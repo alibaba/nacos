@@ -767,11 +767,13 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void executeConfigListen() {
-            
+            // listenCachesMap用来将每个taskId下面所有的有监听者的CacheData进行归类。
             Map<String, List<CacheData>> listenCachesMap = new HashMap<String, List<CacheData>>(16);
+            // removeListenCachesMap用来将每个taskId下面所有的**没有**监听者的CacheData进行归类。
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
+            /* 这个for循环的思想是，将所有的被监听的CacheData按照taskId归类到listenCachesMap中，没被监听的归类到removeListenCachesMap中 */
             for (CacheData cache : cacheMap.get().values()) {
                 
                 synchronized (cache) {
@@ -787,6 +789,7 @@ public class ClientWorker implements Closeable {
                     if (!CollectionUtils.isEmpty(cache.getListeners())) {
                         //get listen  config
                         if (!cache.isUseLocalConfigInfo()) {
+                            // 先把这个taskId所对应的List取出来，然后再把遍历到的这个CacheData放进List里面，完成一次CacheData的归类。
                             List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
                             if (cacheDatas == null) {
                                 cacheDatas = new LinkedList<CacheData>();
@@ -925,6 +928,10 @@ public class ClientWorker implements Closeable {
             }
         }
         
+        /**
+         * 如果taskId对应的rpc长连接存在，则直接返回；如果不存在，则新建一个。
+         * 注：每个taskId都对应一个rpc长连接，对应多个CacheData，也就是对应多个配置。
+         */
         private RpcClient ensureRpcClient(String taskId) throws NacosException {
             synchronized (ClientWorker.this) {
                 
@@ -987,13 +994,22 @@ public class ClientWorker implements Closeable {
                     configChangeListenRequest);
             return response.isSuccess();
         }
-        
+    
+        /**
+         * "查询配置"的业务逻辑实现。
+         *
+         * @param notify      表示本客户端是否要监听这个配置。
+         * @return content.
+         * @throws NacosException throw where query fail .
+         */
         @Override
         public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeouts, boolean notify)
                 throws NacosException {
             ConfigQueryRequest request = ConfigQueryRequest.build(dataId, group, tenant);
             request.putHeader(NOTIFY_HEADER, String.valueOf(notify));
             RpcClient rpcClient = getOneRunningClient();
+            // 此处意思为：如果本机要监听这个配置，就创建一个CacheData对象（CacheData对象表示一个被监听的配置在本机的缓存）。
+            // 并且保证和服务端连接畅通，以便在该配置有变更的时候，实时获取到变更通知。
             if (notify) {
                 CacheData cacheData = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                 if (cacheData != null) {
