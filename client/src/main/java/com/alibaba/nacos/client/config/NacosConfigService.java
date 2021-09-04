@@ -140,8 +140,11 @@ public class NacosConfigService implements ConfigService {
     }
     
     private String getConfigInner(String tenant, String dataId, String group, long timeoutMs) throws NacosException {
+        // 如果group是空字符串的话，就使用默认的"DEFAULT_GROUP"来填充
         group = blank2defaultGroup(group);
+        // 如果dataId为空，或者包含特殊字符，就抛400异常，异常信息"invalid"
         ParamUtils.checkKeyParam(dataId, group);
+        // 构造配置查询返回结果
         ConfigResponse cr = new ConfigResponse();
         
         cr.setDataId(dataId);
@@ -149,39 +152,58 @@ public class NacosConfigService implements ConfigService {
         cr.setGroup(group);
         
         // use local config first
+        // 优先使用本地容灾备份的配置，该配置需要用户手动创建。
+        // 这样就保证了服务端宕机的情况，用户仍然能够正常通过这个方法获取配置，而不是一调用这个方法就去服务端获取，然后返回空。
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
                     worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
+            //
             String encryptedDataKey = LocalEncryptedDataKeyProcessor
                     .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
+            // 在每次获取配置返回Response之前，都要拦截一下Response，来进行相应检查。
+            // 具体检查的内容参考{@ConfigFilterChainManager}的注释。
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             return content;
         }
         
         try {
+            // 如果没有本地容灾备份文件，就在这一步去远程读取配置。
             ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
             cr.setContent(response.getContent());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
+            // 在每次获取配置返回Response之前，都要拦截一下Response，来进行相应检查。
+            // 具体检查的内容参考{@ConfigFilterChainManager}的注释。
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             
             return content;
         } catch (NacosException ioe) {
+            // 如果鉴权失败，就直接抛给用户异常。
             if (NacosException.NO_RIGHT == ioe.getErrCode()) {
                 throw ioe;
             }
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-        
+        // 如果去服务端获取不到该配置，就去本地读快照文件（快照文件和容灾备份的路径不一样，详见{@link LocalConfigInfoProcessor#getFailoverFile}和{@link LocalConfigInfoProcessor#getSnapshotFile}的注释
+        // 快照文件和容灾备份的区别在于：
+        // 1、创建方式不同
+        // 快照文件是去远程拉取配置时，自动创建的--详情参考ClientWorker.queryConfig中的LocalConfigInfoProcessor.saveSnapshot(this.getName(), dataId, group, tenant, response.getContent())语句
+        // 而容灾备份是用户手动创建的。
+        // 2、作用不同
+        // 快照文件是为了在客户端和服务端的通信出现短暂故障时，仍能够保证方法正常返回。
+        // 而容灾备份则是为了保证服务端彻底宕机时，仍能够通过用户手动创建配置，正常返回。
         LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
                 worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+        // 如果使用的是gRPC，则读取的默认路径是：${user.home}/nacos/config/config_rpc_client_nacos/snapshot/group/dataId
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         cr.setContent(content);
+        // 从本地读取相应配置的加密后的dataKey，默认路径：${user.home}/nacos/config/config_rpc_client_nacos/encrypted-data-key/failover/group/dataId
+        // 存疑：为什么是通过getEncryptDataKeyFailover，而不是通过getEncryptDataKeySnapshot读取？
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
                 .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
@@ -200,6 +222,11 @@ public class NacosConfigService implements ConfigService {
         return worker.removeConfig(dataId, group, tenant, tag);
     }
     
+    /**
+     * "新增配置"功能总入口，其他"新增配置"的方法均依赖此方法。
+     *
+     * @return 新增配置是否成功。
+     */
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
             String betaIps, String content, String type, String casMd5) throws NacosException {
         group = blank2defaultGroup(group);
@@ -211,6 +238,7 @@ public class NacosConfigService implements ConfigService {
         cr.setGroup(group);
         cr.setContent(content);
         cr.setType(type);
+        
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
         String encryptedDataKey = (String) cr.getParameter("encryptedDataKey");
