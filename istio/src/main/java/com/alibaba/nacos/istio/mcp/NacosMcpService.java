@@ -20,6 +20,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import io.grpc.stub.StreamObserver;
 import istio.mcp.v1alpha1.Mcp;
@@ -153,26 +154,28 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
-        switch (event.getType()) {
-            case Service:
-                if (connections.size() == 0) {
-                    return;
-                }
-
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-
-                Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, resourceSnapshot);
-
-                for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
-                    if (watchedStatus != null) {
-                        connection.push(serviceEntryMcpResponse, watchedStatus);
+        IstioExecutor.asyncMcpPush(() -> {
+            switch (event.getType()) {
+                case Service:
+                    if (connections.size() == 0) {
+                        return;
                     }
-                }
-                break;
-            default:
-                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
-        }
+
+                    Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
+
+                    Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, resourceSnapshot);
+
+                    for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
+                        WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
+                        if (watchedStatus != null) {
+                            connection.push(serviceEntryMcpResponse, watchedStatus);
+                        }
+                    }
+                    break;
+                default:
+                    Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+            }
+        });
     }
 
     private Mcp.Resources buildMcpResourcesResponse(String type, ResourceSnapshot resourceSnapshot) {

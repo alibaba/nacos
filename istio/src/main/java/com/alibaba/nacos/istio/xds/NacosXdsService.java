@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.istio.xds;
 
-import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
+import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
 /**
@@ -108,6 +110,13 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         String type = discoveryRequest.getTypeUrl();
         String connectionId = connection.getConnectionId();
 
+        // Suitable for bug of istio
+        // See https://github.com/istio/istio/pull/34633
+        if (type.equals(MESH_CONFIG_PROTO_PACKAGE)) {
+            Loggers.MAIN.info("xds: type {} should be ignored.", type);
+            return false;
+        }
+
         if (discoveryRequest.getErrorDetail().getCode() != 0) {
             Loggers.MAIN.error("xds: ACK error, connection-id: {}, code: {}, message: {}",
                     connectionId,
@@ -154,33 +163,35 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
-        switch (event.getType()) {
-            case Service:
-                if (connections.size() == 0) {
-                    return;
-                }
-
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-
-                // Service Entry via MCP
-                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
-                // TODO CDS, EDS
-
-                for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    // Service Entry via MCP
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
-                    if (watchedStatus != null) {
-                        connection.push(serviceEntryResponse, watchedStatus);
+        IstioExecutor.asyncXdsPush(() -> {
+            switch (event.getType()) {
+                case Service:
+                    if (connections.size() == 0) {
+                        return;
                     }
+
+                    Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
+
+                    // Service Entry via MCP
+                    DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
                     // TODO CDS, EDS
-                }
-                break;
-            case Endpoint:
-                Loggers.MAIN.warn("Currently, endpoint event is not supported.");
-                break;
-            default:
-                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
-        }
+
+                    for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
+                        // Service Entry via MCP
+                        WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+                        if (watchedStatus != null) {
+                            connection.push(serviceEntryResponse, watchedStatus);
+                        }
+                        // TODO CDS, EDS
+                    }
+                    break;
+                case Endpoint:
+                    Loggers.MAIN.warn("Currently, endpoint event is not supported.");
+                    break;
+                default:
+                    Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+            }
+        });
     }
 
     private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
