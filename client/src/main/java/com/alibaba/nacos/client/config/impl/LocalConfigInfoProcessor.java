@@ -58,15 +58,20 @@ public class LocalConfigInfoProcessor {
     private static final String SNAPSHOT_FILE_CHILD_2 = "snapshot-tenant";
     
     static {
+        // 默认情况下，该变量为${user.home}/nacos/config
         LOCAL_FILEROOT_PATH =
                 System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
                         + File.separator + "config";
+        // 默认情况下，该变量为${user.home}/nacos/config
         LOCAL_SNAPSHOT_PATH =
                 System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
                         + File.separator + "config";
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
     
+    /**
+     * get Failover file content. NULL means no local file or throw exception.
+     */
     public static String getFailover(String serverName, String dataId, String group, String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
         if (!localPath.exists() || !localPath.isFile()) {
@@ -192,7 +197,13 @@ public class LocalConfigInfoProcessor {
         }
     }
     
+    /*
+     * 返回Failover文件，默认情况下，该文件路径为${user.home}/nacos/config/config_rpc_client_nacos/data/config-data/group/dataId
+     * 或者${user.home}/nacos/config/config_rpc_client_nacos/data/config-data-tenant/tenant/group/dataId
+     */
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
+        // 默认情况下，该tmp变量为${user.home}/nacos/config/config_rpc_client_nacos/data/config-data/group/dataId
+        // 或者${user.home}/nacos/config/config_rpc_client_nacos/data/config-data-tenant/tenant/group/dataId
         File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + SUFFIX);
         tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
         if (StringUtils.isBlank(tenant)) {
@@ -204,6 +215,9 @@ public class LocalConfigInfoProcessor {
         return new File(new File(tmp, group), dataId);
     }
     
+    /*
+     * 返回Failover文件，默认情况下，该文件路径为${user.home}/nacos/config/config_rpc_client_nacos/snapshot/DEFAULT_GROUP/dataId
+     */
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
         if (StringUtils.isBlank(tenant)) {
