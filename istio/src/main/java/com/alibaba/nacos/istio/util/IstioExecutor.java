@@ -22,7 +22,12 @@ import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.istio.IstioApp;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 
 /**
  * @author special.fy
