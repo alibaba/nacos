@@ -25,10 +25,26 @@ package com.alibaba.nacos.core.remote.circuitbreaker;
  */
 public class CircuitBreakerConfig {
 
-    private String pointName;
+    public static final String MODEL_FUZZY = "FUZZY";
 
-    private Long timePeriod;
+    public static final String MODEL_PROTO = "PROTO";
 
-    private Long maxCount;
+    private String monitorType = "";
+
+    private String model = MODEL_FUZZY;
+
+    private boolean isActive = true;
+
+    public void setIsActive(boolean isActive) { this.isActive = isActive; }
+
+    public boolean getIsActive() { return isActive; }
+
+    public void setModel(String model) { this.model = model; }
+
+    public String getModel() { return model; }
+
+    public void setMonitorType(String monitorType) { this.monitorType = monitorType; }
+
+    public String getMonitorType() { return monitorType; }
 
 }

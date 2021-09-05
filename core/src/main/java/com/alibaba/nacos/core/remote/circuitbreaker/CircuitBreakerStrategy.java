@@ -16,7 +16,13 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
+import com.alibaba.nacos.core.remote.control.MonitorKey;
+import io.jsonwebtoken.io.IOException;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract circuit breaker rule class. User can define their own rule class to apply rules other than the default one
@@ -28,6 +34,8 @@ public abstract class CircuitBreakerStrategy {
 
     private String ruleName;
 
+    private final Map<String, CircuitBreakerMonitor> pointToMonitorMap = new ConcurrentHashMap<>();
+
     /**
      * Get the strategy name for this implementation.
      *
@@ -35,12 +43,23 @@ public abstract class CircuitBreakerStrategy {
      */
     public abstract String getRuleName();
 
+    public abstract void registerPoint(String pointName);
+
+    /**
+     * apply tps.
+     *
+     * @param pointName      pointName.
+     * @param monitorKeyList monitorKeyList.
+     * @return pass or not.
+     */
+    public abstract boolean applyStrategy(String pointName, String connectionId, List<MonitorKey> monitorKeyList);
+
     /**
      * Main method for circuit breaker to apply tps control rule.
      *
      * @return true when the current request is allowed to continue; false if the request breaks the upper limit
      */
-    public abstract boolean applyForTps(String pointName);
+    public abstract boolean applyStrategyForClientIp(String pointName, String connectionId, String clientIp);
 
     /**
      * Main method to apply new config to current point.
@@ -50,7 +69,8 @@ public abstract class CircuitBreakerStrategy {
      *
      * @return true when the current request is allowed to continue; false if the request breaks the upper limit
      */
-    public abstract boolean applyRule(String pointName, CircuitBreakerConfig config);
+    public abstract void applyRule(String pointName, CircuitBreakerConfig config,
+                          Map<String, CircuitBreakerConfig> keyConfigMap);
 
     /**
      * Get the strategy instance and save it in the container class.
@@ -58,20 +78,6 @@ public abstract class CircuitBreakerStrategy {
      * @return the specific instance with implement class.
      */
     public abstract CircuitBreakerStrategy getStrategy();
-
-    /**
-     * Get the strategy instance and save it in the container class.
-     *
-     * @param configMap the full or partial config map from the container
-     */
-    public abstract void updateConfig(Map<String, CircuitBreakerConfig> configMap);
-
-    /**
-     * Get the strategy instance and save it in the container class.
-     *
-     * @param configMap the full or partial config map from the container
-     */
-    public abstract void updateConfig(Map<String, CircuitBreakerConfig> configMap, String pointName);
 
     /**
      * Get the strategy instance and save it in the container class.
@@ -87,4 +93,19 @@ public abstract class CircuitBreakerStrategy {
      */
     public abstract Map<String, CircuitBreakerMonitor> getPointRecorders();
 
+    /**
+     * Deserialize point config from JSON content.
+     * @param content JSON config loaded from local file.
+     *
+     * @return the point config that was initialized using concrete config subclass
+     */
+    public abstract CircuitBreakerConfig deserializePointConfig(String content) throws IOException;
+
+    /**
+     * Deserialize point config from JSON content.
+     * @param content JSON config loaded from local file.
+     *
+     * @return the MonitorKey -> config map that was initialized using concrete config subclass
+     */
+    public abstract Map<String, CircuitBreakerConfig> deserializeMonitorKeyConfig(String content) throws IOException;
 }

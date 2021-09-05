@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
-import com.alibaba.nacos.core.remote.control.MonitorType;
 import com.alibaba.nacos.core.remote.control.TpsControlRule;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 
@@ -31,19 +30,17 @@ public class TpsRecorder{
 
     private long startTime;
 
-    TimeUnit period;
-
     private int slotSize;
 
     private List<TpsSlot> slotList;
 
-    private String model;
+    private TpsConfig config;
 
     /**
      * monitor/intercept.
      */
-    public TpsRecorder(long startTime, TimeUnit period, String model, int recordSize) {
-
+    public TpsRecorder(long startTime, int recordSize, TpsConfig config) {
+        TimeUnit period = config.getPeriod();
         this.startTime = startTime;
         if (period.equals(TimeUnit.MINUTES)) {
             this.startTime = TpsMonitorPoint.getTrimMillsOfMinute(startTime);
@@ -51,9 +48,8 @@ public class TpsRecorder{
         if (period.equals(TimeUnit.HOURS)) {
             this.startTime = TpsMonitorPoint.getTrimMillsOfHour(startTime);
         }
-        this.period = period;
-        this.model = model;
         this.slotSize = recordSize + 1;
+        this.config = config;
         slotList = new ArrayList<>(slotSize);
         for (int i = 0; i < slotSize; i++) {
             slotList.add(isProtoModel() ? new MultiKeyTpsSlot() : new TpsSlot());
@@ -61,16 +57,20 @@ public class TpsRecorder{
     }
 
     public boolean isProtoModel() {
-        return TpsControlRule.Rule.MODEL_PROTO.equalsIgnoreCase(this.model);
+        return TpsControlRule.Rule.MODEL_PROTO.equalsIgnoreCase(config.getModel());
     }
 
     public String getModel() {
-        return model;
+        return config.getModel();
     }
 
     public void setModel(String model) {
-        this.model = model;
+        config.setModel(model);
     }
+
+    public TpsConfig getConfig() { return config; }
+
+    public void setConfig(TpsConfig config) { this.config = config; }
 
     /**
      * get slot of the timestamp second,create if not exist.
@@ -81,6 +81,7 @@ public class TpsRecorder{
     public TpsSlot createSlotIfAbsent(long timeStamp) {
         long distance = timeStamp - startTime;
 
+        TimeUnit period = config.getPeriod();
         long diff = (distance < 0 ? distance + period.toMillis(1) * slotSize : distance) / period.toMillis(1);
         long currentWindowTime = startTime + diff * period.toMillis(1);
         int index = (int) diff % slotSize;
@@ -97,6 +98,8 @@ public class TpsRecorder{
      * @return tps slot.
      */
     public TpsSlot getPoint(long timeStamp) {
+
+        TimeUnit period = config.getPeriod();
         long distance = timeStamp - startTime;
         long diff = (distance < 0 ? distance + period.toMillis(1) * slotSize : distance) / period.toMillis(1);
         long currentWindowTime = startTime + diff * period.toMillis(1);
