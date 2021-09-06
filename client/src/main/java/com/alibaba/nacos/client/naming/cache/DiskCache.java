@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
-import java.net.URLDecoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,7 +104,7 @@ public class DiskCache {
                     continue;
                 }
                 
-                String fileName = URLDecoder.decode(file.getName(), "UTF-8");
+                String fileName = UrlCodecUtils.decode(file.getName());
                 
                 if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName
                         .endsWith(Constants.SERVICE_INFO_SPLITER + "special-url"))) {

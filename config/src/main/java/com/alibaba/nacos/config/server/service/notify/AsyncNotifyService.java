@@ -48,8 +48,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -442,12 +441,8 @@ public class AsyncNotifyService {
             super(dataId, group, tenant, lastModified);
             this.target = target;
             this.isBeta = isBeta;
-            try {
-                dataId = URLEncoder.encode(dataId, Constants.ENCODE);
-                group = URLEncoder.encode(group, Constants.ENCODE);
-            } catch (UnsupportedEncodingException e) {
-                LOGGER.error("URLEncoder encode error", e);
-            }
+            dataId = UrlCodecUtils.encode(dataId);
+            group = UrlCodecUtils.encode(group);
             if (StringUtils.isBlank(tenant)) {
                 this.url = MessageFormat.format(URL_PATTERN, target, EnvUtil.getContextPath(), dataId, group);
             } else {

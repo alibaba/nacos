@@ -45,7 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -145,7 +145,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
-                            response.setTag(URLEncoder.encode(autoTag, Constants.ENCODE));
+                            response.setTag(UrlCodecUtils.encode(autoTag));
                             
                         } else {
                             md5 = cacheItem.getMd5();

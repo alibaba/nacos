@@ -57,7 +57,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.net.URLDecoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -248,7 +248,7 @@ public class ServiceController {
     public String serviceStatus(HttpServletRequest request) throws Exception {
         
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
-        String value = URLDecoder.decode(entity, "UTF-8");
+        String value = UrlCodecUtils.decode(entity);
         JsonNode json = JacksonUtils.toObj(value);
         
         //format: service1@@checksum@@@service2@@checksum
@@ -384,7 +384,7 @@ public class ServiceController {
             return new NoneSelector();
         }
         
-        JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
+        JsonNode selectorJson = JacksonUtils.toObj(UrlCodecUtils.decode(selectorJsonString));
         String type = Optional.ofNullable(selectorJson.get("type"))
                 .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
                 .asText();

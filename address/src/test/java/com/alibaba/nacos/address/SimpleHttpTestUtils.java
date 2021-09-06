@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.Map;
 
 public class SimpleHttpTestUtils {
@@ -125,7 +125,7 @@ public class SimpleHttpTestUtils {
                 for (Map.Entry<String, String> element : paramMap.entrySet()) {
                     params.append(element.getKey());
                     params.append('=');
-                    params.append(URLEncoder.encode(element.getValue(), REQUEST_ENCODING));
+                    params.append(UrlCodecUtils.encode(element.getValue(), REQUEST_ENCODING));
                     params.append('&');
                 }
                 

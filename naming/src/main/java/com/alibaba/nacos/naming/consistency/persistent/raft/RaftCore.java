@@ -58,9 +58,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -299,7 +297,7 @@ public class RaftCore implements Closeable {
             
             if (!isLeader()) {
                 Map<String, String> params = new HashMap<>(1);
-                params.put("key", URLEncoder.encode(key, "UTF-8"));
+                params.put("key", UrlCodecUtils.encode(key));
                 raftProxy.proxy(getLeader().ip, API_DEL, params, HttpMethod.DELETE);
                 return;
             }
@@ -824,7 +822,7 @@ public class RaftCore implements Closeable {
                     // update datum entry
                     String url = buildUrl(remote.ip, API_GET);
                     Map<String, String> queryParam = new HashMap<>(1);
-                    queryParam.put("keys", URLEncoder.encode(keys, "UTF-8"));
+                    queryParam.put("keys", UrlCodecUtils.encode(keys));
                     HttpClient.asyncHttpGet(url, null, queryParam, new Callback<String>() {
                         @Override
                         public void onReceive(RestResult<String> result) {
@@ -1062,19 +1060,14 @@ public class RaftCore implements Closeable {
     }
     
     private void deleteDatum(String key) {
-        Datum deleted;
-        try {
-            deleted = datums.remove(URLDecoder.decode(key, "UTF-8"));
-            if (deleted != null) {
-                raftStore.delete(deleted);
-                Loggers.RAFT.info("datum deleted, key: {}", key);
-            }
-            NotifyCenter.publishEvent(
-                    ValueChangeEvent.builder().key(URLDecoder.decode(key, "UTF-8")).action(DataOperation.DELETE)
-                            .build());
-        } catch (UnsupportedEncodingException e) {
-            Loggers.RAFT.warn("datum key decode failed: {}", key);
+        Datum deleted = datums.remove(UrlCodecUtils.decode(key));
+        if (deleted != null) {
+            raftStore.delete(deleted);
+            Loggers.RAFT.info("datum deleted, key: {}", key);
         }
+        NotifyCenter.publishEvent(
+                ValueChangeEvent.builder().key(UrlCodecUtils.decode(key)).action(DataOperation.DELETE)
+                        .build());
     }
     
     public boolean isInitialized() {

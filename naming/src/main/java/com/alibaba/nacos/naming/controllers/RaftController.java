@@ -48,7 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.net.URLDecoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,8 +116,8 @@ public class RaftController {
             throw new IllegalStateException("old raft protocol already stop");
         }
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
-        String value = URLDecoder.decode(entity, "UTF-8");
-        value = URLDecoder.decode(value, "UTF-8");
+        String value = UrlCodecUtils.decode(entity);
+        value = UrlCodecUtils.decode(value);
         
         JsonNode json = JacksonUtils.toObj(value);
         
@@ -191,7 +191,7 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
         
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
-        String value = URLDecoder.decode(entity, "UTF-8");
+        String value = UrlCodecUtils.decode(entity);
         JsonNode json = JacksonUtils.toObj(value);
         
         String key = json.get("key").asText();
@@ -250,7 +250,7 @@ public class RaftController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
         String keysString = WebUtils.required(request, "keys");
-        keysString = URLDecoder.decode(keysString, "UTF-8");
+        keysString = UrlCodecUtils.decode(keysString);
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
         
@@ -304,7 +304,7 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
         
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
-        String value = URLDecoder.decode(entity, "UTF-8");
+        String value = UrlCodecUtils.decode(entity);
         
         JsonNode jsonObject = JacksonUtils.toObj(value);
         String key = "key";
@@ -346,8 +346,8 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
         
         String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
-        String value = URLDecoder.decode(entity, "UTF-8");
-        value = URLDecoder.decode(value, "UTF-8");
+        String value = UrlCodecUtils.decode(entity);
+        value = UrlCodecUtils.decode(value);
         
         JsonNode jsonObject = JacksonUtils.toObj(value);
         

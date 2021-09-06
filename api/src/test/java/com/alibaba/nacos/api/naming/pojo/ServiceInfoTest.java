@@ -23,8 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -84,12 +83,7 @@ public class ServiceInfoTest {
     @Test
     public void testGetKeyEncode() {
         String key = serviceInfo.getKeyEncoded();
-        String encodeName = null;
-        try {
-            encodeName = URLEncoder.encode("G@@testName", "utf-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+        String encodeName = UrlCodecUtils.encode("G@@testName");
         assertEquals(key, ServiceInfo.getKey(encodeName, "testClusters"));
     }
     

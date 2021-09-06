@@ -73,7 +73,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLDecoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -311,7 +311,7 @@ public class ConfigController {
             throw new IllegalArgumentException("invalid probeModify");
         }
         
-        probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
+        probeModify = UrlCodecUtils.decode(probeModify);
         
         Map<String, String> clientMd5Map;
         try {

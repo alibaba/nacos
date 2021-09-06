@@ -21,8 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -44,8 +43,6 @@ public class ServiceInfo {
     private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
     
     public static final String SPLITER = "@@";
-    
-    private static final String DEFAULT_CHARSET = "UTF-8";
     
     private String name;
     
@@ -229,11 +226,8 @@ public class ServiceInfo {
     @JsonIgnore
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();
-        try {
-            serviceName = URLEncoder.encode(serviceName, DEFAULT_CHARSET);
-        } catch (UnsupportedEncodingException e) {
-            //do nothing
-        }
+        //url encode
+        serviceName = UrlCodecUtils.encode(serviceName);
         return getKey(serviceName, clusters);
     }
     
