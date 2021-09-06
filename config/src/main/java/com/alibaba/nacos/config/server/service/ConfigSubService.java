@@ -30,7 +30,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -173,7 +173,7 @@ public class ConfigSubService {
                 StringBuilder paramUrl = new StringBuilder();
                 for (Map.Entry<String, String> param : params.entrySet()) {
                     paramUrl.append('&').append(param.getKey()).append('=')
-                            .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
+                            .append(UrlCodecUtils.encode(param.getValue()));
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;

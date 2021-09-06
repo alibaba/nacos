@@ -45,7 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -178,7 +178,7 @@ public class ConfigServletInner {
                             }
                             
                             response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
-                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
+                                    UrlCodecUtils.encode(autoTag, StandardCharsets.UTF_8));
                         } else {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();

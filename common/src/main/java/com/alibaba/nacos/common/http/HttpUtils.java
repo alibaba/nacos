@@ -37,8 +37,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -200,7 +199,7 @@ public final class HttpUtils {
             }
             
             sb.append(entry.getKey()).append('=');
-            sb.append(URLEncoder.encode(entry.getValue(), encoding));
+            sb.append(UrlCodecUtils.encode(entry.getValue(), encoding));
             sb.append('&');
         }
         
@@ -223,7 +222,7 @@ public final class HttpUtils {
         
         for (Iterator<String> iter = paramValues.iterator(); iter.hasNext(); ) {
             sb.append(iter.next()).append('=');
-            sb.append(URLEncoder.encode(iter.next(), encoding));
+            sb.append(UrlCodecUtils.encode(iter.next(), encoding));
             if (iter.hasNext()) {
                 sb.append('&');
             }
@@ -267,7 +266,7 @@ public final class HttpUtils {
             return pre;
         }
         pre = now;
-        now = URLDecoder.decode(now, encode);
+        now = UrlCodecUtils.decode(now, encode);
         return innerDecode(pre, now, encode);
     }
     

@@ -29,7 +29,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -106,7 +106,7 @@ public class MD5Util {
         }
         
         // To encode WORD_SEPARATOR and LINE_SEPARATOR invisible characters, encoded value is %02 and %01
-        return URLEncoder.encode(sb.toString(), "UTF-8");
+        return UrlCodecUtils.encode(sb.toString());
     }
     
     /**

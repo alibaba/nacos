@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.util.Map;
 
 public class SimpleHttpTestUtils {
@@ -46,11 +46,6 @@ public class SimpleHttpTestUtils {
      * 读取数据超时.
      */
     private static final int READ_TIME_OUT = 2000;
-    
-    /**
-     * 请求编码.
-     */
-    public static final String REQUEST_ENCODING = "UTF-8";
     
     /**
      * 接收编码.
@@ -125,7 +120,7 @@ public class SimpleHttpTestUtils {
                 for (Map.Entry<String, String> element : paramMap.entrySet()) {
                     params.append(element.getKey());
                     params.append('=');
-                    params.append(URLEncoder.encode(element.getValue(), REQUEST_ENCODING));
+                    params.append(UrlCodecUtils.encode(element.getValue()));
                     params.append('&');
                 }
                 

@@ -26,7 +26,7 @@ import com.alibaba.nacos.core.utils.GenericType;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.URLEncoder;
+import com.alibaba.nacos.api.utils.UrlCodecUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,8 +71,8 @@ public class HttpUtils_ITCase {
 		Query query = Query.newInstance().addParam("key-1", "value-1")
 				.addParam("key-2", "value-2");
 		String s1 = query.toQueryUrl();
-		String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name())
-				+ "&key-2=" + URLEncoder.encode("value-2", StandardCharsets.UTF_8.name());
+		String s2 = "key-1=" + UrlCodecUtils.encode("value-1", StandardCharsets.UTF_8)
+				+ "&key-2=" + UrlCodecUtils.encode("value-2", StandardCharsets.UTF_8);
 		Assert.assertEquals(s1, s2);
 	}
 
