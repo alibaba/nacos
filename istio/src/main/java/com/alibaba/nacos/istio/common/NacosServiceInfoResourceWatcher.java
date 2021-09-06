@@ -17,13 +17,11 @@
 package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.util.IstioCrdUtil;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
@@ -36,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author special.fy
  */
 @org.springframework.stereotype.Service
-public class NacosServiceInfoResourceWatcher {
+public class NacosServiceInfoResourceWatcher implements Runnable {
 
     private final Map<String, IstioService> serviceInfoMap = new ConcurrentHashMap<>(16);
 
@@ -44,67 +42,56 @@ public class NacosServiceInfoResourceWatcher {
     private ServiceStorage serviceStorage;
 
     @Autowired
-    private IstioConfig istioConfig;
-
-    @Autowired
     private EventProcessor eventProcessor;
 
-    public void start() {
-        GlobalExecutor
-                .scheduleMcpPushTask(new Watcher(), istioConfig.getMcpPushInterval() * 2L, istioConfig.getMcpPushInterval());
-    }
+    @Override
+    public void run() {
+        boolean changed = false;
 
-    public class Watcher implements Runnable {
+        // Query all services to see if any of them have changes.
+        Set<String> namespaces =  ServiceManager.getInstance().getAllNamespaces();
+        Set<String> allServices = new HashSet<>();
+        for (String namespace : namespaces) {
+            Set<Service>  services = ServiceManager.getInstance().getSingletons(namespace);
+            if (services.isEmpty()) {
+                continue;
+            }
 
-        @Override
-        public void run() {
-            boolean changed = false;
+            for (Service service : services) {
+                String serviceName = IstioCrdUtil.buildServiceNameForServiceEntry(service);
+                allServices.add(serviceName);
 
-            // Query all services to see if any of them have changes.
-            Set<String> namespaces =  ServiceManager.getInstance().getAllNamespaces();
-            Set<String> allServices = new HashSet<>();
-            for (String namespace : namespaces) {
-                Set<Service>  services = ServiceManager.getInstance().getSingletons(namespace);
-                if (services.isEmpty()) {
+                IstioService old = serviceInfoMap.get(serviceName);
+                // Service not changed
+                if (old != null && old.getRevision().equals(service.getRevision())) {
                     continue;
                 }
 
-                for (Service service : services) {
-                    String serviceName = IstioCrdUtil.buildServiceNameForServiceEntry(service);
-                    allServices.add(serviceName);
+                // Update the resource
+                changed = true;
+                ServiceInfo serviceInfo = serviceStorage.getPushData(service);
+                if (!serviceInfo.isValid()) {
+                    serviceInfoMap.remove(serviceName);
+                    continue;
+                }
 
-                    IstioService old = serviceInfoMap.get(serviceName);
-                    // Service not changed
-                    if (old != null && old.getRevision().equals(service.getRevision())) {
-                        continue;
-                    }
-
-                    // Update the resource
-                    changed = true;
-                    ServiceInfo serviceInfo = serviceStorage.getPushData(service);
-                    if (!serviceInfo.isValid()) {
-                        serviceInfoMap.remove(serviceName);
-                        continue;
-                    }
-
-                    if (old != null) {
-                        serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
-                    } else {
-                        serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
-                    }
+                if (old != null) {
+                    serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
+                } else {
+                    serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
                 }
             }
+        }
 
-            for (String key : serviceInfoMap.keySet()) {
-                if (!allServices.contains(key)) {
-                    changed = true;
-                    serviceInfoMap.remove(key);
-                }
+        for (String key : serviceInfoMap.keySet()) {
+            if (!allServices.contains(key)) {
+                changed = true;
+                serviceInfoMap.remove(key);
             }
+        }
 
-            if (changed) {
-                eventProcessor.notify(Event.SERVICE_UPDATE_EVENT);
-            }
+        if (changed) {
+            eventProcessor.notify(Event.SERVICE_UPDATE_EVENT);
         }
     }
 
