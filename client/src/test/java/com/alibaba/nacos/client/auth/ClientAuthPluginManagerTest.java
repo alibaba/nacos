@@ -56,24 +56,24 @@ public class ClientAuthPluginManagerTest {
         Class<ClientAuthPluginManager> clientAuthPluginManagerClass = ClientAuthPluginManager.class;
         Field authPlugins = clientAuthPluginManagerClass.getDeclaredField("clientAuthServiceHashMap");
         authPlugins.setAccessible(true);
-        Map<String, ClientAuthService> clientAuthServiceMap = (Map<String, ClientAuthService>) authPlugins.get(clientAuthPluginManager);
+        Map<String, ClientAuthService> clientAuthServiceMap = (Map<String, ClientAuthService>) authPlugins
+                .get(clientAuthPluginManager);
         clientAuthServiceMap.put(TYPE, clientAuthService);
     }
     
     @Test
     public void testGetInstance() {
         ClientAuthPluginManager instance = ClientAuthPluginManager.getInstance();
-
+        
         Assert.assertNotNull(instance);
     }
     
     @Test
     public void testFindAuthServiceSpiImpl() throws NacosException {
         Mockito.when(clientAuthService.login(properties)).thenReturn(true);
-        Mockito.when(clientAuthService.restRequest(properties)).thenReturn(true);
         Mockito.when(clientAuthService.getClientAuthServiceName()).thenReturn(TYPE);
         Optional<ClientAuthService> authServiceImpl = clientAuthPluginManager.findAuthServiceSpiImpl(TYPE);
         Assert.assertTrue(authServiceImpl.isPresent());
     }
-
+    
 }
