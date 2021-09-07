@@ -4,6 +4,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Optional;
  * @author wuyfee
  */
 public class ClientAuthPluginManager {
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
     
     private static final ClientAuthPluginManager INSTANCE = new ClientAuthPluginManager();
@@ -43,6 +45,7 @@ public class ClientAuthPluginManager {
                         "[ClientAuthPluginManager] Load ClientAuthService({}) ClientAuthServiceName(null/empty) fail. "
                                 + "Please Add ClientAuthServiceName to resolve.", clientAuthService.getClass());
                 continue;
+                
             }
             clientAuthServiceHashMap.put(clientAuthService.getClientAuthServiceName(), clientAuthService);
             LOGGER.info("[ClientAuthPluginManager] Load ClientAuthService({}) ClientAuthServiceName({}) successfully.",
@@ -52,6 +55,7 @@ public class ClientAuthPluginManager {
     
     /**
      * get ClientAuthService instance which ClientAuthService.getType() is type.
+     *
      * @param clientAuthServiceName AuthServiceName, mark a AuthService instance.
      * @return AuthService instance.
      */

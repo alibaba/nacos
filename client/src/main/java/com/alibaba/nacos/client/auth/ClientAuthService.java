@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.auth;
 
-import com.alibaba.nacos.api.exception.NacosException;
-
 import java.util.Properties;
 
 /**
@@ -39,12 +37,5 @@ public interface ClientAuthService {
      * @return ClientAuthServiceName mark clientAuthService.
      */
     String getClientAuthServiceName();
-    
-    /**
-     * package request and execute request.
-     * @param properties login information.
-     * @return Object request result.
-     */
-    boolean restRequest(Properties properties) throws NacosException;
     
 }
