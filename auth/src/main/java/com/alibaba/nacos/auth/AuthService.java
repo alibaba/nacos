@@ -19,6 +19,7 @@ package com.alibaba.nacos.auth;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.model.User;
 
 /**
  * Auth service.
@@ -34,7 +35,7 @@ public interface AuthService {
      * @return boolean if the user identify success
      * @throws AccessException if authentication is failed
      */
-    Boolean login(IdentityContext identityContext) throws AccessException;
+    User login(IdentityContext identityContext) throws AccessException;
     
     
     /**
@@ -43,7 +44,7 @@ public interface AuthService {
      * @param permission permission to auth.
      * @return Boolean if the user has the resource authority.
      */
-    Boolean authorityAccess(IdentityContext identityContext, Permission permission);
+    Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException;
     
     /**
      * AuthService Name which for conveniently find AuthService instance.

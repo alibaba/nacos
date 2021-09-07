@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.Optional;
  *
  * @author Wuyfee
  */
+@Component
 public class AuthPluginManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthPluginManager.class);
