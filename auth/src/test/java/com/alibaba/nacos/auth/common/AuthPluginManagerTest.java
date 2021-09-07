@@ -21,6 +21,7 @@ import com.alibaba.nacos.auth.AuthService;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.model.User;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,6 +56,9 @@ public class AuthPluginManagerTest {
     @Mock
     private Permission permission;
     
+    @Mock
+    private User user;
+    
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         authPluginManager = AuthPluginManager.getInstance();
@@ -74,7 +78,7 @@ public class AuthPluginManagerTest {
     
     @Test
     public void testFindAuthServiceSpiImpl() throws AccessException {
-        Mockito.when(authService.login(identityContext)).thenReturn(true);
+        Mockito.when(authService.login(identityContext)).thenReturn(user);
         Mockito.when(authService.authorityAccess(identityContext, permission)).thenReturn(true);
         Mockito.when(authService.getAuthServiceName()).thenReturn(TYPE);
         Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);

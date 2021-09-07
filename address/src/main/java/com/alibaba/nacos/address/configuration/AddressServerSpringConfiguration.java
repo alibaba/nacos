@@ -17,7 +17,7 @@
 package com.alibaba.nacos.address.configuration;
 
 import com.alibaba.nacos.address.auth.AddressServerAuthManager;
-import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.AuthService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,8 +31,8 @@ import org.springframework.context.annotation.Configuration;
 public class AddressServerSpringConfiguration {
     
     @Bean
-    @ConditionalOnMissingBean(value = AuthManager.class)
-    public AuthManager getAuthManager() {
+    @ConditionalOnMissingBean(value = AuthService.class)
+    public AuthService getAuthManager() {
         return new AddressServerAuthManager();
     }
 }

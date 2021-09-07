@@ -18,7 +18,8 @@ package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.exception.AuthConfigsException;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.Arrays;
@@ -26,14 +27,26 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Grpc request Identify context builder.
+ *
+ * @author wuyfee
+ */
+@Service
 public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpServletRequest> {
     
-    private AuthConfigs authConfigs;
+    @Autowired
+    AuthConfigs authConfigs;
     
-    IdentityContext identityContext;
+    private final IdentityContext identityContext;
     
     public HttpIdentityContextBuilder() {
         authConfigs = new AuthConfigs();
+        identityContext = new IdentityContext();
+    }
+    
+    public HttpIdentityContextBuilder(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
         identityContext = new IdentityContext();
     }
     
@@ -61,13 +74,14 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
                 setIdentityContext(paramBothEnu, request);
                 break;
             default:
-                throw new AuthConfigsException("AuthConfigs.identifyPosition error! Check application.properties nacos.core.auth.identifyPosition.");
+                throw new AuthConfigsException(
+                        "AuthConfigs.identifyPosition error! Check application.properties nacos.core.auth.identifyPosition.");
         }
         return identityContext;
     }
     
     public void setIdentityContext(Enumeration<String> enu, HttpServletRequest request) {
-        Set<String> keySet = new HashSet<String>(Arrays.asList(authConfigs.getAuthorityKey()));
+        Set<String> keySet = new HashSet<>(Arrays.asList(authConfigs.getAuthorityKey()));
         while (enu.hasMoreElements()) {
             String paraName = enu.nextElement();
             if (keySet.contains(paraName)) {

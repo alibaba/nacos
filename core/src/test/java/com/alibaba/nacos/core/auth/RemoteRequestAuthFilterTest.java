@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.AuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -50,7 +50,7 @@ public class RemoteRequestAuthFilterTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private AuthManager authManager;
+    private AuthService authManager;
     
     @Test
     public void testFilter() {

@@ -17,20 +17,22 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.AuthJwtTokenManager;
+import com.alibaba.nacos.auth.NacosAuthServiceImpl;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.exception.AuthConfigsException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
-import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
@@ -69,7 +71,7 @@ import java.util.Objects;
 public class UserController {
     
     @Autowired
-    private JwtTokenManager jwtTokenManager;
+    private AuthJwtTokenManager jwtTokenManager;
     
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -84,7 +86,7 @@ public class UserController {
     private AuthConfigs authConfigs;
     
     @Autowired
-    private NacosAuthManager authManager;
+    private NacosAuthServiceImpl authManager;
     
     /**
      * Create a new user.
@@ -204,12 +206,13 @@ public class UserController {
      */
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException {
+            HttpServletRequest request) throws AccessException, AuthConfigsException {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP
                 .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            NacosUser user = (NacosUser) authManager.login(request);
-            
+            HttpIdentityContextBuilder identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
+            com.alibaba.nacos.auth.model.NacosUser user = authManager.login(identityContextBuilder.build(request));
+    
             response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();

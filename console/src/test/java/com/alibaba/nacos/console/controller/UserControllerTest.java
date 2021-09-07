@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.auth.NacosAuthServiceImpl;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
-import com.alibaba.nacos.console.security.nacos.users.NacosUser;
+import com.alibaba.nacos.auth.exception.AuthConfigsException;
+import com.alibaba.nacos.auth.model.NacosUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +52,7 @@ public class UserControllerTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private NacosAuthManager authManager;
+    private NacosAuthServiceImpl authManager;
     
     private UserController userController;
     
@@ -68,8 +70,9 @@ public class UserControllerTest {
     }
     
     @Test
-    public void testLoginWithAuthedUser() throws AccessException {
-        when(authManager.login(request)).thenReturn(user);
+    public void testLoginWithAuthedUser() throws AccessException, AuthConfigsException {
+        HttpIdentityContextBuilder identityContextBuilder = new HttpIdentityContextBuilder();
+        when(authManager.login(identityContextBuilder.build(request))).thenReturn(user);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(authConfigs.getTokenValidityInSeconds()).thenReturn(18000L);
         Object actual = userController.login("nacos", "nacos", response, request);
