@@ -26,8 +26,6 @@ import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 /**
  * Push execute service for udp.
  *
@@ -35,8 +33,6 @@ import java.util.Optional;
  */
 @Component
 public class PushExecutorUdpImpl implements PushExecutor {
-    
-    private static final String UDP_PUSH_DATA_FOR_V1 = "udpPushDataForV1";
     
     private final UdpPushService pushService;
     
@@ -68,23 +64,15 @@ public class PushExecutorUdpImpl implements PushExecutor {
      * @return new service info for 1.x
      */
     private ServiceInfo replaceServiceInfoName(PushDataWrapper originalData, Subscriber subscriber) {
-        Optional<ServiceInfo> original = originalData.getProcessedPushData(UDP_PUSH_DATA_FOR_V1);
-        if (original.isPresent()) {
-            return original.get();
-        }
-        ServiceInfo serviceInfo = getServiceInfo(originalData, subscriber);
+        ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(originalData.getOriginalData(), originalData.getServiceMetadata(),
+                false, true, subscriber);
         ServiceInfo result = new ServiceInfo();
         result.setName(NamingUtils.getGroupedName(serviceInfo.getName(), serviceInfo.getGroupName()));
         result.setClusters(serviceInfo.getClusters());
         result.setHosts(serviceInfo.getHosts());
         result.setLastRefTime(serviceInfo.getLastRefTime());
         result.setCacheMillis(serviceInfo.getCacheMillis());
-        originalData.addProcessedPushData(UDP_PUSH_DATA_FOR_V1, result);
         return result;
-    }
-    
-    private ServiceInfo getServiceInfo(PushDataWrapper data, Subscriber subscriber) {
-        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true, subscriber);
     }
     
     /**
