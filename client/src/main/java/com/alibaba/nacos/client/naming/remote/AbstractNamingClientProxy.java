@@ -18,10 +18,10 @@ package com.alibaba.nacos.client.naming.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -51,12 +51,12 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
     
     private static final String SEPARATOR = "@@";
     
-    private final SecurityProxy securityProxy;
+    private final NacosClientAuthServiceImpl nacosClientAuthService;
     
     private final Properties properties;
     
-    protected AbstractNamingClientProxy(SecurityProxy securityProxy, Properties properties) {
-        this.securityProxy = securityProxy;
+    protected AbstractNamingClientProxy(NacosClientAuthServiceImpl nacosClientAuthService, Properties properties) {
+        this.nacosClientAuthService = nacosClientAuthService;
         this.properties = properties;
     }
     
@@ -67,8 +67,8 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      */
     protected Map<String, String> getSecurityHeaders() {
         Map<String, String> result = new HashMap<>(1);
-        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            result.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        if (StringUtils.isNotBlank(nacosClientAuthService.getAccessToken())) {
+            result.put(Constants.ACCESS_TOKEN, nacosClientAuthService.getAccessToken());
         }
         return result;
     }

@@ -37,10 +37,10 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
@@ -82,7 +82,7 @@ public class NamingGrpcClientProxyTest {
     private static final String CLUSTERS = "cluster1";
     
     @Mock
-    private SecurityProxy proxy;
+    private NacosClientAuthServiceImpl clientAuthService;
     
     @Mock
     private ServerListFactory factory;
@@ -107,7 +107,7 @@ public class NamingGrpcClientProxyTest {
     @Before
     public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         prop = new Properties();
-        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, prop, holder);
+        client = new NamingGrpcClientProxy(NAMESPACE_ID, clientAuthService, factory, prop, holder);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         rpcClientField.set(client, this.rpcClient);

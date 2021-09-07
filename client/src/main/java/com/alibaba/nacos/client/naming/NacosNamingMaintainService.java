@@ -25,11 +25,11 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 
 import java.util.Map;
@@ -64,9 +64,9 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(properties);
         ServerListManager serverListManager = new ServerListManager(properties, namespace);
-        SecurityProxy securityProxy = new SecurityProxy(properties,
+        NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl(properties,
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
-        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties, null);
+        serverProxy = new NamingHttpClientProxy(namespace, nacosClientAuthService, serverListManager, properties, null);
     }
     
     @Override

@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
@@ -41,7 +42,6 @@ import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -117,9 +117,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
-    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
+    public NamingHttpClientProxy(String namespaceId, NacosClientAuthServiceImpl nacosClientAuthService, ServerListManager serverListManager,
             Properties properties, ServiceInfoHolder serviceInfoHolder) {
-        super(securityProxy, properties);
+        super(nacosClientAuthService, properties);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;

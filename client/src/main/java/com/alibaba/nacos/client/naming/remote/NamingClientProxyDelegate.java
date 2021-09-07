@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.Properties;
@@ -60,7 +60,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private final NamingGrpcClientProxy grpcClientProxy;
     
-    private final SecurityProxy securityProxy;
+    private final NacosClientAuthServiceImpl clientAuthService;
     
     private ScheduledExecutorService executorService;
     
@@ -70,11 +70,11 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
-        this.securityProxy = new SecurityProxy(properties, NamingHttpClientManager.getInstance().getNacosRestTemplate());
+        this.clientAuthService = new NacosClientAuthServiceImpl(properties, NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy();
-        this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties,
+        this.httpClientProxy = new NamingHttpClientProxy(namespace, clientAuthService, serverListManager, properties,
                 serviceInfoHolder);
-        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
+        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, clientAuthService, serverListManager, properties,
                 serviceInfoHolder);
     }
     
@@ -85,8 +85,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
             t.setDaemon(true);
             return t;
         });
-        this.securityProxy.login(serverListManager.getServerList());
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(serverListManager.getServerList()), 0,
+        this.clientAuthService.login(serverListManager.getServerList());
+        this.executorService.scheduleWithFixedDelay(() -> clientAuthService.login(serverListManager.getServerList()), 0,
                 securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
     }
     

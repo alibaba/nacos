@@ -19,9 +19,9 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.identify.StsConfig;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -73,7 +73,7 @@ public abstract class ConfigTransportClient {
     
     private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
     
-    protected SecurityProxy securityProxy;
+    protected NacosClientAuthServiceImpl nacosClientAuthService;
     
     private String accessKey;
     
@@ -96,7 +96,7 @@ public abstract class ConfigTransportClient {
         
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
-        this.securityProxy = new SecurityProxy(properties,
+        this.nacosClientAuthService = new NacosClientAuthServiceImpl(properties,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
         initAkSk(properties);
     }
@@ -131,11 +131,11 @@ public abstract class ConfigTransportClient {
      * @return map that contains accessToken , null if acessToken is empty.
      */
     protected Map<String, String> getSecurityHeaders() {
-        if (StringUtils.isBlank(securityProxy.getAccessToken())) {
+        if (StringUtils.isBlank(nacosClientAuthService.getAccessToken())) {
             return null;
         }
         Map<String, String> spasHeaders = new HashMap<String, String>(2);
-        spasHeaders.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        spasHeaders.put(Constants.ACCESS_TOKEN, nacosClientAuthService.getAccessToken());
         return spasHeaders;
     }
     
@@ -159,7 +159,7 @@ public abstract class ConfigTransportClient {
     }
     
     public String getAccessToken() {
-        return securityProxy.getAccessToken();
+        return nacosClientAuthService.getAccessToken();
     }
     
     private StsCredential getStsCredential() throws Exception {
@@ -240,13 +240,13 @@ public abstract class ConfigTransportClient {
      */
     public void start() throws NacosException {
         
-        if (securityProxy.isEnabled()) {
-            securityProxy.login(serverListManager.getServerUrls());
+        if (nacosClientAuthService.isEnabled()) {
+            nacosClientAuthService.login(serverListManager.getServerUrls());
             
             this.executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
-                    securityProxy.login(serverListManager.getServerUrls());
+                    nacosClientAuthService.login(serverListManager.getServerUrls());
                 }
             }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
             

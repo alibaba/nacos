@@ -37,11 +37,11 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -75,9 +75,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final NamingGrpcRedoService redoService;
     
-    public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
+    public NamingGrpcClientProxy(String namespaceId, NacosClientAuthServiceImpl clientAuthService, ServerListFactory serverListFactory,
             Properties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
-        super(securityProxy, properties);
+        super(clientAuthService, properties);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));

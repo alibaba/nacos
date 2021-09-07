@@ -26,9 +26,9 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
-import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.Event;
 import org.junit.Assert;
@@ -43,7 +43,7 @@ public class AbstractNamingClientProxyTest {
     
     @Test
     public void testGetSecurityHeaders() {
-        SecurityProxy sc = Mockito.mock(SecurityProxy.class);
+        NacosClientAuthServiceImpl sc = Mockito.mock(NacosClientAuthServiceImpl.class);
         Properties props = new Properties();
         AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc, props) {
             @Override
@@ -138,7 +138,7 @@ public class AbstractNamingClientProxyTest {
     
     @Test
     public void testGetSpasHeaders() throws Exception {
-        SecurityProxy sc = Mockito.mock(SecurityProxy.class);
+        NacosClientAuthServiceImpl sc = Mockito.mock(NacosClientAuthServiceImpl.class);
         Properties props = new Properties();
         String ak = "aa";
         String sk = "bb";
