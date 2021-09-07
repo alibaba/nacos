@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.manager.test;
 
-import com.alibaba.nacos.naming.manager.MetricsMonitorManager;
+import com.alibaba.nacos.manager.MetricsMonitorManager;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
@@ -44,7 +44,7 @@ public class MetricsManagerTest {
     // counter 测试
     @Scheduled(cron = "0/5 * * * * ?")
     public void testCounterOne() {
-        Counter counter = MetricsMonitorManager.counter("nacos_monitor", "module", "naming", "name", "counterOne");
+        Counter counter = MetricsMonitorManager.counter("nacos_monitor", "counterDescription", "module", "naming", "name", "counterOne");
         counter.increment();
     }
     
@@ -57,7 +57,7 @@ public class MetricsManagerTest {
     // timer 测试
     @Scheduled(cron = "0/5 * * * * ?")
     public void testTimerOne() {
-        Timer timer = MetricsMonitorManager.timer("nacos_monitor", "module", "naming", "name", "timerOne");
+        Timer timer = MetricsMonitorManager.timer("nacos_monitor", "timerDescription", "module", "naming", "name", "timerOne");
         timer.record(10, TimeUnit.SECONDS);
     }
     
