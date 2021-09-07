@@ -44,7 +44,7 @@ public class ResourceSnapshot {
         serviceEntries = new ArrayList<>();
     }
 
-    public void initResourceSnapshot(NacosResourceManager manager) {
+    public synchronized void initResourceSnapshot(NacosResourceManager manager) {
         if (isCompleted) {
             return;
         }

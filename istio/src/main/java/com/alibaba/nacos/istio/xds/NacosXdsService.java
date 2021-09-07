@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.istio.xds;
 
-import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
+import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
 /**
@@ -107,6 +108,13 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     private boolean shouldPush(DiscoveryRequest discoveryRequest, AbstractConnection<DiscoveryResponse> connection) {
         String type = discoveryRequest.getTypeUrl();
         String connectionId = connection.getConnectionId();
+
+        // Suitable for bug of istio
+        // See https://github.com/istio/istio/pull/34633
+        if (type.equals(MESH_CONFIG_PROTO_PACKAGE)) {
+            Loggers.MAIN.info("xds: type {} should be ignored.", type);
+            return false;
+        }
 
         if (discoveryRequest.getErrorDetail().getCode() != 0) {
             Loggers.MAIN.error("xds: ACK error, connection-id: {}, code: {}, message: {}",
