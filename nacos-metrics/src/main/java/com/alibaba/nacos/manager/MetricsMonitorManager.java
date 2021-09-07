@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.manager;
+package com.alibaba.nacos.manager;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -36,37 +36,51 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MetricsMonitorManager {
     
     /**
-     * 管理 Gauge.
+     * split to create key.
      */
-    private static final Map<String, AtomicLong> GAUGES_MAP = new ConcurrentHashMap<>();
+    private static final String SPILT = "_";
+    
+    private static final MetricsMonitorManager INSTANCE = new MetricsMonitorManager();
     
     /**
-     * 管理 Counter.
+     * manager Gauge.
      */
-    private static final Map<String, Counter> COUNTERS_MAP = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> gaugesMap = new ConcurrentHashMap<>();
     
     /**
-     * 管理 Timer.
+     * manager Counter.
      */
-    private static final Map<String, Timer> TIMERS_MAP = new ConcurrentHashMap<>();
+    private final Map<String, Counter> countersMap = new ConcurrentHashMap<>();
     
-    public static Counter counter(String name, String... tags) {
-        return COUNTERS_MAP.computeIfAbsent(getKey(name, tags), s -> Metrics.counter(name, tags));
+    /**
+     * manager Timer.
+     */
+    private final Map<String, Timer> timersMap = new ConcurrentHashMap<>();
+    
+    /**
+     * register counter with description.
+     */
+    public static Counter counter(String name, String description, String... tags) {
+        return INSTANCE.countersMap.computeIfAbsent(getKey(name, tags), s ->
+                Counter.builder(name).description(description).tags(tags).register(Metrics.globalRegistry));
     }
-
-    public static Timer timer(String name, String... tags) {
-        return TIMERS_MAP.computeIfAbsent(getKey(name, tags), s -> Metrics.timer(name, tags));
+    
+    /**
+     * register timer with description.
+     */
+    public static Timer timer(String name, String description, String... tags) {
+        return INSTANCE.timersMap.computeIfAbsent(getKey(name, tags), s ->
+                Timer.builder(name).description(description).tags(tags).register(Metrics.globalRegistry));
     }
     
     /**
-     * gauge.
+     * register gauge.
      */
     public static AtomicLong gauge(String name, String... tags) {
         if ((tags.length & 1) == 1) {
-            // 报异常
             return null;
         }
-        return GAUGES_MAP.computeIfAbsent(getKey(name, tags), s -> {
+        return INSTANCE.gaugesMap.computeIfAbsent(getKey(name, tags), s -> {
             List<Tag> tagList = new ArrayList<>();
             for (int i = 0; i < tags.length;) {
                 tagList.add(new ImmutableTag(tags[i++], tags[i++]));
@@ -76,19 +90,21 @@ public class MetricsMonitorManager {
     }
     
     /**
-     * 暴露 Manager 管理的 Metrics 信息.
+     * exporter for Metrics.
      */
-    public static List<Metrics> exporter() {
+    private static List<Metrics> exporter() {
         return null;
     }
     
+    /**
+     * create key for metrics.
+     */
     private static String getKey(String name, String... k) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(name).append("_");
+        StringBuilder sb = new StringBuilder(name + SPILT);
         for (String s : k) {
-            sb.append(s).append("_");
+            sb.append(s).append(SPILT);
         }
         return sb.toString();
     }
-
+    
 }
