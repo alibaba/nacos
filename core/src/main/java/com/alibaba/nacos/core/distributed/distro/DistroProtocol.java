@@ -130,9 +130,7 @@ public class DistroProtocol {
                 targetServer);
         DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKeyWithTarget, distroDelayTask);
-        if (Loggers.DISTRO.isDebugEnabled()) {
-            Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
-        }
+        Loggers.DISTRO.debug("[DISTRO-SCHEDULE] {} to {}", distroKey, targetServer);
     }
     
     /**
@@ -181,10 +179,8 @@ public class DistroProtocol {
      * @return true if verify data successfully, otherwise false
      */
     public boolean onVerify(DistroData distroData, String sourceAddress) {
-        if (Loggers.DISTRO.isDebugEnabled()) {
-            Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", distroData.getType(),
-                    distroData.getDistroKey());
-        }
+        Loggers.DISTRO.debug("[DISTRO] Receive verify data type: {}, key: {}", distroData.getType(),
+                distroData.getDistroKey());
         String resourceType = distroData.getDistroKey().getResourceType();
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == dataProcessor) {
