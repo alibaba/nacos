@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.manager.com.alibaba.nacos.util;
+package com.alibaba.nacos.metrics.manager.util;
 
 /**
  * Config Metrics Constant.

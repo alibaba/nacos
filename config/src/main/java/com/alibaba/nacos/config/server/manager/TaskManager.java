@@ -21,8 +21,8 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.manager.MetricsManager;
-import com.alibaba.nacos.manager.com.alibaba.nacos.util.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.util.ConfigMetricsConstant;
 import org.slf4j.Logger;
 
 import javax.management.ObjectName;
