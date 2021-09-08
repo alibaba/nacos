@@ -16,17 +16,40 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
+import com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsConfig;
+import com.alibaba.nacos.core.remote.control.TpsControlRule;
+import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
+import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class CircuitBreakerTest {
 
     static CircuitBreaker circuitBreaker;
 
+    @BeforeClass
+    public static void setUpBeforeClass() throws InterruptedException {
+        circuitBreaker = new CircuitBreaker();
+        circuitBreaker.registerPoint("test1");
+//        TimeUnit.SECONDS.sleep(1);
+//        TpsControlRule rule = new TpsControlRule();
+//        rule.setPointRule(new TpsControlRule.Rule(5000, TimeUnit.SECONDS, "SUM", "intercept"));
+//        rule.getMonitorKeyRule()
+//                .putIfAbsent("testKey:a*b", new TpsControlRule.Rule(500, TimeUnit.SECONDS, "EACH", "intercept"));
+//        rule.getMonitorKeyRule()
+//                .putIfAbsent("testKey:*", new TpsControlRule.Rule(2000000, TimeUnit.SECONDS, "SUM", "intercept"));
+        circuitBreaker.applyRule("test1", new TpsConfig());
+    }
+
+
     @Test
     public void testCircuitBreakerSpi() {
-        circuitBreaker = new CircuitBreaker();
-        Assert.assertTrue(circuitBreaker.applyForStrategy("test1"));
+        Assert.assertTrue(circuitBreaker.applyStrategy("test1", "123", new ArrayList<>()));
+
     }
 
 }
