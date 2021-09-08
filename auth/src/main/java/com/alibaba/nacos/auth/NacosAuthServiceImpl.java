@@ -81,19 +81,7 @@ public class NacosAuthServiceImpl implements AuthService {
         String token = authJwtTokenManager.createToken(finalName);
         SecurityContextHolder.getContext().setAuthentication(authJwtTokenManager.getAuthentication(token));
         
-        NacosUser user = new NacosUser();
-        user.setUserName(finalName);
-        user.setToken(token);
-        List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        if (roleInfoList != null) {
-            for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(AuthNacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
-                    user.setGlobalAdmin(true);
-                    break;
-                }
-            }
-        }
-        return user;
+        return setUser(finalName, token);
     }
     
     @Override
@@ -107,12 +95,16 @@ public class NacosAuthServiceImpl implements AuthService {
         }
         
         String username;
+        NacosUser nacosUser;
         if (StringUtils.isBlank(token)) {
-            username = login(identityContext).getUserName();
+            nacosUser = login(identityContext);
+            username = nacosUser.getUserName();
         } else {
             username = getUsernameFromToken(token);
+            nacosUser = setUser(username, token);
         }
         
+        identityContext.setParameter(AuthNacosAuthConfig.NACOS_USER_KEY, nacosUser);
         if (!roleService.hasPermission(username, permission)) {
             throw new AccessException("authorization failed!");
         }
@@ -140,5 +132,21 @@ public class NacosAuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         
         return authentication.getName();
+    }
+    
+    public NacosUser setUser(String username, String token) {
+        NacosUser user = new NacosUser();
+        user.setUserName(username);
+        user.setToken(token);
+        List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        if (roleInfoList != null) {
+            for (RoleInfo roleInfo : roleInfoList) {
+                if (roleInfo.getRole().equals(AuthNacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                    user.setGlobalAdmin(true);
+                    break;
+                }
+            }
+        }
+        return user;
     }
 }
