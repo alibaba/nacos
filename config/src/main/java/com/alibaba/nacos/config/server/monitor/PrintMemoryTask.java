@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.manager.com.alibaba.nacos.util.ConfigMetricsConstant;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
@@ -35,6 +37,8 @@ public class PrintMemoryTask implements Runnable {
         long subCount = ClientTrackService.subscriberCount();
         MEMORY_LOG.info("groupCount = {}, subscriberClientCount = {}, subscriberCount = {}", groupCount, subClientCount,
                 subCount);
-        MetricsMonitor.getConfigCountMonitor().set(groupCount);
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_COUNT).set(groupCount);
     }
 }

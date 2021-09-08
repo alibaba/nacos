@@ -14,24 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.monitor;
+package com.alibaba.nacos.core.remote;
 
-import org.junit.Test;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
+import org.springframework.stereotype.Component;
 
-import static org.junit.Assert.assertEquals;
-
-public class MetricsMonitorTest {
+/**
+ * MetricsClientConnectionEventListener.
+ *
+ * @author holdonbei
+ */
+@Component
+public class MetricsClientConnectionEventListener extends ClientConnectionEventListener {
     
-    @Test
-    public void testGetTotalPush() {
-        assertEquals(0, MetricsMonitor.getTotalPushMonitor().get());
-        assertEquals(1, MetricsMonitor.getTotalPushMonitor().incrementAndGet());
+    @Override
+    public void clientConnected(Connection connect) {
+        MetricsMonitor.getClientTotalConnection().incrementAndGet();
     }
     
-    @Test
-    public void testGetFailedPush() {
-        assertEquals(0, MetricsMonitor.getFailedPushMonitor().get());
-        assertEquals(1, MetricsMonitor.getFailedPushMonitor().incrementAndGet());
+    @Override
+    public void clientDisConnected(Connection connect) {
+        MetricsMonitor.getClientTotalConnection().decrementAndGet();
     }
-    
 }
