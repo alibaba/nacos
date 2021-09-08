@@ -33,14 +33,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author holdonbei
  */
-public class MetricsMonitorManager {
+public class MetricsManager {
     
     /**
      * split to create key.
      */
     private static final String SPILT = "_";
     
-    private static final MetricsMonitorManager INSTANCE = new MetricsMonitorManager();
+    private static final MetricsManager INSTANCE = new MetricsManager();
     
     /**
      * manager Gauge.
@@ -78,7 +78,7 @@ public class MetricsMonitorManager {
      */
     public static AtomicLong gauge(String name, String... tags) {
         if ((tags.length & 1) == 1) {
-            return null;
+            throw new IllegalArgumentException("tags' length is odd, gauge need even.");
         }
         return INSTANCE.gaugesMap.computeIfAbsent(getKey(name, tags), s -> {
             List<Tag> tagList = new ArrayList<>();
