@@ -52,6 +52,7 @@ class ShowServiceCodeing extends React.Component {
     this.springCode = 'TODO';
     this.sprigbootCode = 'TODO';
     this.sprigcloudCode = 'TODO';
+    this.csharpCode = 'TODO';
   }
 
   componentDidMount() {}
@@ -85,6 +86,7 @@ class ShowServiceCodeing extends React.Component {
     this.cppCode = this.getCppCode(obj);
     this.shellCode = this.getShellCode(obj);
     this.pythonCode = this.getPythonCode(obj);
+    this.csharpCode = this.getCSharpCode(obj);
     this.forceUpdate();
   }
 
@@ -363,6 +365,120 @@ public class NacosConsumerApplication {
     return 'TODO';
   }
 
+  getCSharpCode(data) {
+    return `/* Refer to document: https://github.com/nacos-group/nacos-sdk-csharp/
+Demo for Basic Nacos Opreation
+App.csproj
+
+<ItemGroup>
+  <PackageReference Include="nacos-sdk-csharp" Version="\${latest.version}" />
+</ItemGroup>
+*/
+
+using Microsoft.Extensions.DependencyInjection;
+using Nacos.V2;
+using Nacos.V2.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddNacosV2Naming(x =>
+        {
+            x.ServerAddresses = new List<string> { "http://localhost:8848/" };
+            x.Namespace = "cs-test";
+
+            // swich to use http or rpc
+            x.NamingUseRpc = true;
+        });
+
+        IServiceProvider serviceProvider = services.BuildServiceProvider();
+        var namingSvc = serviceProvider.GetService<INacosNamingService>();
+
+        await namingSvc.RegisterInstance("${this.record.name}", "11.11.11.11", 8888, "TEST1");
+
+        await namingSvc.RegisterInstance("${this.record.name}", "2.2.2.2", 9999, "DEFAULT");
+
+        Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(await namingSvc.GetAllInstances("${this.record.name}")));
+
+        await namingSvc.DeregisterInstance("${this.record.name}", "2.2.2.2", 9999, "DEFAULT");
+
+        var listener = new EventListener();
+
+        await namingSvc.Subscribe("${this.record.name}", listener);
+    }
+
+    internal class EventListener : IEventListener
+    {
+        public Task OnEvent(IEvent @event)
+        {
+            Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(@event));
+            return Task.CompletedTask;
+        }
+    }
+}
+
+/* Refer to document: https://github.com/nacos-group/nacos-sdk-csharp/
+Demo for ASP.NET Core Integration
+App.csproj
+
+<ItemGroup>
+  <PackageReference Include="nacos-sdk-csharp.AspNetCore" Version="\${latest.version}" />
+</ItemGroup>
+*/
+
+/* Refer to document: https://github.com/nacos-group/nacos-sdk-csharp/blob/dev/samples/App1/appsettings.json
+*  appsettings.json
+{
+  "nacos": {
+    "ServerAddresses": [ "http://localhost:8848" ],
+    "DefaultTimeOut": 15000,
+    "Namespace": "cs",
+    "ServiceName": "App1",
+    "GroupName": "DEFAULT_GROUP",
+    "ClusterName": "DEFAULT",
+    "Port": 0,
+    "Weight": 100,
+    "RegisterEnabled": true,
+    "InstanceEnabled": true,
+    "Ephemeral": true,
+    "NamingUseRpc": true,
+    "NamingLoadCacheAtStart": ""
+  }
+}
+*/
+
+// Refer to document: https://github.com/nacos-group/nacos-sdk-csharp/blob/dev/samples/App1/Startup.cs
+using Nacos.AspNetCore.V2;
+
+public class Startup
+{
+    public Startup(IConfiguration configuration)
+    {
+        Configuration = configuration;
+    }
+
+    public IConfiguration Configuration { get; }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // ....
+        services.AddNacosAspNet(Configuration);
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        // ....
+    }
+}
+    `;
+  }
+
   openDialog(record) {
     this.setState({
       dialogvisible: true,
@@ -478,6 +594,12 @@ public class NacosConsumerApplication {
                   title={'Python'}
                   key={6}
                   onClick={this.changeTab.bind(this, 'commoneditor6', this.pythonCode)}
+                />
+
+                <TabPane
+                  title={'C#'}
+                  key={7}
+                  onClick={this.changeTab.bind(this, 'commoneditor7', this.csharpCode)}
                 />
                 {}
               </Tab>
