@@ -2797,7 +2797,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                     new Object[]{tenantTmp},
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
-            return null;
+            return Collections.EMPTY_LIST;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
