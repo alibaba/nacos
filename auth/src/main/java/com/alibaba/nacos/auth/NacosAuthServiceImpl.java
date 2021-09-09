@@ -118,6 +118,9 @@ public class NacosAuthServiceImpl implements AuthService {
     
     /**
      * get username from token.
+     * @param token user access token.
+     * @return username.
+     * @throws AccessException if token is legal.
      */
     private String getUsernameFromToken(String token) throws AccessException {
         try {
@@ -134,6 +137,12 @@ public class NacosAuthServiceImpl implements AuthService {
         return authentication.getName();
     }
     
+    /**
+     * set NacosUser.
+     * @param username username.
+     * @param token user access token.
+     * @return NacosUser Authenticated user information.
+     */
     public NacosUser setUser(String username, String token) {
         NacosUser user = new NacosUser();
         user.setUserName(username);
