@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
+import com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsRecorder;
+import org.checkerframework.checker.units.qual.A;
+
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Info class in charge of storing and monitoring current server point status (tps / tps window / network flow etc.)
  * Can be extended for custom implementations
@@ -24,5 +29,37 @@ package com.alibaba.nacos.core.remote.circuitbreaker;
  * @author chuzefang
  * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
  */
-public class CircuitBreakerRecorder {
+public abstract class CircuitBreakerRecorder {
+
+    String pointName;
+
+    public abstract CircuitBreakerConfig getConfig();
+
+    public abstract Slot getPoint(long timeStamp);
+
+    public static class Slot {
+        public long time = 0L;
+
+        public SlotCountHolder countHolder = new SlotCountHolder();
+
+        public SlotCountHolder getCountHolder() {
+            return countHolder;
+        }
+    }
+
+    public static class SlotCountHolder {
+
+        public AtomicLong count = new AtomicLong();
+
+        public AtomicLong interceptedCount = new AtomicLong();
+
+        @Override
+        public String toString() {
+            return "{" + count + "|" + interceptedCount + '}';
+        }
+    }
+
+    public String getPointName() { return pointName; }
+
+    public void setPointName(String name) { this.pointName = name; }
 }

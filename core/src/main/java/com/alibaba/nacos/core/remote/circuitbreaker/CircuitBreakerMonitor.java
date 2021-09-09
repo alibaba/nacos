@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
+import java.util.Map;
+
 /**
  * Info class in charge of storing and monitoring current server point status (tps / tps window / network flow etc.)
  * Can be extended for custom implementations
@@ -24,5 +26,9 @@ package com.alibaba.nacos.core.remote.circuitbreaker;
  * @author chuzefang
  * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
  */
-public class CircuitBreakerMonitor {
+public abstract class CircuitBreakerMonitor {
+
+    public abstract CircuitBreakerRecorder getPointRecorder();
+
+    public abstract Map<String, CircuitBreakerRecorder> getMonitorKeysRecorder();
 }

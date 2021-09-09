@@ -17,14 +17,13 @@
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
 import com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsConfig;
-import com.alibaba.nacos.core.remote.control.TpsControlRule;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
+import com.alibaba.nacos.core.remote.control.*;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CircuitBreakerTest {
@@ -48,7 +47,11 @@ public class CircuitBreakerTest {
 
     @Test
     public void testCircuitBreakerSpi() {
-        Assert.assertTrue(circuitBreaker.applyStrategy("test1", "123", new ArrayList<>()));
+        ConnectionIdMonitorKey key = new ConnectionIdMonitorKey();
+        key.setKey("123");
+        List<MonitorKey> monitorKeyList = new ArrayList<>();
+        monitorKeyList.add(key);
+        Assert.assertTrue(circuitBreaker.applyStrategy("test1", monitorKeyList));
 
     }
 

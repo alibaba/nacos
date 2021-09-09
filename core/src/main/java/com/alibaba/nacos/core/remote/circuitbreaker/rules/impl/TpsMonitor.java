@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerMonitor;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
 import com.alibaba.nacos.core.remote.control.MonitorKey;
 import com.alibaba.nacos.core.remote.control.MonitorType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.remote.control.MonitorKeyMatcher;
+import org.apache.commons.collections.MapUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * tps control point.
@@ -36,6 +40,8 @@ public class TpsMonitor extends CircuitBreakerMonitor {
     public static final int DEFAULT_RECORD_SIZE = 10;
 
     private static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
+    private static final String CONNECTION_ID = "connectionId";
 
     private long startTime;
 
@@ -126,10 +132,13 @@ public class TpsMonitor extends CircuitBreakerMonitor {
      * @param monitorKeys monitorKeys.
      * @return check current tps is allowed.
      */
-    public boolean applyTps(String connectionId, List<MonitorKey> monitorKeys) {
+    public boolean applyTps(List<MonitorKey> monitorKeys) {
         
         long now = System.currentTimeMillis();
         TpsRecorder.TpsSlot currentTps = tpsRecorder.createSlotIfAbsent(now);
+
+        // Find connectionId for the current monitorKeys
+        String connectionId = getConnectionId(monitorKeys);
 
         Loggers.TPS_CONTROL_DETAIL
                 .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
@@ -139,14 +148,17 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         List<TpsRecorder.SlotCountHolder> passedSlots = new ArrayList<>();
         for (MonitorKey monitorKey : monitorKeys) {
             for (Map.Entry<String, TpsRecorder> entry : monitorKeysRecorder.entrySet()) {
-                if (MonitorKeyMatcher.matchWithType(entry.getKey(), monitorKey.build())) {
+
+                // ConnectionIdMonitorKey should not be included
+                if (!CONNECTION_ID.equals(monitorKey.getType())
+                        && MonitorKeyMatcher.matchWithType(entry.getKey(), monitorKey.build())) {
                     TpsRecorder tpsRecorderKey = entry.getValue();
                     TpsRecorder.TpsSlot currentKeySlot = tpsRecorderKey.createSlotIfAbsent(now);
 
                     // get max count status from config instead of directly from the TpsRecorder
                     TpsConfig config = tpsRecorderKey.getConfig();
                     long maxTpsCount = config.getMaxCount();
-                    TpsRecorder.SlotCountHolder countHolder = currentKeySlot.getCountHolder(monitorKey.build());
+                    TpsRecorder.SlotCountHolder countHolder = currentKeySlot.getCountHolder();
                     boolean overLimit = maxTpsCount >= 0 && countHolder.count.longValue() >= maxTpsCount;
                     if (overLimit) {
                         Loggers.TPS_CONTROL_DETAIL
@@ -154,8 +166,8 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                                         connectionId, this.getPointName(), entry.getKey(),
                                         config.getMonitorType(), maxTpsCount + "/" + config.getPeriod());
                         if (isInterceptMode(config.getMonitorType())) {
-                            currentKeySlot.getCountHolder(monitorKey.build()).interceptedCount.incrementAndGet();
-                            currentTps.getCountHolder(monitorKey.build()).interceptedCount.incrementAndGet();
+                            currentKeySlot.getCountHolder().interceptedCount.incrementAndGet();
+                            currentTps.getCountHolder().interceptedCount.incrementAndGet();
                             return false;
                         }
                     } else {
@@ -167,18 +179,18 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         
         //2.check total tps.
         long maxTps = tpsRecorder.getConfig().getMaxCount();
-        boolean overLimit = maxTps >= 0 && currentTps.getCountHolder(pointName).count.longValue() >= maxTps;
+        boolean overLimit = maxTps >= 0 && currentTps.getCountHolder().count.longValue() >= maxTps;
         if (overLimit) {
             Loggers.TPS_CONTROL_DETAIL
                     .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
                             this.getPointName(), "pointRule", tpsRecorder.getConfig().getMonitorType());
             if (isInterceptMode(tpsRecorder.getConfig().getMonitorType())) {
-                currentTps.getCountHolder(pointName).interceptedCount.incrementAndGet();
+                currentTps.getCountHolder().interceptedCount.incrementAndGet();
                 return false;
             }
         }
         
-        currentTps.getCountHolder(pointName).count.incrementAndGet();
+        currentTps.getCountHolder().count.incrementAndGet();
         for (TpsRecorder.SlotCountHolder passedTpsSlot : passedSlots) {
             passedTpsSlot.count.incrementAndGet();
         }
@@ -299,5 +311,36 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         }
         
     }
-    
+
+    public String getMonitorPointStatus(long lastReportSecond, long lastReportMinutes) {
+        return "";
+    }
+
+    public String getMonitorKeyStatus(long lastReportSecond, long lastReportMinutes) {
+        return "";
+    }
+
+    private String getConnectionId(List<MonitorKey> monitorKeys) {
+        for (MonitorKey monitorKey : monitorKeys) {
+            if (CONNECTION_ID.equals(monitorKey.getType())) {
+                return monitorKey.getKey();
+            }
+        }
+        return "";
+    }
+
+
+    @Override
+    public CircuitBreakerRecorder getPointRecorder() {
+        return tpsRecorder;
+    }
+
+    @Override
+    public Map<String, CircuitBreakerRecorder> getMonitorKeysRecorder() {
+        if (MapUtils.isNotEmpty(monitorKeysRecorder)) {
+            return monitorKeysRecorder.entrySet()
+                    .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+        return new HashMap<>();
+    }
 }
