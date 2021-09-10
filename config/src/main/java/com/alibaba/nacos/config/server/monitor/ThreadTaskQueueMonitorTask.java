@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.manager.com.alibaba.nacos.util.ConfigMetricsConstant;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
@@ -40,7 +42,13 @@ public class ThreadTaskQueueMonitorTask implements Runnable {
         int notifierClientSize = ConfigExecutor.asyncCofigChangeClientNotifyQueueSize();
         MEMORY_LOG.info("toNotifyTaskSize = {}", size);
         MEMORY_LOG.info("toClientNotifyTaskSize = {}", notifierClientSize);
-        MetricsMonitor.getNotifyTaskMonitor().set(size);
-        MetricsMonitor.getNotifyClientTaskMonitor().set(notifierClientSize);
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_TASK)
+                .set(size);
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_CLIENT_TASK)
+                .set(notifierClientSize);
     }
 }

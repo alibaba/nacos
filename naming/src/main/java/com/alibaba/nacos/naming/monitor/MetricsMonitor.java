@@ -25,6 +25,7 @@ import io.micrometer.core.instrument.Tag;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -174,6 +175,11 @@ public class MetricsMonitor {
     
     public static Counter getLeaderSendBeatFailedException() {
         return Metrics.counter("nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+    }
+    
+    public static void setServerPushCost(Long amount, String type, String isSuccess) {
+        Metrics.timer("nacos_server_push", "module", "naming", "type", type, "success", isSuccess)
+                .record(amount, TimeUnit.MILLISECONDS);
     }
     
     /**

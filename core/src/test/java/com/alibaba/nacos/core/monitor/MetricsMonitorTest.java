@@ -76,4 +76,15 @@ public class MetricsMonitorTest {
     
         Assert.assertEquals(30D, raftApplyReadTimer.totalTime(TimeUnit.SECONDS), 0.01);
     }
+    
+    @Test
+    public void testClientTotalConnection() {
+        MetricsMonitor.getClientTotalConnection().incrementAndGet();
+        Assert.assertEquals(MetricsMonitor.getClientTotalConnection().get(), 1);
+    }
+    
+    @Test
+    public void testRequestGrpcCount() {
+        Assert.assertEquals(0D, MetricsMonitor.getGrpcRequestCount("nacos_grpc_request").count(), 0.01);
+    }
 }
