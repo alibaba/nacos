@@ -311,6 +311,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
+        // If upgrade to 2.0.X, do not verify for v1.
+        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
+            return true;
+        }
         DistroHttpData distroHttpData = (DistroHttpData) distroData;
         Map<String, String> verifyData = (Map<String, String>) distroHttpData.getDeserializedContent();
         onReceiveChecksums(verifyData, sourceAddress);

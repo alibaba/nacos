@@ -20,6 +20,7 @@ const I18N_CONF = {
     docs: 'DOCS',
     blog: 'BLOG',
     community: 'COMMUNITY',
+    enterprise: 'ENTERPRISE EDITION',
     languageSwitchButton: '中',
     logout: 'logout',
     changePassword: 'modify password',
@@ -168,6 +169,11 @@ const I18N_CONF = {
     protectThreshold: 'Protect Threshold',
     serviceName: 'Service Name',
     editService: 'Edit Service',
+    InstanceFilter: {
+      title: 'Metadata Filter',
+      addFilter: 'Add Filter',
+      clear: 'Clear',
+    },
   },
   EditServiceDialog: {
     createService: 'Create Service',

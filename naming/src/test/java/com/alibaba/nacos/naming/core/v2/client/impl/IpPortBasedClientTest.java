@@ -16,15 +16,18 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.misc.ClientConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 
@@ -42,6 +45,11 @@ public class IpPortBasedClientTest {
     private Service service;
     
     private InstancePublishInfo instancePublishInfo;
+    
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
     
     @Before
     public void setUp() throws Exception {
@@ -63,7 +71,8 @@ public class IpPortBasedClientTest {
     
     @Test
     public void testIsExpire() {
-        long mustExpireTime = ipPortBasedClient.getLastUpdatedTime() + Constants.DEFAULT_IP_DELETE_TIMEOUT * 2;
+        long mustExpireTime =
+                ipPortBasedClient.getLastUpdatedTime() + ClientConfig.getInstance().getClientExpiredTime() * 2;
         assertTrue(ipPortBasedClient.isExpire(mustExpireTime));
     }
     
