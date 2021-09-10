@@ -106,7 +106,7 @@ public class ServiceStorage {
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
             if (instancePublishInfo.isPresent()) {
-                Instance instance = parseInstance(service, instancePublishInfo.get());
+                Instance instance = parseInstance(service, instancePublishInfo.get(), each);
                 result.add(instance);
                 clusters.add(instance.getClusterName());
             }
@@ -124,8 +124,8 @@ public class ServiceStorage {
         return Optional.ofNullable(client.getInstancePublishInfo(service));
     }
     
-    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
-        Instance result = InstanceUtil.parseToApiInstance(service, instanceInfo);
+    private Instance parseInstance(Service service, InstancePublishInfo instanceInfo, String clientId) {
+        Instance result = InstanceUtil.parseToApiInstance(service, instanceInfo, clientManager.getClient(clientId));
         Optional<InstanceMetadata> metadata = metadataManager
                 .getInstanceMetadata(service, instanceInfo.getMetadataId());
         metadata.ifPresent(instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));

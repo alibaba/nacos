@@ -81,7 +81,7 @@ public class HealthOperatorV2Impl implements HealthOperator {
         if (null == oldInstance) {
             return;
         }
-        Instance newInstance = InstanceUtil.parseToApiInstance(service, oldInstance);
+        Instance newInstance = InstanceUtil.parseToApiInstance(service, oldInstance, client);
         newInstance.setHealthy(healthy);
         clientOperationService.registerInstance(service, newInstance, clientId);
     }
