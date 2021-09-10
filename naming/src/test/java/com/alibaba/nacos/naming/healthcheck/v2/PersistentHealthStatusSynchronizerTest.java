@@ -46,7 +46,7 @@ public class PersistentHealthStatusSynchronizerTest {
                 persistentClientOperationService);
         persistentHealthStatusSynchronizer.instanceHealthStatusChange(true, client, service, instancePublishInfo);
         
-        Instance updateInstance = InstanceUtil.parseToApiInstance(service, instancePublishInfo);
+        Instance updateInstance = InstanceUtil.parseToApiInstance(service, instancePublishInfo, client);
         updateInstance.setHealthy(true);
         
         verify(client).getClientId();

@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.utils;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -38,9 +39,10 @@ public class InstanceUtil {
      *
      * @param service      service of instance
      * @param instanceInfo instance info
+     * @param client       client
      * @return api instance
      */
-    public static Instance parseToApiInstance(Service service, InstancePublishInfo instanceInfo) {
+    public static Instance parseToApiInstance(Service service, InstancePublishInfo instanceInfo, Client client) {
         Instance result = new Instance();
         result.setIp(instanceInfo.getIp());
         result.setPort(instanceInfo.getPort());
@@ -60,6 +62,9 @@ public class InstanceUtil {
         }
         result.setMetadata(instanceMetadata);
         result.setEphemeral(service.isEphemeral());
+        if (client != null) {
+            result.setEphemeral(client.isEphemeral());
+        }
         result.setHealthy(instanceInfo.isHealthy());
         return result;
     }

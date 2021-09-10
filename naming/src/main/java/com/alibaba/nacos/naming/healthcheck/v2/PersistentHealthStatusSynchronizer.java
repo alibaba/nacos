@@ -41,7 +41,7 @@ public class PersistentHealthStatusSynchronizer implements HealthStatusSynchroni
     @Override
     public void instanceHealthStatusChange(boolean isHealthy, Client client, Service service,
             InstancePublishInfo instance) {
-        Instance updateInstance = InstanceUtil.parseToApiInstance(service, instance);
+        Instance updateInstance = InstanceUtil.parseToApiInstance(service, instance, client);
         updateInstance.setHealthy(isHealthy);
         persistentClientOperationService.registerInstance(service, updateInstance, client.getClientId());
     }
