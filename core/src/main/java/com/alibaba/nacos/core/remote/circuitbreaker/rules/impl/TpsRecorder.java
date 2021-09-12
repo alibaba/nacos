@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class TpsRecorder extends CircuitBreakerRecorder {
 
@@ -116,11 +115,16 @@ public class TpsRecorder extends CircuitBreakerRecorder {
 
     static class TpsSlot extends Slot {
 
+        @Override
+        public SlotCountHolder getCountHolder(String key) {
+            return countHolder;
+        }
+
         public void reset(long second) {
             synchronized (this) {
                 if (this.time != second) {
                     this.time = second;
-                    getCountHolder().count.set(0L);
+                    getCountHolder("").count.set(0L);
                     countHolder.interceptedCount.set(0);
                 }
             }

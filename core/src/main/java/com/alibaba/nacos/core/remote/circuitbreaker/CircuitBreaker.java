@@ -105,6 +105,10 @@ public class CircuitBreaker {
         this.currentRule.applyRule(pointName, config, new HashMap<>());
     }
 
+    public void applyRule(String pointName, CircuitBreakerConfig config, Map<String, CircuitBreakerConfig> monitorKeysMap) {
+        this.currentRule.applyRule(pointName, config, monitorKeysMap);
+    }
+
 
     /**
      * Load config from local file or remote db.

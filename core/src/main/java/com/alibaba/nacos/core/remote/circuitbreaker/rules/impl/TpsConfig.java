@@ -34,18 +34,18 @@ public class TpsConfig extends CircuitBreakerConfig {
     private TimeUnit period = TimeUnit.SECONDS;
 
     public TpsConfig() {
-        this("", 100, TimeUnit.SECONDS, "");
+        this(100, TimeUnit.SECONDS, MODEL_FUZZY, "");
     }
 
     public TpsConfig(long maxCount) {
-        this("", maxCount, TimeUnit.SECONDS, "");
+        this(maxCount, TimeUnit.SECONDS, MODEL_FUZZY, "");
     }
 
     public TpsConfig(String monitorType) {
-        this(monitorType, 100, TimeUnit.SECONDS, "");
+        this(100, TimeUnit.SECONDS, MODEL_FUZZY, monitorType);
     }
 
-    public TpsConfig(String monitorType, long maxCount, TimeUnit period, String model) {
+    public TpsConfig(long maxCount, TimeUnit period, String model, String monitorType) {
         this.setMonitorType(monitorType);
         this.maxCount = maxCount;
         this.period = period;

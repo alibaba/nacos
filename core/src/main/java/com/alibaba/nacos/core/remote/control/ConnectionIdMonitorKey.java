@@ -26,8 +26,6 @@ public class ConnectionIdMonitorKey extends MonitorKey {
     
     private static final String TYPE = "connectionId";
     
-    String key;
-    
     public ConnectionIdMonitorKey() {
     
     }

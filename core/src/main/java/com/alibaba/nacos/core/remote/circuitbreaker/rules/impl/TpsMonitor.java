@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 /**
  * tps control point.
  *
- * @author liuzunfei
- * @version $Id: TpsControlPoint.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
+ * @author chuzefang
+ * @version $Id: TpsControlPoint.java, v 0.1 2021年01月09日 12:38 PM chuzefang Exp $
  */
 public class TpsMonitor extends CircuitBreakerMonitor {
 
@@ -139,10 +139,6 @@ public class TpsMonitor extends CircuitBreakerMonitor {
 
         // Find connectionId for the current monitorKeys
         String connectionId = getConnectionId(monitorKeys);
-
-        Loggers.TPS_CONTROL_DETAIL
-                .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
-                        this.getPointName(), "pointRule", tpsRecorder.getConfig().getMonitorType());
         
         //1.check monitor keys.
         List<TpsRecorder.SlotCountHolder> passedSlots = new ArrayList<>();
@@ -158,7 +154,7 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                     // get max count status from config instead of directly from the TpsRecorder
                     TpsConfig config = tpsRecorderKey.getConfig();
                     long maxTpsCount = config.getMaxCount();
-                    TpsRecorder.SlotCountHolder countHolder = currentKeySlot.getCountHolder();
+                    TpsRecorder.SlotCountHolder countHolder = currentKeySlot.getCountHolder(pointName);
                     boolean overLimit = maxTpsCount >= 0 && countHolder.count.longValue() >= maxTpsCount;
                     if (overLimit) {
                         Loggers.TPS_CONTROL_DETAIL
@@ -166,8 +162,8 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                                         connectionId, this.getPointName(), entry.getKey(),
                                         config.getMonitorType(), maxTpsCount + "/" + config.getPeriod());
                         if (isInterceptMode(config.getMonitorType())) {
-                            currentKeySlot.getCountHolder().interceptedCount.incrementAndGet();
-                            currentTps.getCountHolder().interceptedCount.incrementAndGet();
+                            currentKeySlot.getCountHolder(pointName).interceptedCount.incrementAndGet();
+                            currentTps.getCountHolder(pointName).interceptedCount.incrementAndGet();
                             return false;
                         }
                     } else {
@@ -179,18 +175,18 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         
         //2.check total tps.
         long maxTps = tpsRecorder.getConfig().getMaxCount();
-        boolean overLimit = maxTps >= 0 && currentTps.getCountHolder().count.longValue() >= maxTps;
+        boolean overLimit = maxTps >= 0 && currentTps.getCountHolder(pointName).count.longValue() >= maxTps;
         if (overLimit) {
             Loggers.TPS_CONTROL_DETAIL
                     .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
                             this.getPointName(), "pointRule", tpsRecorder.getConfig().getMonitorType());
             if (isInterceptMode(tpsRecorder.getConfig().getMonitorType())) {
-                currentTps.getCountHolder().interceptedCount.incrementAndGet();
+                currentTps.getCountHolder(pointName).interceptedCount.incrementAndGet();
                 return false;
             }
         }
         
-        currentTps.getCountHolder().count.incrementAndGet();
+        currentTps.getCountHolder(pointName).count.incrementAndGet();
         for (TpsRecorder.SlotCountHolder passedTpsSlot : passedSlots) {
             passedTpsSlot.count.incrementAndGet();
         }
@@ -312,14 +308,6 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         
     }
 
-    public String getMonitorPointStatus(long lastReportSecond, long lastReportMinutes) {
-        return "";
-    }
-
-    public String getMonitorKeyStatus(long lastReportSecond, long lastReportMinutes) {
-        return "";
-    }
-
     private String getConnectionId(List<MonitorKey> monitorKeys) {
         for (MonitorKey monitorKey : monitorKeys) {
             if (CONNECTION_ID.equals(monitorKey.getType())) {
@@ -328,7 +316,6 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         }
         return "";
     }
-
 
     @Override
     public CircuitBreakerRecorder getPointRecorder() {

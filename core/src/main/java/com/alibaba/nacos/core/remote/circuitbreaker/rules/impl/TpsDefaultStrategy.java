@@ -19,10 +19,8 @@ package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.circuitbreaker.*;
-import com.alibaba.nacos.core.remote.control.ClientIpMonitorKey;
 import com.alibaba.nacos.core.remote.control.MonitorKey;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
-import com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsRecorder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections.MapUtils;
 
@@ -60,8 +58,6 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
      //     */
     @Override
     public boolean applyStrategy(String pointName, List<MonitorKey> monitorKeyList) {
-        System.out.println("here");
-        System.out.println(pointToMonitorMap.containsKey(pointName));
         if (pointToMonitorMap.containsKey(pointName)) {
             TpsMonitor pointMonitor = pointToMonitorMap.get(pointName);
             return pointMonitor.applyTps(monitorKeyList);
@@ -151,8 +147,8 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
         TpsConfig conf = tpsPoint.getConfig();
         stringBuilder.append(point).append('|').append("point|").append(conf.getPeriod())
                 .append('|').append(formatString).append('|')
-                .append(pointSlot.getCountHolder().count.get()).append('|')
-                .append(pointSlot.getCountHolder().interceptedCount.get()).append('\n');
+                .append(pointSlot.getCountHolder(point).count.get()).append('|')
+                .append(pointSlot.getCountHolder(point).interceptedCount.get()).append('\n');
         return stringBuilder.toString();
     }
 
@@ -198,8 +194,8 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
         } else {
             stringBuilder.append(point).append('|').append(monitorKey).append('|')
                     .append(conf.getPeriod()).append('|').append(timeFormatOfSecond).append('|')
-                    .append(keySlot.getCountHolder().count.get()).append('|')
-                    .append(keySlot.getCountHolder().interceptedCount.get()).append('\n');
+                    .append(keySlot.getCountHolder(point).count.get()).append('|')
+                    .append(keySlot.getCountHolder(point).interceptedCount.get()).append('\n');
         }
         return stringBuilder.toString();
     }

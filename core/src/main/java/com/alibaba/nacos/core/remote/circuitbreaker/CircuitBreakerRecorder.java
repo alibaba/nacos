@@ -42,7 +42,7 @@ public abstract class CircuitBreakerRecorder {
 
         public SlotCountHolder countHolder = new SlotCountHolder();
 
-        public SlotCountHolder getCountHolder() {
+        public SlotCountHolder getCountHolder(String key) {
             return countHolder;
         }
     }
