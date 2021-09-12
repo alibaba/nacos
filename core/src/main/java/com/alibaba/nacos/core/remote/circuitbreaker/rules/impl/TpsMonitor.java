@@ -61,7 +61,7 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         // trim to second,uniform all tps control.
         this.startTime = getTrimMillsOfSecond(System.currentTimeMillis());
         this.pointName = pointName;
-        this.tpsRecorder = new TpsRecorder(startTime, DEFAULT_RECORD_SIZE, config);
+        this.tpsRecorder = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, config);
     }
     
     /**
@@ -273,7 +273,7 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                     if (!Objects.equals(oldConfig.getPeriod(), newConfig.getPeriod()) || !Objects
                             .equals(oldConfig.getModel(), newConfig.getModel())) {
 
-                        TpsRecorder tpsRecorderNew = new TpsRecorder(startTime, DEFAULT_RECORD_SIZE, newConfig);
+                        TpsRecorder tpsRecorderNew = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, newConfig);
                         monitorKeysRecorderCurrent.put(newMonitorConfig.getKey(), tpsRecorderNew);
                     }
                     monitorKeysConfigCurrent.put(newMonitorConfig.getKey(), newConfig);
@@ -284,7 +284,7 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                                     this.getPointName(), newMonitorConfig.getKey(), newMonitorConfig.getValue().getMaxCount(),
                                     newMonitorConfig.getValue().getMonitorType());
                     // add config & new recorder
-                    TpsRecorder tpsRecorderNew = new TpsRecorder(startTime, DEFAULT_RECORD_SIZE, newConfig);
+                    TpsRecorder tpsRecorderNew = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, newConfig);
 
                     monitorKeysRecorderCurrent.put(newMonitorConfig.getKey(), tpsRecorderNew);
                     monitorKeysConfigCurrent.put(newMonitorConfig.getKey(), newConfig);

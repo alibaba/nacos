@@ -39,7 +39,7 @@ public class TpsRecorder extends CircuitBreakerRecorder {
     /**
      * monitor/intercept.
      */
-    public TpsRecorder(long startTime, int recordSize, TpsConfig config) {
+    public TpsRecorder(String pointnName, long startTime, int recordSize, TpsConfig config) {
         TimeUnit period = config.getPeriod();
         this.startTime = startTime;
         if (period.equals(TimeUnit.MINUTES)) {
@@ -50,6 +50,7 @@ public class TpsRecorder extends CircuitBreakerRecorder {
         }
         this.slotSize = recordSize + 1;
         this.config = config;
+        this.setPointName(pointnName);
         slotList = new ArrayList<>(slotSize);
         for (int i = 0; i < slotSize; i++) {
             slotList.add(isProtoModel() ? new MultiKeyTpsSlot() : new TpsSlot());

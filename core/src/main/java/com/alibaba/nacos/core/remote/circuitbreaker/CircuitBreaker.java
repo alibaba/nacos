@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote.circuitbreaker;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.control.*;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -51,6 +53,12 @@ public class CircuitBreaker {
     private ConfigLoader configLoader;
 
     private final ConcurrentHashMap<String, CircuitBreakerConfig> pointConfigMap = new ConcurrentHashMap<>();
+
+    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
+        Thread thread = new Thread(r, "nacos.core.remote.circuitbreaker.reporter");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     CircuitBreaker() {
         init();
@@ -88,6 +96,7 @@ public class CircuitBreaker {
                 this.currentRule = circuitBreakerStrategy.getStrategy();
             }
         }
+        executorService.scheduleWithFixedDelay(new CircuitBreakerReporter(), 0, 900, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -246,7 +255,7 @@ public class CircuitBreaker {
         }
     }
 
-    class TpsMonitorReporter implements Runnable {
+    class CircuitBreakerReporter implements Runnable {
 
         long lastReportSecond = 0L;
 
@@ -254,6 +263,7 @@ public class CircuitBreaker {
 
         @Override
         public void run() {
+            Loggers.TPS_CONTROL_DIGEST.info("Circuit Breaker Starts...\n");
             try {
                 long now = System.currentTimeMillis();
                 ReportTime reportTime = new ReportTime(now, lastReportSecond, lastReportMinutes, 0, 0);
@@ -277,10 +287,10 @@ public class CircuitBreaker {
                     lastReportMinutes = reportTime.tempMinutes;
                 }
                 if (stringBuilder.length() > 0) {
-                    Loggers.TPS_CONTROL_DIGEST.info("Tps reporting...\n" + stringBuilder.toString());
+                    Loggers.TPS_CONTROL_DIGEST.info("Circuit Breaker reporting...\n" + stringBuilder.toString());
                 }
             } catch (Throwable throwable) {
-                Loggers.TPS_CONTROL_DIGEST.error("Tps reporting error", throwable);
+                Loggers.TPS_CONTROL_DIGEST.error("Circuit Breaker reporting error", throwable);
 
             }
 

@@ -52,6 +52,16 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
         pointToMonitorMap.putIfAbsent(pointName, new TpsMonitor(pointName));
     }
 
+    @Override
+    public Map<String, CircuitBreakerMonitor> getPointToMonitorMap() {
+        Map<String,CircuitBreakerMonitor> retMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(pointToMonitorMap)) {
+            retMap = pointToMonitorMap.entrySet()
+                    .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+        return retMap;
+    }
+
     /**
      //     * Check for tps condition for the current point.
      //     * TODO: implement this method

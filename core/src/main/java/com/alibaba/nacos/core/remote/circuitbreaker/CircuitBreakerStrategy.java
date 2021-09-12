@@ -32,10 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class CircuitBreakerStrategy {
 
-    private String ruleName;
-
-    private final Map<String, CircuitBreakerMonitor> pointToMonitorMap = new ConcurrentHashMap<>();
-
     /**
      * Get the strategy name for this implementation.
      *
@@ -45,7 +41,7 @@ public abstract class CircuitBreakerStrategy {
 
     public abstract void registerPoint(String pointName);
 
-    public Map<String, CircuitBreakerMonitor> getPointToMonitorMap() { return pointToMonitorMap; }
+    public abstract Map<String, CircuitBreakerMonitor> getPointToMonitorMap();
 
     /**
      * apply tps.
