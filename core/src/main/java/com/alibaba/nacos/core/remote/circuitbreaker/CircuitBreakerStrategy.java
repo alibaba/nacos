@@ -111,3 +111,4 @@ public abstract class CircuitBreakerStrategy {
 
     public abstract String reportMonitorKeys(CircuitBreaker.ReportTime reportTime, String monitorKey, CircuitBreakerRecorder pointRecorder);
 }
+

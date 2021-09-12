@@ -32,3 +32,4 @@ public abstract class CircuitBreakerMonitor {
 
     public abstract Map<String, CircuitBreakerRecorder> getMonitorKeysRecorder();
 }
+
