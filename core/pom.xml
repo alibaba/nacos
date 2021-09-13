@@ -58,6 +58,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-consistency</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-metrics</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>
