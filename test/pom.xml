@@ -34,6 +34,7 @@
         <module>config-test</module>
         <module>naming-test</module>
         <module>core-test</module>
+        <module>metrics-test</module>
     </modules>
     
     <properties>
@@ -91,7 +92,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-address</artifactId>
         </dependency>
-
+    
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-metrics</artifactId>
+        </dependency>
+        
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
