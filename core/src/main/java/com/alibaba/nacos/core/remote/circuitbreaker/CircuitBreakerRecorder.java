@@ -35,6 +35,8 @@ public abstract class CircuitBreakerRecorder {
 
     public abstract CircuitBreakerConfig getConfig();
 
+    public abstract void setConfig(CircuitBreakerConfig config);
+
     public abstract Slot getPoint(long timeStamp);
 
     public static class Slot {

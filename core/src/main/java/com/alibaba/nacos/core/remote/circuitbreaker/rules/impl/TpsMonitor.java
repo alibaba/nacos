@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerMonitor;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
 import com.alibaba.nacos.core.remote.control.MonitorKey;
@@ -43,10 +44,6 @@ public class TpsMonitor extends CircuitBreakerMonitor {
 
     private static final String CONNECTION_ID = "connectionId";
 
-    private long startTime;
-
-    private String pointName;
-
     private TpsRecorder tpsRecorder;
 
     public Map<String, TpsRecorder> monitorKeysRecorder = new HashMap<>();
@@ -63,7 +60,18 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         this.pointName = pointName;
         this.tpsRecorder = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, config);
     }
-    
+
+    @Override
+    public void createAndPutNewRecorder(String key, CircuitBreakerConfig config) {
+        this.monitorKeysRecorder.put(key, new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, (TpsConfig) config));
+    }
+
+    @Override
+    public Map<String, CircuitBreakerRecorder> getMonitorKeyRecorders() {
+        return this.monitorKeysRecorder.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
     /**
      * get trim mills of second.
      *
@@ -110,13 +118,15 @@ public class TpsMonitor extends CircuitBreakerMonitor {
     public static String getTimeFormatOfSecond(long timeStamp) {
         return new SimpleDateFormat(DATETIME_PATTERN).format(new Date(timeStamp));
     }
-    
-    private void stopAllMonitorClient() {
+
+    @Override
+    public void stopAllMonitorClient() {
         monitorKeysRecorder.clear();
         monitorKeysConfig.clear();
     }
 
-    private void clearAllTpsConfigs() {
+    @Override
+    public void clearAllTpsConfigs() {
         // disable current config for current point
         tpsRecorder.getConfig().setIsActive(false);
         monitorKeysConfig.clear();
@@ -198,115 +208,111 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         return tpsRecorder;
     }
     
-    public String getPointName() {
-        return pointName;
-    }
-    
     public void setPointName(String pointName) {
         this.pointName = pointName;
     }
     
-    /**
-     * apply tps control rule to this point.
-     *
-     * @param newPointConfig controlRule.
-     * @param newKeyMonitorConfigs monitor keys config map
-     */
-    public synchronized void applyRule(boolean clearAll, TpsConfig newPointConfig,
-                                       Map<String, TpsConfig> newKeyMonitorConfigs) {
-        
-        Loggers.TPS_CONTROL.info("Apply tps control rule parse start,pointName=[{}]  ", this.getPointName());
-        TpsRecorder currentRecorder = tpsRecorder;
-        TpsConfig currentConfig = currentRecorder.getConfig();
-
-        //1.reset all monitor point for null.
-        if (clearAll) {
-            Loggers.TPS_CONTROL.info("Clear all tps control config ,pointName=[{}]  ", this.getPointName());
-            this.clearAllTpsConfigs();
-            this.stopAllMonitorClient();
-            return;
-        }
-        
-        //2.check point rule.
-        if (newPointConfig == null) {
-            Loggers.TPS_CONTROL.info("Clear point  control rule ,pointName=[{}]  ", this.getPointName());
-            currentRecorder.getConfig().setIsActive(false);
-        } else {
-            Loggers.TPS_CONTROL.info("Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
-                            + ",original monitorType={}, original monitorType={}, ", this.getPointName(),
-                    currentConfig.getMaxCount(), newPointConfig.getMaxCount(), currentConfig.getMonitorType(),
-                    newPointConfig.getMonitorType());
-            tpsRecorder.setConfig(newPointConfig);
-        }
-        
-        //3.check monitor key rules.
-        // 3.1 clear all monitor keys.
-        if (newKeyMonitorConfigs == null || newKeyMonitorConfigs.isEmpty()) {
-            Loggers.TPS_CONTROL
-                    .info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
-            this.stopAllMonitorClient();
-        } else {
-            Map<String, TpsConfig> monitorKeysConfigCurrent = this.monitorKeysConfig;
-            Map<String, TpsRecorder> monitorKeysRecorderCurrent =  this.monitorKeysRecorder;
-            
-            for (Map.Entry<String, TpsConfig> newMonitorConfig : newKeyMonitorConfigs.entrySet()) {
-                if (newMonitorConfig.getValue() == null) {
-                    continue;
-                }
-                boolean checkPattern = newMonitorConfig.getKey() != null;
-                if (!checkPattern) {
-                    Loggers.TPS_CONTROL.info("Invalid monitor rule, pointName=[{}] ,monitorRule={} ,Ignore this.",
-                            this.getPointName(), newMonitorConfig.getKey());
-                    continue;
-                }
-                TpsConfig newConfig = newMonitorConfig.getValue();
-
-                //update rule.
-                if (monitorKeysConfigCurrent.containsKey(newMonitorConfig.getKey())) {
-                    TpsConfig oldConfig = monitorKeysConfigCurrent.get(newMonitorConfig.getKey());
-                    Loggers.TPS_CONTROL
-                            .info("Update  point  control rule for client ip ,pointName=[{}],monitorKey=[{}],original maxTps={}"
-                                            + ", new maxTps={},original monitorType={}, new monitorType={}, ",
-                                    this.getPointName(), newMonitorConfig.getKey(), oldConfig.getMaxCount(),
-                                    newConfig.getMaxCount(), oldConfig.getMonitorType(), newConfig.getMonitorType());
-                    
-                    if (!Objects.equals(oldConfig.getPeriod(), newConfig.getPeriod()) || !Objects
-                            .equals(oldConfig.getModel(), newConfig.getModel())) {
-
-                        TpsRecorder tpsRecorderNew = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, newConfig);
-                        monitorKeysRecorderCurrent.put(newMonitorConfig.getKey(), tpsRecorderNew);
-                    }
-                    monitorKeysConfigCurrent.put(newMonitorConfig.getKey(), newConfig);
-                    
-                } else {
-                    Loggers.TPS_CONTROL
-                            .info("Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
-                                    this.getPointName(), newMonitorConfig.getKey(), newMonitorConfig.getValue().getMaxCount(),
-                                    newMonitorConfig.getValue().getMonitorType());
-                    // add config & new recorder
-                    TpsRecorder tpsRecorderNew = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, newConfig);
-
-                    monitorKeysRecorderCurrent.put(newMonitorConfig.getKey(), tpsRecorderNew);
-                    monitorKeysConfigCurrent.put(newMonitorConfig.getKey(), newConfig);
-                }
-            }
-            
-            //delete rule.
-            Iterator<Map.Entry<String, TpsConfig>> iteratorCurrent = monitorKeysConfigCurrent.entrySet().iterator();
-            while (iteratorCurrent.hasNext()) {
-                Map.Entry<String, TpsConfig> next1 = iteratorCurrent.next();
-                if (!newKeyMonitorConfigs.containsKey(next1.getKey())) {
-                    Loggers.TPS_CONTROL.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]",
-                            this.getPointName(), next1.getKey());
-                    // remove config & its related recorder
-                    monitorKeysRecorderCurrent.remove(next1.getKey());
-                    iteratorCurrent.remove();
-                }
-            }
-            
-        }
-        
-    }
+//    /**
+//     * apply tps control rule to this point.
+//     *
+//     * @param newPointConfig controlRule.
+//     * @param newKeyMonitorConfigs monitor keys config map
+//     */
+//    public synchronized void applyRule(boolean clearAll, TpsConfig newPointConfig,
+//                                       Map<String, TpsConfig> newKeyMonitorConfigs) {
+//
+//        Loggers.TPS_CONTROL.info("Apply tps control rule parse start,pointName=[{}]  ", this.getPointName());
+//        TpsRecorder currentRecorder = tpsRecorder;
+//        TpsConfig currentConfig = currentRecorder.getConfig();
+//
+//        //1.reset all monitor point for null.
+//        if (clearAll) {
+//            Loggers.TPS_CONTROL.info("Clear all tps control config ,pointName=[{}]  ", this.getPointName());
+//            this.clearAllTpsConfigs();
+//            this.stopAllMonitorClient();
+//            return;
+//        }
+//
+//        //2.check point rule.
+//        if (newPointConfig == null) {
+//            Loggers.TPS_CONTROL.info("Clear point  control rule ,pointName=[{}]  ", this.getPointName());
+//            currentRecorder.getConfig().setIsActive(false);
+//        } else {
+//            Loggers.TPS_CONTROL.info("Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
+//                            + ",original monitorType={}, original monitorType={}, ", this.getPointName(),
+//                    currentConfig.getMaxCount(), newPointConfig.getMaxCount(), currentConfig.getMonitorType(),
+//                    newPointConfig.getMonitorType());
+//            tpsRecorder.setConfig(newPointConfig);
+//        }
+//
+//        //3.check monitor key rules.
+//        // 3.1 clear all monitor keys.
+//        if (newKeyMonitorConfigs == null || newKeyMonitorConfigs.isEmpty()) {
+//            Loggers.TPS_CONTROL
+//                    .info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
+//            this.stopAllMonitorClient();
+//        } else {
+//            Map<String, TpsConfig> monitorKeysConfigCurrent = this.monitorKeysConfig;
+//            Map<String, TpsRecorder> monitorKeysRecorderCurrent =  this.monitorKeysRecorder;
+//
+//            for (Map.Entry<String, TpsConfig> newMonitorConfig : newKeyMonitorConfigs.entrySet()) {
+//                if (newMonitorConfig.getValue() == null) {
+//                    continue;
+//                }
+//                boolean checkPattern = newMonitorConfig.getKey() != null;
+//                if (!checkPattern) {
+//                    Loggers.TPS_CONTROL.info("Invalid monitor rule, pointName=[{}] ,monitorRule={} ,Ignore this.",
+//                            this.getPointName(), newMonitorConfig.getKey());
+//                    continue;
+//                }
+//                TpsConfig newConfig = newMonitorConfig.getValue();
+//
+//                //update rule.
+//                if (monitorKeysConfigCurrent.containsKey(newMonitorConfig.getKey())) {
+//                    TpsConfig oldConfig = monitorKeysConfigCurrent.get(newMonitorConfig.getKey());
+//                    Loggers.TPS_CONTROL
+//                            .info("Update  point  control rule for client ip ,pointName=[{}],monitorKey=[{}],original maxTps={}"
+//                                            + ", new maxTps={},original monitorType={}, new monitorType={}, ",
+//                                    this.getPointName(), newMonitorConfig.getKey(), oldConfig.getMaxCount(),
+//                                    newConfig.getMaxCount(), oldConfig.getMonitorType(), newConfig.getMonitorType());
+//
+//                    if (!Objects.equals(oldConfig.getPeriod(), newConfig.getPeriod()) || !Objects
+//                            .equals(oldConfig.getModel(), newConfig.getModel())) {
+//
+//                        TpsRecorder tpsRecorderNew = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, newConfig);
+//                        monitorKeysRecorderCurrent.put(newMonitorConfig.getKey(), tpsRecorderNew);
+//                    }
+//                    monitorKeysConfigCurrent.put(newMonitorConfig.getKey(), newConfig);
+//
+//                } else {
+//                    Loggers.TPS_CONTROL
+//                            .info("Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
+//                                    this.getPointName(), newMonitorConfig.getKey(), newMonitorConfig.getValue().getMaxCount(),
+//                                    newMonitorConfig.getValue().getMonitorType());
+//                    // add config & new recorder
+//                    TpsRecorder tpsRecorderNew = new TpsRecorder(pointName, startTime, DEFAULT_RECORD_SIZE, newConfig);
+//
+//                    monitorKeysRecorderCurrent.put(newMonitorConfig.getKey(), tpsRecorderNew);
+//                    monitorKeysConfigCurrent.put(newMonitorConfig.getKey(), newConfig);
+//                }
+//            }
+//
+//            //delete rule.
+//            Iterator<Map.Entry<String, TpsConfig>> iteratorCurrent = monitorKeysConfigCurrent.entrySet().iterator();
+//            while (iteratorCurrent.hasNext()) {
+//                Map.Entry<String, TpsConfig> next1 = iteratorCurrent.next();
+//                if (!newKeyMonitorConfigs.containsKey(next1.getKey())) {
+//                    Loggers.TPS_CONTROL.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]",
+//                            this.getPointName(), next1.getKey());
+//                    // remove config & its related recorder
+//                    monitorKeysRecorderCurrent.remove(next1.getKey());
+//                    iteratorCurrent.remove();
+//                }
+//            }
+//
+//        }
+//
+//    }
 
     private String getConnectionId(List<MonitorKey> monitorKeys) {
         for (MonitorKey monitorKey : monitorKeys) {
@@ -329,5 +335,10 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                     .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
         return new HashMap<>();
+    }
+
+    @Override
+    public CircuitBreakerRecorder getCurrentRecorder() {
+        return this.tpsRecorder;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
 import com.alibaba.nacos.core.remote.control.TpsControlRule;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
@@ -72,7 +73,8 @@ public class TpsRecorder extends CircuitBreakerRecorder {
     @Override
     public TpsConfig getConfig() { return config; }
 
-    public void setConfig(TpsConfig config) { this.config = config; }
+    @Override
+    public void setConfig(CircuitBreakerConfig config) { this.config = (TpsConfig) config; }
 
     /**
      * get slot of the timestamp second,create if not exist.

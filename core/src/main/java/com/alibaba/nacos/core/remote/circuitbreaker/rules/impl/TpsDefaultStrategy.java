@@ -86,16 +86,12 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
 
         TpsConfig castedPointConfig = (TpsConfig) config;
 
-        // implicit cast from CircuitBreakerConfig (parent class) to TpsConfig subclass
-        Map<String, TpsConfig> castedKeyConfigMap = keyConfigMap.entrySet()
-                .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> (TpsConfig) e.getValue()));
-
         if (pointToMonitorMap.containsKey(pointName)) {
             TpsMonitor pointMonitor = pointToMonitorMap.get(pointName);
-            pointMonitor.applyRule(false, castedPointConfig, castedKeyConfigMap);
+            pointMonitor.applyRule(false, castedPointConfig, keyConfigMap);
         } else {
             TpsMonitor newMonitor = new TpsMonitor(pointName, castedPointConfig);
-            newMonitor.applyRule(false, castedPointConfig, castedKeyConfigMap);
+            newMonitor.applyRule(false, castedPointConfig, keyConfigMap);
         }
 
     }
