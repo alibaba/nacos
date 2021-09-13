@@ -30,7 +30,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.manager.MetricsManager;
-import com.alibaba.nacos.manager.com.alibaba.nacos.util.ConfigMetricsConstant;
+import com.alibaba.nacos.manager.ConfigMetricsConstant;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -161,7 +161,8 @@ public class RequestLogAspect {
         final String md5 = ConfigCacheService.getContentMd5(groupKey);
         MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
                 ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG).incrementAndGet();
+                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG)
+                .incrementAndGet();
         return logClientRequest("get", pjp, request, response, dataId, group, tenant, md5);
     }
     
