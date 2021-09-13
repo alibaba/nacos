@@ -50,6 +50,9 @@ public class MemoryMonitor {
     
     private static final long DELAY_SECONDS = 10;
     
+    /**
+     * clear metrics getConfig and publish per day.
+     */
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
         MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
