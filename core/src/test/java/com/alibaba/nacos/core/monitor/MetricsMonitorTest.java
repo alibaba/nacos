@@ -106,6 +106,9 @@ public class MetricsMonitorTest {
     
     @Test
     public void testRequestGrpcCount() {
-        Assert.assertEquals(0D, MetricsMonitor.getGrpcRequestCount("nacos_grpc_request").count(), 0.01);
+        Assert.assertEquals(0D,
+                MetricsManager.counter(CoreMetricsConstant.N_NACOS_GRPC_REQUEST_COUNT,
+                CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE,
+                CoreMetricsConstant.TK_NAME, "nacos_grpc_request").count(), 0.01);
     }
 }
