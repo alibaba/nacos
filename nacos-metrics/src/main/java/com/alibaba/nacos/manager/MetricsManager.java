@@ -17,6 +17,7 @@
 package com.alibaba.nacos.manager;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
@@ -81,11 +82,9 @@ public class MetricsManager {
             throw new IllegalArgumentException("tags' length is odd, gauge need even.");
         }
         return INSTANCE.gaugesMap.computeIfAbsent(getKey(name, tags), s -> {
-            List<Tag> tagList = new ArrayList<>();
-            for (int i = 0; i < tags.length;) {
-                tagList.add(new ImmutableTag(tags[i++], tags[i++]));
-            }
-            return Metrics.gauge(name, tagList, new AtomicLong());
+            AtomicLong gauge = new AtomicLong();
+            Gauge.builder(name, () -> gauge).tags(tags).register(Metrics.globalRegistry);
+            return gauge;
         });
     }
     

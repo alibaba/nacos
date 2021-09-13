@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.manager.com.alibaba.nacos.util;
+package com.alibaba.nacos.manager;
 
 /**
  * Config Metrics Constant.
@@ -26,6 +26,16 @@ public class ConfigMetricsConstant {
      * metrics name.
      */
     public static final String N_NACOS_MONITOR = "nacos_monitor";
+    
+    /**
+     * metrics name.
+     */
+    public static final String N_NACOS_TIMER = "nacos_timer";
+    
+    /**
+     * metrics name.
+     */
+    public static final String N_NACOS_EXCEPTION = "nacos_exception";
     
     /**
      * metrics tag key.
@@ -76,5 +86,35 @@ public class ConfigMetricsConstant {
      * metrics tag value.
      */
     public static final String TV_DUMP_TASK = "dumpTask";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TV_NOTIFY_RT = "notifyRt";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TV_ILLEGAL_ARGUMENT = "illegalArgument";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TV_NACOS = "nacos";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TV_DB = "db";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TV_CONFIG_NOTIFY = "configNotify";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TV_UN_HEALTH = "unhealth";
     
 }

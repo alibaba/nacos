@@ -30,7 +30,7 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.manager.MetricsManager;
-import com.alibaba.nacos.manager.com.alibaba.nacos.util.ConfigMetricsConstant;
+import com.alibaba.nacos.manager.ConfigMetricsConstant;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
