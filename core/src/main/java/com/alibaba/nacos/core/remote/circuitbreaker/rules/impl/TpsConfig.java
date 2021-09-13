@@ -55,3 +55,4 @@ public class TpsConfig extends CircuitBreakerConfig {
     public long getMaxCount() { return maxCount; }
 
 }
+
