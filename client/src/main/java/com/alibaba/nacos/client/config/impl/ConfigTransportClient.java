@@ -69,6 +69,8 @@ public abstract class ConfigTransportClient {
     
     final ServerListManager serverListManager;
     
+    final Properties properties;
+    
     private int maxRetry = 3;
     
     private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
@@ -96,7 +98,8 @@ public abstract class ConfigTransportClient {
         
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
-        this.securityProxy = new SecurityProxy(properties,
+        this.properties = properties;
+        this.securityProxy = new SecurityProxy(serverListManager.getServerUrls(),
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
         initAkSk(properties);
     }
@@ -131,11 +134,12 @@ public abstract class ConfigTransportClient {
      * @return map that contains accessToken , null if acessToken is empty.
      */
     protected Map<String, String> getSecurityHeaders() {
-        if (StringUtils.isBlank(securityProxy.getAccessToken())) {
+        String accessToken = (String) this.securityProxy.getLoginIdentityContext().getParameter(Constants.ACCESS_TOKEN);
+        if (StringUtils.isBlank(accessToken)) {
             return null;
         }
         Map<String, String> spasHeaders = new HashMap<String, String>(2);
-        spasHeaders.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        spasHeaders.put(Constants.ACCESS_TOKEN, accessToken);
         return spasHeaders;
     }
     
@@ -159,7 +163,7 @@ public abstract class ConfigTransportClient {
     }
     
     public String getAccessToken() {
-        return securityProxy.getAccessToken();
+        return  (String) this.securityProxy.getLoginIdentityContext().getParameter(Constants.ACCESS_TOKEN);
     }
     
     private StsCredential getStsCredential() throws Exception {
@@ -240,13 +244,13 @@ public abstract class ConfigTransportClient {
      */
     public void start() throws NacosException {
         
-        if (securityProxy.isEnabled()) {
-            securityProxy.login(serverListManager.getServerUrls());
+        if (StringUtils.isNotBlank(this.properties.getProperty(PropertyKeyConst.USERNAME))) {
+            securityProxy.loginClientAuthService(this.properties);
             
             this.executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
-                    securityProxy.login(serverListManager.getServerUrls());
+                    securityProxy.loginClientAuthService(properties);
                 }
             }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
             

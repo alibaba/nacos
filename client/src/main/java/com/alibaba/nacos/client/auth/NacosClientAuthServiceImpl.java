@@ -1,17 +1,27 @@
+/*
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.client.auth;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.auth.result.GrpcRequest;
-import com.alibaba.nacos.client.auth.result.HttpRequest;
-import com.alibaba.nacos.client.auth.result.RequestManager;
-import com.alibaba.nacos.client.auth.result.ResultConstant;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.client.auth.process.HttpLoginProcessor;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -21,23 +31,9 @@ import java.util.concurrent.TimeUnit;
  * @author wuyfee
  */
 
-public class NacosClientAuthServiceImpl implements ClientAuthService {
+public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(NacosClientAuthServiceImpl.class);
-    
-    private static final String CLIENTAUTHSERVICENAME = "NacosClientAuthServiceImpl";
-    
-    private final RequestManager request;
-    
-    /**
-     * User's name.
-     */
-    private final String username;
-    
-    /**
-     * A token to take with when sending request to Nacos server.
-     */
-    private volatile String accessToken;
     
     /**
      * TTL of token in seconds.
@@ -55,84 +51,58 @@ public class NacosClientAuthServiceImpl implements ClientAuthService {
     private long tokenRefreshWindow;
     
     /**
-     * user information.
+     * A context to take with when sending request to Nacos server.
      */
-    private final Properties properties;
+    private volatile LoginIdentityContext loginIdentityContext;
     
-    /**
-     * Http instance.
-     *
-     * @param properties        User information.
-     * @param nacosRestTemplate HttpRequest template.
-     */
-    public NacosClientAuthServiceImpl(Properties properties, NacosRestTemplate nacosRestTemplate) {
-        this.properties = properties;
-        request = new HttpRequest(nacosRestTemplate);
-        username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
-    }
-    
-    /**
-     * Grpc instance.
-     *
-     * @param properties User information.
-     */
-    public NacosClientAuthServiceImpl(Properties properties) {
-        this.properties = properties;
-        request = new GrpcRequest();
-        username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
-    }
     
     /**
      * Login to servers.
      *
-     * @param servers server list
      * @return true if login successfully
      */
-    public boolean login(List<String> servers) {
-        
+    
+    @Override
+    public Boolean login(Properties properties) {
         try {
             if ((System.currentTimeMillis() - lastRefreshTime) < TimeUnit.SECONDS
                     .toMillis(tokenTtl - tokenRefreshWindow)) {
                 return true;
             }
             
-            for (String server : servers) {
-                properties.setProperty(ResultConstant.SERVER, server);
-                if (login(properties)) {
-                    lastRefreshTime = System.currentTimeMillis();
+            if (StringUtils.isBlank(properties.getProperty(PropertyKeyConst.USERNAME))) {
+                lastRefreshTime = System.currentTimeMillis();
+                return true;
+            }
+            
+            for (String server : this.serverList) {
+                HttpLoginProcessor httpLoginProcessor = new HttpLoginProcessor(nacosRestTemplate);
+                properties.setProperty(LoginAuthConstant.SERVER, server);
+                if (httpLoginProcessor.getResponse(properties)) {
+                    LoginIdentityContext identityContext = httpLoginProcessor.getLoginIdentityContext();
+                    if (identityContext != null && StringUtils
+                            .isNotBlank((String) identityContext.getParameter(LoginAuthConstant.ACCESSTOKEN))) {
+                        tokenTtl = Long.parseLong((String) identityContext.getParameter(LoginAuthConstant.TOKENTTL));
+                        tokenRefreshWindow = tokenTtl / 10;
+                        lastRefreshTime = System.currentTimeMillis();
+                        
+                        loginIdentityContext = new LoginIdentityContext();
+                        loginIdentityContext.setParameter(LoginAuthConstant.ACCESSTOKEN,
+                                identityContext.getParameter(LoginAuthConstant.ACCESSTOKEN));
+                    }
                     return true;
                 }
             }
         } catch (Throwable throwable) {
             SECURITY_LOGGER.warn("[SecurityProxy] login failed, error: ", throwable);
-        }
-        
-        return false;
-    }
-    
-    @Override
-    public boolean login(Properties properties) {
-        Map<String, String> map = request.getResponse(properties);
-        if (map != null && map.containsKey(ResultConstant.ACCESSTOKEN)) {
-            accessToken = map.get(ResultConstant.ACCESSTOKEN);
-            tokenTtl = Long.parseLong(map.get(ResultConstant.TOKENTTL));
-            tokenRefreshWindow = tokenTtl / 10;
-            return true;
+            return false;
         }
         return false;
     }
     
     @Override
-    public String getClientAuthServiceName() {
-        return CLIENTAUTHSERVICENAME;
-    }
-    
-    public String getAccessToken() {
-        return accessToken;
-    }
-    
-    public boolean isEnabled() {
-        return StringUtils.isNotBlank(this.username);
+    public LoginIdentityContext getLoginIdentityContext() {
+        return this.loginIdentityContext;
     }
     
 }

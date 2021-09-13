@@ -14,46 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth;
+package com.alibaba.nacos.client.auth.process;
 
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-
-import java.util.List;
+import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import java.util.Properties;
 
-/**
- * Client AuthService.
- *
- * @author wuyfee
- */
-public interface ClientAuthService {
-    
+public interface LoginProcessor {
     /**
-     * login(request) to service and get response.
+     * send request to server and get result.
      *
-     * @return boolean whether login success.
+     * @param properties request properties.
+     * @return response informationn.
      */
-    Boolean login(Properties properties);
-    
-    /**
-     * set login serverList.
-     *
-     * @param serverList login server list;
-     */
-    void setServerList(List<String> serverList);
-    
-    /**
-     * http request template.
-     *
-     * @param nacosRestTemplate nacos http request template.
-     */
-    void setNacosRestTemplate(NacosRestTemplate nacosRestTemplate);
+    Boolean getResponse(Properties properties);
     
     /**
      * get login identity context.
-     *
-     * @return LoginIdentityContext this plugin loginIdentityContext.
+     * @return LoginIdentityContext.
      */
     LoginIdentityContext getLoginIdentityContext();
-    
+
 }

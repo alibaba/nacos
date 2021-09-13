@@ -16,19 +16,16 @@
 
 package com.alibaba.nacos.client.auth;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@link com.alibaba.nacos.client.auth.ClientAuthPluginManager} unit test.
@@ -41,39 +38,23 @@ import java.util.Properties;
 public class ClientAuthPluginManagerTest {
     
     private ClientAuthPluginManager clientAuthPluginManager;
+
+    @Mock
+    private List<String> serverlist;
     
     @Mock
-    private ClientAuthService clientAuthService;
-    
-    @Mock
-    private Properties properties;
-    
-    private static final String TYPE = "NacosClientAuthServiceImpl";
+    private NacosRestTemplate nacosRestTemplate;
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
-        clientAuthPluginManager = ClientAuthPluginManager.getInstance();
-        Class<ClientAuthPluginManager> clientAuthPluginManagerClass = ClientAuthPluginManager.class;
-        Field authPlugins = clientAuthPluginManagerClass.getDeclaredField("clientAuthServiceHashMap");
-        authPlugins.setAccessible(true);
-        Map<String, ClientAuthService> clientAuthServiceMap = (Map<String, ClientAuthService>) authPlugins
-                .get(clientAuthPluginManager);
-        clientAuthServiceMap.put(TYPE, clientAuthService);
+        clientAuthPluginManager = new ClientAuthPluginManager();
+        clientAuthPluginManager.init(serverlist, nacosRestTemplate);
     }
     
     @Test
-    public void testGetInstance() {
-        ClientAuthPluginManager instance = ClientAuthPluginManager.getInstance();
-        
-        Assert.assertNotNull(instance);
-    }
-    
-    @Test
-    public void testFindAuthServiceSpiImpl() throws NacosException {
-        Mockito.when(clientAuthService.login(properties)).thenReturn(true);
-        Mockito.when(clientAuthService.getClientAuthServiceName()).thenReturn(TYPE);
-        Optional<ClientAuthService> authServiceImpl = clientAuthPluginManager.findAuthServiceSpiImpl(TYPE);
-        Assert.assertTrue(authServiceImpl.isPresent());
+    public void testGetAuthServiceSpiImplSet() {
+        Set<ClientAuthService> clientAuthServiceSet = clientAuthPluginManager.getAuthServiceSpiImplSet();
+        Assert.assertFalse(clientAuthServiceSet.isEmpty());
     }
     
 }

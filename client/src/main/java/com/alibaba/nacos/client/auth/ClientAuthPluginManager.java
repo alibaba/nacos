@@ -1,14 +1,30 @@
+/*
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.client.auth;
 
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * ClientAuthService classLoader.
@@ -17,50 +33,38 @@ import java.util.Optional;
  */
 public class ClientAuthPluginManager {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
-    
-    private static final ClientAuthPluginManager INSTANCE = new ClientAuthPluginManager();
+    private static final Logger AUTHPLUGIN_LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
     
     /**
      * The relationship of context type and {@link ClientAuthService}.
      */
-    private Map<String, ClientAuthService> clientAuthServiceHashMap = new HashMap<>();
-    
-    public ClientAuthPluginManager() {
-        initClientAuthServices();
-    }
-    
-    public static ClientAuthPluginManager getInstance() {
-        return INSTANCE;
-    }
+    private final Set<ClientAuthService> clientAuthServiceHashSet = new HashSet<>();
     
     /**
      * init ClientAuthService.
      */
-    private void initClientAuthServices() {
-        Collection<ClientAuthService> clientAuthServices = NacosServiceLoader.load(ClientAuthService.class);
+    public void init(List<String> serverList, NacosRestTemplate nacosRestTemplate) {
+        
+        Collection<AbstractClientAuthService> clientAuthServices = NacosServiceLoader
+                .load(AbstractClientAuthService.class);
         for (ClientAuthService clientAuthService : clientAuthServices) {
-            if (StringUtils.isEmpty(clientAuthService.getClientAuthServiceName())) {
-                LOGGER.warn(
-                        "[ClientAuthPluginManager] Load ClientAuthService({}) ClientAuthServiceName(null/empty) fail. "
-                                + "Please Add ClientAuthServiceName to resolve.", clientAuthService.getClass());
-                continue;
-                
-            }
-            clientAuthServiceHashMap.put(clientAuthService.getClientAuthServiceName(), clientAuthService);
-            LOGGER.info("[ClientAuthPluginManager] Load ClientAuthService({}) ClientAuthServiceName({}) successfully.",
-                    clientAuthService.getClass(), clientAuthService.getClientAuthServiceName());
+            clientAuthService.setServerList(serverList);
+            clientAuthService.setNacosRestTemplate(nacosRestTemplate);
+            clientAuthServiceHashSet.add(clientAuthService);
+        }
+        if (clientAuthServiceHashSet.isEmpty()) {
+            AUTHPLUGIN_LOGGER
+                    .warn("[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
         }
     }
     
     /**
-     * get ClientAuthService instance which ClientAuthService.getType() is type.
+     * get all ClientAuthService instance.
      *
-     * @param clientAuthServiceName AuthServiceName, mark a AuthService instance.
-     * @return AuthService instance.
+     * @return ClientAuthService Set.
      */
-    public Optional<ClientAuthService> findAuthServiceSpiImpl(String clientAuthServiceName) {
-        return Optional.ofNullable(clientAuthServiceHashMap.get(clientAuthServiceName));
+    public Set<ClientAuthService> getAuthServiceSpiImplSet() {
+        return clientAuthServiceHashSet;
     }
     
 }
