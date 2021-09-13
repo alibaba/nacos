@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import com.alibaba.nacos.manager.CoreMetricsConstant;
+import com.alibaba.nacos.manager.MetricsManager;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Assert;
@@ -79,13 +81,21 @@ public class MetricsMonitorTest {
     
     @Test
     public void testClientTotalConnection() {
-        MetricsMonitor.getClientTotalConnection().incrementAndGet();
-        Assert.assertEquals(MetricsMonitor.getClientTotalConnection().get(), 1);
+        MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
+                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+                .incrementAndGet();
+        Assert.assertEquals(
+                MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
+                                CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+                        .get(), 1);
     }
     
     @Test
     public void testRequestGrpcCount() {
-        Assert.assertEquals(0D, MetricsMonitor.getGrpcRequestCount("nacos_grpc_request").count(), 0.01);
+        Assert.assertEquals(0D,
+                MetricsManager.counter(CoreMetricsConstant.N_NACOS_GRPC_REQUEST_COUNT,
+                CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE,
+                CoreMetricsConstant.TK_NAME, "nacos_grpc_request").count(), 0.01);
     }
     
     @Test

@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.core.monitor.MetricsMonitor;
+import com.alibaba.nacos.manager.CoreMetricsConstant;
+import com.alibaba.nacos.manager.MetricsManager;
 import org.springframework.stereotype.Component;
 
 /**
@@ -29,11 +30,15 @@ public class MetricsClientConnectionEventListener extends ClientConnectionEventL
     
     @Override
     public void clientConnected(Connection connect) {
-        MetricsMonitor.getClientTotalConnection().incrementAndGet();
+        MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
+                CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+                .incrementAndGet();
     }
     
     @Override
     public void clientDisConnected(Connection connect) {
-        MetricsMonitor.getClientTotalConnection().decrementAndGet();
+        MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
+                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+                .decrementAndGet();
     }
 }

@@ -58,17 +58,17 @@ public class MetricsManager {
     /**
      * register counter with description.
      */
-    public static Counter counter(String name, String description, String... tags) {
+    public static Counter counter(String name, String... tags) {
         return INSTANCE.countersMap.computeIfAbsent(getKey(name, tags), s ->
-                Counter.builder(name).description(description).tags(tags).register(Metrics.globalRegistry));
+                Counter.builder(name).tags(tags).register(Metrics.globalRegistry));
     }
     
     /**
      * register timer with description.
      */
-    public static Timer timer(String name, String description, String... tags) {
+    public static Timer timer(String name, String... tags) {
         return INSTANCE.timersMap.computeIfAbsent(getKey(name, tags), s ->
-                Timer.builder(name).description(description).tags(tags).register(Metrics.globalRegistry));
+                Timer.builder(name).tags(tags).register(Metrics.globalRegistry));
     }
     
     /**
