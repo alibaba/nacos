@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,7 +128,10 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             
             Beat beat = new Beat(ip, task);
             taskQueue.add(beat);
-            MetricsMonitor.getTcpHealthCheckMonitor().incrementAndGet();
+            MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TCP_HEALTH_CHECK)
+                    .incrementAndGet();
         }
     }
     

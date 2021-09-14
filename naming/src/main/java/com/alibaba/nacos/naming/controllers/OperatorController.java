@@ -26,6 +26,8 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
@@ -109,8 +111,12 @@ public class OperatorController {
     public ObjectNode pushState(@RequestParam(required = false) boolean detail,
             @RequestParam(required = false) boolean reset) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        int failedPushCount = MetricsMonitor.getFailedPushMonitor().get();
-        int totalPushCount = MetricsMonitor.getTotalPushMonitor().get();
+        long failedPushCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get();
+        long totalPushCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get();
         result.put("succeed", totalPushCount - failedPushCount);
         result.put("total", totalPushCount);
         if (totalPushCount > 0) {
@@ -120,8 +126,14 @@ public class OperatorController {
         }
         if (detail) {
             ObjectNode detailNode = JacksonUtils.createEmptyJsonNode();
-            detailNode.put("avgPushCost", MetricsMonitor.getAvgPushCostMonitor().get());
-            detailNode.put("maxPushCost", MetricsMonitor.getMaxPushCostMonitor().get());
+            detailNode.put("avgPushCost",
+                    MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MAX_PUSH_COST).get());
+            detailNode.put("maxPushCost",
+                    MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_AVG_PUSH_COST).get());
             result.replace("detail", detailNode);
         }
         if (reset) {
@@ -197,9 +209,18 @@ public class OperatorController {
         
         int responsibleDomCount = serviceManager.getResponsibleServiceCount();
         int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
-        result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
-        result.put("instanceCount", MetricsMonitor.getIpCountMonitor().get());
-        result.put("subscribeCount", MetricsMonitor.getSubscriberCount().get());
+        result.put("serviceCount",
+                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT).get());
+        result.put("instanceCount",
+                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT).get());
+        result.put("subscribeCount",
+                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT).get());
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);

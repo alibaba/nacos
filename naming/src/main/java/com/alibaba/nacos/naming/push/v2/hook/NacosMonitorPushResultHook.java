@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.push.v2.hook;
 
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -33,11 +35,17 @@ public class NacosMonitorPushResultHook implements PushResultHook {
         MetricsMonitor.incrementPushCost(result.getAllCost());
         MetricsMonitor.compareAndSetMaxPushCost(result.getAllCost());
         if (isRpc(result.getSubscriber())) {
-            MetricsMonitor.getGrpcPushSuccessCount().increment();
+            MetricsManager.counter(NamingMetricsConstant.N_NACOS_SERVER_PUSH_COUNT,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_TYPE, NamingMetricsConstant.TV_GRPC,
+                    NamingMetricsConstant.TK_SUCCESS, NamingMetricsConstant.TV_TRUE).increment();
             MetricsMonitor.setServerPushCost(result.getAllCost(), "grpc", "true");
             NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
         } else {
-            MetricsMonitor.getUdpPushSuccessCount().increment();
+            MetricsManager.counter(NamingMetricsConstant.N_NACOS_SERVER_PUSH_COUNT,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_TYPE, NamingMetricsConstant.TV_UDP,
+                    NamingMetricsConstant.TK_SUCCESS, NamingMetricsConstant.TV_TRUE).increment();
             MetricsMonitor.setServerPushCost(result.getAllCost(), "udp", "true");
             NamingTpsMonitor.udpPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
         }
@@ -47,11 +55,17 @@ public class NacosMonitorPushResultHook implements PushResultHook {
     public void pushFailed(PushResult result) {
         MetricsMonitor.incrementFailPush();
         if (isRpc(result.getSubscriber())) {
-            MetricsMonitor.getGrpcPushFailedCount().increment();
+            MetricsManager.counter(NamingMetricsConstant.N_NACOS_SERVER_PUSH_COUNT,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_TYPE, NamingMetricsConstant.TV_GRPC,
+                    NamingMetricsConstant.TK_SUCCESS, NamingMetricsConstant.TV_FALSE).increment();
             MetricsMonitor.setServerPushCost(result.getAllCost(), "grpc", "false");
             NamingTpsMonitor.rpcPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
         } else {
-            MetricsMonitor.getUdpPushFailedCount().increment();
+            MetricsManager.counter(NamingMetricsConstant.N_NACOS_SERVER_PUSH_COUNT,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_TYPE, NamingMetricsConstant.TV_UDP,
+                    NamingMetricsConstant.TK_SUCCESS, NamingMetricsConstant.TV_FALSE).increment();
             MetricsMonitor.setServerPushCost(result.getAllCost(), "udp", "false");
             NamingTpsMonitor.udpPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
         }

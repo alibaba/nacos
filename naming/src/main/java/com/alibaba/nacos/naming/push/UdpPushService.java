@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -452,7 +454,10 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
                     
                     Loggers.PUSH
                             .info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}", json, ip,
-                                    port, pushCost, ackMap.size(), MetricsMonitor.getTotalPushMonitor().get());
+                                    port, pushCost, ackMap.size(),
+                                    MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get());
                     
                     MetricsMonitor.incrementPushCost(pushCost);
                     
