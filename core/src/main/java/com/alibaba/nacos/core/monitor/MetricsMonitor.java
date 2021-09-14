@@ -64,10 +64,6 @@ public final class MetricsMonitor {
         Metrics.gauge("nacos_client_total_connections", tags, clientTotalConnection);
     }
     
-    public static AtomicInteger getLongConnection() {
-        return longConnection;
-    }
-    
     public static AtomicInteger getClientTotalConnection() {
         return clientTotalConnection;
     }

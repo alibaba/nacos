@@ -198,9 +198,9 @@ public class MetricsMonitor {
         return Metrics.counter("nacos_server_push_count", "module", "naming", "type", "udp", "success", "false");
     }
         
-        /**
-         * Reset all metrics.
-         */
+    /**
+     * Reset all metrics.
+     */
     public static void resetAll() {
         resetPush();
         getHttpHealthCheckMonitor().set(0);
