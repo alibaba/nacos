@@ -24,14 +24,8 @@ public interface LoginProcessor {
      * send request to server and get result.
      *
      * @param properties request properties.
-     * @return response informationn.
+     * @return login identity context.
      */
-    Boolean getResponse(Properties properties);
+    LoginIdentityContext getResponse(Properties properties);
     
-    /**
-     * get login identity context.
-     * @return LoginIdentityContext.
-     */
-    LoginIdentityContext getLoginIdentityContext();
-
 }

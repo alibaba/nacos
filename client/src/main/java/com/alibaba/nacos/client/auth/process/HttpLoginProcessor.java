@@ -46,14 +46,12 @@ public class HttpLoginProcessor implements LoginProcessor {
     
     private final NacosRestTemplate nacosRestTemplate;
     
-    private volatile LoginIdentityContext loginIdentityContext;
-    
     public HttpLoginProcessor(NacosRestTemplate nacosRestTemplate) {
         this.nacosRestTemplate = nacosRestTemplate;
     }
     
     @Override
-    public Boolean getResponse(Properties properties) {
+    public LoginIdentityContext getResponse(Properties properties) {
         
         String contextPath = ContextPathUtil
                 .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
@@ -73,11 +71,11 @@ public class HttpLoginProcessor implements LoginProcessor {
                     .postForm(url, Header.EMPTY, Query.newInstance().initParams(params), bodyMap, String.class);
             if (!restResult.ok()) {
                 SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
-                return false;
+                return null;
             }
             JsonNode obj = JacksonUtils.toObj(restResult.getData());
-            
-            loginIdentityContext = new LoginIdentityContext();
+    
+            LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
             
             if (obj.has(Constants.ACCESS_TOKEN)) {
                 loginIdentityContext
@@ -86,16 +84,12 @@ public class HttpLoginProcessor implements LoginProcessor {
             } else {
                 SECURITY_LOGGER.info("[NacosClientAuthServiceImpl] ACCESS_TOKEN is empty from response");
             }
-            return true;
+            return loginIdentityContext;
         } catch (Exception e) {
             SECURITY_LOGGER.error("[ NacosClientAuthServiceImpl] login http request failed"
                     + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, bodyMap, e.getMessage());
-            return false;
+            return null;
         }
     }
     
-    @Override
-    public LoginIdentityContext getLoginIdentityContext() {
-        return loginIdentityContext;
-    }
 }
