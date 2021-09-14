@@ -67,8 +67,9 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      */
     protected Map<String, String> getSecurityHeaders() {
         Map<String, String> result = new HashMap<>(1);
-        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            result.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
+        String accessToken = (String) securityProxy.getLoginIdentityContext().getParameter(Constants.ACCESS_TOKEN);
+        if (StringUtils.isNotBlank(accessToken)) {
+            result.put(Constants.ACCESS_TOKEN, accessToken);
         }
         return result;
     }
