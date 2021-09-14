@@ -33,8 +33,12 @@ public class NacosMonitorPushResultHook implements PushResultHook {
         MetricsMonitor.incrementPushCost(result.getAllCost());
         MetricsMonitor.compareAndSetMaxPushCost(result.getAllCost());
         if (isRpc(result.getSubscriber())) {
+            MetricsMonitor.getGrpcPushSuccessCount().increment();
+            MetricsMonitor.setServerPushCost(result.getAllCost(), "grpc", "true");
             NamingTpsMonitor.rpcPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
         } else {
+            MetricsMonitor.getUdpPushSuccessCount().increment();
+            MetricsMonitor.setServerPushCost(result.getAllCost(), "udp", "true");
             NamingTpsMonitor.udpPushSuccess(result.getSubscribeClientId(), result.getSubscriber().getIp());
         }
     }
@@ -43,8 +47,12 @@ public class NacosMonitorPushResultHook implements PushResultHook {
     public void pushFailed(PushResult result) {
         MetricsMonitor.incrementFailPush();
         if (isRpc(result.getSubscriber())) {
+            MetricsMonitor.getGrpcPushFailedCount().increment();
+            MetricsMonitor.setServerPushCost(result.getAllCost(), "grpc", "false");
             NamingTpsMonitor.rpcPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
         } else {
+            MetricsMonitor.getUdpPushFailedCount().increment();
+            MetricsMonitor.setServerPushCost(result.getAllCost(), "udp", "false");
             NamingTpsMonitor.udpPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());
         }
     }
