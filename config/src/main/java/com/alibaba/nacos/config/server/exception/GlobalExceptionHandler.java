@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.manager.ConfigMetricsConstant;
-import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;

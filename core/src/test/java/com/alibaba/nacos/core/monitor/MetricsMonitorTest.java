@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.monitor;
 
-import com.alibaba.nacos.manager.CoreMetricsConstant;
-import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.Assert;

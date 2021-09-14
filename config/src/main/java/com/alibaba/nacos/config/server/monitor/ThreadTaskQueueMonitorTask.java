@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.manager.ConfigMetricsConstant;
-import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 

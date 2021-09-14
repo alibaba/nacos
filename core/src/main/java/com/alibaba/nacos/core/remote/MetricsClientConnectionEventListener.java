@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.manager.CoreMetricsConstant;
-import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import org.springframework.stereotype.Component;
 
 /**

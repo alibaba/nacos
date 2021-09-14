@@ -21,8 +21,8 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
-import com.alibaba.nacos.manager.CoreMetricsConstant;
-import com.alibaba.nacos.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import org.springframework.stereotype.Component;
 
 /**
