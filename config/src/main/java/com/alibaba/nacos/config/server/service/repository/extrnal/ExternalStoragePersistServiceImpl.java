@@ -2066,11 +2066,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configAdvanceInfo == null ? "" : (String) configAdvanceInfo.get("encryptedDataKey");
-<<<<<<< HEAD
-        
-=======
     
->>>>>>> summer2021_issue#5695
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -2241,11 +2237,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configAdvanceInfo == null ? "" : (String) configAdvanceInfo.get("encryptedDataKey");
-<<<<<<< HEAD
-        
-=======
     
->>>>>>> summer2021_issue#5695
         try {
             jt.update("UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,"
                             + "app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=?"
@@ -2372,23 +2364,15 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-<<<<<<< HEAD
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
-=======
-        String encryptedDataKey =
-                StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
->>>>>>> summer2021_issue#5695
+
         try {
             jt.update(
                     "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_modified,op_type,encrypted_data_key) "
                             + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", id, configInfo.getDataId(), configInfo.getGroup(),
-<<<<<<< HEAD
                     tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops,
                     encryptedDataKey);
-=======
-                    tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey);
->>>>>>> summer2021_issue#5695
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
