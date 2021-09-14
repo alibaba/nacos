@@ -20,8 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.manager.MetricsManager;
 import org.slf4j.Logger;
 
 import javax.management.ObjectName;
@@ -99,20 +100,29 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     @Override
     public void addTask(Object key, AbstractDelayTask newTask) {
         super.addTask(key, newTask);
-        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DUMP_TASK)
+                .set(tasks.size());
     }
     
     @Override
     public AbstractDelayTask removeTask(Object key) {
         AbstractDelayTask result = super.removeTask(key);
-        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DUMP_TASK)
+                .set(tasks.size());
         return result;
     }
     
     @Override
     protected void processTasks() {
         super.processTasks();
-        MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DUMP_TASK)
+                .set(tasks.size());
         if (tasks.isEmpty()) {
             this.lock.lock();
             try {

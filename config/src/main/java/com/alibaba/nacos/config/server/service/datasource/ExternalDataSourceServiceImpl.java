@@ -19,9 +19,10 @@ package com.alibaba.nacos.config.server.service.datasource;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.manager.MetricsManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.dao.DataAccessException;
@@ -225,7 +226,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             
             if (!isFound) {
                 FATAL_LOG.error("[master-db] master db not found.");
-                MetricsMonitor.getDbException().increment();
+                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DB)
+                        .increment();
             }
         }
     }
@@ -254,8 +258,11 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                                 InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
-                    
-                    MetricsMonitor.getDbException().increment();
+    
+                    MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                                    ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                    ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DB)
+                            .increment();
                 }
             }
         }

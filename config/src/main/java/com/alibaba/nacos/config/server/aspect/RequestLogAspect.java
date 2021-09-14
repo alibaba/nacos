@@ -25,11 +25,12 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.manager.MetricsManager;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -109,7 +110,10 @@ public class RequestLogAspect {
             throws Throwable {
         final String md5 =
                 request.getContent() == null ? null : MD5Utils.md5Hex(request.getContent(), Constants.ENCODE);
-        MetricsMonitor.getPublishMonitor().incrementAndGet();
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_PUBLISH)
+                .incrementAndGet();
         return logClientRequestRpc("publish", pjp, request, meta, request.getDataId(), request.getGroup(),
                 request.getTenant(), md5);
     }
@@ -121,7 +125,10 @@ public class RequestLogAspect {
     public Object interfacePublishSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
             HttpServletResponse response, String dataId, String group, String tenant, String content) throws Throwable {
         final String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
-        MetricsMonitor.getPublishMonitor().incrementAndGet();
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_PUBLISH)
+                .incrementAndGet();
         return logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5);
     }
     
@@ -152,7 +159,10 @@ public class RequestLogAspect {
             String dataId, String group, String tenant) throws Throwable {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final String md5 = ConfigCacheService.getContentMd5(groupKey);
-        MetricsMonitor.getConfigMonitor().incrementAndGet();
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG)
+                .incrementAndGet();
         return logClientRequest("get", pjp, request, response, dataId, group, tenant, md5);
     }
     
@@ -164,7 +174,10 @@ public class RequestLogAspect {
             throws Throwable {
         final String groupKey = GroupKey2.getKey(request.getDataId(), request.getGroup(), request.getTenant());
         final String md5 = ConfigCacheService.getContentMd5(groupKey);
-        MetricsMonitor.getConfigMonitor().incrementAndGet();
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG)
+                .incrementAndGet();
         return logClientRequestRpc("get", pjp, request, meta, request.getDataId(), request.getGroup(),
                 request.getTenant(), md5);
     }
@@ -211,7 +224,10 @@ public class RequestLogAspect {
     @Around(CLIENT_INTERFACE_LISTEN_CONFIG_RPC)
     public Object interfaceListenConfigRpc(ProceedingJoinPoint pjp, ConfigBatchListenRequest request,
             RequestMeta meta) throws Throwable {
-        MetricsMonitor.getConfigMonitor().incrementAndGet();
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG)
+                .incrementAndGet();
         final String requestIp = meta.getClientIp();
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         final long st = System.currentTimeMillis();

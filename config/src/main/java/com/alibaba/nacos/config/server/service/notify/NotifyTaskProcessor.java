@@ -20,10 +20,11 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.manager.MetricsManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -89,18 +90,26 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                         ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
                 
-                MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
-                
+                MetricsManager.timer(ConfigMetricsConstant.N_NACOS_TIMER,
+                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_RT)
+                        .record(delayed, TimeUnit.MILLISECONDS);
                 return true;
             } else {
-                MetricsMonitor.getConfigNotifyException().increment();
+                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                        .increment();
                 LOGGER.error("[notify-error] {}, {}, to {}, result {}", dataId, group, serverIp, result.getCode());
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                         ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
-            MetricsMonitor.getConfigNotifyException().increment();
+            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                    .increment();
             String message = "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString();
             LOGGER.error(message);
             LOGGER.debug(message, e);
