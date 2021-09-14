@@ -31,6 +31,7 @@ public interface ClientAuthService {
     /**
      * login(request) to service and get response.
      *
+     * @param properties login auth information.
      * @return boolean whether login success.
      */
     Boolean login(Properties properties);
