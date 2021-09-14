@@ -170,6 +170,7 @@ public class ConfigController {
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setType(type);
+        configInfo.setEncryptedDataKey(encryptedDataKey);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
@@ -182,7 +183,6 @@ public class ConfigController {
             }
         } else {
             // beta publish
-            configInfo.setEncryptedDataKey(encryptedDataKey);
             persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
             ConfigChangePublisher
                     .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
