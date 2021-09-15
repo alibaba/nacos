@@ -112,10 +112,10 @@ public class OperatorController {
             @RequestParam(required = false) boolean reset) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         long failedPushCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get();
         long totalPushCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get();
         result.put("succeed", totalPushCount - failedPushCount);
         result.put("total", totalPushCount);
@@ -128,11 +128,11 @@ public class OperatorController {
             ObjectNode detailNode = JacksonUtils.createEmptyJsonNode();
             detailNode.put("avgPushCost",
                     MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                     NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MAX_PUSH_COST).get());
             detailNode.put("maxPushCost",
                     MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                     NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_AVG_PUSH_COST).get());
             result.replace("detail", detailNode);
         }
@@ -211,15 +211,15 @@ public class OperatorController {
         int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
         result.put("serviceCount",
                 MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT).get());
         result.put("instanceCount",
                 MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT).get());
         result.put("subscribeCount",
                 MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT).get());
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);

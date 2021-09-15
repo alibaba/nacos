@@ -199,15 +199,15 @@ public class UpgradeOpsController {
         result.put("instanceCountV1", serviceManager.getInstanceCount());
         result.put("serviceCountV2",
                 MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT).get());
         result.put("instanceCountV2",
                 MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT).get());
         result.put("subscribeCountV2",
                 MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT).get());
         result.put("responsibleServiceCountV1", serviceManager.getResponsibleServiceCount());
         result.put("responsibleInstanceCountV1", serviceManager.getResponsibleInstanceCount());

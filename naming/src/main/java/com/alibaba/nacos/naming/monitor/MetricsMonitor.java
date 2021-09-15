@@ -143,7 +143,7 @@ public class MetricsMonitor {
      */
     public static void compareAndSetMaxPushCost(long newCost) {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MAX_PUSH_COST)
                 .getAndUpdate((prev) -> Math.max(newCost, prev));
     }
@@ -153,7 +153,7 @@ public class MetricsMonitor {
      */
     public static void incrementPush() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH)
                 .incrementAndGet();
     }
@@ -163,11 +163,11 @@ public class MetricsMonitor {
      */
     public static void incrementPushCost(long costTime) {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COUNT_FOR_AVG)
                 .incrementAndGet();
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                         NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COST_FOR_AVG)
                 .addAndGet(costTime);
     }
@@ -177,7 +177,7 @@ public class MetricsMonitor {
      */
     public static void incrementFailPush() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH)
                 .incrementAndGet();
     }
@@ -187,7 +187,7 @@ public class MetricsMonitor {
      */
     public static void incrementInstanceCount() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                         NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT)
                 .incrementAndGet();
     }
@@ -197,7 +197,7 @@ public class MetricsMonitor {
      */
     public static void decrementInstanceCount() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                         NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT)
                 .decrementAndGet();
     }
@@ -207,7 +207,7 @@ public class MetricsMonitor {
      */
     public static void incrementSubscribeCount() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                         NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT)
                 .incrementAndGet();
     }
@@ -217,7 +217,7 @@ public class MetricsMonitor {
      */
     public static void decrementSubscribeCount() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT)
                 .decrementAndGet();
     }
@@ -260,13 +260,13 @@ public class MetricsMonitor {
     public static void resetAll() {
         resetPush();
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_HTTP_HEALTH_CHECK).set(0);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MYSQL_HEALTH_CHECK).set(0);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TCP_HEALTH_CHECK).set(0);
     }
     
@@ -275,22 +275,22 @@ public class MetricsMonitor {
      */
     public static void resetPush() {
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).set(0);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).set(0);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COST_FOR_AVG).set(0);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COUNT_FOR_AVG).set(0);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MAX_PUSH_COST).set(-1);
         MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_AVG_PUSH_COST).set(-1);
     }
 }

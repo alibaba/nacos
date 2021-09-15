@@ -27,20 +27,20 @@ public class MetricsMonitorTest {
     @Test
     public void testGetTotalPush() {
         assertEquals(0, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get());
         assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).incrementAndGet());
     }
     
     @Test
     public void testGetFailedPush() {
         assertEquals(0, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get());
         assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                 NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).incrementAndGet());
     }
 }

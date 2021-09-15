@@ -86,7 +86,7 @@ public class HealthController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: "
                 + MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_NAMING,
+                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
                         NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT)
                 + ", local port:" + EnvUtil.getPort());
         return ResponseEntity.ok(result);
