@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -43,6 +44,13 @@ public class AbstractNamingClientProxyTest {
     
     @Test
     public void testGetSecurityHeaders() {
+        //given
+        /*
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        List<String> serverList = new ArrayList<>();
+        serverList.add("localhost");
+        SecurityProxy sc = new SecurityProxy(serverList, nacosRestTemplate);
+        */
         SecurityProxy sc = Mockito.mock(SecurityProxy.class);
         Properties props = new Properties();
         AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc, props) {
@@ -129,7 +137,10 @@ public class AbstractNamingClientProxyTest {
             }
         };
         String token = "aa";
-        Mockito.when(sc.getAccessToken()).thenReturn(token);
+        LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
+        loginIdentityContext.setParameter(Constants.ACCESS_TOKEN, token);
+        Mockito.when(sc.getLoginIdentityContext()).thenReturn(loginIdentityContext);
+        
         Map<String, String> securityHeaders = proxy.getSecurityHeaders();
         Assert.assertEquals(1, securityHeaders.size());
         Assert.assertEquals(token, securityHeaders.get(Constants.ACCESS_TOKEN));
