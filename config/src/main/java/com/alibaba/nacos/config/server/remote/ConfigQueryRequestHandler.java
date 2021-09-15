@@ -219,6 +219,11 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         response.setContent(content);
                         response.setLastModified(lastModified);
                         response.setResultCode(ResponseCode.SUCCESS.getCode());
+                        if (isBeta) {
+                            response.setEncryptedDataKey(cacheItem.getEncryptedDataKeyBeta());
+                        } else {
+                            response.setEncryptedDataKey(cacheItem.getEncryptedDataKey());
+                        }
                     } catch (IOException e) {
                         response.setErrorInfo(ResponseCode.FAIL.getCode(), e.getMessage());
                         return response;
