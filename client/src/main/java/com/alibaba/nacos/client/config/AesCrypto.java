@@ -39,7 +39,7 @@ public class AesCrypto implements CryptoSpi {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AesCrypto.class);
     
-    public static final String AES_NAME = "AES";
+    public static final String AES_NAME = "aes";
     
     private static final String AES_MODE = "AES/ECB/PKCS5Padding";
     
