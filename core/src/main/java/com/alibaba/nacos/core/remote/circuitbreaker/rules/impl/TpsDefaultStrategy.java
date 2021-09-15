@@ -18,20 +18,17 @@ package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerMonitor;
-import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerStrategy;
-import com.alibaba.nacos.core.remote.control.ClientIpMonitorKey;
+import com.alibaba.nacos.core.remote.circuitbreaker.*;
 import com.alibaba.nacos.core.remote.control.MonitorKey;
+import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.collections.MapUtils;
 
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -40,6 +37,8 @@ import java.util.stream.Collectors;
  * @version $Id: MatchMode.java, v 0.1 2021年08月08日 12:38 PM chuzefang Exp $
  */
 public class TpsDefaultStrategy extends CircuitBreakerStrategy {
+
+    private static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     private final Map<String, TpsMonitor> pointToMonitorMap = new ConcurrentHashMap<>();
 
@@ -53,26 +52,25 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
         pointToMonitorMap.putIfAbsent(pointName, new TpsMonitor(pointName));
     }
 
+    @Override
+    public Map<String, CircuitBreakerMonitor> getPointToMonitorMap() {
+        Map<String,CircuitBreakerMonitor> retMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(pointToMonitorMap)) {
+            retMap = pointToMonitorMap.entrySet()
+                    .stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+        return retMap;
+    }
+
     /**
      //     * Check for tps condition for the current point.
      //     * TODO: implement this method
      //     */
     @Override
-    public boolean applyStrategy(String pointName, String connectionId, List<MonitorKey> monitorKeyList) {
-        System.out.println("here");
-        System.out.println(pointToMonitorMap.containsKey(pointName));
+    public boolean applyStrategy(String pointName, List<MonitorKey> monitorKeyList) {
         if (pointToMonitorMap.containsKey(pointName)) {
             TpsMonitor pointMonitor = pointToMonitorMap.get(pointName);
-            return pointMonitor.applyTps(connectionId, monitorKeyList);
-        }
-        return true;
-    }
-
-    @Override
-    public boolean applyStrategyForClientIp(String pointName, String connectionId, String clientIp) {
-        if (pointToMonitorMap.containsKey(pointName)) {
-            TpsMonitor pointMonitor = pointToMonitorMap.get(pointName);
-            return pointMonitor.applyTps(connectionId,  Arrays.asList(new ClientIpMonitorKey(clientIp)));
+            return pointMonitor.applyTps(monitorKeyList);
         }
         return true;
     }
@@ -88,16 +86,12 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
 
         TpsConfig castedPointConfig = (TpsConfig) config;
 
-        // implicit cast from CircuitBreakerConfig (parent class) to TpsConfig subclass
-        Map<String, TpsConfig> castedKeyConfigMap = keyConfigMap.entrySet()
-                .stream().collect(Collectors.toMap(Map.Entry::getKey, e -> (TpsConfig) e.getValue()));
-
         if (pointToMonitorMap.containsKey(pointName)) {
             TpsMonitor pointMonitor = pointToMonitorMap.get(pointName);
-            pointMonitor.applyRule(false, castedPointConfig, castedKeyConfigMap);
+            pointMonitor.applyRule(false, castedPointConfig, keyConfigMap);
         } else {
             TpsMonitor newMonitor = new TpsMonitor(pointName, castedPointConfig);
-            newMonitor.applyRule(false, castedPointConfig, castedKeyConfigMap);
+            newMonitor.applyRule(false, castedPointConfig, keyConfigMap);
         }
 
     }
@@ -105,6 +99,11 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
     @Override
     public Map<String, CircuitBreakerConfig> getAllConfig() {
         return null;
+    }
+
+    @Override
+    public List<String> getAllPointName() {
+        return new ArrayList<>(pointToMonitorMap.keySet());
     }
 
     @Override
@@ -133,4 +132,79 @@ public class TpsDefaultStrategy extends CircuitBreakerStrategy {
         return retMap;
     }
 
+    @Override
+    public String reportMonitorPoint(CircuitBreaker.ReportTime reportTime,  CircuitBreakerRecorder pointRecorder) {
+        TpsRecorder tpsPoint = (TpsRecorder) pointRecorder;
+        StringBuilder stringBuilder = new StringBuilder();
+
+        //get last second
+        CircuitBreakerRecorder.Slot pointSlot = pointRecorder.getPoint(reportTime.now - 1000L);
+        if (pointSlot == null) {
+            return "";
+        }
+
+        //already reported.
+        if (reportTime.lastReportSecond != 0L && reportTime.lastReportSecond == pointSlot.time) {
+            return "";
+        }
+        String point = pointRecorder.getPointName();
+        String formatString = new SimpleDateFormat(DATETIME_PATTERN).format(new Date(reportTime.now - 1000L));
+        reportTime.tempSecond = pointSlot.time;
+        TpsConfig conf = tpsPoint.getConfig();
+        stringBuilder.append(point).append('|').append("point|").append(conf.getPeriod())
+                .append('|').append(formatString).append('|')
+                .append(pointSlot.getCountHolder(point).count.get()).append('|')
+                .append(pointSlot.getCountHolder(point).interceptedCount.get()).append('\n');
+        return stringBuilder.toString();
+    }
+
+    @Override
+    public String reportMonitorKeys(CircuitBreaker.ReportTime reportTime,
+                                    String monitorKey, CircuitBreakerRecorder pointRecorder) {
+        long lastReportSecond = reportTime.lastReportSecond;
+        long lastReportMinutes = reportTime.lastReportMinutes;
+        long now = reportTime.now;
+        TpsRecorder ipRecord = (TpsRecorder) pointRecorder;
+        String point = pointRecorder.getPointName();
+
+        StringBuilder stringBuilder = new StringBuilder();
+        TpsConfig conf = ipRecord.getConfig();
+        CircuitBreakerRecorder.Slot keySlot = ipRecord.getPoint(now - conf.getPeriod().toMillis(1));
+        if (keySlot == null) {
+            return "";
+        }
+        //already reported.
+        if (conf.getPeriod() == TimeUnit.SECONDS) {
+            if (lastReportSecond != 0L && lastReportSecond == keySlot.time) {
+                return "";
+            }
+        }
+        if (conf.getPeriod() == TimeUnit.MINUTES) {
+            if (lastReportMinutes != 0L && lastReportMinutes == keySlot.time) {
+                return "";
+            }
+        }
+
+        String timeFormatOfSecond = TpsMonitorPoint.getTimeFormatOfSecond(keySlot.time);
+        reportTime.tempMinutes = keySlot.time;
+        if (ipRecord.isProtoModel()) {
+            Map<String, TpsRecorder.SlotCountHolder> keySlots = ((TpsRecorder.MultiKeyTpsSlot) keySlot).keySlots;
+            for (Map.Entry<String, TpsRecorder.SlotCountHolder> slotCountHolder : keySlots.entrySet()) {
+                stringBuilder.append(point).append('|').append(monitorKey).append('|')
+                        .append(conf.getPeriod()).append('|').append(timeFormatOfSecond).append('|')
+                        .append(slotCountHolder.getKey()).append('|')
+                        .append(slotCountHolder.getValue().count).append('|')
+                        .append(slotCountHolder.getValue().interceptedCount).append('\n');
+            }
+
+        } else {
+            stringBuilder.append(point).append('|').append(monitorKey).append('|')
+                    .append(conf.getPeriod()).append('|').append(timeFormatOfSecond).append('|')
+                    .append(keySlot.getCountHolder(point).count.get()).append('|')
+                    .append(keySlot.getCountHolder(point).interceptedCount.get()).append('\n');
+        }
+        return stringBuilder.toString();
+    }
+
 }
+

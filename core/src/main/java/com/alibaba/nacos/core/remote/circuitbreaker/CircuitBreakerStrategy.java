@@ -32,10 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class CircuitBreakerStrategy {
 
-    private String ruleName;
-
-    private final Map<String, CircuitBreakerMonitor> pointToMonitorMap = new ConcurrentHashMap<>();
-
     /**
      * Get the strategy name for this implementation.
      *
@@ -45,6 +41,8 @@ public abstract class CircuitBreakerStrategy {
 
     public abstract void registerPoint(String pointName);
 
+    public abstract Map<String, CircuitBreakerMonitor> getPointToMonitorMap();
+
     /**
      * apply tps.
      *
@@ -52,14 +50,7 @@ public abstract class CircuitBreakerStrategy {
      * @param monitorKeyList monitorKeyList.
      * @return pass or not.
      */
-    public abstract boolean applyStrategy(String pointName, String connectionId, List<MonitorKey> monitorKeyList);
-
-    /**
-     * Main method for circuit breaker to apply tps control rule.
-     *
-     * @return true when the current request is allowed to continue; false if the request breaks the upper limit
-     */
-    public abstract boolean applyStrategyForClientIp(String pointName, String connectionId, String clientIp);
+    public abstract boolean applyStrategy(String pointName, List<MonitorKey> monitorKeyList);
 
     /**
      * Main method to apply new config to current point.
@@ -91,6 +82,13 @@ public abstract class CircuitBreakerStrategy {
      *
      * @return the specific instance with implement class.
      */
+    public abstract List<String> getAllPointName();
+
+    /**
+     * Get the strategy instance and save it in the container class.
+     *
+     * @return the specific instance with implement class.
+     */
     public abstract Map<String, CircuitBreakerMonitor> getPointRecorders();
 
     /**
@@ -108,4 +106,9 @@ public abstract class CircuitBreakerStrategy {
      * @return the MonitorKey -> config map that was initialized using concrete config subclass
      */
     public abstract Map<String, CircuitBreakerConfig> deserializeMonitorKeyConfig(String content) throws IOException;
+
+    public abstract String reportMonitorPoint(CircuitBreaker.ReportTime reportTime, CircuitBreakerRecorder pointRecorder);
+
+    public abstract String reportMonitorKeys(CircuitBreaker.ReportTime reportTime, String monitorKey, CircuitBreakerRecorder pointRecorder);
 }
+

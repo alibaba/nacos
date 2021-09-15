@@ -17,16 +17,25 @@
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.control.*;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.file.FileChangeEvent;
+import com.alibaba.nacos.sys.file.FileWatcher;
+import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * CircuitBreaker.
@@ -45,6 +54,12 @@ public class CircuitBreaker {
 
     private final ConcurrentHashMap<String, CircuitBreakerConfig> pointConfigMap = new ConcurrentHashMap<>();
 
+    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
+        Thread thread = new Thread(r, "nacos.core.remote.circuitbreaker.reporter");
+        thread.setDaemon(true);
+        return thread;
+    });
+
     CircuitBreaker() {
         init();
     }
@@ -56,24 +71,10 @@ public class CircuitBreaker {
      * @param  pointName entry point name or class name (TODO: can be modified through Nacos console)
      * @return true when the current request is allowed to continue; false if the request breaks the upper limit
      */
-    public boolean applyStrategy(String pointName, String connectionId, List<MonitorKey> monitorKeyList) {
+    public boolean applyStrategy(String pointName, List<MonitorKey> monitorKeyList) {
 
         // Check monitor keys & check total tps.
-        return currentRule.applyStrategy(pointName, connectionId, monitorKeyList);
-    }
-
-    /**
-     * Main entry point for circuit breaker rule implementations.
-     * Using Java SPI to load circuit break rule and apply for their rules.
-     *
-     * @param  pointName entry point name or class name
-     * @param  connectionId the specific circuit break strategy that client wants to apply for the current point
-     *
-     * @return true when the current request is allowed to continue; false if the request breaks the upper limit
-     */
-    public boolean applyStrategyForClientIp(String pointName, String connectionId, String clientIp) {
-        // Check monitor keys & check total tps.
-        return currentRule.applyStrategyForClientIp(pointName, connectionId, clientIp);
+        return currentRule.applyStrategy(pointName, monitorKeyList);
     }
 
     /**
@@ -83,6 +84,7 @@ public class CircuitBreaker {
         pointConfigMap.put(DEFAULT_RULE, new CircuitBreakerConfig());
         configLoader = new ConfigLoader();
         loadConfig();
+        registerFileWatch();
 
         ServiceLoader<CircuitBreakerStrategy> circuitBreakers = ServiceLoader.load(CircuitBreakerStrategy.class);
         System.out.println(circuitBreakers);
@@ -91,12 +93,10 @@ public class CircuitBreaker {
         for (CircuitBreakerStrategy circuitBreakerStrategy : circuitBreakers) {
             System.out.println(circuitBreakerStrategy.getRuleName());
             if (circuitBreakerStrategy.getRuleName().equals(DEFAULT_RULE)) {
-
                 this.currentRule = circuitBreakerStrategy.getStrategy();
-
             }
         }
-
+        executorService.scheduleWithFixedDelay(new CircuitBreakerReporter(), 0, 900, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -112,6 +112,10 @@ public class CircuitBreaker {
 
     public void applyRule(String pointName, CircuitBreakerConfig config) {
         this.currentRule.applyRule(pointName, config, new HashMap<>());
+    }
+
+    public void applyRule(String pointName, CircuitBreakerConfig config, Map<String, CircuitBreakerConfig> monitorKeysMap) {
+        this.currentRule.applyRule(pointName, config, monitorKeysMap);
     }
 
 
@@ -137,8 +141,13 @@ public class CircuitBreaker {
         if (!pointFile.exists()) {
             pointFile.createNewFile();
         }
+
+        File monitorKeyFile = getMonitorKeyRuleFile(pointName);
+        if (!monitorKeyFile.exists()) {
+            monitorKeyFile.createNewFile();
+        }
         String pointConfigContent = DiskUtils.readFile(pointFile);
-        String monitorKeyContent = DiskUtils.readFile(pointFile);
+        String monitorKeyContent = DiskUtils.readFile(monitorKeyFile);
 
         CircuitBreakerConfig pointConfig = currentRule.deserializePointConfig(pointConfigContent);
         Map<String, CircuitBreakerConfig> monitorKeyConfig = currentRule.deserializeMonitorKeyConfig(monitorKeyContent);
@@ -170,6 +179,44 @@ public class CircuitBreaker {
         Loggers.TPS_CONTROL.info("Save rule to local,pointName={}, ruleContent ={}, monitorKeysContent ={} ", pointName, content, monitorKeyContent);
     }
 
+    private void registerFileWatch() {
+        try {
+            String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data" + File.separator + "cb" + File.separator)
+                    .toString();
+            System.out.println(tpsPath);
+            checkBaseDir();
+            WatchFileCenter.registerWatcher(tpsPath, new FileWatcher() {
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    String fileName = event.getContext().toString();
+                    try {
+                        loadRuleFromLocal(fileName);
+
+                    } catch (Throwable throwable) {
+                        Loggers.TPS_CONTROL
+                                .warn("Fail to load rule from local,pointName={},error={}", fileName, throwable);
+                    }
+                }
+
+                @Override
+                public boolean interest(String context) {
+                    for (String pointName : getAllPointName()) {
+                        if (context.startsWith(pointName)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            });
+        } catch (NacosException e) {
+            Loggers.TPS_CONTROL.warn("Register fire watch fail.", e);
+        }
+    }
+
+    private List<String> getAllPointName() {
+        return currentRule.getAllPointName();
+    }
+
     private File getRuleFile(String pointName) {
         File baseDir = checkBaseDir();
         return new File(baseDir, pointName);
@@ -181,10 +228,72 @@ public class CircuitBreaker {
     }
 
     private File checkBaseDir() {
-        File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);
+        File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "cb" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
         return baseDir;
+    }
+
+    public static class ReportTime {
+        public long now = 0L;
+
+        public long lastReportMinutes = 0L;
+
+        public long lastReportSecond = 0L;
+
+        public long tempMinutes = 0L;
+
+        public long tempSecond = 0L;
+
+        ReportTime(long now, long lastReportSecond, long lastReportMinutes, long tempMinutes, long tempSecond) {
+            this.now = now;
+            this.lastReportSecond = lastReportSecond;
+            this.lastReportMinutes = lastReportMinutes;
+            this.tempMinutes = tempMinutes;
+            this.tempSecond = tempSecond;
+        }
+    }
+
+    class CircuitBreakerReporter implements Runnable {
+
+        long lastReportSecond = 0L;
+
+        long lastReportMinutes = 0L;
+
+        @Override
+        public void run() {
+            Loggers.TPS_CONTROL_DIGEST.info("Circuit Breaker Starts...\n");
+            try {
+                long now = System.currentTimeMillis();
+                ReportTime reportTime = new ReportTime(now, lastReportSecond, lastReportMinutes, 0, 0);
+                Map<String, CircuitBreakerMonitor> monitorMap = currentRule.getPointToMonitorMap();
+
+                StringBuilder stringBuilder = new StringBuilder();
+                for (Map.Entry<String, CircuitBreakerMonitor> entry : monitorMap.entrySet()) {
+                    CircuitBreakerRecorder pointRecorder = entry.getValue().getPointRecorder();
+                    stringBuilder.append(currentRule.reportMonitorPoint(reportTime, pointRecorder));
+
+                    Map<String, CircuitBreakerRecorder> monitorKeyMap = entry.getValue().getMonitorKeysRecorder();
+                    for (Map.Entry<String, CircuitBreakerRecorder> monitorKeyEntry : monitorKeyMap.entrySet()) {
+                        stringBuilder.append(currentRule.reportMonitorKeys(reportTime, monitorKeyEntry.getKey(), monitorKeyEntry.getValue()));
+                    }
+                }
+
+                if (reportTime.tempSecond > 0) {
+                    lastReportSecond = reportTime.tempSecond;
+                }
+                if (reportTime.tempMinutes > 0) {
+                    lastReportMinutes = reportTime.tempMinutes;
+                }
+                if (stringBuilder.length() > 0) {
+                    Loggers.TPS_CONTROL_DIGEST.info("Circuit Breaker reporting...\n" + stringBuilder.toString());
+                }
+            } catch (Throwable throwable) {
+                Loggers.TPS_CONTROL_DIGEST.error("Circuit Breaker reporting error", throwable);
+
+            }
+
+        }
     }
 }

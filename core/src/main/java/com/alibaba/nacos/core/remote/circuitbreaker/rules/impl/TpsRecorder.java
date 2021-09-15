@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
 
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
 import com.alibaba.nacos.core.remote.control.TpsControlRule;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 
@@ -24,9 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
-public class TpsRecorder{
+public class TpsRecorder extends CircuitBreakerRecorder {
 
     private long startTime;
 
@@ -39,7 +40,7 @@ public class TpsRecorder{
     /**
      * monitor/intercept.
      */
-    public TpsRecorder(long startTime, int recordSize, TpsConfig config) {
+    public TpsRecorder(String pointnName, long startTime, int recordSize, TpsConfig config) {
         TimeUnit period = config.getPeriod();
         this.startTime = startTime;
         if (period.equals(TimeUnit.MINUTES)) {
@@ -50,6 +51,7 @@ public class TpsRecorder{
         }
         this.slotSize = recordSize + 1;
         this.config = config;
+        this.setPointName(pointnName);
         slotList = new ArrayList<>(slotSize);
         for (int i = 0; i < slotSize; i++) {
             slotList.add(isProtoModel() ? new MultiKeyTpsSlot() : new TpsSlot());
@@ -68,9 +70,11 @@ public class TpsRecorder{
         config.setModel(model);
     }
 
+    @Override
     public TpsConfig getConfig() { return config; }
 
-    public void setConfig(TpsConfig config) { this.config = config; }
+    @Override
+    public void setConfig(CircuitBreakerConfig config) { this.config = (TpsConfig) config; }
 
     /**
      * get slot of the timestamp second,create if not exist.
@@ -97,7 +101,8 @@ public class TpsRecorder{
      * @param timeStamp the timestamp second.
      * @return tps slot.
      */
-    public TpsSlot getPoint(long timeStamp) {
+    @Override
+    public Slot getPoint(long timeStamp) {
 
         TimeUnit period = config.getPeriod();
         long distance = timeStamp - startTime;
@@ -111,12 +116,9 @@ public class TpsRecorder{
         return tpsSlot;
     }
 
-    static class TpsSlot {
+    static class TpsSlot extends Slot {
 
-        long time = 0L;
-
-        private SlotCountHolder countHolder = new SlotCountHolder();
-
+        @Override
         public SlotCountHolder getCountHolder(String key) {
             return countHolder;
         }
@@ -125,7 +127,7 @@ public class TpsRecorder{
             synchronized (this) {
                 if (this.time != second) {
                     this.time = second;
-                    countHolder.count.set(0L);
+                    getCountHolder("").count.set(0L);
                     countHolder.interceptedCount.set(0);
                 }
             }
@@ -171,20 +173,9 @@ public class TpsRecorder{
 
     }
 
-    static class SlotCountHolder {
-
-        AtomicLong count = new AtomicLong();
-
-        AtomicLong interceptedCount = new AtomicLong();
-
-        @Override
-        public String toString() {
-            return "{" + count + "|" + interceptedCount + '}';
-        }
-    }
-
     public List<TpsSlot> getSlotList() {
         return slotList;
     }
 }
+
 

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Config class for circuit breaker. Can be used as base config class.
  * TODO: design more generic configs
@@ -33,6 +35,8 @@ public class CircuitBreakerConfig {
 
     private String model = MODEL_FUZZY;
 
+    private TimeUnit period = TimeUnit.SECONDS;
+
     private boolean isActive = true;
 
     public void setIsActive(boolean isActive) { this.isActive = isActive; }
@@ -46,5 +50,9 @@ public class CircuitBreakerConfig {
     public void setMonitorType(String monitorType) { this.monitorType = monitorType; }
 
     public String getMonitorType() { return monitorType; }
+
+    public void setPeriod(TimeUnit period) { this.period = period; }
+
+    public TimeUnit getPeriod() { return this.period; }
 
 }
