@@ -17,7 +17,6 @@
 package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.exception.AuthConfigsException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -30,11 +29,12 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     
     private AuthConfigs authConfigs;
     
-    IdentityContext identityContext;
-    
     public HttpIdentityContextBuilder() {
         authConfigs = new AuthConfigs();
-        identityContext = new IdentityContext();
+    }
+    
+    public HttpIdentityContextBuilder(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
     }
     
     /**
@@ -44,36 +44,31 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
      * @return IdentityContext from request context
      */
     @Override
-    public IdentityContext build(HttpServletRequest request) throws AuthConfigsException {
-        switch (authConfigs.getIdentifyPositionTypes()) {
-            case HEADER:
-                Enumeration<String> headerEnu = request.getHeaderNames();
-                setIdentityContext(headerEnu, request);
-                break;
-            case PARAMETER:
-                Enumeration<String> paramEnu = request.getParameterNames();
-                setIdentityContext(paramEnu, request);
-                break;
-            case HEADER_AND_PARAMETER:
-                Enumeration<String> headerBothEnu = request.getHeaderNames();
-                Enumeration<String> paramBothEnu = request.getParameterNames();
-                setIdentityContext(headerBothEnu, request);
-                setIdentityContext(paramBothEnu, request);
-                break;
-            default:
-                throw new AuthConfigsException("AuthConfigs.identifyPosition error! Check application.properties nacos.core.auth.identifyPosition.");
+    public IdentityContext build(HttpServletRequest request) {
+        IdentityContext identityContext = new IdentityContext();
+        Set<String> keySet = new HashSet<>(Arrays.asList(authConfigs.getAuthorityKey()));
+        Enumeration<String> headerEnu = request.getHeaderNames();
+
+        while (headerEnu.hasMoreElements()) {
+            String paraName = headerEnu.nextElement();
+            if (keySet.contains(paraName)) {
+                identityContext.setParameter(paraName, request.getHeader(paraName));
+                keySet.remove(paraName);
+            }
+        }
+        
+        if (keySet.isEmpty()) {
+            return identityContext;
+        }
+        
+        Enumeration<String> paramEnu = request.getParameterNames();
+        while (paramEnu.hasMoreElements()) {
+            String paraName = paramEnu.nextElement();
+            if (keySet.contains(paraName)) {
+                identityContext.setParameter(paraName, request.getParameter(paraName));
+                keySet.remove(paraName);
+            }
         }
         return identityContext;
     }
-    
-    public void setIdentityContext(Enumeration<String> enu, HttpServletRequest request) {
-        Set<String> keySet = new HashSet<String>(Arrays.asList(authConfigs.getAuthorityKey()));
-        while (enu.hasMoreElements()) {
-            String paraName = enu.nextElement();
-            if (keySet.contains(paraName)) {
-                identityContext.setParameter(paraName, request.getParameter(paraName));
-            }
-        }
-    }
-    
 }

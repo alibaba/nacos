@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.auth.context;
 
-import com.alibaba.nacos.auth.exception.AuthConfigsException;
-
 /**
  * Identify context.
  *
@@ -29,8 +27,7 @@ public interface IdentityContextBuilder<T> {
      * build identity context from request.
      * @param request user request
      * @return IdentityContext from request context
-     * @throws AuthConfigsException if AuthConfigs is invalid
      */
-    IdentityContext build(T request) throws AuthConfigsException;
+    IdentityContext build(T request);
     
 }

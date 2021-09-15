@@ -39,8 +39,6 @@ public class AuthConfigsTest {
     
     private static final boolean TEST_ENABLE_UA_WHITE = true;
     
-    private static final IdentifyPositionTypes IDENTIFYPOSITION = IdentifyPositionTypes.HEADER_AND_PARAMETER;
-    
     private static final String AUTHORITYKEY = "username,password,token,tenant";
     
     private AuthConfigs authConfigs;
@@ -61,7 +59,6 @@ public class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
         environment.setProperty("nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
         environment.setProperty("nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
-        environment.setProperty("nacos.core.auth.enable.identifyPosition", String.valueOf(IDENTIFYPOSITION));
         environment.setProperty("nacos.core.auth.enable.authorityKey", AUTHORITYKEY);
         
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
@@ -70,7 +67,6 @@ public class AuthConfigsTest {
         assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
         assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
         assertEquals(TEST_ENABLE_UA_WHITE, authConfigs.isEnableUserAgentAuthWhite());
-        assertEquals(IDENTIFYPOSITION.toString(), authConfigs.getIdentifyPositionTypes().toString());
         Assert.assertTrue(Arrays.equals(AUTHORITYKEY.split(","), authConfigs.getAuthorityKey()));
     }
 }
