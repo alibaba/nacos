@@ -158,21 +158,6 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
         </dependency>
-
-        <!--   micrometer  start   -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-influx</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-elastic</artifactId>
-        </dependency>
-        <!--   micrometer end    -->
         
         <dependency>
             <groupId>io.grpc</groupId>
