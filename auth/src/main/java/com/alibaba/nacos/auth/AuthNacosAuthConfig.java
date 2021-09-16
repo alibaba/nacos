@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
-import com.alibaba.nacos.auth.filter.AuthJwtAuthenticationTokenFilter;
 import com.alibaba.nacos.auth.users.AuthNacosUserDetailsServiceImpl;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +33,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsUtils;
 
 /**
@@ -124,9 +122,6 @@ public class AuthNacosAuthConfig extends WebSecurityConfigurerAdapter {
                     .authenticationEntryPoint(new AuthJwtAuthenticationEntryPoint());
             // disable cache
             http.headers().cacheControl();
-            
-            http.addFilterBefore(new AuthJwtAuthenticationTokenFilter(tokenProvider),
-                    UsernamePasswordAuthenticationFilter.class);
         }
     }
     

@@ -22,9 +22,7 @@ import java.util.List;
 
 /**
  * Page.
- *
- * @author boyan
- * @date 2010-5-6
+ * copy from config module for resolving circular dependency.
  */
 public class Page<E> implements Serializable {
     

@@ -71,13 +71,13 @@ public class AuthLdapAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private AuthNacosRoleServiceImpl nacosRoleService;
     
-    @Value(("${nacos.core.auth.ldap.url:ldap://localhost:389}"))
+    @Value("${nacos.core.auth.ldap.url:ldap://localhost:389}")
     private String ldapUrl;
     
-    @Value(("${nacos.core.auth.ldap.timeout:3000}"))
+    @Value("${nacos.core.auth.ldap.timeout:3000}")
     private String time;
     
-    @Value(("${nacos.core.auth.ldap.userdn:cn={0},ou=user,dc=company,dc=com}"))
+    @Value("${nacos.core.auth.ldap.userdn:cn={0},ou=user,dc=company,dc=com}")
     private String userNamePattern;
     
     @Override
