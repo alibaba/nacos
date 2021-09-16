@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.common;
+package com.alibaba.nacos.auth.model;
 
-public enum IdentifyPositionTypes {
-    /**
-     * Identify context in http request header.
-     */
-    HEADER("HEADER"),
-    /**
-     * Identify context in http request parameter.
-     */
-    PARAMETER("PARAMETER"),
-    /**
-     * Identify context in http request header and parameter..
-     */
-    HEADER_AND_PARAMETER("HEADER_AND_PARAMETER");
+public class NacosUser extends User {
     
-    private  String position;
+    private String token;
     
-    IdentifyPositionTypes(String position) {
-        this.position = position;
+    private boolean globalAdmin = false;
+    
+    public String getToken() {
+        return token;
+    }
+    
+    public void setToken(String token) {
+        this.token = token;
+    }
+    
+    public boolean isGlobalAdmin() {
+        return globalAdmin;
+    }
+    
+    public void setGlobalAdmin(boolean globalAdmin) {
+        this.globalAdmin = globalAdmin;
     }
     
     @Override
     public String toString() {
-        return position;
+        return "NacosUser{" + "token='" + token + '\'' + ", globalAdmin=" + globalAdmin + '}';
     }
     
 }

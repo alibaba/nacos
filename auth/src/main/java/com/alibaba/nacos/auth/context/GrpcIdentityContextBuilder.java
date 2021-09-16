@@ -25,7 +25,16 @@ import java.util.Map;
 import java.util.Set;
 
 public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Request> {
-    AuthConfigs authConfigs = new AuthConfigs();
+    
+    AuthConfigs authConfigs;
+    
+    public GrpcIdentityContextBuilder() {
+        authConfigs = new AuthConfigs();
+    }
+    
+    public GrpcIdentityContextBuilder(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
+    }
     /**
      * get identity context from grpc.
      * @param request grpc request

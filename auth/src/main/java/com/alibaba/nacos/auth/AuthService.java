@@ -31,11 +31,10 @@ public interface AuthService {
      * Authentication of request, identify the user who request the resource.
      *
      * @param identityContext where we can find the user information
-     * @return boolean if the user identify success
+     * @return IdentityContext user auth result
      * @throws AccessException if authentication is failed
      */
-    Boolean login(IdentityContext identityContext) throws AccessException;
-    
+    IdentityContext login(IdentityContext identityContext) throws AccessException;
     
     /**
      * identity whether the user has the resource authority.
@@ -43,7 +42,7 @@ public interface AuthService {
      * @param permission permission to auth.
      * @return Boolean if the user has the resource authority.
      */
-    Boolean authorityAccess(IdentityContext identityContext, Permission permission);
+    Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException;
     
     /**
      * AuthService Name which for conveniently find AuthService instance.

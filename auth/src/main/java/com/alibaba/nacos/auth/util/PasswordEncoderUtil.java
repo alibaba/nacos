@@ -1,5 +1,3 @@
-package com.alibaba.nacos.auth.exception;
-
 /*
  * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
@@ -16,22 +14,22 @@ package com.alibaba.nacos.auth.exception;
  * limitations under the License.
  */
 
-import com.alibaba.nacos.api.exception.NacosException;
+package com.alibaba.nacos.auth.util;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
- * AuthConfig exception.
+ * Password encoder tool.
  *
- * @author wuyfee
+ * @author nacos
  */
-public class AuthConfigsException extends NacosException {
+public class PasswordEncoderUtil {
     
-    public AuthConfigsException() {}
-    
-    public AuthConfigsException(int code) {
-        this.setErrCode(code);
+    public static Boolean matches(String raw, String encoded) {
+        return new BCryptPasswordEncoder().matches(raw, encoded);
     }
     
-    public AuthConfigsException(String msg) {
-        this.setErrMsg(msg);
+    public static String encode(String raw) {
+        return new BCryptPasswordEncoder().encode(raw);
     }
 }
