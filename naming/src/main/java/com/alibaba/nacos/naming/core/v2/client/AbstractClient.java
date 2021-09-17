@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -131,7 +133,13 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public void release() {
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
-        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
+        MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT)
+                .addAndGet(-1 * publishers.size());
+        MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT)
+                .addAndGet(-1 * subscribers.size());
     }
 }

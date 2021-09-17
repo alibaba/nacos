@@ -22,6 +22,8 @@ import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
@@ -31,7 +33,6 @@ import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -256,7 +257,9 @@ public class RaftStore implements Closeable {
         File cacheFile = new File(cacheFileName(namespaceId, datum.key));
         
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
-            MetricsMonitor.getDiskException().increment();
+            MetricsManager.counter(NamingMetricsConstant.N_NACOS_EXCEPTION,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_DISK).increment();
             
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
@@ -269,7 +272,9 @@ public class RaftStore implements Closeable {
             fc.write(data, data.position());
             fc.force(true);
         } catch (Exception e) {
-            MetricsMonitor.getDiskException().increment();
+            MetricsManager.counter(NamingMetricsConstant.N_NACOS_EXCEPTION,
+                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_DISK).increment();
             throw e;
         }
         

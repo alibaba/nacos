@@ -18,8 +18,9 @@ package com.alibaba.nacos.config.server.service.trace;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
@@ -109,7 +110,10 @@ public class ConfigTraceService {
         if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
-        MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
+        MetricsManager.timer(ConfigMetricsConstant.N_NACOS_TIMER,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_RT)
+                .record(delayed, TimeUnit.MILLISECONDS);
         // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {
             tenant = null;

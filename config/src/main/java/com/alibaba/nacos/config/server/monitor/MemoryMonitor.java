@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -48,9 +50,19 @@ public class MemoryMonitor {
     
     private static final long DELAY_SECONDS = 10;
     
+    /**
+     * clear metrics getConfig and publish per day.
+     */
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
-        MetricsMonitor.getConfigMonitor().set(0);
-        MetricsMonitor.getPublishMonitor().set(0);
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG)
+                .set(0);
+    
+        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_PUBLISH)
+                .set(0);
     }
 }

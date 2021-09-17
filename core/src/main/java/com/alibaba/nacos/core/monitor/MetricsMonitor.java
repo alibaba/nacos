@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
@@ -43,6 +44,8 @@ public final class MetricsMonitor {
     
     private static AtomicInteger longConnection = new AtomicInteger();
     
+    private static AtomicInteger clientTotalConnection = new AtomicInteger();
+    
     static {
         RAFT_READ_INDEX_FAILED = NacosMeterRegistry.summary("protocol", "raft_read_index_failed");
         RAFT_FROM_LEADER = NacosMeterRegistry.summary("protocol", "raft_read_from_leader");
@@ -55,6 +58,14 @@ public final class MetricsMonitor {
         tags.add(new ImmutableTag("name", "longConnection"));
         Metrics.gauge("nacos_monitor", tags, longConnection);
         
+        // new metrics
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "core"));
+        Metrics.gauge("nacos_client_total_connections", tags, clientTotalConnection);
+    }
+    
+    public static AtomicInteger getClientTotalConnection() {
+        return clientTotalConnection;
     }
     
     public static AtomicInteger getLongConnectionMonitor() {
@@ -83,5 +94,9 @@ public final class MetricsMonitor {
     
     public static DistributionSummary getRaftFromLeader() {
         return RAFT_FROM_LEADER;
+    }
+    
+    public static Counter getGrpcRequestCount(String requestName) {
+        return Metrics.counter("nacos_grpc_request_count", "module", "core", "name", requestName);
     }
 }

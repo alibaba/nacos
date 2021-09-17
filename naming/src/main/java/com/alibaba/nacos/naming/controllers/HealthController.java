@@ -26,13 +26,14 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.HealthOperator;
 import com.alibaba.nacos.naming.core.HealthOperatorV1Impl;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -83,7 +84,10 @@ public class HealthController {
     @RequestMapping("/server")
     public ResponseEntity server() {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: " + MetricsMonitor.getDomCountMonitor()
+        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: "
+                + MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT)
                 + ", local port:" + EnvUtil.getPort());
         return ResponseEntity.ok(result);
     }

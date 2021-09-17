@@ -23,13 +23,14 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
@@ -384,7 +385,10 @@ public class LongPollingService {
         @Override
         public void run() {
             MEMORY_LOG.info("[long-pulling] client count " + allSubs.size());
-            MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
+            MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
+                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_LONG_POLLING)
+                    .set(allSubs.size());
         }
     }
     

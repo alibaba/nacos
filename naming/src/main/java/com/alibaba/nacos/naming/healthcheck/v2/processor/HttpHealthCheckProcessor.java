@@ -24,13 +24,14 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
@@ -91,7 +92,10 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             
             ASYNC_REST_TEMPLATE.get(target.toString(), header, Query.EMPTY, String.class,
                     new HttpHealthCheckCallback(instance, task, service));
-            MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();
+            MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                            NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_HTTP_HEALTH_CHECK)
+                    .incrementAndGet();
         } catch (Throwable e) {
             instance.setCheckRt(switchDomain.getHttpHealthParams().getMax());
             healthCheckCommon.checkFail(task, service, "http:error:" + e.getMessage());

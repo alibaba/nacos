@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -24,13 +26,21 @@ public class MetricsMonitorTest {
     
     @Test
     public void testGetTotalPush() {
-        assertEquals(0, MetricsMonitor.getTotalPushMonitor().get());
-        assertEquals(1, MetricsMonitor.getTotalPushMonitor().incrementAndGet());
+        assertEquals(0, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get());
+        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).incrementAndGet());
     }
     
     @Test
     public void testGetFailedPush() {
-        assertEquals(0, MetricsMonitor.getFailedPushMonitor().get());
-        assertEquals(1, MetricsMonitor.getFailedPushMonitor().incrementAndGet());
+        assertEquals(0, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get());
+        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).incrementAndGet());
     }
 }

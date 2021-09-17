@@ -34,9 +34,10 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -296,7 +297,10 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     
                     int totalCount = connections.size();
                     Loggers.REMOTE_DIGEST.info("Connection check task start");
-                    MetricsMonitor.getLongConnectionMonitor().set(totalCount);
+                    MetricsManager.gauge(CoreMetricsConstant.N_NACOS_MONITOR,
+                                    CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CONFIG,
+                                    CoreMetricsConstant.TK_NAME, CoreMetricsConstant.TV_LONG_CONNECTION)
+                            .set(totalCount);
                     Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                     int currentSdkClientCount = currentSdkClientCount();
                     boolean isLoaderClient = loadClient >= 0;

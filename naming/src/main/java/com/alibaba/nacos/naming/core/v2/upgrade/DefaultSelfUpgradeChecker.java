@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 
 /**
  * Default upgrade checker for self node.
@@ -40,8 +41,16 @@ public class DefaultSelfUpgradeChecker implements SelfUpgradeChecker {
     }
     
     private boolean checkServiceAndInstanceNumber(ServiceManager serviceManager) {
-        boolean result = serviceManager.getServiceCount() == MetricsMonitor.getDomCountMonitor().get();
-        result &= serviceManager.getInstanceCount() == MetricsMonitor.getIpCountMonitor().get();
+        boolean result = serviceManager.getServiceCount() == MetricsManager
+                .gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT)
+                .get();
+        result &= serviceManager.getInstanceCount() == MetricsManager
+                .gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT)
+                .get();
         return result;
     }
     

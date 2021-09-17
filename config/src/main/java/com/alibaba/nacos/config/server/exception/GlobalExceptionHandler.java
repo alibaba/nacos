@@ -18,7 +18,8 @@ package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -42,7 +43,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(Exception ex) throws IOException {
-        MetricsMonitor.getIllegalArgumentException().increment();
+        MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_ILLEGAL_ARGUMENT)
+                .increment();
         return ResponseEntity.status(400).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
     
@@ -53,7 +57,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException ex) throws IOException {
-        MetricsMonitor.getNacosException().increment();
+        MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NACOS)
+                .increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
     
@@ -64,7 +71,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
-        MetricsMonitor.getDbException().increment();
+        MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DB)
+                .increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
 }

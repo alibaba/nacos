@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -40,6 +39,8 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.metrics.manager.ConfigMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -234,7 +235,10 @@ public class AsyncNotifyService {
                                 configClusterRpcClientProxy
                                         .syncConfigChange(member, syncRequest, new AsyncRpcNotifyCallBack(task));
                             } catch (Exception e) {
-                                MetricsMonitor.getConfigNotifyException().increment();
+                                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                                        .increment();
                                 asyncTaskExecute(task);
                             }
                         }
@@ -311,8 +315,11 @@ public class AsyncNotifyService {
                 LogUtil.NOTIFY_LOG
                         .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                                 task.getGroup(), task.getLastModified());
-                
-                MetricsMonitor.getConfigNotifyException().increment();
+    
+                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                        .increment();
             }
         }
         
@@ -330,8 +337,11 @@ public class AsyncNotifyService {
             asyncTaskExecute(task);
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
-            
-            MetricsMonitor.getConfigNotifyException().increment();
+    
+            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                    .increment();
         }
         
         @Override
@@ -344,8 +354,11 @@ public class AsyncNotifyService {
             asyncTaskExecute(task);
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
-            
-            MetricsMonitor.getConfigNotifyException().increment();
+    
+            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                    .increment();
         }
     }
     
@@ -387,8 +400,11 @@ public class AsyncNotifyService {
                 
                 LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
                         task.getDataId(), task.getGroup(), task.getLastModified());
-                
-                MetricsMonitor.getConfigNotifyException().increment();
+    
+                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                        .increment();
             }
         }
         
@@ -406,8 +422,11 @@ public class AsyncNotifyService {
             asyncTaskExecute(task);
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
                     task.getDataId(), task.getGroup(), task.getLastModified());
-            
-            MetricsMonitor.getConfigNotifyException().increment();
+    
+            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
+                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
+                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                    .increment();
         }
     }
     

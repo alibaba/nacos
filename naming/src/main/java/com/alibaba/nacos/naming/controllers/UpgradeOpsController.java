@@ -30,6 +30,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
+import com.alibaba.nacos.metrics.manager.NamingMetricsConstant;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
@@ -43,7 +45,6 @@ import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -196,9 +197,18 @@ public class UpgradeOpsController {
         result.put("doubleWriteDelayTaskCount", doubleWriteDelayTaskEngine.size());
         result.put("serviceCountV1", serviceManager.getServiceCount());
         result.put("instanceCountV1", serviceManager.getInstanceCount());
-        result.put("serviceCountV2", MetricsMonitor.getDomCountMonitor().get());
-        result.put("instanceCountV2", MetricsMonitor.getIpCountMonitor().get());
-        result.put("subscribeCountV2", MetricsMonitor.getSubscriberCount().get());
+        result.put("serviceCountV2",
+                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT).get());
+        result.put("instanceCountV2",
+                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT).get());
+        result.put("subscribeCountV2",
+                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
+                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
+                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT).get());
         result.put("responsibleServiceCountV1", serviceManager.getResponsibleServiceCount());
         result.put("responsibleInstanceCountV1", serviceManager.getResponsibleInstanceCount());
         result.put("ephemeralServiceCountV2", ephemeralServiceNamesV2.size());
