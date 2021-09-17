@@ -129,19 +129,6 @@ public abstract class ConfigTransportClient {
     }
     
     /**
-     * get accessToken from server of using username/password.
-     *
-     * @return map that contains accessToken , null if acessToken is empty.
-     */
-    protected Map<String, String> getSecurityHeaders() {
-        Map<String, String> spasHeaders = this.securityProxy.getIdentityContext();
-        if (spasHeaders.isEmpty()) {
-            return null;
-        }
-        return spasHeaders;
-    }
-    
-    /**
      * get common header.
      *
      * @return headers.
@@ -243,12 +230,12 @@ public abstract class ConfigTransportClient {
     public void start() throws NacosException {
         
         if (StringUtils.isNotBlank(this.properties.getProperty(PropertyKeyConst.USERNAME))) {
-            securityProxy.loginClientAuthService(this.properties);
+            securityProxy.login(this.properties);
             
             this.executor.scheduleWithFixedDelay(new Runnable() {
                 @Override
                 public void run() {
-                    securityProxy.loginClientAuthService(properties);
+                    securityProxy.login(properties);
                 }
             }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
             

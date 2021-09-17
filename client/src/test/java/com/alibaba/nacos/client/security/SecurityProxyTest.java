@@ -58,7 +58,7 @@ public class SecurityProxyTest {
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         //when
-        boolean ret = securityProxy.loginClientAuthService(properties);
+        boolean ret = securityProxy.login(properties);
         //then
         Assert.assertTrue(ret);
     }
@@ -68,7 +68,7 @@ public class SecurityProxyTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
-        securityProxy.loginClientAuthService(properties);
+        securityProxy.login(properties);
         //when
         Map<String, String> keyMap = securityProxy.getIdentityContext();
         //then

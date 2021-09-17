@@ -1045,7 +1045,7 @@ public class ClientWorker implements Closeable {
         private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
                 throws NacosException {
             try {
-                request.putAllHeader(super.getSecurityHeaders());
+                request.putAllHeader(super.getAccessToken());
                 request.putAllHeader(super.getSpasHeaders());
                 request.putAllHeader(super.getCommonHeader());
             } catch (Exception e) {

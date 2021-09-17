@@ -85,8 +85,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
             t.setDaemon(true);
             return t;
         });
-        this.securityProxy.loginClientAuthService(properties);
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.loginClientAuthService(properties), 0,
+        this.securityProxy.login(properties);
+        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
     }
     

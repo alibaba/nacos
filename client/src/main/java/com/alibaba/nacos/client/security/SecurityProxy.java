@@ -57,7 +57,7 @@ public class SecurityProxy {
      * @param properties login identity information.
      * @return if there are any available clientAuthService instances.
      */
-    public boolean loginClientAuthService(Properties properties) {
+    public boolean login(Properties properties) {
         if (clientAuthServiceHashSet.isEmpty()) {
             return false;
         }
