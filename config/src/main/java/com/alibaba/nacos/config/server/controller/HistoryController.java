@@ -155,6 +155,7 @@ public class HistoryController {
      * @return list
      */
     @GetMapping(value = "/configs")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public List<ConfigInfoWrapper> getDataIds(@RequestParam("tenant") String tenant) {
         // check tenant
         ParamUtils.checkTenant(tenant);
