@@ -2563,6 +2563,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         return result;
     }
-    
+
+    @Override
+    public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenantId) {
+        Assert.hasText(tenantId, "tenantId can not be null");
+        String tenantTmp = StringUtils.isBlank(tenantId) ? StringUtils.EMPTY : tenantId;
+        final String sql = "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info WHERE tenant_id=?";
+        return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
+    }
 }
 

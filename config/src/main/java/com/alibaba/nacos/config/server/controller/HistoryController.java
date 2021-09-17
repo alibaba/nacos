@@ -19,12 +19,15 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -142,6 +146,21 @@ public class HistoryController {
         // check if history config match the input
         checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
         return configHistoryInfo;
+    }
+
+    /**
+     * Query configs list by namespace.
+     * @param tenant config_info namespace
+     * @since 2.1.1
+     * @return list
+     */
+    @GetMapping(value = "/configs")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    public List<ConfigInfoWrapper> getDataIds(@RequestParam("tenant") String tenant) {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        return persistService.queryConfigInfoByNamespace(tenant);
     }
     
 }
