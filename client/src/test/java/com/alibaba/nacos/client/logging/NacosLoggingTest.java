@@ -42,4 +42,19 @@ public class NacosLoggingTest {
         instance.loadConfiguration();
         Mockito.verify(mockLogging, Mockito.times(1)).loadConfiguration();
     }
+
+    @Test
+    public void testLoadConfiguration1() throws NoSuchFieldException, IllegalAccessException {
+        NacosLogging instance = NacosLogging.getInstance();
+        Field logger = NacosLogging.class.getDeclaredField("LOGGER");
+        Field isLogback = NacosLogging.class.getDeclaredField("isLogback");
+        logger.setAccessible(true);
+        isLogback.setAccessible(true);
+        Object actualLogger = logger.get(instance);
+        if ("ch.qos.logback.classic.Logger".equals(actualLogger.getClass().getName())) {
+            Assert.assertEquals(true, isLogback.get(instance));
+        } else {
+            Assert.assertEquals(false, isLogback.get(instance));
+        }
+    }
 }

@@ -35,11 +35,10 @@ public class NacosLogging {
     private boolean isLogback = false;
     
     private NacosLogging() {
-        try {
-            Class.forName("ch.qos.logback.classic.Logger");
+        if ("ch.qos.logback.classic.Logger".equals(LOGGER.getClass().getName())) {
             nacosLogging = new LogbackNacosLogging();
             isLogback = true;
-        } catch (ClassNotFoundException e) {
+        } else {
             nacosLogging = new Log4J2NacosLogging();
         }
     }
