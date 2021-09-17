@@ -71,9 +71,9 @@ public class SecurityProxy {
      * get the context of all nacosRestTemplate instance.
      * @return a combination of all context.
      */
-    public Map<String, String> getAccessToken() {
+    public Map<String, String> getIdentityContext() {
         Map<String, String> header = new HashMap<>();
-        for (ClientAuthService clientAuthService : clientAuthServiceHashSet) {
+        for (ClientAuthService clientAuthService : this.clientAuthServiceHashSet) {
             LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext();
             for (String key : loginIdentityContext.getAllKey()) {
                 header.put(key, (String) loginIdentityContext.getParameter(key));

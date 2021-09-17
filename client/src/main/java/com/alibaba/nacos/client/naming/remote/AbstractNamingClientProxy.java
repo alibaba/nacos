@@ -65,7 +65,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return nacos security access token
      */
     protected Map<String, String> getSecurityHeaders() {
-        return this.securityProxy.getAccessToken();
+        return this.securityProxy.getIdentityContext();
     }
     
     /**

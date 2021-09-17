@@ -64,13 +64,13 @@ public class SecurityProxyTest {
     }
     
     @Test
-    public void testGetAccessToken() {
+    public void testGetIdentityContext() {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         securityProxy.loginClientAuthService(properties);
         //when
-        Map<String, String> keyMap = securityProxy.getAccessToken();
+        Map<String, String> keyMap = securityProxy.getIdentityContext();
         //then
         Assert.assertEquals("ttttttttttttttttt", keyMap.get(LoginAuthConstant.ACCESSTOKEN));
     }

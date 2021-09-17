@@ -134,7 +134,7 @@ public abstract class ConfigTransportClient {
      * @return map that contains accessToken , null if acessToken is empty.
      */
     protected Map<String, String> getSecurityHeaders() {
-        Map<String, String> spasHeaders = this.securityProxy.getAccessToken();
+        Map<String, String> spasHeaders = this.securityProxy.getIdentityContext();
         if (spasHeaders.isEmpty()) {
             return null;
         }
@@ -161,7 +161,7 @@ public abstract class ConfigTransportClient {
     }
     
     public Map<String, String> getAccessToken() {
-        return this.securityProxy.getAccessToken();
+        return this.securityProxy.getIdentityContext();
     }
     
     private StsCredential getStsCredential() throws Exception {
