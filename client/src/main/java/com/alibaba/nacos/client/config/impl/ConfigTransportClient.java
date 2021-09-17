@@ -134,12 +134,10 @@ public abstract class ConfigTransportClient {
      * @return map that contains accessToken , null if acessToken is empty.
      */
     protected Map<String, String> getSecurityHeaders() {
-        String accessToken = (String) this.securityProxy.getLoginIdentityContext().getParameter(Constants.ACCESS_TOKEN);
-        if (StringUtils.isBlank(accessToken)) {
+        Map<String, String> spasHeaders = this.securityProxy.getAccessToken();
+        if (spasHeaders.isEmpty()) {
             return null;
         }
-        Map<String, String> spasHeaders = new HashMap<String, String>(2);
-        spasHeaders.put(Constants.ACCESS_TOKEN, accessToken);
         return spasHeaders;
     }
     
@@ -162,8 +160,8 @@ public abstract class ConfigTransportClient {
         return headers;
     }
     
-    public String getAccessToken() {
-        return  (String) this.securityProxy.getLoginIdentityContext().getParameter(Constants.ACCESS_TOKEN);
+    public Map<String, String> getAccessToken() {
+        return this.securityProxy.getAccessToken();
     }
     
     private StsCredential getStsCredential() throws Exception {

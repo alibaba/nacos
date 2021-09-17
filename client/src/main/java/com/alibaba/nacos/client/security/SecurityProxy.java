@@ -21,7 +21,9 @@ import com.alibaba.nacos.client.auth.ClientAuthService;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -52,7 +54,6 @@ public class SecurityProxy {
     
     /**
      * Login all available ClientAuthService instance.
-     *
      * @param properties login identity information.
      * @return if there are any available clientAuthService instances.
      */
@@ -68,21 +69,17 @@ public class SecurityProxy {
     
     /**
      * get the context of all nacosRestTemplate instance.
-     *
      * @return a combination of all context.
      */
-    public LoginIdentityContext getLoginIdentityContext() {
-        LoginIdentityContext allContext = new LoginIdentityContext();
+    public Map<String, String> getAccessToken() {
+        Map<String, String> header = new HashMap<>();
         for (ClientAuthService clientAuthService : clientAuthServiceHashSet) {
             LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext();
-            if (loginIdentityContext == null) {
-                continue;
-            }
             for (String key : loginIdentityContext.getAllKey()) {
-                allContext.setParameter(key, loginIdentityContext.getParameter(key));
+                header.put(key, (String) loginIdentityContext.getParameter(key));
             }
         }
-        return allContext;
+        return header;
     }
     
 }

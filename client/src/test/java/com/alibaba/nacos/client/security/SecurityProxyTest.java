@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.LoginAuthConstant;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -28,6 +27,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -64,15 +64,15 @@ public class SecurityProxyTest {
     }
     
     @Test
-    public void testGetLoginIdentityContext() {
+    public void testGetAccessToken() {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         securityProxy.loginClientAuthService(properties);
         //when
-        LoginIdentityContext loginIdentityContext = securityProxy.getLoginIdentityContext();
+        Map<String, String> keyMap = securityProxy.getAccessToken();
         //then
-        Assert.assertEquals("ttttttttttttttttt", loginIdentityContext.getParameter(LoginAuthConstant.ACCESSTOKEN));
+        Assert.assertEquals("ttttttttttttttttt", keyMap.get(LoginAuthConstant.ACCESSTOKEN));
     }
     
 }
