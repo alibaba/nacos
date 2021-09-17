@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
-import com.alibaba.nacos.auth.roles.AuthNacosRoleServiceImpl;
+import com.alibaba.nacos.auth.roles.NacosAuthRoleServiceImpl;
 import com.alibaba.nacos.auth.roles.RoleInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -49,13 +49,13 @@ public class NacosAuthServiceImpl implements AuthService {
     private static final String PARAM_PASSWORD = "password";
     
     @Autowired
-    private AuthJwtTokenManager authJwtTokenManager;
+    private JwtTokenManager jwtTokenManager;
     
     @Autowired
     private AuthenticationManager authenticationManager;
     
     @Autowired
-    private AuthNacosRoleServiceImpl roleService;
+    private NacosAuthRoleServiceImpl roleService;
     
     @Override
         public IdentityContext login(IdentityContext identityContext) throws AccessException {
@@ -77,8 +77,8 @@ public class NacosAuthServiceImpl implements AuthService {
             finalName = authenticate.getName();
         }
         
-        String token = authJwtTokenManager.createToken(finalName);
-        SecurityContextHolder.getContext().setAuthentication(authJwtTokenManager.getAuthentication(token));
+        String token = jwtTokenManager.createToken(finalName);
+        SecurityContextHolder.getContext().setAuthentication(jwtTokenManager.getAuthentication(token));
         
         IdentityContext authResult = new IdentityContext();
         authResult.setParameter(Constants.USERNAME, finalName);
@@ -87,7 +87,7 @@ public class NacosAuthServiceImpl implements AuthService {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(AuthNacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(NacosAuthRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
                     authResult.setParameter(Constants.GLOBAL_ADMIN, true);
                     break;
                 }
@@ -99,7 +99,7 @@ public class NacosAuthServiceImpl implements AuthService {
     @Override
     public Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException {
         String token;
-        String bearerToken = (String) identityContext.getParameter(AuthNacosAuthConfig.AUTHORIZATION_HEADER);
+        String bearerToken = (String) identityContext.getParameter(NacosAuthConfig.AUTHORIZATION_HEADER);
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
             token = bearerToken.substring(7);
         } else {
@@ -129,14 +129,14 @@ public class NacosAuthServiceImpl implements AuthService {
      */
     private String getUsernameFromToken(String token) throws AccessException {
         try {
-            authJwtTokenManager.validateToken(token);
+            jwtTokenManager.validateToken(token);
         } catch (ExpiredJwtException e) {
             throw new AccessException("token expired!");
         } catch (Exception e) {
             throw new AccessException("token invalid!");
         }
         
-        Authentication authentication = authJwtTokenManager.getAuthentication(token);
+        Authentication authentication = jwtTokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         
         return authentication.getName();

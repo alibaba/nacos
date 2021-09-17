@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
-import com.alibaba.nacos.auth.users.AuthNacosUserDetailsServiceImpl;
+import com.alibaba.nacos.auth.users.NacosAuthUserDetailsServiceImpl;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +41,7 @@ import org.springframework.web.cors.CorsUtils;
  * @author Nacos
  */
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class AuthNacosAuthConfig extends WebSecurityConfigurerAdapter {
+public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     public static final String AUTHORIZATION_HEADER = "Authorization";
     
@@ -65,16 +65,16 @@ public class AuthNacosAuthConfig extends WebSecurityConfigurerAdapter {
     private Environment env;
     
     @Autowired
-    private AuthJwtTokenManager tokenProvider;
+    private JwtTokenManager tokenProvider;
     
     @Autowired
     private AuthConfigs authConfigs;
     
     @Autowired
-    private AuthNacosUserDetailsServiceImpl userDetailsService;
+    private NacosAuthUserDetailsServiceImpl userDetailsService;
     
     @Autowired
-    private AuthLdapAuthenticationProvider ldapAuthenticationProvider;
+    private LdapAuthenticationProvider ldapAuthenticationProvider;
     
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
@@ -119,7 +119,7 @@ public class AuthNacosAuthConfig extends WebSecurityConfigurerAdapter {
                     .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                     .antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
                     .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
-                    .authenticationEntryPoint(new AuthJwtAuthenticationEntryPoint());
+                    .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
             // disable cache
             http.headers().cacheControl();
         }

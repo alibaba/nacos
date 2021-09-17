@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.roles;
 
-import com.alibaba.nacos.auth.AuthNacosAuthConfig;
+import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.model.Permission;
@@ -47,9 +47,9 @@ import java.util.regex.Pattern;
  * @since 1.2.0
  */
 @Service
-public class AuthNacosRoleServiceImpl {
+public class NacosAuthRoleServiceImpl {
     
-    public static final Logger LOGGER = LoggerFactory.getLogger(AuthNacosRoleServiceImpl.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(NacosAuthRoleServiceImpl.class);
     
     public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
     
@@ -115,7 +115,7 @@ public class AuthNacosRoleServiceImpl {
      */
     public boolean hasPermission(String username, Permission permission) {
         //update password
-        if (AuthNacosAuthConfig.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource())) {
+        if (NacosAuthConfig.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource())) {
             return true;
         }
         
@@ -132,7 +132,7 @@ public class AuthNacosRoleServiceImpl {
         }
         
         // Old global admin can pass resource 'console/':
-        if (permission.getResource().startsWith(AuthNacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX)) {
+        if (permission.getResource().startsWith(NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX)) {
             return false;
         }
         

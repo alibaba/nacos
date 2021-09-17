@@ -38,9 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author nkorange
  */
 @Service
-public class AuthNacosUserDetailsServiceImpl implements UserDetailsService {
+public class NacosAuthUserDetailsServiceImpl implements UserDetailsService {
     
-    public static final Logger LOGGER = LoggerFactory.getLogger(AuthNacosUserDetailsServiceImpl.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(NacosAuthUserDetailsServiceImpl.class);
     
     private Map<String, User> userMap = new ConcurrentHashMap<>();
     

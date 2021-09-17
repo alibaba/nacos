@@ -33,9 +33,9 @@ import java.io.IOException;
  * @author wfnuser
  */
 @Component
-public class AuthJwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthJwtAuthenticationEntryPoint.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationEntryPoint.class);
     
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
