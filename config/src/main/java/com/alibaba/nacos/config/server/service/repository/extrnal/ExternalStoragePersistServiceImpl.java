@@ -103,7 +103,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     private DataSourceService dataSourceService;
     
-    private static final String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema FROM config_info";
+    private static final String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
     
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(*) FROM tenant_info WHERE tenant_id = ?";
     
@@ -179,10 +179,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                 addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
-                
-                final String encryptedDataKey =
-                        configAdvanceInfo == null ? "" : (String) configAdvanceInfo.get("encryptedDataKey");
-                configInfo.setEncryptedDataKey(encryptedDataKey);
                 
                 insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
             } catch (CannotGetJdbcConnectionException e) {
@@ -2065,7 +2061,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
-                configAdvanceInfo == null ? "" : (String) configAdvanceInfo.get("encryptedDataKey");
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
     
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         
@@ -2236,7 +2232,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
-                configAdvanceInfo == null ? "" : (String) configAdvanceInfo.get("encryptedDataKey");
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
     
         try {
             jt.update("UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,"
@@ -2732,6 +2728,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
+            configInfo2Save.setEncryptedDataKey(
+                    configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey());
             
             String type = configInfo.getType();
             if (StringUtils.isBlank(type)) {

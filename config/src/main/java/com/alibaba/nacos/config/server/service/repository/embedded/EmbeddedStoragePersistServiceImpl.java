@@ -1945,7 +1945,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        final String encryptedDataKey = configInfo.getEncryptedDataKey();
+        final String encryptedDataKey =
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
     
         final String sql =
                 "INSERT INTO config_info(id, data_id, group_id, tenant_id, app_name, content, md5, src_ip, src_user, gmt_create,"
@@ -2057,7 +2058,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
-                configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("encryptedDataKey");
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
     
         final String sql = "UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=?,"
                 + "c_desc=?,c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=? WHERE data_id=? AND group_id=? AND tenant_id=?";
@@ -2494,7 +2495,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
-            
+            configInfo2Save.setEncryptedDataKey(
+                    configInfo.getEncryptedDataKey() == null ? "" : configInfo.getEncryptedDataKey());
             String type = configInfo.getType();
             if (StringUtils.isBlank(type)) {
                 // simple judgment of file type based on suffix
