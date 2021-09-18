@@ -64,7 +64,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(properties);
         ServerListManager serverListManager = new ServerListManager(properties, namespace);
-        SecurityProxy securityProxy = new SecurityProxy(properties,
+        SecurityProxy securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties, null);
     }
