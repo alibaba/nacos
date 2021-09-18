@@ -36,7 +36,7 @@ Nacos provides four major functions.
 ## Quick Start
 It is super easy to get started with your first project.
 
-### deploying Nacos on cloud
+### Deploying Nacos on cloud
 
 You can deploy Nacos on cloud, which is the easiest and most convenient way to start Nacos. 
 
