@@ -36,6 +36,8 @@ Nacos provides four major functions.
 ## Quick Start
 It is super easy to get started with your first project.
 
+### Start by the provided zip package
+
 #### Step 1: Download the binary package 
 
 You can download the package from the [latest stable release](https://github.com/alibaba/nacos/releases).  
@@ -59,6 +61,11 @@ startup.cmd -m standalone
 ```
 
 For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
+
+### Start by the public cloud
+
+Use the following [Nacos deployment guide](https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0) to start Nacos.
+
 
 ## Quick start for other open-source projects:
 * [Quick start with Nacos command and console](https://nacos.io/en-us/docs/quick-start.html)
