@@ -2786,5 +2786,22 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         return result.intValue();
     }
-    
+
+    @Override
+    public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenant) {
+        Assert.hasText(tenant, "tenant can not be null");
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        try {
+            return this.jt.query(
+                    "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info_beta WHERE tenant_id=?",
+                    new Object[]{tenantTmp},
+                    CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
+            return Collections.EMPTY_LIST;
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
 }

@@ -31,6 +31,7 @@ public class ApiConstants {
      * TODO Support other Istio crd, such as gateway, vs, dr and so on.
      */
     public static final String SERVICE_ENTRY_PROTO_PACKAGE = "networking.istio.io/v1alpha3/ServiceEntry";
+    public static final String MESH_CONFIG_PROTO_PACKAGE = "core/v1alpha1/MeshConfig";
 
     /**
      * Istio crd type url for mcp

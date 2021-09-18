@@ -42,16 +42,16 @@ public class PushExecutorRpcImpl implements PushExecutor {
     
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(data)));
+        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(data, subscriber)));
     }
     
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(data)),
+        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(getServiceInfo(data, subscriber)),
                 callBack, GlobalExecutor.getCallbackExecutor());
     }
     
-    private ServiceInfo getServiceInfo(PushDataWrapper data) {
-        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true);
+    private ServiceInfo getServiceInfo(PushDataWrapper data, Subscriber subscriber) {
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true, subscriber);
     }
 }
