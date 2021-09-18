@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.naming.remote;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
@@ -66,11 +65,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return nacos security access token
      */
     protected Map<String, String> getSecurityHeaders() {
-        Map<String, String> result = new HashMap<>(1);
-        if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            result.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
-        }
-        return result;
+        return this.securityProxy.getIdentityContext();
     }
     
     /**

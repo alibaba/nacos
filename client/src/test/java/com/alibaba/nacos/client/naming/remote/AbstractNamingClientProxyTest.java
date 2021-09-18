@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -129,7 +130,10 @@ public class AbstractNamingClientProxyTest {
             }
         };
         String token = "aa";
-        Mockito.when(sc.getAccessToken()).thenReturn(token);
+        Map<String, String> keyMap = new HashMap<>();
+        keyMap.put(Constants.ACCESS_TOKEN, token);
+        Mockito.when(sc.getIdentityContext()).thenReturn(keyMap);
+        
         Map<String, String> securityHeaders = proxy.getSecurityHeaders();
         Assert.assertEquals(1, securityHeaders.size());
         Assert.assertEquals(token, securityHeaders.get(Constants.ACCESS_TOKEN));
