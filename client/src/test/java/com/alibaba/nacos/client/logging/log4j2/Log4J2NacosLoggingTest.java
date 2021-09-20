@@ -33,15 +33,12 @@ public class Log4J2NacosLoggingTest {
     
     @Test
     public void testLoadConfiguration() {
-        LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
-        Configuration contextConfiguration = loggerContext.getConfiguration();
-        Assert.assertEquals(0, contextConfiguration.getLoggers().size());
         Log4J2NacosLogging log4J2NacosLogging = new Log4J2NacosLogging();
         //when
         log4J2NacosLogging.loadConfiguration();
         //then
-        loggerContext = (LoggerContext) LogManager.getContext(false);
-        contextConfiguration = loggerContext.getConfiguration();
+        LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
+        Configuration contextConfiguration = loggerContext.getConfiguration();
         Map<String, LoggerConfig> nacosClientLoggers = contextConfiguration.getLoggers();
         Assert.assertEquals(4, nacosClientLoggers.size());
         for (Map.Entry<String, LoggerConfig> loggerEntry : nacosClientLoggers.entrySet()) {
