@@ -77,7 +77,8 @@ public class NacosConfigService implements ConfigService {
         this.configFilterChainManager = new ConfigFilterChainManager(properties);
         ServerListManager serverListManager = new ServerListManager(properties);
         serverListManager.start();
-        
+
+        // 更新维护配置
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, properties);
         // will be deleted in 2.0 later versions
         agent = new ServerHttpAgent(serverListManager);

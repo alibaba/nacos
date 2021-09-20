@@ -51,6 +51,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 集群模式：
+ *
+ *
  * Serverlist Manager.
  *
  * @author Nacos
@@ -64,7 +67,8 @@ public class ServerListManager implements Closeable {
     private static final String HTTP = "http://";
     
     private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
-    
+
+    /** 创建并执行一个在给定初始延迟后首次启用的定期操作：每30s执行一次，维护服务地址更新操作 */
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -370,7 +374,7 @@ public class ServerListManager implements Closeable {
             return;
         }
         
-        List<String> newServerAddrList = new ArrayList<String>();
+        List<String> newServerAddrList = new ArrayList<String>(newList.size());
         for (String server : newList) {
             if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
                 newServerAddrList.add(server);
