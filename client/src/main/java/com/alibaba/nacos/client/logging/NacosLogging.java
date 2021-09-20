@@ -29,13 +29,15 @@ import org.slf4j.Logger;
 public class NacosLogging {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosLogging.class);
+
+    private final String logbackFullyQualifiedName = "ch.qos.logback.classic.Logger";
     
     private AbstractNacosLogging nacosLogging;
     
     private boolean isLogback = false;
     
     private NacosLogging() {
-        if ("ch.qos.logback.classic.Logger".equals(LOGGER.getClass().getName())) {
+        if (logbackFullyQualifiedName.equals(LOGGER.getClass().getName())) {
             nacosLogging = new LogbackNacosLogging();
             isLogback = true;
         } else {
