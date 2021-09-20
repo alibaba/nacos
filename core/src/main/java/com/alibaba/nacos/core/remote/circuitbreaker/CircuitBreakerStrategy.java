@@ -53,6 +53,15 @@ public abstract class CircuitBreakerStrategy {
     public abstract boolean applyStrategy(String pointName, List<MonitorKey> monitorKeyList);
 
     /**
+     * apply tps with content / load (in bytes / kb / mb).
+     *
+     * @param pointName      pointName.
+     * @param monitorKeyList monitorKeyList.
+     * @return pass or not.
+     */
+    public abstract boolean applyStrategyWithLoad(String pointName, List<MonitorKey> monitorKeyList, long load);
+
+    /**
      * Main method to apply new config to current point.
      *
      * @param pointName point / points that apply the param config.

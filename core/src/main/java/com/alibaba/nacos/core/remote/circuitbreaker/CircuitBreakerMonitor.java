@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.remote.circuitbreaker;
 
 import com.alibaba.nacos.core.utils.Loggers;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +33,10 @@ import java.util.Objects;
  * @version $Id: MatchMode.java, v 0.1 2021年08月07日 22:50 PM chuzefang Exp $
  */
 public abstract class CircuitBreakerMonitor {
+
+    protected static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
+    protected static final String CONNECTION_ID = "connectionId";
 
     protected String pointName;
 
@@ -141,6 +147,53 @@ public abstract class CircuitBreakerMonitor {
 
         }
 
+    }
+
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return mills of second.
+     */
+    public static long getTrimMillsOfSecond(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.parseLong(substring + "000");
+
+    }
+
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return minis of minute.
+     */
+    public static long getTrimMillsOfMinute(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.parseLong(Long.parseLong(substring) / 60 * 60 + "000");
+    }
+
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return mills of hour.
+     */
+    public static long getTrimMillsOfHour(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.parseLong(Long.parseLong(substring) / (60 * 60) * (60 * 60) + "000");
+    }
+
+    /**
+     * get format string "2021-01-16 17:20:21" of timestamp.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return datetime string.
+     */
+    public static String getTimeFormatOfSecond(long timeStamp) {
+        return new SimpleDateFormat(DATETIME_PATTERN).format(new Date(timeStamp));
     }
 }
 

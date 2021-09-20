@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
-import com.alibaba.nacos.core.remote.circuitbreaker.rules.impl.TpsConfig;
+import com.alibaba.nacos.core.remote.circuitbreaker.rule.tps.TpsConfig;
 import com.alibaba.nacos.core.remote.control.*;
 import org.assertj.core.util.Lists;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

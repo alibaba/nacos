@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
+package com.alibaba.nacos.core.remote.circuitbreaker.rule.tps;
 
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
 
