@@ -3,6 +3,7 @@ package com.alibaba.nacos.core.remote.circuitbreaker.rule.flow;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerRecorder;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -17,6 +18,10 @@ public class FlowControlRecorder extends CircuitBreakerRecorder {
     public FlowControlRecorder(String pointnName, long startTime, int recordSize, FlowControlConfig config) {
         super(pointnName, startTime, recordSize, config);
         this.config = config;
+        slotList = new ArrayList<>(slotSize);
+        for (int i = 0; i < slotSize; i++) {
+            slotList.add(isProtoModel() ? new MultiKeyFlowControlSlot() : new FlowControlSlot());
+        }
     }
 
     @Override
@@ -29,12 +34,6 @@ public class FlowControlRecorder extends CircuitBreakerRecorder {
         this.config = (FlowControlConfig) config;
     }
 
-    @Override
-    protected Slot createSlot() { return new FlowControlSlot(); }
-
-    @Override
-    protected Slot createMultiKeySlot() { return new MultiKeyFlowControlSlot(); }
-
     static class FlowControlSlot extends Slot {
 
         @Override
@@ -43,8 +42,24 @@ public class FlowControlRecorder extends CircuitBreakerRecorder {
         }
 
         @Override
-        public SlotCountHolder getCountHolder(String key) {
-            return countHolder;
+        public void reset(long second) {
+            synchronized (this) {
+                if (this.time != second) {
+                    this.time = second;
+                    getCountHolder("").count.set(0L);
+                    countHolder.interceptedCount.set(0);
+                    ((LoadCountHolder)countHolder).interceptedLoad.set(0);
+                    ((LoadCountHolder)countHolder).load.set(0);
+                }
+            }
+        }
+
+        @Override
+        public LoadCountHolder getCountHolder(String key) {
+            if (countHolder == null) {
+                initCountHolder();
+            }
+            return (LoadCountHolder) countHolder;
         }
 
         @Override

@@ -33,7 +33,7 @@ public class TpsRecorder extends CircuitBreakerRecorder {
         this.config = config;
         slotList = new ArrayList<>(slotSize);
         for (int i = 0; i < slotSize; i++) {
-            slotList.add(isProtoModel() ? createMultiKeySlot() : createSlot());
+            slotList.add(isProtoModel() ? new MultiKeySlot() : new Slot());
         }
     }
 

@@ -20,9 +20,9 @@ public class FlowControlConfig extends CircuitBreakerConfig {
         this(100, TimeUnit.SECONDS, MODEL_FUZZY, monitorType);
     }
 
-    public FlowControlConfig(long maxCount, TimeUnit period, String model, String monitorType) {
+    public FlowControlConfig(long maxLoad, TimeUnit period, String model, String monitorType) {
         this.setMonitorType(monitorType);
-        this.maxLoad = maxCount;
+        this.maxLoad = maxLoad;
         this.setPeriod(period);
         this.setModel(model);
     }

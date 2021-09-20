@@ -94,10 +94,11 @@ public class FlowControlMonitor extends CircuitBreakerMonitor {
                     long maxLoad = config.getMaxLoad();
                     FlowControlRecorder.LoadCountHolder countHolder = (FlowControlRecorder.LoadCountHolder)
                             currentKeySlot.getCountHolder(pointName);
+
                     boolean overLimit = maxLoad >= 0 && countHolder.load.longValue() + load >= maxLoad;
                     if (overLimit) {
                         Loggers.TPS_CONTROL_DETAIL
-                                .info("[{}]flow control over limit ,pointName=[{}],barrier=[{}]，monitorModel={},maxTps={}",
+                                .info("[{}]flow control over limit ,pointName=[{}],barrier=[{}]，monitorModel={}, maxLoad={}",
                                         connectionId, this.getPointName(), entry.getKey(),
                                         config.getMonitorType(), maxLoad + "/" + config.getPeriod());
 
@@ -122,7 +123,7 @@ public class FlowControlMonitor extends CircuitBreakerMonitor {
         boolean overLimit = maxWorkLoad >= 0 && pointCountHolder.load.longValue() + load >= maxWorkLoad;
         if (overLimit) {
             Loggers.TPS_CONTROL_DETAIL
-                    .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
+                    .info("[{}]flow control over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
                             this.getPointName(), "pointRule", flowRecorder.getConfig().getMonitorType());
             if (isInterceptMode(flowRecorder.getConfig().getMonitorType())) {
                 currentSlot.getCountHolder(pointName).interceptedCount.incrementAndGet();
@@ -133,6 +134,7 @@ public class FlowControlMonitor extends CircuitBreakerMonitor {
         }
 
         currentSlot.getCountHolder(pointName).count.incrementAndGet();
+        ((FlowControlRecorder.LoadCountHolder) currentSlot.getCountHolder(pointName)).load.accumulateAndGet(load, sumOperator);
         for (FlowControlRecorder.LoadCountHolder passedSlot : passedSlots) {
             passedSlot.count.incrementAndGet();
             passedSlot.load.accumulateAndGet(load, sumOperator);

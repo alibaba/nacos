@@ -52,8 +52,6 @@ public class CircuitBreaker {
 
     private ConfigLoader configLoader;
 
-    private final ConcurrentHashMap<String, CircuitBreakerConfig> pointConfigMap = new ConcurrentHashMap<>();
-
     private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
         Thread thread = new Thread(r, "nacos.core.remote.circuitbreaker.reporter");
         thread.setDaemon(true);
@@ -61,6 +59,11 @@ public class CircuitBreaker {
     });
 
     CircuitBreaker() {
+        init();
+    }
+
+    CircuitBreaker(String strategy) {
+        currentRuleName = strategy;
         init();
     }
 
@@ -77,11 +80,24 @@ public class CircuitBreaker {
         return currentRule.applyStrategy(pointName, monitorKeyList);
     }
 
+
+    /**
+     * Main entry point for circuit breaker rule implementations.
+     * Using Java SPI to load circuit break rule and apply for their rules.
+     *
+     * @param  pointName entry point name or class name (TODO: can be modified through Nacos console)
+     * @return true when the current request is allowed to continue; false if the request breaks the upper limit
+     */
+    public boolean applyStrategyWithLoad(String pointName, List<MonitorKey> monitorKeyList, long load) {
+
+        // Check monitor keys & check total tps.
+        return currentRule.applyStrategyWithLoad(pointName, monitorKeyList, load);
+    }
+
     /**
      * Init the current global CircuitBreaker. Load configs from local or DB.
      */
     private void init() {
-        pointConfigMap.put(DEFAULT_RULE, new CircuitBreakerConfig());
         configLoader = new ConfigLoader();
         loadConfig();
         registerFileWatch();
@@ -92,7 +108,7 @@ public class CircuitBreaker {
         // SPI mechanism to load rule implementation as current circuit breaker strategy
         for (CircuitBreakerStrategy circuitBreakerStrategy : circuitBreakers) {
             System.out.println(circuitBreakerStrategy.getRuleName());
-            if (circuitBreakerStrategy.getRuleName().equals(DEFAULT_RULE)) {
+            if (circuitBreakerStrategy.getRuleName().equals(currentRuleName)) {
                 this.currentRule = circuitBreakerStrategy.getStrategy();
             }
         }
@@ -131,8 +147,8 @@ public class CircuitBreaker {
      *
      * @param pointName config's point name.
      */
-    public  CircuitBreakerConfig getConfig(String pointName) {
-        return pointConfigMap.getOrDefault(pointName, new CircuitBreakerConfig());
+    public CircuitBreakerConfig getConfig(String pointName) {
+        return null;
     }
 
     private synchronized void loadRuleFromLocal(String pointName) throws IOException {

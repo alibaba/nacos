@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 import com.alibaba.nacos.core.remote.control.TpsControlRule;
-import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,11 +58,6 @@ public abstract class CircuitBreakerRecorder {
     public void setModel(String model) {
         getConfig().setModel(model);
     }
-
-    protected Slot createSlot() { return new Slot(); }
-
-    protected Slot createMultiKeySlot() { return new MultiKeySlot(); }
-
 
     public CircuitBreakerRecorder(String pointName, long startTime, int recordSize, CircuitBreakerConfig config) {
         TimeUnit period = config.getPeriod();

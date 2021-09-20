@@ -3,9 +3,7 @@ package com.alibaba.nacos.core.remote.circuitbreaker.rule.flow;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.circuitbreaker.*;
-import com.alibaba.nacos.core.remote.circuitbreaker.rule.tps.TpsRecorder;
 import com.alibaba.nacos.core.remote.control.MonitorKey;
-import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.jsonwebtoken.io.IOException;
 import org.apache.commons.collections.MapUtils;
@@ -133,10 +131,13 @@ public class FlowControlStrategy extends CircuitBreakerStrategy {
         String formatString = new SimpleDateFormat(DATETIME_PATTERN).format(new Date(reportTime.now - 1000L));
         reportTime.tempSecond = pointSlot.time;
         FlowControlConfig conf = (FlowControlConfig) tpsPoint.getConfig();
-        stringBuilder.append(point).append('|').append("point|").append(conf.getPeriod())
+        FlowControlRecorder.LoadCountHolder holder = (FlowControlRecorder.LoadCountHolder) pointSlot.getCountHolder(point);
+        stringBuilder.append("flow control|").append(point).append('|').append("point|").append(conf.getPeriod())
                 .append('|').append(formatString).append('|')
-                .append(pointSlot.getCountHolder(point).count.get()).append('|')
-                .append(pointSlot.getCountHolder(point).interceptedCount.get()).append('\n');
+                .append(holder.count.get()).append('|')
+                .append(holder.load.get()).append('|')
+                .append(holder.interceptedCount.get()).append('|')
+                .append(holder.interceptedLoad.get()).append('\n');
         return stringBuilder.toString();
     }
 
@@ -171,22 +172,23 @@ public class FlowControlStrategy extends CircuitBreakerStrategy {
         if (ipRecord.isProtoModel()) {
             Map<String, FlowControlRecorder.LoadCountHolder> keySlots = ((FlowControlRecorder.MultiKeyFlowControlSlot) keySlot).keySlots;
             for (Map.Entry<String, FlowControlRecorder.LoadCountHolder> slotCountHolder : keySlots.entrySet()) {
-                stringBuilder.append(point).append('|').append(monitorKey).append('|')
+                stringBuilder.append("flow control|").append(point).append('|').append(monitorKey).append('|')
                         .append(conf.getPeriod()).append('|').append(timeFormatOfSecond).append('|')
                         .append(slotCountHolder.getKey()).append('|')
-                        .append(slotCountHolder.getValue().count).append('|')
-                        .append(slotCountHolder.getValue().load).append('|')
-                        .append(slotCountHolder.getValue().interceptedCount).append('|')
-                        .append(slotCountHolder.getValue().interceptedLoad).append('\n');
+                        .append(slotCountHolder.getValue().count.get()).append('|')
+                        .append(slotCountHolder.getValue().load.get()).append('|')
+                        .append(slotCountHolder.getValue().interceptedCount.get()).append('|')
+                        .append(slotCountHolder.getValue().interceptedLoad.get()).append('\n');
             }
 
         } else {
-            stringBuilder.append(point).append('|').append(monitorKey).append('|')
+            FlowControlRecorder.LoadCountHolder holder = (FlowControlRecorder.LoadCountHolder) keySlot.getCountHolder(point);
+            stringBuilder.append("flow control|").append(point).append('|').append(monitorKey).append('|')
                     .append(conf.getPeriod()).append('|').append(timeFormatOfSecond).append('|')
-                    .append(keySlot.getCountHolder(point).count.get()).append('|')
-                    .append(((FlowControlRecorder.LoadCountHolder) keySlot.getCountHolder(point)).load).append('|')
-                    .append(keySlot.getCountHolder(point).interceptedCount.get()).append('|')
-                    .append(((FlowControlRecorder.LoadCountHolder) keySlot.getCountHolder(point)).interceptedLoad).append('\n');
+                    .append(holder.count.get()).append('|')
+                    .append(holder.load).append('|')
+                    .append(holder.interceptedCount.get()).append('|')
+                    .append(holder.interceptedLoad).append('\n');
         }
         return stringBuilder.toString();
     }
