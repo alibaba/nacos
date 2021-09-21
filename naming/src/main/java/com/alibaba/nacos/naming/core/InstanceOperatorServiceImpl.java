@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -35,9 +36,9 @@ import com.alibaba.nacos.naming.push.v1.ClientInfo;
 import com.alibaba.nacos.naming.push.v1.DataSource;
 import com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.naming.push.v1.PushClient;
+import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.apache.commons.collections.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
@@ -75,6 +76,8 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     private final InstanceUpgradeHelper instanceUpgradeHelper;
     
+    private final SelectorManager selectorManager;
+    
     private DataSource pushDataSource = new DataSource() {
         
         @Override
@@ -98,12 +101,13 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
     
     public InstanceOperatorServiceImpl(ServiceManager serviceManager, SwitchDomain switchDomain,
             UdpPushService pushService, NamingSubscriberServiceV1Impl subscriberServiceV1,
-            InstanceUpgradeHelper instanceUpgradeHelper) {
+            InstanceUpgradeHelper instanceUpgradeHelper, SelectorManager selectorManager) {
         this.serviceManager = serviceManager;
         this.switchDomain = switchDomain;
         this.pushService = pushService;
         this.subscriberServiceV1 = subscriberServiceV1;
         this.instanceUpgradeHelper = instanceUpgradeHelper;
+        this.selectorManager = selectorManager;
     }
     
     @Override
@@ -193,7 +197,7 @@ public class InstanceOperatorServiceImpl implements InstanceOperator {
         
         // filter ips using selector:
         if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
-            srvedIps = service.getSelector().select(clientIP, srvedIps);
+            srvedIps = selectorManager.select(service.getSelector(), clientIP, srvedIps);
         }
         
         if (CollectionUtils.isEmpty(srvedIps)) {

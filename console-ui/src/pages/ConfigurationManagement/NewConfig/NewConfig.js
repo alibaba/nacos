@@ -363,6 +363,7 @@ class NewConfig extends React.Component {
       },
       complete: () => {
         this.closeLoading();
+        this.goList();
       },
       error: res => {
         this.closeLoading();
@@ -591,7 +592,7 @@ class NewConfig extends React.Component {
               }
               required
             >
-              <div id={'container'} className={editorClass} style={{ height: 450 }} />
+              <div id={'container'} className={editorClass} style={{ minHeight: 450 }} />
             </FormItem>
 
             <FormItem label=" ">

@@ -50,10 +50,8 @@ public class PushExecutorUdpImpl implements PushExecutor {
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            PushCallBack callBack) {
-        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber),
-                callBack);
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data), subscriber), callBack);
     }
     
     /**
@@ -74,7 +72,7 @@ public class PushExecutorUdpImpl implements PushExecutor {
         if (original.isPresent()) {
             return original.get();
         }
-        ServiceInfo serviceInfo = originalData.getOriginalData();
+        ServiceInfo serviceInfo = getServiceInfo(originalData);
         ServiceInfo result = new ServiceInfo();
         result.setName(NamingUtils.getGroupedName(serviceInfo.getName(), serviceInfo.getGroupName()));
         result.setClusters(serviceInfo.getClusters());
@@ -83,6 +81,10 @@ public class PushExecutorUdpImpl implements PushExecutor {
         result.setCacheMillis(serviceInfo.getCacheMillis());
         originalData.addProcessedPushData(UDP_PUSH_DATA_FOR_V1, result);
         return result;
+    }
+    
+    private ServiceInfo getServiceInfo(PushDataWrapper data) {
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true);
     }
     
     /**
