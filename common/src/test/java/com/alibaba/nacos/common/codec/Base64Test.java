@@ -46,10 +46,21 @@ public class Base64Test {
     @Test
     public void testChunk() {
         String a = "very large characters to test chunk encoding and see if the result is expected or not";
-        byte[] bytes = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
-        String b = new String(bytes);
-        Assert.assertEquals(b, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0" + "\r\n"
+        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, Integer.MAX_VALUE);
+        byte[] b2 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
+        String s1 = new String(b1);
+        String s2 = new String(b2);
+        Assert.assertEquals(s1, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0"
+                + "aGUgcmVzdWx0IGlzIGV4cGVjdGVkIG9yIG5vdA==");
+        Assert.assertEquals(s2, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0" + "\r\n"
                 + "aGUgcmVzdWx0IGlzIGV4cGVjdGVkIG9yIG5vdA==" + "\r\n");
+    
+        byte[] c1 = Base64.decodeBase64(b1);
+        byte[] c2 = Base64.decodeBase64(b2);
+        String s3 = new String(c1);
+        String s4 = new String(c2);
+        Assert.assertEquals(a, s3);
+        Assert.assertEquals(a, s4);
     }
     
     @Test
