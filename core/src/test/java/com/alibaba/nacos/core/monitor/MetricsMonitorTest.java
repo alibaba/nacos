@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * {@link MetricsMonitor} and {@link NacosMeterRegistry} unit tests.
@@ -42,8 +41,10 @@ public class MetricsMonitorTest {
     
     @Test
     public void testGetLongConnectionMonitor() {
-        AtomicInteger atomicInteger = MetricsMonitor.getLongConnectionMonitor();
-        Assert.assertEquals(atomicInteger.get(), 0);
+        Assert.assertEquals(
+                MetricsManager.gauge(CoreMetricsConstant.N_NACOS_MONITOR,
+                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CONFIG,
+                        CoreMetricsConstant.TK_NAME, CoreMetricsConstant.TV_LONG_CONNECTION).get(), 0);
     }
     
     @Test
