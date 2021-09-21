@@ -28,6 +28,7 @@ import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +43,7 @@ import java.util.concurrent.TimeUnit;
  * @author chuzefang
  * @version $Id: MatchMode.java, v 0.1 2021年08月08日 12:38 PM chuzefang Exp $
  */
+@Service
 public class CircuitBreaker {
 
     public static final String DEFAULT_RULE = "default";
