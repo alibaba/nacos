@@ -24,8 +24,13 @@ public class NameThreadFactoryTest {
     @Test
     public void test() {
         NameThreadFactory threadFactory = new NameThreadFactory("test");
-        Thread t1 = threadFactory.newThread(() -> {});
-        Thread t2 = threadFactory.newThread(() -> {});
+        Thread t1 = threadFactory.newThread(() -> {
+        
+        });
+        Thread t2 = threadFactory.newThread(() -> {
+        
+        });
+        
         Assert.assertEquals(t1.getName(), "test.0");
         Assert.assertEquals(t2.getName(), "test.1");
     }

@@ -33,7 +33,6 @@ public class ExecutorFactoryTest {
     public void test() {
         ExecutorService executorService;
         ThreadPoolExecutor threadPoolExecutor;
-        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
         
         executorService = ExecutorFactory.newSingleExecutorService();
         Assert.assertTrue(executorService instanceof ThreadPoolExecutor);
@@ -62,6 +61,8 @@ public class ExecutorFactoryTest {
         Assert.assertEquals(10, threadPoolExecutor.getCorePoolSize());
         Assert.assertEquals(10, threadPoolExecutor.getMaximumPoolSize());
         Assert.assertEquals(threadFactory, threadPoolExecutor.getThreadFactory());
+    
+        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
         
         executorService = ExecutorFactory.newSingleScheduledExecutorService(threadFactory);
         Assert.assertTrue(executorService instanceof ScheduledThreadPoolExecutor);
@@ -88,10 +89,9 @@ public class ExecutorFactoryTest {
         String testGroup = "test";
         ExecutorService executorService;
         ThreadPoolExecutor threadPoolExecutor;
-        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
         ThreadPoolManager manager = ExecutorFactory.Managed.getThreadPoolManager();
-        Map<String, Map<String, Set<ExecutorService>>> resourcesManager = manager.getResourcesManager();
-    
+        final Map<String, Map<String, Set<ExecutorService>>> resourcesManager = manager.getResourcesManager();
+        
         executorService = ExecutorFactory.Managed.newSingleExecutorService(testGroup);
         Assert.assertTrue(executorService instanceof ThreadPoolExecutor);
         threadPoolExecutor = (ThreadPoolExecutor) executorService;
@@ -123,6 +123,8 @@ public class ExecutorFactoryTest {
         Assert.assertEquals(10, threadPoolExecutor.getMaximumPoolSize());
         Assert.assertEquals(threadFactory, threadPoolExecutor.getThreadFactory());
         Assert.assertEquals(4, resourcesManager.get("nacos").get(testGroup).size());
+    
+        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
         
         executorService = ExecutorFactory.Managed.newSingleScheduledExecutorService(testGroup, threadFactory);
         Assert.assertTrue(executorService instanceof ScheduledThreadPoolExecutor);
