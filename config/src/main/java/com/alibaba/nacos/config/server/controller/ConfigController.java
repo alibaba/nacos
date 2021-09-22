@@ -157,7 +157,6 @@ public class ConfigController {
         MapUtil.putIfValNoNull(configAdvanceInfo, "effect", effect);
         MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
         MapUtil.putIfValNoNull(configAdvanceInfo, "schema", schema);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "encryptedDataKey", encryptedDataKey);
         ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(dataId)) {
@@ -847,6 +846,7 @@ public class ConfigController {
                 ci4save.setAppName(ci.getAppName());
             }
             ci4save.setDesc(ci.getDesc());
+            ci4save.setEncryptedDataKey(ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
         
