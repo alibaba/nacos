@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.auth.persist.datasource;
 
+import com.alibaba.nacos.auth.model.ConfigInfo4Beta;
+import com.alibaba.nacos.auth.persist.monitor.MetricsMonitor;
 import com.alibaba.nacos.auth.util.AuthPropertyUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -25,11 +27,14 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import static com.alibaba.nacos.auth.util.LogUtil.DEFAULT_LOG;
@@ -41,6 +46,8 @@ import static com.alibaba.nacos.auth.util.LogUtil.FATAL_LOG;
  * @author Nacos
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
+    
+    public static final ConfigInfo4BetaRowMapper CONFIG_INFO4BETA_ROW_MAPPER = new ConfigInfo4BetaRowMapper();
     
     /**
      * JDBC execute timeout value, unit:second.
@@ -125,7 +132,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                         isHealthList.add(Boolean.TRUE);
                     });
             new SelectMasterTask().run();
-            //new CheckDbHealthTask().run();
+            new CheckDbHealthTask().run();
         } catch (RuntimeException e) {
             FATAL_LOG.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
@@ -222,11 +229,11 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             
             if (!isFound) {
                 FATAL_LOG.error("[master-db] master db not found.");
-                //MetricsMonitor.getDbException().increment();
+                MetricsMonitor.getDbException().increment();
             }
         }
     }
-    /*
+    
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     class CheckDbHealthTask implements Runnable {
         
@@ -256,5 +263,33 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 }
             }
         }
-    }*/
+    }
+    
+    public static final class ConfigInfo4BetaRowMapper implements RowMapper<ConfigInfo4Beta> {
+        
+        @Override
+        public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
+            ConfigInfo4Beta info = new ConfigInfo4Beta();
+            
+            info.setDataId(rs.getString("data_id"));
+            info.setGroup(rs.getString("group_id"));
+            info.setTenant(rs.getString("tenant_id"));
+            info.setAppName(rs.getString("app_name"));
+            info.setBetaIps(rs.getString("beta_ips"));
+            
+            try {
+                info.setContent(rs.getString("content"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setId(rs.getLong("id"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setMd5(rs.getString("md5"));
+            } catch (SQLException ignore) {
+            }
+            return info;
+        }
+    }
 }
