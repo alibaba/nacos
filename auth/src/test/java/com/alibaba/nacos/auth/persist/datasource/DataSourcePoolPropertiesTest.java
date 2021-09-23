@@ -52,7 +52,7 @@ public class DataSourcePoolPropertiesTest {
     public void testBuild() {
         DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
         poolProperties.setJdbcUrl(JDBC_URL);
-        // poolProperties.setDriverClassName(JDBC_DRIVER_CLASS_NAME);
+        poolProperties.setDriverClassName(JDBC_DRIVER_CLASS_NAME);
         poolProperties.setUsername(USERNAME);
         poolProperties.setPassword(PASSWORD);
         HikariDataSource actual = poolProperties.getDataSource();
