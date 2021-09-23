@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.cache;
+package com.alibaba.nacos.common.cache.decorators;
 
+import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +31,7 @@ import java.util.stream.IntStream;
 public class LruCacheTest {
 
     @Test
-    public void testlru() {
+    public void testBasic() throws Exception {
         int capacity = 10;
         int start = 0;
         int end = 99;
@@ -40,10 +41,16 @@ public class LruCacheTest {
         Assert.assertNull(cache.get(start));
         Assert.assertEquals(89, cache.get(89));
         Assert.assertEquals(94, cache.get(94));
+        Assert.assertEquals(94, cache.get(94, () -> 100));
+        Object removed = cache.remove(98);
+        Assert.assertEquals(98, removed);
+        Assert.assertEquals(9, cache.getSize());
+        cache.clear();
+        Assert.assertEquals(0, cache.getSize());
     }
 
     @Test
-    public void testlru2() {
+    public void testLru() {
         int capacity = 10;
         int start = 0;
         int end = 10;
