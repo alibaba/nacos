@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.cache;
+package com.alibaba.nacos.common.cache.impl;
 
+import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class SimpleCacheTest {
 
     @Test
     public void test() throws Exception {
-        Cache cache = CacheBuilder.builder().build();
+        Cache cache = CacheBuilder.builder().initializeCapacity(100).build();
         IntStream.range(0, 100).forEach(item -> cache.put(item, item));
         Assert.assertEquals(100, cache.getSize());
         Object item = cache.remove(89);
@@ -34,6 +35,7 @@ public class SimpleCacheTest {
         Assert.assertEquals(99, cache.getSize());
         Assert.assertEquals(null, cache.get(89));
         Assert.assertEquals(99, cache.get(99));
+        Assert.assertEquals(99, cache.get(99, () -> 99999));
         Assert.assertEquals(87, cache.get(111, () -> 87));
         cache.clear();
         Assert.assertEquals(0, cache.getSize());
