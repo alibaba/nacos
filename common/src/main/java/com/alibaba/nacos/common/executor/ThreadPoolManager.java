@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.executor;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,4 +199,13 @@ public final class ThreadPoolManager {
         }
     }
     
+    @JustForTest
+    public Map<String, Map<String, Set<ExecutorService>>> getResourcesManager() {
+        return resourcesManager;
+    }
+    
+    @JustForTest
+    public Map<String, Object> getLockers() {
+        return lockers;
+    }
 }
