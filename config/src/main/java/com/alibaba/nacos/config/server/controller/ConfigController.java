@@ -501,8 +501,9 @@ public class ConfigController {
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
+            String decryptContent = CryptoExecutor.executeDecrypt(ci.getDataId(), ci.getEncryptedDataKey(), ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, decryptContent));
         }
         if (metaData != null) {
             zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
@@ -513,7 +514,7 @@ public class ConfigController {
                 EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
                         + EXPORT_CONFIG_FILE_NAME_EXT;
         headers.add("Content-Disposition", "attachment;filename=" + fileName);
-        return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
     /**
@@ -546,8 +547,9 @@ public class ConfigController {
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
             configMetadataItems.add(configMetadataItem);
+            String decryptContent = CryptoExecutor.executeDecrypt(ci.getDataId(), ci.getEncryptedDataKey(), ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, decryptContent));
         }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
@@ -685,14 +687,22 @@ public class ConfigController {
                             .substring(tempDataId.lastIndexOf(".") + 1);
                 }
                 final String metaDataId = group + "." + tempDataId + ".app";
+                String encryptedDataKey = "";
+                String content = item.getItemData();
+                CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
+                if (null != cryptoSpi) {
+                    encryptedDataKey = cryptoSpi.generateSecretKey();
+                    content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, encryptedDataKey, content);
+                }
                 ConfigAllInfo ci = new ConfigAllInfo();
                 ci.setGroup(group);
                 ci.setDataId(dataId);
-                ci.setContent(item.getItemData());
+                ci.setContent(content);
                 if (metaDataMap.get(metaDataId) != null) {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
                 ci.setTenant(namespace);
+                ci.setEncryptedDataKey(encryptedDataKey);
                 configInfoList.add(ci);
             }
         }
@@ -771,6 +781,12 @@ public class ConfigController {
                 unrecognizedList.add(unrecognizedItem);
                 continue;
             }
+            String encryptedDataKey = "";
+            CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
+            if (null != cryptoSpi) {
+                encryptedDataKey = cryptoSpi.generateSecretKey();
+                content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, encryptedDataKey, content);
+            }
             ConfigAllInfo ci = new ConfigAllInfo();
             ci.setGroup(group);
             ci.setDataId(dataId);
@@ -779,6 +795,7 @@ public class ConfigController {
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
+            ci.setEncryptedDataKey(encryptedDataKey);
             configInfoList.add(ci);
         }
         return null;
