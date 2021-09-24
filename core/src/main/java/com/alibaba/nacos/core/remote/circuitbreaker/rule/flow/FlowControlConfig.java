@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,45 +14,36 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.circuitbreaker.rules.impl;
+package com.alibaba.nacos.core.remote.circuitbreaker.rule.flow;
 
 import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreakerConfig;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * point configs for TPS strategy. Extends from CircuitBreakerConfig.
- *
- * @author czf
- */
-public class TpsConfig extends CircuitBreakerConfig {
+public class FlowControlConfig extends CircuitBreakerConfig {
 
-    private long maxCount = -1;
+    private long maxLoad = -1;
 
-    public TpsConfig() {
+    public FlowControlConfig() {
         this(100, TimeUnit.SECONDS, MODEL_FUZZY, "");
     }
 
-    public TpsConfig(long maxCount) {
+    public FlowControlConfig(long maxCount) {
         this(maxCount, TimeUnit.SECONDS, MODEL_FUZZY, "");
     }
 
-    public TpsConfig(String monitorType) {
+    public FlowControlConfig(String monitorType) {
         this(100, TimeUnit.SECONDS, MODEL_FUZZY, monitorType);
     }
 
-    public TpsConfig(long maxCount, TimeUnit period, String model, String monitorType) {
+    public FlowControlConfig(long maxLoad, TimeUnit period, String model, String monitorType) {
         this.setMonitorType(monitorType);
-        this.maxCount = maxCount;
+        this.maxLoad = maxLoad;
         this.setPeriod(period);
         this.setModel(model);
     }
 
-    public void setMaxCount(long maxCount) { this.maxCount = maxCount; }
+    public void setMaxLoad(long maxCount) { this.maxLoad = maxCount; }
 
-    public long getMaxCount() { return maxCount; }
-
+    public long getMaxLoad() { return maxLoad; }
 }
-

@@ -1,23 +1,9 @@
-/*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.alibaba.nacos.core.remote.circuitbreaker;
 
-import com.alibaba.nacos.core.remote.circuitbreaker.rule.tps.TpsConfig;
-import com.alibaba.nacos.core.remote.control.*;
+import com.alibaba.nacos.core.remote.circuitbreaker.rule.flow.FlowControlConfig;
+import com.alibaba.nacos.core.remote.control.ClientIpMonitorKey;
+import com.alibaba.nacos.core.remote.control.ConnectionIdMonitorKey;
+import com.alibaba.nacos.core.remote.control.MonitorKey;
 import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,19 +14,18 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
 
-public class CircuitBreakerTest {
-
+public class SpiTest {
     static CircuitBreaker circuitBreaker;
 
     @BeforeClass
     public static void setUpBeforeClass() throws InterruptedException {
-        circuitBreaker = new CircuitBreaker();
+        circuitBreaker = new CircuitBreaker("flowControl");
         circuitBreaker.registerPoint("test1");
         TimeUnit.SECONDS.sleep(1);
         Map<String, CircuitBreakerConfig> monitorKeyMap = new HashMap<>();
-        monitorKeyMap.put("testKey:a*b", new TpsConfig(500, TimeUnit.SECONDS, "EACH", "intercept"));
-        monitorKeyMap.put("testKey:*", new TpsConfig(2000000, TimeUnit.SECONDS, "SUM", "intercept"));
-        TpsConfig pointConfig = new TpsConfig(800, TimeUnit.SECONDS, "SUM", "intercept");
+        monitorKeyMap.put("testKey:a*b", new FlowControlConfig(500, TimeUnit.SECONDS, "EACH", "intercept"));
+        monitorKeyMap.put("testKey:*", new FlowControlConfig(2000000, TimeUnit.SECONDS, "SUM", "intercept"));
+        FlowControlConfig pointConfig = new FlowControlConfig(800, TimeUnit.SECONDS, "SUM", "intercept");
 
         circuitBreaker.applyRule("test1", pointConfig, monitorKeyMap);
     }
@@ -51,7 +36,7 @@ public class CircuitBreakerTest {
         monitorKeyList.add(new ClientIpMonitorKey("ab"));
         monitorKeyList.add(new ClientIpMonitorKey("at"));
         monitorKeyList.add(new ConnectionIdMonitorKey("connection1"));
-        Assert.assertTrue(circuitBreaker.applyStrategy("test1", monitorKeyList));
+        Assert.assertTrue(circuitBreaker.applyStrategyWithLoad("test1", monitorKeyList, 500));
     }
 
     @Test
@@ -65,7 +50,8 @@ public class CircuitBreakerTest {
         for (int i = 0; i < 100; i++) {
             String value = "atg" + (new Random().nextInt(100) + 2) + "efb";
 
-            boolean pass = circuitBreaker.applyStrategy("test1", Lists.list(connectionId, new TestKey(value)));
+            boolean pass = circuitBreaker.applyStrategyWithLoad("test1",
+                    Lists.list(connectionId, new SpiTest.TestKey(value)), 4);
             assertTrue(pass);
             try {
                 Thread.sleep(1L);
@@ -80,7 +66,7 @@ public class CircuitBreakerTest {
         ConnectionIdMonitorKey connectionId = new ConnectionIdMonitorKey("connection1");
         for (int i = 0; i < 2000; i++) {
             String value = "atg" + (new Random().nextInt(100) + 2) + "efb";
-            boolean pass = circuitBreaker.applyStrategy("test1", Lists.list(connectionId, new TestKey(value)));
+            boolean pass = circuitBreaker.applyStrategyWithLoad("test1", Lists.list(connectionId, new SpiTest.TestKey(value)), 128);
             if (!pass) {
                 return;
             }
@@ -97,8 +83,8 @@ public class CircuitBreakerTest {
     public void testTotalTpsWithOverFlow() {
         ConnectionIdMonitorKey connectionId = new ConnectionIdMonitorKey("connection1");
         for (int i = 0; i < 1000; i++) {
-            boolean pass = circuitBreaker.applyStrategy("test1", Lists.list(connectionId));
-            pass &= circuitBreaker.applyStrategy("test1", Lists.list(connectionId));
+            boolean pass = circuitBreaker.applyStrategyWithLoad("test1", Lists.list(connectionId), 16);
+            pass &= circuitBreaker.applyStrategyWithLoad("test1", Lists.list(connectionId), 16);
             if (!pass) {
                 return;
             }
@@ -124,4 +110,3 @@ public class CircuitBreakerTest {
     }
 
 }
-
