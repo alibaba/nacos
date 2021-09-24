@@ -61,15 +61,25 @@ public class NacosMetersReporter extends ScheduledReporter {
      * A builder for {@link NacosMetersReporter} instances.
      */
     public static class Builder {
+        
         private final MetricRegistry registry;
+        
         private Locale locale;
+        
         private Clock clock;
+        
         private TimeZone timeZone;
+        
         private TimeUnit rateUnit;
+        
         private TimeUnit durationUnit;
+        
         private MetricFilter filter;
+        
         private ScheduledExecutorService executor;
+        
         private boolean shutdownExecutorOnStop;
+        
         private Set<MetricAttribute> disabledMetricAttributes;
         
         private Builder(MetricRegistry registry) {
@@ -83,65 +93,6 @@ public class NacosMetersReporter extends ScheduledReporter {
             this.executor = null;
             this.shutdownExecutorOnStop = true;
             disabledMetricAttributes = Collections.emptySet();
-        }
-        
-        /**
-         * Specifies whether or not, the executor (used for reporting) will be stopped with same time with reporter.
-         * Default value is true.
-         * Setting this parameter to false, has the sense in combining with providing external managed executor via {@link #scheduleOn(ScheduledExecutorService)}.
-         *
-         * @param shutdownExecutorOnStop if true, then executor will be stopped in same time with this reporter
-         * @return {@code this}
-         */
-        public Builder shutdownExecutorOnStop(boolean shutdownExecutorOnStop) {
-            this.shutdownExecutorOnStop = shutdownExecutorOnStop;
-            return this;
-        }
-        
-        /**
-         * Specifies the executor to use while scheduling reporting of metrics.
-         * Default value is null.
-         * Null value leads to executor will be auto created on start.
-         *
-         * @param executor the executor to use while scheduling reporting of metrics.
-         * @return {@code this}
-         */
-        public Builder scheduleOn(ScheduledExecutorService executor) {
-            this.executor = executor;
-            return this;
-        }
-        
-        /**
-         * Format numbers for the given {@link Locale}.
-         *
-         * @param locale a {@link Locale}
-         * @return {@code this}
-         */
-        public Builder formattedFor(Locale locale) {
-            this.locale = locale;
-            return this;
-        }
-        
-        /**
-         * Use the given {@link Clock} instance for the time.
-         *
-         * @param clock a {@link Clock} instance
-         * @return {@code this}
-         */
-        public Builder withClock(Clock clock) {
-            this.clock = clock;
-            return this;
-        }
-        
-        /**
-         * Use the given {@link TimeZone} for the time.
-         *
-         * @param timeZone a {@link TimeZone}
-         * @return {@code this}
-         */
-        public Builder formattedFor(TimeZone timeZone) {
-            this.timeZone = timeZone;
-            return this;
         }
         
         /**
@@ -209,7 +160,9 @@ public class NacosMetersReporter extends ScheduledReporter {
     }
     
     private final Locale locale;
+    
     private final Clock clock;
+    
     private final DateFormat dateFormat;
     
     private NacosMetersReporter(MetricRegistry registry,
