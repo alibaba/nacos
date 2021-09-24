@@ -38,6 +38,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
+import com.alibaba.nacos.core.distributed.raft.utils.NacosMetersReporter;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
@@ -52,6 +53,7 @@ import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.closure.ReadIndexClosure;
 import com.alipay.sofa.jraft.conf.Configuration;
 import com.alipay.sofa.jraft.core.CliServiceImpl;
+import com.alipay.sofa.jraft.core.NodeImpl;
 import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
@@ -266,6 +268,14 @@ public class JRaftServer {
     
             // Because BaseRpcServer has been started before, it is not allowed to start again here
             Node node = raftGroupService.start(false);
+            
+            // open metrics
+            NacosMetersReporter reporter = NacosMetersReporter.forRegistry(node.getNodeMetrics().getMetricRegistry())
+                    .convertRatesTo(TimeUnit.SECONDS)
+                    .convertDurationsTo(TimeUnit.MILLISECONDS)
+                    .build();
+            reporter.start(10, TimeUnit.SECONDS);
+            
             machine.setNode(node);
             RouteTable.getInstance().updateConfiguration(groupName, configuration);
             
