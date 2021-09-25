@@ -272,6 +272,7 @@ public class JRaftServer {
             NacosMetersReporter reporter = NacosMetersReporter.forRegistry(node.getNodeMetrics().getMetricRegistry())
                     .convertRatesTo(TimeUnit.SECONDS)
                     .convertDurationsTo(TimeUnit.MILLISECONDS)
+                    .setGroupName(groupName)
                     .build();
             reporter.start(10, TimeUnit.SECONDS);
             

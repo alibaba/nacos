@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
-import com.codahale.metrics.Clock;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -28,13 +27,10 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Timer;
 
-import java.text.DateFormat;
 import java.util.Collections;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TimeZone;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -45,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class NacosMetersReporter extends ScheduledReporter {
     
-    private long cnt = 0;
+    private String groupName;
     
     /**
      * Returns a new {@link Builder} for {@link NacosMetersReporter}.
@@ -64,11 +60,7 @@ public class NacosMetersReporter extends ScheduledReporter {
         
         private final MetricRegistry registry;
         
-        private Locale locale;
-        
-        private Clock clock;
-        
-        private TimeZone timeZone;
+        private String groupName;
         
         private TimeUnit rateUnit;
         
@@ -84,9 +76,6 @@ public class NacosMetersReporter extends ScheduledReporter {
         
         private Builder(MetricRegistry registry) {
             this.registry = registry;
-            this.locale = Locale.getDefault();
-            this.clock = Clock.defaultClock();
-            this.timeZone = TimeZone.getDefault();
             this.rateUnit = TimeUnit.SECONDS;
             this.durationUnit = TimeUnit.MILLISECONDS;
             this.filter = MetricFilter.ALL;
@@ -139,6 +128,17 @@ public class NacosMetersReporter extends ScheduledReporter {
             this.disabledMetricAttributes = disabledMetricAttributes;
             return this;
         }
+    
+        /**
+         * groupName for this reporter.
+         *
+         * @param groupName groupName
+         * @return {@code this}
+         */
+        public Builder setGroupName(String groupName) {
+            this.groupName = groupName;
+            return this;
+        }
         
         /**
          * Builds a {@link ConsoleReporter} with the given properties.
@@ -147,9 +147,7 @@ public class NacosMetersReporter extends ScheduledReporter {
          */
         public NacosMetersReporter build() {
             return new NacosMetersReporter(registry,
-                    locale,
-                    clock,
-                    timeZone,
+                    groupName,
                     rateUnit,
                     durationUnit,
                     filter,
@@ -159,16 +157,8 @@ public class NacosMetersReporter extends ScheduledReporter {
         }
     }
     
-    private final Locale locale;
-    
-    private final Clock clock;
-    
-    private final DateFormat dateFormat;
-    
     private NacosMetersReporter(MetricRegistry registry,
-            Locale locale,
-            Clock clock,
-            TimeZone timeZone,
+            String groupName,
             TimeUnit rateUnit,
             TimeUnit durationUnit,
             MetricFilter filter,
@@ -176,17 +166,14 @@ public class NacosMetersReporter extends ScheduledReporter {
             boolean shutdownExecutorOnStop,
             Set<MetricAttribute> disabledMetricAttributes) {
         super(registry, "nacos-meters--reporter", filter, rateUnit, durationUnit, executor, shutdownExecutorOnStop, disabledMetricAttributes);
-        this.locale = locale;
-        this.clock = clock;
-        this.dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT,
-                DateFormat.MEDIUM,
-                locale);
-        dateFormat.setTimeZone(timeZone);
+        this.groupName = groupName;
     }
     
     @Override
     public void report(SortedMap<String, Gauge> gauges, SortedMap<String, Counter> counters,
             SortedMap<String, Histogram> histograms, SortedMap<String, Meter> meters, SortedMap<String, Timer> timers) {
+    
+        System.out.println("groupName = " + groupName);
         
         for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
             reportGauge(entry.getKey(), entry.getValue());
