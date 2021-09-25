@@ -105,9 +105,9 @@ public class PushExecuteTaskTest {
         PushDelayTask delayTask = new PushDelayTask(service, 0L);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
-        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get());
+        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH).get());
     }
     
     @Test
@@ -115,9 +115,9 @@ public class PushExecuteTaskTest {
         PushDelayTask delayTask = new PushDelayTask(service, 0L, clientId);
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         executeTask.run();
-        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get());
+        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH).get());
     }
     
     @Test
@@ -126,9 +126,9 @@ public class PushExecuteTaskTest {
         PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
         when(delayTaskExecuteEngine.getServiceStorage()).thenThrow(new RuntimeException());
         executeTask.run();
-        assertEquals(0, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get());
+        assertEquals(0, MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.FAILED_PUSH).get());
         verify(delayTaskExecuteEngine).addTask(eq(service), any(PushDelayTask.class));
     }
     
@@ -139,9 +139,9 @@ public class PushExecuteTaskTest {
         pushExecutor.setShouldSuccess(false);
         pushExecutor.setFailedException(new NoRequiredRetryException());
         executeTask.run();
-        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get());
+        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.FAILED_PUSH).get());
         verify(delayTaskExecuteEngine, never()).addTask(eq(service), any(PushDelayTask.class));
     }
     
@@ -152,9 +152,9 @@ public class PushExecuteTaskTest {
         pushExecutor.setShouldSuccess(false);
         pushExecutor.setFailedException(new RuntimeException());
         executeTask.run();
-        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).get());
+        assertEquals(1, MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.FAILED_PUSH).get());
         verify(delayTaskExecuteEngine).addTask(eq(service), any(PushDelayTask.class));
     }
 }

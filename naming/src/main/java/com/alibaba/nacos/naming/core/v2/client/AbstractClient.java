@@ -133,13 +133,13 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public void release() {
-        MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT)
+        MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.IP_COUNT)
                 .addAndGet(-1 * publishers.size());
-        MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT)
+        MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.SUBSCRIBER_COUNT)
                 .addAndGet(-1 * subscribers.size());
     }
 }

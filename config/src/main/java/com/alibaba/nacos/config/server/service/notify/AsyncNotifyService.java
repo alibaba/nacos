@@ -235,9 +235,9 @@ public class AsyncNotifyService {
                                 configClusterRpcClientProxy
                                         .syncConfigChange(member, syncRequest, new AsyncRpcNotifyCallBack(task));
                             } catch (Exception e) {
-                                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                                MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                                                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                                ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                                         .increment();
                                 asyncTaskExecute(task);
                             }
@@ -316,9 +316,9 @@ public class AsyncNotifyService {
                         .error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                                 task.getGroup(), task.getLastModified());
     
-                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                         .increment();
             }
         }
@@ -338,9 +338,9 @@ public class AsyncNotifyService {
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
     
-            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+            MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                            ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                            ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                     .increment();
         }
         
@@ -355,9 +355,9 @@ public class AsyncNotifyService {
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified());
     
-            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+            MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                            ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                            ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                     .increment();
         }
     }
@@ -401,9 +401,9 @@ public class AsyncNotifyService {
                 LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
                         task.getDataId(), task.getGroup(), task.getLastModified());
     
-                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                         .increment();
             }
         }
@@ -423,9 +423,9 @@ public class AsyncNotifyService {
             LogUtil.NOTIFY_LOG.error("[notify-retry] target:{} dataId:{} group:{} ts:{}", task.member.getAddress(),
                     task.getDataId(), task.getGroup(), task.getLastModified());
     
-            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+            MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                            ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                            ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                     .increment();
         }
     }
