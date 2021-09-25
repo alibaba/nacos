@@ -38,6 +38,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosureImpl;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftUtils;
+import com.alibaba.nacos.core.distributed.raft.utils.NacosMetersReporter;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftOptionsBuilder;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
@@ -266,6 +267,15 @@ public class JRaftServer {
     
             // Because BaseRpcServer has been started before, it is not allowed to start again here
             Node node = raftGroupService.start(false);
+            
+            // open metrics
+            NacosMetersReporter reporter = NacosMetersReporter.forRegistry(node.getNodeMetrics().getMetricRegistry())
+                    .convertRatesTo(TimeUnit.SECONDS)
+                    .convertDurationsTo(TimeUnit.MILLISECONDS)
+                    .setGroupName(groupName)
+                    .build();
+            reporter.start(10, TimeUnit.SECONDS);
+            
             machine.setNode(node);
             RouteTable.getInstance().updateConfiguration(groupName, configuration);
             
