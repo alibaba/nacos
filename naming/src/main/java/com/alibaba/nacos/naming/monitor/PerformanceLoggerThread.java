@@ -80,13 +80,13 @@ public class PerformanceLoggerThread {
      */
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectMetrics() {
-        MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT)
+        MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.SERVICE_COUNT)
                 .set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
-        MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_AVG_PUSH_COST)
+        MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.AVG_PUSH_COST)
                 .set(getAvgPushCost());
         metricsRaftLeader();
     }
@@ -98,19 +98,19 @@ public class PerformanceLoggerThread {
     private void metricsRaftLeader() {
         if (!versionJudgement.allMemberIsNewVersion()) {
             if (raftCore.isLeader()) {
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_LEADER_STATUS)
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.LEADER_STATUS)
                         .set(1);
             } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_LEADER_STATUS)
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.LEADER_STATUS)
                         .set(0);
             } else {
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_LEADER_STATUS)
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.LEADER_STATUS)
                         .set(2);
             }
         }
@@ -130,22 +130,22 @@ public class PerformanceLoggerThread {
                     Loggers.PERFORMANCE_LOG.info("DISTRO:|V1SyncDone|V1SyncFail|V2SyncDone|V2SyncFail|V2VerifyFail|");
                 }
                 int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
-                long ipCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT).get();
-                long subscribeCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SUBSCRIBER_COUNT).get();
-                long maxPushCost = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MAX_PUSH_COST).get();
+                long ipCount = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.IP_COUNT).get();
+                long subscribeCount = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.SUBSCRIBER_COUNT).get();
+                long maxPushCost = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.MAX_PUSH_COST).get();
                 long avgPushCost = getAvgPushCost();
-                long totalPushCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).longValue();
-                long failPushCount = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_FAILED_PUSH).longValue();
+                long totalPushCount = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH).longValue();
+                long failPushCount = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.FAILED_PUSH).longValue();
                 Loggers.PERFORMANCE_LOG
                         .info("PERFORMANCE:|{}|{}|{}|{}|{}|{}|{}", serviceCount, ipCount, subscribeCount, maxPushCost,
                                 avgPushCost, totalPushCount, failPushCount);
@@ -153,15 +153,15 @@ public class PerformanceLoggerThread {
                         .info("Task worker status: \n" + NamingExecuteTaskDispatcher.getInstance().workersStatus());
                 printDistroMonitor();
                 logCount++;
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COUNT_FOR_AVG).set(0);
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COST_FOR_AVG).set(0);
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MAX_PUSH_COST)
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH_COUNT_FOR_AVG).set(0);
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH_COST_FOR_AVG).set(0);
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.MAX_PUSH_COST)
                         .set(-1);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
@@ -194,12 +194,12 @@ public class PerformanceLoggerThread {
     }
     
     private long getAvgPushCost() {
-        long size = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COUNT_FOR_AVG).get();
-        long totalCost = MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH_COST_FOR_AVG).get();
+        long size = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH_COUNT_FOR_AVG).get();
+        long totalCost = MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH_COST_FOR_AVG).get();
         return (size > 0 && totalCost > 0) ? totalCost / size : -1;
     }
 }

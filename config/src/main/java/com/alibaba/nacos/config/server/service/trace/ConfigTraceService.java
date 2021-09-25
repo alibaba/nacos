@@ -110,9 +110,9 @@ public class ConfigTraceService {
         if (!LogUtil.TRACE_LOG.isInfoEnabled()) {
             return;
         }
-        MetricsManager.timer(ConfigMetricsConstant.N_NACOS_TIMER,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_RT)
+        MetricsManager.timer(ConfigMetricsConstant.NACOS_TIMER,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.NOTIFY_RT)
                 .record(delayed, TimeUnit.MILLISECONDS);
         // Convenient tlog segmentation
         if (StringUtils.isBlank(tenant)) {

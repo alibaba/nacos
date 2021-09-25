@@ -100,18 +100,18 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     @Override
     public void addTask(Object key, AbstractDelayTask newTask) {
         super.addTask(key, newTask);
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DUMP_TASK)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.DUMP_TASK)
                 .set(tasks.size());
     }
     
     @Override
     public AbstractDelayTask removeTask(Object key) {
         AbstractDelayTask result = super.removeTask(key);
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DUMP_TASK)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.DUMP_TASK)
                 .set(tasks.size());
         return result;
     }
@@ -119,9 +119,9 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     @Override
     protected void processTasks() {
         super.processTasks();
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DUMP_TASK)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.DUMP_TASK)
                 .set(tasks.size());
         if (tasks.isEmpty()) {
             this.lock.lock();

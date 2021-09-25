@@ -18,6 +18,7 @@ package com.alibaba.nacos.metrics.manager;
 
 /**
  * Config Metrics Constant.
+ *
  * @author holdonbei
  */
 public class ConfigMetricsConstant {
@@ -25,96 +26,96 @@ public class ConfigMetricsConstant {
     /**
      * metrics name.
      */
-    public static final String N_NACOS_MONITOR = "nacos_monitor";
+    public static final String NACOS_MONITOR = "nacos_monitor";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_TIMER = "nacos_timer";
+    public static final String NACOS_TIMER = "nacos_timer";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_EXCEPTION = "nacos_exception";
+    public static final String NACOS_EXCEPTION = "nacos_exception";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_MODULE = "module";
+    public static final String MODULE = "module";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_NAME = "name";
+    public static final String NAME = "name";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CONFIG = "config";
+    public static final String CONFIG = "config";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_GET_CONFIG = "getConfig";
+    public static final String GET_CONFIG = "getConfig";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_PUBLISH = "publish";
+    public static final String PUBLISH = "publish";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_LONG_POLLING = "longPolling";
+    public static final String LONG_POLLING = "longPolling";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CONFIG_COUNT = "configCount";
+    public static final String CONFIG_COUNT = "configCount";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_NOTIFY_TASK = "notifyTask";
+    public static final String NOTIFY_TASK = "notifyTask";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_NOTIFY_CLIENT_TASK = "notifyClientTask";
+    public static final String NOTIFY_CLIENT_TASK = "notifyClientTask";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_DUMP_TASK = "dumpTask";
+    public static final String DUMP_TASK = "dumpTask";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_NOTIFY_RT = "notifyRt";
+    public static final String NOTIFY_RT = "notifyRt";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_ILLEGAL_ARGUMENT = "illegalArgument";
+    public static final String ILLEGAL_ARGUMENT = "illegalArgument";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_NACOS = "nacos";
+    public static final String NACOS = "nacos";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_DB = "db";
+    public static final String DB = "db";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CONFIG_NOTIFY = "configNotify";
+    public static final String CONFIG_NOTIFY = "configNotify";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_UN_HEALTH = "unhealth";
+    public static final String UNHEALTH = "unhealth";
     
 }

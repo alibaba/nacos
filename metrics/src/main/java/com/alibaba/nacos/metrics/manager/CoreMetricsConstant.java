@@ -18,6 +18,7 @@ package com.alibaba.nacos.metrics.manager;
 
 /**
  * Core Metrics Constant.
+ *
  * @author holdonbei
  */
 public class CoreMetricsConstant {
@@ -25,40 +26,40 @@ public class CoreMetricsConstant {
     /**
      * metrics name.
      */
-    public static final String N_NACOS_MONITOR = "nacos_monitor";
+    public static final String NACOS_MONITOR = "nacos_monitor";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_CLIENT_TOTAL_CONNECTIONS = "nacos_client_total_connections";
+    public static final String NACOS_CLIENT_TOTAL_CONNECTIONS = "nacos_client_total_connections";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_GRPC_REQUEST_COUNT = "nacos_grpc_request_count";
+    public static final String NACOS_GRPC_REQUEST_COUNT = "nacos_grpc_request_count";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_MODULE = "module";
+    public static final String MODULE = "module";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_NAME = "name";
+    public static final String NAME = "name";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CORE = "core";
+    public static final String CORE = "core";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CONFIG = "config";
+    public static final String CONFIG = "config";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_LONG_CONNECTION = "longConnection";
+    public static final String LONG_CONNECTION = "longConnection";
 }

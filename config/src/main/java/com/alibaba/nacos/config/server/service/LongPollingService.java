@@ -385,9 +385,9 @@ public class LongPollingService {
         @Override
         public void run() {
             MEMORY_LOG.info("[long-pulling] client count " + allSubs.size());
-            MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_LONG_POLLING)
+            MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                            ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                            ConfigMetricsConstant.NAME, ConfigMetricsConstant.LONG_POLLING)
                     .set(allSubs.size());
         }
     }

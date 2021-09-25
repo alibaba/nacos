@@ -297,9 +297,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     
                     int totalCount = connections.size();
                     Loggers.REMOTE_DIGEST.info("Connection check task start");
-                    MetricsManager.gauge(CoreMetricsConstant.N_NACOS_MONITOR,
-                                    CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CONFIG,
-                                    CoreMetricsConstant.TK_NAME, CoreMetricsConstant.TV_LONG_CONNECTION)
+                    MetricsManager.gauge(CoreMetricsConstant.NACOS_MONITOR,
+                                    CoreMetricsConstant.MODULE, CoreMetricsConstant.CONFIG,
+                                    CoreMetricsConstant.NAME, CoreMetricsConstant.LONG_CONNECTION)
                             .set(totalCount);
                     Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                     int currentSdkClientCount = currentSdkClientCount();
