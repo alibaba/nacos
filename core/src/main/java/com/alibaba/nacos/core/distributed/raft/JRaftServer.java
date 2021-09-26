@@ -274,7 +274,7 @@ public class JRaftServer {
                     .convertDurationsTo(TimeUnit.MILLISECONDS)
                     .setGroupName(groupName)
                     .build();
-            reporter.start(10, TimeUnit.SECONDS);
+            reporter.start(15, TimeUnit.SECONDS);
             
             machine.setNode(node);
             RouteTable.getInstance().updateConfiguration(groupName, configuration);

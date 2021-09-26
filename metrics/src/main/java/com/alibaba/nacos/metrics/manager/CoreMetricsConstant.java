@@ -39,6 +39,46 @@ public class CoreMetricsConstant {
     public static final String NACOS_GRPC_REQUEST_COUNT = "nacos_grpc_request_count";
     
     /**
+     * metrics name.
+     */
+    public static final String APPEND_LOGS_COUNT = "append_logs_count";
+    
+    /**
+     * metrics name.
+     */
+    public static final String REPLICATE_ENTRIES_COUNT = "replicate_entries_count";
+    
+    /**
+     * metrics name.
+     */
+    public static final String NEXT_INDEX = "next_index";
+    
+    /**
+     * metrics name.
+     */
+    public static final String LOG_LAGS = "log_lags";
+    
+    /**
+     * metrics name.
+     */
+    public static final String APPEND_LOGS = "append_logs";
+    
+    /**
+     * metrics name.
+     */
+    public static final String REPLICATE_ENTRIES = "replicate_entries";
+    
+    /**
+     * metrics name.
+     */
+    public static final String PRE_VOTE = "pre_vote";
+    
+    /**
+     * metrics name.
+     */
+    public static final String REQUEST_VOTE = "request_vote";
+    
+    /**
      * metrics tag key.
      */
     public static final String MODULE = "module";
@@ -47,6 +87,11 @@ public class CoreMetricsConstant {
      * metrics tag key.
      */
     public static final String NAME = "name";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String GROUP_NAME = "group_name";
     
     /**
      * metrics tag value.

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.raft.utils;
 
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -172,23 +174,13 @@ public class NacosMetersReporter extends ScheduledReporter {
     @Override
     public void report(SortedMap<String, Gauge> gauges, SortedMap<String, Counter> counters,
             SortedMap<String, Histogram> histograms, SortedMap<String, Meter> meters, SortedMap<String, Timer> timers) {
-    
-        System.out.println("groupName = " + groupName);
         
         for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
             reportGauge(entry.getKey(), entry.getValue());
         }
     
-        for (Map.Entry<String, Counter> entry : counters.entrySet()) {
-            reportCounter(entry.getKey(), entry.getValue());
-        }
-    
         for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
             reportHistogram(entry.getKey(), entry.getValue());
-        }
-    
-        for (Map.Entry<String, Meter> entry : meters.entrySet()) {
-            reportMeter(entry.getKey(), entry.getValue());
         }
     
         for (Map.Entry<String, Timer> entry : timers.entrySet()) {
@@ -197,22 +189,34 @@ public class NacosMetersReporter extends ScheduledReporter {
     }
     
     private void reportTimer(String key, Timer value) {
-    
-    }
-    
-    private void reportMeter(String key, Meter value) {
-    
+        String metricsKey = key.replace("-", "_");
+        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS) ||
+                metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES) ||
+                metricsKey.equals(CoreMetricsConstant.PRE_VOTE) ||
+                metricsKey.equals(CoreMetricsConstant.REQUEST_VOTE)) {
+            MetricsManager.gauge(metricsKey.concat("_total"),
+                            CoreMetricsConstant.GROUP_NAME, groupName)
+                    .getAndAdd(value.getCount());
+        }
     }
     
     private void reportHistogram(String key, Histogram value) {
-    
+        String metricsKey = key.replace("-", "_");
+        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS_COUNT) ||
+                metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES_COUNT)) {
+            MetricsManager.gauge(metricsKey,
+                            CoreMetricsConstant.GROUP_NAME, groupName)
+                    .set(value.getCount());
+        }
     }
-    
-    private void reportCounter(String key, Counter value) {
-    
-    }
-    
+
     private void reportGauge(String key, Gauge value) {
-    
+        String metricsKey = key.replace("-", "_");
+        if (metricsKey.equals(CoreMetricsConstant.NEXT_INDEX) ||
+                metricsKey.equals(CoreMetricsConstant.LOG_LAGS)) {
+            MetricsManager.gauge(metricsKey,
+                            CoreMetricsConstant.GROUP_NAME, groupName)
+                    .set(Long.parseLong(value.getValue().toString()));
+        }
     }
 }
