@@ -45,6 +45,8 @@ public class NacosMetersReporter extends ScheduledReporter {
     
     private String groupName;
     
+    private static final String PREFIX = "jraft_";
+    
     /**
      * Returns a new {@link Builder} for {@link NacosMetersReporter}.
      *
@@ -192,7 +194,7 @@ public class NacosMetersReporter extends ScheduledReporter {
         String metricsKey = key.replace("-", "_");
         if (metricsKey.equals(CoreMetricsConstant.PRE_VOTE)
                 || metricsKey.equals(CoreMetricsConstant.REQUEST_VOTE)) {
-            MetricsManager.gauge(metricsKey.concat("_count"),
+            MetricsManager.gauge(PREFIX + metricsKey.concat("_count"),
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .getAndAdd(value.getCount());
         }
@@ -202,7 +204,7 @@ public class NacosMetersReporter extends ScheduledReporter {
         String metricsKey = key.replace("-", "_");
         if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS_COUNT)
                 || metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES_COUNT)) {
-            MetricsManager.gauge(metricsKey,
+            MetricsManager.gauge(PREFIX + metricsKey,
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .set(value.getCount());
         }
@@ -212,7 +214,7 @@ public class NacosMetersReporter extends ScheduledReporter {
         String metricsKey = key.replace("-", "_");
         if (metricsKey.equals(CoreMetricsConstant.NEXT_INDEX)
                 || metricsKey.equals(CoreMetricsConstant.LOG_LAGS)) {
-            MetricsManager.gauge(metricsKey,
+            MetricsManager.gauge(PREFIX + metricsKey,
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .set(Long.parseLong(value.getValue().toString()));
         }
