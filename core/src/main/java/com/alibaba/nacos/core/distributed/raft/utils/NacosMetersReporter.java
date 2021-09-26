@@ -190,10 +190,10 @@ public class NacosMetersReporter extends ScheduledReporter {
     
     private void reportTimer(String key, Timer value) {
         String metricsKey = key.replace("-", "_");
-        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS) ||
-                metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES) ||
-                metricsKey.equals(CoreMetricsConstant.PRE_VOTE) ||
-                metricsKey.equals(CoreMetricsConstant.REQUEST_VOTE)) {
+        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS)
+                || metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES)
+                || metricsKey.equals(CoreMetricsConstant.PRE_VOTE)
+                || metricsKey.equals(CoreMetricsConstant.REQUEST_VOTE)) {
             MetricsManager.gauge(metricsKey.concat("_total"),
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .getAndAdd(value.getCount());
@@ -202,8 +202,8 @@ public class NacosMetersReporter extends ScheduledReporter {
     
     private void reportHistogram(String key, Histogram value) {
         String metricsKey = key.replace("-", "_");
-        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS_COUNT) ||
-                metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES_COUNT)) {
+        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS_COUNT)
+                || metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES_COUNT)) {
             MetricsManager.gauge(metricsKey,
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .set(value.getCount());
@@ -212,8 +212,8 @@ public class NacosMetersReporter extends ScheduledReporter {
 
     private void reportGauge(String key, Gauge value) {
         String metricsKey = key.replace("-", "_");
-        if (metricsKey.equals(CoreMetricsConstant.NEXT_INDEX) ||
-                metricsKey.equals(CoreMetricsConstant.LOG_LAGS)) {
+        if (metricsKey.equals(CoreMetricsConstant.NEXT_INDEX)
+                || metricsKey.equals(CoreMetricsConstant.LOG_LAGS)) {
             MetricsManager.gauge(metricsKey,
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .set(Long.parseLong(value.getValue().toString()));
