@@ -61,16 +61,6 @@ public class CoreMetricsConstant {
     /**
      * metrics name.
      */
-    public static final String APPEND_LOGS = "append_logs";
-    
-    /**
-     * metrics name.
-     */
-    public static final String REPLICATE_ENTRIES = "replicate_entries";
-    
-    /**
-     * metrics name.
-     */
     public static final String PRE_VOTE = "pre_vote";
     
     /**

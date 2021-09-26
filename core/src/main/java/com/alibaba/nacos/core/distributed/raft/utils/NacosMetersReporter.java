@@ -190,11 +190,9 @@ public class NacosMetersReporter extends ScheduledReporter {
     
     private void reportTimer(String key, Timer value) {
         String metricsKey = key.replace("-", "_");
-        if (metricsKey.equals(CoreMetricsConstant.APPEND_LOGS)
-                || metricsKey.equals(CoreMetricsConstant.REPLICATE_ENTRIES)
-                || metricsKey.equals(CoreMetricsConstant.PRE_VOTE)
+        if (metricsKey.equals(CoreMetricsConstant.PRE_VOTE)
                 || metricsKey.equals(CoreMetricsConstant.REQUEST_VOTE)) {
-            MetricsManager.gauge(metricsKey.concat("_total"),
+            MetricsManager.gauge(metricsKey.concat("_count"),
                             CoreMetricsConstant.GROUP_NAME, groupName)
                     .getAndAdd(value.getCount());
         }
