@@ -28,8 +28,8 @@ public class CryptoManagerTest {
     
     @Test
     public void testInstance() {
-        CryptoSpi aes = CryptoManager.instance("rsa");
-        Assert.assertNull(aes);
+        CryptoSpi rsa = CryptoManager.instance("rsa");
+        Assert.assertNull(rsa);
     }
     
     @Test
