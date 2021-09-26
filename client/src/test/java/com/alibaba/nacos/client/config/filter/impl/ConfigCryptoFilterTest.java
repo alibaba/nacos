@@ -17,8 +17,6 @@
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
-import com.alibaba.nacos.api.config.filter.IConfigRequest;
-import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,8 +25,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import static org.junit.Assert.*;
 
 /**
  * ConfigCryptoFilterTest.
@@ -62,7 +58,7 @@ public class ConfigCryptoFilterTest {
     }
     
     @Test
-    public void doFilter() throws NacosException {
+    public void testDoFilter() throws NacosException {
         configCryptoFilter.doFilter(configRequest, null, iConfigFilterChain);
         
         Mockito.verify(configRequest).getDataId();
@@ -76,7 +72,7 @@ public class ConfigCryptoFilterTest {
     }
     
     @Test
-    public void getOrder() {
+    public void testGetOrder() {
         int order = configCryptoFilter.getOrder();
         Assert.assertEquals(order, 0);
     }
