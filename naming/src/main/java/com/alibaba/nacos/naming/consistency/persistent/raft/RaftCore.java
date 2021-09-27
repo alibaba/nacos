@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.http.Callback;
@@ -25,6 +24,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -44,13 +44,13 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -127,6 +127,8 @@ public class RaftCore implements Closeable {
     
     private final EventPublisher publisher;
     
+    private final RaftListener raftListener;
+    
     private boolean initialized = false;
     
     private volatile boolean stopWork = false;
@@ -136,7 +138,7 @@ public class RaftCore implements Closeable {
     private ScheduledFuture heartbeatTask = null;
     
     public RaftCore(RaftPeerSet peers, SwitchDomain switchDomain, GlobalConfig globalConfig, RaftProxy raftProxy,
-            RaftStore raftStore, ClusterVersionJudgement versionJudgement) {
+            RaftStore raftStore, ClusterVersionJudgement versionJudgement, RaftListener raftListener) {
         this.peers = peers;
         this.switchDomain = switchDomain;
         this.globalConfig = globalConfig;
@@ -145,6 +147,7 @@ public class RaftCore implements Closeable {
         this.versionJudgement = versionJudgement;
         this.notifier = new PersistentNotifier(key -> null == getDatum(key) ? null : getDatum(key).value);
         this.publisher = NotifyCenter.registerToPublisher(ValueChangeEvent.class, 16384);
+        this.raftListener = raftListener;
     }
     
     /**
@@ -175,6 +178,7 @@ public class RaftCore implements Closeable {
             if (stopWork) {
                 try {
                     shutdown();
+                    raftListener.removeOldRaftMetadata();
                 } catch (NacosException e) {
                     throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
                 }
@@ -610,7 +614,7 @@ public class RaftCore implements Closeable {
         
         private void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (ApplicationUtils.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
+            if (EnvUtil.getStandaloneMode() || local.state != RaftPeer.State.LEADER) {
                 return;
             }
             if (Loggers.RAFT.isDebugEnabled()) {
@@ -1004,10 +1008,10 @@ public class RaftCore implements Closeable {
      * @return api url
      */
     public static String buildUrl(String ip, String api) {
-        if (!IPUtil.containsPort(ip)) {
-            ip = ip + IPUtil.IP_PORT_SPLITER + ApplicationUtils.getPort();
+        if (!InternetAddressUtil.containsPort(ip)) {
+            ip = ip + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        return "http://" + ip + ApplicationUtils.getContextPath() + api;
+        return "http://" + ip + EnvUtil.getContextPath() + api;
     }
     
     public Datum<?> getDatum(String key) {

@@ -89,8 +89,7 @@ public class WatchFileCenter {
      */
     public static synchronized boolean registerWatcher(final String paths, FileWatcher watcher) throws NacosException {
         checkState();
-        NOW_WATCH_JOB_CNT++;
-        if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
+        if (NOW_WATCH_JOB_CNT == MAX_WATCH_FILE_JOB) {
             return false;
         }
         WatchDirJob job = MANAGER.get(paths);
@@ -98,6 +97,7 @@ public class WatchFileCenter {
             job = new WatchDirJob(paths);
             job.start();
             MANAGER.put(paths, job);
+            NOW_WATCH_JOB_CNT++;
         }
         job.addSubscribe(watcher);
         return true;
@@ -114,6 +114,7 @@ public class WatchFileCenter {
         if (job != null) {
             job.shutdown();
             MANAGER.remove(path);
+            NOW_WATCH_JOB_CNT--;
             return true;
         }
         return false;
@@ -132,10 +133,11 @@ public class WatchFileCenter {
             try {
                 entry.getValue().shutdown();
             } catch (Throwable e) {
-                LOGGER.error("[WatchFileCenter] shutdown has error : {}", e);
+                LOGGER.error("[WatchFileCenter] shutdown has error : ", e);
             }
         }
         MANAGER.clear();
+        NOW_WATCH_JOB_CNT = 0;
         LOGGER.warn("[WatchFileCenter] already closed");
     }
     
@@ -228,7 +230,7 @@ public class WatchFileCenter {
                 } catch (InterruptedException ignore) {
                     Thread.interrupted();
                 } catch (Throwable ex) {
-                    LOGGER.error("An exception occurred during file listening : {}", ex);
+                    LOGGER.error("An exception occurred during file listening : ", ex);
                 }
             }
         }
@@ -249,7 +251,7 @@ public class WatchFileCenter {
                         try {
                             job.run();
                         } catch (Throwable ex) {
-                            LOGGER.error("File change event callback error : {}", ex);
+                            LOGGER.error("File change event callback error : ", ex);
                         }
                     } else {
                         executor.execute(job);

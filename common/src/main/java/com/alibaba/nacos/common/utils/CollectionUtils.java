@@ -17,11 +17,17 @@
 package com.alibaba.nacos.common.utils;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 /**
  * Copy from {@link org.apache.commons.collections}.
@@ -191,7 +197,7 @@ public final class CollectionUtils {
      *
      * @param coll   collection
      * @param target target value
-     * @param <T>    Genreal Type
+     * @param <T>    General Type
      * @return true if contain, otherwise false
      */
     public static <T> boolean contains(Collection<T> coll, T target) {
@@ -231,18 +237,81 @@ public final class CollectionUtils {
      * Returns the value to which the specified index , or {@code defaultValue} if this collection contains no value for
      * the index.
      *
-     * @param coll         the collection to get a value from
+     * @param obj         the object to get a value from
      * @param index        the index to get
      * @param defaultValue default value
      * @param <T>          General Type
      * @return the value to which the specified index , or {@code defaultValue} if this collection contains no value for
-     *     the index.
+     * the index.
      */
-    public static <T> T getOrDefault(Collection<T> coll, int index, T defaultValue) {
+    public static <T> T getOrDefault(Object obj, int index, T defaultValue) {
         try {
-            return (T) get(coll, index);
+            return (T) get(obj, index);
         } catch (IndexOutOfBoundsException e) {
             return defaultValue;
         }
+    }
+    
+    /**
+     * return an arraylist containing all input parameters.
+     * @author zzq
+     * @param elements element array
+     * @return arraylist containing all input parameters
+     */
+    public static <T> List<T> list(T... elements) {
+        if (elements == null) {
+            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+        }
+        ArrayList<T> list = new ArrayList<>(elements.length);
+        Collections.addAll(list, elements);
+        return list;
+    }
+    
+    /**
+     * Return an set containing all input parameters.
+     * @param elements elements element array
+     * @return set containing all input parameters
+     */
+    public static <T> Set<T> set(T... elements) {
+        if (elements == null) {
+            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+        } else {
+            return new LinkedHashSet(Arrays.asList(elements));
+        }
+    }
+    
+    /**
+     * return the first element, if the iterator contains multiple elements,
+     * will throw {@code IllegalArgumentException}.
+     * @throws NoSuchElementException if the iterator is empty
+     * @throws IllegalArgumentException if the iterator contains multiple elements.
+     * The state of the iterator is unspecified.
+     */
+    public static <T> T getOnlyElement(Iterable<T> iterable) {
+        if (iterable == null) {
+            throw new IllegalArgumentException("iterable cannot be null.");
+        }
+        Iterator<T> iterator = iterable.iterator();
+        T first = iterator.next();
+        if (!iterator.hasNext()) {
+            return first;
+        }
+        throw new IllegalArgumentException(buildExceptionMessage(iterator, first));
+    }
+    
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
+    private static <T> String buildExceptionMessage(Iterator<T> iterator, T first) {
+        String msg = "";
+        msg += "expected one element but was: <";
+        msg += first;
+        for (int i = 0; i < 4 && iterator.hasNext(); i++) {
+            msg += ", ";
+            msg += iterator.next();
+        }
+        if (iterator.hasNext()) {
+            msg += ", ...";
+        }
+        msg += '>';
+        return msg;
     }
 }

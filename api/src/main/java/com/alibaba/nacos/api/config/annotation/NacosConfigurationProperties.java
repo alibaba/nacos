@@ -72,9 +72,9 @@ public @interface NacosConfigurationProperties {
     /**
      * config style.
      *
-     * @return default value is {@link ConfigType#PROPERTIES}
+     * @return default value is {@link ConfigType#UNSET}
      */
-    ConfigType type() default ConfigType.PROPERTIES;
+    ConfigType type() default ConfigType.UNSET;
     
     /**
      * It indicates the properties of current doBind bean is auto-refreshed when Nacos configuration is changed.

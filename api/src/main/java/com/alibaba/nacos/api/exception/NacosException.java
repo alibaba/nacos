@@ -108,7 +108,12 @@ public class NacosException extends Exception {
     public static final int CLIENT_INVALID_PARAM = -400;
     
     /**
-     * over client threshold（超过server端的限流阈值）.
+     * client disconnect.
+     */
+    public static final int CLIENT_DISCONNECT = -401;
+    
+    /**
+     * over client threshold（超过client端的限流阈值）.
      */
     public static final int CLIENT_OVER_THRESHOLD = -503;
     
@@ -153,11 +158,28 @@ public class NacosException extends Exception {
      */
     public static final int OVER_THRESHOLD = 503;
     
+    /**
+     * Server is not started.
+     */
+    public static final int INVALID_SERVER_STATUS = 300;
+    
+    /**
+     * Connection is not registered.
+     */
+    public static final int UN_REGISTER = 301;
+    
+    /**
+     * No Handler Found.
+     */
+    public static final int NO_HANDLER = 302;
+    
     public static final int RESOURCE_NOT_FOUND = -404;
     
     /**
-     * http client error code,
-     * ome exceptions that occurred when the use the Nacos RestTemplate and Nacos AsyncRestTemplate.
+     * http client error code, ome exceptions that occurred when the use the Nacos RestTemplate and Nacos
+     * AsyncRestTemplate.
      */
     public static final int HTTP_CLIENT_ERROR_CODE = -500;
+    
+    
 }

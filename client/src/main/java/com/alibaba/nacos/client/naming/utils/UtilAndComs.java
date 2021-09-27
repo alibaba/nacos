@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 
 /**
@@ -25,6 +26,8 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  */
 public class UtilAndComs {
     
+    // using  ClientCommonUtils#VERSION instead.
+    @Deprecated
     public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
     
     public static String webContext = "/nacos";
@@ -52,13 +55,19 @@ public class UtilAndComs {
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
     
     public static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT =
-            Runtime.getRuntime().availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2 : 1;
+            ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
     
     public static final int DEFAULT_POLLING_THREAD_COUNT =
-            Runtime.getRuntime().availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2 : 1;
+            ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
     
     public static final String HTTP = "http://";
     
     public static final String HTTPS = "https://";
+    
+    public static final String ENV_CONFIGS = "00-00---000-ENV_CONFIGS-000---00-00";
+    
+    public static final String VIP_CLIENT_FILE = "vipclient.properties";
+    
+    public static final String ALL_HOSTS = "00-00---000-ALL_HOSTS-000---00-00";
     
 }

@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.config.server.filter;
 
-import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorRecoverEvent;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.Member;
@@ -107,16 +109,21 @@ public class CurcuitFilter implements Filter {
     }
     
     private void listenerSelfInCluster() {
-        protocol.protocolMetaData()
-                .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.RAFT_GROUP_MEMBER, (o, arg) -> {
-                    final List<String> peers = (List<String>) arg;
-                    final Member self = memberManager.getSelf();
-                    final String raftAddress =
-                            self.getIp() + ":" + self.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
-                    // Only when you are in the cluster and the current Leader is
-                    // elected can you provide external services
-                    isOpenService = peers.contains(raftAddress);
-                });
+        protocol.protocolMetaData().subscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.RAFT_GROUP_MEMBER, o -> {
+            if (!(o instanceof ProtocolMetaData.ValueItem)) {
+                return;
+            }
+            final List<String> peers = (List<String>) ((ProtocolMetaData.ValueItem) o).getData();
+            if (CollectionUtils.isEmpty(peers)) {
+                isOpenService = false;
+                return;
+            }
+            final Member self = memberManager.getSelf();
+            final String raftAddress = self.getIp() + ":" + self.getExtendVal(MemberMetaDataConstants.RAFT_PORT);
+            // Only when you are in the cluster and the current Leader is
+            // elected can you provide external services
+            isOpenService = peers.contains(raftAddress);
+        });
     }
     
     private void registerSubscribe() {

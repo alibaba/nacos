@@ -20,6 +20,7 @@ import { request } from '../../../globalLib';
 import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
+import { isDiff } from './util';
 
 @ConfigProvider.config
 class InstanceTable extends React.Component {
@@ -30,6 +31,11 @@ class InstanceTable extends React.Component {
     clusterName: PropTypes.string,
     serviceName: PropTypes.string,
     groupName: PropTypes.string,
+    filters: PropTypes.object,
+  };
+
+  static defaultProps = {
+    filters: new Map(),
   };
 
   constructor(props) {
@@ -38,6 +44,7 @@ class InstanceTable extends React.Component {
     this.state = {
       loading: false,
       instance: { count: 0, list: [] },
+      // tableData: {},
       pageNum: 1,
       pageSize: 10,
     };
@@ -56,7 +63,8 @@ class InstanceTable extends React.Component {
   }
 
   getInstanceList() {
-    const { clusterName, serviceName, groupName } = this.props;
+    const { clusterName, serviceName, groupName, filters } = this.props;
+
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
@@ -118,9 +126,16 @@ class InstanceTable extends React.Component {
     const { locale = {} } = this.props;
     const { clusterName, serviceName, groupName } = this.props;
     const { instance, pageSize, loading } = this.state;
-    return instance.count ? (
+    const instanceList = instanceFilter(instance.list, this.props.filters);
+
+    const _instance = {
+      count: instanceList.length,
+      list: instanceList,
+    };
+
+    return _instance.count ? (
       <div>
-        <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
+        <Table dataSource={_instance.list} loading={loading} rowProps={this.rowColor}>
           <Table.Column width={138} title="IP" dataIndex="ip" />
           <Table.Column width={100} title={locale.port} dataIndex="port" />
           <Table.Column
@@ -191,5 +206,21 @@ class InstanceTable extends React.Component {
     ) : null;
   }
 }
+
+const instanceFilter = function(array, filters) {
+  return array.filter(item => {
+    const { metadata } = item;
+    let isTargetInstance = true;
+
+    filters.forEach((value, key) => {
+      if (value !== metadata[key]) {
+        isTargetInstance = false;
+        return isTargetInstance;
+      }
+    });
+
+    return isTargetInstance;
+  });
+};
 
 export default InstanceTable;

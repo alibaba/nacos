@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.consistency;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.pojo.Record;
 
+import java.util.Optional;
+
 /**
  * Consistence service for all implementations to derive.
  *
@@ -76,6 +78,13 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     void unListen(String key, RecordListener listener) throws NacosException;
+    
+    /**
+     * Get the error message of the consistency protocol.
+     *
+     * @return the consistency protocol error message.
+     */
+    Optional<String> getErrorMsg();
     
     /**
      * Tell the status of this consistency service.

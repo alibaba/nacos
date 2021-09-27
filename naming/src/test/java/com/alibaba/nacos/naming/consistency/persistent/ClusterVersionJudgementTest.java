@@ -20,7 +20,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,23 +29,65 @@ import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockServletContext;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClusterVersionJudgementTest {
     
     private ServerMemberManager manager;
     
+    private String[] ipList;
+    
+    private final int ipCount = 3;
+    
+    private final String ip1 = "1.1.1.1";
+    
+    private final String ip2 = "2.2.2.2";
+    
+    private final String ip3 = "3.3.3.3";
+    
+    private final int defalutPort = 80;
+    
+    private final String newVersion = "1.4.0";
+    
+    private final String oldVersion = "1.3.0";
+    
+    private List<Member> members;
+    
+    private Map<String, Object> newVersionMeta;
+    
+    private Map<String, Object> oldVersionMeta;
+    
+    private ClusterVersionJudgement judgement;
+    
+    public ClusterVersionJudgementTest() {
+    }
+    
     @BeforeClass
     public static void beforeClass() {
-        ApplicationUtils.injectEnvironment(new MockEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Before
     public void beforeMethod() throws Exception {
         manager = new ServerMemberManager(new MockServletContext());
+        newVersionMeta = new HashMap<>(4);
+        newVersionMeta.put(MemberMetaDataConstants.VERSION, newVersion);
+        oldVersionMeta = new HashMap<>(4);
+        oldVersionMeta.put(MemberMetaDataConstants.VERSION, oldVersion);
+        ipList = new String[ipCount];
+        ipList[0] = ip1;
+        ipList[1] = ip2;
+        ipList[2] = ip3;
+        members = new LinkedList<>();
+        members.add(Member.builder().ip(ipList[0]).port(defalutPort).state(NodeState.UP).build());
+        members.add(Member.builder().ip(ipList[1]).port(defalutPort).state(NodeState.UP).build());
+        members.add(Member.builder().ip(ipList[2]).port(defalutPort).state(NodeState.UP).build());
+        manager.memberJoin(members);
     }
     
     @After
@@ -59,49 +101,49 @@ public class ClusterVersionJudgementTest {
      */
     @Test
     public void testAllMemberIsNewVersion() {
-        Map<String, String> metadataInfo = new HashMap<>(4);
-        metadataInfo.put(MemberMetaDataConstants.VERSION, "1.4.0");
-        Collection<Member> members = Arrays
-                .asList(Member.builder().ip("1.1.1.1").port(80).state(NodeState.UP).extendInfo(metadataInfo).build(),
-                        Member.builder().ip("2.2.2.2").port(80).state(NodeState.UP).extendInfo(metadataInfo).build(),
-                        Member.builder().ip("3.3.3.3").port(80).state(NodeState.UP).extendInfo(metadataInfo).build());
-        manager.memberJoin(members);
-        ClusterVersionJudgement judgement = new ClusterVersionJudgement(manager);
+        Collection<Member> allMembers = manager.allMembers();
+        allMembers.forEach(member -> member.setExtendInfo(newVersionMeta));
+        judgement = new ClusterVersionJudgement(manager);
         judgement.judge();
         Assert.assertTrue(judgement.allMemberIsNewVersion());
     }
     
     @Test
     public void testPartMemberIsNewVersion() {
-        Map<String, String> metadataInfo = new HashMap<>(4);
-        metadataInfo.put(MemberMetaDataConstants.VERSION, "1.4.0");
-        Collection<Member> members = Arrays
-                .asList(Member.builder().ip("1.1.1.1").port(80).state(NodeState.UP).extendInfo(metadataInfo).build(),
-                        Member.builder().ip("2.2.2.2").port(80).state(NodeState.UP).extendInfo(metadataInfo).build(),
-                        Member.builder().ip("3.3.3.3").port(80).state(NodeState.UP).build());
-        manager.memberJoin(members);
-        ClusterVersionJudgement judgement = new ClusterVersionJudgement(manager);
+        Collection<Member> allMembers = manager.allMembers();
+        AtomicInteger count = new AtomicInteger();
+        allMembers.forEach(member -> {
+            if (count.get() == 0) {
+                member.setExtendInfo(oldVersionMeta);
+            } else {
+                count.incrementAndGet();
+                member.setExtendInfo(newVersionMeta);
+            }
+        });
+        judgement = new ClusterVersionJudgement(manager);
         judgement.judge();
         Assert.assertFalse(judgement.allMemberIsNewVersion());
     }
     
     @Test
     public void testPartMemberUpdateToNewVersion() {
-        Map<String, String> metadataInfo = new HashMap<>(4);
-        metadataInfo.put(MemberMetaDataConstants.VERSION, "1.4.0");
-        Collection<Member> members = Arrays
-                .asList(Member.builder().ip("1.1.1.1").port(80).state(NodeState.UP).extendInfo(metadataInfo).build(),
-                        Member.builder().ip("2.2.2.2").port(80).state(NodeState.UP).extendInfo(metadataInfo).build(),
-                        Member.builder().ip("3.3.3.3").port(80).state(NodeState.UP).build());
-        manager.memberJoin(members);
-        ClusterVersionJudgement judgement = new ClusterVersionJudgement(manager);
+        // Firstly, make a cluster with a part of new version servers.
+        Collection<Member> allMembers = manager.allMembers();
+        AtomicInteger count = new AtomicInteger();
+        allMembers.forEach(member -> {
+            if (count.get() == 0) {
+                member.setExtendInfo(oldVersionMeta);
+            } else {
+                count.incrementAndGet();
+                member.setExtendInfo(newVersionMeta);
+            }
+        });
+        judgement = new ClusterVersionJudgement(manager);
         judgement.judge();
         Assert.assertFalse(judgement.allMemberIsNewVersion());
-        
-        // update 3.3.3.3:80 version to 1.4.0
-        manager.update(Member.builder().ip("3.3.3.3").port(80).state(NodeState.UP).extendInfo(metadataInfo).build());
-        
-        judgement.registerObserver(Assert::assertTrue, 0);
+        // Secondly, make all in the cluster to be new version servers.
+        allMembers.forEach(member -> member.setExtendInfo(newVersionMeta));
+        judgement = new ClusterVersionJudgement(manager);
         judgement.judge();
         Assert.assertTrue(judgement.allMemberIsNewVersion());
     }

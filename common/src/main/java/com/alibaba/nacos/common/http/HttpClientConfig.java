@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.http;
 
+import com.alibaba.nacos.common.utils.ThreadUtils;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -66,12 +68,23 @@ public class HttpClientConfig {
     private final int maxConnPerRoute;
     
     /**
+     * is HTTP compression enabled.
+     */
+    private final boolean contentCompressionEnabled;
+    
+    /**
+     * io thread count.
+     */
+    private final int ioThreadCount;
+    
+    /**
      * user agent.
      */
     private final String userAgent;
     
     public HttpClientConfig(int conTimeOutMillis, int readTimeOutMillis, long connTimeToLive, TimeUnit timeUnit,
-            int connectionRequestTimeout, int maxRedirects, int maxConnTotal, int maxConnPerRoute, String userAgent) {
+            int connectionRequestTimeout, int maxRedirects, int maxConnTotal, int maxConnPerRoute,
+            boolean contentCompressionEnabled, int ioThreadCount, String userAgent) {
         this.conTimeOutMillis = conTimeOutMillis;
         this.readTimeOutMillis = readTimeOutMillis;
         this.connTimeToLive = connTimeToLive;
@@ -80,6 +93,8 @@ public class HttpClientConfig {
         this.maxRedirects = maxRedirects;
         this.maxConnTotal = maxConnTotal;
         this.maxConnPerRoute = maxConnPerRoute;
+        this.contentCompressionEnabled = contentCompressionEnabled;
+        this.ioThreadCount = ioThreadCount;
         this.userAgent = userAgent;
     }
     
@@ -115,6 +130,14 @@ public class HttpClientConfig {
         return maxConnPerRoute;
     }
     
+    public boolean getContentCompressionEnabled() {
+        return contentCompressionEnabled;
+    }
+    
+    public int getIoThreadCount() {
+        return ioThreadCount;
+    }
+    
     public String getUserAgent() {
         return userAgent;
     }
@@ -141,6 +164,10 @@ public class HttpClientConfig {
         
         private int maxConnPerRoute = 0;
         
+        private boolean contentCompressionEnabled = true;
+        
+        private int ioThreadCount = ThreadUtils.getSuitableThreadCount(1);
+        
         private String userAgent;
         
         public HttpClientConfigBuilder setConTimeOutMillis(int conTimeOutMillis) {
@@ -158,7 +185,7 @@ public class HttpClientConfig {
             this.connTimeToLiveTimeUnit = connTimeToLiveTimeUnit;
             return this;
         }
-    
+        
         public HttpClientConfigBuilder setConnectionRequestTimeout(int connectionRequestTimeout) {
             this.connectionRequestTimeout = connectionRequestTimeout;
             return this;
@@ -179,14 +206,30 @@ public class HttpClientConfig {
             return this;
         }
         
+        public HttpClientConfigBuilder setContentCompressionEnabled(boolean contentCompressionEnabled) {
+            this.contentCompressionEnabled = contentCompressionEnabled;
+            return this;
+        }
+        
+        public HttpClientConfigBuilder setIoThreadCount(int ioThreadCount) {
+            this.ioThreadCount = ioThreadCount;
+            return this;
+        }
+        
         public HttpClientConfigBuilder setUserAgent(String userAgent) {
             this.userAgent = userAgent;
             return this;
         }
-        
+    
+        /**
+         * build http client config.
+         *
+         * @return HttpClientConfig
+         */
         public HttpClientConfig build() {
             return new HttpClientConfig(conTimeOutMillis, readTimeOutMillis, connTimeToLive, connTimeToLiveTimeUnit,
-                    connectionRequestTimeout, maxRedirects, maxConnTotal, maxConnPerRoute, userAgent);
+                    connectionRequestTimeout, maxRedirects, maxConnTotal, maxConnPerRoute, contentCompressionEnabled,
+                    ioThreadCount, userAgent);
         }
     }
 }

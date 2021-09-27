@@ -27,7 +27,7 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.Filter;
@@ -39,6 +39,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Unified filter to handle authentication and authorization.
@@ -57,6 +59,8 @@ public class AuthFilter implements Filter {
     @Autowired
     private ControllerMethodsCache methodsCache;
     
+    private Map<Class<? extends ResourceParser>, ResourceParser> parserInstance = new ConcurrentHashMap<>();
+    
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -69,10 +73,25 @@ public class AuthFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         
-        String userAgent = WebUtils.getUserAgent(req);
-        
-        if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
-            chain.doFilter(request, response);
+        if (authConfigs.isEnableUserAgentAuthWhite()) {
+            String userAgent = WebUtils.getUserAgent(req);
+            if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
+                chain.doFilter(request, response);
+                return;
+            }
+        } else if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils
+                .isNotBlank(authConfigs.getServerIdentityValue())) {
+            String serverIdentity = req.getHeader(authConfigs.getServerIdentityKey());
+            if (authConfigs.getServerIdentityValue().equals(serverIdentity)) {
+                chain.doFilter(request, response);
+                return;
+            }
+            Loggers.AUTH.warn("Invalid server identity value for {} from {}", authConfigs.getServerIdentityKey(),
+                    req.getRemoteHost());
+        } else {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+                    "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                            + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
             return;
         }
         
@@ -96,7 +115,7 @@ public class AuthFilter implements Filter {
                 String resource = secured.resource();
                 
                 if (StringUtils.isBlank(resource)) {
-                    ResourceParser parser = secured.parser().newInstance();
+                    ResourceParser parser = getResourceParser(secured.parser());
                     resource = parser.parseName(req);
                 }
                 
@@ -115,13 +134,20 @@ public class AuthFilter implements Filter {
                         e.getErrMsg());
             }
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
-            return;
         } catch (IllegalArgumentException e) {
             resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));
-            return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
-            return;
         }
+    }
+    
+    private ResourceParser getResourceParser(Class<? extends ResourceParser> parseClass)
+            throws IllegalAccessException, InstantiationException {
+        ResourceParser parser = parserInstance.get(parseClass);
+        if (parser == null) {
+            parser = parseClass.newInstance();
+            parserInstance.put(parseClass, parser);
+        }
+        return parser;
     }
 }

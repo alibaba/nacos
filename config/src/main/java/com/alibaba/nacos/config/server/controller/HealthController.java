@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
+import java.util.Map;
 
 /**
  * Health service.
@@ -39,11 +40,11 @@ public class HealthController {
     
     private DataSourceService dataSourceService;
     
-    private String heathUpStr = "UP";
+    private static final String HEALTH_UP = "UP";
     
-    private String heathDownStr = "DOWN";
+    private static final String HEALTH_DOWN = "DOWN";
     
-    private String heathWarnStr = "WARN";
+    private static final String HEALTH_WARN = "WARN";
     
     @Autowired
     private ServerMemberManager memberManager;
@@ -58,23 +59,34 @@ public class HealthController {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
-        if (dbStatus.contains(heathUpStr) && memberManager.isInIpList()) {
-            sb.append(heathUpStr);
-        } else if (dbStatus.contains(heathWarnStr) && memberManager.isInIpList()) {
+        boolean addressServerHealthy = isAddressServerHealthy();
+        if (dbStatus.contains(HEALTH_UP) && addressServerHealthy && ServerMemberManager.isInIpList()) {
+            sb.append(HEALTH_UP);
+        } else if (dbStatus.contains(HEALTH_WARN) && addressServerHealthy && ServerMemberManager.isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {
             sb.append("DOWN:");
-            if (dbStatus.contains(heathDownStr)) {
+            if (dbStatus.contains(HEALTH_DOWN)) {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
-            if (!memberManager.isInIpList()) {
+        
+            if (!addressServerHealthy) {
+                sb.append("address server down. ");
+            }
+            if (!ServerMemberManager.isInIpList()) {
                 sb.append("server ip ").append(InetUtils.getSelfIP())
                         .append(" is not in the serverList of address server. ");
             }
         }
-        
+    
         return sb.toString();
+    }
+    
+    private boolean isAddressServerHealthy() {
+        Map<String, Object> info = memberManager.getLookup().info();
+        return info != null && info.get("addressServerHealth") != null && Boolean
+                .parseBoolean(info.get("addressServerHealth").toString());
     }
     
 }

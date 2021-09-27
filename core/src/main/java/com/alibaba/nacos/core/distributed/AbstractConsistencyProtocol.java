@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed;
 
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 
 import java.util.Collections;
@@ -32,7 +32,7 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public abstract class AbstractConsistencyProtocol<T extends Config, L extends LogProcessor>
+public abstract class AbstractConsistencyProtocol<T extends Config, L extends RequestProcessor>
         implements ConsistencyProtocol<T, L> {
     
     protected final ProtocolMetaData metaData = new ProtocolMetaData();

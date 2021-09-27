@@ -54,9 +54,18 @@ $contentWidth: 1280px;
         margin-top: 58px;
         text-align: center;
       }
+      .internal-sys-tip {
+        width: 100%;
+        line-height: 25px;
+        font-size: 20px;
+        margin-top: 25px;
+        text-align: center;
+        font-weight: 800;
+        color: #ff0000cc;
+      }
       .login-form {
         width: 360px;
-        margin: 80px auto auto auto;
+        margin: 40px auto auto auto;
         input {
           height: 60px;
         }

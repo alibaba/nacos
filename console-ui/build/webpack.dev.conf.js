@@ -18,6 +18,16 @@ const path = require('path');
 const webpack = require('webpack');
 const base = require('./webpack.base.conf');
 
+const [cssLoader]  = base.module.rules;
+cssLoader.use.push({
+  loader: '@alifd/next-theme-loader',
+  options: {
+    modifyVars: {
+      '$icon-font-path': '"/icons/icon-font"',
+      '$font-custom-path': '"/fonts/"'
+    }
+  }
+})
 module.exports = Object.assign({}, base, {
   output: {
     filename: './js/[name].js',

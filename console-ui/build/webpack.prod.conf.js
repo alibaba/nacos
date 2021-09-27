@@ -26,8 +26,8 @@ cssLoader.use.push({
   loader: '@alifd/next-theme-loader',
   options: {
     modifyVars: {
-      '$icon-font-path': '"/nacos/icons/icon-font"',
-      '$font-custom-path': '"/nacos/fonts/"'
+      '$icon-font-path': '"/nacos/console-ui/public/icons/icon-font"',
+      '$font-custom-path': '"/nacos/console-ui/public/fonts/"'
     }
   }
 })
@@ -36,8 +36,7 @@ module.exports = Object.assign({}, base, {
     minimizer: [
       new UglifyJsPlugin({
         cache: true,
-        parallel: true,
-        sourceMap: true,
+        parallel: true
       }),
       new OptimizeCSSAssetsPlugin({}),
     ],
@@ -54,5 +53,5 @@ module.exports = Object.assign({}, base, {
       chunkFilename: '[id].css',
     }),
   ],
-  mode: 'production',
+  mode: 'production'
 });

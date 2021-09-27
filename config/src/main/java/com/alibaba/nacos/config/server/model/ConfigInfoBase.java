@@ -26,7 +26,7 @@ import java.io.Serializable;
 
 /**
  * ConfigInfoBase.
- * And can't add field, to compatible with old interface(If adding a field, then it will occour compatibility problems).
+ * And can't add field, to compatible with old interface(If adding a field, then it will occur compatibility problems).
  *
  * @author Nacos
  */

@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +40,13 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 public class NotifyTaskProcessor implements NacosTaskProcessor {
+    
+    static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
+    
+    static final String URL_PATTERN =
+            "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
+    
+    final ServerMemberManager memberManager;
     
     public NotifyTaskProcessor(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -75,7 +82,7 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
                     .asList(NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
                             NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, InetUtils.getSelfIP());
             String urlString = MessageFormat
-                    .format(URL_PATTERN, serverIp, ApplicationUtils.getContextPath(), dataId, group);
+                    .format(URL_PATTERN, serverIp, EnvUtil.getContextPath(), dataId, group);
             
             RestResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
             if (result.ok()) {
@@ -87,26 +94,19 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
                 return true;
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
-                LOGGER.error("[notify-error] {}, {}, to {}, result {}",
-                        new Object[] {dataId, group, serverIp, result.getCode()});
+                LOGGER.error("[notify-error] {}, {}, to {}, result {}", dataId, group, serverIp, result.getCode());
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                         ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
             MetricsMonitor.getConfigNotifyException().increment();
-            LOGGER.error("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString());
-            LOGGER.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
+            String message = "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString();
+            LOGGER.error(message);
+            LOGGER.debug(message, e);
             ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                     ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }
     }
-    
-    static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
-    
-    static final String URL_PATTERN =
-            "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
-    
-    final ServerMemberManager memberManager;
 }

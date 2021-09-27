@@ -29,10 +29,11 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
@@ -93,7 +94,7 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
     }
     
     public RaftPeer getLeader() {
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return local();
         }
         return leader;
@@ -136,7 +137,7 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
      * @return true if is leader or stand alone, otherwise false
      */
     public boolean isLeader(String ip) {
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         
@@ -271,8 +272,8 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
      * @return local raft peer
      */
     public RaftPeer local() {
-        RaftPeer peer = peers.get(ApplicationUtils.getLocalAddress());
-        if (peer == null && ApplicationUtils.getStandaloneMode()) {
+        RaftPeer peer = peers.get(EnvUtil.getLocalAddress());
+        if (peer == null && EnvUtil.getStandaloneMode()) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
             localPeer.term.set(localTerm.get());
@@ -350,7 +351,7 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
             raftPeer.ip = address;
             
             // first time meet the local server:
-            if (ApplicationUtils.getLocalAddress().equals(address)) {
+            if (EnvUtil.getLocalAddress().equals(address)) {
                 raftPeer.term.set(localTerm.get());
             }
             

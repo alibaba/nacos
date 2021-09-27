@@ -31,8 +31,10 @@ import java.util.Properties;
  */
 public class PropertiesChangeParser extends AbstractConfigChangeParser {
     
+    private static final String CONFIG_TYPE = "properties";
+    
     public PropertiesChangeParser() {
-        super("properties");
+        super(CONFIG_TYPE);
     }
     
     @Override

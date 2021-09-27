@@ -71,4 +71,5 @@ public interface EventPublisher extends Closeable {
      * @param event      {@link Event}
      */
     void notifySubscriber(Subscriber subscriber, Event event);
+    
 }

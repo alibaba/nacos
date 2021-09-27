@@ -124,9 +124,9 @@ public class SimpleHttpTestUtils {
             if (paramMap != null) {
                 for (Map.Entry<String, String> element : paramMap.entrySet()) {
                     params.append(element.getKey());
-                    params.append("=");
+                    params.append('=');
                     params.append(URLEncoder.encode(element.getValue(), REQUEST_ENCODING));
-                    params.append("&");
+                    params.append('&');
                 }
                 
                 if (params.length() > 0) {

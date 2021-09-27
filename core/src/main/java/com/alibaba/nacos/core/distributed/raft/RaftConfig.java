@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +35,7 @@ import java.util.Set;
  */
 @Component
 @ConfigurationProperties(prefix = "nacos.core.protocol.raft")
-public class RaftConfig implements Config<LogProcessor4CP> {
+public class RaftConfig implements Config<RequestProcessor4CP> {
     
     private static final long serialVersionUID = 9174789390266064002L;
     

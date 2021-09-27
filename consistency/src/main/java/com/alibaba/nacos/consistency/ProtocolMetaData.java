@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,26 +23,19 @@ import org.javatuples.Pair;
 
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Consistent protocol metadata information, &lt;Key, &lt;Key, Value &gt;&gt; structure Listeners that can register to listen to
- * changes in value.
+ * Consistent protocol metadata information, &lt;Key, &lt;Key, Value &gt;&gt; structure Listeners that can register to
+ * listen to changes in value.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.Rule:CollectionInitShouldAssignCapacityRule")
 public final class ProtocolMetaData {
     
-    private static final Executor EXECUTOR = ExecutorFactory.Managed
-            .newFixedExecutorService(ProtocolMetaData.class.getCanonicalName(), 4,
-                    new NameThreadFactory("com.alibaba.nacos.consistency.protocol.metadata"));
-    
-    private Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
+    private final Map<String, MetaData> metaDataMap = new ConcurrentHashMap<>(4);
     
     public Map<String, Map<Object, Object>> getMetaDataMap() {
         return metaDataMap.entrySet().stream().map(entry -> Pair.with(entry.getKey(),
@@ -72,7 +63,7 @@ public final class ProtocolMetaData {
     /**
      * get protocol metadata by group and key.
      *
-     * @param group group name
+     * @param group  group name
      * @param subKey key
      * @return target value
      */
@@ -87,8 +78,9 @@ public final class ProtocolMetaData {
         }
     }
     
-    // If MetaData does not exist, actively create a MetaData
-    
+    /**
+     * If MetaData does not exist, actively create a MetaData.
+     */
     public void subscribe(final String group, final String key, final Observer observer) {
         metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
         metaDataMap.get(group).subscribe(key, observer);
@@ -154,8 +146,6 @@ public final class ProtocolMetaData {
         
         private volatile Object data;
         
-        private transient BlockingQueue<Object> deferObject = new LinkedBlockingQueue<>();
-        
         public ValueItem(String path) {
             this.path = path;
         }
@@ -173,19 +163,15 @@ public final class ProtocolMetaData {
             writeLock.lock();
             try {
                 this.data = data;
-                deferObject.offer(data);
                 setChanged();
-                
-                EXECUTOR.execute(() -> {
-                    try {
-                        notifyObservers(deferObject.take());
-                    } catch (InterruptedException ignore) {
-                        Thread.interrupted();
-                    }
-                });
+                notifyObservers();
             } finally {
                 writeLock.unlock();
             }
+        }
+        
+        public String getPath() {
+            return path;
         }
     }
 }

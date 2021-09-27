@@ -21,6 +21,7 @@ package com.alibaba.nacos.api.config.filter;
  *
  * @author Nacos
  */
+@Deprecated
 public interface IFilterConfig {
     
     /**

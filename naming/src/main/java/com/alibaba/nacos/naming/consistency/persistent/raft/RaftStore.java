@@ -34,7 +34,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -261,22 +261,16 @@ public class RaftStore implements Closeable {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
         
-        FileChannel fc = null;
         ByteBuffer data;
         
         data = ByteBuffer.wrap(JacksonUtils.toJson(datum).getBytes(StandardCharsets.UTF_8));
         
-        try {
-            fc = new FileOutputStream(cacheFile, false).getChannel();
+        try (FileChannel fc = new FileOutputStream(cacheFile, false).getChannel()) {
             fc.write(data, data.position());
             fc.force(true);
         } catch (Exception e) {
             MetricsMonitor.getDiskException().increment();
             throw e;
-        } finally {
-            if (fc != null) {
-                fc.close();
-            }
         }
         
         // remove old format file:

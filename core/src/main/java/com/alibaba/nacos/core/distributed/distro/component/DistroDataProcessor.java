@@ -43,10 +43,11 @@ public interface DistroDataProcessor {
     /**
      * Process received verify data.
      *
-     * @param distroData verify data
+     * @param distroData    verify data
+     * @param sourceAddress source server address, might be get data from source server
      * @return true if the data is available, otherwise false
      */
-    boolean processVerifyData(DistroData distroData);
+    boolean processVerifyData(DistroData distroData, String sourceAddress);
     
     /**
      * Process snapshot data.

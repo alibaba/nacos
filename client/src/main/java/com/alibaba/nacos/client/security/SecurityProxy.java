@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -34,6 +35,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.client.naming.utils.UtilAndComs.HTTP;
+import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
+
 /**
  * Security proxy to update security information.
  *
@@ -48,7 +52,7 @@ public class SecurityProxy {
     
     private final NacosRestTemplate nacosRestTemplate;
     
-    private String contextPath;
+    private final String contextPath;
     
     /**
      * User's name.
@@ -63,7 +67,7 @@ public class SecurityProxy {
     /**
      * A token to take with when sending request to Nacos server.
      */
-    private String accessToken;
+    private volatile String accessToken;
     
     /**
      * TTL of token in seconds.
@@ -88,8 +92,8 @@ public class SecurityProxy {
     public SecurityProxy(Properties properties, NacosRestTemplate nacosRestTemplate) {
         username = properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY);
         password = properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY);
-        contextPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH, "/nacos");
-        contextPath = contextPath.startsWith("/") ? contextPath : "/" + contextPath;
+        contextPath = ContextPathUtil
+                .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
         this.nacosRestTemplate = nacosRestTemplate;
     }
     
@@ -113,7 +117,8 @@ public class SecurityProxy {
                     return true;
                 }
             }
-        } catch (Throwable ignore) {
+        } catch (Throwable throwable) {
+            SECURITY_LOGGER.warn("[SecurityProxy] login failed, error: ", throwable);
         }
         
         return false;
@@ -130,9 +135,9 @@ public class SecurityProxy {
         if (StringUtils.isNotBlank(username)) {
             Map<String, String> params = new HashMap<String, String>(2);
             Map<String, String> bodyMap = new HashMap<String, String>(2);
-            params.put("username", username);
-            bodyMap.put("password", password);
-            String url = "http://" + server + contextPath + LOGIN_URL;
+            params.put(PropertyKeyConst.USERNAME, username);
+            bodyMap.put(PropertyKeyConst.PASSWORD, password);
+            String url = HTTP + server + contextPath + LOGIN_URL;
             
             if (server.contains(Constants.HTTP_PREFIX)) {
                 url = server + contextPath + LOGIN_URL;
@@ -161,5 +166,9 @@ public class SecurityProxy {
     
     public String getAccessToken() {
         return accessToken;
+    }
+    
+    public boolean isEnabled() {
+        return StringUtils.isNotBlank(this.username);
     }
 }

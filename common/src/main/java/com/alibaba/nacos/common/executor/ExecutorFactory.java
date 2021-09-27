@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.executor;
 
+import com.alibaba.nacos.common.JustForTest;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -164,7 +166,7 @@ public final class ExecutorFactory {
          * @param coreThreads     core thread number
          * @param maxThreads      max thread number
          * @param keepAliveTimeMs keep alive time milliseconds
-         * @param threadFactory   thread facotry
+         * @param threadFactory   thread factory
          * @return new custom executor service
          */
         public static ThreadPoolExecutor newCustomerThreadExecutor(final String group, final int coreThreads,
@@ -173,6 +175,11 @@ public final class ExecutorFactory {
                     TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executor);
             return executor;
+        }
+    
+        @JustForTest
+        public static ThreadPoolManager getThreadPoolManager() {
+            return THREAD_POOL_MANAGER;
         }
     }
 }

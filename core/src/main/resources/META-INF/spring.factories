@@ -3,5 +3,4 @@ org.springframework.context.ApplicationListener=\
 com.alibaba.nacos.core.code.StandaloneProfileApplicationListener
 # SpringApplicationRunListener
 org.springframework.boot.SpringApplicationRunListener=\
-com.alibaba.nacos.core.code.LoggingSpringApplicationRunListener,\
-com.alibaba.nacos.core.code.StartingSpringApplicationRunListener
+com.alibaba.nacos.core.code.SpringApplicationRunListener

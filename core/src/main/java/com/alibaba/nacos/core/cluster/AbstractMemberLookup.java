@@ -46,4 +46,17 @@ public abstract class AbstractMemberLookup implements MemberLookup {
     public void destroy() throws NacosException {
     
     }
+    
+    @Override
+    public void start() throws NacosException {
+        if (start.compareAndSet(false, true)) {
+            doStart();
+        }
+    }
+    
+    /**
+     * subclass can override this method if need.
+     * @throws NacosException NacosException
+     */
+    protected abstract void doStart() throws NacosException;
 }

@@ -35,6 +35,8 @@ import java.lang.reflect.Type;
 @SuppressWarnings("all")
 public class HessianSerializer implements Serializer {
     
+    private static final String NAME = "Hessian";
+    
     private SerializerFactory serializerFactory = new SerializerFactory();
     
     public HessianSerializer() {
@@ -89,7 +91,7 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public String name() {
-        return "Hessian";
+        return NAME;
     }
     
 }

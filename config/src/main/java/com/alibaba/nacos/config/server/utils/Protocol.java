@@ -25,10 +25,10 @@ package com.alibaba.nacos.config.server.utils;
 public class Protocol {
     
     /**
-     * 解析类于2.0.4(major.minor.bug-fix这样的版本为数字)
+     * fix the version number like 2.0.4(fix the version template like major.minor.bug-fix)
      *
      * @param version version
-     * @return
+     * @return version.
      */
     public static int getVersionNumber(String version) {
         if (version == null) {

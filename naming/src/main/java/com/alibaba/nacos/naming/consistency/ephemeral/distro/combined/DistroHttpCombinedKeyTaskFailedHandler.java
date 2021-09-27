@@ -17,12 +17,12 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.combined;
 
 import com.alibaba.nacos.consistency.DataOperation;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandler;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 
 /**
  * Distro combined key task failed handler.
@@ -31,13 +31,9 @@ import com.alibaba.nacos.naming.misc.GlobalConfig;
  */
 public class DistroHttpCombinedKeyTaskFailedHandler implements DistroFailedTaskHandler {
     
-    private final GlobalConfig globalConfig;
-    
     private final DistroTaskEngineHolder distroTaskEngineHolder;
     
-    public DistroHttpCombinedKeyTaskFailedHandler(GlobalConfig globalConfig,
-            DistroTaskEngineHolder distroTaskEngineHolder) {
-        this.globalConfig = globalConfig;
+    public DistroHttpCombinedKeyTaskFailedHandler(DistroTaskEngineHolder distroTaskEngineHolder) {
         this.distroTaskEngineHolder = distroTaskEngineHolder;
     }
     
@@ -46,7 +42,8 @@ public class DistroHttpCombinedKeyTaskFailedHandler implements DistroFailedTaskH
         DistroHttpCombinedKey combinedKey = (DistroHttpCombinedKey) distroKey;
         for (String each : combinedKey.getActualResourceTypes()) {
             DistroKey newKey = new DistroKey(each, KeyBuilder.INSTANCE_LIST_KEY_PREFIX, distroKey.getTargetServer());
-            DistroDelayTask newTask = new DistroDelayTask(newKey, action, globalConfig.getSyncRetryDelay());
+            DistroDelayTask newTask = new DistroDelayTask(newKey, action,
+                    DistroConfig.getInstance().getSyncRetryDelayMillis());
             distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(newKey, newTask);
         }
     }

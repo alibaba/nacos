@@ -107,7 +107,7 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.url.0", JDBC_URL);
         List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
             dataSource.validate();
-            Assert.assertEquals(dataSource.getMinimumIdle(), ExternalDataSourceProperties.DEFAULT_MINIMUM_IDLE);
+            Assert.assertEquals(dataSource.getMinimumIdle(), DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE);
         }));
         Assert.assertEquals(dataSources.size(), 1);
     }

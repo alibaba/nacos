@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -48,6 +49,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Service
 public class MergeDatumService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
+    
+    final TaskManager mergeTasks;
     
     private PersistService persistService;
     
@@ -114,7 +119,7 @@ public class MergeDatumService {
         if (!PropertyUtil.isEmbeddedStorage()) {
             return true;
         }
-        if (ApplicationUtils.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
@@ -179,9 +184,4 @@ public class MergeDatumService {
             LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
         }
     }
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(MergeDatumService.class);
-    
-    final TaskManager mergeTasks;
-    
 }

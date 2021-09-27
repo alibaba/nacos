@@ -21,9 +21,11 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.ServiceLoader;
 
 /**
  * Config Filter Chain Management.
@@ -32,7 +34,15 @@ import java.util.List;
  */
 public class ConfigFilterChainManager implements IConfigFilterChain {
     
-    private final List<IConfigFilter> filters = Lists.newArrayList();
+    private final List<IConfigFilter> filters = new ArrayList<IConfigFilter>();
+    
+    public ConfigFilterChainManager(Properties properties) {
+        ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
+        for (IConfigFilter configFilter : configFilters) {
+            configFilter.init(properties);
+            addFilter(configFilter);
+        }
+    }
     
     /**
      * Add filter.
@@ -41,7 +51,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
      * @return this
      */
     public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
-        // 根据order大小顺序插入
+        // ordered by order value
         int i = 0;
         while (i < this.filters.size()) {
             IConfigFilter currentValue = this.filters.get(i);

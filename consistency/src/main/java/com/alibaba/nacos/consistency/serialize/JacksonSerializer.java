@@ -29,6 +29,8 @@ import java.lang.reflect.Type;
  */
 public class JacksonSerializer implements Serializer {
     
+    private static final String NAME = "JSON";
+    
     @Override
     public <T> T deserialize(byte[] data) {
         throw new UnsupportedOperationException("Jackson serializer can't support deserialize json without type");
@@ -57,6 +59,6 @@ public class JacksonSerializer implements Serializer {
     
     @Override
     public String name() {
-        return "JSON";
+        return NAME;
     }
 }
