@@ -42,11 +42,35 @@ public class CoreMetricsConstant {
      * metrics name.
      */
     public static final String DISTRO_VERIFY = "distro_verify";
+  
+    public static final String APPEND_LOGS_COUNT = "append_logs_count";
     
     /**
      * metrics name.
      */
     public static final String DISTRO_SYNC = "distro_sync";
+
+    public static final String REPLICATE_ENTRIES_COUNT = "replicate_entries_count";
+    
+    /**
+     * metrics name.
+     */
+    public static final String NEXT_INDEX = "next_index";
+    
+    /**
+     * metrics name.
+     */
+    public static final String LOG_LAGS = "log_lags";
+    
+    /**
+     * metrics name.
+     */
+    public static final String PRE_VOTE = "pre_vote";
+    
+    /**
+     * metrics name.
+     */
+    public static final String REQUEST_VOTE = "request_vote";
     
     /**
      * metrics tag key.
@@ -72,6 +96,8 @@ public class CoreMetricsConstant {
      * metrics tag key.
      */
     public static final String SUCCESS = "success";
+
+    public static final String GROUP_NAME = "group_name";
     
     /**
      * metrics tag value.
