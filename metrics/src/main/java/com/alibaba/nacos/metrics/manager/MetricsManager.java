@@ -43,23 +43,23 @@ public class MetricsManager {
     /**
      * manager Gauge.
      */
-    private final Map<String, AtomicLong> gaugesMap = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> gauges = new ConcurrentHashMap<>();
     
     /**
      * manager Counter.
      */
-    private final Map<String, Counter> countersMap = new ConcurrentHashMap<>();
+    private final Map<String, Counter> counters = new ConcurrentHashMap<>();
     
     /**
      * manager Timer.
      */
-    private final Map<String, Timer> timersMap = new ConcurrentHashMap<>();
+    private final Map<String, Timer> timers = new ConcurrentHashMap<>();
     
     /**
      * register counter with description.
      */
     public static Counter counter(String name, String... tags) {
-        return INSTANCE.countersMap.computeIfAbsent(getKey(name, tags),
+        return INSTANCE.counters.computeIfAbsent(getKey(name, tags),
                 s -> Counter.builder(name).tags(tags).register(Metrics.globalRegistry));
     }
     
@@ -67,7 +67,7 @@ public class MetricsManager {
      * register timer with description.
      */
     public static Timer timer(String name, String... tags) {
-        return INSTANCE.timersMap.computeIfAbsent(getKey(name, tags),
+        return INSTANCE.timers.computeIfAbsent(getKey(name, tags),
                 s -> Timer.builder(name).tags(tags).register(Metrics.globalRegistry));
     }
     
@@ -78,20 +78,13 @@ public class MetricsManager {
         if ((tags.length & 1) == 1) {
             throw new IllegalArgumentException("tags' length is odd, gauge need even.");
         }
-        return INSTANCE.gaugesMap.computeIfAbsent(getKey(name, tags), s -> {
+        return INSTANCE.gauges.computeIfAbsent(getKey(name, tags), s -> {
             AtomicLong gauge = new AtomicLong();
             Gauge.builder(name, () -> gauge).tags(tags).register(Metrics.globalRegistry);
             return gauge;
         });
     }
-    
-    /**
-     * exporter for Metrics.
-     */
-    private static List<Metrics> exporter() {
-        return null;
-    }
-    
+
     /**
      * create key for metrics.
      */
