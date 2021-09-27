@@ -41,11 +41,15 @@ public class CoreMetricsConstant {
     /**
      * metrics name.
      */
+    public static final String DISTRO_VERIFY = "distro_verify";
+  
     public static final String APPEND_LOGS_COUNT = "append_logs_count";
     
     /**
      * metrics name.
      */
+    public static final String DISTRO_SYNC = "distro_sync";
+
     public static final String REPLICATE_ENTRIES_COUNT = "replicate_entries_count";
     
     /**
@@ -81,6 +85,18 @@ public class CoreMetricsConstant {
     /**
      * metrics tag key.
      */
+    public static final String RESOURCE_TYPE = "resourceType";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String TARGET_SERVER = "targetServer";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String SUCCESS = "success";
+
     public static final String GROUP_NAME = "group_name";
     
     /**
@@ -97,4 +113,14 @@ public class CoreMetricsConstant {
      * metrics tag value.
      */
     public static final String LONG_CONNECTION = "longConnection";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TRUE = "ture";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String FALSE = "false";
 }
