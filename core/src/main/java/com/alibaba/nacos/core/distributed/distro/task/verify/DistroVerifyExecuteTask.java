@@ -23,6 +23,8 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 
 import java.util.List;
 
@@ -77,6 +79,11 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onSuccess() {
+            MetricsManager.counter(CoreMetricsConstant.DISTRO_VERIFY,
+                            CoreMetricsConstant.RESOURCE_TYPE, resourceType,
+                            CoreMetricsConstant.TARGET_SERVER, targetServer,
+                            CoreMetricsConstant.SUCCESS, CoreMetricsConstant.TRUE)
+                    .increment();
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO.debug("[DISTRO] verify data for type {} to {} success", resourceType, targetServer);
             }
@@ -86,6 +93,11 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
         public void onFailed(Throwable throwable) {
             DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(resourceType);
             distroRecord.verifyFail();
+            MetricsManager.counter(CoreMetricsConstant.DISTRO_VERIFY,
+                            CoreMetricsConstant.RESOURCE_TYPE, resourceType,
+                            CoreMetricsConstant.TARGET_SERVER, targetServer,
+                            CoreMetricsConstant.SUCCESS, CoreMetricsConstant.FALSE)
+                    .increment();
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO
                         .debug("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer,

@@ -39,6 +39,16 @@ public class CoreMetricsConstant {
     public static final String NACOS_GRPC_REQUEST_COUNT = "nacos_grpc_request_count";
     
     /**
+     * metrics name.
+     */
+    public static final String DISTRO_VERIFY = "distro_verify";
+    
+    /**
+     * metrics name.
+     */
+    public static final String DISTRO_SYNC = "distro_sync";
+    
+    /**
      * metrics tag key.
      */
     public static final String MODULE = "module";
@@ -47,6 +57,21 @@ public class CoreMetricsConstant {
      * metrics tag key.
      */
     public static final String NAME = "name";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String RESOURCE_TYPE = "resourceType";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String TARGET_SERVER = "targetServer";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String SUCCESS = "success";
     
     /**
      * metrics tag value.
@@ -62,4 +87,14 @@ public class CoreMetricsConstant {
      * metrics tag value.
      */
     public static final String LONG_CONNECTION = "longConnection";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TRUE = "ture";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String FALSE = "false";
 }
