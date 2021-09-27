@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Address server cluster controller.
@@ -47,16 +48,16 @@ import java.util.List;
 @RestController
 @RequestMapping({AddressServerConstants.ADDRESS_SERVER_REQUEST_URL + "/nodes"})
 public class AddressServerClusterController {
-    
+
     @Autowired
     private ServiceManager serviceManager;
-    
+
     @Autowired
     private AddressServerManager addressServerManager;
-    
+
     @Autowired
     private AddressServerGeneratorManager addressServerGeneratorManager;
-    
+
     /**
      * Create new cluster.
      *
@@ -68,11 +69,11 @@ public class AddressServerClusterController {
     @RequestMapping(value = "", method = RequestMethod.POST)
     public ResponseEntity postCluster(@RequestParam(required = false) String product,
             @RequestParam(required = false) String cluster, @RequestParam(name = "ips") String ips) {
-        
+
         //1. prepare the storage name for product and cluster
         String productName = addressServerGeneratorManager.generateProductName(product);
         String clusterName = addressServerManager.getDefaultClusterNameIfEmpty(cluster);
-        
+
         //2. prepare the response name for product and cluster to client
         String rawProductName = addressServerManager.getRawProductName(product);
         String rawClusterName = addressServerManager.getRawClusterName(cluster);
@@ -81,13 +82,15 @@ public class AddressServerClusterController {
         ResponseEntity responseEntity;
         try {
             String serviceName = addressServerGeneratorManager.generateNacosServiceName(productName);
-            
+
             Cluster clusterObj = new Cluster();
             clusterObj.setName(clusterName);
             clusterObj.setHealthChecker(new AbstractHealthChecker.None());
             serviceManager.createServiceIfAbsent(Constants.DEFAULT_NAMESPACE_ID, serviceName, false, clusterObj);
             String[] ipArray = addressServerManager.splitIps(ips);
-            String checkResult = IPUtil.checkIPs(ipArray);
+            String[] ipAddrArray = Stream.of(ipArray)
+                .map(ip -> ip.split(IPUtil.IP_PORT_SPLITER)[0]).toArray(String[]::new);
+            String checkResult = IPUtil.checkIPs(ipAddrArray);
             if (IPUtil.checkOK(checkResult)) {
                 List<Instance> instanceList = addressServerGeneratorManager
                         .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
@@ -103,10 +106,10 @@ public class AddressServerClusterController {
         } catch (Exception e) {
             responseEntity = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
-        
+
         return responseEntity;
     }
-    
+
     /**
      * Delete cluster.
      *
@@ -121,22 +124,22 @@ public class AddressServerClusterController {
         //1. prepare the storage name for product and cluster
         String productName = addressServerGeneratorManager.generateProductName(product);
         String clusterName = addressServerManager.getDefaultClusterNameIfEmpty(cluster);
-        
+
         //2. prepare the response name for product and cluster to client
         String rawProductName = addressServerManager.getRawProductName(product);
         String rawClusterName = addressServerManager.getRawClusterName(cluster);
         ResponseEntity responseEntity = ResponseEntity.status(HttpStatus.OK)
                 .body("product=" + rawProductName + ", cluster=" + rawClusterName + " delete success.");
         try {
-            
+
             String serviceName = addressServerGeneratorManager.generateNacosServiceName(productName);
             Service service = serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, serviceName);
-            
+
             if (service == null) {
                 responseEntity = ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("product=" + rawProductName + " not found.");
             } else {
-                
+
                 if (StringUtils.isBlank(ips)) {
                     // delete all ips from the cluster
                     responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ips must not be empty.");
@@ -155,11 +158,11 @@ public class AddressServerClusterController {
                 }
             }
         } catch (Exception e) {
-            
+
             responseEntity = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getCause());
         }
-        
+
         return responseEntity;
     }
-    
+
 }
