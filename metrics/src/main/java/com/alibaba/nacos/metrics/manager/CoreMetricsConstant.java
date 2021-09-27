@@ -42,14 +42,20 @@ public class CoreMetricsConstant {
      * metrics name.
      */
     public static final String DISTRO_VERIFY = "distro_verify";
-  
+    
+    /**
+     * metrics name.
+     */
     public static final String APPEND_LOGS_COUNT = "append_logs_count";
     
     /**
      * metrics name.
      */
     public static final String DISTRO_SYNC = "distro_sync";
-
+    
+    /**
+     * metrics name.
+     */
     public static final String REPLICATE_ENTRIES_COUNT = "replicate_entries_count";
     
     /**
@@ -96,7 +102,10 @@ public class CoreMetricsConstant {
      * metrics tag key.
      */
     public static final String SUCCESS = "success";
-
+    
+    /**
+     * metrics tag key.
+     */
     public static final String GROUP_NAME = "group_name";
     
     /**
