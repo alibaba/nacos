@@ -29,6 +29,8 @@ public class AesCryptoTest {
     
     private AesCrypto aesCrypto;
     
+    private static final String CONTENT = "nacos";
+    
     @Before
     public void setUp() throws Exception {
         aesCrypto = new AesCrypto();
@@ -37,16 +39,14 @@ public class AesCryptoTest {
     @Test
     public void testEncrypt() {
         String secretKey = aesCrypto.generateSecretKey();
-        String content = "nacos";
-        String encrypt = aesCrypto.encrypt(secretKey, content);
+        String encrypt = aesCrypto.encrypt(secretKey, CONTENT);
         Assert.assertNotNull(encrypt);
     }
     
     @Test
     public void testDecrypt() {
         String secretKey = aesCrypto.generateSecretKey();
-        String content = "nacos";
-        String encrypt = aesCrypto.encrypt(secretKey, content);
+        String encrypt = aesCrypto.encrypt(secretKey, CONTENT);
         String decrypt = aesCrypto.decrypt(secretKey, encrypt);
         Assert.assertNotNull(decrypt);
     }
