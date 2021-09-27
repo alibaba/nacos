@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth.persist.repository.embedded;
 
 import com.alibaba.nacos.auth.configuration.ConditionStandaloneEmbedStorage;
 import com.alibaba.nacos.auth.persist.datasource.DataSourceService;
-import com.alibaba.nacos.auth.persist.datasource.DynamicDataSource;
+import com.alibaba.nacos.auth.persist.datasource.AuthDynamicDataSource;
 import com.alibaba.nacos.auth.persist.sql.ModifyRequest;
 import com.alibaba.nacos.auth.util.LogUtil;
 import org.springframework.context.annotation.Conditional;
@@ -39,7 +39,7 @@ import java.util.function.BiConsumer;
  */
 @Conditional(ConditionStandaloneEmbedStorage.class)
 @Component
-public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
+public class AuthStandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
     
     private JdbcTemplate jdbcTemplate;
     
@@ -47,7 +47,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
     
     @PostConstruct
     protected void init() {
-        DataSourceService dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        DataSourceService dataSourceService = AuthDynamicDataSource.getInstance().getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
         LogUtil.DEFAULT_LOG.info("use StandaloneDatabaseOperateImpl");

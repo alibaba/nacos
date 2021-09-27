@@ -1,11 +1,11 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,57 +16,52 @@
 
 package com.alibaba.nacos.auth.persist;
 
-import com.alibaba.nacos.auth.configuration.ConditionOnExternalStorage;
+import com.alibaba.nacos.auth.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.externel.ExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.auth.persist.repository.embedded.AuthEmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.auth.roles.RoleInfo;
-import com.alibaba.nacos.auth.util.LogUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+
 /**
- * Implemetation of ExternalRolePersistServiceImpl.
+ * There is no self-augmented primary key.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnExternalStorage.class)
+@Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
-public class ExternalRolePersistServiceImpl implements RolePersistService {
-    
-    public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
+public class AuthEmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Autowired
-    private ExternalStoragePersistServiceImpl persistService;
+    private DatabaseOperate databaseOperate;
     
-    private JdbcTemplate jt;
+    @Autowired
+    private AuthEmbeddedStoragePersistServiceImpl persistService;
     
-    @PostConstruct
-    protected void init() {
-        jt = persistService.getJdbcTemplate();
-    }
+    public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
     
     @Override
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-
-        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
-
-        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
+        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+      
+        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
+    
         String where = " username= ? ";
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -75,16 +70,12 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             where = " 1=1 ";
         }
         
-        try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                    ROLE_INFO_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
+                pageSize, ROLE_INFO_ROW_MAPPER);
+        
     }
     
-    private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
+    public static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
         
         @Override
         public RoleInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -94,4 +85,5 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             return roleInfo;
         }
     }
+    
 }

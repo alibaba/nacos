@@ -20,7 +20,7 @@ import com.alibaba.nacos.auth.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
 import com.alibaba.nacos.auth.persist.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.auth.persist.repository.embedded.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.embedded.AuthEmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.auth.persist.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.auth.users.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ import java.util.ArrayList;
  */
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
-public class EmbeddedUserPersistServiceImpl implements UserPersistService {
+public class AuthEmbeddedUserPersistServiceImpl implements UserPersistService {
     
     public static final RowMapper<User> USER_ROW_MAPPER = new UserRowMapper();
     
@@ -47,7 +47,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     private DatabaseOperate databaseOperate;
     
     @Autowired
-    private EmbeddedStoragePersistServiceImpl persistService;
+    private AuthEmbeddedStoragePersistServiceImpl persistService;
     
     @Override
     public User findUserByUsername(String username) {

@@ -43,6 +43,10 @@ import org.springframework.web.cors.CorsUtils;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
+    public static final String NACOS_IDENTITY_KEY = "identity";
+    
+    public static final String USERNAME_PASSWORD = "username_password_auth";
+    
     public static final String AUTHORIZATION_HEADER = "Authorization";
     
     public static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
@@ -64,7 +68,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private Environment env;
     
-    @Autowired
+    //@Autowired
     private JwtTokenManager tokenProvider;
     
     @Autowired

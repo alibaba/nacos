@@ -17,7 +17,6 @@
 
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
@@ -54,9 +53,6 @@ public class AuthFilterTest {
     
     @Mock
     private AuthConfigs authConfigs;
-    
-    @Mock
-    private AuthManager authManager;
     
     @Mock
     private ControllerMethodsCache methodsCache;

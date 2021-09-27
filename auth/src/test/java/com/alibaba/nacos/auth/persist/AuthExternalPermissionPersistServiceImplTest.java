@@ -17,9 +17,9 @@
 package com.alibaba.nacos.auth.persist;
 
 import com.alibaba.nacos.auth.model.Page;
+import com.alibaba.nacos.auth.model.PermissionInfo;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.externel.ExternalStoragePersistServiceImpl;
-import com.alibaba.nacos.auth.roles.RoleInfo;
+import com.alibaba.nacos.auth.persist.repository.externel.AuthExternalStoragePersistServiceImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,37 +32,39 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.lang.reflect.Field;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ExternalRolePersistServiceImplTest {
+public class AuthExternalPermissionPersistServiceImplTest {
     
     @Mock
-    private ExternalStoragePersistServiceImpl persistService;
+    private AuthExternalStoragePersistServiceImpl externalStoragePersistService;
     
     @Mock
-    private JdbcTemplate jt;
+    private JdbcTemplate jdbcTemplate;
     
     @Mock
     private PaginationHelper paginationHelper;
     
-    private ExternalRolePersistServiceImpl externalRolePersistService;
+    private AuthExternalPermissionPersistServiceImpl externalPermissionPersistService;
     
     @Before
     public void setUp() throws Exception {
-        externalRolePersistService = new ExternalRolePersistServiceImpl();
-        Class<ExternalRolePersistServiceImpl> externalRolePersistServiceClass = ExternalRolePersistServiceImpl.class;
-        Field persistServiceClassDeclaredField = externalRolePersistServiceClass.getDeclaredField("persistService");
+        externalPermissionPersistService = new AuthExternalPermissionPersistServiceImpl();
+        
+        Class<AuthExternalPermissionPersistServiceImpl> externalPermissionPersistServiceClass = AuthExternalPermissionPersistServiceImpl.class;
+        Field persistServiceClassDeclaredField = externalPermissionPersistServiceClass
+                .getDeclaredField("persistService");
         persistServiceClassDeclaredField.setAccessible(true);
-        persistServiceClassDeclaredField.set(externalRolePersistService, persistService);
+        persistServiceClassDeclaredField.set(externalPermissionPersistService, externalStoragePersistService);
         
-        Mockito.when(persistService.getJdbcTemplate()).thenReturn(jt);
-        Mockito.when(persistService.createPaginationHelper()).thenReturn(paginationHelper);
+        Mockito.when(externalStoragePersistService.getJdbcTemplate()).thenReturn(jdbcTemplate);
+        Mockito.when(externalStoragePersistService.createPaginationHelper()).thenReturn(paginationHelper);
         
-        externalRolePersistService.init();
+        externalPermissionPersistService.init();
     }
     
     @Test
-    public void testGetRolesByUserName() {
-        Page<RoleInfo> userName = externalRolePersistService.getRolesByUserName("userName", 1, 10);
-        Assert.assertNull(userName);
+    public void testGetPermissions() {
+        Page<PermissionInfo> role = externalPermissionPersistService.getPermissions("role", 1, 10);
+        Assert.assertNotNull(role);
     }
     
 }

@@ -39,7 +39,7 @@ public class AuthConfigsTest {
     
     private static final boolean TEST_ENABLE_UA_WHITE = true;
     
-    private static final String AUTHORITYKEY = "username,password,token,tenant";
+    private static final String AUTHORITYKEY = "accessToken,username,password";
     
     private AuthConfigs authConfigs;
     

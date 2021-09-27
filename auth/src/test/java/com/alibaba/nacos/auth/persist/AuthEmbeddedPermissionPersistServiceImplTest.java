@@ -20,7 +20,7 @@ import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.model.PermissionInfo;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
 import com.alibaba.nacos.auth.persist.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.auth.persist.repository.embedded.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.embedded.AuthEmbeddedStoragePersistServiceImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Field;
 
 @RunWith(MockitoJUnitRunner.class)
-public class EmbeddedPermissionPersistServiceImplTest {
+public class AuthEmbeddedPermissionPersistServiceImplTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
@@ -41,14 +41,14 @@ public class EmbeddedPermissionPersistServiceImplTest {
     private PaginationHelper paginationHelper;
     
     @Mock
-    private EmbeddedStoragePersistServiceImpl embeddedStoragePersistService;
+    private AuthEmbeddedStoragePersistServiceImpl embeddedStoragePersistService;
     
-    private EmbeddedPermissionPersistServiceImpl embeddedPermissionPersistService;
+    private AuthEmbeddedPermissionPersistServiceImpl embeddedPermissionPersistService;
     
     @Before
     public void setUp() throws Exception {
-        embeddedPermissionPersistService = new EmbeddedPermissionPersistServiceImpl();
-        Class<EmbeddedPermissionPersistServiceImpl> embeddedPermissionPersistServiceClass = EmbeddedPermissionPersistServiceImpl.class;
+        embeddedPermissionPersistService = new AuthEmbeddedPermissionPersistServiceImpl();
+        Class<AuthEmbeddedPermissionPersistServiceImpl> embeddedPermissionPersistServiceClass = AuthEmbeddedPermissionPersistServiceImpl.class;
         Field databaseOperateF = embeddedPermissionPersistServiceClass.getDeclaredField("databaseOperate");
         databaseOperateF.setAccessible(true);
         databaseOperateF.set(embeddedPermissionPersistService, databaseOperate);

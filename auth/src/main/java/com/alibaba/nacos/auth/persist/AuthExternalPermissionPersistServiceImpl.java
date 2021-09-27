@@ -1,11 +1,11 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,21 @@
 
 package com.alibaba.nacos.auth.persist;
 
-import com.alibaba.nacos.auth.configuration.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.auth.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.model.PermissionInfo;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.auth.persist.repository.embedded.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.externel.AuthExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.util.LogUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -35,28 +38,31 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * There is no self-augmented primary key.
+ * Implemetation of ExternalPermissionPersistServiceImpl.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = ConditionOnEmbeddedStorage.class)
+@Conditional(value = ConditionOnExternalStorage.class)
 @Component
-public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistService {
+public class AuthExternalPermissionPersistServiceImpl implements PermissionPersistService {
     
     public static final PermissionRowMapper PERMISSION_ROW_MAPPER = new PermissionRowMapper();
     
     @Autowired
-    private DatabaseOperate databaseOperate;
+    private AuthExternalStoragePersistServiceImpl persistService;
     
-    @Autowired
-    private EmbeddedStoragePersistServiceImpl persistService;
+    private JdbcTemplate jt;
+    
+    @PostConstruct
+    protected void init() {
+        jt = persistService.getJdbcTemplate();
+    }
     
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
-
         String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
     
         String where = " role= ? ";
@@ -67,16 +73,23 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
             where = " 1=1 ";
         }
         
-        Page<PermissionInfo> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
-                        pageSize, PERMISSION_ROW_MAPPER);
-        
-        if (pageInfo == null) {
-            pageInfo = new Page<>();
-            pageInfo.setTotalCount(0);
-            pageInfo.setPageItems(new ArrayList<>());
+        try {
+            Page<PermissionInfo> pageInfo = helper
+                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
+                            pageSize, PERMISSION_ROW_MAPPER);
+            
+            if (pageInfo == null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+            
+            return pageInfo;
+            
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
         }
-        return pageInfo;
     }
     
     public static final class PermissionRowMapper implements RowMapper<PermissionInfo> {

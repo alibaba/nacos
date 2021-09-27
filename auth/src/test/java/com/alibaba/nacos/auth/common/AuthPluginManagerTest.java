@@ -18,16 +18,16 @@ package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.auth.AuthPluginManager;
 import com.alibaba.nacos.auth.AuthService;
-import com.alibaba.nacos.auth.context.IdentityContext;
-import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.NacosAuthConfig;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
@@ -45,39 +45,29 @@ public class AuthPluginManagerTest {
     private AuthPluginManager authPluginManager;
     
     @Mock
-    private AuthService authService;
-    
-    private static final String TYPE = "test";
-    
-    @Mock
-    private IdentityContext identityContext;
-    
-    @Mock
-    private Permission permission;
+    private ConfigurableApplicationContext context;
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
+        ApplicationUtils.injectContext(context);
+        
         authPluginManager = AuthPluginManager.getInstance();
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
         Map<String, AuthService> authServiceMap = (Map<String, AuthService>) authPlugins.get(authPluginManager);
-        authServiceMap.put(TYPE, authService);
     }
     
     @Test
     public void testGetInstance() {
         AuthPluginManager instance = AuthPluginManager.getInstance();
-
         Assert.assertNotNull(instance);
     }
     
     @Test
-    public void testFindAuthServiceSpiImpl() throws AccessException {
-        Mockito.when(authService.authorityAccess(identityContext, permission)).thenReturn(true);
-        Mockito.when(authService.getAuthServiceName()).thenReturn(TYPE);
-        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
+    public void testFindAuthServiceSpiImpl() {
+        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(NacosAuthConfig.USERNAME_PASSWORD);
         Assert.assertTrue(authServiceImpl.isPresent());
     }
-
+    
 }

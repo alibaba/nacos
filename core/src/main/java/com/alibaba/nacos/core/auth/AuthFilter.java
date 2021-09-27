@@ -16,9 +16,14 @@
 
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.AuthPluginManager;
+import com.alibaba.nacos.auth.AuthService;
+import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
+import com.alibaba.nacos.auth.context.IdentityContext;
+import com.alibaba.nacos.auth.context.IdentityContextBuilder;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
@@ -53,8 +58,8 @@ public class AuthFilter implements Filter {
     @Autowired
     private AuthConfigs authConfigs;
     
-    @Autowired
-    private AuthManager authManager;
+    //@Autowired
+    //private AuthService authService;
     
     @Autowired
     private ControllerMethodsCache methodsCache;
@@ -123,9 +128,11 @@ public class AuthFilter implements Filter {
                     // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
-                
-                authManager.auth(new Permission(resource, action), authManager.login(req));
-                
+                AuthService authService =  AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getAuthorityMethod()).get();
+                IdentityContextBuilder<HttpServletRequest> identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
+                IdentityContext identityContext = identityContextBuilder.build(req);
+                authService.authorityAccess(identityContext, new Permission(resource, action));
+                req.setAttribute(NacosAuthConfig.NACOS_IDENTITY_KEY, identityContext);
             }
             chain.doFilter(request, response);
         } catch (AccessException e) {

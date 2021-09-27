@@ -19,7 +19,7 @@ package com.alibaba.nacos.auth.persist;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
 import com.alibaba.nacos.auth.persist.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.auth.persist.repository.embedded.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.embedded.AuthEmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.auth.roles.RoleInfo;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,23 +32,23 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Field;
 
 @RunWith(MockitoJUnitRunner.class)
-public class EmbeddedRolePersistServiceImplTest {
+public class AuthEmbeddedRolePersistServiceImplTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
     
     @Mock
-    private EmbeddedStoragePersistServiceImpl persistService;
+    private AuthEmbeddedStoragePersistServiceImpl persistService;
     
     @Mock
     private PaginationHelper paginationHelper;
     
-    private EmbeddedRolePersistServiceImpl embeddedRolePersistService;
+    private AuthEmbeddedRolePersistServiceImpl embeddedRolePersistService;
     
     @Before
     public void setUp() throws Exception {
-        embeddedRolePersistService = new EmbeddedRolePersistServiceImpl();
-        Class<EmbeddedRolePersistServiceImpl> embeddedRolePersistServiceClass = EmbeddedRolePersistServiceImpl.class;
+        embeddedRolePersistService = new AuthEmbeddedRolePersistServiceImpl();
+        Class<AuthEmbeddedRolePersistServiceImpl> embeddedRolePersistServiceClass = AuthEmbeddedRolePersistServiceImpl.class;
         Field databaseOperateFields = embeddedRolePersistServiceClass.getDeclaredField("databaseOperate");
         databaseOperateFields.setAccessible(true);
         databaseOperateFields.set(embeddedRolePersistService, databaseOperate);
