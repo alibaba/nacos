@@ -82,6 +82,11 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     @Override
     public void delete(String namespaceId, String serviceName) throws NacosException {
         Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
+        if (!ServiceManager.getInstance().containSingleton(service)) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("service %s not found!", service.getGroupedServiceName()));
+        }
+        
         if (!serviceStorage.getPushData(service).getHosts().isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Service " + serviceName + " is not empty, can't be delete. Please unregister instance first");
