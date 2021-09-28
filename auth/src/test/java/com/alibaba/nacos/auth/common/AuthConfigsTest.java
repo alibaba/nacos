@@ -23,8 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
 
 public class AuthConfigsTest {
@@ -39,7 +37,9 @@ public class AuthConfigsTest {
     
     private static final boolean TEST_ENABLE_UA_WHITE = true;
     
-    private static final String AUTHORITYKEY = "accessToken,username,password";
+    private static final String AUTHORITY_KEY = "accessToken,username,password";
+    
+    private static final String AUTH_SYSTEM_TYPES = AuthSystemTypes.USERNAME_PASSWORD.name();
     
     private AuthConfigs authConfigs;
     
@@ -59,7 +59,8 @@ public class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
         environment.setProperty("nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
         environment.setProperty("nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
-        environment.setProperty("nacos.core.auth.enable.authorityKey", AUTHORITYKEY);
+        environment.setProperty("nacos.core.auth.enable.authorityKey", AUTHORITY_KEY);
+        environment.setProperty("nacos.core.auth.system.type", AUTH_SYSTEM_TYPES);
         
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
         assertEquals(TEST_AUTH_ENABLED, authConfigs.isAuthEnabled());
@@ -67,6 +68,7 @@ public class AuthConfigsTest {
         assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
         assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
         assertEquals(TEST_ENABLE_UA_WHITE, authConfigs.isEnableUserAgentAuthWhite());
-        Assert.assertTrue(Arrays.equals(AUTHORITYKEY.split(","), authConfigs.getAuthorityKey()));
+        assertEquals(AUTH_SYSTEM_TYPES, authConfigs.getNacosAuthSystemType());
+        Assert.assertArrayEquals(AUTHORITY_KEY.split(","), authConfigs.getAuthorityKey());
     }
 }

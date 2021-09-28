@@ -76,7 +76,7 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                     // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
-                AuthService authService =  AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getAuthorityMethod()).get();
+                AuthService authService =  AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType()).get();
     
                 IdentityContextBuilder<Request> identityContextBuilder = new GrpcIdentityContextBuilder(authConfigs);
                 IdentityContext identityContext = identityContextBuilder.build(request);

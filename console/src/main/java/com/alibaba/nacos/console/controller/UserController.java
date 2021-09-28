@@ -207,9 +207,10 @@ public class UserController {
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response, HttpServletRequest request)
             throws AccessException {
-        AuthService authService =  AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getAuthorityMethod()).get();
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP.name()
+                .equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.USERNAME_PASSWORD.name()
                 .equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            AuthService authService = AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType()).get();
             IdentityContextBuilder<HttpServletRequest> identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
             IdentityContext identityContext = authService.login(identityContextBuilder.build(request));
             

@@ -58,9 +58,6 @@ public class AuthFilter implements Filter {
     @Autowired
     private AuthConfigs authConfigs;
     
-    //@Autowired
-    //private AuthService authService;
-    
     @Autowired
     private ControllerMethodsCache methodsCache;
     
@@ -128,7 +125,7 @@ public class AuthFilter implements Filter {
                     // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
-                AuthService authService =  AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getAuthorityMethod()).get();
+                AuthService authService =  AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType()).get();
                 IdentityContextBuilder<HttpServletRequest> identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
                 IdentityContext identityContext = identityContextBuilder.build(req);
                 authService.authorityAccess(identityContext, new Permission(resource, action));

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.common.AuthSystemTypes;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
@@ -111,7 +112,7 @@ public class NacosAuthServiceImpl implements AuthService {
     
     @Override
     public String getAuthServiceName() {
-        return NacosAuthConfig.USERNAME_PASSWORD;
+        return AuthSystemTypes.USERNAME_PASSWORD.name();
     }
     
     /**

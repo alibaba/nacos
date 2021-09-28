@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.auth.AuthPluginManager;
 import com.alibaba.nacos.auth.AuthService;
-import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -66,7 +65,7 @@ public class AuthPluginManagerTest {
     
     @Test
     public void testFindAuthServiceSpiImpl() {
-        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(NacosAuthConfig.USERNAME_PASSWORD);
+        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(AuthSystemTypes.USERNAME_PASSWORD.name());
         Assert.assertTrue(authServiceImpl.isPresent());
     }
     
