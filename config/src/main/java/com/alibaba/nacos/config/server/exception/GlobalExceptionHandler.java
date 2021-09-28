@@ -43,9 +43,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(Exception ex) throws IOException {
-        MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_ILLEGAL_ARGUMENT)
+        MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.ILLEGAL_ARGUMENT)
                 .increment();
         return ResponseEntity.status(400).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
@@ -57,9 +57,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException ex) throws IOException {
-        MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NACOS)
+        MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.NACOS)
                 .increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
@@ -71,9 +71,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
-        MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DB)
+        MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.DB)
                 .increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.metrics.manager;
 
 /**
  * Naming Metrics Constant.
+ *
  * @author holdonbei
  */
 public class NamingMetricsConstant {
@@ -25,141 +26,141 @@ public class NamingMetricsConstant {
     /**
      * metrics name.
      */
-    public static final String N_NACOS_MONITOR = "nacos_monitor";
+    public static final String NACOS_MONITOR = "nacos_monitor";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_EXCEPTION = "nacos_exception";
+    public static final String NACOS_EXCEPTION = "nacos_exception";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_SERVER_PUSH = "nacos_server_push";
+    public static final String NACOS_SERVER_PUSH = "nacos_server_push";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_SERVER_PUSH_COUNT = "nacos_server_push_count";
+    public static final String NACOS_SERVER_PUSH_COUNT = "nacos_server_push_count";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_MODULE = "module";
+    public static final String MODULE = "module";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_NAME = "name";
+    public static final String NAME = "name";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_TYPE = "type";
+    public static final String TYPE = "type";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_SUCCESS = "success";
+    public static final String SUCCESS = "success";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_NAMING = "naming";
+    public static final String NAMING = "naming";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_MYSQL_HEALTH_CHECK = "mysqlHealthCheck";
+    public static final String MYSQL_HEALTH_CHECK = "mysqlHealthCheck";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_HTTP_HEALTH_CHECK = "httpHealthCheck";
+    public static final String HTTP_HEALTH_CHECK = "httpHealthCheck";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_TCP_HEALTH_CHECK = "tcpHealthCheck";
+    public static final String TCP_HEALTH_CHECK = "tcpHealthCheck";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_SERVICE_COUNT = "serviceCount";
+    public static final String SERVICE_COUNT = "serviceCount";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_IP_COUNT = "ipCount";
+    public static final String IP_COUNT = "ipCount";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_SUBSCRIBER_COUNT = "subscriberCount";
+    public static final String SUBSCRIBER_COUNT = "subscriberCount";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_MAX_PUSH_COST = "maxPushCost";
+    public static final String MAX_PUSH_COST = "maxPushCost";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_AVG_PUSH_COST = "avgPushCost";
+    public static final String AVG_PUSH_COST = "avgPushCost";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_LEADER_STATUS = "leaderStatus";
+    public static final String LEADER_STATUS = "leaderStatus";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_TOTAL_PUSH = "totalPush";
+    public static final String TOTAL_PUSH = "totalPush";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_FAILED_PUSH = "failedPush";
+    public static final String FAILED_PUSH = "failedPush";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_TOTAL_PUSH_COUNT_FOR_AVG = "totalPushCountForAvg";
+    public static final String TOTAL_PUSH_COUNT_FOR_AVG = "totalPushCountForAvg";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_TOTAL_PUSH_COST_FOR_AVG = "totalPushCostForAvg";
+    public static final String TOTAL_PUSH_COST_FOR_AVG = "totalPushCostForAvg";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_DISK = "disk";
+    public static final String DISK = "disk";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_LEADER_SEND_BEAT_FAILED = "leaderSendBeatFailed";
+    public static final String LEADER_SEND_BEAT_FAILED = "leaderSendBeatFailed";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_GRPC = "grpc";
+    public static final String GRPC = "grpc";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_UDP = "udp";
+    public static final String UDP = "udp";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_TRUE = "true";
+    public static final String TRUE = "true";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_FALSE = "false";
+    public static final String FALSE = "false";
     
 }

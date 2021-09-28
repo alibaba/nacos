@@ -42,14 +42,14 @@ public class DefaultSelfUpgradeChecker implements SelfUpgradeChecker {
     
     private boolean checkServiceAndInstanceNumber(ServiceManager serviceManager) {
         boolean result = serviceManager.getServiceCount() == MetricsManager
-                .gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_SERVICE_COUNT)
+                .gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.SERVICE_COUNT)
                 .get();
         result &= serviceManager.getInstanceCount() == MetricsManager
-                .gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_IP_COUNT)
+                .gauge(NamingMetricsConstant.NACOS_MONITOR,
+                NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                NamingMetricsConstant.NAME, NamingMetricsConstant.IP_COUNT)
                 .get();
         return result;
     }

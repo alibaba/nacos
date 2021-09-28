@@ -37,8 +37,8 @@ public class PrintMemoryTask implements Runnable {
         long subCount = ClientTrackService.subscriberCount();
         MEMORY_LOG.info("groupCount = {}, subscriberClientCount = {}, subscriberCount = {}", groupCount, subClientCount,
                 subCount);
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_COUNT).set(groupCount);
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_COUNT).set(groupCount);
     }
 }

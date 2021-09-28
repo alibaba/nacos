@@ -30,15 +30,15 @@ public class MetricsClientConnectionEventListener extends ClientConnectionEventL
     
     @Override
     public void clientConnected(Connection connect) {
-        MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
-                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+        MetricsManager.gauge(CoreMetricsConstant.NACOS_CLIENT_TOTAL_CONNECTIONS,
+                        CoreMetricsConstant.MODULE, CoreMetricsConstant.CORE)
                 .incrementAndGet();
     }
     
     @Override
     public void clientDisConnected(Connection connect) {
-        MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
-                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+        MetricsManager.gauge(CoreMetricsConstant.NACOS_CLIENT_TOTAL_CONNECTIONS,
+                        CoreMetricsConstant.MODULE, CoreMetricsConstant.CORE)
                 .decrementAndGet();
     }
 }

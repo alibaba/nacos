@@ -455,9 +455,9 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
                     Loggers.PUSH
                             .info("received ack: {} from: {}:{}, cost: {} ms, unacked: {}, total push: {}", json, ip,
                                     port, pushCost, ackMap.size(),
-                                    MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                                            NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TOTAL_PUSH).get());
+                                    MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                                            NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                                            NamingMetricsConstant.NAME, NamingMetricsConstant.TOTAL_PUSH).get());
                     
                     MetricsMonitor.incrementPushCost(pushCost);
                     

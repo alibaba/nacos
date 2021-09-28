@@ -55,14 +55,14 @@ public class MemoryMonitor {
      */
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_GET_CONFIG)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.GET_CONFIG)
                 .set(0);
     
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_PUBLISH)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.PUBLISH)
                 .set(0);
     }
 }
