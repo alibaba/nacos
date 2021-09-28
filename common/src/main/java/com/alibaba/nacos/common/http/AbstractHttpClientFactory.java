@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.tls.SelfHostnameVerifier;
 import com.alibaba.nacos.common.tls.TlsFileWatcher;
 import com.alibaba.nacos.common.tls.TlsHelper;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
-import com.alibaba.nacos.common.utils.BiConsumer;
+import java.util.function.BiConsumer;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
