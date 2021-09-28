@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * {@link MetricsMonitor} and {@link NacosMeterRegistry} unit tests.
@@ -42,8 +41,10 @@ public class MetricsMonitorTest {
     
     @Test
     public void testGetLongConnectionMonitor() {
-        AtomicInteger atomicInteger = MetricsMonitor.getLongConnectionMonitor();
-        Assert.assertEquals(atomicInteger.get(), 0);
+        Assert.assertEquals(
+                MetricsManager.gauge(CoreMetricsConstant.NACOS_MONITOR,
+                        CoreMetricsConstant.MODULE, CoreMetricsConstant.CONFIG,
+                        CoreMetricsConstant.NAME, CoreMetricsConstant.LONG_CONNECTION).get(), 0);
     }
     
     @Test
@@ -81,20 +82,20 @@ public class MetricsMonitorTest {
     
     @Test
     public void testClientTotalConnection() {
-        MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
-                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+        MetricsManager.gauge(CoreMetricsConstant.NACOS_CLIENT_TOTAL_CONNECTIONS,
+                        CoreMetricsConstant.MODULE, CoreMetricsConstant.CORE)
                 .incrementAndGet();
         Assert.assertEquals(
-                MetricsManager.gauge(CoreMetricsConstant.N_NACOS_CLIENT_TOTAL_CONNECTIONS,
-                                CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE)
+                MetricsManager.gauge(CoreMetricsConstant.NACOS_CLIENT_TOTAL_CONNECTIONS,
+                                CoreMetricsConstant.MODULE, CoreMetricsConstant.CORE)
                         .get(), 1);
     }
     
     @Test
     public void testRequestGrpcCount() {
         Assert.assertEquals(0D,
-                MetricsManager.counter(CoreMetricsConstant.N_NACOS_GRPC_REQUEST_COUNT,
-                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE,
-                        CoreMetricsConstant.TK_NAME, "nacos_grpc_request").count(), 0.01);
+                MetricsManager.counter(CoreMetricsConstant.NACOS_GRPC_REQUEST_COUNT,
+                        CoreMetricsConstant.MODULE, CoreMetricsConstant.CORE,
+                        CoreMetricsConstant.NAME, "nacos_grpc_request").count(), 0.01);
     }
 }

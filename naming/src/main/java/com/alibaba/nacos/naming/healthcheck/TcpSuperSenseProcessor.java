@@ -128,9 +128,9 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             
             Beat beat = new Beat(ip, task);
             taskQueue.add(beat);
-            MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                            NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_TCP_HEALTH_CHECK)
+            MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                            NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                            NamingMetricsConstant.NAME, NamingMetricsConstant.TCP_HEALTH_CHECK)
                     .incrementAndGet();
         }
     }

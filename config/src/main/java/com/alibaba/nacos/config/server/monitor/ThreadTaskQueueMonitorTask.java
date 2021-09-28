@@ -42,13 +42,13 @@ public class ThreadTaskQueueMonitorTask implements Runnable {
         int notifierClientSize = ConfigExecutor.asyncCofigChangeClientNotifyQueueSize();
         MEMORY_LOG.info("toNotifyTaskSize = {}", size);
         MEMORY_LOG.info("toClientNotifyTaskSize = {}", notifierClientSize);
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_TASK)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.NOTIFY_TASK)
                 .set(size);
-        MetricsManager.gauge(ConfigMetricsConstant.N_NACOS_MONITOR,
-                        ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                        ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_CLIENT_TASK)
+        MetricsManager.gauge(ConfigMetricsConstant.NACOS_MONITOR,
+                        ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                        ConfigMetricsConstant.NAME, ConfigMetricsConstant.NOTIFY_CLIENT_TASK)
                 .set(notifierClientSize);
     }
 }

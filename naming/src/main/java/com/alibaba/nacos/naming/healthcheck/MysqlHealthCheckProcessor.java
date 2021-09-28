@@ -104,9 +104,9 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                 }
                 
                 GlobalExecutor.executeMysqlCheckTask(new MysqlCheckTask(ip, task));
-                MetricsManager.gauge(NamingMetricsConstant.N_NACOS_MONITOR,
-                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_MYSQL_HEALTH_CHECK)
+                MetricsManager.gauge(NamingMetricsConstant.NACOS_MONITOR,
+                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                        NamingMetricsConstant.NAME, NamingMetricsConstant.MYSQL_HEALTH_CHECK)
                         .incrementAndGet();
             } catch (Exception e) {
                 ip.setCheckRt(switchDomain.getMysqlHealthParams().getMax());

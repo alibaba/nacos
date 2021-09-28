@@ -18,6 +18,7 @@ package com.alibaba.nacos.metrics.manager;
 
 /**
  * Core Metrics Constant.
+ *
  * @author holdonbei
  */
 public class CoreMetricsConstant {
@@ -25,40 +26,110 @@ public class CoreMetricsConstant {
     /**
      * metrics name.
      */
-    public static final String N_NACOS_MONITOR = "nacos_monitor";
+    public static final String NACOS_MONITOR = "nacos_monitor";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_CLIENT_TOTAL_CONNECTIONS = "nacos_client_total_connections";
+    public static final String NACOS_CLIENT_TOTAL_CONNECTIONS = "nacos_client_total_connections";
     
     /**
      * metrics name.
      */
-    public static final String N_NACOS_GRPC_REQUEST_COUNT = "nacos_grpc_request_count";
+    public static final String NACOS_GRPC_REQUEST_COUNT = "nacos_grpc_request_count";
+    
+    /**
+     * metrics name.
+     */
+    public static final String DISTRO_VERIFY = "distro_verify";
+    
+    /**
+     * metrics name.
+     */
+    public static final String APPEND_LOGS_COUNT = "append_logs_count";
+    
+    /**
+     * metrics name.
+     */
+    public static final String DISTRO_SYNC = "distro_sync";
+    
+    /**
+     * metrics name.
+     */
+    public static final String REPLICATE_ENTRIES_COUNT = "replicate_entries_count";
+    
+    /**
+     * metrics name.
+     */
+    public static final String NEXT_INDEX = "next_index";
+    
+    /**
+     * metrics name.
+     */
+    public static final String LOG_LAGS = "log_lags";
+    
+    /**
+     * metrics name.
+     */
+    public static final String PRE_VOTE = "pre_vote";
+    
+    /**
+     * metrics name.
+     */
+    public static final String REQUEST_VOTE = "request_vote";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_MODULE = "module";
+    public static final String MODULE = "module";
     
     /**
      * metrics tag key.
      */
-    public static final String TK_NAME = "name";
+    public static final String NAME = "name";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String RESOURCE_TYPE = "resourceType";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String TARGET_SERVER = "targetServer";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String SUCCESS = "success";
+    
+    /**
+     * metrics tag key.
+     */
+    public static final String GROUP_NAME = "group_name";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CORE = "core";
+    public static final String CORE = "core";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_CONFIG = "config";
+    public static final String CONFIG = "config";
     
     /**
      * metrics tag value.
      */
-    public static final String TV_LONG_CONNECTION = "longConnection";
+    public static final String LONG_CONNECTION = "longConnection";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String TRUE = "ture";
+    
+    /**
+     * metrics tag value.
+     */
+    public static final String FALSE = "false";
 }

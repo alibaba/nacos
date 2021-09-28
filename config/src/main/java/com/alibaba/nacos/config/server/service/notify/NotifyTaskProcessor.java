@@ -90,15 +90,15 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                         ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
                 
-                MetricsManager.timer(ConfigMetricsConstant.N_NACOS_TIMER,
-                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_NOTIFY_RT)
+                MetricsManager.timer(ConfigMetricsConstant.NACOS_TIMER,
+                                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                ConfigMetricsConstant.NAME, ConfigMetricsConstant.NOTIFY_RT)
                         .record(delayed, TimeUnit.MILLISECONDS);
                 return true;
             } else {
-                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+                MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                         .increment();
                 LOGGER.error("[notify-error] {}, {}, to {}, result {}", dataId, group, serverIp, result.getCode());
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
@@ -106,9 +106,9 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
                 return false;
             }
         } catch (Exception e) {
-            MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                            ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                            ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_CONFIG_NOTIFY)
+            MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                            ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                            ConfigMetricsConstant.NAME, ConfigMetricsConstant.CONFIG_NOTIFY)
                     .increment();
             String message = "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString();
             LOGGER.error(message);

@@ -226,9 +226,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             
             if (!isFound) {
                 FATAL_LOG.error("[master-db] master db not found.");
-                MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                                ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DB)
+                MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                                ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                ConfigMetricsConstant.NAME, ConfigMetricsConstant.DB)
                         .increment();
             }
         }
@@ -259,9 +259,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     }
                     isHealthList.set(i, Boolean.FALSE);
     
-                    MetricsManager.counter(ConfigMetricsConstant.N_NACOS_EXCEPTION,
-                                    ConfigMetricsConstant.TK_MODULE, ConfigMetricsConstant.TV_CONFIG,
-                                    ConfigMetricsConstant.TK_NAME, ConfigMetricsConstant.TV_DB)
+                    MetricsManager.counter(ConfigMetricsConstant.NACOS_EXCEPTION,
+                                    ConfigMetricsConstant.MODULE, ConfigMetricsConstant.CONFIG,
+                                    ConfigMetricsConstant.NAME, ConfigMetricsConstant.DB)
                             .increment();
                 }
             }

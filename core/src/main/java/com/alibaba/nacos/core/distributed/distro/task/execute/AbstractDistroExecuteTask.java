@@ -26,6 +26,8 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.metrics.manager.CoreMetricsConstant;
+import com.alibaba.nacos.metrics.manager.MetricsManager;
 
 /**
  * Abstract distro execute task.
@@ -120,6 +122,11 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         public void onSuccess() {
             DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
             distroRecord.syncSuccess();
+            MetricsManager.counter(CoreMetricsConstant.DISTRO_SYNC,
+                    CoreMetricsConstant.RESOURCE_TYPE, distroKey.getResourceType(),
+                    CoreMetricsConstant.TARGET_SERVER, distroKey.getTargetServer(),
+                    CoreMetricsConstant.SUCCESS, CoreMetricsConstant.TRUE)
+                    .increment();
             Loggers.DISTRO.info("[DISTRO-END] {} result: true", getDistroKey().toString());
         }
         
@@ -127,6 +134,11 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
         public void onFailed(Throwable throwable) {
             DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
             distroRecord.syncFail();
+            MetricsManager.counter(CoreMetricsConstant.DISTRO_SYNC,
+                            CoreMetricsConstant.RESOURCE_TYPE, distroKey.getResourceType(),
+                            CoreMetricsConstant.TARGET_SERVER, distroKey.getTargetServer(),
+                            CoreMetricsConstant.SUCCESS, CoreMetricsConstant.FALSE)
+                    .increment();
             if (null == throwable) {
                 Loggers.DISTRO.info("[DISTRO-END] {} result: false", getDistroKey().toString());
             } else {

@@ -38,9 +38,9 @@ public class MetricsGrpcRequestCountFilter extends AbstractRequestFilter {
      */
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        MetricsManager.counter(CoreMetricsConstant.N_NACOS_GRPC_REQUEST_COUNT,
-                        CoreMetricsConstant.TK_MODULE, CoreMetricsConstant.TV_CORE,
-                        CoreMetricsConstant.TK_NAME, request.getClass().getSimpleName())
+        MetricsManager.counter(CoreMetricsConstant.NACOS_GRPC_REQUEST_COUNT,
+                        CoreMetricsConstant.MODULE, CoreMetricsConstant.CORE,
+                        CoreMetricsConstant.NAME, request.getClass().getSimpleName())
                 .increment();
         return null;
     }

@@ -681,9 +681,9 @@ public class RaftCore implements Closeable {
                         public void onReceive(RestResult<String> result) {
                             if (!result.ok()) {
                                 Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}", result.getCode(), server);
-                                MetricsManager.counter(NamingMetricsConstant.N_NACOS_EXCEPTION,
-                                        NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                                        NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_LEADER_SEND_BEAT_FAILED)
+                                MetricsManager.counter(NamingMetricsConstant.NACOS_EXCEPTION,
+                                        NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                                        NamingMetricsConstant.NAME, NamingMetricsConstant.LEADER_SEND_BEAT_FAILED)
                                         .increment();
                                 return;
                             }
@@ -698,9 +698,9 @@ public class RaftCore implements Closeable {
                         public void onError(Throwable throwable) {
                             Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server,
                                     throwable);
-                            MetricsManager.counter(NamingMetricsConstant.N_NACOS_EXCEPTION,
-                                    NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                                    NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_LEADER_SEND_BEAT_FAILED)
+                            MetricsManager.counter(NamingMetricsConstant.NACOS_EXCEPTION,
+                                    NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                                    NamingMetricsConstant.NAME, NamingMetricsConstant.LEADER_SEND_BEAT_FAILED)
                                     .increment();
                         }
                         
@@ -711,9 +711,9 @@ public class RaftCore implements Closeable {
                     });
                 } catch (Exception e) {
                     Loggers.RAFT.error("error while sending heart-beat to peer: {} {}", server, e);
-                    MetricsManager.counter(NamingMetricsConstant.N_NACOS_EXCEPTION,
-                            NamingMetricsConstant.TK_MODULE, NamingMetricsConstant.TV_NAMING,
-                            NamingMetricsConstant.TK_NAME, NamingMetricsConstant.TV_LEADER_SEND_BEAT_FAILED)
+                    MetricsManager.counter(NamingMetricsConstant.NACOS_EXCEPTION,
+                            NamingMetricsConstant.MODULE, NamingMetricsConstant.NAMING,
+                            NamingMetricsConstant.NAME, NamingMetricsConstant.LEADER_SEND_BEAT_FAILED)
                             .increment();
                 }
             }
