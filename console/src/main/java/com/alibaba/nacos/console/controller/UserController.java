@@ -17,22 +17,26 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.AuthPluginManager;
+import com.alibaba.nacos.auth.AuthService;
+import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
+import com.alibaba.nacos.auth.context.IdentityContext;
+import com.alibaba.nacos.auth.context.IdentityContextBuilder;
 import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.JwtTokenManager;
+
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
-import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
-import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
+
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
-import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -83,9 +87,6 @@ public class UserController {
     @Autowired
     private AuthConfigs authConfigs;
     
-    @Autowired
-    private NacosAuthManager authManager;
-    
     /**
      * Create a new user.
      *
@@ -134,21 +135,21 @@ public class UserController {
      *
      * @param username    username of user
      * @param newPassword new password of user
-     * @param response http response
-     * @param request http request
+     * @param response    http response
+     * @param request     http request
      * @return ok if update succeed
      * @throws IllegalArgumentException if user not exist or oldPassword is incorrect
      * @since 1.2.0
      */
     @PutMapping
     @Secured(resource = NacosAuthConfig.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
-    public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
-            HttpServletResponse response, HttpServletRequest request) throws IOException {
+    public Object updateUser(@RequestParam String username, @RequestParam String newPassword, HttpServletResponse response,
+            HttpServletRequest request) throws IOException {
         // admin or same user
         if (!hasPermission(username, request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
         }
-
+        
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
@@ -158,22 +159,23 @@ public class UserController {
         
         return RestResultUtils.success("update user ok!");
     }
-
+    
     private boolean hasPermission(String username, HttpServletRequest request) {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (Objects.isNull(request.getAttribute(RequestUtil.NACOS_USER_KEY))) {
+        if (Objects.isNull(request.getAttribute(NacosAuthConfig.NACOS_IDENTITY_KEY))) {
             return false;
         }
-
-        NacosUser user = (NacosUser) request.getAttribute(RequestUtil.NACOS_USER_KEY);
+        IdentityContext context = (IdentityContext) request.getAttribute(NacosAuthConfig.NACOS_IDENTITY_KEY);
+        
         // admin
-        if (user.isGlobalAdmin()) {
+        if ((Boolean) context.getParameter(Constants.GLOBAL_ADMIN)) {
             return true;
         }
         // same user
-        return user.getUserName().equals(username);
+        String authorityUserName = (String) context.getParameter(Constants.USERNAME);
+        return authorityUserName.equals(username);
     }
     
     /**
@@ -203,26 +205,28 @@ public class UserController {
      * @throws AccessException if user info is incorrect
      */
     @PostMapping("/login")
-    public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException {
-        
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP
-                .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            NacosUser user = (NacosUser) authManager.login(request);
+    public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response, HttpServletRequest request)
+            throws AccessException {
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP.name()
+                .equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.USERNAME_PASSWORD.name()
+                .equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            AuthService authService = AuthPluginManager.getInstance().findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType()).get();
+            IdentityContextBuilder<HttpServletRequest> identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
+            IdentityContext identityContext = authService.login(identityContextBuilder.build(request));
             
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
+            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER,
+                    NacosAuthConfig.TOKEN_PREFIX + identityContext.getParameter(Constants.ACCESS_TOKEN));
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
-            result.put(Constants.ACCESS_TOKEN, user.getToken());
+            result.put(Constants.ACCESS_TOKEN, (String) identityContext.getParameter(Constants.ACCESS_TOKEN));
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
-            result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
-            result.put(Constants.USERNAME, user.getUserName());
+            result.put(Constants.GLOBAL_ADMIN, (Boolean) identityContext.getParameter(Constants.GLOBAL_ADMIN));
+            result.put(Constants.USERNAME, (String) identityContext.getParameter(Constants.USERNAME));
             return result;
         }
         
         // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
-                password);
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
         
         try {
             // use the method authenticate of AuthenticationManager(default implement is ProviderManager) to valid Authentication
@@ -266,8 +270,8 @@ public class UserController {
             return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
         }
     }
-
-
+    
+    
     /**
      * Fuzzy matching username.
      *

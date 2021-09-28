@@ -50,7 +50,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      * Authority key set.
      */
     @Value("${nacos.core.auth.authorityKey:}")
-    private  String[] authorityKey;
+    private String[] authorityKey;
     
     /**
      * Whether auth enabled.
@@ -160,6 +160,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityValue = EnvUtil.getProperty("nacos.core.auth.server.identity.value", "");
             enableUserAgentAuthWhite = EnvUtil.getProperty("nacos.core.auth.enable.userAgentAuthWhite", Boolean.class, false);
             authorityKey = EnvUtil.getProperty("nacos.core.auth.authorityKey", "").split(",");
+            nacosAuthSystemType = EnvUtil.getProperty("nacos.core.auth.system.type", "");
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }

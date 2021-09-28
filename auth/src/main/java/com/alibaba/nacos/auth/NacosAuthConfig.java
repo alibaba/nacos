@@ -43,6 +43,8 @@ import org.springframework.web.cors.CorsUtils;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
+    public static final String NACOS_IDENTITY_KEY = "identity";
+    
     public static final String AUTHORIZATION_HEADER = "Authorization";
     
     public static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
@@ -90,6 +92,8 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
             ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
+        } else if (AuthSystemTypes.USERNAME_PASSWORD.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
         }
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
             ignoreUrls = env.getProperty(PROPERTY_IGNORE_URLS, DEFAULT_ALL_PATH_PATTERN);
@@ -107,6 +111,8 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
             auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             auth.authenticationProvider(ldapAuthenticationProvider);
+        } else if (AuthSystemTypes.USERNAME_PASSWORD.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
         }
     }
     
@@ -115,9 +121,8 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
             http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
-                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                    .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
+                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
+                    .requestMatchers(CorsUtils::isPreFlightRequest).permitAll().antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
                     .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
                     .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
             // disable cache
