@@ -86,13 +86,6 @@ public class MetricsManager {
     }
     
     /**
-     * exporter for Metrics.
-     */
-    private static List<Metrics> exporter() {
-        return null;
-    }
-    
-    /**
      * create key for metrics.
      */
     private static String getKey(String name, String... k) {
