@@ -16,27 +16,27 @@
 
 package com.alibaba.nacos.config.server.auth;
 
-import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.AuthService;
+import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
-import com.alibaba.nacos.auth.model.User;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MockAuthManager implements AuthManager {
+public class MockAuthManager implements AuthService {
     
     @Override
-    public User login(Object request) throws AccessException {
+    public IdentityContext login(IdentityContext identityContext) throws AccessException {
         return null;
     }
     
     @Override
-    public User loginRemote(Object request) throws AccessException {
+    public Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException {
         return null;
     }
     
     @Override
-    public void auth(Permission permission, User user) throws AccessException {
-    
+    public String getAuthServiceName() {
+        return null;
     }
 }
