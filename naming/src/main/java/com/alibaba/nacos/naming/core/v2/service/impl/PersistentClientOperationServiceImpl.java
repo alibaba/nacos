@@ -34,6 +34,7 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOperation;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -184,6 +185,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     private void onInstanceDeregister(Service service, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            Loggers.CORE.warn("client not exist onInstanceDeregister，clientId : {} ", clientId);
+            return;
+        }
         client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
         if (client.getAllPublishedService().isEmpty()) {
