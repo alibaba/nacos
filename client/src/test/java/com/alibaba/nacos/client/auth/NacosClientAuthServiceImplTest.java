@@ -17,6 +17,8 @@
 package com.alibaba.nacos.client.auth;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
+import com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -160,7 +162,7 @@ public class NacosClientAuthServiceImplTest {
         //when
         Assert.assertTrue(nacosClientAuthService.login(properties));
         //then
-        Assert.assertEquals("abc", nacosClientAuthService.getLoginIdentityContext().getParameter(LoginAuthConstant.ACCESSTOKEN));
+        Assert.assertEquals("abc", nacosClientAuthService.getLoginIdentityContext().getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
 }

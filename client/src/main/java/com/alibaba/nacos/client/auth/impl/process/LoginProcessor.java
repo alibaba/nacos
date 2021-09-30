@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth.process;
+package com.alibaba.nacos.client.auth.impl.process;
 
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import java.util.Properties;

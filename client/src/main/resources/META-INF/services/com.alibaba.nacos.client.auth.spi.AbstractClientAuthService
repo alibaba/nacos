@@ -15,4 +15,4 @@
 #
 #
 
-com.alibaba.nacos.client.auth.NacosClientAuthServiceImpl
+com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl

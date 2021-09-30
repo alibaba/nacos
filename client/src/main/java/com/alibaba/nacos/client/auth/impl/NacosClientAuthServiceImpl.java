@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth;
+package com.alibaba.nacos.client.auth.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.auth.process.HttpLoginProcessor;
+import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.client.auth.impl.process.HttpLoginProcessor;
+import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,17 +79,17 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
             
             for (String server : this.serverList) {
                 HttpLoginProcessor httpLoginProcessor = new HttpLoginProcessor(nacosRestTemplate);
-                properties.setProperty(LoginAuthConstant.SERVER, server);
+                properties.setProperty(NacosAuthLoginConstant.SERVER, server);
                 LoginIdentityContext identityContext = httpLoginProcessor.getResponse(properties);
                 if (identityContext != null) {
-                    if (StringUtils.isNotBlank((String) identityContext.getParameter(LoginAuthConstant.ACCESSTOKEN))) {
-                        tokenTtl = Long.parseLong((String) identityContext.getParameter(LoginAuthConstant.TOKENTTL));
+                    if (StringUtils.isNotBlank((String) identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN))) {
+                        tokenTtl = Long.parseLong((String) identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
                         tokenRefreshWindow = tokenTtl / 10;
                         lastRefreshTime = System.currentTimeMillis();
                         
                         loginIdentityContext = new LoginIdentityContext();
-                        loginIdentityContext.setParameter(LoginAuthConstant.ACCESSTOKEN,
-                                identityContext.getParameter(LoginAuthConstant.ACCESSTOKEN));
+                        loginIdentityContext.setParameter(NacosAuthLoginConstant.ACCESSTOKEN,
+                                identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
                     }
                     return true;
                 }
