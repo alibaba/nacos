@@ -142,7 +142,6 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                 return false;
             }
         }
-
         currentTps.getCountHolder(pointName).count.incrementAndGet();
         for (CircuitBreakerRecorder.SlotCountHolder passedTpsSlot : passedSlots) {
             passedTpsSlot.count.incrementAndGet();

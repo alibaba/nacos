@@ -27,6 +27,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.jsonwebtoken.io.IOException;
 import org.apache.commons.collections.MapUtils;
 
@@ -61,6 +62,7 @@ public class TpsConfigSerializer extends ConfigSerializer {
                 for (CircuitBreakerPointConfig<TpsConfig> config : configList) {
                     String pointName = config.getPointName();
                     System.out.println(config.getPointName());
+
                     // Serialize point file.
                     File pointFile = getRuleFile(pointName);
                     if (!pointFile.exists()) {
@@ -98,7 +100,6 @@ public class TpsConfigSerializer extends ConfigSerializer {
     }
 
     private File checkBaseDir() {
-        System.out.println(EnvUtil.getNacosHome() + "data" + File.separator + "cb" + File.separator + "tps" + File.separator);
         File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "cb" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdirs();

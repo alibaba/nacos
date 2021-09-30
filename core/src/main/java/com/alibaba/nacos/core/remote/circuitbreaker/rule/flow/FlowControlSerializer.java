@@ -53,6 +53,7 @@ public class FlowControlSerializer extends ConfigSerializer {
                 List<CircuitBreakerPointConfig<FlowControlConfig>> configList = objectMapper.readValue((byte[]) configContent.get("configList"),
                         new TypeReference<List<CircuitBreakerPointConfig<FlowControlConfig>>>() {});
                 System.out.println("succ");
+
                 // For each config content, serialize its point config and monitorKeyConfig to two separate files.
                 for (CircuitBreakerPointConfig<FlowControlConfig> config : configList) {
                     // Serialize point file.

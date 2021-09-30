@@ -69,6 +69,11 @@ public class CircuitBreaker {
         init();
     }
 
+    CircuitBreaker(String strategy) {
+        currentRuleName = strategy;
+        init();
+    }
+
     /**
      * Main entry point for circuit breaker rule implementations.
      * Using Java SPI to load circuit break rule and apply for their rules.
