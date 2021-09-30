@@ -29,13 +29,14 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreaker;
+import com.alibaba.nacos.core.remote.control.*;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -55,8 +56,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
     
+//    @Autowired
+//    private TpsMonitorManager tpsMonitorManager;
+
     @Autowired
-    private TpsMonitorManager tpsMonitorManager;
+    private CircuitBreaker circuitBreaker;
     
     public RpcConfigChangeNotifier() {
         NotifyCenter.registerSubscriber(this);
@@ -64,10 +68,12 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     @PostConstruct
     private void registerTpsPoint() {
-        
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH));
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_SUCCESS));
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_FAIL));
+        circuitBreaker.registerPoint(POINT_CONFIG_PUSH);
+        circuitBreaker.registerPoint(POINT_CONFIG_PUSH_SUCCESS);
+        circuitBreaker.registerPoint(POINT_CONFIG_PUSH_FAIL);
+//        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH));
+//        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_SUCCESS));
+//        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_FAIL));
         
     }
     
@@ -170,18 +176,21 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         @Override
         public void run() {
             tryTimes++;
-            if (!tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH, connectionId, clientIp)) {
+            List<MonitorKey> monitorKeyList = new ArrayList<>();
+            monitorKeyList.add(new ConnectionIdMonitorKey(connectionId));
+            monitorKeyList.add(new ClientIpMonitorKey(clientIp));
+            if (!circuitBreaker.applyStrategy(POINT_CONFIG_PUSH, monitorKeyList)) {
                 push(this);
             } else {
                 rpcPushService.pushWithCallback(connectionId, notifyRequest, new AbstractPushCallBack(3000L) {
                     @Override
                     public void onSuccess() {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_SUCCESS, connectionId, clientIp);
+                        circuitBreaker.applyStrategy(POINT_CONFIG_PUSH_SUCCESS, monitorKeyList);
                     }
                     
                     @Override
                     public void onFail(Throwable e) {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_FAIL, connectionId, clientIp);
+                        circuitBreaker.applyStrategy(POINT_CONFIG_PUSH_FAIL, monitorKeyList);
                         Loggers.REMOTE_PUSH.warn("Push fail", e);
                         push(RpcPushTask.this);
                     }

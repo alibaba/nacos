@@ -21,9 +21,11 @@ import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.circuitbreaker.ConfigSerializer;
 import com.alibaba.nacos.core.remote.circuitbreaker.pojo.CircuitBreakerPointConfig;
+import com.alibaba.nacos.core.remote.circuitbreaker.rule.tps.TpsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.io.IOException;
 import org.apache.commons.collections.MapUtils;
 
@@ -42,13 +44,15 @@ public class FlowControlSerializer extends ConfigSerializer {
     }
 
     @Override
-    public boolean serializeConfig(Map<String, String> configContent) throws IOException {
+    public boolean serializeConfig(Map<String, Object> configContent) throws IOException {
         try {
             if (configContent.containsKey(POINT_NAME) && configContent.containsKey(POINT_LIST)) {
-                String pointName = configContent.get(POINT_NAME);
-                List<CircuitBreakerPointConfig<FlowControlConfig>> configList = JacksonUtils.toObj(configContent.get(POINT_NAME),
-                        new TypeReference<List<CircuitBreakerPointConfig<FlowControlConfig>>>() {});
+                String pointName = (String) configContent.get(POINT_NAME);
+                ObjectMapper objectMapper = new ObjectMapper();
 
+                List<CircuitBreakerPointConfig<FlowControlConfig>> configList = objectMapper.readValue((byte[]) configContent.get("configList"),
+                        new TypeReference<List<CircuitBreakerPointConfig<FlowControlConfig>>>() {});
+                System.out.println("succ");
                 // For each config content, serialize its point config and monitorKeyConfig to two separate files.
                 for (CircuitBreakerPointConfig<FlowControlConfig> config : configList) {
                     // Serialize point file.

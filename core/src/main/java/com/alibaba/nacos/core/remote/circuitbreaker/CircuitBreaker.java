@@ -60,11 +60,11 @@ public class CircuitBreaker {
         return thread;
     });
 
-    CircuitBreaker() {
+    public CircuitBreaker() {
         init();
     }
 
-    CircuitBreaker(String strategy) {
+    public CircuitBreaker(String strategy) {
         currentRuleName = strategy;
         init();
     }
@@ -313,5 +313,9 @@ public class CircuitBreaker {
             }
 
         }
+    }
+
+    public CircuitBreakerStrategy getCurrentRule() {
+        return this.currentRule;
     }
 }

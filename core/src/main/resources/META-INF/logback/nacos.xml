@@ -18,7 +18,7 @@
 <configuration>
     
     <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
-    
+
     <property name="LOG_HOME" value="${logPath}"/>
     
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>

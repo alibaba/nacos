@@ -90,7 +90,6 @@ public class TpsMonitor extends CircuitBreakerMonitor {
      * @return check current tps is allowed.
      */
     public boolean applyTps(List<MonitorKey> monitorKeys) {
-        
         long now = System.currentTimeMillis();
         CircuitBreakerRecorder.Slot currentTps = tpsRecorder.createSlotIfAbsent(now);
 
@@ -133,6 +132,7 @@ public class TpsMonitor extends CircuitBreakerMonitor {
         //2.check total tps.
         long maxTps = tpsRecorder.getConfig().getMaxCount();
         boolean overLimit = maxTps >= 0 && currentTps.getCountHolder(pointName).count.longValue() >= maxTps;
+
         if (overLimit) {
             Loggers.TPS_CONTROL_DETAIL
                     .info("[{}]Tps over limit ,pointName=[{}],barrier=[{}]，monitorType={}", connectionId,
@@ -142,7 +142,7 @@ public class TpsMonitor extends CircuitBreakerMonitor {
                 return false;
             }
         }
-        
+
         currentTps.getCountHolder(pointName).count.incrementAndGet();
         for (CircuitBreakerRecorder.SlotCountHolder passedTpsSlot : passedSlots) {
             passedTpsSlot.count.incrementAndGet();

@@ -29,5 +29,5 @@ public abstract class ConfigSerializer {
 
     public abstract String getName();
 
-    public abstract boolean serializeConfig(Map<String, String> config);
+    public abstract boolean serializeConfig(Map<String, Object> config);
 }

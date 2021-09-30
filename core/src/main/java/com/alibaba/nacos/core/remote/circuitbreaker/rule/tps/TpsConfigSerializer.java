@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.remote.circuitbreaker.rule.flow.FlowControlConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.io.IOException;
 import org.apache.commons.collections.MapUtils;
 
@@ -44,15 +45,22 @@ public class TpsConfigSerializer extends ConfigSerializer {
     }
 
     @Override
-    public boolean serializeConfig(Map<String, String> configContent) throws IOException {
+    public boolean serializeConfig(Map<String, Object> configContent) throws IOException {
         try {
-            if (configContent.containsKey(POINT_NAME) && configContent.containsKey(POINT_LIST)) {
-                String pointName = configContent.get(POINT_NAME);
-                List<CircuitBreakerPointConfig<TpsConfig>> configList = JacksonUtils.toObj(configContent.get(POINT_NAME),
-                        new TypeReference<List<CircuitBreakerPointConfig<TpsConfig>>>() {});
+            System.out.println(JacksonUtils.toJson(configContent));
+            System.out.println(JacksonUtils.toJson(configContent.get("pointList")));
+            System.out.println(configContent.containsKey("pointList"));
+            if (configContent.containsKey("pointList")) {
 
+                ObjectMapper objectMapper = new ObjectMapper();
+                Object obj = configContent.get("configList");
+                List<CircuitBreakerPointConfig<TpsConfig>> configList = objectMapper.readValue(JacksonUtils.toJson(obj),
+                        new TypeReference<List<CircuitBreakerPointConfig<TpsConfig>>>() {});
+                System.out.println(configList);
                 // For each config content, serialize its point config and monitorKeyConfig to two separate files.
                 for (CircuitBreakerPointConfig<TpsConfig> config : configList) {
+                    String pointName = config.getPointName();
+                    System.out.println(config.getPointName());
                     // Serialize point file.
                     File pointFile = getRuleFile(pointName);
                     if (!pointFile.exists()) {
@@ -90,6 +98,7 @@ public class TpsConfigSerializer extends ConfigSerializer {
     }
 
     private File checkBaseDir() {
+        System.out.println(EnvUtil.getNacosHome() + "data" + File.separator + "cb" + File.separator + "tps" + File.separator);
         File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "cb" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdirs();

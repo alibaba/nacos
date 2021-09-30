@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.circuitbreaker;
 import com.alibaba.nacos.core.remote.control.TpsControlRule;
+import com.alibaba.nacos.core.remote.control.TpsRecorder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -183,4 +184,8 @@ public abstract class CircuitBreakerRecorder {
     public String getRecorderName() { return recorderName; }
 
     public void setRecorderName(String recorderName) { this.recorderName = recorderName; }
+
+    public List<Slot> getSlotList() {
+        return slotList;
+    }
 }

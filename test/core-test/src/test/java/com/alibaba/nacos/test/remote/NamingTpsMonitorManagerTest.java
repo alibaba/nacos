@@ -35,13 +35,13 @@ import java.util.concurrent.TimeUnit;
 
 @Ignore("It should be Unit test, not IT")
 public class NamingTpsMonitorManagerTest {
-    
+
     static TpsMonitorManager tpsMonitorManager = null;
-    
+
     static List<String> testPoints = null;
-    
+
     static {
-        
+
         tpsMonitorManager = new TpsMonitorManager();
         testPoints = Arrays
                 .asList("test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10");
@@ -61,12 +61,12 @@ public class NamingTpsMonitorManagerTest {
             tpsMonitorManager.registerTpsControlPoint(tpsMonitorPoint);
             System.out.println(JacksonUtils.toJson(tpsControlRule));
             tpsMonitorPoint.applyRule(tpsControlRule);
-            
+
         }
-        
+
     }
-    
-    
+
+
     @Test
     public void printlnJson() {
         TpsControlRule tpsControlRule = new TpsControlRule();
@@ -80,7 +80,7 @@ public class NamingTpsMonitorManagerTest {
                 .setPointRule(new TpsControlRule.Rule(100, TimeUnit.SECONDS, "SUM", MonitorType.INTERCEPT.getType()));
         System.out.println(JacksonUtils.toJson(tpsControlRule));
     }
-    
+
     @Test
     public void runTest() {
         long start = System.currentTimeMillis();

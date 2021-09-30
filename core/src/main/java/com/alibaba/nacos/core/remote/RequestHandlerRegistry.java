@@ -18,10 +18,12 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreaker;
 import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.remote.control.TpsControlConfig;
 import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -47,6 +49,9 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
     
     @Autowired
     private TpsMonitorManager tpsMonitorManager;
+
+    @Autowired
+    private CircuitBreaker circuitBreaker;
     
     /**
      * Get Request Handler By request Type.
@@ -82,8 +87,8 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
                 if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
                     TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                     String pointName = tpsControl.pointName();
-                    TpsMonitorPoint tpsMonitorPoint = new TpsMonitorPoint(pointName);
-                    tpsMonitorManager.registerTpsControlPoint(tpsMonitorPoint);
+//                    TpsMonitorPoint tpsMonitorPoint = new TpsMonitorPoint(pointName);
+                    circuitBreaker.registerPoint(pointName);
                 }
             } catch (Exception e) {
                 //ignore.

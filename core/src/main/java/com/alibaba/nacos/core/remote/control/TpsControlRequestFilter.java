@@ -21,12 +21,14 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
+import com.alibaba.nacos.core.remote.circuitbreaker.CircuitBreaker;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,6 +42,9 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
     
     @Autowired
     private TpsMonitorManager tpsMonitorManager;
+
+    @Autowired
+    private CircuitBreaker circuitBreaker;
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) {
@@ -73,8 +78,9 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                     }
                 }
             }
-            
-            boolean pass = tpsMonitorManager.applyTps(pointName, meta.getConnectionId(), monitorKeys);
+
+            monitorKeys.add(new ConnectionIdMonitorKey(meta.getConnectionId()));
+            boolean pass = circuitBreaker.applyStrategy(pointName, monitorKeys);
             
             if (!pass) {
                 Response response;
