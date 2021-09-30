@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.client.auth.spi;
 
-import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+
 import java.util.List;
 
 public abstract class AbstractClientAuthService implements ClientAuthService {

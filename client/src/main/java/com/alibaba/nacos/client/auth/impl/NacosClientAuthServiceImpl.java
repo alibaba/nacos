@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.impl.process.HttpLoginProcessor;
 import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
+import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,7 +103,7 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     }
     
     @Override
-    public LoginIdentityContext getLoginIdentityContext() {
+    public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
         return this.loginIdentityContext;
     }
     
