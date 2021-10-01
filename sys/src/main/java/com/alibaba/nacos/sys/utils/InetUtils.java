@@ -144,7 +144,7 @@ public class InetUtils {
         InetAddress result = null;
         
         try {
-            int lowest = Integer.MAX_VALUE;
+            int lowest = Integer.MIN_VALUE;
             for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
                     nics.hasMoreElements(); ) {
                 NetworkInterface ifc = nics.nextElement();
