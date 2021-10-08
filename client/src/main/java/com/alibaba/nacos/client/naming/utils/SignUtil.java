@@ -33,9 +33,6 @@ public class SignUtil {
     
     private static final Charset UTF8 = StandardCharsets.UTF_8;
     
-    public SignUtil() {
-    }
-    
     /**
      * Sign.
      *

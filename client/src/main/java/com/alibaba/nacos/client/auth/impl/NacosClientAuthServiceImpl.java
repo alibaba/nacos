@@ -83,8 +83,8 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
                 properties.setProperty(NacosAuthLoginConstant.SERVER, server);
                 LoginIdentityContext identityContext = httpLoginProcessor.getResponse(properties);
                 if (identityContext != null) {
-                    if (StringUtils.isNotBlank((String) identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN))) {
-                        tokenTtl = Long.parseLong((String) identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
+                    if (StringUtils.isNotBlank(identityContext.getParameter(NacosAuthLoginConstant.ACCESSTOKEN))) {
+                        tokenTtl = Long.parseLong(identityContext.getParameter(NacosAuthLoginConstant.TOKENTTL));
                         tokenRefreshWindow = tokenTtl / 10;
                         lastRefreshTime = System.currentTimeMillis();
                         

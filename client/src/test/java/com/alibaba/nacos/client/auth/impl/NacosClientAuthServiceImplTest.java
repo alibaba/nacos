@@ -160,7 +160,7 @@ public class NacosClientAuthServiceImplTest {
         //when
         Assert.assertTrue(nacosClientAuthService.login(properties));
         //then
-        Assert.assertEquals("abc", nacosClientAuthService.getLoginIdentityContext().getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        Assert.assertEquals("abc", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
 }
