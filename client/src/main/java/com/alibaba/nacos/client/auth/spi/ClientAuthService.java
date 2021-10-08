@@ -54,8 +54,10 @@ public interface ClientAuthService {
     /**
      * get login identity context.
      *
+     * @param resource resource for this request, some of plugin implementation will use this resource to generate their
+     *                 identity context. If no need to use can ignore it.
      * @return LoginIdentityContext this plugin loginIdentityContext.
      */
-    LoginIdentityContext getLoginIdentityContext();
+    LoginIdentityContext getLoginIdentityContext(RequestResource resource);
     
 }
