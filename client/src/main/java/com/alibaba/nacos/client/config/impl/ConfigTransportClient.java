@@ -147,7 +147,8 @@ public abstract class ConfigTransportClient {
     }
     
     public Map<String, String> getAccessToken() {
-        return this.securityProxy.getIdentityContext();
+        //TODO generate resource
+        return this.securityProxy.getIdentityContext(null);
     }
     
     private StsCredential getStsCredential() throws Exception {

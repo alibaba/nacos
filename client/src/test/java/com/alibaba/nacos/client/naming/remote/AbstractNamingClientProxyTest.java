@@ -132,7 +132,7 @@ public class AbstractNamingClientProxyTest {
         String token = "aa";
         Map<String, String> keyMap = new HashMap<>();
         keyMap.put(Constants.ACCESS_TOKEN, token);
-        Mockito.when(sc.getIdentityContext()).thenReturn(keyMap);
+        Mockito.when(sc.getIdentityContext(null)).thenReturn(keyMap);
         
         Map<String, String> securityHeaders = proxy.getSecurityHeaders();
         Assert.assertEquals(1, securityHeaders.size());
