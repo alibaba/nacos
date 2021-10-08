@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.identify.StsCredential;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.identify.StsConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -31,11 +32,9 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -117,9 +116,9 @@ public abstract class ConfigTransportClient {
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
             StsCredential stsCredential = getStsCredential();
-            accessKey = stsCredential.accessKeyId;
-            secretKey = stsCredential.accessKeySecret;
-            spasHeaders.put(SECURITY_TOKEN_HEADER, stsCredential.securityToken);
+            accessKey = stsCredential.getAccessKeyId();
+            secretKey = stsCredential.getAccessKeySecret();
+            spasHeaders.put(SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
@@ -155,7 +154,7 @@ public abstract class ConfigTransportClient {
         boolean cacheSecurityCredentials = StsConfig.getInstance().isCacheSecurityCredentials();
         if (cacheSecurityCredentials && stsCredential != null) {
             long currentTime = System.currentTimeMillis();
-            long expirationTime = stsCredential.expiration.getTime();
+            long expirationTime = stsCredential.getExpiration().getTime();
             int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
             if (expirationTime - currentTime > timeToRefreshInMillisecond) {
                 return stsCredential;
@@ -338,49 +337,5 @@ public abstract class ConfigTransportClient {
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException;
-    
-    private static class StsCredential {
-        
-        @JsonProperty(value = "AccessKeyId")
-        private String accessKeyId;
-        
-        @JsonProperty(value = "AccessKeySecret")
-        private String accessKeySecret;
-        
-        @JsonProperty(value = "Expiration")
-        private Date expiration;
-        
-        @JsonProperty(value = "SecurityToken")
-        private String securityToken;
-        
-        @JsonProperty(value = "LastUpdated")
-        private Date lastUpdated;
-        
-        @JsonProperty(value = "Code")
-        private String code;
-        
-        public String getAccessKeyId() {
-            return accessKeyId;
-        }
-        
-        public Date getExpiration() {
-            return expiration;
-        }
-        
-        public Date getLastUpdated() {
-            return lastUpdated;
-        }
-        
-        public String getCode() {
-            return code;
-        }
-        
-        @Override
-        public String toString() {
-            return "STSCredential{" + "accessKeyId='" + accessKeyId + '\'' + ", accessKeySecret='" + accessKeySecret
-                    + '\'' + ", expiration=" + expiration + ", securityToken='" + securityToken + '\''
-                    + ", lastUpdated=" + lastUpdated + ", code='" + code + '\'' + '}';
-        }
-    }
     
 }

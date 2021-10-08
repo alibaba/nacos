@@ -74,9 +74,10 @@ public class SecurityProxy {
     public Map<String, String> getIdentityContext() {
         Map<String, String> header = new HashMap<>();
         for (ClientAuthService clientAuthService : this.clientAuthServiceHashSet) {
-            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext();
+            //TODO input resource
+            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(null);
             for (String key : loginIdentityContext.getAllKey()) {
-                header.put(key, (String) loginIdentityContext.getParameter(key));
+                header.put(key, loginIdentityContext.getParameter(key));
             }
         }
         return header;

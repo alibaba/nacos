@@ -24,31 +24,45 @@ public class LoginIdentityContext {
     
     /**
      * get context from request.
-    */
-    private final Map<String, Object> param = new HashMap<String, Object>();
+     */
+    private final Map<String, String> param = new HashMap<>();
     
     /**
      * get key from context.
+     *
      * @param key key of request
      * @return value of param key
      */
-    public Object getParameter(String key) {
-        return param.get(key); }
+    public String getParameter(String key) {
+        return param.get(key);
+    }
     
     /**
      * put key and value to param.
-     * @param key key of request
+     *
+     * @param key   key of request
      * @param value value of request's key
      */
-    public void setParameter(String key, Object value) {
-        param.put(key, value); }
+    public void setParameter(String key, String value) {
+        param.put(key, value);
+    }
+    
+    /**
+     * put all parameters from Map.
+     *
+     * @param parameters map of parameters
+     */
+    public void setParameters(Map<String, String> parameters) {
+        param.putAll(parameters);
+    }
     
     /**
      * get all keys of param map.
+     *
      * @return set all param keys.
      */
     public Set<String> getAllKey() {
         return param.keySet();
     }
-
+    
 }
