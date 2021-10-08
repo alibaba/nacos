@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.client.auth.ClientAuthPluginManager;
-import com.alibaba.nacos.client.auth.ClientAuthService;
+import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 

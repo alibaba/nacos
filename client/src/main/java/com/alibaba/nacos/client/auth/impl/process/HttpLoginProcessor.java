@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth.process;
+package com.alibaba.nacos.client.auth.impl.process;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.auth.LoginAuthConstant;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -55,7 +55,7 @@ public class HttpLoginProcessor implements LoginProcessor {
         
         String contextPath = ContextPathUtil
                 .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
-        String server = properties.getProperty(LoginAuthConstant.SERVER, StringUtils.EMPTY);
+        String server = properties.getProperty(NacosAuthLoginConstant.SERVER, StringUtils.EMPTY);
         String url = HTTP + server + contextPath + LOGIN_URL;
         
         if (server.contains(Constants.HTTP_PREFIX)) {
@@ -79,8 +79,8 @@ public class HttpLoginProcessor implements LoginProcessor {
             
             if (obj.has(Constants.ACCESS_TOKEN)) {
                 loginIdentityContext
-                        .setParameter(LoginAuthConstant.ACCESSTOKEN, obj.get(Constants.ACCESS_TOKEN).asText());
-                loginIdentityContext.setParameter(LoginAuthConstant.TOKENTTL, obj.get(Constants.TOKEN_TTL).asText());
+                        .setParameter(NacosAuthLoginConstant.ACCESSTOKEN, obj.get(Constants.ACCESS_TOKEN).asText());
+                loginIdentityContext.setParameter(NacosAuthLoginConstant.TOKENTTL, obj.get(Constants.TOKEN_TTL).asText());
             } else {
                 SECURITY_LOGGER.info("[NacosClientAuthServiceImpl] ACCESS_TOKEN is empty from response");
             }

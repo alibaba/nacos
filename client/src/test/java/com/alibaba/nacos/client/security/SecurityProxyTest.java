@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.auth.LoginAuthConstant;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -72,7 +72,7 @@ public class SecurityProxyTest {
         //when
         Map<String, String> keyMap = securityProxy.getIdentityContext();
         //then
-        Assert.assertEquals("ttttttttttttttttt", keyMap.get(LoginAuthConstant.ACCESSTOKEN));
+        Assert.assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
 }

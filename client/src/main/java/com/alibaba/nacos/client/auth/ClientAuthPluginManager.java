@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.auth;
 
+import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
+import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
