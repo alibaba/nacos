@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.client.naming.remote;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -26,6 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -37,16 +37,17 @@ import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 public class AbstractNamingClientProxyTest {
     
     @Test
     public void testGetSecurityHeaders() {
         SecurityProxy sc = Mockito.mock(SecurityProxy.class);
-        Properties props = new Properties();
-        AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc, props) {
+        AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc) {
             @Override
             public void onEvent(ServerListChangedEvent event) {
             }
@@ -132,7 +133,7 @@ public class AbstractNamingClientProxyTest {
         String token = "aa";
         Map<String, String> keyMap = new HashMap<>();
         keyMap.put(Constants.ACCESS_TOKEN, token);
-        Mockito.when(sc.getIdentityContext(null)).thenReturn(keyMap);
+        when(sc.getIdentityContext(null)).thenReturn(keyMap);
         
         Map<String, String> securityHeaders = proxy.getSecurityHeaders();
         Assert.assertEquals(1, securityHeaders.size());
@@ -143,12 +144,10 @@ public class AbstractNamingClientProxyTest {
     @Test
     public void testGetSpasHeaders() throws Exception {
         SecurityProxy sc = Mockito.mock(SecurityProxy.class);
-        Properties props = new Properties();
         String ak = "aa";
         String sk = "bb";
-        props.put(PropertyKeyConst.ACCESS_KEY, ak);
-        props.put(PropertyKeyConst.SECRET_KEY, sk);
-        AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc, props) {
+        final AbstractNamingClientProxy proxy = new AbstractNamingClientProxy(sc) {
+            
             @Override
             public void onEvent(ServerListChangedEvent event) {
             }
@@ -231,13 +230,17 @@ public class AbstractNamingClientProxyTest {
             
             }
         };
+        Map<String, String> mockIdentityContext = new HashMap<>();
         String serviceName = "aaa";
-        Map<String, String> spasHeaders = proxy.getSpasHeaders(serviceName);
+        mockIdentityContext.put("ak", ak);
+        mockIdentityContext.put("data", System.currentTimeMillis() + "@@" + serviceName);
+        mockIdentityContext.put("signature", SignUtil.sign(System.currentTimeMillis() + "@@" + serviceName, sk));
+        when(sc.getIdentityContext(any(RequestResource.class))).thenReturn(mockIdentityContext);
+        Map<String, String> spasHeaders = proxy.getSpasHeaders("", "", serviceName);
         Assert.assertEquals(4, spasHeaders.size());
         Assert.assertEquals(AppNameUtils.getAppName(), spasHeaders.get("app"));
         Assert.assertEquals(ak, spasHeaders.get("ak"));
         Assert.assertTrue(spasHeaders.get("data").endsWith("@@" + serviceName));
-        
         String expectSign = SignUtil.sign(spasHeaders.get("data"), sk);
         Assert.assertEquals(expectSign, spasHeaders.get("signature"));
         

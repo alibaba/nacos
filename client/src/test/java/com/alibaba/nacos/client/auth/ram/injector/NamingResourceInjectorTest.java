@@ -39,18 +39,28 @@ public class NamingResourceInjectorTest {
         ramContext = new RamContext();
         ramContext.setAccessKey(PropertyKeyConst.ACCESS_KEY);
         ramContext.setSecretKey(PropertyKeyConst.SECRET_KEY);
-        resource = new RequestResource();
-        resource.setType(RequestResource.NAMING);
-        resource.setResource("aaa");
     }
     
     @Test
-    public void testDoInject() throws Exception {
+    public void testDoInjectWithGroup() throws Exception {
+        resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
         Assert.assertEquals(3, actual.getAllKey().size());
         Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
-        Assert.assertTrue(actual.getParameter("data").endsWith("@@aaa"));
+        Assert.assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
+        String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
+        Assert.assertEquals(expectSign, actual.getParameter("signature"));
+    }
+    
+    @Test
+    public void testDoInjectWithoutGroup() throws Exception {
+        resource = RequestResource.namingBuilder().setResource("aaa").setGroup("group").build();
+        LoginIdentityContext actual = new LoginIdentityContext();
+        namingResourceInjector.doInject(resource, ramContext, actual);
+        Assert.assertEquals(3, actual.getAllKey().size());
+        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
+        Assert.assertTrue(actual.getParameter("data").endsWith("@@group@@aaa"));
         String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
         Assert.assertEquals(expectSign, actual.getParameter("signature"));
     }

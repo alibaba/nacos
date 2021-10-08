@@ -119,7 +119,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
             Properties properties, ServiceInfoHolder serviceInfoHolder) {
-        super(securityProxy, properties);
+        super(securityProxy);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
@@ -462,7 +462,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         long start = System.currentTimeMillis();
         long end = 0;
         params.putAll(getSecurityHeaders());
-        params.putAll(getSpasHeaders(params.get(SERVICE_NAME_PARAM)));
+        String namespace = params.get(CommonParams.NAMESPACE_ID);
+        String group = params.get(CommonParams.GROUP_NAME);
+        String serviceName = params.get(CommonParams.SERVICE_NAME);
+        params.putAll(getSpasHeaders(namespace, group, serviceName));
         Header header = NamingHttpUtil.builderHeader();
         
         String url;

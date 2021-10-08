@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.auth.ram.injector;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
@@ -31,8 +33,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class NamingResourceInjector extends AbstractResourceInjector {
     
-    private static final String SEPARATOR = "@@";
-    
     private static final String SIGNATURE_FILED = "signature";
     
     private static final String DATA_FILED = "data";
@@ -43,7 +43,7 @@ public class NamingResourceInjector extends AbstractResourceInjector {
     public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
         if (context.validate()) {
             try {
-                String signData = getSignData(resource.getResource());
+                String signData = getSignData(getGroupedServiceName(resource));
                 String signature = SignUtil.sign(signData, context.getSecretKey());
                 result.setParameter(SIGNATURE_FILED, signature);
                 result.setParameter(DATA_FILED, signData);
@@ -54,8 +54,15 @@ public class NamingResourceInjector extends AbstractResourceInjector {
         }
     }
     
+    private String getGroupedServiceName(RequestResource resource) {
+        if (resource.getResource().contains(Constants.SERVICE_INFO_SPLITER) || StringUtils.isBlank(resource.getGroup())) {
+            return resource.getResource();
+        }
+        return NamingUtils.getGroupedNameOptional(resource.getResource(), resource.getGroup());
+    }
+    
     private String getSignData(String serviceName) {
-        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + SEPARATOR + serviceName
-                : String.valueOf(System.currentTimeMillis());
+        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + Constants.SERVICE_INFO_SPLITER
+                + serviceName : String.valueOf(System.currentTimeMillis());
     }
 }
