@@ -87,6 +87,7 @@ public class ServiceInfoUpdateService implements Closeable {
      */
     public void scheduleUpdateIfAbsent(String serviceName, String groupName, String clusters) {
         String serviceKey = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+        // 若某一个JVM进程,一个服务存在多个实例订阅的情形,则只有第一个实例能订阅成功
         if (futureMap.get(serviceKey) != null) {
             return;
         }
@@ -94,7 +95,7 @@ public class ServiceInfoUpdateService implements Closeable {
             if (futureMap.get(serviceKey) != null) {
                 return;
             }
-            
+            // 将更新服务任务加入周期性的线程池,每隔一秒钟向服务端更新当前的service信息
             ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, groupName, clusters));
             futureMap.put(serviceKey, future);
         }
@@ -169,31 +170,39 @@ public class ServiceInfoUpdateService implements Closeable {
                             .info("update task is stopped, service:{}, clusters:{}", groupedServiceName, clusters);
                     return;
                 }
-                
+                // 先查询本地缓存serviceInfoMap是否存在对应的service信息,若不存在,直接发送请求去Nacos服务端查询
                 ServiceInfo serviceObj = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
                 if (serviceObj == null) {
+                    // 构建ServiceQueryRequest对象,向Nacos服务端发送请求
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, 0, false);
+                    // 将新的service信息缓存到serviceInfoMap中
                     serviceInfoHolder.processServiceInfo(serviceObj);
+                    // 更新最后从Nacos服务端拉取service信息的时间
                     lastRefTime = serviceObj.getLastRefTime();
                     return;
                 }
                 
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
+                    // 构建ServiceQueryRequest对象,向Nacos服务端发送请求
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, 0, false);
+                    // 将新的service信息缓存到serviceInfoMap中
                     serviceInfoHolder.processServiceInfo(serviceObj);
                 }
+                // 更新最后从Nacos服务端拉取service信息的时间
                 lastRefTime = serviceObj.getLastRefTime();
                 if (CollectionUtils.isEmpty(serviceObj.getHosts())) {
                     incFailCount();
                     return;
                 }
                 // TODO multiple time can be configured.
+                // 默认每隔6s向服务端更新目前的service信息
                 delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
                 resetFailCount();
             } catch (Throwable e) {
                 incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: {}", groupedServiceName, e);
             } finally {
+                // 重新将此任务加入到线程池,实现周期性执行的目的
                 executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
             }
         }

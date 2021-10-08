@@ -59,6 +59,7 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
+        // publishers缓存了服务和实例的映射关系
         if (null == publishers.put(service, instancePublishInfo)) {
             MetricsMonitor.incrementInstanceCount();
         }

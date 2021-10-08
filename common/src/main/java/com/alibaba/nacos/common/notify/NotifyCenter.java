@@ -38,7 +38,7 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
 /**
  * Unified Event Notify Center.
- *
+ * 玩了个花活,NotifyCenter是被人为定义成静态类,所以有INSTANCE.publisherMap这种奇怪的写法
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author zongtanghu
  */

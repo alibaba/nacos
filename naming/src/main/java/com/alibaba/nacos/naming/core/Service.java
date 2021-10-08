@@ -278,6 +278,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
         
         setLastModifiedMillis(System.currentTimeMillis());
+
+        // TODO 重点
         getPushService().serviceChanged(this);
         ApplicationUtils.getBean(DoubleWriteEventListener.class).doubleWriteToV2(this, ephemeral);
         StringBuilder stringBuilder = new StringBuilder();

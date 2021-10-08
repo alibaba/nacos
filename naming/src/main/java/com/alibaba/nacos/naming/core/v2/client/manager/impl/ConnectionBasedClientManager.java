@@ -49,8 +49,8 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
     
     public ConnectionBasedClientManager() {
-        GlobalExecutor
-                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
+        // 周期性的线程池,每隔5s,检测并清理无效的客户端,不会关闭连接对象
+        GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
                         TimeUnit.MILLISECONDS);
     }
     
@@ -69,11 +69,13 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     public boolean clientConnected(String clientId, ClientAttributes attributes) {
         String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
         ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
+        // 构建新的客户端对象Client并缓存
         return clientConnected(clientFactory.newClient(clientId, attributes));
     }
     
     @Override
     public boolean clientConnected(final Client client) {
+        // 缓存了clientID(即connID)和连接客户端的映射关系
         clients.computeIfAbsent(client.getClientId(), s -> {
             Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
             return (ConnectionBasedClient) client;
@@ -107,6 +109,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     @Override
     public Client getClient(String clientId) {
+        // 缓存了connID和连接客户端的映射关系
         return clients.get(clientId);
     }
     
@@ -148,6 +151,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
             long currentTime = System.currentTimeMillis();
             for (String each : clientManager.allClientId()) {
                 ConnectionBasedClient client = (ConnectionBasedClient) clientManager.getClient(each);
+                // 默认3分钟客户端没有与服务端通信,则认为客户端无效,不会关闭连接对象
                 if (null != client && client.isExpire(currentTime)) {
                     clientManager.clientDisconnected(each);
                 }

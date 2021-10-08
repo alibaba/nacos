@@ -57,8 +57,10 @@ public class ServiceManager {
      * @return if service is exist, return exist service, otherwise return new service
      */
     public Service getSingleton(Service service) {
+        // 缓存了所有的service信息
         singletonRepository.putIfAbsent(service, service);
         Service result = singletonRepository.get(service);
+        // 缓存了所有命名空间和service信息的映射关系
         namespaceSingletonMaps.computeIfAbsent(result.getNamespace(), (namespace) -> new ConcurrentHashSet<>());
         namespaceSingletonMaps.get(result.getNamespace()).add(result);
         return result;

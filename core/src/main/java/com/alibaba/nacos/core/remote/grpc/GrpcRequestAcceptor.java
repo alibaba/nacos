@@ -72,8 +72,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
     @Override
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
-        
+        // 通过IP地址判断,是否追踪当前的请求,其实就是将请求的信息记录到日志中,并没有其他的逻辑处理
         traceIfNecessary(grpcRequest, true);
+        // 从请求中获取type,type代表业务类型
         String type = grpcRequest.getMetadata().getType();
         
         //server is on starting.
@@ -87,15 +88,16 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             return;
         }
         
-        // server check.
+        // 服务检查类型的请求,单独处理
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get()));
             traceIfNecessary(serverCheckResponseP, false);
+            // 将响应发送给客户端
             responseObserver.onNext(serverCheckResponseP);
             responseObserver.onCompleted();
             return;
         }
-        
+        // 根据业务类型,获取不同的业务处理器
         RequestHandler requestHandler = requestHandlerRegistry.getByRequestType(type);
         //no handler found.
         if (requestHandler == null) {
@@ -110,6 +112,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         //check connection status.
         String connectionId = CONTEXT_KEY_CONN_ID.get();
+        // 通过ConnectionManager.connections的属性,检查当前的connID是否存在
         boolean requestValid = connectionManager.checkValid(connectionId);
         if (!requestValid) {
             Loggers.REMOTE_DIGEST
@@ -124,6 +127,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         Object parseObj = null;
         try {
+            // 将grpcRequest中的body信息转换成对应的Request对象,类似SpringMVC中的入参转换器
             parseObj = GrpcUtils.parse(grpcRequest);
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST

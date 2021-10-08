@@ -116,7 +116,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     @PostConstruct
     protected void initLimitRue() {
         try {
+            // 从本地的指定目录加载需要监控的IP列表
             loadRuleFromLocal();
+            // 监视指定目录的监控IP列表文件是否变动,若变动,自动重新加载变动后的文件到内存
             registerFileWatch();
         } catch (Exception e) {
             Loggers.REMOTE.warn("Fail to init limit rue from local ,error= ", e);
@@ -151,9 +153,11 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             if (traced(connection.getMetaInfo().clientIp)) {
                 connection.setTraced(true);
             }
+            // 缓存connId和连接对象的映射关系
             connections.put(connectionId, connection);
             connectionForClientIp.get(connection.getMetaInfo().clientIp).getAndIncrement();
-            
+            // 通知各个客户端连接事件的监听者,连接已经建立,执行各自的业务逻辑
+            // 特别说明ConnectionBasedClientManager,会创建Client对象,缓存到clients属性中
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             Loggers.REMOTE_DIGEST
                     .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
@@ -288,7 +292,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     @PostConstruct
     public void start() {
         
-        // Start UnHealthy Connection Expel Task.
+        // 使用周期性的线程池,每隔3s检测一次,去除无效的客户端对象,关闭连接对象,释放系统资源
         RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -356,7 +360,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                             integer.decrementAndGet();
                             expelClient.add(client.getMetaInfo().getConnectionId());
                             expelCount--;
-                        } else if (now - client.getMetaInfo().getLastActiveTime() >= KEEP_ALIVE_TIME) {
+                        } else if (now - client.getMetaInfo().getLastActiveTime() >= KEEP_ALIVE_TIME) {     // 客户端超过20s没有和服务端通信,即认为与客户端通信异常,需关闭此连接
                             outDatedConnections.add(client.getMetaInfo().getConnectionId());
                         }
                         
@@ -413,6 +417,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                             try {
                                 Connection connection = getConnection(outDateConnectionId);
                                 if (connection != null) {
+                                    // 构建客户端探测请求对象,对所有检测无效的客户端再发一次请求,看是否能连接上,
                                     ClientDetectionRequest clientDetectionRequest = new ClientDetectionRequest();
                                     connection.asyncRequest(clientDetectionRequest, new RequestCallBack() {
                                         @Override
@@ -428,7 +433,9 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                                         @Override
                                         public void onResponse(Response response) {
                                             latch.countDown();
+                                            // 若能成功连接,说明客户端和服务端通信恢复正常,不必释放客户端的资源
                                             if (response != null && response.isSuccess()) {
+                                                // 刷新客户端连接对象的上次活跃时间
                                                 connection.freshActiveTime();
                                                 successConnections.add(outDateConnectionId);
                                             }
@@ -691,12 +698,14 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     }
     
     private synchronized void loadRuleFromLocal() throws Exception {
+        // 从本地目录加载需要监控的IP列表
         File limitFile = getRuleFile();
         if (!limitFile.exists()) {
             limitFile.createNewFile();
         }
         
         String ruleContent = DiskUtils.readFile(limitFile);
+        // 反序列化创建ConnectionLimitRule对象
         ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(ruleContent) ? new ConnectionLimitRule()
                 : JacksonUtils.toObj(ruleContent, ConnectionLimitRule.class);
         // apply rule.

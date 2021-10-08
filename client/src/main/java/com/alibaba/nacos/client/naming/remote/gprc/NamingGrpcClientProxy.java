@@ -85,13 +85,16 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels);
+        // 创建ConnectionEventListener用于建立和断开gRPC连接时的事件响应
         this.redoService = new NamingGrpcRedoService(this);
         start(serverListFactory, serviceInfoHolder);
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
+        // 注册连接事件的监听器,当连接建立和断开时处理事件
         rpcClient.registerConnectionListener(redoService);
+        // 注册ServerRequestHandler用于处理从Nacos服务端推送到客户端的请求(主要是服务端的service信息)
         rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
         rpcClient.start();
         NotifyCenter.registerSubscriber(this);
@@ -99,11 +102,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void onEvent(ServerListChangedEvent event) {
+        // 事件的处理逻辑
         rpcClient.onServerListChange();
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
+        // 消费的事件类型
         return ServerListChangedEvent.class;
     }
     
@@ -111,6 +116,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,
                 instance);
+        // 缓存服务实例,断开重新连接时,进行重新注册
         redoService.cacheInstanceForRedo(serviceName, groupName, instance);
         doRegisterService(serviceName, groupName, instance);
     }

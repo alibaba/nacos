@@ -143,7 +143,7 @@ public abstract class GrpcClient extends RpcClient {
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
-            Payload response = responseFuture.get(3000L, TimeUnit.MILLISECONDS);
+            Payload response = responseFuture.get(3000000L, TimeUnit.MILLISECONDS);
             //receive connection unregister response here,not check response is success.
             return (Response) GrpcUtils.parse(response);
         } catch (Exception e) {
@@ -169,6 +169,7 @@ public abstract class GrpcClient extends RpcClient {
                     if (request != null) {
                         
                         try {
+                            // 处理服务端发送过来的请求
                             Response response = handleServerRequest(request);
                             if (response != null) {
                                 response.setRequestId(request.getRequestId());
@@ -264,7 +265,7 @@ public abstract class GrpcClient extends RpcClient {
             int port = serverInfo.getServerPort() + rpcPortOffset();
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(), port);
             if (newChannelStubTemp != null) {
-                
+                // 发送serverCheckRequest请求给服务端,检查是否能够成功连接到Nacos,返回的响应对象包括了connId
                 Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
                 if (response == null || !(response instanceof ServerCheckResponse)) {
                     shuntDownChannel((ManagedChannel) newChannelStubTemp.getChannel());
@@ -273,10 +274,12 @@ public abstract class GrpcClient extends RpcClient {
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
+                // 创建客户端的连接对象,后续所有向服务端发送请求都需要通过此连接对象
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
                 
                 //create stream request and bind connection event to this connection.
+                // 服务端向客户端发送消息的回调方法
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
                 
                 // stream observer to send response to server

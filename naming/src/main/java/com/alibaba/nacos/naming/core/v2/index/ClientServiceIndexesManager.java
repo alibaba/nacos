@@ -42,12 +42,19 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Component
 public class ClientServiceIndexesManager extends SmartSubscriber {
-    
+
+    /**
+     * 缓存服务和客户端的映射关系(可能存在一个服务部署在多个机器上的情况,一个服务实例对应一个客户端,一个服务可能对应多个客户端)
+     * */
     private final ConcurrentMap<Service, Set<String>> publisherIndexes = new ConcurrentHashMap<>();
-    
+
+    /**
+     * 缓存服务和客户端(有订阅关系的)的映射关系
+     * */
     private final ConcurrentMap<Service, Set<String>> subscriberIndexes = new ConcurrentHashMap<>();
     
     public ClientServiceIndexesManager() {
+        // 实例化ClientServiceIndexesManager(处理客户端操作[实例注册、实例注销,实例订阅、实例取消订阅]事件,客户端连接断开事件),会将此订阅者注册到通知中心
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
     

@@ -107,6 +107,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                                     payload.getBody().getValue().toStringUtf8(), payload.getMetadata());
                     return;
                 }
+                // 客户端发送过来的连接请求处理逻辑
                 if (parseObj instanceof ConnectionSetupRequest) {
                     ConnectionSetupRequest setUpRequest = (ConnectionSetupRequest) parseObj;
                     Map<String, String> labels = setUpRequest.getLabels();
@@ -119,10 +120,11 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
+                    // 创建grpc的连接对象
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     connection.setAbilities(setUpRequest.getAbilities());
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
-                    
+                    // 将连接对象注册到ConnectionManager.connections的属性中
                     if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {

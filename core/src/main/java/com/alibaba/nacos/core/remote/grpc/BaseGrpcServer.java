@@ -124,8 +124,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                         int localPort = localAddress.getPort();
                         String remoteIp = remoteAddress.getAddress().getHostAddress();
                         Attributes attrWrapper = transportAttrs.toBuilder()
+                                // 给每一个连接对象一个唯一的ConnID(时间戳+远程IP+远程端口)
                                 .set(TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
+                                // 设置远程客户端的端口号
                                 .set(TRANS_KEY_REMOTE_IP, remoteIp).set(TRANS_KEY_REMOTE_PORT, remotePort)
+                                // 设置本地服务端连接的端口号
                                 .set(TRANS_KEY_LOCAL_PORT, localPort).build();
                         String connectionId = attrWrapper.get(TRANS_KEY_CONN_ID);
                         Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
@@ -171,9 +174,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 .setFullMethodName(MethodDescriptor.generateFullMethodName(REQUEST_SERVICE_NAME, REQUEST_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-        
+        // 异步处理请求
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
                 .asyncUnaryCall((request, responseObserver) -> {
+                    // 真正处理请求的逻辑
                     grpcCommonRequestAcceptor.request(request, responseObserver);
                 });
         
@@ -182,6 +186,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
         
         // bi stream register.
+        // 服务端响应客户端连接
         final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
                 (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
         

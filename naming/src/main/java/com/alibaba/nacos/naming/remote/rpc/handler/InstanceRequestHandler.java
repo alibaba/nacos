@@ -50,6 +50,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
+                // 注册实例
                 return registerInstance(service, request, meta);
             case NamingRemoteConstants.DE_REGISTER_INSTANCE:
                 return deregisterInstance(service, request, meta);
@@ -60,6 +61,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     }
     
     private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta) {
+        // 注册实例
         clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }

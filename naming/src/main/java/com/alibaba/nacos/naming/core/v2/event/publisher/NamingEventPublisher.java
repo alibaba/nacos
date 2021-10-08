@@ -61,6 +61,7 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
         this.publisherName = type.getSimpleName();
         super.setName(THREAD_NAME + this.publisherName);
         super.setDaemon(true);
+        // 启动线程
         super.start();
         initialized = true;
     }

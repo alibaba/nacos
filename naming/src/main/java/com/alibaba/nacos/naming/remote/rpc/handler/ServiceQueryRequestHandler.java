@@ -44,8 +44,7 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
     
     private final NamingMetadataManager metadataManager;
     
-    public ServiceQueryRequestHandler(ServiceStorage serviceStorage,
-                                      NamingMetadataManager metadataManager) {
+    public ServiceQueryRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
     }
@@ -56,11 +55,14 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         String namespaceId = request.getNamespace();
         String groupName = request.getGroupName();
         String serviceName = request.getServiceName();
+        // 根据命名空间,组名和服务名称创建一个Service对象,通过这个对象做查询条件
         Service service = Service.newService(namespaceId, groupName, serviceName);
         String cluster = null == request.getCluster() ? "" : request.getCluster();
         boolean healthyOnly = request.isHealthyOnly();
+        // ServiceInfo中包含了实例的集合信息
         ServiceInfo result = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
+        // 排除掉当前服务中不健康的实例
         result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster, healthyOnly, true, meta.getClientIp());
         return QueryServiceResponse.buildSuccessResponse(result);
     }

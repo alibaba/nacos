@@ -48,11 +48,12 @@ public class NamingEventPublisherFactory implements EventPublisherFactory {
     
     @Override
     public EventPublisher apply(final Class<? extends Event> eventType, final Integer maxQueueSize) {
-        // Like ClientEvent$ClientChangeEvent cache by ClientEvent
+        // 处理ClientEvent$ClientChangeEvent这种类型的Class对象,其实就是获取内部类的外部类
         Class<? extends Event> cachedEventType =
                 eventType.isMemberClass() ? (Class<? extends Event>) eventType.getEnclosingClass() : eventType;
         publisher.computeIfAbsent(cachedEventType, eventClass -> {
             NamingEventPublisher result = new NamingEventPublisher();
+            // 启动发布者的线程
             result.init(eventClass, maxQueueSize);
             return result;
         });

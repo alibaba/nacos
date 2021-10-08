@@ -44,6 +44,7 @@ public abstract class RequestHandler<T extends Request, S extends Response> {
      * @throws NacosException nacos exception when handle request has problem.
      */
     public Response handleRequest(T request, RequestMeta meta) throws NacosException {
+        // 过滤器处理(比如限流的功能,@TpsControl注解)
         for (AbstractRequestFilter filter : requestFilters.filters) {
             try {
                 Response filterResult = filter.filter(request, meta, this.getClass());
@@ -55,6 +56,7 @@ public abstract class RequestHandler<T extends Request, S extends Response> {
             }
             
         }
+        // 此处是真正的调用不同的请求处理器,来处理各类型的请求
         return handle(request, meta);
     }
     

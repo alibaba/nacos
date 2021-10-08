@@ -24,11 +24,7 @@ import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 
 import java.util.Properties;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Nacos naming example.
@@ -37,20 +33,18 @@ import java.util.concurrent.TimeUnit;
  *
  * @author nkorange
  */
-public class NamingExample {
+public class NamingExample2 {
     
     public static void main(String[] args) throws NacosException, InterruptedException {
         
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", System.getProperty("serverAddr"));
-        properties.setProperty("namespace", System.getProperty("namespace"));
+        properties.setProperty("serverAddr", "127.0.0.1:8848");
+        properties.setProperty("namespace", "public");
         
         NamingService naming = NamingFactory.createNamingService(properties);
         
-        naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
-        
-        System.out.println("instances after register: " + naming.getAllInstances("nacos.test.3"));
-        
+        naming.registerInstance("nacos.test.1", "11.11.11.12", 8888, "TEST1");
+
         Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
                 new ThreadFactory() {
                     @Override
@@ -61,7 +55,7 @@ public class NamingExample {
                     }
                 });
         
-        naming.subscribe("nacos.test.3", new AbstractEventListener() {
+        naming.subscribe("nacos.test.1", new AbstractEventListener() {
             
             //EventListener onEvent is sync to handle, If process too low in onEvent, maybe block other onEvent callback.
             //So you can override getExecutor() to async handle event.
@@ -76,13 +70,7 @@ public class NamingExample {
                 System.out.println("instances from event: " + ((NamingEvent) event).getInstances());
             }
         });
-    
-        naming.deregisterInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
-        
-        Thread.sleep(1000);
-    
-        System.out.println("instances after deregister: " + naming.getAllInstances("nacos.test.3"));
-        
-        Thread.sleep(1000);
+
+        Thread.sleep(1000000);
     }
 }

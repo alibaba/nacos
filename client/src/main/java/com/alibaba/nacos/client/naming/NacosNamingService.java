@@ -224,8 +224,10 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo;
         String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
+            // 先从本地的缓存serviceInfoMap查询service信息
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
             if (null == serviceInfo) {
+                // 若本地缓存不存在此service信息,则发送rpc请求从服务端查询
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
         } else {
@@ -389,7 +391,9 @@ public class NacosNamingService implements NamingService {
             return;
         }
         String clusterString = StringUtils.join(clusters, ",");
+        // 注册一个监听器,用来监听InstancesChangeEvent事件
         changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
+        // 客户端订阅服务端,定时从Nacos服务端拉取service信息
         clientProxy.subscribe(serviceName, groupName, clusterString);
     }
     

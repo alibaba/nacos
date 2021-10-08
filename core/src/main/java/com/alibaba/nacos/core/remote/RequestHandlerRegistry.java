@@ -60,17 +60,20 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
     
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        // 获取RequestHandler抽象类的全部实现类
         Map<String, RequestHandler> beansOfType = event.getApplicationContext().getBeansOfType(RequestHandler.class);
         Collection<RequestHandler> values = beansOfType.values();
         for (RequestHandler requestHandler : values) {
-            
             Class<?> clazz = requestHandler.getClass();
             boolean skip = false;
+            // 筛选出RequestHandler抽象类被动态代理,导致clazz不是原本的Class对象,
+            // 从而在后面使用反射出现未知错误
             while (!clazz.getSuperclass().equals(RequestHandler.class)) {
                 if (clazz.getSuperclass().equals(Object.class)) {
                     skip = true;
                     break;
                 }
+                // 获取被动态代理类的原Class对象
                 clazz = clazz.getSuperclass();
             }
             if (skip) {
@@ -78,7 +81,9 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
             }
             
             try {
+                // 获取handle()方法的反射信息
                 Method method = clazz.getMethod("handle", Request.class, RequestMeta.class);
+                // 处理@TpsControl注解,将解析得到的注解信息缓存到TpsMonitorManager.points属性中
                 if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
                     TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                     String pointName = tpsControl.pointName();
@@ -88,7 +93,9 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
             } catch (Exception e) {
                 //ignore.
             }
+            // 获取RequestHandler的第一个泛型的Class类型
             Class tClass = (Class) ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments()[0];
+            // 将请求处理器的类名和请求处理器的映射关系缓存到registryHandlers中,通过request对象中的type类型查询得到不同的请求处理器,执行对应的业务逻辑
             registryHandlers.putIfAbsent(tClass.getSimpleName(), requestHandler);
         }
     }

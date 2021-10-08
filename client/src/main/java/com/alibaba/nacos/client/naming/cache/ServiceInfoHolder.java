@@ -151,12 +151,16 @@ public class ServiceInfoHolder implements Closeable {
         if (serviceKey == null) {
             return null;
         }
+        // 获取旧的service信息
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
+        // 验证新的serviceInfo是否有效
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
             return oldService;
         }
+        // 将新的serviceInfo缓存到serviceInfoMap
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
+        // 判断新旧serviceInfo是否有变动
         boolean changed = isChangedServiceInfo(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));

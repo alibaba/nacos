@@ -81,6 +81,7 @@ public class ServiceStorage {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             return result;
         }
+        // 获取当前服务下的所有实例信息
         result.setHosts(getAllInstancesFromIndex(service));
         serviceDataIndexes.put(service, result);
         return result;
@@ -112,6 +113,7 @@ public class ServiceStorage {
             }
         }
         // cache clusters of this service
+        // 缓存了服务和集群之间的映射关系
         serviceClusterIndex.put(service, clusters);
         return new LinkedList<>(result);
     }

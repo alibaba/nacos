@@ -29,6 +29,7 @@ public abstract class AbstractNamingCleaner extends AbstractExecuteTask implemen
     @Override
     public void run() {
         try {
+            // 检测并清理无效的服务
             doClean();
         } catch (Exception e) {
             Loggers.SRV_LOG.error("Clean {} fail. ", getType(), e);

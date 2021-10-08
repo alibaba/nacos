@@ -154,8 +154,10 @@ public class GrpcUtils {
      * @return payload
      */
     public static Object parse(Payload payload) {
+        // 根据请求的类型,在REGISTRY_REQUEST缓存中查找对应class对象
         Class classType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         if (classType != null) {
+            // 将payload中body携带的信息转换成对应的class对象实例
             Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());

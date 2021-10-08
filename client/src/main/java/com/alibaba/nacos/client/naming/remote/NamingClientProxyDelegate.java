@@ -141,11 +141,14 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
         String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
+        // 将更新服务的任务加入周期性的线程池(即客户端定时从Nacos服务端拉取数据,更新本地的serviceInfoMap,保证即使Nacos服务端宕机,客户端也能正常运行)
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         ServiceInfo result = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
         if (null == result) {
+            // 若本地缓存serviceInfoMap无对应的service信息,subscribe()方法将构建一个SubscribeServiceRequest请求发送到Nacos服务端,获取服务端最新的service信息
             result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
+        // 将新的serviceInfo缓存到serviceInfoMap
         serviceInfoHolder.processServiceInfo(result);
         return result;
     }
