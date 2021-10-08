@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.auth;
 
+import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.Assert;
 import org.junit.Before;
