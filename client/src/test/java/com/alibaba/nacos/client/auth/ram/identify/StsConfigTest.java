@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package com.alibaba.nacos.client.identify;
+package com.alibaba.nacos.client.auth.ram.identify;
 
 import org.junit.After;
 import org.junit.Assert;

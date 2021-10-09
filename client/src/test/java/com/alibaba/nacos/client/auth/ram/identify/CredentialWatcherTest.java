@@ -14,16 +14,24 @@
  *   limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.utils;
+package com.alibaba.nacos.client.auth.ram.identify;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SignUtilTest {
+import java.lang.reflect.Field;
+import java.util.concurrent.ScheduledExecutorService;
+
+public class CredentialWatcherTest {
     
     @Test
-    public void testSign() throws Exception {
-        String actual = SignUtil.sign("aaa", "b");
-        Assert.assertEquals("DxyaKScrqL26yXYOuHXE3OwfQ0Y=", actual);
+    public void stop() throws NoSuchFieldException, IllegalAccessException {
+        CredentialService instance =  CredentialService.getInstance();
+        CredentialWatcher watcher = new CredentialWatcher("app", instance);
+        watcher.stop();
+        Field executorField = CredentialWatcher.class.getDeclaredField("executor");
+        executorField.setAccessible(true);
+        ScheduledExecutorService executor = (ScheduledExecutorService) executorField.get(watcher);
+        Assert.assertTrue(executor.isShutdown());
     }
 }

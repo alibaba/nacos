@@ -17,14 +17,15 @@
 package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.ConfigResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.NamingResourceInjector;
 import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
-import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.identify.StsConfig;
+import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
+import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,5 +99,10 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
             return true;
         }
         return false;
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        SpasAdapter.freeCredentialInstance();
     }
 }

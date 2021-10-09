@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.identify;
+package com.alibaba.nacos.client.auth.ram.identify;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

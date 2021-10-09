@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.identify;
+package com.alibaba.nacos.client.auth.ram.identify;
 
 /**
- * Spas Credential Loader.
+ * Spas Credential Interface.
  *
  * @author Nacos
  */
-public interface SpasCredentialLoader {
+public interface SpasCredential {
     
     /**
-     * get Credential.
+     * get AccessKey.
      *
-     * @return Credential
+     * @return AccessKey
      */
-    SpasCredential getCredential();
+    String getAccessKey();
+    
+    /**
+     * get SecretKey.
+     *
+     * @return SecretKey
+     */
+    String getSecretKey();
 }

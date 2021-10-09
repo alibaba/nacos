@@ -16,7 +16,7 @@
  *
  */
 
-package com.alibaba.nacos.client.identify;
+package com.alibaba.nacos.client.auth.ram.identify;
 
 import org.junit.Assert;
 import org.junit.Test;
