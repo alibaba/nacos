@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.client.identify.StsConfig;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,6 +34,10 @@ public class ConfigResourceInjectorTest {
     
     private RequestResource resource;
     
+    private String cachedSecurityCredentialsUrl;
+    
+    private String cachedSecurityCredentials;
+    
     @Before
     public void setUp() throws Exception {
         configResourceInjector = new ConfigResourceInjector();
@@ -42,6 +48,16 @@ public class ConfigResourceInjectorTest {
         resource.setType(RequestResource.CONFIG);
         resource.setNamespace("tenant");
         resource.setGroup("group");
+        cachedSecurityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
+        cachedSecurityCredentials = StsConfig.getInstance().getSecurityCredentials();
+        StsConfig.getInstance().setSecurityCredentialsUrl("");
+        StsConfig.getInstance().setSecurityCredentials("");
+    }
+    
+    @After
+    public void tearDown() {
+        StsConfig.getInstance().setSecurityCredentialsUrl(cachedSecurityCredentialsUrl);
+        StsConfig.getInstance().setSecurityCredentials(cachedSecurityCredentials);
     }
     
     @Test

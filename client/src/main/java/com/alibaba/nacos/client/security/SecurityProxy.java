@@ -17,15 +17,15 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.client.auth.ClientAuthPluginManager;
-import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.client.auth.spi.ClientAuthService;
+import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * Security proxy to update security information.
@@ -35,10 +35,7 @@ import java.util.Set;
  */
 public class SecurityProxy {
     
-    /**
-     * ClientAuthPlugin instance set.
-     */
-    private final Set<ClientAuthService> clientAuthServiceHashSet;
+    private ClientAuthPluginManager clientAuthPluginManager;
     
     /**
      * Construct from serverList, nacosRestTemplate, init client auth plugin.
@@ -47,35 +44,33 @@ public class SecurityProxy {
      * @Param nacosRestTemplate http request template.
      */
     public SecurityProxy(List<String> serverList, NacosRestTemplate nacosRestTemplate) {
-        ClientAuthPluginManager clientAuthPluginManager = new ClientAuthPluginManager();
+        clientAuthPluginManager = new ClientAuthPluginManager();
         clientAuthPluginManager.init(serverList, nacosRestTemplate);
-        clientAuthServiceHashSet = clientAuthPluginManager.getAuthServiceSpiImplSet();
     }
     
     /**
      * Login all available ClientAuthService instance.
+     *
      * @param properties login identity information.
-     * @return if there are any available clientAuthService instances.
      */
-    public boolean login(Properties properties) {
-        if (clientAuthServiceHashSet.isEmpty()) {
-            return false;
+    public void login(Properties properties) {
+        if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
+            return;
         }
-        for (ClientAuthService clientAuthService : clientAuthServiceHashSet) {
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
-        return true;
     }
     
     /**
      * get the context of all nacosRestTemplate instance.
+     *
      * @return a combination of all context.
      */
-    public Map<String, String> getIdentityContext() {
+    public Map<String, String> getIdentityContext(RequestResource resource) {
         Map<String, String> header = new HashMap<>();
-        for (ClientAuthService clientAuthService : this.clientAuthServiceHashSet) {
-            //TODO input resource
-            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(null);
+        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(resource);
             for (String key : loginIdentityContext.getAllKey()) {
                 header.put(key, loginIdentityContext.getParameter(key));
             }
