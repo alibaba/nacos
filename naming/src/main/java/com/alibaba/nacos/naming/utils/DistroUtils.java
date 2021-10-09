@@ -1,0 +1,194 @@
+package com.alibaba.nacos.naming.utils;
+
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import org.apache.commons.lang.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static com.alibaba.nacos.naming.constants.Constants.DEFAULT_INSTANCE_WEIGHT;
+import static com.alibaba.nacos.naming.constants.Constants.PUBLISH_INSTANCE_ENABLE;
+import static com.alibaba.nacos.naming.constants.Constants.PUBLISH_INSTANCE_WEIGHT;
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+
+/**
+ * Utils to generate revision/checksum of distro clients.
+ *
+ * @author Pixy Yuan
+ * on 2021/10/9
+ */
+public class DistroUtils {
+    
+    /**
+     * Build service key.
+     */
+    public static String serviceKey(Service service) {
+        return service.getNamespace()
+                + "##"
+                + service.getGroupedServiceName()
+                + "##"
+                + service.isEphemeral();
+    }
+    
+    /**
+     * Calculate revision for client.
+     */
+    public static int revision(Client client) {
+        String s = buildUniqueString(client);
+        if (s == null) {
+            return 0;
+        }
+        return s.hashCode();
+    }
+    
+    /**
+     * Calculate hash for client. Reduce strings in memory and cpu costs.
+     */
+    public static int hash(Client client) {
+        if (!(client instanceof IpPortBasedClient)) {
+            return 0;
+        }
+        return Objects.hash(client.getClientId(),
+                client.getAllPublishedService().stream()
+                        .sorted(Comparator.comparing(DistroUtils::serviceKey))
+                        .map(s -> {
+                            InstancePublishInfo ip = client.getInstancePublishInfo(s);
+                            double weight = getWeight(ip);
+                            Boolean enabled = getEnabled(ip);
+                            String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
+                            return Objects.hash(serviceKey(s),
+                                    ip.getIp(),
+                                    ip.getPort(),
+                                    weight,
+                                    ip.isHealthy(),
+                                    enabled,
+                                    cluster,
+                                    ip.getExtendDatum()
+                            );
+                        })
+                        .collect(Collectors.toSet()),
+                client.getAllSubscribeService().stream()
+                        .sorted(Comparator.comparing(DistroUtils::serviceKey))
+                        .map(s -> {
+                            Subscriber subscriber = client.getSubscriber(s);
+                            String cluster = StringUtils.defaultIfBlank(subscriber.getCluster(), DEFAULT_CLUSTER_NAME);
+                            String agent = StringUtils.defaultIfBlank(subscriber.getAgent(), StringUtils.EMPTY);
+                            String app = StringUtils.defaultIfBlank(subscriber.getApp(), StringUtils.EMPTY);
+                            return Objects.hash(serviceKey(s),
+                                    subscriber.getAddrStr(),
+                                    cluster,
+                                    agent,
+                                    app
+                            );
+                        })
+                        .collect(Collectors.toSet())
+        );
+    }
+    
+    /**
+     * Calculate checksum for client.
+     */
+    public static String checksum(Client client) {
+        String s = buildUniqueString(client);
+        if (s == null) {
+            return "0";
+        }
+        return MD5Utils.md5Hex(s, Constants.ENCODE);
+    }
+    
+    /**
+     * Calculate unique string for client.
+     */
+    public static String buildUniqueString(Client client) {
+        if (!(client instanceof IpPortBasedClient)) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(client.getClientId()).append('|');
+        client.getAllPublishedService().stream()
+                .sorted(Comparator.comparing(DistroUtils::serviceKey))
+                .forEach(s -> {
+                    InstancePublishInfo ip = client.getInstancePublishInfo(s);
+                    double weight = getWeight(ip);
+                    Boolean enabled = getEnabled(ip);
+                    String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
+                    sb.append(serviceKey(s)).append('_')
+                            .append(ip.getIp()).append(':').append(ip.getPort()).append('_')
+                            .append(weight).append('_')
+                            .append(ip.isHealthy()).append('_')
+                            .append(enabled).append('_')
+                            .append(cluster).append('_')
+                            .append(convertMap2String(ip.getExtendDatum()))
+                            .append(',');
+                });
+        sb.append('|');
+        client.getAllSubscribeService().stream()
+                .sorted(Comparator.comparing(DistroUtils::serviceKey))
+                .forEach(s -> {
+                    Subscriber subscriber = client.getSubscriber(s);
+                    String cluster = StringUtils.defaultIfBlank(subscriber.getCluster(), DEFAULT_CLUSTER_NAME);
+                    String agent = StringUtils.defaultIfBlank(subscriber.getAgent(), StringUtils.EMPTY);
+                    String app = StringUtils.defaultIfBlank(subscriber.getApp(), StringUtils.EMPTY);
+                    sb.append(serviceKey(s)).append('_')
+                            .append(subscriber.getAddrStr()).append('_')
+                            .append(cluster).append('_')
+                            .append(agent).append('_')
+                            .append(app)
+                            .append(',');
+                });
+        sb.append('|');
+        return sb.toString();
+    }
+    
+    private static boolean getEnabled(InstancePublishInfo ip) {
+        Object enabled0 = ip.getExtendDatum().get(PUBLISH_INSTANCE_ENABLE);
+        if (!(enabled0 instanceof Boolean)) {
+            return true;
+        } else {
+            return (Boolean) enabled0;
+        }
+    }
+    
+    private static double getWeight(InstancePublishInfo ip) {
+        Object weight0 = ip.getExtendDatum().get(PUBLISH_INSTANCE_WEIGHT);
+        if (!(weight0 instanceof Number)) {
+            return DEFAULT_INSTANCE_WEIGHT;
+        } else {
+            return ((Number) weight0).doubleValue();
+        }
+    }
+    
+    /**
+     * Convert Map to KV string with ':'.
+     *
+     * @param map map need to be converted
+     * @return KV string with ':'
+     */
+    private static String convertMap2String(Map<String, Object> map) {
+        if (map == null || map.isEmpty()) {
+            return StringUtils.EMPTY;
+        }
+        StringBuilder sb = new StringBuilder();
+        List<String> keys = new ArrayList<>(map.keySet());
+        Collections.sort(keys);
+        for (String key : keys) {
+            sb.append(key);
+            sb.append(':');
+            sb.append(map.get(key));
+            sb.append(',');
+        }
+        return sb.toString();
+    }
+    
+}

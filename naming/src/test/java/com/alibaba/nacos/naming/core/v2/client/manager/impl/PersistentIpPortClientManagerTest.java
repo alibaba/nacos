@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import org.junit.After;
@@ -85,7 +86,7 @@ public class PersistentIpPortClientManagerTest {
     
     @Test(expected = UnsupportedOperationException.class)
     public void makeSureNoVerify() {
-        persistentIpPortClientManager.verifyClient(clientId);
+        persistentIpPortClientManager.verifyClient(new DistroClientVerifyInfo(clientId, 0));
     }
     
     @Test

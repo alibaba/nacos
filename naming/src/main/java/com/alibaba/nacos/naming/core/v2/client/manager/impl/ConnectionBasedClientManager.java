@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.ClientConnectionEventListener;
 import com.alibaba.nacos.core.remote.Connection;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -126,8 +127,8 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     }
     
     @Override
-    public boolean verifyClient(String clientId) {
-        ConnectionBasedClient client = clients.get(clientId);
+    public boolean verifyClient(DistroClientVerifyInfo verifyData) {
+        ConnectionBasedClient client = clients.get(verifyData.getClientId());
         if (null != client) {
             client.setLastRenewTime();
             return true;

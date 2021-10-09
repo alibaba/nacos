@@ -40,6 +40,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.utils.DistroUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -226,7 +227,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroClientVerifyInfo verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), DistroClientVerifyInfo.class);
-        if (clientManager.verifyClient(verifyData.getClientId())) {
+        if (clientManager.verifyClient(verifyData)) {
             return true;
         }
         Loggers.DISTRO.info("client {} is invalid, get new client from {}", verifyData.getClientId(), sourceAddress);
@@ -271,19 +272,22 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public List<DistroData> getVerifyData() {
-        List<DistroData> result = new LinkedList<>();
+        List<DistroData> result = null;
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
             if (null == client || !client.isEphemeral()) {
                 continue;
             }
             if (clientManager.isResponsibleClient(client)) {
-                // TODO add revision for client.
-                DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(), 0);
+                DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(),
+                        DistroUtils.hash(client));
                 DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
                 DistroData data = new DistroData(distroKey,
                         ApplicationUtils.getBean(Serializer.class).serialize(verifyData));
                 data.setType(DataOperation.VERIFY);
+                if (result == null) {
+                    result = new LinkedList<>();
+                }
                 result.add(data);
             }
         }

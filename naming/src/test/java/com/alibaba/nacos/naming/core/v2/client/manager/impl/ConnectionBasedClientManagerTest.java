@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import org.junit.After;
@@ -63,7 +64,7 @@ public class ConnectionBasedClientManagerTest {
         when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
         
         assertTrue(connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         connectionBasedClientManager.clientConnected(connection);
         
     }
@@ -72,16 +73,16 @@ public class ConnectionBasedClientManagerTest {
     public void testAllClientId() {
         Collection<String> allClientIds = connectionBasedClientManager.allClientId();
         assertEquals(1, allClientIds.size());
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(allClientIds.contains(connectionId));
     }
     
     @Test
     public void testContainsConnectionId() {
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(connectionBasedClientManager.contains(connectionId));
         String unUsedClientId = "127.0.0.1:8888#true";
-        assertFalse(connectionBasedClientManager.verifyClient(unUsedClientId));
+        assertFalse(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(unUsedClientId, 0)));
         assertFalse(connectionBasedClientManager.contains(unUsedClientId));
     }
     

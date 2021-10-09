@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.utils.DistroUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -118,9 +120,10 @@ public class EphemeralIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean verifyClient(String clientId) {
+    public boolean verifyClient(DistroClientVerifyInfo verifyData) {
+        String clientId = verifyData.getClientId();
         IpPortBasedClient client = clients.get(clientId);
-        if (null != client) {
+        if (null != client && DistroUtils.hash(client) == (int) verifyData.getRevision()) {
             NamingExecuteTaskDispatcher.getInstance()
                     .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
             return true;
