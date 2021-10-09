@@ -17,7 +17,6 @@
 package com.alibaba.nacos.test.common;
 
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.ClassUtils;
@@ -25,8 +24,6 @@ import com.alibaba.nacos.core.utils.GenericType;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -65,13 +62,4 @@ public class HttpUtils_ITCase {
 	}
 
 
-	@Test
-	public void test_query_str() throws Exception {
-		Query query = Query.newInstance().addParam("key-1", "value-1")
-				.addParam("key-2", "value-2");
-		String s1 = query.toQueryUrl();
-		String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name())
-				+ "&key-2=" + URLEncoder.encode("value-2", StandardCharsets.UTF_8.name());
-		Assert.assertEquals(s1, s2);
-	}
 }
