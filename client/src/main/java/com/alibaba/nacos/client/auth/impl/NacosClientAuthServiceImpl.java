@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.auth.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.impl.process.HttpLoginProcessor;
 import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
@@ -107,4 +108,8 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
         return this.loginIdentityContext;
     }
     
+    @Override
+    public void shutdown() throws NacosException {
+    
+    }
 }

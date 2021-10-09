@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.client.security;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.ClientAuthPluginManager;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +35,7 @@ import java.util.Properties;
  * @author nkorange
  * @since 1.2.0
  */
-public class SecurityProxy {
+public class SecurityProxy implements Closeable {
     
     private ClientAuthPluginManager clientAuthPluginManager;
     
@@ -78,4 +80,8 @@ public class SecurityProxy {
         return header;
     }
     
+    @Override
+    public void shutdown() throws NacosException {
+        clientAuthPluginManager.shutdown();
+    }
 }

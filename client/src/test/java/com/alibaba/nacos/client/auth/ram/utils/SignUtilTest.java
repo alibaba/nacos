@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.identify;
+package com.alibaba.nacos.client.auth.ram.utils;
 
-/**
- * Spas Credential Interface.
- *
- * @author Nacos
- */
-public interface SpasCredential {
+import org.junit.Assert;
+import org.junit.Test;
+
+public class SignUtilTest {
     
-    /**
-     * get AccessKey.
-     *
-     * @return AccessKey
-     */
-    String getAccessKey();
-    
-    /**
-     * get SecretKey.
-     *
-     * @return SecretKey
-     */
-    String getSecretKey();
+    @Test
+    public void testSign() throws Exception {
+        String actual = SignUtil.sign("aaa", "b");
+        Assert.assertEquals("DxyaKScrqL26yXYOuHXE3OwfQ0Y=", actual);
+    }
 }

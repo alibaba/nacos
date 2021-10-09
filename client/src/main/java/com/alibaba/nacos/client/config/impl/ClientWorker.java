@@ -593,7 +593,8 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void shutdown() {
+        public void shutdown() throws NacosException {
+            super.shutdown();
             synchronized (RpcClientFactory.getAllClientEntries()) {
                 LOGGER.info("Trying to shutdown transport client " + this);
                 Set<Map.Entry<String, RpcClient>> allClientEntries = RpcClientFactory.getAllClientEntries();

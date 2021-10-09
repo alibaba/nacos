@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
-import com.alibaba.nacos.client.naming.utils.SignUtil;
+import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
