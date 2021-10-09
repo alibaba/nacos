@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.client.auth;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
 import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +35,7 @@ import java.util.Set;
  *
  * @author wuyfee
  */
-public class ClientAuthPluginManager {
+public class ClientAuthPluginManager implements Closeable {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
     
@@ -70,4 +72,10 @@ public class ClientAuthPluginManager {
         return clientAuthServiceHashSet;
     }
     
+    @Override
+    public void shutdown() throws NacosException {
+        for (ClientAuthService each : clientAuthServiceHashSet) {
+            each.shutdown();
+        }
+    }
 }

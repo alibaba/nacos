@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.auth.spi;
 
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
 import java.util.Properties;
@@ -27,7 +28,7 @@ import java.util.Properties;
  *
  * @author wuyfee
  */
-public interface ClientAuthService {
+public interface ClientAuthService extends Closeable {
     
     /**
      * login(request) to service and get response.

@@ -178,6 +178,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         serverListManager.shutdown();
         httpClientProxy.shutdown();
         grpcClientProxy.shutdown();
+        securityProxy.shutdown();
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }

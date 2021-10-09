@@ -62,8 +62,8 @@ public abstract class ConfigTransportClient {
     
     protected SecurityProxy securityProxy;
     
-    public void shutdown() {
-    
+    public void shutdown() throws NacosException {
+        securityProxy.shutdown();
     }
     
     public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {

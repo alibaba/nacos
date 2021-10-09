@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.ConfigResourceInjector;
@@ -98,5 +99,10 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
             return true;
         }
         return false;
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        SpasAdapter.freeCredentialInstance();
     }
 }
