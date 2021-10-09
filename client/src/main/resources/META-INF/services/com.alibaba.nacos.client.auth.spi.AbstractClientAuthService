@@ -16,3 +16,4 @@
 #
 
 com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl
+com.alibaba.nacos.client.auth.ram.RamClientAuthServiceImpl

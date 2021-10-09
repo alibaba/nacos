@@ -24,6 +24,9 @@ import com.alibaba.nacos.common.http.param.Header;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,17 +34,20 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class SecurityProxyTest {
     
     private SecurityProxy securityProxy;
     
+    @Mock
+    private NacosRestTemplate nacosRestTemplate;
+    
     @Before
     public void setUp() throws Exception {
         //given
-        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
         result.setCode(200);
@@ -53,14 +59,12 @@ public class SecurityProxyTest {
     }
     
     @Test
-    public void testLoginClientAuthService() {
+    public void testLoginClientAuthService() throws Exception {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
-        //when
-        boolean ret = securityProxy.login(properties);
-        //then
-        Assert.assertTrue(ret);
+        securityProxy.login(properties);
+        verify(nacosRestTemplate).postForm(any(), (Header) any(), any(), any(), any());
     }
     
     @Test
@@ -70,7 +74,7 @@ public class SecurityProxyTest {
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         securityProxy.login(properties);
         //when
-        Map<String, String> keyMap = securityProxy.getIdentityContext();
+        Map<String, String> keyMap = securityProxy.getIdentityContext(null);
         //then
         Assert.assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
     }

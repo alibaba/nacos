@@ -110,16 +110,19 @@ public class RequestResource {
             this.type = type;
         }
     
-        public void setNamespace(String namespace) {
+        public Builder setNamespace(String namespace) {
             this.namespace = namespace;
+            return this;
         }
     
-        public void setGroup(String group) {
+        public Builder setGroup(String group) {
             this.group = group;
+            return this;
         }
     
-        public void setResource(String resource) {
+        public Builder setResource(String resource) {
             this.resource = resource;
+            return this;
         }
     
         /**

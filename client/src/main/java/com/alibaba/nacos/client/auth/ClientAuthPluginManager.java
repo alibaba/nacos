@@ -35,7 +35,7 @@ import java.util.Set;
  */
 public class ClientAuthPluginManager {
     
-    private static final Logger AUTHPLUGIN_LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientAuthPluginManager.class);
     
     /**
      * The relationship of context type and {@link ClientAuthService}.
@@ -53,10 +53,11 @@ public class ClientAuthPluginManager {
             clientAuthService.setServerList(serverList);
             clientAuthService.setNacosRestTemplate(nacosRestTemplate);
             clientAuthServiceHashSet.add(clientAuthService);
+            LOGGER.info("[ClientAuthPluginManager] Load ClientAuthService {} success.",
+                    clientAuthService.getClass().getCanonicalName());
         }
         if (clientAuthServiceHashSet.isEmpty()) {
-            AUTHPLUGIN_LOGGER
-                    .warn("[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
+            LOGGER.warn("[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
         }
     }
     
