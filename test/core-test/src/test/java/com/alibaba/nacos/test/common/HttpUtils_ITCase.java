@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.test.common;
 
-import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
@@ -75,35 +74,4 @@ public class HttpUtils_ITCase {
 				+ "&key-2=" + URLEncoder.encode("value-2", StandardCharsets.UTF_8.name());
 		Assert.assertEquals(s1, s2);
 	}
-
-	@Test
-	public void test_build_httpUrl() {
-		String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1/api/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-		targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "v1/api/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-		targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-		targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api", "/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-		targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api/", "/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-		targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "", "/api/", "/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-		targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "", null, "/api/", "/test");
-		Assert.assertEquals(exceptUrl, targetUrl);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_build_httpUrl_fail_1() {
-		String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "//v1/api/test");
-		Assert.assertNotEquals(exceptUrl, targetUrl);
-	}
-
-	@Test(expected = IllegalArgumentException.class)
-	public void test_build_httpUrl_fail_2() {
-		String targetUrl = HttpUtils.buildUrl(false, "127.0.0.1:8080", "/v1", "/api//", "test");
-		Assert.assertNotEquals(exceptUrl, targetUrl);
-	}
-
 }
