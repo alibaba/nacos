@@ -25,6 +25,11 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Identity context builder for HTTP.
+ *
+ * @author Nacos
+ */
 public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpServletRequest> {
     
     private AuthConfigs authConfigs;

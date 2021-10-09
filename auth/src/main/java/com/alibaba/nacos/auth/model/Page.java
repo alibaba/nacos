@@ -23,6 +23,8 @@ import java.util.List;
 /**
  * Page.
  * copy from config module for resolving circular dependency.
+ *
+ * @author boyan
  */
 public class Page<E> implements Serializable {
     

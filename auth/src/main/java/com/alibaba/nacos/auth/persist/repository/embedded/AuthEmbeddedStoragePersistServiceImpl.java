@@ -10,6 +10,11 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
+/**
+ * Auth persist service for embedded storage.
+ *
+ * @author Nacos
+ */
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class AuthEmbeddedStoragePersistServiceImpl {
