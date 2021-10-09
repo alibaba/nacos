@@ -22,7 +22,7 @@ import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
-import com.alibaba.nacos.client.config.impl.SpasAdapter;
+import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredential;
 import com.alibaba.nacos.client.utils.LogUtils;
