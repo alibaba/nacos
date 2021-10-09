@@ -109,13 +109,11 @@ public class ClientWorker implements Closeable {
     
     private static final String ENCRYPTED_DATA_KEY_PARAM = "encryptedDataKey";
     
-    private static final String DEFAULT_RESOURCE = "";
-    
     /**
      * groupKey -> cacheData.
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-            new HashMap<String, CacheData>());
+            new HashMap<>());
     
     private final ConfigFilterChainManager configFilterChainManager;
     
