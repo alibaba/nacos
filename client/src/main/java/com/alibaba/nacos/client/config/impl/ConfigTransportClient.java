@@ -129,19 +129,9 @@ public abstract class ConfigTransportClient {
      * base start client.
      */
     public void start() throws NacosException {
-        
-        if (StringUtils.isNotBlank(this.properties.getProperty(PropertyKeyConst.USERNAME))) {
-            securityProxy.login(this.properties);
-            
-            this.executor.scheduleWithFixedDelay(new Runnable() {
-                @Override
-                public void run() {
-                    securityProxy.login(properties);
-                }
-            }, 0, this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-            
-        }
-        
+        securityProxy.login(this.properties);
+        this.executor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
+                this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         startInternal();
     }
     
