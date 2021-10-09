@@ -56,7 +56,7 @@ public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     /**
      * A context to take with when sending request to Nacos server.
      */
-    private volatile LoginIdentityContext loginIdentityContext;
+    private volatile LoginIdentityContext loginIdentityContext = new LoginIdentityContext();
     
     
     /**
