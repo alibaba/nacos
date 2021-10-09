@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
-import com.alibaba.nacos.client.identify.StsConfig;
+import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

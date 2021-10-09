@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.identify.CredentialService;
+import com.alibaba.nacos.client.auth.ram.identify.CredentialService;
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.utils.StringUtils;
 
