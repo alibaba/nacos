@@ -41,17 +41,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         this.securityProxy = securityProxy;
     }
     
-    /**
-     * Get nacos security headers.
-     *
-     * @return nacos security access token
-     */
-    protected Map<String, String> getSecurityHeaders() {
-        //TODO generate resource
-        return this.securityProxy.getIdentityContext(null);
-    }
-    
-    protected Map<String, String> getSpasHeaders(String namespace, String group, String serviceName) {
+    protected Map<String, String> getSecurityHeaders(String namespace, String group, String serviceName) {
         RequestResource resource = RequestResource.namingBuilder().setNamespace(namespace).setGroup(group)
                 .setResource(serviceName).build();
         Map<String, String> result = this.securityProxy.getIdentityContext(resource);

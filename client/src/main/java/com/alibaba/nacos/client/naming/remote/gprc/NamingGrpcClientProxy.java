@@ -261,9 +261,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
         try {
-            request.putAllHeader(getSecurityHeaders());
             request.putAllHeader(
-                    getSpasHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
+                    getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             Response response =
                     requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {

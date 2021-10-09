@@ -461,11 +461,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
-        params.putAll(getSecurityHeaders());
         String namespace = params.get(CommonParams.NAMESPACE_ID);
         String group = params.get(CommonParams.GROUP_NAME);
         String serviceName = params.get(CommonParams.SERVICE_NAME);
-        params.putAll(getSpasHeaders(namespace, group, serviceName));
+        params.putAll(getSecurityHeaders(namespace, group, serviceName));
         Header header = NamingHttpUtil.builderHeader();
         
         String url;
