@@ -24,6 +24,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Identity context builder for Grpc.
+ *
+ * @author Nacos
+ */
 public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Request> {
     
     AuthConfigs authConfigs;
