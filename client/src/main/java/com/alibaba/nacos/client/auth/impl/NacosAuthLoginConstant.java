@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.client.auth.impl;
 
+/**
+ * Nacos auth login constants.
+ *
+ * @author Nacos
+ */
 public class NacosAuthLoginConstant {
     
     public static final String ACCESSTOKEN = "accessToken";

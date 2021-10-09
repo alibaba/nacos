@@ -20,6 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Login identity context.
+ *
+ * @author Nacos
+ */
 public class LoginIdentityContext {
     
     /**

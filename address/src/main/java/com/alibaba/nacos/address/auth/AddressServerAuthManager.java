@@ -28,6 +28,7 @@ import com.alibaba.nacos.auth.model.Permission;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class AddressServerAuthManager implements AuthService {
     
     @Override
