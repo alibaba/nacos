@@ -38,6 +38,11 @@ import java.util.Properties;
 import static com.alibaba.nacos.client.naming.utils.UtilAndComs.HTTP;
 import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
 
+/**
+ * Login processor for Http.
+ *
+ * @author Nacos
+ */
 public class HttpLoginProcessor implements LoginProcessor {
     
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(HttpLoginProcessor.class);

@@ -19,6 +19,11 @@ package com.alibaba.nacos.client.auth.impl.process;
 import com.alibaba.nacos.client.auth.LoginIdentityContext;
 import java.util.Properties;
 
+/**
+ * Nacos login processor.
+ *
+ * @author Nacos
+ */
 public interface LoginProcessor {
     /**
      * send request to server and get result.

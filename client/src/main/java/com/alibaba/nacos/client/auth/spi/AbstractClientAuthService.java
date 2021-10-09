@@ -20,6 +20,11 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 
 import java.util.List;
 
+/**
+ * Client auth services SPI.
+ *
+ * @author Nacos
+ */
 public abstract class AbstractClientAuthService implements ClientAuthService {
     
     protected List<String> serverList;

@@ -70,7 +70,7 @@ public class SecurityProxy implements Closeable {
      * @return a combination of all context.
      */
     public Map<String, String> getIdentityContext(RequestResource resource) {
-        Map<String, String> header = new HashMap<>();
+        Map<String, String> header = new HashMap<>(1);
         for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(resource);
             for (String key : loginIdentityContext.getAllKey()) {
