@@ -63,7 +63,7 @@ public class ServiceControllerTest extends BaseTest {
     @Test
     public void testList() throws Exception {
         
-        Mockito.when(serviceOperatorV2.listService(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt()))
+        Mockito.when(serviceOperatorV2.listService(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(Collections.singletonList("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:1"));
     
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
