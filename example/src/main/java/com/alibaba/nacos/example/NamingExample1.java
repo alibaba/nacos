@@ -50,13 +50,10 @@ public class NamingExample1 {
         naming.registerInstance("nacos.test.1", "11.11.11.11", 8888, "TEST1");
 
         Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setName("test-thread");
-                        return thread;
-                    }
+                r -> {
+                    Thread thread = new Thread(r);
+                    thread.setName("test-thread");
+                    return thread;
                 });
         
         naming.subscribe("nacos.test.1", new AbstractEventListener() {
@@ -75,6 +72,6 @@ public class NamingExample1 {
             }
         });
 
-        Thread.sleep(1000000);
+        Thread.sleep(10000);
     }
 }

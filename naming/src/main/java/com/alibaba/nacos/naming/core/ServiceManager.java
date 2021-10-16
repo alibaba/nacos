@@ -82,9 +82,9 @@ public class ServiceManager implements RecordListener<Service> {
      * Map(namespace, Map(group::serviceName, Service)).
      */
     private final Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
-    
+
+
     private final LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
-    
     private final Synchronizer synchronizer = new ServiceStatusSynchronizer();
     
     @Resource(name = "consistencyDelegate")
@@ -480,7 +480,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @throws Exception any error occurred in the process
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-        
+
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
         
         Service service = getService(namespaceId, serviceName);

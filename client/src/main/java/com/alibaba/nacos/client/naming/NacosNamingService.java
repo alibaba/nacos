@@ -89,6 +89,7 @@ public class NacosNamingService implements NamingService {
         initLogName(properties);
         
         this.changeNotifier = new InstancesChangeNotifier();
+        // 在通知中心注册InstancesChangeEvent事件的发布者
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, properties);
@@ -126,6 +127,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName)
             throws NacosException {
+        // 创建实例对象,并填充属性
         Instance instance = new Instance();
         instance.setIp(ip);
         instance.setPort(port);
@@ -393,7 +395,7 @@ public class NacosNamingService implements NamingService {
         String clusterString = StringUtils.join(clusters, ",");
         // 注册一个监听器,用来监听InstancesChangeEvent事件
         changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
-        // 客户端订阅服务端,定时从Nacos服务端拉取service信息
+        // 客户端订阅其他服务,定时从Nacos服务端拉取service信息
         clientProxy.subscribe(serviceName, groupName, clusterString);
     }
     

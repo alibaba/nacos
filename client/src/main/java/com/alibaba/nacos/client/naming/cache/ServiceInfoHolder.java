@@ -169,6 +169,8 @@ public class ServiceInfoHolder implements Closeable {
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
+            // 发布实例变更事件InstancesChangeEvent,由InstancesChangeNotifier类的onEvent()方法来处理,
+            // InstancesChangeEvent事件的监听者AbstractEventListener是实例注册时,调用subscribe()方法,自己实现的
             NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
                     serviceInfo.getClusters(), serviceInfo.getHosts()));
             DiskCache.write(serviceInfo, cacheDir);

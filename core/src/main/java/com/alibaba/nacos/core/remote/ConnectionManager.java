@@ -157,7 +157,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             connections.put(connectionId, connection);
             connectionForClientIp.get(connection.getMetaInfo().clientIp).getAndIncrement();
             // 通知各个客户端连接事件的监听者,连接已经建立,执行各自的业务逻辑
-            // 特别说明ConnectionBasedClientManager,会创建Client对象,缓存到clients属性中
+            // 特别说明:ConnectionBasedClientManager,会创建Client对象,缓存到clients属性中
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             Loggers.REMOTE_DIGEST
                     .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,

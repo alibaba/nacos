@@ -62,6 +62,7 @@ public class NotifyCenter {
     
     /**
      * Publisher management container.
+     * 缓存了事件类型和发布者之间的映射关系
      */
     private final Map<String, EventPublisher> publisherMap = new ConcurrentHashMap<>(16);
     
@@ -296,7 +297,7 @@ public class NotifyCenter {
         }
         
         final String topic = ClassUtils.getCanonicalName(eventType);
-        
+        // 根据事件类型,获取对应的事件发布者
         EventPublisher publisher = INSTANCE.publisherMap.get(topic);
         if (publisher != null) {
             return publisher.publish(event);

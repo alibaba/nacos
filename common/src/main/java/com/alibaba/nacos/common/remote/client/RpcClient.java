@@ -850,6 +850,7 @@ public abstract class RpcClient implements Closeable {
         lastActiveTimeStamp = System.currentTimeMillis();
         for (ServerRequestHandler serverRequestHandler : serverRequestHandlers) {
             try {
+                // 处理Nacos服务端推送过来的请求信息
                 Response response = serverRequestHandler.requestReply(request);
                 
                 if (response != null) {

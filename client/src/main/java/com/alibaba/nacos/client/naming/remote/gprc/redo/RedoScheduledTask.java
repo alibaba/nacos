@@ -55,8 +55,10 @@ public class RedoScheduledTask extends AbstractExecuteTask {
     }
     
     private void redoForInstances() {
+        // 遍历所有需要重新请求(注册,注销和删除)的实例
         for (InstanceRedoData each : redoService.findInstanceRedoData()) {
             try {
+                // 重新发送请求
                 redoForInstance(each);
             } catch (NacosException e) {
                 LogUtils.NAMING_LOGGER.error("Redo instance operation {} for {}@@{} failed. ", each.getRedoType(),

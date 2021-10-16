@@ -72,7 +72,6 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     
     /**
      * Clear the service index without instances.
-     *
      * @param service The service of the Nacos.
      */
     public void removePublisherIndexesByEmptyService(Service service) {
@@ -114,6 +113,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     private void handleClientOperation(ClientOperationEvent event) {
         Service service = event.getService();
         String clientId = event.getClientId();
+        // 处理客户端注册事件,即新的服务实例注册到Nacos服务端
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             addPublisherIndexes(service, clientId);
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
@@ -126,8 +126,10 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addPublisherIndexes(Service service, String clientId) {
+        // 缓存service和所属全部实例的映射关系
         publisherIndexes.computeIfAbsent(service, (key) -> new ConcurrentHashSet<>());
         publisherIndexes.get(service).add(clientId);
+        // 发布服务变更事件,会通知所有订阅了此service的客户端
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
@@ -136,6 +138,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
             return;
         }
         publisherIndexes.get(service).remove(clientId);
+        // 发布服务变更事件,会通知所有订阅了此service的客户端
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     

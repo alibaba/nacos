@@ -30,7 +30,7 @@ import java.util.Collection;
 
 /**
  * Nacos naming client based ip and port.
- *
+ * 针对 1.x 版本
  * <p>The client is bind to the ip and port users registered. It's a abstract content to simulate the tcp session
  * client.
  *

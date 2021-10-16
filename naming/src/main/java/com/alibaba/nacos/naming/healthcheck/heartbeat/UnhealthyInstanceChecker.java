@@ -70,6 +70,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     }
     
     private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {
+        // 将实例的健康置为false?
         instance.setHealthy(false);
         Loggers.EVT_LOG
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),

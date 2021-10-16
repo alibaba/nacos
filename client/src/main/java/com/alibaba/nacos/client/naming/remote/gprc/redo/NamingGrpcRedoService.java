@@ -62,6 +62,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy) {
         this.redoExecutor = new ScheduledThreadPoolExecutor(REDO_THREAD, new NameThreadFactory(REDO_THREAD_NAME));
+        // 线程池每隔3s扫描没有向Nacos集群请求(注册,注销和删除)成功的实例和订阅者,进行重新的请求(注册,注销和删除)
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), DEFAULT_REDO_DELAY,
                 DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
     }

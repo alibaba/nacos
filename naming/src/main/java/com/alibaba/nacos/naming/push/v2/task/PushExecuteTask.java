@@ -62,7 +62,9 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     // means this client has disconnect
                     continue;
                 }
+                // 获取该service的订阅者
                 Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
+                // 通过udp/rpc通信向订阅者推送service信息
                 delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
                         new NamingPushCallback(each, subscriber, wrapper.getOriginalData(), delayTask.isPushToAll()));
             }
@@ -73,6 +75,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     }
     
     private PushDataWrapper generatePushData() {
+        // 查询ServiceInfo,并更新ServiceStorage缓存
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
         ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
         return new PushDataWrapper(serviceMetadata, serviceInfo);

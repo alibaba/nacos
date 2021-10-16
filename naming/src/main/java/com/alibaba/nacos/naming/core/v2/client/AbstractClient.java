@@ -36,9 +36,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public abstract class AbstractClient implements Client {
-    
+
+    /**
+     * 缓存了服务和实例的映射关系(针对同一个连接对象)
+     * 注意:客户端的同一个连接,禁止在同一个服务下,注册多个实例,原因是publishers属性中[服务-实例]是一对一的关系
+     * */
     protected final ConcurrentHashMap<Service, InstancePublishInfo> publishers = new ConcurrentHashMap<>(16, 0.75f, 1);
-    
+
+    /**
+     * 缓存了服务和该服务订阅者的映射关系(针对同一个连接对象)
+     * 注意:客户端的同一个连接,禁止在同一个服务下,订阅不同的其他服务,原因是subscribers属性中[服务-订阅]是一对一的关系
+     * */
     protected final ConcurrentHashMap<Service, Subscriber> subscribers = new ConcurrentHashMap<>(16, 0.75f, 1);
     
     protected volatile long lastUpdatedTime;
@@ -63,6 +71,7 @@ public abstract class AbstractClient implements Client {
         if (null == publishers.put(service, instancePublishInfo)) {
             MetricsMonitor.incrementInstanceCount();
         }
+        // 发布实例变更事件
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
         return true;

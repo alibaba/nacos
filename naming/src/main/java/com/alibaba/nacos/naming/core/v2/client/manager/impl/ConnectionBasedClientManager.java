@@ -103,6 +103,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
             return true;
         }
         client.release();
+        // 发布客户端断开连接的事件
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
         return true;
     }

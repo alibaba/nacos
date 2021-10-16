@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * Service storage.
- *
+ * 主要是提供服务下的所有实例集合
  * @author xiweng.yy
  */
 @Component
@@ -75,7 +75,11 @@ public class ServiceStorage {
     public ServiceInfo getData(Service service) {
         return serviceDataIndexes.containsKey(service) ? serviceDataIndexes.get(service) : getPushData(service);
     }
-    
+
+    /**
+     *  查询ServiceInfo，并更新ServiceStorage缓存serviceDataIndexes
+     *  每次该方法被调用,就会更新ServiceInfo中的实例集合信息
+     * */
     public ServiceInfo getPushData(Service service) {
         ServiceInfo result = emptyServiceInfo(service);
         if (!ServiceManager.getInstance().containSingleton(service)) {
@@ -83,6 +87,7 @@ public class ServiceStorage {
         }
         // 获取当前服务下的所有实例信息
         result.setHosts(getAllInstancesFromIndex(service));
+        // 缓存服务信息和服务信息(包括实例集合)的映射关系
         serviceDataIndexes.put(service, result);
         return result;
     }
@@ -104,6 +109,7 @@ public class ServiceStorage {
     private List<Instance> getAllInstancesFromIndex(Service service) {
         Set<Instance> result = new HashSet<>();
         Set<String> clusters = new HashSet<>();
+        // 从publisherIndexes中获取该service下所有的clientId,遍历组装成Instance
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
             if (instancePublishInfo.isPresent()) {
@@ -123,6 +129,7 @@ public class ServiceStorage {
         if (null == client) {
             return Optional.empty();
         }
+        // 从publishers属性中获取该service下所有的实例对象
         return Optional.ofNullable(client.getInstancePublishInfo(service));
     }
     
