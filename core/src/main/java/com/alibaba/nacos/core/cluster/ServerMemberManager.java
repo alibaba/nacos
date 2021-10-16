@@ -233,7 +233,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * member information update.
      *
      * @param newMember {@link Member}
-     * @return update is successw
+     * @return update is success
      */
     public boolean update(Member newMember) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
@@ -271,7 +271,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * Whether the node exists within the cluster.
      *
      * @param address ip:port
-     * @return is exist
+     * @return is exists
      */
     public boolean hasMember(String address) {
         boolean result = serverList.containsKey(address);
