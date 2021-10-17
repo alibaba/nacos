@@ -72,7 +72,7 @@ public class CoreOpsV2Controller {
      * @return {@link RestResult}
      */
     @GetMapping(value = "/ids")
-    public RestResult<List<IdGeneratorVO>> listIds() {
+    public RestResult<List<IdGeneratorVO>> ids() {
         List<IdGeneratorVO> result = new ArrayList<>();
         idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> {
             IdGeneratorVO vo = new IdGeneratorVO();

@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
@@ -37,7 +36,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,9 +45,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Cluster communication interface v2.
@@ -73,40 +71,44 @@ public class NacosClusterV2Controller {
      * The console displays the list of cluster members.
      *
      * @param address match address
-     * @return all members
+     * @param state match state
+     *
+     * @return members that matches condition
      */
     @GetMapping(value = "/nodes")
-    public RestResult<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address) {
+    public RestResult<Collection<Member>> listNodes(
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "state", required = false) String state) {
+        
+        NodeState nodeState = null;
+        if (StringUtils.isNoneBlank(state)) {
+            try {
+                nodeState = NodeState.valueOf(state.toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                return RestResultUtils.failedWithMsg(400, "Illegal state: " + state);
+            }
+        }
+        
         Collection<Member> members = memberManager.allMembers();
         Collection<Member> result = new ArrayList<>();
         
-        members.stream().sorted().forEach(member -> {
-            if (StringUtils.isBlank(address)) {
-                result.add(member);
-                return;
+        for (Member member : members) {
+            if (StringUtils.isNoneBlank(address) && !StringUtils.startsWith(member.getAddress(), address)) {
+                continue;
             }
             
-            final String memberAddress = member.getAddress();
-            if (StringUtils.equals(memberAddress, address) || StringUtils.startsWith(memberAddress, address)) {
-                result.add(member);
+            if (nodeState != null && member.getState() != nodeState) {
+                continue;
             }
-        });
+            
+            result.add(member);
+        }
         
         return RestResultUtils.success(result);
     }
     
     // The client can get all the nacos node information in the current
     // cluster according to this interface
-    
-    @GetMapping(value = "/nodes", params = "state=up")
-    public RestResult<Collection<Member>> listNodes() {
-        Collection<Member> members = memberManager.allMembers();
-        List<Member> result = members.stream()
-                .filter((member) -> member.getState() != NodeState.DOWN)
-                .collect(Collectors.toList());
-    
-        return RestResultUtils.success(result);
-    }
     
     /**
      * Other nodes return their own metadata information.
@@ -121,7 +123,7 @@ public class NacosClusterV2Controller {
                 LoggerUtils.printIfWarnEnabled(Loggers.CLUSTER, "node information is illegal, ignore node: {}", node);
                 continue;
             }
-    
+            
             LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state updated, node: {}", node);
             node.setState(NodeState.UP);
             node.setFailAccessCnt(0);
@@ -157,50 +159,51 @@ public class NacosClusterV2Controller {
     public RestResult<Void> deleteNodes(@RequestParam("addresses") List<String> addresses) throws Exception {
         Collection<Member> memberList = MemberUtil.multiParse(addresses);
         memberManager.memberLeave(memberList);
-        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
+        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
+                Loggers.CLUSTER);
         final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
         };
         final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
         notifyList.removeAll(memberList);
         CountDownLatch latch = new CountDownLatch(notifyList.size());
         for (Member member : notifyList) {
-            final String url = HttpUtils
-                    .buildUrl(false, member.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT_V2,
-                            "/cluster/nodes");
-            nacosAsyncRestTemplate.delete(url, Header.EMPTY, StringUtils.join(addresses, ","), genericType.getType(), new Callback<Void>() {
-                @Override
-                public void onReceive(RestResult<Void> result) {
-                    try {
-                        if (result.ok()) {
-                            LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
-                                    "The node : [{}] success to process the request", member);
-                            MemberUtil.onSuccess(memberManager, member);
-                        } else {
-                            Loggers.CLUSTER
-                                    .warn("The node : [{}] failed to process the request, response is : {}", member,
+            final String url = HttpUtils.buildUrl(false, member.getAddress(), EnvUtil.getContextPath(),
+                    Commons.NACOS_CORE_CONTEXT_V2, "/cluster/nodes");
+            nacosAsyncRestTemplate.delete(url, Header.EMPTY, StringUtils.join(addresses, ","), genericType.getType(),
+                    new Callback<Void>() {
+                        @Override
+                        public void onReceive(RestResult<Void> result) {
+                            try {
+                                if (result.ok()) {
+                                    LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
+                                            "The node : [{}] success to process the request", member);
+                                    MemberUtil.onSuccess(memberManager, member);
+                                } else {
+                                    Loggers.CLUSTER.warn(
+                                            "The node : [{}] failed to process the request, response is : {}", member,
                                             result);
-                            MemberUtil.onFail(memberManager, member);
+                                    MemberUtil.onFail(memberManager, member);
+                                }
+                            } finally {
+                                latch.countDown();
+                            }
                         }
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-                
-                @Override
-                public void onError(Throwable throwable) {
-                    try {
-                        Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
-                        MemberUtil.onFail(memberManager, member);
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-    
-                @Override
-                public void onCancel() {
-        
-                }
-            });
+                        
+                        @Override
+                        public void onError(Throwable throwable) {
+                            try {
+                                Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
+                                MemberUtil.onFail(memberManager, member);
+                            } finally {
+                                latch.countDown();
+                            }
+                        }
+                        
+                        @Override
+                        public void onCancel() {
+                        
+                        }
+                    });
         }
         
         try {
