@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.model.vo;
 
 /**
  * Id generator vo.
+ *
+ * @author wuzhiguo
  */
 public class IdGeneratorVO {
     
@@ -62,5 +64,15 @@ public class IdGeneratorVO {
         public void setWorkerId(Long workerId) {
             this.workerId = workerId;
         }
+    
+        @Override
+        public String toString() {
+            return "IdInfo{" + "currentId=" + currentId + ", workerId=" + workerId + '}';
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return "IdGeneratorVO{" + "resource='" + resource + '\'' + ", info=" + info + '}';
     }
 }

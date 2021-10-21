@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.model.request;
 
 /**
  * Request entity for log operator interface.
+ *
+ * @author wuzhiguo
  */
 public class LogUpdateRequest {
     

@@ -51,6 +51,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Cluster communication interface v2.
+ *
+ * @author wuzhiguo
  */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/cluster")
@@ -124,9 +126,14 @@ public class NacosClusterV2Controller {
                 continue;
             }
             
-            LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state updated, node: {}", node);
+            LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state updating, node: {}", node);
             node.setState(NodeState.UP);
             node.setFailAccessCnt(0);
+    
+            boolean update = memberManager.update(node);
+            if (!update) {
+                LoggerUtils.printIfErrorEnabled(Loggers.CLUSTER, "node state update failed, node: {}", node);
+            }
         }
         
         return RestResultUtils.success();

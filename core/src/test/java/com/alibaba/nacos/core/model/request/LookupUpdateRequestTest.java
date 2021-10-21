@@ -16,20 +16,16 @@
 
 package com.alibaba.nacos.core.model.request;
 
-/**
- * Update member lookup type.
- *
- * @author wuzhiguo
- */
-public class LookupUpdateRequest {
+import org.junit.Assert;
+import org.junit.Test;
+
+public class LookupUpdateRequestTest {
     
-    private String type;
+    @Test
+    public void test() {
+        LookupUpdateRequest request = new LookupUpdateRequest();
+        request.setType("type");
     
-    public String getType() {
-        return type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
+        Assert.assertEquals(request.getType(), "type");
     }
 }

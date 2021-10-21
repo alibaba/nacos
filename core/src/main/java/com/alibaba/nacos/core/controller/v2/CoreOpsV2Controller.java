@@ -39,6 +39,8 @@ import java.util.Map;
 
 /**
  * Kernel modules operate and maintain HTTP interfaces v2.
+ *
+ * @author wuzhiguo
  */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/ops")
