@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server;
+package com.alibaba.nacos.common.event;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import com.alibaba.nacos.common.notify.Event;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Config main.
- *
- * @author Nacos
- */
-@EnableScheduling
-@SpringBootApplication(scanBasePackages = {
-        "com.alibaba.nacos.config.server",
-        "com.alibaba.nacos.core"})
-public class Config {
+public class ServerConfigChangeEventTest {
     
-    public static void main(String[] args) {
-        SpringApplication.run(Config.class, args);
+    @Test
+    public void test() {
+        Event event = ServerConfigChangeEvent.newEvent();
+        Assert.assertTrue(event instanceof ServerConfigChangeEvent);
     }
 }

@@ -36,6 +36,15 @@ Nacos provides four major functions.
 ## Quick Start
 It is super easy to get started with your first project.
 
+### Deploying Nacos on cloud
+
+You can deploy Nacos on cloud, which is the easiest and most convenient way to start Nacos. 
+
+Use the following [Nacos deployment guide](https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0) to see more information and deploy a stable and out-of-the-box Nacos server.
+
+
+### Start by the provided startup package
+
 #### Step 1: Download the binary package 
 
 You can download the package from the [latest stable release](https://github.com/alibaba/nacos/releases).  

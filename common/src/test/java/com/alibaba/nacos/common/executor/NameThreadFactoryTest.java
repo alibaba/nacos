@@ -14,24 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server;
+package com.alibaba.nacos.common.executor;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Config main.
- *
- * @author Nacos
- */
-@EnableScheduling
-@SpringBootApplication(scanBasePackages = {
-        "com.alibaba.nacos.config.server",
-        "com.alibaba.nacos.core"})
-public class Config {
+public class NameThreadFactoryTest {
     
-    public static void main(String[] args) {
-        SpringApplication.run(Config.class, args);
+    @Test
+    public void test() {
+        NameThreadFactory threadFactory = new NameThreadFactory("test");
+        Thread t1 = threadFactory.newThread(() -> {
+        
+        });
+        Thread t2 = threadFactory.newThread(() -> {
+        
+        });
+        
+        Assert.assertEquals(t1.getName(), "test.0");
+        Assert.assertEquals(t2.getName(), "test.1");
     }
+    
 }
