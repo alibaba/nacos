@@ -393,7 +393,7 @@ public class CacheData {
         this.dataId = dataId;
         this.group = group;
         this.tenant = TenantUtil.getUserTenantForAcm();
-        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
+        listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
@@ -410,7 +410,7 @@ public class CacheData {
         this.dataId = dataId;
         this.group = group;
         this.tenant = tenant;
-        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
+        listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
         this.md5 = getMd5String(content);
