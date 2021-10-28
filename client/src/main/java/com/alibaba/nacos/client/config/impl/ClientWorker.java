@@ -113,8 +113,7 @@ public class ClientWorker implements Closeable {
     /**
      * groupKey -> cacheData.
      */
-    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-            new HashMap<String, CacheData>());
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
     
     private final ConfigFilterChainManager configFilterChainManager;
     
