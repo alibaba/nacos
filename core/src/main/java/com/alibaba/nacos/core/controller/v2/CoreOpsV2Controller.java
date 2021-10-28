@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.controller.v2;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
@@ -42,6 +43,7 @@ import java.util.Map;
  *
  * @author wuzhiguo
  */
+@Beta
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/ops")
 public class CoreOpsV2Controller {

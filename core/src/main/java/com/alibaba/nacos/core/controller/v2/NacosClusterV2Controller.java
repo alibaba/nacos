@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.controller.v2;
 
+import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpUtils;
@@ -54,6 +55,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author wuzhiguo
  */
+@Beta
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/cluster")
 public class NacosClusterV2Controller {
