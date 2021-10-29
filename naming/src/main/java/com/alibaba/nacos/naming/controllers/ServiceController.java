@@ -44,6 +44,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -164,17 +165,15 @@ public class ServiceController {
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode list(HttpServletRequest request) throws Exception {
-        
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        List<String> serviceNameList = getServiceOperator()
-                .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
-        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
+        Collection<String> serviceNameList = getServiceOperator().listService(namespaceId, groupName, selectorString);
         result.put("count", serviceNameList.size());
+        result.replace("doms", JacksonUtils.transferToJsonNode(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList)));
         return result;
         
     }

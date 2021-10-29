@@ -16,32 +16,21 @@
 
 package com.alibaba.nacos.config.server.constant;
 
-/**
- * counter mode.
- *
- * @author hexu.hxy
- * @date 2018/3/13
- */
-public enum CounterMode {
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mock;
+
+public class CounterModeTest {
     
-    /**
-     * Increment.
-     */
-    INCREMENT,
-    /**
-     * Decrement.
-     */
-    DECREMENT;
+    @Mock
+    CounterMode counterMode;
     
-    /**
-     * Reverse the two mode value.
-     *
-     * @return CounterMode
-     */
-    public CounterMode reverse() {
-        if (INCREMENT == this) {
-            return DECREMENT;
-        }
-        return INCREMENT;
+    @Test
+    public void testReverse() {
+        counterMode = CounterMode.INCREMENT;
+        Assert.assertEquals(CounterMode.DECREMENT, counterMode.reverse());
+        counterMode = CounterMode.DECREMENT;
+        Assert.assertEquals(CounterMode.INCREMENT, counterMode.reverse());
     }
+    
 }

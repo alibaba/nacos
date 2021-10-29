@@ -41,7 +41,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -123,7 +122,7 @@ public class ServiceOperatorV2ImplTest {
     
     @Test
     public void testListService() throws NacosException {
-        List<String> res = serviceOperatorV2.listService("A", "B", null, 10, 1);
+        Collection<String> res = serviceOperatorV2.listService("A", "B", null);
         Assert.assertEquals(1, res.size());
     }
     
