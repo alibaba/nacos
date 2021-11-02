@@ -149,10 +149,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
             }
             if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
+                serversFromEndpoint = list;
+                lastServerListRefreshTime = System.currentTimeMillis();
+                NotifyCenter.publishEvent(new ServerListChangedEvent());
             }
-            serversFromEndpoint = list;
-            lastServerListRefreshTime = System.currentTimeMillis();
-            NotifyCenter.publishEvent(new ServerListChangedEvent());
         } catch (Throwable e) {
             NAMING_LOGGER.warn("failed to update server list", e);
         }
