@@ -1,3 +1,4 @@
+This repository is forked from alibaba-nacos, includes postgresql supports since official districution does not support postgresql.
 
 <img src="doc/Nacos_Logo.png" width="50%" syt height="50%" />
 
