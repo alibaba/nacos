@@ -150,7 +150,7 @@
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
         <netty-all.version>4.1.59.Final</netty-all.version>
-        <mina-core.version>2.0.0-RC1</mina-core.version>
+        <mina-core.version>2.1.5</mina-core.version>
         <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
         <commonOkHttp.version>0.4.1</commonOkHttp.version>
