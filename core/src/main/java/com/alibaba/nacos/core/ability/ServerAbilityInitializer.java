@@ -26,6 +26,11 @@ import com.alibaba.nacos.api.ability.initializer.AbilityInitializer;
  */
 public interface ServerAbilityInitializer extends AbilityInitializer<ServerAbilities> {
     
+    /**
+     * Initialize server abilities content.
+     *
+     * @param abilities server abilities
+     */
     @Override
     void initialize(ServerAbilities abilities);
 }
