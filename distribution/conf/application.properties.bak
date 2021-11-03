@@ -31,7 +31,6 @@ server.port=8848
 #*************** Config Module Related Configurations ***************#
 ### If use MySQL as datasource:
 # spring.datasource.platform=mysql
-# spring.datasource.platform=postgresql
 
 ### Count of DB:
 # db.num=1
@@ -40,9 +39,6 @@ server.port=8848
 # db.url.0=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
 # db.user.0=nacos
 # db.password.0=nacos
-# db.url.0=jdbc:postgresql://127.0.0.1:5432/nacos_config?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
-# db.user.0=postgres
-# db.password.0=postgres
 
 ### Connection pool configuration: hikariCP
 db.pool.config.connectionTimeout=30000

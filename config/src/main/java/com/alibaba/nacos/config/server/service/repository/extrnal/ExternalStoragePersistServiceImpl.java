@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
@@ -42,6 +43,8 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -1264,14 +1267,24 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
-        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+        String sql = "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id";
+        if (PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM)))) {
+            sql += " OFFSET ? LIMIT ?";
+        } else {
+            sql += " LIMIT ?, ?";
+        }
         int from = (page - 1) * pageSize;
         return jt.queryForList(sql, String.class, from, pageSize);
     }
     
     @Override
     public List<String> getGroupIdList(int page, int pageSize) {
-        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
+        String sql = "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id";
+        if (PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM)))) {
+            sql += " OFFSET ? LIMIT ?";
+        } else {
+            sql += " LIMIT ?, ?";
+        }
         int from = (page - 1) * pageSize;
         return jt.queryForList(sql, String.class, from, pageSize);
     }
@@ -1334,6 +1347,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
                 + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
                 + " g, config_info t  WHERE g.id = t.id ";
+        if (PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM))) {
+            sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
+                    + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET ? LIMIT ? )"
+                    + " g, config_info t  WHERE g.id = t.id ";
+        }
         
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         try {
@@ -1349,10 +1367,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String select = " SELECT data_id,group_id,app_name  FROM ( "
-                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ?  )"
-                + " g, config_info t WHERE g.id = t.id  ";
-        
+        String select = " SELECT data_id,group_id,app_name  FROM ";
+        if (PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM))) {
+            select += "( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET ? LIMIT ?  )";
+        } else {
+            select += "( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ?  )";
+        }
+        select += " g, config_info t WHERE g.id = t.id  ";
         final int totalCount = configInfoCount(tenant);
         int pageCount = totalCount / pageSize;
         if (totalCount > pageSize * pageCount) {
@@ -2067,7 +2088,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             jt.update(new PreparedStatementCreator() {
                 @Override
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement ps;
+                    if (PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM))) {
+                        ps = connection.prepareStatement(sql, new String[]{"id"});
+                    } else {
+                        ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    }
                     ps.setString(1, configInfo.getDataId());
                     ps.setString(2, configInfo.getGroup());
                     ps.setString(3, tenantTmp);
@@ -2804,4 +2830,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
     }
 
+    private boolean isPostgre() {
+        return (PropertyUtil.isUseExternalDB()) && PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM));
+    }
 }

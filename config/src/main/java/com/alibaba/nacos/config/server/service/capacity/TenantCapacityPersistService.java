@@ -17,11 +17,13 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -103,7 +105,12 @@ public class TenantCapacityPersistService {
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
                 @Override
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement ps;
+                    if (PropertiesConstant.POSTGRESQL.equalsIgnoreCase(EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM))) {
+                        ps = connection.prepareStatement(sql, new String[]{"id"});
+                    } else {
+                        ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    }
                     String tenant = tenantCapacity.getTenant();
                     ps.setString(1, tenant);
                     ps.setInt(2, tenantCapacity.getQuota());

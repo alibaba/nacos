@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.spi;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -82,8 +83,8 @@ public class NacosServiceLoader {
     
     private static Object newServiceInstance(final Class<?> clazz) {
         try {
-            return clazz.newInstance();
-        } catch (IllegalAccessException | InstantiationException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException e) {
             throw new ServiceLoaderException(clazz, e);
         }
     }

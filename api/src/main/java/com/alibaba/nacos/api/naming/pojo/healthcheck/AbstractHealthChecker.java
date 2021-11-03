@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.naming.pojo.healthcheck;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker.None;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Http;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Mysql;
+import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Postgresql;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -35,6 +36,7 @@ import java.io.Serializable;
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = None.class)
 @JsonSubTypes({@JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
         @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
+        @JsonSubTypes.Type(name = Postgresql.TYPE, value = Postgresql.class),
         @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class),
         @JsonSubTypes.Type(name = None.TYPE, value = None.class)})
 public abstract class AbstractHealthChecker implements Cloneable, Serializable {
