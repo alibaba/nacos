@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.api.ability;
 
-import com.alibaba.nacos.api.config.ServerConfigAbility;
-import com.alibaba.nacos.api.naming.ServerNamingAbility;
+import com.alibaba.nacos.api.config.ability.ServerConfigAbility;
+import com.alibaba.nacos.api.naming.ability.ServerNamingAbility;
+import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 
 import java.io.Serializable;
 import java.util.Objects;

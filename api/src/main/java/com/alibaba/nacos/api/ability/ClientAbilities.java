@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.api.ability;
 
-import com.alibaba.nacos.api.config.ClientConfigAbility;
-import com.alibaba.nacos.api.naming.ClientNamingAbility;
+import com.alibaba.nacos.api.config.ability.ClientConfigAbility;
+import com.alibaba.nacos.api.naming.ability.ClientNamingAbility;
+import com.alibaba.nacos.api.remote.ability.ClientRemoteAbility;
 
 /**
  * abilities of nacos client.
