@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.util;
 
-import com.alibaba.nacos.auth.constant.PropertiesConstant;
+import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
@@ -242,46 +242,48 @@ public class AuthPropertyUtil implements ApplicationContextInitializer<Configura
     // if use mysql, Reduce database read pressure
     // if use raft+derby, Reduce leader read pressure
     
-    public static boolean isDirectRead() {
-        return EnvUtil.getStandaloneMode() && isEmbeddedStorage();
-    }
-    
     public static void setEmbeddedStorage(boolean embeddedStorage) {
         AuthPropertyUtil.embeddedStorage = embeddedStorage;
     }
     
+    public static boolean isDirectRead() {
+        return EnvUtil.getStandaloneMode() && isEmbeddedStorage();
+    }
+    
     private void loadSetting() {
         try {
-            setNotifyConnectTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT,
-                    String.valueOf(notifyConnectTimeout))));
+            setNotifyConnectTimeout(Integer.parseInt(
+                    EnvUtil.getProperty(Constants.Load.NOTIFY_CONNECT_TIMEOUT,
+                            String.valueOf(notifyConnectTimeout))));
             LOGGER.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT,
+            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty(Constants.Load.NOTIFY_SOCKET_TIMEOUT,
                     String.valueOf(notifySocketTimeout))));
             LOGGER.info("notifySocketTimeout:{}", notifySocketTimeout);
             setHealthCheck(Boolean.parseBoolean(
-                    EnvUtil.getProperty(PropertiesConstant.IS_HEALTH_CHECK, String.valueOf(isHealthCheck))));
+                    EnvUtil.getProperty(Constants.Load.IS_HEALTH_CHECK, String.valueOf(isHealthCheck))));
             LOGGER.info("isHealthCheck:{}", isHealthCheck);
             setMaxHealthCheckFailCount(Integer.parseInt(
-                    EnvUtil.getProperty(PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT,
+                    EnvUtil.getProperty(Constants.Load.MAX_HEALTH_CHECK_FAIL_COUNT,
                             String.valueOf(maxHealthCheckFailCount))));
             LOGGER.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
-            setMaxContent(
-                    Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.MAX_CONTENT, String.valueOf(maxContent))));
+            setMaxContent(Integer.parseInt(
+                    EnvUtil.getProperty(Constants.Load.MAX_CONTENT, String.valueOf(maxContent))));
             LOGGER.info("maxContent:{}", maxContent);
             // capacity management
-            setManageCapacity(getBoolean(PropertiesConstant.IS_MANAGE_CAPACITY, isManageCapacity));
-            setCapacityLimitCheck(getBoolean(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
-            setDefaultClusterQuota(getInt(PropertiesConstant.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
-            setDefaultGroupQuota(getInt(PropertiesConstant.DEFAULT_GROUP_QUOTA, defaultGroupQuota));
-            setDefaultTenantQuota(getInt(PropertiesConstant.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
-            setDefaultMaxSize(getInt(PropertiesConstant.DEFAULT_MAX_SIZE, defaultMaxSize));
-            setDefaultMaxAggrCount(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
-            setDefaultMaxAggrSize(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
-            setCorrectUsageDelay(getInt(PropertiesConstant.CORRECT_USAGE_DELAY, correctUsageDelay));
-            setInitialExpansionPercent(getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
+            setManageCapacity(getBoolean(Constants.Load.IS_MANAGE_CAPACITY, isManageCapacity));
+            setCapacityLimitCheck(getBoolean(Constants.Load.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
+            setDefaultClusterQuota(getInt(Constants.Load.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
+            setDefaultGroupQuota(getInt(Constants.Load.DEFAULT_GROUP_QUOTA, defaultGroupQuota));
+            setDefaultTenantQuota(getInt(Constants.Load.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
+            setDefaultMaxSize(getInt(Constants.Load.DEFAULT_MAX_SIZE, defaultMaxSize));
+            setDefaultMaxAggrCount(getInt(Constants.Load.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
+            setDefaultMaxAggrSize(getInt(Constants.Load.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
+            setCorrectUsageDelay(getInt(Constants.Load.CORRECT_USAGE_DELAY, correctUsageDelay));
+            setInitialExpansionPercent(
+                    getInt(Constants.Load.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
             // External data sources are used by default in cluster mode
-            setUseExternalDB(PropertiesConstant.MYSQL
-                    .equalsIgnoreCase(getString(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "")));
+            setUseExternalDB(Constants.Load.MYSQL.equalsIgnoreCase(
+                    getString(Constants.Load.SPRING_DATASOURCE_PLATFORM, "")));
             // must initialize after setUseExternalDB
             // This value is true in stand-alone mode and false in cluster mode
             // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
@@ -290,10 +292,10 @@ public class AuthPropertyUtil implements ApplicationContextInitializer<Configura
             if (isUseExternalDB()) {
                 setEmbeddedStorage(false);
             } else {
-                boolean embeddedStorage =
-                        AuthPropertyUtil.embeddedStorage || Boolean.getBoolean(PropertiesConstant.EMBEDDED_STORAGE);
+                boolean embeddedStorage = AuthPropertyUtil.embeddedStorage || Boolean.getBoolean(
+                        Constants.Load.EMBEDDED_STORAGE);
                 setEmbeddedStorage(embeddedStorage);
-               
+                
                 // If the embedded data source storage is not turned on, it is automatically
                 // upgraded to the external data source storage, as before
                 if (!embeddedStorage) {

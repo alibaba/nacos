@@ -59,7 +59,7 @@ public class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
         environment.setProperty("nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
         environment.setProperty("nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
-        environment.setProperty("nacos.core.auth.enable.authorityKey", AUTHORITY_KEY);
+        environment.setProperty("nacos.core.auth.authorityKey", AUTHORITY_KEY);
         environment.setProperty("nacos.core.auth.system.type", AUTH_SYSTEM_TYPES);
         
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
