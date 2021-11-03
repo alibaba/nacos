@@ -40,6 +40,8 @@ public class IstioCrdUtil {
 
     public static final String VALID_DEFAULT_GROUP_NAME = "DEFAULT-GROUP";
 
+    private static final String SUFFIX_DOMAIN = "nacos";
+
     private static final String ISTIO_HOSTNAME = "istio.hostname";
 
     public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
@@ -108,7 +110,7 @@ public class IstioCrdUtil {
             serviceEntryBuilder.addEndpoints(workloadEntry);
         }
 
-        serviceEntryBuilder.addHosts(hostname).addPorts(
+        serviceEntryBuilder.addHosts(hostname + "." + SUFFIX_DOMAIN).addPorts(
                 GatewayOuterClass.Port.newBuilder().setNumber(port).setName(protocol).setProtocol(protocol.toUpperCase()).build());
         ServiceEntry serviceEntry = serviceEntryBuilder.build();
 
