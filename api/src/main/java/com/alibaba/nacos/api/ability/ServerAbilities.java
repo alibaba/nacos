@@ -31,6 +31,8 @@ import java.util.Objects;
  */
 public class ServerAbilities implements Serializable {
     
+    private static final long serialVersionUID = -2120543002911304171L;
+    
     private ServerRemoteAbility remoteAbility = new ServerRemoteAbility();
     
     private ServerConfigAbility configAbility = new ServerConfigAbility();
