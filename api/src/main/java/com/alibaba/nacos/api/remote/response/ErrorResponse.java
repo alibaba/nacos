@@ -24,6 +24,12 @@ package com.alibaba.nacos.api.remote.response;
  */
 public class ErrorResponse extends Response {
     
+    /**
+     *
+     * @param errorCode errorCode
+     * @param msg msg
+     * @return response
+     */
     public static Response build(int errorCode, String msg) {
         ErrorResponse response = new ErrorResponse();
         response.setErrorInfo(errorCode, msg);
