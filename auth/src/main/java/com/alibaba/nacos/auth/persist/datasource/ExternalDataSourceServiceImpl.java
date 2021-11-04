@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.persist.datasource;
 
+import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.auth.util.AuthPropertyUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -73,7 +74,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public void init() {
-        queryTimeout = ConvertUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
+        queryTimeout = ConvertUtils.toInt(System.getProperty(Constants.ExternalDataSource.QUERYTIMEOUT), 3);
         jt = new JdbcTemplate();
         // Set the maximum number of records to prevent memory expansion
         jt.setMaxRows(50000);

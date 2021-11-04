@@ -41,15 +41,11 @@ import java.util.List;
  */
 public class NacosAuthServiceImpl implements AuthService {
     
-    private static final String TOKEN_PREFIX = "Bearer ";
+    private final JwtTokenManager jwtTokenManager;
     
-    private static final String PARAM_PASSWORD = "password";
+    private final AuthenticationManager authenticationManager;
     
-    private JwtTokenManager jwtTokenManager;
-    
-    private AuthenticationManager authenticationManager;
-    
-    private NacosAuthRoleServiceImpl roleService;
+    private final NacosAuthRoleServiceImpl roleService;
     
     public NacosAuthServiceImpl() {
         jwtTokenManager = ApplicationUtils.getBean(JwtTokenManager.class);
@@ -60,11 +56,13 @@ public class NacosAuthServiceImpl implements AuthService {
     @Override
     public IdentityContext login(IdentityContext identityContext) throws AccessException {
         String username = (String) identityContext.getParameter(Constants.USERNAME);
-        String password = (String) identityContext.getParameter(PARAM_PASSWORD);
+        String password = (String) identityContext.getParameter(
+                com.alibaba.nacos.auth.constant.Constants.Auth.PARAM_PASSWORD);
         String finalName;
         Authentication authenticate;
         try {
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
+                    password);
             
             authenticate = authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
@@ -90,7 +88,8 @@ public class NacosAuthServiceImpl implements AuthService {
     public Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException {
         String token;
         String bearerToken = (String) identityContext.getParameter(NacosAuthConfig.AUTHORIZATION_HEADER);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(
+                com.alibaba.nacos.auth.constant.Constants.Auth.TOKEN_PREFIX)) {
             token = bearerToken.substring(7);
         } else {
             token = (String) identityContext.getParameter(Constants.ACCESS_TOKEN);
@@ -146,7 +145,7 @@ public class NacosAuthServiceImpl implements AuthService {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(NacosAuthRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(com.alibaba.nacos.auth.constant.Constants.Auth.GLOBAL_ADMIN_ROLE)) {
                     identityContext.setParameter(Constants.GLOBAL_ADMIN, true);
                     break;
                 }
