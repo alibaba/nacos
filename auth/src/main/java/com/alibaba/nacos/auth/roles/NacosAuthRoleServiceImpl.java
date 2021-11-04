@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth.roles;
 
 import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.model.PermissionInfo;
@@ -126,7 +127,7 @@ public class NacosAuthRoleServiceImpl {
         
         // Global admin pass:
         for (RoleInfo roleInfo : roleInfoList) {
-            if (GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
+            if (Constants.Auth.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
                 return true;
             }
         }

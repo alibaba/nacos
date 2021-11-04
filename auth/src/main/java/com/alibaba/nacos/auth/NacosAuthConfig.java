@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.auth.users.NacosAuthUserDetailsServiceImpl;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,21 +48,11 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     public static final String AUTHORIZATION_HEADER = "Authorization";
     
-    public static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
-    
-    public static final String LOGIN_ENTRY_POINT = "/v1/auth/login";
-    
-    public static final String TOKEN_BASED_AUTH_ENTRY_POINT = "/v1/auth/**";
-    
     public static final String TOKEN_PREFIX = "Bearer ";
     
     public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
     
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
-    
-    private static final String DEFAULT_ALL_PATH_PATTERN = "/**";
-    
-    private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
     
     @Autowired
     private Environment env;
@@ -89,17 +80,17 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         
         String ignoreUrls = null;
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
+            ignoreUrls = Constants.Auth.DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
+            ignoreUrls = Constants.Auth.DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.USERNAME_PASSWORD.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
+            ignoreUrls = Constants.Auth.DEFAULT_ALL_PATH_PATTERN;
         }
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = env.getProperty(PROPERTY_IGNORE_URLS, DEFAULT_ALL_PATH_PATTERN);
+            ignoreUrls = env.getProperty(Constants.Auth.PROPERTY_IGNORE_URLS, Constants.Auth.DEFAULT_ALL_PATH_PATTERN);
         }
         if (StringUtils.isNotBlank(ignoreUrls)) {
-            for (String each : ignoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
+            for (String each : ignoreUrls.trim().split(Constants.Auth.SECURITY_IGNORE_URLS_SPILT_CHAR)) {
                 web.ignoring().antMatchers(each.trim());
             }
         }
@@ -121,9 +112,10 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
             http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
-                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-                    .requestMatchers(CorsUtils::isPreFlightRequest).permitAll().antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
-                    .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
+                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                    .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+                    .antMatchers(Constants.Auth.LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
+                    .antMatchers(Constants.Auth.TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
                     .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
             // disable cache
             http.headers().cacheControl();
