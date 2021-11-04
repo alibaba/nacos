@@ -21,9 +21,9 @@ import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
-import com.alibaba.nacos.api.remote.request.PushAckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -181,7 +181,10 @@ public abstract class GrpcClient extends RpcClient {
                         } catch (Exception e) {
                             LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
                                     grpcConn.getConnectionId(), payload.toString(), e.getMessage());
-                            sendResponse(request.getRequestId(), false);
+                            Response errResponse = ErrorResponse
+                                    .build(NacosException.CLIENT_ERROR, "Handle server request error");
+                            errResponse.setRequestId(request.getRequestId());
+                            sendResponse(errResponse);
                         }
                         
                     }
@@ -229,15 +232,6 @@ public abstract class GrpcClient extends RpcClient {
                 
             }
         });
-    }
-    
-    private void sendResponse(String ackId, boolean success) {
-        try {
-            PushAckRequest request = PushAckRequest.build(ackId, success);
-            this.currentConnection.request(request, 3000L);
-        } catch (Exception e) {
-            LOGGER.error("[{}]Error to send ack response, ackId->{}", this.currentConnection.getConnectionId(), ackId);
-        }
     }
     
     private void sendResponse(Response response) {
