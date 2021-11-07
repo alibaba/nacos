@@ -267,7 +267,7 @@ public class CacheData {
             tmpStaticConfigFilterChainManager.doFilter(null, cr);
             config = cr.getContent();
         } catch (NacosException e) {
-            LOGGER.error("[CacheData-getMd5String] error by encryptedDataKey={}", encryptedDataKey);
+            LOGGER.error("[CacheData-getMd5String] error by encryptedDataKey={},config={}", encryptedDataKey, config, e);
         }
         return MD5Utils.md5Hex(config, Constants.ENCODE);
     }
@@ -302,7 +302,7 @@ public class CacheData {
     private final String name;
     
     /**
-     * FIXME temporary provide for {@link #getMd5String(String, String)}
+     * FIXME temporary provide for {@link #getMd5String(String, String)}.
      */
     private static ConfigFilterChainManager tmpStaticConfigFilterChainManager;
     
