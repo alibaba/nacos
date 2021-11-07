@@ -64,7 +64,7 @@ public class CacheData {
     
     public void setContent(String content) {
         this.content = content;
-        this.md5 = getMd5String(this.content);
+        this.md5 = getMd5String(this.content, this.encryptedDataKey);
     }
     
     public String getType() {
@@ -249,8 +249,27 @@ public class CacheData {
                 name, (finishNotify - startNotify), dataId, group, md5, listener);
     }
     
-    public static String getMd5String(String config) {
-        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
+    /**
+     * FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
+     */
+    public static String getMd5String(String config, String encryptedDataKey) {
+        if (null == config) {
+            return Constants.NULL;
+        }
+        if (encryptedDataKey == null || encryptedDataKey.isEmpty()) {
+            return MD5Utils.md5Hex(config, Constants.ENCODE);
+        }
+        
+        ConfigResponse cr = new ConfigResponse();
+        cr.setEncryptedDataKey(encryptedDataKey);
+        cr.setContent(config);
+        try {
+            tmpStaticConfigFilterChainManager.doFilter(null, cr);
+            config = cr.getContent();
+        } catch (NacosException e) {
+            LOGGER.error("[CacheData-getMd5String] error by encryptedDataKey={}", encryptedDataKey);
+        }
+        return MD5Utils.md5Hex(config, Constants.ENCODE);
     }
     
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
@@ -264,6 +283,7 @@ public class CacheData {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
         }
+        tmpStaticConfigFilterChainManager = configFilterChainManager;
         this.name = name;
         this.configFilterChainManager = configFilterChainManager;
         this.dataId = dataId;
@@ -272,13 +292,19 @@ public class CacheData {
         listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
         this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
+        // FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
+        this.md5 = getMd5String(content, encryptedDataKey);
     }
     
     // ==================
     
     private final String name;
+    
+    /**
+     * FIXME temporary provide for {@link #getMd5String(String, String)}
+     */
+    private static ConfigFilterChainManager tmpStaticConfigFilterChainManager;
     
     private final ConfigFilterChainManager configFilterChainManager;
     
@@ -334,7 +360,7 @@ public class CacheData {
         
         final Listener listener;
         
-        String lastCallMd5 = CacheData.getMd5String(null);
+        String lastCallMd5 = CacheData.getMd5String(null, null);
         
         String lastContent = null;
         
