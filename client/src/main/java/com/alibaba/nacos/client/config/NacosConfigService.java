@@ -176,7 +176,6 @@ public class NacosConfigService implements ConfigService {
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
                 dataId, group, tenant, ContentUtils.truncateContent(content));
-        content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
                 .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
