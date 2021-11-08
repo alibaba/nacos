@@ -101,7 +101,7 @@ public class CacheBuilder<K, V> {
     }
     
     /**
-     * Set the initialize capacity of the cache pair.
+     * Set the initial capacity of the cache pair.
      * @param initializeCapacity initialize capacity
      */
     public CacheBuilder<K, V> initializeCapacity(int initializeCapacity) {
@@ -116,12 +116,12 @@ public class CacheBuilder<K, V> {
      * Build the cache according to the builder attribute.
      */
     public Cache<K, V> build() {
-        Cache<K, V> cache = new SimpleCache(initializeCapacity);
+        Cache<K, V> cache = new SimpleCache<>(initializeCapacity);
         if (lru) {
             cache = new LruCache<>(cache, maximumSize);
         }
         if (expireNanos != -1) {
-            cache = new AutoExpireCache(cache, expireNanos);
+            cache = new AutoExpireCache<>(cache, expireNanos);
         }
         if (sync) {
             cache = new SynchronizedCache<>(cache);

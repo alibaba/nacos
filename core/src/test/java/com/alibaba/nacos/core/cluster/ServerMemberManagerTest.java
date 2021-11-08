@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.InetUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,6 +63,7 @@ public class ServerMemberManagerTest {
         when(environment.getProperty("server.port", Integer.class, 8848)).thenReturn(8848);
         when(environment.getProperty("nacos.member-change-event.queue.size", Integer.class, 128)).thenReturn(128);
         EnvUtil.setEnvironment(environment);
+        EnvUtil.setIsStandalone(true);
         when(servletContext.getContextPath()).thenReturn("");
         serverMemberManager = new ServerMemberManager(servletContext);
         serverMemberManager.updateMember(Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build());
@@ -74,6 +76,14 @@ public class ServerMemberManagerTest {
         EVENT_PUBLISH.set(false);
         NotifyCenter.deregisterPublisher(MembersChangeEvent.class);
         serverMemberManager.shutdown();
+    }
+    
+    @Test
+    public void testInit() {
+        String selfIp = InetUtils.getSelfIP();
+        Member member = serverMemberManager.getSelf();
+        assertEquals(selfIp, member.getIp());
+        assertTrue(member.getAbilities().getRemoteAbility().isSupportRemoteConnection());
     }
     
     @Test

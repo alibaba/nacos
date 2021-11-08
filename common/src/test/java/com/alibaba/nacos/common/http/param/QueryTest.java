@@ -17,8 +17,11 @@
 package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.api.naming.CommonParams;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,5 +42,15 @@ public class QueryTest {
         parameters.put("ephemeral", String.valueOf(true));
         String excepted = "groupName=group&namespaceId=namespace&port=9999&ip=1.1.1.1&weight=1.0&ephemeral=true&serviceName=service";
         assertEquals(excepted, Query.newInstance().initParams(parameters).toQueryUrl());
+    }
+    
+    @Test
+    public void testToQueryUrl2() throws Exception {
+        Query query = Query.newInstance().addParam("key-1", "value-1")
+                .addParam("key-2", "value-2");
+        String s1 = query.toQueryUrl();
+        String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name())
+                + "&key-2=" + URLEncoder.encode("value-2", StandardCharsets.UTF_8.name());
+        Assert.assertEquals(s1, s2);
     }
 }

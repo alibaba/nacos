@@ -76,7 +76,7 @@ public class ExternalRolePersistServiceImplTest {
     public void testAddRole() {
         externalRolePersistService.addRole("role", "userName");
         
-        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
+        String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
         Mockito.verify(jt).update(sql, "role", "userName");
     }
     

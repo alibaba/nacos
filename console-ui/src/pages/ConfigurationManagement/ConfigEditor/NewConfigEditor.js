@@ -246,7 +246,7 @@ class ConfigEditor extends React.Component {
     if (beta) {
       headers.betaIps = betaIps;
     }
-    const form = { ...this.state.form, content: this.getCodeVal() };
+    const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
     const payload = {};
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
