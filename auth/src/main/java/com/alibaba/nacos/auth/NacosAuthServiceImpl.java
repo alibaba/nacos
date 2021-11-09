@@ -88,7 +88,7 @@ public class NacosAuthServiceImpl implements AuthService {
     @Override
     public Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException {
         String token;
-        String bearerToken = (String) identityContext.getParameter(NacosAuthConfig.AUTHORIZATION_HEADER);
+        String bearerToken = (String) identityContext.getParameter(AuthModuleConstants.Auth.AUTHORIZATION_HEADER);
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(
                 AuthModuleConstants.Auth.TOKEN_PREFIX)) {
             token = bearerToken.substring(7);

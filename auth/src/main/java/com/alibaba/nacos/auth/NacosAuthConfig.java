@@ -44,12 +44,6 @@ import org.springframework.web.cors.CorsUtils;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
-    public static final String NACOS_IDENTITY_KEY = "identity";
-    
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-    
-    public static final String TOKEN_PREFIX = "Bearer ";
-    
     public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
     
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";

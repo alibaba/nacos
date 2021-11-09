@@ -71,7 +71,7 @@ public class ExternalDataSourceProperties {
      */
     List<HikariDataSource> build(Environment environment, Callback<HikariDataSource> callback) {
         List<HikariDataSource> dataSources = new ArrayList<>();
-        Binder.get(environment).bind("db", Bindable.ofInstance(this));
+        Binder.get(environment).bind(AuthModuleConstants.DataSource.BIND_DB_NAME, Bindable.ofInstance(this));
         Preconditions.checkArgument(Objects.nonNull(num), "db.num is null");
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(user), "db.user or db.user.[index] is null");
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(password), "db.password or db.password.[index] is null");

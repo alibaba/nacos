@@ -137,6 +137,8 @@ public class AuthModuleConstants {
     
     public static class DataSource {
         
+        public static final String BIND_DB_NAME = "db";
+        
         public static final String DB_POOL_CONFIG = "db.pool.config";
     }
     

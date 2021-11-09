@@ -18,9 +18,9 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.auth.AuthPluginManager;
 import com.alibaba.nacos.auth.AuthService;
-import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.context.IdentityContextBuilder;
@@ -129,7 +129,7 @@ public class AuthFilter implements Filter {
                 IdentityContextBuilder<HttpServletRequest> identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
                 IdentityContext identityContext = identityContextBuilder.build(req);
                 authService.authorityAccess(identityContext, new Permission(resource, action));
-                req.setAttribute(NacosAuthConfig.NACOS_IDENTITY_KEY, identityContext);
+                req.setAttribute(AuthModuleConstants.Auth.NACOS_IDENTITY_KEY, identityContext);
             }
             chain.doFilter(request, response);
         } catch (AccessException e) {

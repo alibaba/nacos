@@ -52,8 +52,6 @@ public class NacosAuthRoleServiceImpl {
     
     public static final Logger LOGGER = LoggerFactory.getLogger(NacosAuthRoleServiceImpl.class);
     
-    public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
-    
     private static final int DEFAULT_PAGE_NO = 1;
     
     @Autowired

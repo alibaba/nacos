@@ -24,6 +24,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.context.IdentityContextBuilder;
@@ -164,10 +165,10 @@ public class UserController {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (Objects.isNull(request.getAttribute(NacosAuthConfig.NACOS_IDENTITY_KEY))) {
+        if (Objects.isNull(request.getAttribute(AuthModuleConstants.Auth.NACOS_IDENTITY_KEY))) {
             return false;
         }
-        IdentityContext context = (IdentityContext) request.getAttribute(NacosAuthConfig.NACOS_IDENTITY_KEY);
+        IdentityContext context = (IdentityContext) request.getAttribute(AuthModuleConstants.Auth.NACOS_IDENTITY_KEY);
         
         // admin
         if ((Boolean) context.getParameter(Constants.GLOBAL_ADMIN)) {
@@ -214,8 +215,8 @@ public class UserController {
             IdentityContextBuilder<HttpServletRequest> identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
             IdentityContext identityContext = authService.login(identityContextBuilder.build(request));
             
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER,
-                    NacosAuthConfig.TOKEN_PREFIX + identityContext.getParameter(Constants.ACCESS_TOKEN));
+            response.addHeader(AuthModuleConstants.Auth.AUTHORIZATION_HEADER,
+                    AuthModuleConstants.Auth.TOKEN_PREFIX + identityContext.getParameter(Constants.ACCESS_TOKEN));
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, (String) identityContext.getParameter(Constants.ACCESS_TOKEN));
@@ -236,7 +237,7 @@ public class UserController {
             // generate Token
             String token = jwtTokenManager.createToken(authentication);
             // write Token to Http header
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
+            response.addHeader(AuthModuleConstants.Auth.AUTHORIZATION_HEADER, "Bearer " + token);
             return RestResultUtils.success("Bearer " + token);
         } catch (BadCredentialsException authentication) {
             return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed");
