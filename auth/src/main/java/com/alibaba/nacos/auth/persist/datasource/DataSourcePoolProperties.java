@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.persist.datasource;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -59,7 +59,7 @@ public class DataSourcePoolProperties {
      */
     public static DataSourcePoolProperties build(Environment environment) {
         DataSourcePoolProperties result = new DataSourcePoolProperties();
-        Binder.get(environment).bind(Constants.DataSource.DB_POOL_CONFIG, Bindable.ofInstance(result.getDataSource()));
+        Binder.get(environment).bind(AuthModuleConstants.DataSource.DB_POOL_CONFIG, Bindable.ofInstance(result.getDataSource()));
         return result;
     }
     

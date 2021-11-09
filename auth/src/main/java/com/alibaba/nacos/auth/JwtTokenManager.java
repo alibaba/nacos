@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -84,7 +84,7 @@ public class JwtTokenManager {
                 .parseClaimsJws(token).getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
-                .commaSeparatedStringToAuthorityList((String) claims.get(Constants.Jwt.AUTHORITIES_KEY));
+                .commaSeparatedStringToAuthorityList((String) claims.get(AuthModuleConstants.Jwt.AUTHORITIES_KEY));
         
         User principal = new User(claims.getSubject(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);

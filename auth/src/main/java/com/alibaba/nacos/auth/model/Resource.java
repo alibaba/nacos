@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.model;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 
 import java.io.Serializable;
 
@@ -45,7 +45,7 @@ public class Resource implements Serializable {
     }
     
     public String parseName() {
-        return key.substring(0, key.lastIndexOf(Constants.Resource.SPLITTER));
+        return key.substring(0, key.lastIndexOf(AuthModuleConstants.Resource.SPLITTER));
     }
     
     @Override

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.roles.NacosAuthRoleServiceImpl;
 import com.alibaba.nacos.auth.roles.RoleInfo;
 import com.alibaba.nacos.auth.users.NacosAuthUserDetailsServiceImpl;
@@ -60,13 +60,13 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private NacosAuthRoleServiceImpl nacosRoleService;
     
-    @Value("${" + Constants.Ldap.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}")
+    @Value("${" + AuthModuleConstants.Ldap.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}")
     private String ldapUrl;
     
-    @Value("${" + Constants.Ldap.NACOS_CORE_AUTH_LDAP_TIMEOUT + ":3000}")
+    @Value("${" + AuthModuleConstants.Ldap.NACOS_CORE_AUTH_LDAP_TIMEOUT + ":3000}")
     private String time;
     
-    @Value("${" + Constants.Ldap.NACOS_CORE_AUTH_LDAP_USERDN + ":cn={0},ou=user,dc=company,dc=com}")
+    @Value("${" + AuthModuleConstants.Ldap.NACOS_CORE_AUTH_LDAP_USERDN + ":cn={0},ou=user,dc=company,dc=com}")
     private String userNamePattern;
     
     @Override
@@ -89,12 +89,12 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         
         UserDetails userDetails;
         try {
-            userDetails = userDetailsService.loadUserByUsername(Constants.Ldap.LDAP_PREFIX + username);
+            userDetails = userDetailsService.loadUserByUsername(AuthModuleConstants.Ldap.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
-            String nacosPassword = PasswordEncoderUtil.encode(Constants.Ldap.DEFAULT_PASSWORD);
-            userDetailsService.createUser(Constants.Ldap.LDAP_PREFIX + username, nacosPassword);
+            String nacosPassword = PasswordEncoderUtil.encode(AuthModuleConstants.Ldap.DEFAULT_PASSWORD);
+            userDetailsService.createUser(AuthModuleConstants.Ldap.LDAP_PREFIX + username, nacosPassword);
             User user = new User();
-            user.setUsername(Constants.Ldap.LDAP_PREFIX + username);
+            user.setUsername(AuthModuleConstants.Ldap.LDAP_PREFIX + username);
             user.setPassword(nacosPassword);
             userDetails = new NacosUserDetails(user);
         }
@@ -107,7 +107,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             return false;
         }
         for (RoleInfo roleinfo : roleInfos) {
-            if (Constants.Auth.GLOBAL_ADMIN_ROLE.equals(roleinfo.getRole())) {
+            if (AuthModuleConstants.Auth.GLOBAL_ADMIN_ROLE.equals(roleinfo.getRole())) {
                 return true;
             }
         }
@@ -116,13 +116,13 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     private boolean ldapLogin(String username, String password) throws AuthenticationException {
         Hashtable<String, String> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, Constants.Ldap.FACTORY);
+        env.put(Context.INITIAL_CONTEXT_FACTORY, AuthModuleConstants.Ldap.FACTORY);
         env.put(Context.PROVIDER_URL, ldapUrl);
-        env.put(Context.SECURITY_AUTHENTICATION, Constants.Ldap.DEFAULT_SECURITY_AUTH);
+        env.put(Context.SECURITY_AUTHENTICATION, AuthModuleConstants.Ldap.DEFAULT_SECURITY_AUTH);
         
         env.put(Context.SECURITY_PRINCIPAL, userNamePattern.replace("{0}", username));
         env.put(Context.SECURITY_CREDENTIALS, password);
-        env.put(Constants.Ldap.TIMEOUT, time);
+        env.put(AuthModuleConstants.Ldap.TIMEOUT, time);
         LdapContext ctx = null;
         try {
             ctx = new InitialLdapContext(env, null);

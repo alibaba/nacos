@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.persist.datasource;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.util.Preconditions;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.zaxxer.hikari.HikariDataSource;
@@ -79,12 +79,12 @@ public class ExternalDataSourceProperties {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
-            poolProperties.setDriverClassName(Constants.ExternalDataSource.JDBC_DRIVER_NAME);
+            poolProperties.setDriverClassName(AuthModuleConstants.ExternalDataSource.JDBC_DRIVER_NAME);
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
             HikariDataSource ds = poolProperties.getDataSource();
-            ds.setConnectionTestQuery(Constants.ExternalDataSource.TEST_QUERY);
+            ds.setConnectionTestQuery(AuthModuleConstants.ExternalDataSource.TEST_QUERY);
             ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(10L));
             ds.setConnectionTimeout(TimeUnit.SECONDS.toMillis(3L));
             dataSources.add(ds);

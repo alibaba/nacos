@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.util;
 
 import ch.qos.logback.classic.Level;
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,31 +61,31 @@ public class LogUtil {
     public static void setLogLevel(String logName, String level) {
         
         switch (logName) {
-            case Constants.Log.CONFIG_SERVER:
+            case AuthModuleConstants.Log.CONFIG_SERVER:
                 ((ch.qos.logback.classic.Logger) DEFAULT_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_FATAL:
+            case AuthModuleConstants.Log.CONFIG_FATAL:
                 ((ch.qos.logback.classic.Logger) FATAL_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_PULL:
+            case AuthModuleConstants.Log.CONFIG_PULL:
                 ((ch.qos.logback.classic.Logger) PULL_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_PULL_CHECK:
+            case AuthModuleConstants.Log.CONFIG_PULL_CHECK:
                 ((ch.qos.logback.classic.Logger) PULL_CHECK_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_DUMP:
+            case AuthModuleConstants.Log.CONFIG_DUMP:
                 ((ch.qos.logback.classic.Logger) DUMP_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_MEMORY:
+            case AuthModuleConstants.Log.CONFIG_MEMORY:
                 ((ch.qos.logback.classic.Logger) MEMORY_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_CLIENT_REQUEST:
+            case AuthModuleConstants.Log.CONFIG_CLIENT_REQUEST:
                 ((ch.qos.logback.classic.Logger) CLIENT_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_TRACE:
+            case AuthModuleConstants.Log.CONFIG_TRACE:
                 ((ch.qos.logback.classic.Logger) TRACE_LOG).setLevel(Level.valueOf(level));
                 break;
-            case Constants.Log.CONFIG_NOTIFY:
+            case AuthModuleConstants.Log.CONFIG_NOTIFY:
                 ((ch.qos.logback.classic.Logger) NOTIFY_LOG).setLevel(Level.valueOf(level));
                 break;
             default:

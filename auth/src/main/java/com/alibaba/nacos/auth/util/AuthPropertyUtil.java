@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.util;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
@@ -253,37 +253,37 @@ public class AuthPropertyUtil implements ApplicationContextInitializer<Configura
     private void loadSetting() {
         try {
             setNotifyConnectTimeout(Integer.parseInt(
-                    EnvUtil.getProperty(Constants.Load.NOTIFY_CONNECT_TIMEOUT,
+                    EnvUtil.getProperty(AuthModuleConstants.Load.NOTIFY_CONNECT_TIMEOUT,
                             String.valueOf(notifyConnectTimeout))));
             LOGGER.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty(Constants.Load.NOTIFY_SOCKET_TIMEOUT,
+            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty(AuthModuleConstants.Load.NOTIFY_SOCKET_TIMEOUT,
                     String.valueOf(notifySocketTimeout))));
             LOGGER.info("notifySocketTimeout:{}", notifySocketTimeout);
             setHealthCheck(Boolean.parseBoolean(
-                    EnvUtil.getProperty(Constants.Load.IS_HEALTH_CHECK, String.valueOf(isHealthCheck))));
+                    EnvUtil.getProperty(AuthModuleConstants.Load.IS_HEALTH_CHECK, String.valueOf(isHealthCheck))));
             LOGGER.info("isHealthCheck:{}", isHealthCheck);
             setMaxHealthCheckFailCount(Integer.parseInt(
-                    EnvUtil.getProperty(Constants.Load.MAX_HEALTH_CHECK_FAIL_COUNT,
+                    EnvUtil.getProperty(AuthModuleConstants.Load.MAX_HEALTH_CHECK_FAIL_COUNT,
                             String.valueOf(maxHealthCheckFailCount))));
             LOGGER.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
             setMaxContent(Integer.parseInt(
-                    EnvUtil.getProperty(Constants.Load.MAX_CONTENT, String.valueOf(maxContent))));
+                    EnvUtil.getProperty(AuthModuleConstants.Load.MAX_CONTENT, String.valueOf(maxContent))));
             LOGGER.info("maxContent:{}", maxContent);
             // capacity management
-            setManageCapacity(getBoolean(Constants.Load.IS_MANAGE_CAPACITY, isManageCapacity));
-            setCapacityLimitCheck(getBoolean(Constants.Load.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
-            setDefaultClusterQuota(getInt(Constants.Load.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
-            setDefaultGroupQuota(getInt(Constants.Load.DEFAULT_GROUP_QUOTA, defaultGroupQuota));
-            setDefaultTenantQuota(getInt(Constants.Load.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
-            setDefaultMaxSize(getInt(Constants.Load.DEFAULT_MAX_SIZE, defaultMaxSize));
-            setDefaultMaxAggrCount(getInt(Constants.Load.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
-            setDefaultMaxAggrSize(getInt(Constants.Load.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
-            setCorrectUsageDelay(getInt(Constants.Load.CORRECT_USAGE_DELAY, correctUsageDelay));
+            setManageCapacity(getBoolean(AuthModuleConstants.Load.IS_MANAGE_CAPACITY, isManageCapacity));
+            setCapacityLimitCheck(getBoolean(AuthModuleConstants.Load.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
+            setDefaultClusterQuota(getInt(AuthModuleConstants.Load.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
+            setDefaultGroupQuota(getInt(AuthModuleConstants.Load.DEFAULT_GROUP_QUOTA, defaultGroupQuota));
+            setDefaultTenantQuota(getInt(AuthModuleConstants.Load.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
+            setDefaultMaxSize(getInt(AuthModuleConstants.Load.DEFAULT_MAX_SIZE, defaultMaxSize));
+            setDefaultMaxAggrCount(getInt(AuthModuleConstants.Load.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
+            setDefaultMaxAggrSize(getInt(AuthModuleConstants.Load.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
+            setCorrectUsageDelay(getInt(AuthModuleConstants.Load.CORRECT_USAGE_DELAY, correctUsageDelay));
             setInitialExpansionPercent(
-                    getInt(Constants.Load.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
+                    getInt(AuthModuleConstants.Load.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
             // External data sources are used by default in cluster mode
-            setUseExternalDB(Constants.Load.MYSQL.equalsIgnoreCase(
-                    getString(Constants.Load.SPRING_DATASOURCE_PLATFORM, "")));
+            setUseExternalDB(AuthModuleConstants.Load.MYSQL.equalsIgnoreCase(
+                    getString(AuthModuleConstants.Load.SPRING_DATASOURCE_PLATFORM, "")));
             // must initialize after setUseExternalDB
             // This value is true in stand-alone mode and false in cluster mode
             // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
@@ -293,7 +293,7 @@ public class AuthPropertyUtil implements ApplicationContextInitializer<Configura
                 setEmbeddedStorage(false);
             } else {
                 boolean embeddedStorage = AuthPropertyUtil.embeddedStorage || Boolean.getBoolean(
-                        Constants.Load.EMBEDDED_STORAGE);
+                        AuthModuleConstants.Load.EMBEDDED_STORAGE);
                 setEmbeddedStorage(embeddedStorage);
                 
                 // If the embedded data source storage is not turned on, it is automatically

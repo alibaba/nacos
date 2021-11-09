@@ -20,8 +20,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.auth.constant.Constants;
-import com.alibaba.nacos.auth.model.Resource;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -75,15 +74,15 @@ public class NamingResourceParser implements ResourceParser {
         }
         
         if (StringUtils.isBlank(groupName)) {
-            sb.append(Constants.Resource.SPLITTER).append('*');
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(AuthModuleConstants.Resource.ANY);
         } else {
-            sb.append(Constants.Resource.SPLITTER).append(groupName);
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(groupName);
         }
         
         if (StringUtils.isBlank(serviceName)) {
-            sb.append(Constants.Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append('*');
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append(AuthModuleConstants.Resource.ANY);
         } else {
-            sb.append(Constants.Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append(serviceName);
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(AUTH_NAMING_PREFIX).append(serviceName);
         }
         
         return sb.toString();

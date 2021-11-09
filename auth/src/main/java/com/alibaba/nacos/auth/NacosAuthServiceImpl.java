@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
@@ -57,7 +58,7 @@ public class NacosAuthServiceImpl implements AuthService {
     public IdentityContext login(IdentityContext identityContext) throws AccessException {
         String username = (String) identityContext.getParameter(Constants.USERNAME);
         String password = (String) identityContext.getParameter(
-                com.alibaba.nacos.auth.constant.Constants.Auth.PARAM_PASSWORD);
+                AuthModuleConstants.Auth.PARAM_PASSWORD);
         String finalName;
         Authentication authenticate;
         try {
@@ -89,7 +90,7 @@ public class NacosAuthServiceImpl implements AuthService {
         String token;
         String bearerToken = (String) identityContext.getParameter(NacosAuthConfig.AUTHORIZATION_HEADER);
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(
-                com.alibaba.nacos.auth.constant.Constants.Auth.TOKEN_PREFIX)) {
+                AuthModuleConstants.Auth.TOKEN_PREFIX)) {
             token = bearerToken.substring(7);
         } else {
             token = (String) identityContext.getParameter(Constants.ACCESS_TOKEN);
@@ -145,7 +146,7 @@ public class NacosAuthServiceImpl implements AuthService {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(com.alibaba.nacos.auth.constant.Constants.Auth.GLOBAL_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(AuthModuleConstants.Auth.GLOBAL_ADMIN_ROLE)) {
                     identityContext.setParameter(Constants.GLOBAL_ADMIN, true);
                     break;
                 }

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.common;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
@@ -50,19 +50,19 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     /**
      * Authority key set.
      */
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY + ":}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY + ":}")
     private String[] authorityKey;
     
     /**
      * Whether auth enabled.
      */
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLED + ":false}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_ENABLED + ":false}")
     private boolean authEnabled;
     
     /**
      * secret key.
      */
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_DEFAULT_TOKEN_SECRET_KEY + ":}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_DEFAULT_TOKEN_SECRET_KEY + ":}")
     private String secretKey;
     
     /**
@@ -73,22 +73,22 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     /**
      * Token validity time(seconds).
      */
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_DEFAULT_TOKEN_EXPIRE_SECONDS + ":18000}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_DEFAULT_TOKEN_EXPIRE_SECONDS + ":18000}")
     private long tokenValidityInSeconds;
     
     /**
      * Which auth system is in use.
      */
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE + ":}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE + ":}")
     private String nacosAuthSystemType;
     
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY + ":}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY + ":}")
     private String serverIdentityKey;
     
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE + ":}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE + ":}")
     private String serverIdentityValue;
     
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
+    @Value("${" + AuthModuleConstants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
     private boolean enableUserAgentAuthWhite;
     
     public AuthConfigs() {
@@ -145,7 +145,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             return cachingEnabled;
         }
         return ConvertUtils.toBoolean(
-                EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, "true"));
+                EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, "true"));
     }
     
     @JustForTest
@@ -156,15 +156,15 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
         try {
-            authEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
-            cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class,
+            authEnabled = EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_ENABLED, Boolean.class, false);
+            cachingEnabled = EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class,
                     true);
-            serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
-            serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
+            serverIdentityKey = EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
+            serverIdentityValue = EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
             enableUserAgentAuthWhite = EnvUtil.getProperty(
-                    Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
-            authorityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY, "").split(",");
-            nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
+                    AuthModuleConstants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
+            authorityKey = EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY, "").split(",");
+            nacosAuthSystemType = EnvUtil.getProperty(AuthModuleConstants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }

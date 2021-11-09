@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth.persist.datasource;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.util.AuthPropertyUtil;
 import com.alibaba.nacos.auth.util.LogUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -72,7 +72,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         if (!initialize) {
             LogUtil.DEFAULT_LOG.info("use local db service for init");
             final String jdbcUrl =
-                    "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), Constants.LocalDataSource.DERBY_BASE_DIR).toString()
+                    "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), AuthModuleConstants.LocalDataSource.DERBY_BASE_DIR).toString()
                             + ";create=true";
             initialize(jdbcUrl);
             initialize = true;
@@ -86,7 +86,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             throw new RuntimeException("datasource is null");
         }
         try {
-            execute(ds.getConnection(), Constants.LocalDataSource.SCHEMA_SQL_FILE_CLASS_PATH);
+            execute(ds.getConnection(), AuthModuleConstants.LocalDataSource.SCHEMA_SQL_FILE_CLASS_PATH);
         } catch (Exception e) {
             if (LogUtil.DEFAULT_LOG.isErrorEnabled()) {
                 LogUtil.DEFAULT_LOG.error(e.getMessage(), e);
@@ -107,7 +107,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
-                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), Constants.LocalDataSource.DERBY_BASE_DIR) + ";create=true";
+                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), AuthModuleConstants.LocalDataSource.DERBY_BASE_DIR) + ";create=true";
         initialize(jdbcUrl);
     }
     
@@ -130,19 +130,19 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             DriverManager.getConnection("jdbc:derby:;shutdown=true");
         } catch (Exception e) {
             // An error is thrown when the Derby shutdown is executed, which should be ignored
-            if (!StringUtils.containsIgnoreCase(e.getMessage(), Constants.LocalDataSource.DERBY_SHUTDOWN_ERR_MSG)) {
+            if (!StringUtils.containsIgnoreCase(e.getMessage(), AuthModuleConstants.LocalDataSource.DERBY_SHUTDOWN_ERR_MSG)) {
                 throw e;
             }
         }
-        DiskUtils.deleteDirectory(Paths.get(EnvUtil.getNacosHome(), Constants.LocalDataSource.DERBY_BASE_DIR).toString());
+        DiskUtils.deleteDirectory(Paths.get(EnvUtil.getNacosHome(), AuthModuleConstants.LocalDataSource.DERBY_BASE_DIR).toString());
     }
     
     private synchronized void initialize(String jdbcUrl) {
         DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(EnvUtil.getEnvironment());
-        poolProperties.setDriverClassName(Constants.LocalDataSource.JDBC_DRIVER_NAME);
+        poolProperties.setDriverClassName(AuthModuleConstants.LocalDataSource.JDBC_DRIVER_NAME);
         poolProperties.setJdbcUrl(jdbcUrl);
-        poolProperties.setUsername(Constants.LocalDataSource.USER_NAME);
-        poolProperties.setPassword(Constants.LocalDataSource.PASSWORD);
+        poolProperties.setUsername(AuthModuleConstants.LocalDataSource.USER_NAME);
+        poolProperties.setPassword(AuthModuleConstants.LocalDataSource.PASSWORD);
         HikariDataSource ds = poolProperties.getDataSource();
         DataSourceTransactionManager tm = new DataSourceTransactionManager();
         tm.setDataSource(ds);
@@ -178,7 +178,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public String getCurrentDbUrl() {
-        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + Constants.LocalDataSource.DERBY_BASE_DIR + ";create=true";
+        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + AuthModuleConstants.LocalDataSource.DERBY_BASE_DIR + ";create=true";
     }
     
     @Override
@@ -202,7 +202,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         InputStream sqlFileIn = null;
         try {
             File file = new File(
-                    EnvUtil.getNacosHome() + File.separator + Constants.LocalDataSource.SCHEMA_SQL_FILE_LOCAL_PATH);
+                    EnvUtil.getNacosHome() + File.separator + AuthModuleConstants.LocalDataSource.SCHEMA_SQL_FILE_LOCAL_PATH);
             if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);

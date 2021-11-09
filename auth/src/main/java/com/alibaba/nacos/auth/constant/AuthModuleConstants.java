@@ -23,7 +23,7 @@ import java.io.File;
  *
  * @author onew
  */
-public class Constants {
+public class AuthModuleConstants {
     
     public static class Load {
         

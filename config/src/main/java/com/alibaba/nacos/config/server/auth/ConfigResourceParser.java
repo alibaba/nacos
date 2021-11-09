@@ -18,8 +18,7 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.auth.constant.Constants;
-import com.alibaba.nacos.auth.model.Resource;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -72,15 +71,15 @@ public class ConfigResourceParser implements ResourceParser {
         }
         
         if (StringUtils.isBlank(groupName)) {
-            sb.append(Constants.Resource.SPLITTER).append('*');
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append('*');
         } else {
-            sb.append(Constants.Resource.SPLITTER).append(groupName);
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(groupName);
         }
         
         if (StringUtils.isBlank(dataId)) {
-            sb.append(Constants.Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append('*');
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append('*');
         } else {
-            sb.append(Constants.Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
+            sb.append(AuthModuleConstants.Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
         }
         
         return sb.toString();

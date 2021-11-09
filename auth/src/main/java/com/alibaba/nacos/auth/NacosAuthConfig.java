@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.common.AuthSystemTypes;
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.AuthModuleConstants;
 import com.alibaba.nacos.auth.users.NacosAuthUserDetailsServiceImpl;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,17 +80,17 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         
         String ignoreUrls = null;
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = Constants.Auth.DEFAULT_ALL_PATH_PATTERN;
+            ignoreUrls = AuthModuleConstants.Auth.DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = Constants.Auth.DEFAULT_ALL_PATH_PATTERN;
+            ignoreUrls = AuthModuleConstants.Auth.DEFAULT_ALL_PATH_PATTERN;
         } else if (AuthSystemTypes.USERNAME_PASSWORD.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = Constants.Auth.DEFAULT_ALL_PATH_PATTERN;
+            ignoreUrls = AuthModuleConstants.Auth.DEFAULT_ALL_PATH_PATTERN;
         }
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = env.getProperty(Constants.Auth.PROPERTY_IGNORE_URLS, Constants.Auth.DEFAULT_ALL_PATH_PATTERN);
+            ignoreUrls = env.getProperty(AuthModuleConstants.Auth.PROPERTY_IGNORE_URLS, AuthModuleConstants.Auth.DEFAULT_ALL_PATH_PATTERN);
         }
         if (StringUtils.isNotBlank(ignoreUrls)) {
-            for (String each : ignoreUrls.trim().split(Constants.Auth.SECURITY_IGNORE_URLS_SPILT_CHAR)) {
+            for (String each : ignoreUrls.trim().split(AuthModuleConstants.Auth.SECURITY_IGNORE_URLS_SPILT_CHAR)) {
                 web.ignoring().antMatchers(each.trim());
             }
         }
@@ -114,8 +114,8 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
             http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
                     .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                     .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .antMatchers(Constants.Auth.LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
-                    .antMatchers(Constants.Auth.TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
+                    .antMatchers(AuthModuleConstants.Auth.LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
+                    .antMatchers(AuthModuleConstants.Auth.TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
                     .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
             // disable cache
             http.headers().cacheControl();
