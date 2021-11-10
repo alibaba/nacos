@@ -22,7 +22,7 @@ import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.pojo.ServiceNameVO;
+import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,7 +97,7 @@ public class ServiceControllerV2Test {
         when(request.getParameter("pageSize")).thenReturn("10");
         when(serviceOperatorV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "")).thenReturn(
                 Collections.singletonList("serviceName"));
-        RestResult<ServiceNameVO> actual = serviceController.list(request);
+        RestResult<ServiceNameView> actual = serviceController.list(request);
         assertEquals(200, actual.getCode());
         assertEquals(1, actual.getData().getCount());
         assertEquals(1, actual.getData().getServices().size());

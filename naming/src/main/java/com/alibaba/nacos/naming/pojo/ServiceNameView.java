@@ -23,7 +23,7 @@ import java.util.Collection;
  *
  * @author xiweng.yy
  */
-public class ServiceNameVO {
+public class ServiceNameView {
     
     private int count;
     

@@ -34,7 +34,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.pojo.ServiceNameVO;
+import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
@@ -147,13 +147,13 @@ public class ServiceControllerV2 {
      */
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
-    public RestResult<ServiceNameVO> list(HttpServletRequest request) throws Exception {
+    public RestResult<ServiceNameView> list(HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
-        ServiceNameVO result = new ServiceNameVO();
+        ServiceNameView result = new ServiceNameView();
         Collection<String> serviceNameList = serviceOperatorV2.listService(namespaceId, groupName, selectorString);
         result.setCount(serviceNameList.size());
         result.setServices(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList));

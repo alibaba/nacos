@@ -154,7 +154,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         ServiceDetailInfo result = new ServiceDetailInfo();
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
         setServiceMetadata(result, serviceMetadata, service);
-        Map<String, ClusterInfo> clusters = new HashMap<>();
+        Map<String, ClusterInfo> clusters = new HashMap<>(2);
         for (String each : serviceStorage.getClusters(service)) {
             ClusterMetadata clusterMetadata =
                     serviceMetadata.getClusters().containsKey(each) ? serviceMetadata.getClusters().get(each)
