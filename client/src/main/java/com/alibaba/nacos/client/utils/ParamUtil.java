@@ -185,12 +185,9 @@ public class ParamUtil {
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             namespaceTmp = TenantUtil.getUserTenantForAcm();
             
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                    return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
-                }
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, () -> {
+                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
             });
         }
         
@@ -228,12 +225,7 @@ public class ParamUtil {
         
         String endpointUrlSource = TemplateUtils
                 .stringBlankAndThenExecute(System.getProperty(endpointUrl, System.getenv(endpointUrl)),
-                        new Callable<String>() {
-                            @Override
-                            public String call() {
-                                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
-                            }
-                        });
+                        () -> System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {
