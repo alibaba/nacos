@@ -44,10 +44,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
