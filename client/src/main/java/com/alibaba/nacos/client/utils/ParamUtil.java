@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import org.slf4j.Logger;
 
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 /**
