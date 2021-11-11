@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,32 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.ability;
+package com.alibaba.nacos.api.naming.ability;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * remote abilities of nacos server.
+ * naming abilities of nacos server.
  *
  * @author liuzunfei
- * @version $Id: ServerRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
+ * @version $Id: ServerNamingAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ServerRemoteAbility implements Serializable {
+public class ServerNamingAbility implements Serializable {
+    
+    private static final long serialVersionUID = 8308895444341445512L;
     
     /**
-     * if support remote connection.
+     * Nacos server can use SOFA-Jraft to handle persist service and metadata.
      */
-    private boolean supportRemoteConnection;
+    private boolean supportJraft;
     
-    public boolean isSupportRemoteConnection() {
-        return this.supportRemoteConnection;
+    public boolean isSupportJraft() {
+        return supportJraft;
     }
     
-    public void setSupportRemoteConnection(boolean supportRemoteConnection) {
-        this.supportRemoteConnection = supportRemoteConnection;
+    public void setSupportJraft(boolean supportJraft) {
+        this.supportJraft = supportJraft;
     }
     
     @Override
@@ -45,15 +47,15 @@ public class ServerRemoteAbility implements Serializable {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof ServerNamingAbility)) {
             return false;
         }
-        ServerRemoteAbility that = (ServerRemoteAbility) o;
-        return supportRemoteConnection == that.supportRemoteConnection;
+        ServerNamingAbility that = (ServerNamingAbility) o;
+        return supportJraft == that.supportJraft;
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(supportRemoteConnection);
+        return Objects.hash(supportJraft);
     }
 }

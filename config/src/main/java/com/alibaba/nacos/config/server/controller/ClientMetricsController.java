@@ -71,7 +71,7 @@ public class ClientMetricsController {
      * get client metric.
      *
      * @param ip client ip .
-     * @return
+     * @return ResponseEntity
      */
     @GetMapping("/cluster")
     public ResponseEntity metric(@RequestParam("ip") String ip,
