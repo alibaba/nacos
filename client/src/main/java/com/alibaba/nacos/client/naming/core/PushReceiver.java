@@ -53,6 +53,8 @@ public class PushReceiver implements Runnable, Closeable {
     
     private static final String PUSH_PACKAGE_TYPE_DUMP = "dump";
     
+    private static final String NACOS_NAMING_PUSH_RECEIVER_THREAD_NAME = "com.alibaba.nacos.naming.push.receiver";
+    
     private ScheduledExecutorService executorService;
     
     private DatagramSocket udpSocket;
@@ -79,7 +81,7 @@ public class PushReceiver implements Runnable, Closeable {
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r);
                     thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.push.receiver");
+                    thread.setName(NACOS_NAMING_PUSH_RECEIVER_THREAD_NAME);
                     return thread;
                 }
             });

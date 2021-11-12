@@ -206,7 +206,7 @@ public class NamingHttpClientProxyTest {
         Service service = clientProxy.queryService(serviceName, groupName);
         //then
         verify(nacosRestTemplate, times(1))
-                .exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(), eq(HttpMethod.GET), any());
+                .exchangeForm(endsWith(UtilAndComs.webContext + "/v1/ns/service"), any(), any(), any(), eq(HttpMethod.GET), any());
         Assert.assertEquals(serviceName, service.getName());
         Assert.assertEquals(groupName, service.getGroupName());
     }
@@ -235,7 +235,7 @@ public class NamingHttpClientProxyTest {
         clientProxy.createService(new Service(), new NoneSelector());
         //then
         verify(nacosRestTemplate, times(1))
-                .exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(), eq(HttpMethod.POST), any());
+                .exchangeForm(endsWith(UtilAndComs.webContext + "/v1/ns/service"), any(), any(), any(), eq(HttpMethod.POST), any());
     }
     
     @Test
@@ -264,7 +264,7 @@ public class NamingHttpClientProxyTest {
         clientProxy.deleteService(serviceName, groupName);
         //then
         verify(nacosRestTemplate, times(1))
-                .exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(), eq(HttpMethod.DELETE), any());
+                .exchangeForm(endsWith(UtilAndComs.webContext + "/v1/ns/service"), any(), any(), any(), eq(HttpMethod.DELETE), any());
     }
     
     @Test
@@ -293,7 +293,7 @@ public class NamingHttpClientProxyTest {
         clientProxy.updateService(new Service(), new NoneSelector());
         //then
         verify(nacosRestTemplate, times(1))
-                .exchangeForm(endsWith(UtilAndComs.nacosUrlService), any(), any(), any(), eq(HttpMethod.PUT), any());
+                .exchangeForm(endsWith(UtilAndComs.webContext + "/v1/ns/service"), any(), any(), any(), eq(HttpMethod.PUT), any());
         
     }
     

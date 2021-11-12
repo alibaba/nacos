@@ -35,6 +35,10 @@ public class GroupKey {
     
     private static final char FIVE = '5';
     
+    private static final String PERCENT_2B = "%2B";
+    
+    private static final String PERCENT_25 = "%25";
+    
     public static String getKey(String dataId, String group) {
         return getKey(dataId, group, "");
     }
@@ -127,9 +131,9 @@ public class GroupKey {
         for (int idx = 0; idx < str.length(); ++idx) {
             char c = str.charAt(idx);
             if (PLUS == c) {
-                sb.append("%2B");
+                sb.append(PERCENT_2B);
             } else if (PERCENT == c) {
-                sb.append("%25");
+                sb.append(PERCENT_25);
             } else {
                 sb.append(c);
             }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -55,6 +56,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class ServerListManager implements ServerListFactory, Closeable {
+    
+    private static final String NACOS_URL_SERVER_LIST = "/nacos/serverlist";
     
     private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
     
@@ -110,7 +113,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private List<String> getServerListFromEndpoint() {
         try {
-            String urlString = "http://" + endpoint + "/nacos/serverlist";
+            String urlString = Constants.Protocols.HTTP + endpoint + NACOS_URL_SERVER_LIST;
             Header header = NamingHttpUtil.builderHeader();
             Query query = StringUtils.isNotBlank(namespace)
                     ? Query.newInstance().addParam("namespace", namespace)

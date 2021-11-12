@@ -27,11 +27,21 @@ public class StsConfig {
     
     private static final String RAM_SECURITY_CREDENTIALS_URL = "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
     
+    private static final String RAM_ROLE_NAME_PROPERTY = "ram.role.name";
+    
+    private static final String REFRESH_TIME_PROPERTY = "time.to.refresh.in.millisecond";
+    
+    private static final String SECURITY_PROPERTY = "security.credentials";
+    
+    private static final String SECURITY_URL_PROPERTY = "security.credentials.url";
+    
+    private static final String SECURITY_CACHE_PROPERTY = "cache.security.credentials";
+    
     private String ramRoleName;
     
     /**
-     * The STS temporary certificate will be refreshed when the validity period of
-     * the temporary certificate is left (allow the local time to be at most slower than the STS service time).
+     * The STS temporary certificate will be refreshed when the validity period of the temporary certificate is left
+     * (allow the local time to be at most slower than the STS service time).
      */
     private int timeToRefreshInMillisecond = 3 * 60 * 1000;
     
@@ -50,33 +60,28 @@ public class StsConfig {
      */
     private boolean cacheSecurityCredentials = true;
     
-    private static class Singleton {
-        
-        private static final StsConfig INSTANCE = new StsConfig();
-    }
-    
     private StsConfig() {
-        String ramRoleName = System.getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
+        String ramRoleName = System.getProperty(RAM_ROLE_NAME_PROPERTY);
         if (!StringUtils.isBlank(ramRoleName)) {
             setRamRoleName(ramRoleName);
         }
         
-        String timeToRefreshInMillisecond = System.getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
+        String timeToRefreshInMillisecond = System.getProperty(REFRESH_TIME_PROPERTY);
         if (!StringUtils.isBlank(timeToRefreshInMillisecond)) {
             setTimeToRefreshInMillisecond(Integer.parseInt(timeToRefreshInMillisecond));
         }
         
-        String securityCredentials = System.getProperty(IdentifyConstants.SECURITY_PROPERTY);
+        String securityCredentials = System.getProperty(SECURITY_PROPERTY);
         if (!StringUtils.isBlank(securityCredentials)) {
             setSecurityCredentials(securityCredentials);
         }
         
-        String securityCredentialsUrl = System.getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
+        String securityCredentialsUrl = System.getProperty(SECURITY_URL_PROPERTY);
         if (!StringUtils.isBlank(securityCredentialsUrl)) {
             setSecurityCredentialsUrl(securityCredentialsUrl);
         }
         
-        String cacheSecurityCredentials = System.getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
+        String cacheSecurityCredentials = System.getProperty(SECURITY_CACHE_PROPERTY);
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
             setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }
@@ -131,5 +136,10 @@ public class StsConfig {
     
     public void setCacheSecurityCredentials(boolean cacheSecurityCredentials) {
         this.cacheSecurityCredentials = cacheSecurityCredentials;
+    }
+    
+    private static class Singleton {
+        
+        private static final StsConfig INSTANCE = new StsConfig();
     }
 }

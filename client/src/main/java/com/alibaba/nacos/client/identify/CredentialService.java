@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.identify;
 
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -31,6 +32,8 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private static final Logger LOGGER = LogUtils.logger(CredentialService.class);
     
+    private static final String NO_APP_NAME = "";
+    
     private static final ConcurrentHashMap<String, CredentialService> INSTANCES = new ConcurrentHashMap<String, CredentialService>();
     
     private final String appName;
@@ -43,7 +46,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = System.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
+            String value = System.getProperty(Constants.SysEnv.PROJECT_NAME);
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
@@ -57,7 +60,7 @@ public final class CredentialService implements SpasCredentialLoader {
     }
     
     public static CredentialService getInstance(String appName) {
-        String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
+        String key = appName != null ? appName : NO_APP_NAME;
         CredentialService instance = INSTANCES.get(key);
         if (instance != null) {
             return instance;
@@ -81,7 +84,7 @@ public final class CredentialService implements SpasCredentialLoader {
      * @return {@link CredentialService}
      */
     public static CredentialService freeInstance(String appName) {
-        String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
+        String key = appName != null ? appName : NO_APP_NAME;
         CredentialService instance = INSTANCES.remove(key);
         if (instance != null) {
             instance.free();

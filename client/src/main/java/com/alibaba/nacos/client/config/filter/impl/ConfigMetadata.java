@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.common;
+package com.alibaba.nacos.client.config.filter.impl;
 
 /**
- * config common constants.
+ * There are some constants of the config request and response in the package scope .
  *
- * @author Nacos
+ * @author onewe
  */
-public class ConfigConstants {
+class ConfigMetadata {
     
     public static final String TENANT = "tenant";
     
@@ -36,4 +36,5 @@ public class ConfigConstants {
     public static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
     
     public static final String TYPE = "type";
+    
 }

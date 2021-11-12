@@ -24,7 +24,6 @@ import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -51,6 +50,11 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private static final int DEFAULT_UPDATE_CACHE_TIME_MULTIPLE = 6;
     
+    private static final int DEFAULT_POLLING_THREAD_COUNT =
+            ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
+    
+    private static final String NACOS_CLIENT_NAMING_UPDATER = "com.alibaba.nacos.client.naming.updater";
+    
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
     
     private final ServiceInfoHolder serviceInfoHolder;
@@ -64,7 +68,7 @@ public class ServiceInfoUpdateService implements Closeable {
     public ServiceInfoUpdateService(Properties properties, ServiceInfoHolder serviceInfoHolder,
             NamingClientProxy namingClientProxy, InstancesChangeNotifier changeNotifier) {
         this.executor = new ScheduledThreadPoolExecutor(initPollingThreadCount(properties),
-                new NameThreadFactory("com.alibaba.nacos.client.naming.updater"));
+                new NameThreadFactory(NACOS_CLIENT_NAMING_UPDATER));
         this.serviceInfoHolder = serviceInfoHolder;
         this.namingClientProxy = namingClientProxy;
         this.changeNotifier = changeNotifier;
@@ -72,10 +76,10 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private int initPollingThreadCount(Properties properties) {
         if (properties == null) {
-            return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
+            return DEFAULT_POLLING_THREAD_COUNT;
         }
         return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
-                UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+                DEFAULT_POLLING_THREAD_COUNT);
     }
     
     /**
@@ -134,8 +138,6 @@ public class ServiceInfoUpdateService implements Closeable {
     
     public class UpdateTask implements Runnable {
         
-        long lastRefTime = Long.MAX_VALUE;
-        
         private final String serviceName;
         
         private final String groupName;
@@ -145,7 +147,9 @@ public class ServiceInfoUpdateService implements Closeable {
         private final String groupedServiceName;
         
         private final String serviceKey;
-    
+        
+        long lastRefTime = Long.MAX_VALUE;
+        
         /**
          * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
          */
@@ -164,9 +168,9 @@ public class ServiceInfoUpdateService implements Closeable {
             long delayTime = DEFAULT_DELAY;
             
             try {
-                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(serviceKey)) {
-                    NAMING_LOGGER
-                            .info("update task is stopped, service:{}, clusters:{}", groupedServiceName, clusters);
+                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap
+                        .containsKey(serviceKey)) {
+                    NAMING_LOGGER.info("update task is stopped, service:{}, clusters:{}", groupedServiceName, clusters);
                     return;
                 }
                 

@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
@@ -83,7 +84,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String WEIGHT_PARAM = "weight";
     
-    private static final String ENABLE_PARAM = "enabled";
+    private static final String ENABLED_PARAM = "enabled";
+    
+    private static final String ENABLE_PARAM = "enable";
     
     private static final String EPHEMERAL_PARAM = "ephemeral";
     
@@ -104,6 +107,26 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
     
     private static final String SERVICE_NAME_PARAM = "serviceName";
+    
+    private static final String RET_CODE_OK = "ok";
+    
+    private static final String NACOS_URL_BASE = "/v1/ns";
+    
+    public static final String NACOS_URL_INSTANCE = NACOS_URL_BASE + "/instance";
+    
+    public static final String NACOS_URL_SERVICE = NACOS_URL_BASE + "/service";
+    
+    public static final String NACOS_URL_SERVICE_LIST = NACOS_URL_SERVICE + "/list";
+    
+    public static final String NACOS_URL_INSTANCE_LIST = NACOS_URL_INSTANCE + "/list";
+    
+    public static final String NACOS_URL_INSTANCE_BEAT = NACOS_URL_INSTANCE + "/beat";
+    
+    public static final String NACOS_URL_OPERATOR = NACOS_URL_BASE + "/operator";
+    
+    public static final String NACOS_URL_OPERATOR_METRICS = NACOS_URL_OPERATOR + "/metrics";
+    
+    private static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
     
     private final String namespaceId;
     
@@ -126,7 +149,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         this.beatReactor = new BeatReactor(this, properties);
         this.pushReceiver = new PushReceiver(serviceInfoHolder);
         this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
-                String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
+                String.valueOf(REQUEST_DOMAIN_RETRY_COUNT)));
     }
     
     @Override
@@ -157,12 +180,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(IP_PARAM, instance.getIp());
         params.put(PORT_PARAM, String.valueOf(instance.getPort()));
         params.put(WEIGHT_PARAM, String.valueOf(instance.getWeight()));
-        params.put("enable", String.valueOf(instance.isEnabled()));
+        params.put(ENABLE_PARAM, String.valueOf(instance.isEnabled()));
         params.put(HEALTHY_PARAM, String.valueOf(instance.isHealthy()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
         
-        reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.POST);
+        reqApi(UtilAndComs.webContext + NACOS_URL_INSTANCE, params, HttpMethod.POST);
         
     }
     
@@ -183,7 +206,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(PORT_PARAM, String.valueOf(instance.getPort()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
         
-        reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.DELETE);
+        reqApi(UtilAndComs.webContext  + NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
     }
     
     @Override
@@ -199,11 +222,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(IP_PARAM, instance.getIp());
         params.put(PORT_PARAM, String.valueOf(instance.getPort()));
         params.put(WEIGHT_PARAM, String.valueOf(instance.getWeight()));
-        params.put(ENABLE_PARAM, String.valueOf(instance.isEnabled()));
+        params.put(ENABLED_PARAM, String.valueOf(instance.isEnabled()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
         
-        reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.PUT);
+        reqApi(UtilAndComs.webContext  + NACOS_URL_INSTANCE, params, HttpMethod.PUT);
     }
     
     @Override
@@ -216,7 +239,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(UDP_PORT_PARAM, String.valueOf(udpPort));
         params.put(CLIENT_IP_PARAM, NetUtils.localIP());
         params.put(HEALTHY_ONLY_PARAM, String.valueOf(healthyOnly));
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
+        String result = reqApi(UtilAndComs.webContext + NACOS_URL_INSTANCE_LIST, params, HttpMethod.GET);
         if (StringUtils.isNotEmpty(result)) {
             return JacksonUtils.toObj(result, ServiceInfo.class);
         }
@@ -232,7 +255,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
         
-        String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
+        String result = reqApi(UtilAndComs.webContext + NACOS_URL_SERVICE, params, HttpMethod.GET);
         return JacksonUtils.toObj(result, Service.class);
     }
     
@@ -249,7 +272,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(META_PARAM, JacksonUtils.toJson(service.getMetadata()));
         params.put(SELECTOR_PARAM, JacksonUtils.toJson(selector));
         
-        reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.POST);
+        reqApi(UtilAndComs.webContext  + NACOS_URL_SERVICE, params, HttpMethod.POST);
         
     }
     
@@ -263,8 +286,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
         
-        String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.DELETE);
-        return "ok".equals(result);
+        String result = reqApi(UtilAndComs.webContext + NACOS_URL_SERVICE, params, HttpMethod.DELETE);
+        return RET_CODE_OK.equals(result);
     }
     
     @Override
@@ -279,7 +302,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(META_PARAM, JacksonUtils.toJson(service.getMetadata()));
         params.put(SELECTOR_PARAM, JacksonUtils.toJson(selector));
         
-        reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.PUT);
+        reqApi(UtilAndComs.webContext + NACOS_URL_SERVICE, params, HttpMethod.PUT);
     }
     
     /**
@@ -305,7 +328,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.CLUSTER_NAME, beatInfo.getCluster());
         params.put(IP_PARAM, beatInfo.getIp());
         params.put(PORT_PARAM, String.valueOf(beatInfo.getPort()));
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/beat", params, bodyMap, HttpMethod.PUT);
+        String result = reqApi(UtilAndComs.webContext + NACOS_URL_INSTANCE_BEAT, params, bodyMap, HttpMethod.PUT);
         return JacksonUtils.toObj(result);
     }
     
@@ -313,11 +336,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public boolean serverHealthy() {
         
         try {
-            String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<String, String>(8),
+            String result = reqApi(UtilAndComs.webContext + NACOS_URL_OPERATOR_METRICS, new HashMap<String, String>(8),
                     HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
             String serverStatus = json.get("status").asText();
-            return "UP".equals(serverStatus);
+            return Constants.HealthCheck.UP.equals(serverStatus);
         } catch (Exception e) {
             return false;
         }
@@ -346,7 +369,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             }
         }
         
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
+        String result = reqApi(UtilAndComs.webContext + NACOS_URL_SERVICE_LIST, params, HttpMethod.GET);
         
         JsonNode json = JacksonUtils.toObj(result);
         ListView<String> listView = new ListView<String>();
@@ -466,7 +489,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Header header = NamingHttpUtil.builderHeader();
         
         String url;
-        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+        if (curServer.startsWith(Constants.Protocols.HTTPS) || curServer.startsWith(Constants.Protocols.HTTP)) {
             url = curServer + api;
         } else {
             if (!InternetAddressUtil.containsPort(curServer)) {

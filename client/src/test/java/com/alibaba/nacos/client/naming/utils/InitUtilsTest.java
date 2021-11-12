@@ -32,8 +32,8 @@ public class InitUtilsTest {
         properties.put(PropertyKeyConst.CONTEXT_PATH, ctx);
         InitUtils.initWebRootContext(properties);
         Assert.assertEquals(ctx, UtilAndComs.webContext);
-        Assert.assertEquals(ctx + "/v1/ns", UtilAndComs.nacosUrlBase);
-        Assert.assertEquals(ctx + "/v1/ns/instance", UtilAndComs.nacosUrlInstance);
+        Assert.assertEquals(ctx + "/v1/ns", UtilAndComs.webContext + "/v1/ns");
+        Assert.assertEquals(ctx + "/v1/ns/instance", UtilAndComs.webContext + "/v1/ns/instance");
     }
     
     /**

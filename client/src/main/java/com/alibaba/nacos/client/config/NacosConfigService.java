@@ -41,6 +41,9 @@ import org.slf4j.Logger;
 import java.util.Arrays;
 import java.util.Properties;
 
+import static com.alibaba.nacos.client.constant.Constants.HealthCheck.DOWN;
+import static com.alibaba.nacos.client.constant.Constants.HealthCheck.UP;
+
 /**
  * Config Impl.
  *
@@ -50,10 +53,6 @@ import java.util.Properties;
 public class NacosConfigService implements ConfigService {
     
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
-    
-    private static final String UP = "UP";
-    
-    private static final String DOWN = "DOWN";
     
     /**
      * will be deleted in 2.0 later versions

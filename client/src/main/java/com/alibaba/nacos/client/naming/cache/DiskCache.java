@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.StringReader;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +42,12 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xuanyin
  */
 public class DiskCache {
+    
+    private static final String LINE_SEPARATOR = "line.separator";
+    
+    private static final String META = "meta";
+    
+    private static final String SPECIAL_URL = "special-url";
     
     /**
      * Write service info to dir.
@@ -80,7 +87,7 @@ public class DiskCache {
     }
     
     public static String getLineSeparator() {
-        return System.getProperty("line.separator");
+        return System.getProperty(LINE_SEPARATOR);
     }
     
     /**
@@ -104,10 +111,10 @@ public class DiskCache {
                     continue;
                 }
                 
-                String fileName = URLDecoder.decode(file.getName(), "UTF-8");
+                String fileName = URLDecoder.decode(file.getName(), StandardCharsets.UTF_8.name());
                 
-                if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName
-                        .endsWith(Constants.SERVICE_INFO_SPLITER + "special-url"))) {
+                if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + META) || fileName.endsWith(
+                        Constants.SERVICE_INFO_SPLITER + SPECIAL_URL))) {
                     ServiceInfo dom = new ServiceInfo(fileName);
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);
@@ -115,8 +122,8 @@ public class DiskCache {
                     ServiceInfo newFormat = null;
                     
                     try {
-                        String dataString = ConcurrentDiskUtil
-                                .getFileContent(file, Charset.defaultCharset().toString());
+                        String dataString = ConcurrentDiskUtil.getFileContent(file,
+                                Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
                         
                         String json;
@@ -146,8 +153,8 @@ public class DiskCache {
                             //ignore
                         }
                     }
-                    if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils
-                            .isEmpty(newFormat.getHosts())) {
+                    if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils.isEmpty(
+                            newFormat.getHosts())) {
                         domMap.put(dom.getKey(), newFormat);
                     } else if (!CollectionUtils.isEmpty(dom.getHosts())) {
                         domMap.put(dom.getKey(), dom);

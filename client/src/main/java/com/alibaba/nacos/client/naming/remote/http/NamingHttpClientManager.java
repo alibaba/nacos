@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -36,10 +37,14 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class NamingHttpClientManager implements Closeable {
     
-    private static final int READ_TIME_OUT_MILLIS = Integer
-            .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
+    private static final String NACOS_CLIENT_NAMING_RTIMEOUT = "com.alibaba.nacos.client.naming.rtimeout";
     
-    private static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    private static final String NACOS_CLIENT_NAMING_CTIMEOUT = "com.alibaba.nacos.client.naming.ctimeout";
+    
+    private static final int READ_TIME_OUT_MILLIS = Integer
+            .getInteger(NACOS_CLIENT_NAMING_RTIMEOUT, 50000);
+    
+    private static final int CON_TIME_OUT_MILLIS = Integer.getInteger(NACOS_CLIENT_NAMING_CTIMEOUT, 3000);
     
     private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
@@ -58,9 +63,9 @@ public class NamingHttpClientManager implements Closeable {
     
     public String getPrefix() {
         if (ENABLE_HTTPS) {
-            return "https://";
+            return Constants.Protocols.HTTPS;
         }
-        return "http://";
+        return Constants.Protocols.HTTP;
     }
     
     public NacosRestTemplate getNacosRestTemplate() {

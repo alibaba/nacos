@@ -43,23 +43,47 @@ public class CredentialWatcher {
     
     private static final long REFRESH_INTERVAL = 10 * 1000L;
     
+    private static final String ACCESS_KEY = "accessKey";
+    
+    private static final String SECRET_KEY = "secretKey";
+    
+    private static final String TENANT_ID = "tenantId";
+    
+    private static final String PROPERTIES_FILENAME = "spas.properties";
+    
+    private static final String CREDENTIAL_PATH = "/home/admin/.spas_key/";
+    
+    private static final String CREDENTIAL_DEFAULT = "default";
+    
+    private static final String DOCKER_CREDENTIAL_PATH = "/etc/instanceInfo";
+    
+    private static final String DOCKER_ACCESS_KEY = "env_spas_accessKey";
+    
+    private static final String DOCKER_SECRET_KEY = "env_spas_secretKey";
+    
+    private static final String DOCKER_TENANT_ID = "ebv_spas_tenantId";
+    
+    private static final String SPAS_IDENTITY = "spas.identity";
+    
+    private static final String NACOS_CLIENT_IDENTIFY_WATCHER_THREAD_NAME = "com.alibaba.nacos.client.identify.watcher";
+    
     private final CredentialService serviceInstance;
     
     private final String appName;
     
+    private final ScheduledExecutorService executor;
+    
     private String propertyPath;
     
     private boolean stopped;
-    
-    private final ScheduledExecutorService executor;
     
     public CredentialWatcher(String appName, CredentialService serviceInstance) {
         this.appName = appName;
         this.serviceInstance = serviceInstance;
         loadCredential(true);
         
-        executor = ExecutorFactory
-                .newSingleScheduledExecutorService(new NameThreadFactory("com.alibaba.nacos.client.identify.watcher"));
+        executor = ExecutorFactory.newSingleScheduledExecutorService(
+                new NameThreadFactory(NACOS_CLIENT_IDENTIFY_WATCHER_THREAD_NAME));
         
         executor.scheduleWithFixedDelay(new Runnable() {
             private long modified = 0;
@@ -107,20 +131,18 @@ public class CredentialWatcher {
     
     private void loadCredential(boolean init) {
         if (propertyPath == null) {
-            URL url = ClassLoader.getSystemResource(IdentifyConstants.PROPERTIES_FILENAME);
+            URL url = ClassLoader.getSystemResource(PROPERTIES_FILENAME);
             if (url != null) {
                 propertyPath = url.getPath();
             }
             if (propertyPath == null || propertyPath.isEmpty()) {
                 
-                String value = System.getProperty("spas.identity");
+                String value = System.getProperty(SPAS_IDENTITY);
                 if (StringUtils.isNotEmpty(value)) {
                     propertyPath = value;
                 }
                 if (propertyPath == null || propertyPath.isEmpty()) {
-                    propertyPath =
-                            IdentifyConstants.CREDENTIAL_PATH + (appName == null ? IdentifyConstants.CREDENTIAL_DEFAULT
-                                    : appName);
+                    propertyPath = CREDENTIAL_PATH + (appName == null ? CREDENTIAL_DEFAULT : appName);
                 } else {
                     if (init) {
                         SPAS_LOGGER.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
@@ -128,8 +150,7 @@ public class CredentialWatcher {
                 }
             } else {
                 if (init) {
-                    SPAS_LOGGER.info("[{}] Load credential file from classpath: {}", appName,
-                            IdentifyConstants.PROPERTIES_FILENAME);
+                    SPAS_LOGGER.info("[{}] Load credential file from classpath: {}", appName, PROPERTIES_FILENAME);
                 }
             }
         }
@@ -139,13 +160,13 @@ public class CredentialWatcher {
             try {
                 propertiesIS = new FileInputStream(propertyPath);
             } catch (FileNotFoundException e) {
-                if (appName != null && !appName.equals(IdentifyConstants.CREDENTIAL_DEFAULT) && propertyPath
-                        .equals(IdentifyConstants.CREDENTIAL_PATH + appName)) {
-                    propertyPath = IdentifyConstants.CREDENTIAL_PATH + IdentifyConstants.CREDENTIAL_DEFAULT;
+                if (appName != null && !appName.equals(CREDENTIAL_DEFAULT) && propertyPath.equals(
+                        CREDENTIAL_PATH + appName)) {
+                    propertyPath = CREDENTIAL_PATH + CREDENTIAL_DEFAULT;
                     continue;
                 }
-                if (!IdentifyConstants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
-                    propertyPath = IdentifyConstants.DOCKER_CREDENTIAL_PATH;
+                if (!DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
+                    propertyPath = DOCKER_CREDENTIAL_PATH;
                     continue;
                 }
             }
@@ -157,8 +178,8 @@ public class CredentialWatcher {
         String tenantId = null;
         if (propertiesIS == null) {
             propertyPath = null;
-            accessKey = System.getenv(IdentifyConstants.ENV_ACCESS_KEY);
-            secretKey = System.getenv(IdentifyConstants.ENV_SECRET_KEY);
+            accessKey = System.getenv(ACCESS_KEY);
+            secretKey = System.getenv(SECRET_KEY);
             if (accessKey == null && secretKey == null) {
                 if (init) {
                     SPAS_LOGGER.info("{} No credential found", appName);
@@ -170,8 +191,9 @@ public class CredentialWatcher {
             try {
                 properties.load(propertiesIS);
             } catch (IOException e) {
-                SPAS_LOGGER.error("[26] Unable to load credential file, appName:" + appName
-                        + "Unable to load credential file " + propertyPath, e);
+                SPAS_LOGGER.error(
+                        "[26] Unable to load credential file, appName:" + appName + "Unable to load credential file "
+                                + propertyPath, e);
                 propertyPath = null;
                 return;
             } finally {
@@ -187,26 +209,26 @@ public class CredentialWatcher {
                 SPAS_LOGGER.info("[{}] Load credential file {}", appName, propertyPath);
             }
             
-            if (!IdentifyConstants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
-                if (properties.containsKey(IdentifyConstants.ACCESS_KEY)) {
-                    accessKey = properties.getProperty(IdentifyConstants.ACCESS_KEY);
+            if (!DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
+                if (properties.containsKey(ACCESS_KEY)) {
+                    accessKey = properties.getProperty(ACCESS_KEY);
                 }
-                if (properties.containsKey(IdentifyConstants.SECRET_KEY)) {
-                    secretKey = properties.getProperty(IdentifyConstants.SECRET_KEY);
+                if (properties.containsKey(SECRET_KEY)) {
+                    secretKey = properties.getProperty(SECRET_KEY);
                 }
-                if (properties.containsKey(IdentifyConstants.TENANT_ID)) {
-                    tenantId = properties.getProperty(IdentifyConstants.TENANT_ID);
+                if (properties.containsKey(TENANT_ID)) {
+                    tenantId = properties.getProperty(TENANT_ID);
                 }
             } else {
-                if (properties.containsKey(IdentifyConstants.DOCKER_ACCESS_KEY)) {
-                    accessKey = properties.getProperty(IdentifyConstants.DOCKER_ACCESS_KEY);
+                if (properties.containsKey(DOCKER_ACCESS_KEY)) {
+                    accessKey = properties.getProperty(DOCKER_ACCESS_KEY);
                 }
-                if (properties.containsKey(IdentifyConstants.DOCKER_SECRET_KEY)) {
-                    secretKey = properties.getProperty(IdentifyConstants.DOCKER_SECRET_KEY);
+                if (properties.containsKey(DOCKER_SECRET_KEY)) {
+                    secretKey = properties.getProperty(DOCKER_SECRET_KEY);
                 }
                 
-                if (properties.containsKey(IdentifyConstants.DOCKER_TENANT_ID)) {
-                    tenantId = properties.getProperty(IdentifyConstants.DOCKER_TENANT_ID);
+                if (properties.containsKey(DOCKER_TENANT_ID)) {
+                    tenantId = properties.getProperty(DOCKER_TENANT_ID);
                 }
             }
         }
@@ -224,9 +246,8 @@ public class CredentialWatcher {
         
         Credentials credential = new Credentials(accessKey, secretKey, tenantId);
         if (!credential.valid()) {
-            SPAS_LOGGER
-                    .warn("[1] Credential file missing required property {} Credential file missing {} or {}", appName,
-                            IdentifyConstants.ACCESS_KEY, IdentifyConstants.SECRET_KEY);
+            SPAS_LOGGER.warn("[1] Credential file missing required property {} Credential file missing {} or {}",
+                    appName, ACCESS_KEY, SECRET_KEY);
             propertyPath = null;
             // return;
         }
