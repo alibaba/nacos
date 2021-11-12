@@ -83,7 +83,7 @@ public class ConfigServletInnerTest {
     @Test
     public void testDoPollingConfig() throws Exception {
         
-        Mockito.mockStatic(MD5Util.class);
+        final MockedStatic<MD5Util> md5Util =  Mockito.mockStatic(MD5Util.class);
         Map<String, String> clientMd5Map = new HashMap<>();
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -101,6 +101,8 @@ public class ConfigServletInnerTest {
         Assert.assertEquals("test-old", response.getHeader(Constants.PROBE_MODIFY_RESPONSE));
         Assert.assertEquals("test-new", response.getHeader(Constants.PROBE_MODIFY_RESPONSE_NEW));
         Assert.assertEquals("no-cache,no-store", response.getHeader("Cache-Control"));
+        
+        md5Util.close();
         
     }
     
