@@ -45,10 +45,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.StringTokenizer;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -81,14 +79,11 @@ public class ServerListManager implements Closeable {
     
     private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
-    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName(NACOS_CLIENT_SERVER_LIST_MANAGE_THREAD_NAME);
-            t.setDaemon(true);
-            return t;
-        }
+    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread t = new Thread(r);
+        t.setName(NACOS_CLIENT_SERVER_LIST_MANAGE_THREAD_NAME);
+        t.setDaemon(true);
+        return t;
     });
     
     /**
@@ -104,8 +99,6 @@ public class ServerListManager implements Closeable {
     
     boolean isStarted = false;
     
-    volatile List<String> serverUrls = new ArrayList<String>();
-    
     private String namespace = "";
     
     private String tenant = "";
@@ -117,6 +110,8 @@ public class ServerListManager implements Closeable {
     private String contentPath = ParamUtil.getDefaultContextPath();
     
     private String serverListName = ParamUtil.getDefaultNodesPath();
+    
+    volatile List<String> serverUrls = new ArrayList<>();
     
     private volatile String currentServerAddr;
     
@@ -137,7 +132,7 @@ public class ServerListManager implements Closeable {
     public ServerListManager(List<String> fixed, String namespace) {
         this.isFixed = true;
         this.isStarted = true;
-        List<String> serverAddrs = new ArrayList<String>();
+        List<String> serverAddrs = new ArrayList<>();
         for (String serverAddr : fixed) {
             String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
@@ -147,7 +142,7 @@ public class ServerListManager implements Closeable {
                 serverAddrs.add(serverAddr);
             }
         }
-        this.serverUrls = new ArrayList<String>(serverAddrs);
+        this.serverUrls = new ArrayList<>(serverAddrs);
         if (StringUtils.isBlank(namespace)) {
             this.name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()]));
         } else {
@@ -203,7 +198,7 @@ public class ServerListManager implements Closeable {
         
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             this.isFixed = true;
-            List<String> serverAddrs = new ArrayList<String>();
+            List<String> serverAddrs = new ArrayList<>();
             StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
             while (serverAddrsTokens.hasMoreTokens()) {
                 String serverAddr = serverAddrsTokens.nextToken().trim();
@@ -264,14 +259,10 @@ public class ServerListManager implements Closeable {
     
     private String initEndpoint(final Properties properties) {
         
-        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(
-                System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
-                    @Override
-                    public String call() {
-                        return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
-                    }
-                });
-        
+        String endpointPortTmp = TemplateUtils
+                .stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
+                        () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
+
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             this.endpointPort = Integer.parseInt(endpointPortTmp);
         }
@@ -351,7 +342,7 @@ public class ServerListManager implements Closeable {
             return;
         }
         
-        List<String> newServerAddrList = new ArrayList<String>();
+        List<String> newServerAddrList = new ArrayList<>();
         for (String server : newList) {
             if (server.startsWith(Constants.Protocols.HTTP) || server.startsWith(Constants.Protocols.HTTPS)) {
                 newServerAddrList.add(server);
@@ -366,7 +357,7 @@ public class ServerListManager implements Closeable {
         if (newServerAddrList.equals(serverUrls)) {
             return;
         }
-        serverUrls = new ArrayList<String>(newServerAddrList);
+        serverUrls = new ArrayList<>(newServerAddrList);
         iterator = iterator();
         currentServerAddr = iterator.next();
         
@@ -384,7 +375,7 @@ public class ServerListManager implements Closeable {
                     EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());
                 }
                 List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
-                List<String> result = new ArrayList<String>(lines.size());
+                List<String> result = new ArrayList<>(lines.size());
                 for (String serverAddr : lines) {
                     if (StringUtils.isNotBlank(serverAddr)) {
                         String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
