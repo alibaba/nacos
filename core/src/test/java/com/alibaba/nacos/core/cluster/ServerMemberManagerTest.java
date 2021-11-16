@@ -22,11 +22,15 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.boot.web.context.WebServerInitializedEvent;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import javax.servlet.ServletContext;
@@ -53,6 +57,9 @@ public class ServerMemberManagerTest {
     
     @Mock
     private EventPublisher eventPublisher;
+    
+    @Mock
+    private WebServerInitializedEvent mockEvent;
     
     private ServerMemberManager serverMemberManager;
     
@@ -152,5 +159,15 @@ public class ServerMemberManagerTest {
     @Test
     public void testGetServerList() {
         assertEquals(2, serverMemberManager.getServerList().size());
+    }
+    
+    @Test
+    public void testEnvSetPort() {
+        ServletWebServerApplicationContext context = new ServletWebServerApplicationContext();
+        context.setServerNamespace("management");
+        Mockito.when(mockEvent.getApplicationContext()).thenReturn(context);
+        serverMemberManager.onApplicationEvent(mockEvent);
+        int port = EnvUtil.getPort();
+        Assert.assertEquals(port, 8848);
     }
 }
