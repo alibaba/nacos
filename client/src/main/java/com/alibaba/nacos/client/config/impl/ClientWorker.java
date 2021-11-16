@@ -259,10 +259,11 @@ public class ClientWorker implements Closeable {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
-            cacheData.setContent(content);
+            // FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
             String encryptedDataKey = LocalEncryptedDataKeyProcessor
                     .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
             cacheData.setEncryptedDataKey(encryptedDataKey);
+            cacheData.setContent(content);
             
             LOGGER.warn(
                     "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
@@ -285,10 +286,11 @@ public class ClientWorker implements Closeable {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
-            cacheData.setContent(content);
+            // FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
             String encryptedDataKey = LocalEncryptedDataKeyProcessor
                     .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
             cacheData.setEncryptedDataKey(encryptedDataKey);
+            cacheData.setContent(content);
             LOGGER.warn(
                     "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
                     agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
@@ -547,8 +549,9 @@ public class ClientWorker implements Closeable {
                     try {
                         ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
-                        cache.setContent(response.getContent());
+                        // FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
                         cache.setEncryptedDataKey(response.getEncryptedDataKey());
+                        cache.setContent(response.getContent());
                         if (null != response.getConfigType()) {
                             cache.setType(response.getConfigType());
                         }
