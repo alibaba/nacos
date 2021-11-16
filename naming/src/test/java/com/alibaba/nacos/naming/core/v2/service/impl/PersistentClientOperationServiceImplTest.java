@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.service.impl;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.Serializer;
@@ -79,6 +80,7 @@ public class PersistentClientOperationServiceImplTest {
     
     @Before
     public void setUp() throws Exception {
+        when(service.getNamespace()).thenReturn("n");
         when(applicationContext.getBean(ProtocolManager.class)).thenReturn(protocolManager);
         when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         when(serializer.serialize(any(PersistentClientOperationServiceImpl.InstanceStoreRequest.class)))
@@ -88,6 +90,12 @@ public class PersistentClientOperationServiceImplTest {
         serializerField.setAccessible(true);
         persistentClientOperationServiceImpl = new PersistentClientOperationServiceImpl(clientManager);
         serializerField.set(persistentClientOperationServiceImpl, serializer);
+    }
+    
+    @Test(expected = NacosRuntimeException.class)
+    public void testRegisterPersistentInstance() {
+        when(service.isEphemeral()).thenReturn(true);
+        persistentClientOperationServiceImpl.registerInstance(service, instance, clientId);
     }
     
     @Test
