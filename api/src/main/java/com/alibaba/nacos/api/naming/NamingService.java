@@ -339,7 +339,7 @@ public interface NamingService {
      * @throws NacosException nacos exception
      */
     List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy,
-            boolean subscribe) throws NacosException;
+                                   boolean subscribe) throws NacosException;
     
     /**
      * Select one healthy instance of service using predefined load balance strategy.

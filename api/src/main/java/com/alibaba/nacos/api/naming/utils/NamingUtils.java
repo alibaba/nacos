@@ -33,7 +33,7 @@ public class NamingUtils {
      * Returns a combined string with serviceName and groupName. serviceName can not be nil.
      *
      * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
-     * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
+     * NamingUtils#getGroupedNameOptional(String, String)}
      *
      * <p>etc:
      * <p>serviceName | groupName | result</p>
@@ -97,7 +97,7 @@ public class NamingUtils {
     
     /**
      * Returns a combined string with serviceName and groupName. Such as 'groupName@@serviceName'
-     * <p>This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not
+     * <p>This method works similar with {@link NamingUtils#getGroupedName} But not
      * verify any parameters.
      *
      * </p> etc:

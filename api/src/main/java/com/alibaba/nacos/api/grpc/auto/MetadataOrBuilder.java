@@ -48,7 +48,7 @@ public interface MetadataOrBuilder extends
    * <code>map&lt;string, string&gt; headers = 7;</code>
    */
   boolean containsHeaders(
-      String key);
+          String key);
   /**
    * Use {@link #getHeadersMap()} instead.
    */
@@ -65,12 +65,12 @@ public interface MetadataOrBuilder extends
    */
 
   String getHeadersOrDefault(
-      String key,
-      String defaultValue);
+          String key,
+          String defaultValue);
   /**
    * <code>map&lt;string, string&gt; headers = 7;</code>
    */
 
   String getHeadersOrThrow(
-      String key);
+          String key);
 }
