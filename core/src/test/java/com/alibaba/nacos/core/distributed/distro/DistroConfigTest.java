@@ -16,11 +16,18 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import junit.framework.TestCase;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.mock.env.MockEnvironment;
 
-public class DistroConfigTest extends TestCase {
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+
+public class DistroConfigTest {
     
     private DistroConfig distroConfig;
     
@@ -34,6 +41,7 @@ public class DistroConfigTest extends TestCase {
     
     @Before
     public void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         distroConfig = DistroConfig.getInstance();
     }
     
@@ -55,8 +63,20 @@ public class DistroConfigTest extends TestCase {
         assertEquals(verifyIntervalMillis, distroConfig.getVerifyIntervalMillis());
     }
     
+    @Test
     public void testSetLoadDataRetryDelayMillis() {
         distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
         assertEquals(loadDataRetryDelayMillis, distroConfig.getLoadDataRetryDelayMillis());
+    }
+    
+    @Test
+    public void testUpgradeConfig() throws InterruptedException {
+        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS, distroConfig.getSyncDelayMillis());
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, String.valueOf(syncDelayMillis));
+        EnvUtil.setEnvironment(environment);
+        NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
+        TimeUnit.SECONDS.sleep(1);
+        assertEquals(syncDelayMillis, distroConfig.getSyncDelayMillis());
     }
 }

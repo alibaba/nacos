@@ -53,6 +53,14 @@ public abstract class ConfigTransportClient {
     
     private static final Logger LOGGER = LogUtils.logger(ConfigTransportClient.class);
     
+    private static final String SECURITY_TOKEN_HEADER =  "Spas-SecurityToken";
+    
+    private static final String ACCESS_KEY_HEADER = "Spas-AccessKey";
+    
+    private static final String CONFIG_INFO_HEADER = "exConfigInfo";
+    
+    private static final String DEFAULT_CONFIG_INFO = "true";
+    
     String encode;
     
     String tenant;
@@ -108,11 +116,11 @@ public abstract class ConfigTransportClient {
             StsCredential stsCredential = getStsCredential();
             accessKey = stsCredential.accessKeyId;
             secretKey = stsCredential.accessKeySecret;
-            spasHeaders.put("Spas-SecurityToken", stsCredential.securityToken);
+            spasHeaders.put(SECURITY_TOKEN_HEADER, stsCredential.securityToken);
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
-            spasHeaders.put("Spas-AccessKey", accessKey);
+            spasHeaders.put(ACCESS_KEY_HEADER, accessKey);
         }
         return spasHeaders;
     }
@@ -145,7 +153,7 @@ public abstract class ConfigTransportClient {
         headers.put(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         headers.put(Constants.CLIENT_REQUEST_TS_HEADER, ts);
         headers.put(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
-        headers.put("exConfigInfo", "true");
+        headers.put(CONFIG_INFO_HEADER, DEFAULT_CONFIG_INFO);
         headers.put(Constants.CHARSET_KEY, encode);
         return headers;
     }
@@ -165,9 +173,8 @@ public abstract class ConfigTransportClient {
             }
         }
         String stsResponse = getStsResponse();
-        StsCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
+        stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
         });
-        stsCredential = stsCredentialTmp;
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
                 stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
                 stsCredential.getExpiration());

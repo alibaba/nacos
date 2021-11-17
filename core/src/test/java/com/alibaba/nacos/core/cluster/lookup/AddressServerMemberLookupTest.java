@@ -21,11 +21,13 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import junit.framework.TestCase;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +71,8 @@ public class AddressServerMemberLookupTest extends TestCase {
     
     @Mock
     private ConfigurableEnvironment environment;
+
+    private final GenericType<String> genericType = new GenericType<String>() { };
     
     @Before
     public void setUp() throws Exception {
@@ -77,7 +81,6 @@ public class AddressServerMemberLookupTest extends TestCase {
         when(environment.getProperty("nacos.core.address-server.retry", Integer.class, 5)).thenReturn(5);
         when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
         when(environment.getProperty("address.server.port", "8080")).thenReturn("8080");
-        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
         when(environment.getProperty(eq("address.server.url"), any(String.class))).thenReturn("/nacos/serverlist");
         initAddressSys();
         when(restTemplate.<String>get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()), any(Type.class)))
@@ -111,6 +114,13 @@ public class AddressServerMemberLookupTest extends TestCase {
         assertTrue(infos.containsKey("addressServerFailCount"));
         assertEquals(addressServerUrl, infos.get("addressServerUrl"));
         assertEquals(envIdUrl, infos.get("envIdUrl"));
+    }
+
+    @Test
+    public void testSyncFromAddressUrl() throws Exception {
+        RestResult<String> result = restTemplate
+                .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
+        assertEquals("1.1.1.1:8848", result.getData());
     }
     
     private void initAddressSys() {

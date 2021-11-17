@@ -68,7 +68,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
             InstancesChangeNotifier changeNotifier) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
-        this.serverListManager = new ServerListManager(properties);
+        this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
         this.securityProxy = new SecurityProxy(properties, NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy();
@@ -141,11 +141,11 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
         String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
+        serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         ServiceInfo result = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
         if (null == result) {
             result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
-        serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         serviceInfoHolder.processServiceInfo(result);
         return result;
     }

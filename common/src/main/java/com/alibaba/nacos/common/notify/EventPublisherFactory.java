@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.notify;
 
-import com.alibaba.nacos.common.utils.BiFunction;
+import java.util.function.BiFunction;
 
 /**
  * Event publisher factory.

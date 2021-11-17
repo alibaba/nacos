@@ -60,6 +60,8 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
+    private final String namespace;
+    
     private final AtomicInteger currentIndex = new AtomicInteger();
     
     private final List<String> serverList = new ArrayList<>();
@@ -75,6 +77,11 @@ public class ServerListManager implements ServerListFactory, Closeable {
     private long lastServerListRefreshTime = 0L;
     
     public ServerListManager(Properties properties) {
+        this(properties, null);
+    }
+    
+    public ServerListManager(Properties properties, String namespace) {
+        this.namespace = namespace;
         initServerAddr(properties);
         if (!serverList.isEmpty()) {
             currentIndex.set(new Random().nextInt(serverList.size()));
@@ -105,7 +112,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
             Header header = NamingHttpUtil.builderHeader();
-            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, Query.EMPTY, String.class);
+            Query query = StringUtils.isNotBlank(namespace)
+                    ? Query.newInstance().addParam("namespace", namespace)
+                    : Query.EMPTY;
+            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, query, String.class);
             if (!restResult.ok()) {
                 throw new IOException(
                         "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
@@ -139,10 +149,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
             }
             if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
+                serversFromEndpoint = list;
+                lastServerListRefreshTime = System.currentTimeMillis();
+                NotifyCenter.publishEvent(new ServerListChangedEvent());
             }
-            serversFromEndpoint = list;
-            lastServerListRefreshTime = System.currentTimeMillis();
-            NotifyCenter.publishEvent(new ServerListChangedEvent());
         } catch (Throwable e) {
             NAMING_LOGGER.warn("failed to update server list", e);
         }

@@ -149,6 +149,11 @@ public class NacosException extends Exception {
     public static final int SERVER_ERROR = 500;
     
     /**
+     * client error（client异常，返回给服务端）.
+     */
+    public static final int CLIENT_ERROR = -500;
+    
+    /**
      * bad gateway（路由异常，如nginx后面的Server挂掉）.
      */
     public static final int BAD_GATEWAY = 502;

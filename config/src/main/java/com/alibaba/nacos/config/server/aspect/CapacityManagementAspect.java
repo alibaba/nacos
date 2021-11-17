@@ -23,7 +23,7 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;

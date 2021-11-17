@@ -22,7 +22,7 @@ import com.alibaba.nacos.auth.model.Resource;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -70,12 +70,16 @@ public class ConfigResourceParser implements ResourceParser {
             sb.append(namespaceId);
         }
         
-        sb.append(Resource.SPLITTER);
+        if (StringUtils.isBlank(groupName)) {
+            sb.append(Resource.SPLITTER).append('*');
+        } else {
+            sb.append(Resource.SPLITTER).append(groupName);
+        }
         
         if (StringUtils.isBlank(dataId)) {
-            sb.append("*").append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append("*");
+            sb.append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append('*');
         } else {
-            sb.append(groupName).append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
+            sb.append(Resource.SPLITTER).append(AUTH_CONFIG_PREFIX).append(dataId);
         }
         
         return sb.toString();

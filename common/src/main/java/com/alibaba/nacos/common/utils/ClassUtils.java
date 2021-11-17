@@ -18,6 +18,8 @@ package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 
+import java.util.Objects;
+
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
 /**
@@ -104,7 +106,7 @@ public final class ClassUtils {
      * @param cls Instances of the class represent classes and interfaces.
      * @return the simple name of the underlying class.
      */
-    public static String getSimplaName(Class cls) {
+    public static String getSimpleName(Class cls) {
         Objects.requireNonNull(cls, "cls");
         return cls.getSimpleName();
     }
@@ -115,7 +117,7 @@ public final class ClassUtils {
      * @param obj Object instance.
      * @return the simple name of the underlying class.
      */
-    public static String getSimplaName(Object obj) {
+    public static String getSimpleName(Object obj) {
         Objects.requireNonNull(obj, "obj");
         return obj.getClass().getSimpleName();
     }

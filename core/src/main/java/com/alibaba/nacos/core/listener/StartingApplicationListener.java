@@ -22,6 +22,7 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -29,7 +30,7 @@ import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
@@ -169,6 +170,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
                 try {
                     Map<String, ?> tmp = EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
                     SOURCES.putAll(tmp);
+                    NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
                 } catch (IOException ignore) {
                     LOGGER.warn("Failed to monitor file ", ignore);
                 }

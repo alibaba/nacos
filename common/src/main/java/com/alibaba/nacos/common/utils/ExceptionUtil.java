@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Objects;
 
 /**
  * Common methods for exception.
@@ -37,7 +38,7 @@ public class ExceptionUtil {
         StringBuilder strBuilder = new StringBuilder();
         
         while (cause != null && !StringUtils.isEmpty(cause.getMessage())) {
-            strBuilder.append("caused: ").append(cause.getMessage()).append(";");
+            strBuilder.append("caused: ").append(cause.getMessage()).append(';');
             cause = cause.getCause();
         }
         

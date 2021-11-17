@@ -63,7 +63,7 @@ public class Chooser<K, T> {
             return ref.items.get(index);
         }
         
-        if (index >= 0 && index < ref.weights.length) {
+        if (index < ref.weights.length) {
             if (random < ref.weights[index]) {
                 return ref.items.get(index);
             }

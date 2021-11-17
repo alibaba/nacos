@@ -168,9 +168,9 @@ class ServiceDetail extends React.Component {
             <FormItem label={`${locale.type}:`}>
               <Input value={selector.type} readOnly />
             </FormItem>
-            {service.type === 'label' && (
+            {selector.type !== 'none' && (
               <FormItem label={`${locale.selector}:`}>
-                <Input value={selector.selector} readOnly />
+                <Input value={selector.expression} readOnly />
               </FormItem>
             )}
           </Form>
@@ -187,7 +187,7 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceFilter setFilters={this.setFilters(cluster.name)} />
+              <InstanceFilter setFilters={this.setFilters(cluster.name)} locale={locale.InstanceFilter} />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}

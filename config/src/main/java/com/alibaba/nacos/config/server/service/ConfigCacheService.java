@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

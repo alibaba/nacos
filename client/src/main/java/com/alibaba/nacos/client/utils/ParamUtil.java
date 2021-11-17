@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import org.slf4j.Logger;
 
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 /**
@@ -102,7 +101,7 @@ public class ParamUtil {
         
         try {
             perTaskConfigSize = Double
-                    .valueOf(System.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+                    .parseDouble(System.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
             LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
         } catch (Throwable t) {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", t);
@@ -185,12 +184,9 @@ public class ParamUtil {
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             namespaceTmp = TenantUtil.getUserTenantForAcm();
             
-            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                    return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
-                }
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, () -> {
+                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
             });
         }
         
@@ -228,12 +224,7 @@ public class ParamUtil {
         
         String endpointUrlSource = TemplateUtils
                 .stringBlankAndThenExecute(System.getProperty(endpointUrl, System.getenv(endpointUrl)),
-                        new Callable<String>() {
-                            @Override
-                            public String call() {
-                                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
-                            }
-                        });
+                        () -> System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {

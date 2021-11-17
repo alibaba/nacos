@@ -55,12 +55,7 @@ public class ConsoleConfig {
         methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
         methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
     }
-
-    /**
-     * 解决跨域
-     * cmj 添加注释备注
-     * @return
-     */
+    
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();

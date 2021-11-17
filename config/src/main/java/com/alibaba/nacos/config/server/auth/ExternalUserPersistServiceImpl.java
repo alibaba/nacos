@@ -62,7 +62,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void createUser(String username, String password) {
-        String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
         
         try {
             jt.update(sql, username, password, true);
@@ -79,7 +79,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
      */
     @Override
     public void deleteUser(String username) {
-        String sql = "DELETE from users WHERE username=?";
+        String sql = "DELETE FROM users WHERE username=?";
         try {
             jt.update(sql, username);
         } catch (CannotGetJdbcConnectionException e) {
@@ -131,8 +131,9 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "select count(*) from users where ";
-        String sqlFetchRows = "select username,password from users where ";
+        String sqlCountRows = "SELECT count(*) FROM users WHERE ";
+
+        String sqlFetchRows = "SELECT username,password FROM users WHERE ";
         
         String where = " 1=1 ";
         
@@ -154,7 +155,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
 
     @Override
     public List<String> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username like '%' ? '%'";
+        String sql = "SELECT username FROM users WHERE username LIKE '%' ? '%'";
         List<String> users = this.jt.queryForList(sql, new String[]{username}, String.class);
         return users;
     }

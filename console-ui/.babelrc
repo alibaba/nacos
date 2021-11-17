@@ -15,7 +15,6 @@
         "legacy": true
       }
     ],
-    ["@babel/plugin-proposal-private-methods", { "loose": true }],
     [
       "babel-plugin-import",
       {

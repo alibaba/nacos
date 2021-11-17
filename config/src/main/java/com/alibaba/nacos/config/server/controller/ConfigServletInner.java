@@ -34,7 +34,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

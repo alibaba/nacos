@@ -41,6 +41,8 @@ import java.util.concurrent.Callable;
  */
 public class InitUtils {
     
+    private static final String DEFAULT_END_POINT_PORT = "8080";
+    
     /**
      * Add a difference to the name naming. This method simply initializes the namespace for Naming. Config
      * initialization is not the same, so it cannot be reused directly.
@@ -58,14 +60,7 @@ public class InitUtils {
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             
             tmpNamespace = TenantUtil.getUserTenantForAns();
-            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
-                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                    return namespace;
-                }
-            });
+            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property : {}", tmpNamespace);
             
             tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
                 @Override
@@ -86,7 +81,7 @@ public class InitUtils {
             }
         });
         
-        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
+        if (StringUtils.isEmpty(tmpNamespace)) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
         
@@ -180,7 +175,7 @@ public class InitUtils {
         endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
             @Override
             public String call() {
-                return "8080";
+                return DEFAULT_END_POINT_PORT;
             }
         });
         

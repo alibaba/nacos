@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.address;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
 
-@Ignore
 public class AddressServerControllerTests {
     
     private static final String PRODUCT_NACOS = "nacos";

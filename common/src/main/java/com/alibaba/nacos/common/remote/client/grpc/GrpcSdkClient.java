@@ -24,6 +24,8 @@ package com.alibaba.nacos.common.remote.client.grpc;
  */
 public class GrpcSdkClient extends GrpcClient {
     
+    private static final String NACOS_SERVER_GRPC_PORT_DEFAULT_OFFSET = "1000";
+    
     /**
      * Empty constructor.
      *
@@ -35,7 +37,8 @@ public class GrpcSdkClient extends GrpcClient {
     
     @Override
     public int rpcPortOffset() {
-        return 1000;
+        return Integer.parseInt(System.getProperty(
+                NACOS_SERVER_GRPC_PORT_OFFSET_KEY, NACOS_SERVER_GRPC_PORT_DEFAULT_OFFSET));
     }
     
 }

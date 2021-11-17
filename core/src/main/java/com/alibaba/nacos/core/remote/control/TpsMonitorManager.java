@@ -214,10 +214,10 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                     }
                     String point = entry.getKey();
                     tempSecond = pointSlot.time;
-                    stringBuilder.append(point).append("|").append("point|").append(value.getTpsRecorder().period)
-                            .append("|").append(formatString).append("|")
-                            .append(pointSlot.getCountHolder(point).count.get()).append("|")
-                            .append(pointSlot.getCountHolder(point).interceptedCount.get()).append("\n");
+                    stringBuilder.append(point).append('|').append("point|").append(value.getTpsRecorder().period)
+                            .append('|').append(formatString).append('|')
+                            .append(pointSlot.getCountHolder(point).count.get()).append('|')
+                            .append(pointSlot.getCountHolder(point).interceptedCount.get()).append('\n');
                     for (Map.Entry<String, TpsRecorder> monitorKeyEntry : value.monitorKeysRecorder.entrySet()) {
                         String monitorPattern = monitorKeyEntry.getKey();
                         TpsRecorder ipRecord = monitorKeyEntry.getValue();
@@ -241,18 +241,18 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
                         if (ipRecord.isProtoModel()) {
                             Map<String, TpsRecorder.SlotCountHolder> keySlots = ((TpsRecorder.MultiKeyTpsSlot) keySlot).keySlots;
                             for (Map.Entry<String, TpsRecorder.SlotCountHolder> slotCountHolder : keySlots.entrySet()) {
-                                stringBuilder.append(point).append("|").append(monitorPattern).append("|")
-                                        .append(ipRecord.period).append("|").append(timeFormatOfSecond).append("|")
-                                        .append(slotCountHolder.getKey()).append("|")
-                                        .append(slotCountHolder.getValue().count).append("|")
-                                        .append(slotCountHolder.getValue().interceptedCount).append("\n");
+                                stringBuilder.append(point).append('|').append(monitorPattern).append('|')
+                                        .append(ipRecord.period).append('|').append(timeFormatOfSecond).append('|')
+                                        .append(slotCountHolder.getKey()).append('|')
+                                        .append(slotCountHolder.getValue().count).append('|')
+                                        .append(slotCountHolder.getValue().interceptedCount).append('\n');
                             }
                             
                         } else {
-                            stringBuilder.append(point).append("|").append(monitorPattern).append("|")
-                                    .append(ipRecord.period).append("|").append(timeFormatOfSecond).append("|")
-                                    .append(keySlot.getCountHolder(point).count.get()).append("|")
-                                    .append(keySlot.getCountHolder(point).interceptedCount.get()).append("\n");
+                            stringBuilder.append(point).append('|').append(monitorPattern).append('|')
+                                    .append(ipRecord.period).append('|').append(timeFormatOfSecond).append('|')
+                                    .append(keySlot.getCountHolder(point).count.get()).append('|')
+                                    .append(keySlot.getCountHolder(point).interceptedCount.get()).append('\n');
                         }
                     }
                 }
@@ -308,7 +308,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     private File checkBaseDir() {
         File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
-            baseDir.mkdir();
+            baseDir.mkdirs();
         }
         return baseDir;
     }

@@ -31,6 +31,12 @@ public class EnvUtil {
     
     public static final Logger LOGGER = LogUtils.logger(EnvUtil.class);
     
+    private static String selfAmorayTag;
+    
+    private static String selfVipserverTag;
+    
+    private static String selfLocationTag;
+    
     public static void setSelfEnv(Map<String, List<String>> headers) {
         if (headers != null) {
             List<String> amorayTagTmp = headers.get(Constants.AMORY_TAG);
@@ -95,15 +101,8 @@ public class EnvUtil {
         StringBuilder result = new StringBuilder();
         for (String string : list) {
             result.append(string);
-            result.append(",");
+            result.append(',');
         }
-        return result.toString().substring(0, result.length() - 1);
+        return result.substring(0, result.length() - 1);
     }
-    
-    private static String selfAmorayTag;
-    
-    private static String selfVipserverTag;
-    
-    private static String selfLocationTag;
-    
 }

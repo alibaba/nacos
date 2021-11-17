@@ -41,6 +41,16 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public abstract class AbstractNamingClientProxy extends Subscriber<ServerListChangedEvent>
         implements NamingClientProxy {
     
+    private static final String APP_FILED = "app";
+    
+    private static final String SIGNATURE_FILED = "signature";
+    
+    private static final String DATA_FILED = "data";
+    
+    private static final String AK_FILED = "ak";
+    
+    private static final String SEPARATOR = "@@";
+    
     private final SecurityProxy securityProxy;
     
     private final Properties properties;
@@ -56,7 +66,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return nacos security access token
      */
     protected Map<String, String> getSecurityHeaders() {
-        Map<String, String> result = new HashMap<>(1);
+        Map<String, String> result = new HashMap<>(2);
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             result.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
         }
@@ -70,17 +80,17 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return Ak Sk headers.
      */
     protected Map<String, String> getSpasHeaders(String serviceName) {
-        Map<String, String> result = new HashMap<>(2);
+        Map<String, String> result = new HashMap<>(8);
         String ak = getAccessKey();
         String sk = getSecretKey();
-        result.put("app", AppNameUtils.getAppName());
+        result.put(APP_FILED, AppNameUtils.getAppName());
         if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
             try {
                 String signData = getSignData(serviceName);
                 String signature = SignUtil.sign(signData, sk);
-                result.put("signature", signature);
-                result.put("data", signData);
-                result.put("ak", ak);
+                result.put(SIGNATURE_FILED, signature);
+                result.put(DATA_FILED, signData);
+                result.put(AK_FILED, ak);
             } catch (Exception e) {
                 NAMING_LOGGER.error("inject ak/sk failed.", e);
             }
@@ -105,7 +115,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
     }
     
     private String getSignData(String serviceName) {
-        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + "@@" + serviceName
+        return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + SEPARATOR + serviceName
                 : String.valueOf(System.currentTimeMillis());
     }
 }
