@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.client.naming.utils.UtilAndComs.HTTP;
+import static com.alibaba.nacos.client.constant.Constants.Protocols.HTTP;
 import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
 
 /**
