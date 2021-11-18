@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -51,13 +50,18 @@ public class BeatReactor implements Closeable {
     
     private static final String CLIENT_BEAT_INTERVAL_FIELD = "clientBeatInterval";
     
+    private static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT =
+            ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
+    
+    private static final String NACOS_NAMING_BEAT_SENDER_THREAD_NAME = "com.alibaba.nacos.naming.beat.sender";
+    
+    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+    
     private final ScheduledExecutorService executorService;
     
     private final NamingHttpClientProxy serverProxy;
     
     private boolean lightBeatEnabled = false;
-    
-    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
     
     public BeatReactor(NamingHttpClientProxy serverProxy) {
         this(serverProxy, null);
@@ -71,7 +75,7 @@ public class BeatReactor implements Closeable {
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
                 thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.beat.sender");
+                thread.setName(NACOS_NAMING_BEAT_SENDER_THREAD_NAME);
                 return thread;
             }
         });
@@ -79,11 +83,11 @@ public class BeatReactor implements Closeable {
     
     private int initClientBeatThreadCount(Properties properties) {
         if (properties == null) {
-            return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
+            return DEFAULT_CLIENT_BEAT_THREAD_COUNT;
         }
         
         return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
-                UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+                DEFAULT_CLIENT_BEAT_THREAD_COUNT);
     }
     
     /**

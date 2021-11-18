@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.common.utils.IoUtils;
 
 import java.io.File;
@@ -37,10 +38,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author nkorange
  */
 public class ConcurrentDiskUtil {
-    
-    private static final String READ_ONLY = "r";
-    
-    private static final String READ_WRITE = "rw";
     
     private static final int RETRY_COUNT = 10;
     
@@ -71,7 +68,7 @@ public class ConcurrentDiskUtil {
         RandomAccessFile fis = null;
         FileLock rlock = null;
         try {
-            fis = new RandomAccessFile(file, READ_ONLY);
+            fis = new RandomAccessFile(file, Constants.Disk.READ_ONLY);
             FileChannel fcin = fis.getChannel();
             int i = 0;
             do {
@@ -136,7 +133,7 @@ public class ConcurrentDiskUtil {
         FileLock lock = null;
         RandomAccessFile raf = null;
         try {
-            raf = new RandomAccessFile(file, READ_WRITE);
+            raf = new RandomAccessFile(file, Constants.Disk.READ_WRITE);
             channel = raf.getChannel();
             int i = 0;
             do {

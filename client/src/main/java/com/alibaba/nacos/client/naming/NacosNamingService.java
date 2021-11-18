@@ -34,7 +34,6 @@ import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -44,6 +43,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
+import static com.alibaba.nacos.client.constant.Constants.HealthCheck.DOWN;
+import static com.alibaba.nacos.client.constant.Constants.HealthCheck.UP;
+
 /**
  * Nacos Naming Service.
  *
@@ -52,11 +54,9 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     
-    private static final String DEFAULT_NAMING_LOG_FILE_PATH =  "naming.log";
+    private static final String DEFAULT_NAMING_LOG_FILE_PATH = "naming.log";
     
-    private static final String UP = "UP";
-    
-    private static final String DOWN = "DOWN";
+    private static final String NACOS_NAMING_LOG_NAME = "com.alibaba.nacos.naming.log.filename";
     
     /**
      * Each Naming service should have different namespace.
@@ -96,12 +96,11 @@ public class NacosNamingService implements NamingService {
     }
     
     private void initLogName(Properties properties) {
-        logName = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
+        logName = System.getProperty(NACOS_NAMING_LOG_NAME);
         if (StringUtils.isEmpty(logName)) {
             
-            if (properties != null && StringUtils
-                    .isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
-                logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
+            if (properties != null && StringUtils.isNotEmpty(properties.getProperty(NACOS_NAMING_LOG_NAME))) {
+                logName = properties.getProperty(NACOS_NAMING_LOG_NAME);
             } else {
                 logName = DEFAULT_NAMING_LOG_FILE_PATH;
             }

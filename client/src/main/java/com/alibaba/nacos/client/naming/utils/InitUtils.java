@@ -43,6 +43,8 @@ public class InitUtils {
     
     private static final String DEFAULT_END_POINT_PORT = "8080";
     
+    private static final String DEFAULT_NAMESPACE_ID = "public";
+    
     /**
      * Add a difference to the name naming. This method simply initializes the namespace for Naming. Config
      * initialization is not the same, so it cannot be reused directly.
@@ -88,7 +90,7 @@ public class InitUtils {
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
             public String call() {
-                return UtilAndComs.DEFAULT_NAMESPACE_ID;
+                return DEFAULT_NAMESPACE_ID;
             }
         });
         return tmpNamespace;
@@ -106,8 +108,6 @@ public class InitUtils {
             @Override
             public void run() {
                 UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-                UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-                UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
             }
         });
         initWebRootContext();
@@ -124,8 +124,6 @@ public class InitUtils {
             @Override
             public void run() {
                 UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-                UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-                UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
             }
         });
     }

@@ -65,6 +65,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
+    private static final String NAMING_REQUEST_DEFAULT_TIMEOUT = "-1";
+    
     private final String namespaceId;
     
     private final String uuid;
@@ -80,7 +82,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         super(securityProxy, properties);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
-        this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));
+        this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, NAMING_REQUEST_DEFAULT_TIMEOUT));
         Map<String, String> labels = new HashMap<String, String>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
