@@ -22,11 +22,11 @@ import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.DATA_ID;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.GROUP;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.TYPE;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.CONTENT;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.DATA_ID;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.GROUP;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.TENANT;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.TYPE;
 
 /**
  * Config Request.

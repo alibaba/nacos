@@ -96,6 +96,8 @@ public class ClientWorker implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
+    private static final String NACOS_CLIENT_WORKER_THREAD_NAME = "com.alibaba.nacos.client.Worker";
+    
     private static final String NOTIFY_HEADER = "notify";
     
     private static final String TAG_PARAM = "tag";
@@ -109,6 +111,8 @@ public class ClientWorker implements Closeable {
     private static final String ENCRYPTED_DATA_KEY_PARAM = "encryptedDataKey";
     
     private static final String DEFAULT_RESOURCE = "";
+    
+    private static final String CLIENT_NAME = "config_rpc_client";
     
     /**
      * groupKey -> cacheData.
@@ -463,7 +467,7 @@ public class ClientWorker implements Closeable {
         ScheduledExecutorService executorService = Executors
                 .newScheduledThreadPool(ThreadUtils.getSuitableThreadCount(1), r -> {
                     Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Worker");
+                    t.setName(NACOS_CLIENT_WORKER_THREAD_NAME);
                     t.setDaemon(true);
                     return t;
                 });
@@ -753,7 +757,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public String getName() {
-            return "config_rpc_client";
+            return CLIENT_NAME;
         }
         
         @Override

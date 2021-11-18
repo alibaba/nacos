@@ -39,20 +39,17 @@ public class Limiter {
     
     private static final Cache<String, RateLimiter> CACHE;
     
-    static {
-        CACHE = CacheBuilder.builder()
-                .expireNanos(1, TimeUnit.MINUTES)
-                .initializeCapacity(CAPACITY_SIZE)
-                .sync(true)
-                .build();
-    }
-    
     private static final String LIMIT_TIME_PROPERTY = "limitTime";
     
     /**
      * qps 5.
      */
     private static double limit = 5;
+    
+    static {
+        CACHE = CacheBuilder.builder().expireNanos(1, TimeUnit.MINUTES).initializeCapacity(CAPACITY_SIZE).sync(true)
+                .build();
+    }
     
     static {
         try {

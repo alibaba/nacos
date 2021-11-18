@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -57,13 +57,17 @@ public class LocalConfigInfoProcessor {
     
     private static final String SNAPSHOT_FILE_CHILD_2 = "snapshot-tenant";
     
+    private static final String FILE_PATH_NACOS = "nacos";
+    
+    private static final String FILE_PATH_CONFIG = "config";
+    
     static {
         LOCAL_FILEROOT_PATH =
-                System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
+                System.getProperty(Constants.SysEnv.JM_LOG_PATH, System.getProperty(Constants.SysEnv.USER_HOME))
+                        + File.separator + FILE_PATH_NACOS + File.separator + FILE_PATH_CONFIG;
         LOCAL_SNAPSHOT_PATH =
-                System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
+                System.getProperty(Constants.SysEnv.JM_SNAPSHOT_PATH, System.getProperty(Constants.SysEnv.USER_HOME))
+                        + File.separator + FILE_PATH_NACOS + File.separator + FILE_PATH_CONFIG;
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
     
@@ -107,10 +111,10 @@ public class LocalConfigInfoProcessor {
         }
         
         if (JvmUtil.isMultiInstance()) {
-            return ConcurrentDiskUtil.getFileContent(file, Constants.ENCODE);
+            return ConcurrentDiskUtil.getFileContent(file, com.alibaba.nacos.api.common.Constants.ENCODE);
         } else {
             try (InputStream is = new FileInputStream(file)) {
-                return IoUtils.toString(is, Constants.ENCODE);
+                return IoUtils.toString(is, com.alibaba.nacos.api.common.Constants.ENCODE);
             }
         }
     }
@@ -146,9 +150,9 @@ public class LocalConfigInfoProcessor {
                 }
                 
                 if (JvmUtil.isMultiInstance()) {
-                    ConcurrentDiskUtil.writeFileContent(file, config, Constants.ENCODE);
+                    ConcurrentDiskUtil.writeFileContent(file, config, com.alibaba.nacos.api.common.Constants.ENCODE);
                 } else {
-                    IoUtils.writeStringToFile(file, config, Constants.ENCODE);
+                    IoUtils.writeStringToFile(file, config, com.alibaba.nacos.api.common.Constants.ENCODE);
                 }
             } catch (IOException ioe) {
                 LOGGER.error("[" + envName + "] save snapshot error, " + file, ioe);

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,10 +48,6 @@ public class ConcurrentDiskUtil {
      */
     static final int SLEEP_BASETIME = 10;
     
-    private static final String READ_ONLY = "r";
-    
-    private static final String READ_WRITE = "rw";
-    
     /**
      * get file content.
      *
@@ -76,7 +73,7 @@ public class ConcurrentDiskUtil {
         RandomAccessFile fis = null;
         FileLock rlock = null;
         try {
-            fis = new RandomAccessFile(file, READ_ONLY);
+            fis = new RandomAccessFile(file, Constants.Disk.READ_ONLY);
             FileChannel fcin = fis.getChannel();
             int i = 0;
             do {
@@ -143,7 +140,7 @@ public class ConcurrentDiskUtil {
         FileLock lock = null;
         RandomAccessFile raf = null;
         try {
-            raf = new RandomAccessFile(file, READ_WRITE);
+            raf = new RandomAccessFile(file, Constants.Disk.READ_WRITE);
             channel = raf.getChannel();
             int i = 0;
             do {

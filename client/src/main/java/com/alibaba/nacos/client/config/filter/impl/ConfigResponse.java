@@ -22,12 +22,12 @@ import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.nacos.client.config.common.ConfigConstants.CONFIG_TYPE;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.DATA_ID;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.ENCRYPTED_DATA_KEY;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.GROUP;
-import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.CONFIG_TYPE;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.CONTENT;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.DATA_ID;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.ENCRYPTED_DATA_KEY;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.GROUP;
+import static com.alibaba.nacos.client.config.filter.impl.ConfigMetadata.TENANT;
 
 /**
  * Config Response.

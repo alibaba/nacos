@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -30,8 +31,8 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
@@ -55,17 +56,32 @@ import java.util.concurrent.TimeUnit;
  */
 public class ServerListManager implements Closeable {
     
+    /**
+     * Connection timeout and socket timeout with other servers.
+     */
+    static final int TIMEOUT = 5000;
+    
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
     
-    private static final String HTTPS = "https://";
+    private static final String NACOS_CLIENT_SERVER_LIST_MANAGE_THREAD_NAME = "com.alibaba.nacos.client.ServerListManager";
     
-    private static final String HTTP = "http://";
+    private static final String DEFAULT_NAME = "default";
+    
+    private static final String CUSTOM_NAME = "custom";
+    
+    private static final String FIXED_NAME = "fixed";
+    
+    private static final String SERVER_ADDRESS_URL_FORMAT = "http://%s:%d%s/%s";
+    
+    private static final String SERVER_ADDRESS_URL_FORMAT_WITH_NAMESPACE = "http://%s:%d%s/%s?namespace=%s";
+    
+    final boolean isFixed;
     
     private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
     private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
         Thread t = new Thread(r);
-        t.setName("com.alibaba.nacos.client.ServerListManager");
+        t.setName(NACOS_CLIENT_SERVER_LIST_MANAGE_THREAD_NAME);
         t.setDaemon(true);
         return t;
     });
@@ -75,26 +91,19 @@ public class ServerListManager implements Closeable {
      */
     private final String name;
     
+    private final int initServerlistRetryTimes = 5;
+    
+    public String serverPort = ParamUtil.getDefaultServerPort();
+    
+    public String addressServerUrl;
+    
+    boolean isStarted = false;
+    
+    volatile List<String> serverUrls = new ArrayList<String>();
+    
     private String namespace = "";
     
     private String tenant = "";
-    
-    public static final String DEFAULT_NAME = "default";
-    
-    public static final String CUSTOM_NAME = "custom";
-    
-    public static final String FIXED_NAME = "fixed";
-    
-    private final int initServerlistRetryTimes = 5;
-    
-    /**
-     * Connection timeout and socket timeout with other servers.
-     */
-    static final int TIMEOUT = 5000;
-    
-    final boolean isFixed;
-    
-    boolean isStarted = false;
     
     private String endpoint;
     
@@ -104,15 +113,9 @@ public class ServerListManager implements Closeable {
     
     private String serverListName = ParamUtil.getDefaultNodesPath();
     
-    volatile List<String> serverUrls = new ArrayList<>();
-    
     private volatile String currentServerAddr;
     
     private Iterator<String> iterator;
-    
-    public String serverPort = ParamUtil.getDefaultServerPort();
-    
-    public String addressServerUrl;
     
     private String serverAddrsStr;
     
@@ -133,7 +136,8 @@ public class ServerListManager implements Closeable {
         for (String serverAddr : fixed) {
             String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
-                serverAddrs.add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                serverAddrs.add(
+                        serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
             } else {
                 serverAddrs.add(serverAddr);
             }
@@ -152,9 +156,8 @@ public class ServerListManager implements Closeable {
         this.isFixed = false;
         this.isStarted = false;
         this.name = CUSTOM_NAME + "-" + host + "-" + port;
-        this.addressServerUrl = String
-                .format("http://%s:%d%s/%s", host, port, ContextPathUtil.normalizeContextPath(this.contentPath),
-                        this.serverListName);
+        this.addressServerUrl = String.format(SERVER_ADDRESS_URL_FORMAT, host, port,
+                ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
     }
     
     public ServerListManager(String endpoint) throws NacosException {
@@ -173,7 +176,7 @@ public class ServerListManager implements Closeable {
         }
         if (StringUtils.isBlank(namespace)) {
             this.name = endpoint;
-            this.addressServerUrl = String.format("http://%s:%d%s/%s", endpoint, this.endpointPort,
+            this.addressServerUrl = String.format(SERVER_ADDRESS_URL_FORMAT, endpoint, this.endpointPort,
                     ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
         } else {
             if (StringUtils.isBlank(endpoint)) {
@@ -182,7 +185,7 @@ public class ServerListManager implements Closeable {
             this.name = endpoint + "-" + namespace;
             this.namespace = namespace;
             this.tenant = namespace;
-            this.addressServerUrl = String.format("http://%s:%d%s/%s?namespace=%s", endpoint, this.endpointPort,
+            this.addressServerUrl = String.format(SERVER_ADDRESS_URL_FORMAT_WITH_NAMESPACE, endpoint, this.endpointPort,
                     ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName, namespace);
         }
     }
@@ -199,15 +202,15 @@ public class ServerListManager implements Closeable {
             StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
             while (serverAddrsTokens.hasMoreTokens()) {
                 String serverAddr = serverAddrsTokens.nextToken().trim();
-                if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
+                if (serverAddr.startsWith(Constants.Protocols.HTTPS) || serverAddr.startsWith(Constants.Protocols.HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
                     String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
-                                .getDefaultServerPort());
+                        serverAddrs.add(Constants.Protocols.HTTP + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER
+                                + ParamUtil.getDefaultServerPort());
                     } else {
-                        serverAddrs.add(HTTP + serverAddr);
+                        serverAddrs.add(Constants.Protocols.HTTP + serverAddr);
                     }
                 }
             }
@@ -228,15 +231,15 @@ public class ServerListManager implements Closeable {
             this.isFixed = false;
             if (StringUtils.isBlank(namespace)) {
                 this.name = endpoint;
-                this.addressServerUrl = String.format("http://%s:%d%s/%s", this.endpoint, this.endpointPort,
+                this.addressServerUrl = String.format(SERVER_ADDRESS_URL_FORMAT, this.endpoint, this.endpointPort,
                         ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName);
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
                 this.name = this.endpoint + "-" + namespace;
-                this.addressServerUrl = String
-                        .format("http://%s:%d%s/%s?namespace=%s", this.endpoint, this.endpointPort,
-                                ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName, namespace);
+                this.addressServerUrl = String.format(SERVER_ADDRESS_URL_FORMAT_WITH_NAMESPACE, this.endpoint,
+                        this.endpointPort, ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName,
+                        namespace);
             }
         }
     }
@@ -333,27 +336,6 @@ public class ServerListManager implements Closeable {
         LOGGER.info("{} do shutdown stop", className);
     }
     
-    class GetServerListTask implements Runnable {
-        
-        final String url;
-        
-        GetServerListTask(String url) {
-            this.url = url;
-        }
-        
-        @Override
-        public void run() {
-            /*
-             get serverlist from nameserver
-             */
-            try {
-                updateIfChanged(getApacheServerList(url, name));
-            } catch (Exception e) {
-                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!", e);
-            }
-        }
-    }
-    
     private void updateIfChanged(List<String> newList) {
         if (null == newList || newList.isEmpty()) {
             LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
@@ -362,10 +344,10 @@ public class ServerListManager implements Closeable {
         
         List<String> newServerAddrList = new ArrayList<>();
         for (String server : newList) {
-            if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
+            if (server.startsWith(Constants.Protocols.HTTP) || server.startsWith(Constants.Protocols.HTTPS)) {
                 newServerAddrList.add(server);
             } else {
-                newServerAddrList.add(HTTP + server);
+                newServerAddrList.add(Constants.Protocols.HTTP + server);
             }
         }
         
@@ -500,6 +482,34 @@ public class ServerListManager implements Closeable {
      */
     private static class ServerAddressIterator implements Iterator<String> {
         
+        final List<RandomizedServerAddress> sorted;
+        
+        final Iterator<RandomizedServerAddress> iter;
+        
+        public ServerAddressIterator(List<String> source) {
+            sorted = new ArrayList<RandomizedServerAddress>();
+            for (String address : source) {
+                sorted.add(new RandomizedServerAddress(address));
+            }
+            Collections.sort(sorted);
+            iter = sorted.iterator();
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return iter.hasNext();
+        }
+        
+        @Override
+        public String next() {
+            return iter.next().serverIp;
+        }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+        
         static class RandomizedServerAddress implements Comparable<RandomizedServerAddress> {
             
             static Random random = new Random();
@@ -531,33 +541,26 @@ public class ServerListManager implements Closeable {
                 }
             }
         }
+    }
+    
+    class GetServerListTask implements Runnable {
         
-        public ServerAddressIterator(List<String> source) {
-            sorted = new ArrayList<>();
-            for (String address : source) {
-                sorted.add(new RandomizedServerAddress(address));
+        final String url;
+        
+        GetServerListTask(String url) {
+            this.url = url;
+        }
+        
+        @Override
+        public void run() {
+            /*
+             get serverlist from nameserver
+             */
+            try {
+                updateIfChanged(getApacheServerList(url, name));
+            } catch (Exception e) {
+                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!", e);
             }
-            Collections.sort(sorted);
-            iter = sorted.iterator();
         }
-        
-        @Override
-        public boolean hasNext() {
-            return iter.hasNext();
-        }
-        
-        @Override
-        public String next() {
-            return iter.next().serverIp;
-        }
-        
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-        
-        final List<RandomizedServerAddress> sorted;
-        
-        final Iterator<RandomizedServerAddress> iter;
     }
 }
