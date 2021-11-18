@@ -51,6 +51,10 @@ public class NacosResourceManager {
         return serviceInfoResourceWatcher.snapshot();
     }
 
+    public IstioConfig getIstioConfig() {
+        return istioConfig;
+    }
+
     public synchronized ResourceSnapshot getResourceSnapshot() {
         return resourceSnapshot;
     }

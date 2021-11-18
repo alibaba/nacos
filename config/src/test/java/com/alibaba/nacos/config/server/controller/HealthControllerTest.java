@@ -47,7 +47,7 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
-public class HealthControllerUnitTest {
+public class HealthControllerTest {
     
     @InjectMocks
     HealthController healthController;
