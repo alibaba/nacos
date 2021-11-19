@@ -39,7 +39,11 @@ import java.util.Collection;
  * </p>
  *
  * <p>
+<<<<<<< HEAD
  * This builder is a wrapper for {@link InstanceBuilder} and will inject some
+=======
+ * This builder is a wrapper for {@link com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder} and will inject some
+>>>>>>> 8b88eaa69f6a74e379f879926dd2b8bf762d795e
  * extension handler by spi.
  * </p>
  *

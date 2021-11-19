@@ -363,7 +363,11 @@ public class StringUtils {
      * @param str    the CharSequence to check, may be null
      * @param prefix the prefix to find, may be null
      * @return {@code true} if the CharSequence starts with the prefix, case sensitive, or both {@code null}
+<<<<<<< HEAD
      * @see String#startsWith(String)
+=======
+     * @see java.lang.String#startsWith(String)
+>>>>>>> 8b88eaa69f6a74e379f879926dd2b8bf762d795e
      */
     public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
         return startsWith(str, prefix, false);
@@ -376,7 +380,11 @@ public class StringUtils {
      * @param prefix     the prefix to find, may be null
      * @param ignoreCase indicates whether the compare should ignore case (case insensitive) or not.
      * @return {@code true} if the CharSequence starts with the prefix or both {@code null}
+<<<<<<< HEAD
      * @see String#startsWith(String)
+=======
+     * @see java.lang.String#startsWith(String)
+>>>>>>> 8b88eaa69f6a74e379f879926dd2b8bf762d795e
      */
     private static boolean startsWith(final CharSequence str, final CharSequence prefix, final boolean ignoreCase) {
         if (str == null || prefix == null) {
@@ -403,7 +411,11 @@ public class StringUtils {
      * @param str    the CharSequence to check, may be null
      * @param prefix the prefix to find, may be null
      * @return {@code true} if the CharSequence starts with the prefix, case insensitive, or both {@code null}
+<<<<<<< HEAD
      * @see String#startsWith(String)
+=======
+     * @see java.lang.String#startsWith(String)
+>>>>>>> 8b88eaa69f6a74e379f879926dd2b8bf762d795e
      */
     public static boolean startsWithIgnoreCase(final CharSequence str, final CharSequence prefix) {
         return startsWith(str, prefix, true);

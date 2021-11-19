@@ -54,7 +54,11 @@ public class ServiceOperatorV1ImplTest extends BaseTest {
     public void testUpdate() throws NacosException {
         String serviceName = "DEFAULT_GROUP@@order-service";
         serviceManager.createEmptyService(TEST_NAMESPACE, serviceName, true);
+<<<<<<< HEAD
         Service service = Service
+=======
+        com.alibaba.nacos.naming.core.v2.pojo.Service service = Service
+>>>>>>> 8b88eaa69f6a74e379f879926dd2b8bf762d795e
                 .newService(TEST_NAMESPACE, NamingUtils.getGroupName(serviceName),
                         NamingUtils.getServiceName(serviceName));
         ServiceMetadata metadata = new ServiceMetadata();

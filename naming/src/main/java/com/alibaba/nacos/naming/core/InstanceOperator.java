@@ -123,7 +123,11 @@ public interface InstanceOperator {
      * @throws NacosException nacos exception when service non-exist and client beat info is null
      */
     int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat,
+<<<<<<< HEAD
                    BeatInfoInstanceBuilder builder) throws NacosException;
+=======
+            BeatInfoInstanceBuilder builder) throws NacosException;
+>>>>>>> 8b88eaa69f6a74e379f879926dd2b8bf762d795e
     
     /**
      * Get heart beat interval for specified instance.
