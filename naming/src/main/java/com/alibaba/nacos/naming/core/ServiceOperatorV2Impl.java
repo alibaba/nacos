@@ -151,17 +151,19 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
                     "service not found, namespace: " + service.getNamespace() + ", serviceName: " + service
                             .getGroupedServiceName());
         }
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
         ServiceDetailInfo result = new ServiceDetailInfo();
-        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
-        setServiceMetadata(result, serviceMetadata, service);
+        ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(singleton).orElse(new ServiceMetadata());
+        setServiceMetadata(result, serviceMetadata, singleton);
         Map<String, ClusterInfo> clusters = new HashMap<>(2);
-        for (String each : serviceStorage.getClusters(service)) {
+        for (String each : serviceStorage.getClusters(singleton)) {
             ClusterMetadata clusterMetadata =
                     serviceMetadata.getClusters().containsKey(each) ? serviceMetadata.getClusters().get(each)
                             : new ClusterMetadata();
             clusters.put(each, newClusterNodeV2(each, clusterMetadata));
         }
         result.setClusterMap(clusters);
+        result.setEphemeral(singleton.isEphemeral());
         return result;
     }
     
