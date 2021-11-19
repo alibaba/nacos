@@ -43,6 +43,8 @@ public class ServiceDetailInfo implements Serializable {
     
     private Selector selector;
     
+    private Boolean ephemeral;
+    
     /**
      * Getter method for property <tt>serviceName</tt>.
      *
@@ -127,5 +129,13 @@ public class ServiceDetailInfo implements Serializable {
     
     public void setSelector(Selector selector) {
         this.selector = selector;
+    }
+    
+    public Boolean isEphemeral() {
+        return ephemeral;
+    }
+    
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
     }
 }
