@@ -23,7 +23,7 @@ import com.alipay.sofa.jraft.rpc.RpcContext;
 import com.alipay.sofa.jraft.rpc.RpcProcessor;
 
 /**
- * nacos request processor for {@link com.alibaba.nacos.consistency.entity.ReadRequest}.
+ * nacos request processor for {@link ReadRequest}.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
@@ -43,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
@@ -97,7 +97,7 @@ public final class DiskUtils {
      *
      * <p>The details as to how the name of the file is constructed is
      * implementation dependent and therefore not specified. Where possible the {@code prefix} and {@code suffix} are
-     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String,
+     * used to construct candidate names in the same manner as the {@link File#createTempFile(String, String,
      * File)} method.
      *
      * @param dir    the path to directory in which to create the file

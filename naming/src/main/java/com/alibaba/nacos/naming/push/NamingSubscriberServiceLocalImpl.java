@@ -28,7 +28,7 @@ import java.util.HashSet;
  * Naming subscriber service for local.
  *
  * @author xiweng.yy
- * @deprecated Will be removed with {@link com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl}
+ * @deprecated Will be removed with {@link NamingSubscriberServiceV1Impl}
  */
 @org.springframework.stereotype.Service
 @Deprecated

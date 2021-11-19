@@ -196,7 +196,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      * @return {@link Boolean}
      */
     default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
-            List<ModifyRequest> contexts) {
+                           List<ModifyRequest> contexts) {
         return update(transactionTemplate, jdbcTemplate, contexts, null);
     }
     
@@ -209,7 +209,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      * @return {@link Boolean}
      */
     default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
-            List<ModifyRequest> contexts, BiConsumer<Boolean, Throwable> consumer) {
+                           List<ModifyRequest> contexts, BiConsumer<Boolean, Throwable> consumer) {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[] {null};
             Object[][] args = new Object[][] {null};

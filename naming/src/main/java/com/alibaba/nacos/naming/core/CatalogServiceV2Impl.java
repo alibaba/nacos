@@ -35,7 +35,7 @@ import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -89,13 +89,13 @@ public class CatalogServiceV2Impl implements CatalogService {
         ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
         detailView.replace(FieldsConstants.SERVICE, serviceObject);
         
-        List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
+        List<Cluster> clusters = new ArrayList<>();
         
         for (String each : serviceStorage.getClusters(service)) {
             ClusterMetadata clusterMetadata =
                     detailedService.getClusters().containsKey(each) ? detailedService.getClusters().get(each)
                             : new ClusterMetadata();
-            com.alibaba.nacos.api.naming.pojo.Cluster clusterView = new Cluster();
+            Cluster clusterView = new Cluster();
             clusterView.setName(each);
             clusterView.setHealthChecker(clusterMetadata.getHealthChecker());
             clusterView.setMetadata(clusterMetadata.getExtendData());

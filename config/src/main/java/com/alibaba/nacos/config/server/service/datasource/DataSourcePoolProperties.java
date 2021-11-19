@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * DataSource pool properties.
  *
  * <p>Nacos server use HikariCP as the datasource pool. So the basic pool properties will based on {@link
- * com.zaxxer.hikari.HikariDataSource}.
+ * HikariDataSource}.
  *
  * @author xiweng.yy
  */

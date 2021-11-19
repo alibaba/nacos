@@ -27,7 +27,7 @@ import com.alibaba.nacos.core.cluster.lookup.StandaloneMemberLookup;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

@@ -43,6 +43,8 @@ public class FieldsConstants {
     
     public static final String NAME_SPACE_ID = "namespaceId";
     
+    public static final String NAME_SPACE = "namespace";
+    
     public static final String HEALTH_CHECKER = "healthChecker";
     
     public static final String IP = "ip";

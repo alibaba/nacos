@@ -26,7 +26,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,12 +40,6 @@ import java.util.regex.Pattern;
  */
 @JsonInclude(Include.NON_NULL)
 public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
-    
-    private static final double MAX_WEIGHT_VALUE = 10000.0D;
-    
-    private static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
-    
-    private static final double MIN_WEIGHT_VALUE = 0.00D;
     
     private static final long serialVersionUID = -6527721638428975306L;
     
@@ -124,7 +118,8 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
         
         int port = 0;
-        if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils.isNumber(providerAddr[1])) {
+        if (providerAddr.length == InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH && NumberUtils
+                .isDigits(providerAddr[1])) {
             port = Integer.parseInt(providerAddr[1]);
         }
         
@@ -212,13 +207,14 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             throw new IllegalArgumentException("malformed ip config: " + json);
         }
         
-        if (ip.getWeight() > MAX_WEIGHT_VALUE) {
-            ip.setWeight(MAX_WEIGHT_VALUE);
+        if (ip.getWeight() > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE) {
+            ip.setWeight(com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
         
-        if (ip.getWeight() < MIN_POSITIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
-            ip.setWeight(MIN_POSITIVE_WEIGHT_VALUE);
-        } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
+        if (ip.getWeight() < com.alibaba.nacos.naming.constants.Constants.MIN_POSITIVE_WEIGHT_VALUE
+                && ip.getWeight() > com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
+            ip.setWeight(com.alibaba.nacos.naming.constants.Constants.MIN_POSITIVE_WEIGHT_VALUE);
+        } else if (ip.getWeight() < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
         
@@ -363,9 +359,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             }
         }
         
-        if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    "instance format invalid: The weights range from " + MIN_WEIGHT_VALUE + " to " + MAX_WEIGHT_VALUE);
+        if (getWeight() > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
+                || getWeight() < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: The weights range from "
+                    + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
+                    + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
         
     }

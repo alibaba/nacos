@@ -18,7 +18,6 @@ package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
@@ -42,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Its own configuration information manipulation tool class.
@@ -107,7 +107,7 @@ public class EnvUtil {
     @JustForTest
     private static String nacosHomePath = null;
     
-    private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (com.sun.management.OperatingSystemMXBean) ManagementFactory
+    private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (OperatingSystemMXBean) ManagementFactory
             .getOperatingSystemMXBean();
     
     private static ConfigurableEnvironment environment;
@@ -161,7 +161,7 @@ public class EnvUtil {
         
         for (int i = 0; i < Integer.MAX_VALUE; i++) {
             String value = environment.getProperty(key + "[" + i + "]");
-            if (org.apache.commons.lang3.StringUtils.isBlank(value)) {
+            if (StringUtils.isBlank(value)) {
                 break;
             }
             
@@ -218,7 +218,6 @@ public class EnvUtil {
     public static boolean getStandaloneMode() {
         if (Objects.isNull(isStandalone)) {
             isStandalone = Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME);
-            isStandalone = true;//曹明杰修改 单机测试，不做集群，为了查看源码
         }
         return isStandalone;
     }

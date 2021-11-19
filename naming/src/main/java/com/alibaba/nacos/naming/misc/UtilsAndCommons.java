@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;
@@ -45,7 +45,11 @@ public class UtilsAndCommons {
     
     public static final String NACOS_SERVER_VERSION = "/v1";
     
+    public static final String NACOS_SERVER_VERSION_2 = "/v2";
+    
     public static final String DEFAULT_NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+    
+    public static final String DEFAULT_NACOS_NAMING_CONTEXT_V2 = NACOS_SERVER_VERSION_2 + "/ns";
     
     public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
     

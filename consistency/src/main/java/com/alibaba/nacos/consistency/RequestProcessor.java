@@ -32,7 +32,7 @@ public abstract class RequestProcessor {
     /**
      * get data by key.
      *
-     * @param request request {@link com.alibaba.nacos.consistency.entity.ReadRequest}
+     * @param request request {@link ReadRequest}
      * @return target type data
      */
     public abstract Response onRequest(ReadRequest request);

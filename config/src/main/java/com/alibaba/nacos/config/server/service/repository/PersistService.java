@@ -86,7 +86,7 @@ public interface PersistService {
      * @param notify            whether to push
      */
     void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
-            final Map<String, Object> configAdvanceInfo, final boolean notify);
+                       final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
      * Add beta configuration information and publish data change events.
@@ -99,7 +99,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+                            boolean notify);
     
     /**
      * Add tag configuration information and publish data change events.
@@ -112,7 +112,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+                           boolean notify);
     
     /**
      * Update common configuration information.
@@ -125,7 +125,7 @@ public interface PersistService {
      * @param notify            whether to push
      */
     void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
-            final Map<String, Object> configAdvanceInfo, final boolean notify);
+                          final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
      * Update common configuration information.
@@ -139,7 +139,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
+                                final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
      * Update beta configuration information.
@@ -152,7 +152,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+                               boolean notify);
     
     /**
      * Update beta configuration information.
@@ -166,7 +166,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
-            Timestamp time, boolean notify);
+                                     Timestamp time, boolean notify);
     
     /**
      * Update tag configuration information.
@@ -179,7 +179,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+                              boolean notify);
     
     /**
      * Update tag configuration information.
@@ -193,7 +193,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+                                    boolean notify);
     
     /**
      * insert or update beta config.
@@ -206,7 +206,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp, final String srcUser,
-            final Timestamp time, final boolean notify);
+                            final Timestamp time, final boolean notify);
     
     /**
      * insert or update beta config cas.
@@ -220,7 +220,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
-            final String srcUser, final Timestamp time, final boolean notify);
+                                  final String srcUser, final Timestamp time, final boolean notify);
     
     /**
      * insert or update tag config.
@@ -233,7 +233,7 @@ public interface PersistService {
      * @param notify     whether to push
      */
     void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp, final String srcUser,
-            final Timestamp time, final boolean notify);
+                           final Timestamp time, final boolean notify);
     
     /**
      * insert or update tag config cas.
@@ -247,7 +247,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
-            final String srcUser, final Timestamp time, final boolean notify);
+                                 final String srcUser, final Timestamp time, final boolean notify);
     
     /**
      * update md5.
@@ -270,7 +270,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      */
     void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo);
+                        Map<String, Object> configAdvanceInfo);
     
     /**
      * Write to the main table, insert or update.
@@ -283,7 +283,7 @@ public interface PersistService {
      * @param notify            whether to push
      */
     void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo, boolean notify);
+                        Map<String, Object> configAdvanceInfo, boolean notify);
     
     /**
      * insert or update cas..
@@ -296,7 +296,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo);
+                              Map<String, Object> configAdvanceInfo);
     
     /**
      * Write to the main table, insert or update cas.
@@ -310,7 +310,7 @@ public interface PersistService {
      * @return success or not.
      */
     boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo, boolean notify);
+                              Map<String, Object> configAdvanceInfo, boolean notify);
     
     // ----------------------- config_aggr_info table insert update delete
     
@@ -331,7 +331,7 @@ public interface PersistService {
      * @param srcUser user
      */
     void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
-            final String srcUser);
+                          final String srcUser);
     
     /**
      * Delete config info by ids.
@@ -365,7 +365,7 @@ public interface PersistService {
      * @return {@code true} if add success
      */
     boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
-            String appName, final String content);
+                              String appName, final String content);
     
     /**
      * Delete a single piece of data before aggregation.
@@ -432,7 +432,7 @@ public interface PersistService {
      * @return {@code true} if publish success
      */
     boolean batchPublishAggr(final String dataId, final String group, final String tenant,
-            final Map<String, String> datumMap, final String appName);
+                             final Map<String, String> datumMap, final String appName);
     
     /**
      * Batch replacement, first delete all the specified DataID+Group data in the aggregation table, and then insert the
@@ -446,7 +446,7 @@ public interface PersistService {
      * @return {@code true} if replace success
      */
     boolean replaceAggr(final String dataId, final String group, final String tenant,
-            final Map<String, String> datumMap, final String appName);
+                        final Map<String, String> datumMap, final String appName);
     
     /**
      * Find all dataId and group. It is guaranteed not to return NULL.
@@ -498,7 +498,7 @@ public interface PersistService {
      * @return {@link com.alibaba.nacos.config.server.Config}
      */
     ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
-            final Map<String, Object> configAdvanceInfo);
+                                         final Map<String, Object> configAdvanceInfo);
     
     /**
      * Query configuration information based on dataId and group.
@@ -537,7 +537,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
-            final String tenant);
+                                            final String tenant);
     
     /**
      * Query configuration information based on dataId.
@@ -550,7 +550,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
-            final String tenant, final String appName);
+                                                  final String tenant, final String appName);
     
     /**
      * find config info.
@@ -563,7 +563,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
+                                                      final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
      * find config info.
@@ -577,7 +577,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
+                                         final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
      * Query configuration information based on dataId.
@@ -599,7 +599,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
-            final String tenant);
+                                           final String tenant);
     
     /**
      * Query configuration information based on group.
@@ -612,7 +612,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
-            final String tenant, final String appName);
+                                                 final String tenant, final String appName);
     
     /**
      * Query configuration information.
@@ -625,7 +625,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
+                                                     final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
      * Query configuration information based on group.
@@ -637,7 +637,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
-            final String appName);
+                                         final String appName);
     
     /**
      * Query configuration information.
@@ -649,7 +649,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
-            final Map<String, Object> configAdvanceInfo);
+                                             final Map<String, Object> configAdvanceInfo);
     
     /**
      * Query configuration information based on group.
@@ -831,7 +831,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
-            int subQueryLimit);
+                                           int subQueryLimit);
     
     /**
      * Fuzzy query configuration information based on dataId and group.
@@ -846,7 +846,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId, final String group,
-            final String tenant, final String appName, final String content);
+                                        final String tenant, final String appName, final String content);
     
     /**
      * Fuzzy query configuration information based on dataId and group.
@@ -858,7 +858,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final ConfigKey[] configKeys,
-            final boolean blacklist);
+                                        final boolean blacklist);
     
     /**
      * Query config info.
@@ -872,7 +872,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
-            final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
+                                             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
      * Fuzzy query configuration information based on dataId and group.
@@ -886,7 +886,7 @@ public interface PersistService {
      * @throws IOException exception
      */
     Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo, final int pageSize, final String dataId,
-            final String group, final String content) throws IOException;
+                                                final String group, final String content) throws IOException;
     
     /**
      * Find a single piece of data before aggregation.
@@ -920,7 +920,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfoAggr} generation
      */
     Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
-            final int pageSize);
+                                                  final int pageSize);
     
     /**
      * Query eligible aggregated data.
@@ -932,7 +932,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfoAggr} generation
      */
     Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
-            boolean blacklist);
+                                                boolean blacklist);
     
     /**
      * Find all aggregated data sets.
@@ -975,8 +975,8 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
-            final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
-            final int pageSize, final long lastMaxId);
+                                             final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
+                                             final int pageSize, final long lastMaxId);
     
     /**
      * Query deleted config.
@@ -999,7 +999,7 @@ public interface PersistService {
      * @return execute sql result
      */
     long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
-            final Timestamp time, Map<String, Object> configAdvanceInfo);
+                             final Timestamp time, Map<String, Object> configAdvanceInfo);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -1058,7 +1058,7 @@ public interface PersistService {
      * @param srcUser user
      */
     void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
-            final String srcUser);
+                                final String srcUser);
     
     /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -1078,7 +1078,7 @@ public interface PersistService {
      * @param srcUser user
      */
     void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
-            final String srcIp, final String srcUser);
+                             final String srcIp, final String srcUser);
     
     /**
      * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -1090,14 +1090,14 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      */
     void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-            final Timestamp time, Map<String, Object> configAdvanceInfo);
+                                final Timestamp time, Map<String, Object> configAdvanceInfo);
     
     
     /**
      * find ConfigInfo by ids.
      *
      * @param ids id list
-     * @return {@link com.alibaba.nacos.config.server.model.ConfigInfo} list
+     * @return {@link ConfigInfo} list
      * @author klw
      * @date 2019/7/5 16:37
      */
@@ -1134,7 +1134,7 @@ public interface PersistService {
      * @param ops        ops type
      */
     void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
-            String ops);
+                                   String ops);
     
     /**
      * List configuration history change record.
@@ -1196,7 +1196,7 @@ public interface PersistService {
      * @param time          time
      */
     void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResoure,
-            final long time);
+                                final long time);
     
     /**
      * Update tenantInfo showname.
@@ -1309,7 +1309,7 @@ public interface PersistService {
      * @return Collection of ConfigInfo objects
      */
     List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
-            final String appName, final List<Long> ids);
+                                                 final String appName, final List<Long> ids);
     
     /**
      * batch operation,insert or update the format of the returned: succCount: number of successful imports skipCount:
@@ -1327,7 +1327,7 @@ public interface PersistService {
      * @throws NacosException nacos exception
      */
     Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
-            Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
+                                            Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
             throws NacosException;
     
     /**

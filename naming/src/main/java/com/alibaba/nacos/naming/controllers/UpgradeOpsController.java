@@ -19,14 +19,17 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
@@ -42,17 +45,16 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.selector.LabelSelector;
+import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,8 +69,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,41 +84,39 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NAMESPACE_SERVICE_CO
  *
  * <p>Helping to resolve some unexpected problems when upgrading.
  *
- * @author gengtuo.ygt
- * on 2021/5/14
+ * @author gengtuo.ygt on 2021/5/14
  * @deprecated will be removed at 2.1.x
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/upgrade/ops")
 public class UpgradeOpsController {
-
+    
     private final SwitchDomain switchDomain;
-
+    
     private final ServiceManager serviceManager;
-
+    
     private final ServiceOperatorV1Impl serviceOperatorV1;
-
+    
     private final ServiceOperatorV2Impl serviceOperatorV2;
-
+    
     private final InstanceOperatorServiceImpl instanceServiceV1;
-
+    
     private final InstanceOperatorClientImpl instanceServiceV2;
-
+    
     private final ServiceStorage serviceStorage;
     
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
-
+    
     private final UpgradeJudgement upgradeJudgement;
-
-    public UpgradeOpsController(SwitchDomain switchDomain,
-                                ServiceManager serviceManager,
-                                ServiceOperatorV1Impl serviceOperatorV1,
-                                ServiceOperatorV2Impl serviceOperatorV2,
-                                InstanceOperatorServiceImpl instanceServiceV1,
-                                InstanceOperatorClientImpl instanceServiceV2,
-                                ServiceStorage serviceStorage,
-                                DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine,
-                                UpgradeJudgement upgradeJudgement) {
+    
+    @Autowired
+    private SelectorManager selectorManager;
+    
+    public UpgradeOpsController(SwitchDomain switchDomain, ServiceManager serviceManager,
+            ServiceOperatorV1Impl serviceOperatorV1, ServiceOperatorV2Impl serviceOperatorV2,
+            InstanceOperatorServiceImpl instanceServiceV1, InstanceOperatorClientImpl instanceServiceV2,
+            ServiceStorage serviceStorage, DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine,
+            UpgradeJudgement upgradeJudgement) {
         this.switchDomain = switchDomain;
         this.serviceManager = serviceManager;
         this.serviceOperatorV1 = serviceOperatorV1;
@@ -126,7 +127,7 @@ public class UpgradeOpsController {
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         this.upgradeJudgement = upgradeJudgement;
     }
-
+    
     /**
      * Get metrics information for upgrading view.
      *
@@ -158,7 +159,7 @@ public class UpgradeOpsController {
             return sb.toString();
         }
     }
-
+    
     private ObjectNode getMetrics() throws NacosException {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         Set<String> serviceNamesV2 = new HashSet<>();
@@ -168,11 +169,11 @@ public class UpgradeOpsController {
         int ephemeralInstanceCountV2 = 0;
         Set<String> allNamespaces = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getAllNamespaces();
         for (String ns : allNamespaces) {
-            Set<com.alibaba.nacos.naming.core.v2.pojo.Service> services
-                    = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().getSingletons(ns);
+            Set<com.alibaba.nacos.naming.core.v2.pojo.Service> services = com.alibaba.nacos.naming.core.v2.ServiceManager
+                    .getInstance().getSingletons(ns);
             for (com.alibaba.nacos.naming.core.v2.pojo.Service service : services) {
-                String nameWithNs = service.getNamespace()
-                        + NAMESPACE_SERVICE_CONNECTOR + service.getGroupedServiceName();
+                String nameWithNs =
+                        service.getNamespace() + NAMESPACE_SERVICE_CONNECTOR + service.getGroupedServiceName();
                 serviceNamesV2.add(nameWithNs);
                 if (service.isEphemeral()) {
                     ephemeralServiceNamesV2.add(nameWithNs);
@@ -180,7 +181,7 @@ public class UpgradeOpsController {
                     persistentServiceNamesV2.add(nameWithNs);
                 }
                 ServiceInfo data = serviceStorage.getPushData(service);
-                for (com.alibaba.nacos.api.naming.pojo.Instance instance : data.getHosts()) {
+                for (Instance instance : data.getHosts()) {
                     if (instance.isEphemeral()) {
                         ephemeralInstanceCountV2 += 1;
                     } else {
@@ -204,22 +205,21 @@ public class UpgradeOpsController {
         result.put("persistentServiceCountV2", persistentServiceNamesV2.size());
         result.put("ephemeralInstanceCountV2", ephemeralInstanceCountV2);
         result.put("persistentInstanceCountV2", persistentInstanceCountV2);
-
+        
         Set<String> serviceNamesV1 = serviceManager.getAllServiceNames().entrySet().stream()
                 .flatMap(e -> e.getValue().stream().map(name -> {
                     if (!name.contains(SERVICE_INFO_SPLITER)) {
                         name = NamingUtils.getGroupedName(name, DEFAULT_GROUP);
                     }
                     return e.getKey() + NAMESPACE_SERVICE_CONNECTOR + name;
-                }))
-                .collect(Collectors.toSet());
-        result.put("service.V1.not.in.V2", String.join("\n",
-                (Collection<String>) CollectionUtils.subtract(serviceNamesV1, serviceNamesV2)));
-        result.put("service.V2.not.in.V1", String.join("\n",
-                (Collection<String>) CollectionUtils.subtract(serviceNamesV2, serviceNamesV1)));
+                })).collect(Collectors.toSet());
+        result.put("service.V1.not.in.V2",
+                String.join("\n", (Collection<String>) CollectionUtils.subtract(serviceNamesV1, serviceNamesV2)));
+        result.put("service.V2.not.in.V1",
+                String.join("\n", (Collection<String>) CollectionUtils.subtract(serviceNamesV2, serviceNamesV1)));
         return result;
     }
-
+    
     /**
      * Create a new service. This API will create a persistence service.
      *
@@ -234,23 +234,22 @@ public class UpgradeOpsController {
     @PostMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String createService(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                HttpServletRequest request,
-                                @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                                @RequestParam String serviceName,
-                                @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
-                                @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
-                                @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
+            HttpServletRequest request, @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam String serviceName,
+            @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
+            @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
+            @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(protectThreshold);
         serviceMetadata.setSelector(parseSelector(selector));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
-        boolean ephemeral = BooleanUtils.toBoolean(
+        boolean ephemeral = ConvertUtils.toBoolean(
                 WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
         serviceMetadata.setEphemeral(ephemeral);
         getServiceOperator(ver).create(namespaceId, serviceName, serviceMetadata);
         return "ok";
     }
-
+    
     /**
      * Remove service.
      *
@@ -262,16 +261,16 @@ public class UpgradeOpsController {
     @DeleteMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String removeService(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                                @RequestParam String serviceName) throws Exception {
+            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam String serviceName) throws Exception {
         getServiceOperator(ver).delete(namespaceId, serviceName);
         return "ok";
     }
-
+    
     private ServiceOperator getServiceOperator(String ver) {
         return "v2".equals(ver) ? serviceOperatorV2 : serviceOperatorV1;
     }
-
+    
     /**
      * Get detail of service.
      *
@@ -283,11 +282,11 @@ public class UpgradeOpsController {
     @GetMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode detailService(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                    @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                                    @RequestParam String serviceName) throws NacosException {
+            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam String serviceName) throws NacosException {
         return getServiceOperator(ver).queryService(namespaceId, serviceName);
     }
-
+    
     /**
      * List all service names.
      *
@@ -298,20 +297,19 @@ public class UpgradeOpsController {
     @GetMapping("/service/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode listService(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                  HttpServletRequest request) throws Exception {
+            HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        List<String> serviceNameList = getServiceOperator(ver)
-                .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
-        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
+        Collection<String> serviceNameList = getServiceOperator(ver).listService(namespaceId, groupName, selectorString);
         result.put("count", serviceNameList.size());
+        result.replace("doms", JacksonUtils.transferToJsonNode(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList)));
         return result;
     }
-
+    
     /**
      * Update service.
      *
@@ -322,7 +320,7 @@ public class UpgradeOpsController {
     @PutMapping("/service")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String updateService(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                HttpServletRequest request) throws Exception {
+            HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
@@ -336,7 +334,7 @@ public class UpgradeOpsController {
         getServiceOperator(ver).update(service, serviceMetadata);
         return "ok";
     }
-
+    
     /**
      * Search service names.
      *
@@ -348,9 +346,9 @@ public class UpgradeOpsController {
     @RequestMapping("/service/names")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode searchService(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                    @RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
-                                    @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
-                                    @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
+            @RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
+            @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
+            @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
         Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
         int totalCount = 0;
         ServiceOperator serviceOperator = getServiceOperator(ver);
@@ -370,30 +368,27 @@ public class UpgradeOpsController {
         result.put("count", totalCount);
         return result;
     }
-
+    
     private Selector parseSelector(String selectorJsonString) throws Exception {
-
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
         }
-
+    
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        switch (SelectorType.valueOf(selectorJson.get("type").asText())) {
-            case none:
-                return new NoneSelector();
-            case label:
-                String expression = selectorJson.get("expression").asText();
-                Set<String> labels = LabelSelector.parseExpression(expression);
-                LabelSelector labelSelector = new LabelSelector();
-                labelSelector.setExpression(expression);
-                labelSelector.setLabels(labels);
-                return labelSelector;
-            default:
-                throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
+        String type = Optional.ofNullable(selectorJson.get("type"))
+                .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
+                .asText();
+        String expression = Optional.ofNullable(selectorJson.get("expression"))
+                .map(JsonNode::asText)
+                .orElse(null);
+        Selector selector = selectorManager.parseSelector(type, expression);
+        if (Objects.isNull(selector)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
+        return selector;
     }
-
-
+    
+    
     /**
      * Register new instance.
      *
@@ -405,19 +400,20 @@ public class UpgradeOpsController {
     @PostMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String registerInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                   HttpServletRequest request) throws Exception {
-
+            HttpServletRequest request) throws Exception {
+        
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-
-        final Instance instance = parseInstance(request);
-
+        
+        final Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
+        
         getInstanceOperator(ver).registerInstance(namespaceId, serviceName, instance);
         return "ok";
     }
-
+    
     /**
      * Deregister instances.
      *
@@ -429,16 +425,17 @@ public class UpgradeOpsController {
     @DeleteMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String deregisterInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                     HttpServletRequest request) throws Exception {
-        Instance instance = getIpAddress(request);
+            HttpServletRequest request) throws Exception {
+        Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-
+        
         getInstanceOperator(ver).removeInstance(namespaceId, serviceName, instance);
         return "ok";
     }
-
+    
     /**
      * Update instance.
      *
@@ -450,15 +447,17 @@ public class UpgradeOpsController {
     @PutMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String updateInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                 HttpServletRequest request) throws Exception {
+            HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-        getInstanceOperator(ver).updateInstance(namespaceId, serviceName, parseInstance(request));
+        Instance instance = HttpRequestInstanceBuilder.newBuilder()
+                .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
+        getInstanceOperator(ver).updateInstance(namespaceId, serviceName, instance);
         return "ok";
     }
-
-
+    
+    
     /**
      * Get all instance of input service.
      *
@@ -469,29 +468,29 @@ public class UpgradeOpsController {
     @GetMapping("/instance/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public Object listInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
-                               HttpServletRequest request) throws Exception {
-
+            HttpServletRequest request) throws Exception {
+        
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
-
+        
         String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         int udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
-
+        
         boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
-
+        
         String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
         String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
-
+        
         Subscriber subscriber = new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
                 udpPort, clusters);
         return getInstanceOperator(ver).listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
     }
-
+    
     /**
      * Get detail information of specified instance.
      *
@@ -502,16 +501,16 @@ public class UpgradeOpsController {
     @GetMapping("/instance")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode detailInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
-                                     HttpServletRequest request) throws Exception {
-
+            HttpServletRequest request) throws Exception {
+        
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
-
-        com.alibaba.nacos.api.naming.pojo.Instance instance = getInstanceOperator(ver)
+        
+        Instance instance = getInstanceOperator(ver)
                 .getInstance(namespaceId, serviceName, cluster, ip, port);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put("service", serviceName);
@@ -524,71 +523,9 @@ public class UpgradeOpsController {
         result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
         return result;
     }
-
-    private Instance parseInstance(HttpServletRequest request) throws Exception {
-
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String app = WebUtils.optional(request, "app", "DEFAULT");
-        Instance instance = getIpAddress(request);
-        instance.setApp(app);
-        instance.setServiceName(serviceName);
-        // Generate simple instance id first. This value would be updated according to
-        // INSTANCE_ID_GENERATOR.
-        instance.setInstanceId(instance.generateInstanceId());
-        instance.setLastBeat(System.currentTimeMillis());
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        if (StringUtils.isNotEmpty(metadata)) {
-            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
-        }
-
-        instance.validate();
-
-        return instance;
-    }
-
-    private Instance getIpAddress(HttpServletRequest request) {
-
-        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
-        boolean enabled;
-        if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
-        } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
-        }
-
-        String weight = WebUtils.optional(request, "weight", "1");
-        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
-
-        Instance instance = getBasicIpAddress(request);
-        instance.setWeight(Double.parseDouble(weight));
-        instance.setHealthy(healthy);
-        instance.setEnabled(enabled);
-
-        return instance;
-    }
-
-    private Instance getBasicIpAddress(HttpServletRequest request) {
-
-        final String ip = WebUtils.required(request, "ip");
-        final String port = WebUtils.required(request, "port");
-        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
-        if (StringUtils.isBlank(cluster)) {
-            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        }
-        boolean ephemeral = BooleanUtils.toBoolean(
-                WebUtils.optional(request, "ephemeral", String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
-
-        Instance instance = new Instance();
-        instance.setPort(Integer.parseInt(port));
-        instance.setIp(ip);
-        instance.setEphemeral(ephemeral);
-        instance.setClusterName(cluster);
-
-        return instance;
-    }
-
+  
     private InstanceOperator getInstanceOperator(String ver) {
         return "v2".equals(ver) ? instanceServiceV2 : instanceServiceV1;
     }
-
+    
 }

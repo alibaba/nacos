@@ -17,8 +17,10 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
@@ -31,14 +33,12 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -283,7 +283,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         StringBuilder stringBuilder = new StringBuilder();
         
         for (Instance instance : allIPs()) {
-            stringBuilder.append(instance.toIpAddr()).append("_").append(instance.isHealthy()).append(",");
+            stringBuilder.append(instance.toIpAddr()).append('_').append(instance.isHealthy()).append(',');
         }
         
         Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}", getNamespaceId(), getName(),
@@ -560,7 +560,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip
                     .getClusterName();
             ipsString.append(string);
-            ipsString.append(",");
+            ipsString.append(',');
         }
         
         checksum = MD5Utils.md5Hex(ipsString.toString(), Constants.ENCODE);

@@ -66,7 +66,7 @@ public interface CatalogService {
      * @throws NacosException exception in query
      */
     Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
-            String instancePattern, boolean ignoreEmptyService) throws NacosException;
+                           String instancePattern, boolean ignoreEmptyService) throws NacosException;
     
     /**
      * List service with cluster and instances by page.

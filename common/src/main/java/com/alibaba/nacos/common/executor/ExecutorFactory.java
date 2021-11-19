@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Unified thread pool creation factory, and actively create thread pool resources by ThreadPoolManager for unified life
- * cycle management {@link ExecutorFactory.Managed}.
+ * cycle management {@link Managed}.
  *
  * <p>Unified thread pool creation factory without life cycle management {@link ExecutorFactory}.
  *

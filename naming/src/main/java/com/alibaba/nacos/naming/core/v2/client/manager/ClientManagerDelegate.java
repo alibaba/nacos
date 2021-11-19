@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
@@ -41,8 +42,6 @@ public class ClientManagerDelegate implements ClientManager {
     
     private final PersistentIpPortClientManager persistentIpPortClientManager;
     
-    private static final String SUFFIX = "false";
-    
     public ClientManagerDelegate(ConnectionBasedClientManager connectionBasedClientManager,
             EphemeralIpPortClientManager ephemeralIpPortClientManager,
             PersistentIpPortClientManager persistentIpPortClientManager) {
@@ -52,12 +51,17 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     @Override
+    public boolean clientConnected(String clientId, ClientAttributes attributes) {
+        return getClientManagerById(clientId).clientConnected(clientId, attributes);
+    }
+    
+    @Override
     public boolean clientConnected(Client client) {
         return getClientManagerById(client.getClientId()).clientConnected(client);
     }
     
     @Override
-    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+    public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         return getClientManagerById(clientId).syncClientConnected(clientId, attributes);
     }
     
@@ -100,7 +104,7 @@ public class ClientManagerDelegate implements ClientManager {
         if (isConnectionBasedClient(clientId)) {
             return connectionBasedClientManager;
         }
-        return clientId.endsWith(SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
+        return clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX) ? persistentIpPortClientManager : ephemeralIpPortClientManager;
     }
     
     private boolean isConnectionBasedClient(String clientId) {

@@ -57,7 +57,7 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     public NamingKvStorage(final String baseDir) throws Exception {
         this.baseDir = baseDir;
-        this.baseDirStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, LABEL, baseDir);
+        this.baseDirStorage = StorageFactory.createKvStorage(KvType.File, LABEL, baseDir);
         this.namespaceKvStorage = new ConcurrentHashMap<>(16);
     }
     

@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

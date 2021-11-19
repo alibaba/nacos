@@ -34,42 +34,42 @@ public interface NacosApplicationListener {
     void starting();
     
     /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#environmentPrepared}.
+     * {@link SpringApplicationRunListener#environmentPrepared}.
      *
      * @param environment environment
      */
     void environmentPrepared(ConfigurableEnvironment environment);
     
     /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
+     * {@link SpringApplicationRunListener#contextLoaded}.
      *
      * @param context context
      */
     void contextPrepared(ConfigurableApplicationContext context);
     
     /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
+     * {@link SpringApplicationRunListener#contextLoaded}.
      *
      * @param context context
      */
     void contextLoaded(ConfigurableApplicationContext context);
     
     /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#started}.
+     * {@link SpringApplicationRunListener#started}.
      *
      * @param context context
      */
     void started(ConfigurableApplicationContext context);
     
     /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#running}.
+     * {@link SpringApplicationRunListener#running}.
      *
      * @param context context
      */
     void running(ConfigurableApplicationContext context);
     
     /**
-     * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#failed}.
+     * {@link SpringApplicationRunListener#failed}.
      *
      * @param context   context
      * @param exception exception

@@ -46,14 +46,14 @@ public class SignUtil {
      */
     public static String sign(String data, String key) throws Exception {
         try {
-            byte[] signature = sign(data.getBytes(UTF8), key.getBytes(UTF8), SignUtil.SigningAlgorithm.HmacSHA1);
+            byte[] signature = sign(data.getBytes(UTF8), key.getBytes(UTF8), SigningAlgorithm.HmacSHA1);
             return new String(Base64.encodeBase64(signature));
         } catch (Exception ex) {
             throw new Exception("Unable to calculate a request signature: " + ex.getMessage(), ex);
         }
     }
     
-    private static byte[] sign(byte[] data, byte[] key, SignUtil.SigningAlgorithm algorithm) throws Exception {
+    private static byte[] sign(byte[] data, byte[] key, SigningAlgorithm algorithm) throws Exception {
         try {
             Mac mac = Mac.getInstance(algorithm.toString());
             mac.init(new SecretKeySpec(key, algorithm.toString()));

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public interface InstanceOperator {
      * @throws Exception exception when list instance failed
      */
     ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
-            boolean healthOnly) throws Exception;
+                             boolean healthOnly) throws Exception;
     
     /**
      * Get instance detail information.
@@ -116,11 +117,13 @@ public interface InstanceOperator {
      * @param port        port of instance
      * @param cluster     cluster of instance
      * @param clientBeat  client beat info
+     * @param builder     client beat instance builder, will be used when current instance is not exist and clientBeat
+     *                    exist
      * @return result code
      * @throws NacosException nacos exception when service non-exist and client beat info is null
      */
-    int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat)
-            throws NacosException;
+    int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat,
+                   BeatInfoInstanceBuilder builder) throws NacosException;
     
     /**
      * Get heart beat interval for specified instance.
@@ -147,24 +150,24 @@ public interface InstanceOperator {
     /**
      * Batch update metadata of instances.
      *
-     * @param namespaceId namespace Id of instances
+     * @param namespaceId           namespace Id of instances
      * @param instanceOperationInfo instance operation info
-     * @param metadata updated metadata
+     * @param metadata              updated metadata
      * @return updated instance
      * @throws NacosException nacos exception during update
      */
     List<String> batchUpdateMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException;
+                                     Map<String, String> metadata) throws NacosException;
     
     /**
      * Batch delete metadata of instances.
      *
-     * @param namespaceId namespace Id of instances
+     * @param namespaceId           namespace Id of instances
      * @param instanceOperationInfo instance operation info
-     * @param metadata delete metadata
+     * @param metadata              delete metadata
      * @return updated instance
      * @throws NacosException nacos exception during update
      */
     List<String> batchDeleteMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException;
+                                     Map<String, String> metadata) throws NacosException;
 }

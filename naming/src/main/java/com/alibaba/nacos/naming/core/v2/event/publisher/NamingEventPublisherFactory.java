@@ -62,7 +62,7 @@ public class NamingEventPublisherFactory implements EventPublisherFactory {
     public String getAllPublisherStatues() {
         StringBuilder result = new StringBuilder("Naming event publisher statues:\n");
         for (NamingEventPublisher each : publisher.values()) {
-            result.append("\t").append(each.getStatus()).append("\n");
+            result.append('\t').append(each.getStatus()).append('\n');
         }
         return result.toString();
     }

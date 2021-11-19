@@ -39,5 +39,5 @@ public interface HealthOperator {
      * @throws NacosException any exception during updating
      */
     void updateHealthStatusForPersistentInstance(String namespace, String fullServiceName, String clusterName,
-            String ip, int port, boolean healthy) throws NacosException;
+                                                 String ip, int port, boolean healthy) throws NacosException;
 }

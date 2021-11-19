@@ -109,7 +109,7 @@ public class Observable {
      * automatically by the {@code notifyObservers} methods.
      *
      * @see java.util.Observable#notifyObservers()
-     * @see java.util.Observable#notifyObservers(java.lang.Object)
+     * @see java.util.Observable#notifyObservers(Object)
      */
     protected synchronized void clearChanged() {
         changed = false;
