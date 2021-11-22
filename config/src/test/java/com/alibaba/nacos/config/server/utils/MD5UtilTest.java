@@ -19,9 +19,7 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -43,9 +41,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 public class MD5UtilTest {
-    
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
     
     @Test
     public void testCompareMd5() {
@@ -72,6 +67,7 @@ public class MD5UtilTest {
     
     @Test
     public void testCompareMd5OldResult() {
+        
         final MockedStatic<GroupKey2> groupKey2MockedStatic = Mockito.mockStatic(GroupKey2.class);
         
         List<String> changedGroupKeys = new ArrayList<>();
@@ -105,11 +101,8 @@ public class MD5UtilTest {
         when(GroupKey2.parseKey(anyString())).thenReturn(arr);
         
         try {
-            
             String actualValue = MD5Util.compareMd5ResultString(changedGroupKeys);
-            
             Assert.assertEquals("test0%02test1%02test2%01", actualValue);
-            
         } catch (IOException e) {
             System.out.println(e.toString());
         }
@@ -134,13 +127,9 @@ public class MD5UtilTest {
     public void testToStringV1() {
         
         try {
-            
             InputStream input = IOUtils.toInputStream("test", StandardCharsets.UTF_8);
-            
             String actualValue = MD5Util.toString(input, "UTF-8");
-            
             Assert.assertEquals("test", actualValue);
-            
         } catch (IOException e) {
             System.out.println(e.toString());
         }
