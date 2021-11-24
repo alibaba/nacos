@@ -109,6 +109,8 @@ public class ServerListManager implements Closeable {
     private volatile String currentServerAddr;
     
     private Iterator<String> iterator;
+
+    private final Object iteratorMutex = new Object();
     
     public String serverPort = ParamUtil.getDefaultServerPort();
     
@@ -376,8 +378,7 @@ public class ServerListManager implements Closeable {
             return;
         }
         serverUrls = new ArrayList<>(newServerAddrList);
-        iterator = iterator();
-        currentServerAddr = iterator.next();
+        refreshCurrentServerAddr();
         
         // Using unified event processor, NotifyCenter
         NotifyCenter.publishEvent(new ServerlistChangeEvent());
@@ -442,31 +443,37 @@ public class ServerListManager implements Closeable {
         
         return serverUrls.contains(ip);
     }
-    
+
     public void refreshCurrentServerAddr() {
-        iterator = iterator();
-        currentServerAddr = iterator.next();
+        synchronized (iteratorMutex) {
+            iterator = iterator();
+            currentServerAddr = iterator.next();
+        }
+    }
+
+    public String tryGetNextServerAddr() {
+        String addr = null;
+        synchronized (iteratorMutex) {
+            if (iterator != null && iterator.hasNext()) {
+                addr = iterator.next();
+            }
+        }
+        return addr;
     }
     
     public String getNextServerAddr() {
-        if (iterator == null || !iterator.hasNext()) {
-            refreshCurrentServerAddr();
-            return currentServerAddr;
-        }
-        try {
+        synchronized (iteratorMutex) {
+            if (iterator == null || !iterator.hasNext()) {
+                refreshCurrentServerAddr();
+                return currentServerAddr;
+            }
             return iterator.next();
-        } catch (Exception e) {
-            //No nothing.
         }
-        refreshCurrentServerAddr();
-        return currentServerAddr;
-        
     }
     
     public String getCurrentServerAddr() {
         if (StringUtils.isBlank(currentServerAddr)) {
-            iterator = iterator();
-            currentServerAddr = iterator.next();
+            refreshCurrentServerAddr();
         }
         return currentServerAddr;
     }

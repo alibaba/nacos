@@ -96,9 +96,10 @@ public class ServerHttpAgent implements HttpAgent {
                         ex);
                 throw ex;
             }
-            
-            if (serverListMgr.getIterator().hasNext()) {
-                currentServerAddr = serverListMgr.getIterator().next();
+
+            String addr;
+            if ((addr = serverListMgr.tryGetNextServerAddr()) != null) {
+                currentServerAddr = addr;
             } else {
                 maxRetry--;
                 if (maxRetry < 0) {
@@ -150,9 +151,10 @@ public class ServerHttpAgent implements HttpAgent {
                 LOGGER.error("[NACOS Exception httpPost] currentServerAddr: " + currentServerAddr, ex);
                 throw ex;
             }
-            
-            if (serverListMgr.getIterator().hasNext()) {
-                currentServerAddr = serverListMgr.getIterator().next();
+
+            String addr;
+            if ((addr = serverListMgr.tryGetNextServerAddr()) != null) {
+                currentServerAddr = addr;
             } else {
                 maxRetry--;
                 if (maxRetry < 0) {
@@ -205,9 +207,10 @@ public class ServerHttpAgent implements HttpAgent {
                         ex);
                 throw ex;
             }
-            
-            if (serverListMgr.getIterator().hasNext()) {
-                currentServerAddr = serverListMgr.getIterator().next();
+
+            String addr;
+            if ((addr = serverListMgr.tryGetNextServerAddr()) != null) {
+                currentServerAddr = addr;
             } else {
                 maxRetry--;
                 if (maxRetry < 0) {
