@@ -73,7 +73,7 @@ public class HealthCheckStatus {
             String datumKey = instance.getDatumKey();
             return serviceName + ":" + clusterName + ":" + datumKey;
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: {}", instance.toJson(), e);
+            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: ", instance.toJson(), e);
         }
         
         return instance.getDefaultKey();
