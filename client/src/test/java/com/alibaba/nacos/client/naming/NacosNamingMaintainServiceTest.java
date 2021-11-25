@@ -298,6 +298,7 @@ public class NacosNamingMaintainServiceTest {
     
     @Test
     public void testShutDown() throws NacosException {
+        //when
         nacosNamingMaintainService.shutDown();
         //then
         verify(serverProxy, times(1)).shutdown();
