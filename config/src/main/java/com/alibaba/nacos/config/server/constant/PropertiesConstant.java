@@ -57,6 +57,5 @@ public class PropertiesConstant {
     
     public static final String MYSQL = "mysql";
     
-    public static final String EMBEDDED_STORAGE = "embeddedStorage";
     
 }

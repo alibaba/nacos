@@ -247,7 +247,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     }
     
     public static void setEmbeddedStorage(boolean embeddedStorage) {
-        PropertyUtil.embeddedStorage = embeddedStorage;
+        PropertyUtil.embeddedStorage = embeddedStorage|| Boolean.getBoolean(PropertiesConstant.EMBEDDED_STORAGE);
     }
     
     private void loadSetting() {
@@ -291,9 +291,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             if (isUseExternalDB()) {
                 setEmbeddedStorage(false);
             } else {
-                boolean embeddedStorage =
-                        PropertyUtil.embeddedStorage || Boolean.getBoolean(PropertiesConstant.EMBEDDED_STORAGE);
-                setEmbeddedStorage(embeddedStorage);
+                setEmbeddedStorage(PropertyUtil.embeddedStorage;);
                 
                 // If the embedded data source storage is not turned on, it is automatically
                 // upgraded to the external data source storage, as before
