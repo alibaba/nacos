@@ -1,4 +1,4 @@
-/*
+/* // NOPMD by Arthur on 18/11/2021 11:02
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -71,19 +71,21 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  *
  * @author nkorange
  */
-public class NamingHttpClientProxy extends AbstractNamingClientProxy {
+public class NamingHttpClientProxy extends AbstractNamingClientProxy {		 // NOPMD by Arthur on 18/11/2021 11:02
     
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();	// Instantiate the a client manager with the rest template
     
-    private static final int DEFAULT_SERVER_PORT = 8848;
+    // Setting the default parameters for the module 
+    
+    private static final int DEFAULT_SERVER_PORT = 8848;	// Setting the default server port as 8848 // NOPMD by Arthur on 18/11/2021 11:03
     
     private static final String IP_PARAM = "ip";
     
     private static final String PORT_PARAM = "port";
     
-    private static final String WEIGHT_PARAM = "weight";
+    private static final String WEIGHT_PARAM = "weight"; 
     
-    private static final String ENABLE_PARAM = "enabled";
+    private static final String ENABLE_PARAM = "enabled";	// Enable the use of parameters
     
     private static final String EPHEMERAL_PARAM = "ephemeral";
     
@@ -91,9 +93,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String SELECTOR_PARAM = "selector";
     
-    private static final String HEALTHY_PARAM = "healthy";
+    private static final String HEALTHY_PARAM = "healthy";	
     
-    private static final String PROTECT_THRESHOLD_PARAM = "protectThreshold";
+    private static final String PROTECT_THRESHOLD_PARAM = "protectThreshold";	 // NOPMD by Arthur on 18/11/2021 11:03
     
     private static final String CLUSTERS_PARAM = "clusters";
     
@@ -101,9 +103,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String CLIENT_IP_PARAM = "clientIP";
     
-    private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
+    private static final String HEALTHY_ONLY_PARAM = "healthyOnly"; // NOPMD by Arthur on 18/11/2021 11:03
     
-    private static final String SERVICE_NAME_PARAM = "serviceName";
+    private static final String SERVICE_NAME_PARAM = "serviceName"; // NOPMD by Arthur on 18/11/2021 11:03
     
     private final String namespaceId;
     
@@ -111,14 +113,14 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final BeatReactor beatReactor;
     
-    private final PushReceiver pushReceiver;
+    private final PushReceiver pushReceiver;	// A global push receiver 
     
-    private final int maxRetry;
+    private final int maxRetry;		// The maximum number of connection retries allowed
     
-    private int serverPort = DEFAULT_SERVER_PORT;
+    private int serverPort = DEFAULT_SERVER_PORT;	//Setting the server port of the module as the default server port -- 设置模块的服务器端口为默认服务器端口 // NOPMD by Arthur on 18/11/2021 11:02
     
-    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
-            Properties properties, ServiceInfoHolder serviceInfoHolder) {
+    public NamingHttpClientProxy(final String namespaceId,final SecurityProxy securityProxy, final ServerListManager serverListManager,
+            final Properties properties, final ServiceInfoHolder serviceInfoHolder) {
         super(securityProxy, properties);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
@@ -130,7 +132,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(ServerListChangedEvent event) {
+    public void onEvent(final ServerListChangedEvent event) {
         // do nothing in http client
     }
     
@@ -140,16 +142,16 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void registerService(final String serviceName,final String groupName,final Instance instance) throws NacosException {
         
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}", namespaceId, serviceName,
                 instance);
-        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        final String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName); // NOPMD by Arthur on 18/11/2021 11:03
         if (instance.isEphemeral()) {
-            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
+            final BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
             beatReactor.addBeatInfo(groupedServiceName, beatInfo);
         }
-        final Map<String, String> params = new HashMap<String, String>(32);
+        final Map<String, String> params = new HashMap<String, String>(16);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, groupedServiceName);
         params.put(CommonParams.GROUP_NAME, groupName);
@@ -167,7 +169,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void deregisterService(final String serviceName,final String groupName,final Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
                         instance);
@@ -175,7 +177,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(),
                     instance.getPort());
         }
-        final Map<String, String> params = new HashMap<String, String>(16);
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
         params.put(CommonParams.CLUSTER_NAME, instance.getClusterName());
@@ -187,11 +189,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+    public void updateInstance(final String serviceName,final String groupName,final Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName, instance);
         
-        final Map<String, String> params = new HashMap<String, String>(32);
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
@@ -207,41 +209,46 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
-            boolean healthyOnly) throws NacosException {
-        final Map<String, String> params = new HashMap<String, String>(16);
+    public ServiceInfo queryInstancesOfService(final String serviceName,final String groupName,final String clusters,final int udpPort,
+            final boolean healthyOnly) throws NacosException {
+    	ServiceInfo outputServiceinfo;
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
         params.put(CLUSTERS_PARAM, clusters);
         params.put(UDP_PORT_PARAM, String.valueOf(udpPort));
         params.put(CLIENT_IP_PARAM, NetUtils.localIP());
         params.put(HEALTHY_ONLY_PARAM, String.valueOf(healthyOnly));
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
+        final String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
+        
         if (StringUtils.isNotEmpty(result)) {
-            return JacksonUtils.toObj(result, ServiceInfo.class);
+            outputServiceinfo = JacksonUtils.toObj(result, ServiceInfo.class);
+        } else {
+        	outputServiceinfo = new ServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         }
-        return new ServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), clusters);
+        
+        return outputServiceinfo;
     }
     
     @Override
-    public Service queryService(String serviceName, String groupName) throws NacosException {
+    public Service queryService(final String serviceName,final String groupName) throws NacosException {
         NAMING_LOGGER.info("[QUERY-SERVICE] {} query service : {}, {}", namespaceId, serviceName, groupName);
         
-        final Map<String, String> params = new HashMap<String, String>(16);
+        final Map<String, String> params = new HashMap<String, String>(3);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
         
-        String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
+        final String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
         return JacksonUtils.toObj(result, Service.class);
     }
     
     @Override
-    public void createService(Service service, AbstractSelector selector) throws NacosException {
+    public void createService(final Service service, final AbstractSelector selector) throws NacosException {
         
         NAMING_LOGGER.info("[CREATE-SERVICE] {} creating service : {}", namespaceId, service);
         
-        final Map<String, String> params = new HashMap<String, String>(16);
+        final Map<String, String> params = new HashMap<String, String>(6);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, service.getName());
         params.put(CommonParams.GROUP_NAME, service.getGroupName());
@@ -254,24 +261,24 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public boolean deleteService(String serviceName, String groupName) throws NacosException {
+    public boolean deleteService(final String serviceName,final String groupName) throws NacosException {
         NAMING_LOGGER.info("[DELETE-SERVICE] {} deleting service : {} with groupName : {}", namespaceId, serviceName,
                 groupName);
         
-        final Map<String, String> params = new HashMap<String, String>(16);
+        final Map<String, String> params = new HashMap<String, String>(6);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
         
-        String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.DELETE);
+        final String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.DELETE);
         return "ok".equals(result);
     }
     
     @Override
-    public void updateService(Service service, AbstractSelector selector) throws NacosException {
+    public void updateService(final Service service,final AbstractSelector selector) throws NacosException {
         NAMING_LOGGER.info("[UPDATE-SERVICE] {} updating service : {}", namespaceId, service);
         
-        final Map<String, String> params = new HashMap<String, String>(16);
+        final Map<String, String> params = new HashMap<String, String>(6);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, service.getName());
         params.put(CommonParams.GROUP_NAME, service.getGroupName());
@@ -290,13 +297,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
      * @return beat result
      * @throws NacosException nacos exception
      */
-    public JsonNode sendBeat(BeatInfo beatInfo, boolean lightBeatEnabled) throws NacosException {
+    public JsonNode sendBeat(final BeatInfo beatInfo,final boolean lightBeatEnabled) throws NacosException {
         
         if (NAMING_LOGGER.isDebugEnabled()) {
             NAMING_LOGGER.debug("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
         }
-        Map<String, String> params = new HashMap<String, String>(16);
-        Map<String, String> bodyMap = new HashMap<String, String>(2);
+        final Map<String, String> params = new HashMap<String, String>(8);
+        final Map<String, String> bodyMap = new HashMap<String, String>(2);
         if (!lightBeatEnabled) {
             bodyMap.put("beat", JacksonUtils.toJson(beatInfo));
         }
@@ -305,29 +312,30 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.CLUSTER_NAME, beatInfo.getCluster());
         params.put(IP_PARAM, beatInfo.getIp());
         params.put(PORT_PARAM, String.valueOf(beatInfo.getPort()));
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/beat", params, bodyMap, HttpMethod.PUT);
+        final String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/beat", params, bodyMap, HttpMethod.PUT);
         return JacksonUtils.toObj(result);
     }
     
     @Override
     public boolean serverHealthy() {
-        
+        boolean success;
         try {
-            String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<String, String>(8),
+            final String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<String, String>(2),
                     HttpMethod.GET);
-            JsonNode json = JacksonUtils.toObj(result);
-            String serverStatus = json.get("status").asText();
-            return "UP".equals(serverStatus);
-        } catch (Exception e) {
-            return false;
+            final JsonNode json = JacksonUtils.toObj(result);
+            final String serverStatus = json.get("status").asText();
+            success = "UP".equals(serverStatus);
+        } catch (Exception e) { // NOPMD by Arthur on 18/11/2021 11:02
+           success = false;
         }
+        return success;
     }
     
     @Override
-    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
+    public final ListView<String> getServiceList(final int pageNo,final int pageSize, final String groupName,final AbstractSelector selector)
             throws NacosException {
         
-        Map<String, String> params = new HashMap<String, String>(16);
+        final Map<String, String> params = new HashMap<String, String>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -338,7 +346,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 case none:
                     break;
                 case label:
-                    ExpressionSelector expressionSelector = (ExpressionSelector) selector;
+                    final ExpressionSelector expressionSelector = (ExpressionSelector) selector; // NOPMD by Arthur on 18/11/2021 11:03
                     params.put(SELECTOR_PARAM, JacksonUtils.toJson(expressionSelector));
                     break;
                 default:
@@ -346,10 +354,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             }
         }
         
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
+        final String result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
         
-        JsonNode json = JacksonUtils.toObj(result);
-        ListView<String> listView = new ListView<String>();
+        final JsonNode json = JacksonUtils.toObj(result);
+        final ListView<String> listView = new ListView<String>();
         listView.setCount(json.get("count").asInt());
         listView.setData(JacksonUtils.toObj(json.get("doms").toString(), new TypeReference<List<String>>() {
         }));
@@ -358,35 +366,36 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+	public final ServiceInfo subscribe(final String serviceName,final String groupName,final String clusters) throws NacosException {
         return queryInstancesOfService(serviceName, groupName, clusters, pushReceiver.getUdpPort(), false);
     }
     
     @Override
-    public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
+    public void unsubscribe(final String serviceName,final String groupName,final String clusters) throws NacosException {
+    	//Unimplemented 
     }
     
     @Override
-    public void updateBeatInfo(Set<Instance> modifiedInstances) {
-        for (Instance instance : modifiedInstances) {
-            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
+    public void updateBeatInfo(final Set<Instance> modifiedInstances) {
+        for (final Instance instance : modifiedInstances) {
+            final String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
             if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
-                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
+                final BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
                 beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
             }
         }
     }
     
-    public String reqApi(String api, Map<String, String> params, String method) throws NacosException {
-        return reqApi(api, params, Collections.EMPTY_MAP, method);
+    public String reqApi(final String api,final Map<String, String> params,final String method) throws NacosException {
+        return reqApi(api, params, Collections.<String, String>emptyMap(), method);
     }
     
-    public String reqApi(String api, Map<String, String> params, Map<String, String> body, String method)
+    public String reqApi(final String api,final Map<String, String> params,final Map<String, String> body,final String method)
             throws NacosException {
         return reqApi(api, params, body, serverListManager.getServerList(), method);
     }
     
-    /**
+    /** // NOPMD by Arthur on 18/11/2021 11:02
      * Request api.
      *
      * @param api     api
@@ -397,8 +406,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
      * @return result
      * @throws NacosException nacos exception
      */
-    public String reqApi(String api, Map<String, String> params, Map<String, String> body, List<String> servers,
-            String method) throws NacosException {
+    public String reqApi(final String api, final Map<String, String> params,final Map<String, String> body, final List<String> servers,
+            final String method) throws NacosException {
         
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
         
@@ -409,10 +418,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         NacosException exception = new NacosException();
         
         if (serverListManager.isDomain()) {
-            String nacosDomain = serverListManager.getNacosDomain();
+            final String nacosDomain = serverListManager.getNacosDomain();
             for (int i = 0; i < maxRetry; i++) {
                 try {
-                    return callServer(api, params, body, nacosDomain, method);
+                    return callServer(api, params, body, nacosDomain, method); // NOPMD by Arthur on 18/11/2021 11:02
                 } catch (NacosException e) {
                     exception = e;
                     if (NAMING_LOGGER.isDebugEnabled()) {
@@ -421,11 +430,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 }
             }
         } else {
-            Random random = new Random(System.currentTimeMillis());
+            final Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
             
             for (int i = 0; i < servers.size(); i++) {
-                String server = servers.get(index);
+            	String server = servers.get(index);
                 try {
                     return callServer(api, params, body, server, method);
                 } catch (NacosException e) {
@@ -446,7 +455,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         
     }
     
-    /**
+    /** // NOPMD by Arthur on 18/11/2021 11:02
      * Call server.
      *
      * @param api       api
@@ -457,26 +466,26 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
      * @return result
      * @throws NacosException nacos exception
      */
-    public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer,
-            String method) throws NacosException {
-        long start = System.currentTimeMillis();
-        long end = 0;
+    public String callServer(final String api,final Map<String, String> params,final Map<String, String> body, String curServer,
+            final String method) throws NacosException {
+        final long start = System.currentTimeMillis();
+        long end;
         params.putAll(getSecurityHeaders());
         params.putAll(getSpasHeaders(params.get(SERVICE_NAME_PARAM)));
-        Header header = NamingHttpUtil.builderHeader();
+        final Header header = NamingHttpUtil.builderHeader();
         
         String url;
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
             url = curServer + api;
         } else {
             if (!InternetAddressUtil.containsPort(curServer)) {
-                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + serverPort;
+                curServer = curServer + InternetAddressUtil.IP_PORT_SPLITER + serverPort; // NOPMD by Arthur on 18/11/2021 11:02
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
         
         try {
-            HttpRestResult<String> restResult = nacosRestTemplate
+            final HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
@@ -484,13 +493,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     .observe(end - start);
             
             if (restResult.ok()) {
-                return restResult.getData();
+                return restResult.getData(); // NOPMD by Arthur on 18/11/2021 11:02
             }
             if (HttpStatus.SC_NOT_MODIFIED == restResult.getCode()) {
                 return StringUtils.EMPTY;
             }
             throw new NacosException(restResult.getCode(), restResult.getMessage());
-        } catch (Exception e) {
+        } catch (Exception e) { // NOPMD by Arthur on 18/11/2021 11:02
             NAMING_LOGGER.error("[NA] failed to request", e);
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
@@ -500,12 +509,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         return namespaceId;
     }
     
-    public void setServerPort(int serverPort) {
+    public void setServerPort(final int serverPort) {
         this.serverPort = serverPort;
         
-        String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
-        if (StringUtils.isNotBlank(sp)) {
-            this.serverPort = Integer.parseInt(sp);
+        final String systemprop = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
+        if (StringUtils.isNotBlank(systemprop)) {
+            this.serverPort = Integer.parseInt(systemprop);
         }
     }
     
@@ -515,7 +524,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void shutdown() throws NacosException {
-        String className = this.getClass().getName();
+        final String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
         beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
