@@ -40,7 +40,7 @@ import org.springframework.stereotype.Service;
 import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
 
 /**
- * rpc request accetor of grpc.
+ * rpc request acceptor of grpc.
  *
  * @author liuzunfei
  * @version $Id: GrpcCommonRequestAcceptor.java, v 0.1 2020年09月01日 10:52 AM liuzunfei Exp $
