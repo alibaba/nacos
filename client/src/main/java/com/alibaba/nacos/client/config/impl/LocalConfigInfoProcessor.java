@@ -162,11 +162,11 @@ public class LocalConfigInfoProcessor {
     public static void cleanAllSnapshot() {
         try {
             File rootFile = new File(LOCAL_SNAPSHOT_PATH);
-            File[] files = rootFile.listFiles();
+            final File[] files = rootFile.listFiles();
             if (files == null || files.length == 0) {
                 return;
             }
-            for (File file : files) {
+            for (final File file : files) {
                 if (file.getName().endsWith(SUFFIX)) {
                     IoUtils.cleanDirectory(file);
                 }

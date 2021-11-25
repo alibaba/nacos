@@ -48,7 +48,6 @@ import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
-import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -141,7 +140,7 @@ public class ClientWorker implements Closeable {
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
             
-            for (Listener listener : listeners) {
+            for (final Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setSyncWithServer(false);
@@ -164,7 +163,7 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
-            for (Listener listener : listeners) {
+            for (final Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setSyncWithServer(false);
@@ -189,7 +188,7 @@ public class ClientWorker implements Closeable {
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
             cache.setContent(content);
-            for (Listener listener : listeners) {
+            for (final Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setSyncWithServer(false);
@@ -535,7 +534,7 @@ public class ClientWorker implements Closeable {
             return null;
         }
         Map<ClientConfigMetricRequest.MetricsKey, Object> values = new HashMap<>(16);
-        for (ClientConfigMetricRequest.MetricsKey metricsKey : metricsKeys) {
+        for (final ClientConfigMetricRequest.MetricsKey metricsKey : metricsKeys) {
             if (ClientConfigMetricRequest.MetricsKey.CACHE_DATA.equals(metricsKey.getType())) {
                 CacheData cacheData = cacheMap.get().get(metricsKey.getKey());
                 values.putIfAbsent(metricsKey,
@@ -616,7 +615,7 @@ public class ClientWorker implements Closeable {
                 LOGGER.info("Shutdown executor " + executor);
                 executor.shutdown();
                 Map<String, CacheData> stringCacheDataMap = cacheMap.get();
-                for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
+                for (final Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
                     entry.getValue().setSyncWithServer(false);
                 }
             }
@@ -687,7 +686,7 @@ public class ClientWorker implements Closeable {
                     LOGGER.info("[{}] DisConnected,clear listen context...", rpcClientInner.getName());
                     Collection<CacheData> values = cacheMap.get().values();
                     
-                    for (CacheData cacheData : values) {
+                    for (final CacheData cacheData : values) {
                         if (StringUtils.isNotBlank(taskId)) {
                             if (Integer.valueOf(taskId).equals(cacheData.getTaskId())) {
                                 cacheData.setSyncWithServer(false);
@@ -768,7 +767,7 @@ public class ClientWorker implements Closeable {
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
-            for (CacheData cache : cacheMap.get().values()) {
+            for (final CacheData cache : cacheMap.get().values()) {
                 
                 synchronized (cache) {
                     
@@ -780,7 +779,7 @@ public class ClientWorker implements Closeable {
                         }
                     }
                     
-                    if (!CollectionUtils.isEmpty(cache.getListeners())) {
+                    if (CollectionUtils.isEmpty(cache.getListeners())) {
                         //get listen  config
                         if (!cache.isUseLocalConfigInfo()) {
                             List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
@@ -791,7 +790,7 @@ public class ClientWorker implements Closeable {
                             cacheDatas.add(cache);
                             
                         }
-                    } else if (CollectionUtils.isEmpty(cache.getListeners())) {
+                    } else {
                         
                         if (!cache.isUseLocalConfigInfo()) {
                             List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
@@ -810,12 +809,12 @@ public class ClientWorker implements Closeable {
             boolean hasChangedKeys = false;
             
             if (!listenCachesMap.isEmpty()) {
-                for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
+                for (final Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
                     Map<String, Long> timestampMap = new HashMap<>(listenCachesMap.size() * 2);
                     
-                    List<CacheData> listenCaches = entry.getValue();
-                    for (CacheData cacheData : listenCaches) {
+                    final List<CacheData> listenCaches = entry.getValue();
+                    for (final CacheData cacheData : listenCaches) {
                         timestampMap.put(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant),
                                 cacheData.getLastModifiedTs().longValue());
                     }
@@ -832,7 +831,7 @@ public class ClientWorker implements Closeable {
                             //handle changed keys,notify listener
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
                                 hasChangedKeys = true;
-                                for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
+                                for (final ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
                                         .getChangedConfigs()) {
                                     String changeKey = GroupKey
                                             .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
@@ -845,7 +844,7 @@ public class ClientWorker implements Closeable {
                             }
                             
                             //handler content configs
-                            for (CacheData cacheData : listenCaches) {
+                            for (final CacheData cacheData : listenCaches) {
                                 String groupKey = GroupKey
                                         .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
                                 if (!changeKeys.contains(groupKey)) {
@@ -882,7 +881,7 @@ public class ClientWorker implements Closeable {
             }
             
             if (!removeListenCachesMap.isEmpty()) {
-                for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
+                for (final Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
                     List<CacheData> removeListenCaches = entry.getValue();
                     ConfigBatchListenRequest configChangeListenRequest = buildConfigRequest(removeListenCaches);
@@ -891,7 +890,7 @@ public class ClientWorker implements Closeable {
                         RpcClient rpcClient = ensureRpcClient(taskId);
                         boolean removeSuccess = unListenConfigChange(rpcClient, configChangeListenRequest);
                         if (removeSuccess) {
-                            for (CacheData cacheData : removeListenCaches) {
+                            for (final CacheData cacheData : removeListenCaches) {
                                 synchronized (cacheData) {
                                     if (cacheData.getListeners().isEmpty()) {
                                         ClientWorker.this
@@ -958,7 +957,7 @@ public class ClientWorker implements Closeable {
         private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
             
             ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
-            for (CacheData cacheData : caches) {
+            for (final CacheData cacheData : caches) {
                 configChangeListenRequest.addConfigListenContext(cacheData.group, cacheData.dataId, cacheData.tenant,
                         cacheData.getMd5());
             }

@@ -18,8 +18,6 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.lifecycle.Closeable;
-
 import java.util.Map;
 
 /**
@@ -27,7 +25,7 @@ import java.util.Map;
  *
  * @author Nacos
  */
-public interface HttpAgent extends Closeable {
+public interface HttpAgent extends AutoCloseable {
     
     /**
      * start to get nacos ip list.
@@ -48,7 +46,7 @@ public interface HttpAgent extends Closeable {
      * @throws Exception If an input or output exception occurred
      */
     
-    HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
+    HttpRestResult httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encoding, long readTimeoutMs) throws Exception;
     
     /**
@@ -62,7 +60,7 @@ public interface HttpAgent extends Closeable {
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
+    HttpRestResult httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encoding, long readTimeoutMs) throws Exception;
     
     /**
@@ -76,7 +74,7 @@ public interface HttpAgent extends Closeable {
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
+    HttpRestResult httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encoding, long readTimeoutMs) throws Exception;
     
     /**

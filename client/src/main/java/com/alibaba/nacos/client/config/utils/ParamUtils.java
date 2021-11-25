@@ -64,7 +64,7 @@ public class ParamUtils {
     }
     
     private static boolean isValidChar(char ch) {
-        for (char c : VALID_CHARS) {
+        for (final char c : VALID_CHARS) {
             if (c == ch) {
                 return true;
             }
@@ -134,10 +134,10 @@ public class ParamUtils {
      * @throws NacosException nacos exception
      */
     public static void checkKeyParam(List<String> dataIds, String group) throws NacosException {
-        if (dataIds == null || dataIds.size() == 0) {
+        if (dataIds == null || dataIds.isEmpty()) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "dataIds invalid");
         }
-        for (String dataId : dataIds) {
+        for (final String dataId : dataIds) {
             if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
             }
@@ -201,7 +201,7 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, BETAIPS_INVALID_MSG);
         }
         String[] ipsArr = betaIps.split(",");
-        for (String ip : ipsArr) {
+        for (final String ip : ipsArr) {
             if (!InternetAddressUtil.isIP(ip)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, BETAIPS_INVALID_MSG);
             }

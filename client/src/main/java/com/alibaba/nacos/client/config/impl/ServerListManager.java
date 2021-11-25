@@ -130,7 +130,7 @@ public class ServerListManager implements Closeable {
         this.isFixed = true;
         this.isStarted = true;
         List<String> serverAddrs = new ArrayList<>();
-        for (String serverAddr : fixed) {
+        for (final String serverAddr : fixed) {
             String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
                 serverAddrs.add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
@@ -361,7 +361,7 @@ public class ServerListManager implements Closeable {
         }
         
         List<String> newServerAddrList = new ArrayList<>();
-        for (String server : newList) {
+        for (final String server : newList) {
             if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
                 newServerAddrList.add(server);
             } else {
@@ -387,14 +387,14 @@ public class ServerListManager implements Closeable {
     private List<String> getApacheServerList(String url, String name) {
         try {
             HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class);
-            
-            if (httpResult.ok()) {
+            final boolean httpresultOk = httpResult.ok();
+            if (httpresultOk) {
                 if (DEFAULT_NAME.equals(name)) {
                     EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());
                 }
                 List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
                 List<String> result = new ArrayList<>(lines.size());
-                for (String serverAddr : lines) {
+                for (final String serverAddr : lines) {
                     if (StringUtils.isNotBlank(serverAddr)) {
                         String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
                         String ip = ipPort[0].trim();
@@ -534,7 +534,7 @@ public class ServerListManager implements Closeable {
         
         public ServerAddressIterator(List<String> source) {
             sorted = new ArrayList<>();
-            for (String address : source) {
+            for (final String address : source) {
                 sorted.add(new RandomizedServerAddress(address));
             }
             Collections.sort(sorted);

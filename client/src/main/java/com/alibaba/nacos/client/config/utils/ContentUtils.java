@@ -45,7 +45,8 @@ public class ContentUtils {
             if (c == '\r' || c == '\n') {
                 throw new IllegalArgumentException("publish/delete content can not contain return and linefeed");
             }
-            if (c == Constants.WORD_SEPARATOR.charAt(0)) {
+            char charAt = Constants.WORD_SEPARATOR.charAt(0);
+            if (c == charAt) {
                 throw new IllegalArgumentException("publish/delete content can not contain(char)2");
             }
         }
