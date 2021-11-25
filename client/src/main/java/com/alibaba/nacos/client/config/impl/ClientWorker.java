@@ -765,67 +765,6 @@ public class ClientWorker implements Closeable {
             listenExecutebell.offer(bellItem);
         }
         
-        public void HandleListenCaches(CacheData cacheData,Set<String> changeKeys,Map<String, Long> timestampMap) {
-            String groupKey = GroupKey
-                    .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
-            if (!changeKeys.contains(groupKey)) {
-                //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
-                synchronized (cacheData) {
-                    if (!cacheData.getListeners().isEmpty()) {
-                        
-                        Long previousTimesStamp = timestampMap.get(groupKey);
-                        if (previousTimesStamp != null) {
-                            if (!cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
-                                    System.currentTimeMillis())) {
-                                return;
-                            }
-                        }
-                        cacheData.setSyncWithServer(true);
-                    }
-                }
-            }
-            
-            cacheData.setInitializing(false);
-        	
-        }
-        
-        public void HandleSyncCache(CacheData cache, Map<String, List<CacheData>> listenCachesMap, Map<String, List<CacheData>> removeListenCachesMap, boolean needAllSync) {
-        	synchronized (cache) {
-                
-                //check local listeners consistent.
-                if (cache.isSyncWithServer()) {
-                    cache.checkListenerMd5();
-                    if (!needAllSync) {
-                        return;
-                    }
-                }
-                
-                if (!CollectionUtils.isEmpty(cache.getListeners())) {
-                    //get listen  config
-                    if (!cache.isUseLocalConfigInfo()) {
-                        List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
-                        if (cacheDatas == null) {
-                            cacheDatas = new LinkedList<CacheData>();
-                            listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                        }
-                        cacheDatas.add(cache);
-                        
-                    }
-                } else if (CollectionUtils.isEmpty(cache.getListeners())) {
-                    
-                    if (!cache.isUseLocalConfigInfo()) {
-                        List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
-                        if (cacheDatas == null) {
-                            cacheDatas = new LinkedList<CacheData>();
-                            removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                        }
-                        cacheDatas.add(cache);
-                        
-                    }
-                }
-            }
-        }
-        
         @Override
         public void executeConfigListen() {
             
@@ -833,15 +772,51 @@ public class ClientWorker implements Closeable {
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<String, List<CacheData>>(16);
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
-            for (CacheData cache : cacheMap.get().values()) HandleSyncCache(cache,listenCachesMap,removeListenCachesMap,needAllSync);
-            boolean hasChangedKeys = false;
+            for (CacheData cache : cacheMap.get().values()) {
+                
+                synchronized (cache) {
+                    
+                    //check local listeners consistent.
+                    if (cache.isSyncWithServer()) {
+                        cache.checkListenerMd5();
+                        if (!needAllSync) {
+                            continue;
+                        }
+                    }
+                    
+                    if (!CollectionUtils.isEmpty(cache.getListeners())) {
+                        //get listen  config
+                        if (!cache.isUseLocalConfigInfo()) {
+                            List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
+                            if (cacheDatas == null) {
+                                cacheDatas = new LinkedList<CacheData>();
+                                listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                            }
+                            cacheDatas.add(cache);
+                            
+                        }
+                    } else if (CollectionUtils.isEmpty(cache.getListeners())) {
+                        
+                        if (!cache.isUseLocalConfigInfo()) {
+                            List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
+                            if (cacheDatas == null) {
+                                cacheDatas = new LinkedList<CacheData>();
+                                removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
+                            }
+                            cacheDatas.add(cache);
+                            
+                        }
+                    }
+                }
+                
+            }
             
-            if(removeListenCachesMap.isEmpty()) return;
+            boolean hasChangedKeys = false;
             
             if (!listenCachesMap.isEmpty()) {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
-                    Map<String, Long> timestampMap = new HashMap<String, Long>(listenCachesMap.size() * 2);
+                    Map<String, Long> timestampMap = new HashMap<>(listenCachesMap.size() * 2);
                     
                     List<CacheData> listenCaches = entry.getValue();
                     for (CacheData cacheData : listenCaches) {
@@ -872,10 +847,34 @@ public class ClientWorker implements Closeable {
                                 }
                                 
                             }
+                            
                             //handler content configs
-                            for (CacheData cacheData : listenCaches) HandleListenCaches(cacheData,changeKeys,timestampMap);
+                            for (CacheData cacheData : listenCaches) {
+                                String groupKey = GroupKey
+                                        .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
+                                if (!changeKeys.contains(groupKey)) {
+                                    //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
+                                    synchronized (cacheData) {
+                                        if (!cacheData.getListeners().isEmpty()) {
+                                            
+                                            Long previousTimesStamp = timestampMap.get(groupKey);
+                                            if (previousTimesStamp != null) {
+                                                if (!cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
+                                                        System.currentTimeMillis())) {
+                                                    continue;
+                                                }
+                                            }
+                                            cacheData.setSyncWithServer(true);
+                                        }
+                                    }
+                                }
+                                
+                                cacheData.setInitializing(false);
+                            }
+                            
                         }
                     } catch (Exception e) {
+                        
                         LOGGER.error("Async listen config change error ", e);
                         try {
                             Thread.sleep(50L);
