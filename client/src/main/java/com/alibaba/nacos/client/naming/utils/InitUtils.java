@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 /**
  * Init utils.
