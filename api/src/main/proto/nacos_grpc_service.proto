@@ -29,16 +29,9 @@ message Metadata {
   map<string, string> headers = 7;
 }
 
-
 message Payload {
   Metadata metadata = 2;
   google.protobuf.Any body = 3;
-}
-
-service RequestStream {
-  // build a streamRequest
-  rpc requestStream (Payload) returns (stream Payload) {
-  }
 }
 
 service Request {

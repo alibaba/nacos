@@ -116,6 +116,11 @@ public class SnowFlowerIdGenerator implements IdGenerator {
     }
     
     @Override
+    public long workerId() {
+        return workerId;
+    }
+    
+    @Override
     public synchronized long nextId() {
         long currentMillis = currentTimeMillis();
         if (this.lastTime == currentMillis) {

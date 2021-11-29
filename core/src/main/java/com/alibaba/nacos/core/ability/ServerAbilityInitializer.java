@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.config;
+package com.alibaba.nacos.core.ability;
+
+import com.alibaba.nacos.api.ability.ServerAbilities;
+import com.alibaba.nacos.api.ability.initializer.AbilityInitializer;
 
 /**
- * config abilities of nacos client.
+ * Nacos server ability initializer.
  *
- * @author liuzunfei
- * @version $Id: ClientConfigAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class ClientConfigAbility {
+public interface ServerAbilityInitializer extends AbilityInitializer<ServerAbilities> {
     
     /**
-     * support remote metrics get.
+     * Initialize server abilities content.
+     *
+     * @param abilities server abilities
      */
-    private boolean supportRemoteMetrics;
-    
-    public boolean isSupportRemoteMetrics() {
-        return supportRemoteMetrics;
-    }
-    
-    public void setSupportRemoteMetrics(boolean supportRemoteMetrics) {
-        this.supportRemoteMetrics = supportRemoteMetrics;
-    }
+    @Override
+    void initialize(ServerAbilities abilities);
 }

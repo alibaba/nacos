@@ -48,6 +48,7 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -68,7 +69,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -304,10 +304,9 @@ public class UpgradeOpsController {
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        List<String> serviceNameList = getServiceOperator(ver)
-                .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
-        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
+        Collection<String> serviceNameList = getServiceOperator(ver).listService(namespaceId, groupName, selectorString);
         result.put("count", serviceNameList.size());
+        result.replace("doms", JacksonUtils.transferToJsonNode(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList)));
         return result;
     }
     

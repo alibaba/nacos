@@ -64,7 +64,7 @@ public class ResourceSnapshot {
     private void initServiceEntry(NacosResourceManager manager) {
        Map<String, IstioService> serviceInfoMap = manager.services();
        for (String serviceName : serviceInfoMap.keySet()) {
-           ServiceEntryWrapper serviceEntryWrapper = IstioCrdUtil.buildServiceEntry(serviceName, serviceInfoMap.get(serviceName));
+           ServiceEntryWrapper serviceEntryWrapper = IstioCrdUtil.buildServiceEntry(serviceName, manager.getIstioConfig().getDomainSuffix(), serviceInfoMap.get(serviceName));
            if (serviceEntryWrapper != null) {
                serviceEntries.add(serviceEntryWrapper);
            }

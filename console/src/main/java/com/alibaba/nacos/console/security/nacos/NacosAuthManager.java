@@ -96,7 +96,7 @@ public class NacosAuthManager implements AuthManager {
                 }
             }
         }
-        req.setAttribute(RequestUtil.NACOS_USER_KEY, user);
+        req.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, user);
         return user;
     }
     
