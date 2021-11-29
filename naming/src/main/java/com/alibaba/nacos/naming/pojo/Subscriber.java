@@ -38,6 +38,12 @@ public class Subscriber implements Serializable {
     
     private String serviceName;
     
+    /**
+     * for json to obj.
+     */
+    public Subscriber() {
+    }
+    
     public Subscriber(String addrStr, String agent, String app, String ip, String namespaceId, String serviceName) {
         this.addrStr = addrStr;
         this.agent = agent;
