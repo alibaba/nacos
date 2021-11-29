@@ -47,9 +47,9 @@ public class AesCrypto implements CryptoSpi {
     
     private static final String IV_PARAMETER = "fa6fa5207b3286b2";
     
-    private static final IvParameterSpec IV = new IvParameterSpec(IV_PARAMETER.getBytes(StandardCharsets.UTF_8));
-    
     private static final String DEFAULT_SECRET_KEY = "nacos6b31e19f931a7603ae5473250b4";
+
+    private static final int IV_LENGTH = 16;
     
     @Override
     public String encrypt(String secretKey, String content) {
@@ -109,9 +109,10 @@ public class AesCrypto implements CryptoSpi {
      * @return
      */
     private IvParameterSpec generateIv(String secretKey) {
-        System.out.println("秘钥："+secretKey);
-        String iv = secretKey.substring(0, 16);
-        System.out.println("IV: "+iv);
+        if (StringUtils.isBlank(secretKey) || secretKey.length() < IV_LENGTH) {
+            new IvParameterSpec(IV_PARAMETER.getBytes(StandardCharsets.UTF_8));
+        }
+        String iv = secretKey.substring(0, IV_LENGTH);
         return new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
     }
     
