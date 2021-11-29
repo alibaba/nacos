@@ -60,7 +60,7 @@ public class AesCrypto implements CryptoSpi {
             secretKey = new String(Base64.decodeBase64(secretKey.getBytes(StandardCharsets.UTF_8)));
             Key key = new SecretKeySpec(Hex.decodeHex(secretKey), AES_NAME);
             Cipher cipher = Cipher.getInstance(AES_MODE);
-            cipher.init(Cipher.ENCRYPT_MODE, key, IV);
+            cipher.init(Cipher.ENCRYPT_MODE, key, generateIv(secretKey));
             byte[] result = cipher.doFinal(content.getBytes(StandardCharsets.UTF_8));
             return Hex.encodeHexString(result);
         } catch (Exception e) {
@@ -78,7 +78,7 @@ public class AesCrypto implements CryptoSpi {
             secretKey = new String(Base64.decodeBase64(secretKey.getBytes(StandardCharsets.UTF_8)));
             Key key = new SecretKeySpec(Hex.decodeHex(secretKey), AES_NAME);
             Cipher cipher = Cipher.getInstance(AES_MODE);
-            cipher.init(Cipher.DECRYPT_MODE, key, IV);
+            cipher.init(Cipher.DECRYPT_MODE, key, generateIv(secretKey));
             byte[] result = cipher.doFinal(Hex.decodeHex(content));
             return new String(result);
         } catch (Exception e) {
@@ -100,6 +100,19 @@ public class AesCrypto implements CryptoSpi {
             LOGGER.error("generate key error", e);
         }
         return DEFAULT_SECRET_KEY;
+    }
+
+    /**
+     * IV initial vector size is 16 bytes, take the first 16 bytes of secret Key
+     *
+     * @param secretKey
+     * @return
+     */
+    private IvParameterSpec generateIv(String secretKey) {
+        System.out.println("秘钥："+secretKey);
+        String iv = secretKey.substring(0, 16);
+        System.out.println("IV: "+iv);
+        return new IvParameterSpec(iv.getBytes(StandardCharsets.UTF_8));
     }
     
     @Override
