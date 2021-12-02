@@ -82,9 +82,7 @@ public final class ThreadPoolManager {
      */
     public void register(String namespace, String group, ExecutorService executor) {
         if (!resourcesManager.containsKey(namespace)) {
-            synchronized (this) {
-                lockers.put(namespace, new Object());
-            }
+            lockers.putIfAbsent(namespace, new Object()); // 因为lockers : ConcurrentHashMap
         }
         final Object monitor = lockers.get(namespace);
         synchronized (monitor) {
