@@ -75,7 +75,6 @@ public final class ThreadPoolManager {
     
     /**
      * Register the thread pool resources with the resource manager.
-     *
      * @param namespace namespace name
      * @param group     group name
      * @param executor  {@link ExecutorService}
