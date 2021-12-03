@@ -34,6 +34,7 @@ public class NamingUtils {
      *
      * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
      * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
+     *
      * <p>If serviceName has combined like 'groupA@@serviceA' and groupName is nil, then return serviceName directly.
      *
      * <p>etc:
