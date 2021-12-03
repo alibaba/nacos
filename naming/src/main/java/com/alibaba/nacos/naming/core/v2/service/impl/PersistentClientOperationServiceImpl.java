@@ -46,6 +46,7 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
@@ -190,6 +191,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     private void onInstanceDeregister(Service service, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            Loggers.SRV_LOG.warn("Persistent Client connection {} already disconnect", clientId);
+            return;
+        }
         client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
         if (client.getAllPublishedService().isEmpty()) {
