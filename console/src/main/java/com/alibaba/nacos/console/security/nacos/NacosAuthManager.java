@@ -26,7 +26,11 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.core.utils.Loggers;
+
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jws;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -67,15 +71,16 @@ public class NacosAuthManager implements AuthManager {
             throw new AccessException("user not found!");
         }
         
+        Jws<Claims> jws;
         try {
-            tokenManager.validateToken(token);
+            jws = tokenManager.validateToken(token);
         } catch (ExpiredJwtException e) {
             throw new AccessException("token expired!");
         } catch (Exception e) {
             throw new AccessException("token invalid!");
         }
         
-        Authentication authentication = tokenManager.getAuthentication(token);
+        Authentication authentication = tokenManager.getAuthentication(jws);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         
         String username = authentication.getName();

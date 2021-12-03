@@ -19,6 +19,10 @@ package com.alibaba.nacos.console.filter;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,8 +56,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         String jwt = resolveToken(request);
         
         if (StringUtils.isNotBlank(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            this.tokenManager.validateToken(jwt);
-            Authentication authentication = this.tokenManager.getAuthentication(jwt);
+            Jws<Claims> jws = this.tokenManager.validateToken(jwt);
+            Authentication authentication = this.tokenManager.getAuthentication(jws);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         chain.doFilter(request, response);

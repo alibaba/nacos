@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -32,6 +34,8 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+
 /**
  * JWT token manager.
  *
@@ -45,6 +49,18 @@ public class JwtTokenManager {
     
     @Autowired
     private AuthConfigs authConfigs;
+    
+    private JwtParser jwtParser;
+    
+    /**
+     * Initialize jwtParser.
+     * Call the build() method on the JwtParserBuilder to return a thread-safe JwtParser.
+     * https://github.com/jwtk/jjwt
+     */
+    @PostConstruct
+    public void initJwtParser() {
+        jwtParser = Jwts.parserBuilder().setSigningKey(authConfigs.getSecretKeyBytes()).build();
+    }
     
     /**
      * Create token.
@@ -77,12 +93,11 @@ public class JwtTokenManager {
     /**
      * Get auth Info.
      *
-     * @param token token
+     * @param jws JSON web token
      * @return auth info
      */
-    public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(authConfigs.getSecretKeyBytes()).build()
-                .parseClaimsJws(token).getBody();
+    public Authentication getAuthentication(Jws<Claims> jws) {
+        Claims claims = jws.getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
                 .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
@@ -95,9 +110,10 @@ public class JwtTokenManager {
      * validate token.
      *
      * @param token token
+     * @return JSON web token
      */
-    public void validateToken(String token) {
-        Jwts.parserBuilder().setSigningKey(authConfigs.getSecretKeyBytes()).build().parseClaimsJws(token);
+    public Jws<Claims> validateToken(String token) {
+        return jwtParser.parseClaimsJws(token);
     }
     
 }
