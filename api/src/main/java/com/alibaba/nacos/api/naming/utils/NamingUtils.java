@@ -34,6 +34,7 @@ public class NamingUtils {
      *
      * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
      * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
+     * <p>If serviceName has combined like 'groupA@@serviceA' and groupName is nil, then return serviceName directly.
      *
      * <p>etc:
      * <p>serviceName | groupName | result</p>
@@ -47,7 +48,9 @@ public class NamingUtils {
             throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
         }
         if (StringUtils.isBlank(groupName)) {
-            throw new IllegalArgumentException("Param 'groupName' is illegal, groupName is blank");
+            // fix #7344
+            checkServiceNameFormat(serviceName);
+            return serviceName;
         }
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
