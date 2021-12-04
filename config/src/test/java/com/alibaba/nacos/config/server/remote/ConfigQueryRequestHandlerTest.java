@@ -47,7 +47,6 @@ import static com.alibaba.nacos.api.common.Constants.ENCODE;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-@WebAppConfiguration
 public class ConfigQueryRequestHandlerTest {
 
     @InjectMocks
@@ -79,7 +78,7 @@ public class ConfigQueryRequestHandlerTest {
     }
     
     @Test
-    public void testHandle() throws IOException, NacosException {
+    public void testHandle() throws NacosException {
         ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
         configQueryRequest.setDataId("dataId");
         configQueryRequest.setGroup("group");
