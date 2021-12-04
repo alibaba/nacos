@@ -67,8 +67,7 @@ public class ConfigQueryRequestHandlerTest {
         Mockito.mockStatic(FileUtils.class);
         Mockito.mockStatic(DiskUtil.class);
         ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
-        final String groupKey = GroupKey2
-                .getKey("dataId", "group", "");
+        final String groupKey = GroupKey2.getKey("dataId", "group", "");
         when(ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
         when(DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(file);
         when(FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
