@@ -35,8 +35,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -46,7 +46,7 @@ import java.io.IOException;
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @WebAppConfiguration
 public class ConfigQueryRequestHandlerTest {
 
@@ -60,7 +60,7 @@ public class ConfigQueryRequestHandlerTest {
     private File file;
 
     @Before
-    public void init() throws IOException {
+    public void setUp() throws IOException {
         EnvUtil.setEnvironment(new StandardEnvironment());
         Mockito.mockStatic(ConfigCacheService.class);
         Mockito.mockStatic(PropertyUtil.class);
