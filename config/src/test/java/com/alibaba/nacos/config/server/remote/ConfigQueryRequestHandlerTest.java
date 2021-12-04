@@ -67,15 +67,8 @@ public class ConfigQueryRequestHandlerTest {
         Mockito.mockStatic(FileUtils.class);
         Mockito.mockStatic(DiskUtil.class);
         ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
-    }
-    
-    @Test
-    public void testHandle() throws IOException, NacosException {
-        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
-        configQueryRequest.setDataId("dataId");
-        configQueryRequest.setGroup("group");
         final String groupKey = GroupKey2
-                .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
+                .getKey("dataId", "group", "");
         when(ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
         when(DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(file);
         when(FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
@@ -84,7 +77,13 @@ public class ConfigQueryRequestHandlerTest {
         cacheItem.setMd5("1");
         cacheItem.setLastModifiedTs(1L);
         when(ConfigCacheService.getContentCache(Mockito.any())).thenReturn(cacheItem);
-
+    }
+    
+    @Test
+    public void testHandle() throws IOException, NacosException {
+        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
+        configQueryRequest.setDataId("dataId");
+        configQueryRequest.setGroup("group");
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
