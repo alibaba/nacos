@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
@@ -36,11 +52,12 @@ public class ConfigQueryRequestHandlerTest {
 
     @InjectMocks
     private ConfigQueryRequestHandler configQueryRequestHandler;
+
     @Mock
     private PersistService persistService;
+
     @Mock
     private File file;
-
 
     @Before
     public void init() throws IOException {
@@ -49,21 +66,21 @@ public class ConfigQueryRequestHandlerTest {
         Mockito.mockStatic(PropertyUtil.class);
         Mockito.mockStatic(FileUtils.class);
         Mockito.mockStatic(DiskUtil.class);
-        when(DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(file);
-        when(FileUtils.readFileToString(file,ENCODE)).thenReturn("content");
-        when(file.exists()).thenReturn(true);
         ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
     }
+    
     @Test
     public void testHandle() throws IOException, NacosException {
-        ConfigQueryRequest configQueryRequest=new ConfigQueryRequest();
+        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
         configQueryRequest.setDataId("dataId");
         configQueryRequest.setGroup("group");
         final String groupKey = GroupKey2
                 .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
         when(ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
-
-        CacheItem cacheItem=new CacheItem(groupKey);
+        when(DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(file);
+        when(FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
+        when(file.exists()).thenReturn(true);
+        CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.setMd5("1");
         cacheItem.setLastModifiedTs(1L);
         when(ConfigCacheService.getContentCache(Mockito.any())).thenReturn(cacheItem);
@@ -71,8 +88,7 @@ public class ConfigQueryRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        Assert.assertEquals(response.getContent(),"content");
+        Assert.assertEquals(response.getContent(), "content");
     }
-
-
+    
 }
