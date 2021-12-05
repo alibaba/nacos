@@ -482,8 +482,8 @@ public class ServiceManager implements RecordListener<Service> {
             }
             service.validate();
             
-            putServiceAndInit(service);
-            if (!local) {
+            boolean success = putServiceAndInit(service);
+            if (success && !local) {
                 addOrReplaceService(service);
             }
         }
@@ -881,15 +881,20 @@ public class ServiceManager implements RecordListener<Service> {
         serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
-    private void putServiceAndInit(Service service) throws NacosException {
+    private boolean putServiceAndInit(Service service) throws NacosException {
         putService(service);
-        service = getService(service.getNamespaceId(), service.getName());
+        Service existedService = getService(service.getNamespaceId(), service.getName());
+        if (existedService != service) {
+            Loggers.SRV_LOG.warn("[NEW-SERVICE] {} failed as the same service is already existed.", service.toJson());
+            return false;
+        }
         service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
         Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJson());
+        return true;
     }
     
     /**
