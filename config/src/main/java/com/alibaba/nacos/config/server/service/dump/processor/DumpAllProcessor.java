@@ -17,8 +17,6 @@
 package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.task.NacosTask;
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
@@ -73,10 +71,17 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                                     cf.getType());
                     
                     final String content = cf.getContent();
-                    final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-                    LogUtil.DUMP_LOG.info("[dump-all-ok] {}, {}, length={}, md5={}",
-                            GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(),
-                            md5);
+                    final String md5 = cf.getMd5();
+                    if (result) {
+                        LogUtil.DUMP_LOG.info("[dump-all-ok] {}, {}, length={}, md5={}",
+                                GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(),
+                                md5);
+                    } else {
+                        LogUtil.DUMP_LOG.warn("[dump-all-failed] {}, {}, length={}, md5={}",
+                                GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(),
+                                md5);
+                    }
+                  
                 }
                 DEFAULT_LOG.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
             } else {
