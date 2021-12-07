@@ -113,8 +113,7 @@ public class ClientWorker implements Closeable {
     /**
      * groupKey -> cacheData.
      */
-    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-            new HashMap<String, CacheData>());
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
     
     private final ConfigFilterChainManager configFilterChainManager;
     
@@ -736,19 +735,16 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void startInternal() throws NacosException {
-            executor.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    while (!executor.isShutdown() && !executor.isTerminated()) {
-                        try {
-                            listenExecutebell.poll(5L, TimeUnit.SECONDS);
-                            if (executor.isShutdown() || executor.isTerminated()) {
-                                continue;
-                            }
-                            executeConfigListen();
-                        } catch (Exception e) {
-                            LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
+            executor.schedule(() -> {
+                while (!executor.isShutdown() && !executor.isTerminated()) {
+                    try {
+                        listenExecutebell.poll(5L, TimeUnit.SECONDS);
+                        if (executor.isShutdown() || executor.isTerminated()) {
+                            continue;
                         }
+                        executeConfigListen();
+                    } catch (Exception e) {
+                        LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
                     }
                 }
             }, 0L, TimeUnit.MILLISECONDS);
@@ -789,7 +785,7 @@ public class ClientWorker implements Closeable {
                         if (!cache.isUseLocalConfigInfo()) {
                             List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
                             if (cacheDatas == null) {
-                                cacheDatas = new LinkedList<CacheData>();
+                                cacheDatas = new LinkedList<>();
                                 listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
                             }
                             cacheDatas.add(cache);
@@ -800,7 +796,7 @@ public class ClientWorker implements Closeable {
                         if (!cache.isUseLocalConfigInfo()) {
                             List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
                             if (cacheDatas == null) {
-                                cacheDatas = new LinkedList<CacheData>();
+                                cacheDatas = new LinkedList<>();
                                 removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
                             }
                             cacheDatas.add(cache);

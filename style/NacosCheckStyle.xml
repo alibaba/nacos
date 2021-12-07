@@ -60,6 +60,7 @@
         <module name="AbbreviationAsWordInName">
             <property name="ignoreFinal" value="false"/>
             <property name="allowedAbbreviationLength" value="1"/>
+            <property name="allowedAbbreviations" value="VO"/>
         </module>
         
         <!-- Import Checker -->
