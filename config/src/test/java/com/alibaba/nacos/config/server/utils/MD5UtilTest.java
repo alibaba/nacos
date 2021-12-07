@@ -124,6 +124,17 @@ public class MD5UtilTest {
     }
     
     @Test
+    public void testGetClientMd5MapForNewProtocol() {
+        String configKeysString =
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.WORD_SEPARATOR_CHAR + "test3"
+                        + MD5Util.LINE_SEPARATOR_CHAR;
+    
+        Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
+    
+        Assert.assertEquals("test2", actualValueMap.get("test0+test1+test3"));
+    }
+    
+    @Test
     public void testToStringV1() {
         
         try {
