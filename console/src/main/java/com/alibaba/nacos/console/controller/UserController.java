@@ -36,6 +36,10 @@ import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -55,6 +59,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -155,8 +160,15 @@ public class UserController {
         }
         
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
-        
-        return RestResultUtils.success("update user ok!");
+
+        long now = System.currentTimeMillis();
+        Date validity;
+        validity = new Date(now + authConfigs.getTokenValidityInSeconds() * 1000L);
+        Claims claims = Jwts.claims().setSubject(username);
+        String updatePwdToken = Jwts.builder().setClaims(claims).setExpiration(validity)
+                .signWith(Keys.hmacShaKeyFor(authConfigs.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
+
+        return RestResultUtils.success("update user ok!", updatePwdToken);
     }
 
     private boolean hasPermission(String username, HttpServletRequest request) {

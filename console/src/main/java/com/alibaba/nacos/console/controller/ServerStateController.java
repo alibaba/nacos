@@ -41,14 +41,16 @@ public class ServerStateController {
      * @return state json.
      */
     @GetMapping("/state")
-    public ResponseEntity<Map<String, String>> serverState() {
+    public ResponseEntity<Map<String, String>> serverState(String accessToken, String newStatusToken) {
+        if (!accessToken.equals(newStatusToken)) {
+            return ResponseEntity.status(10).body(null);
+        }
         Map<String, String> serverState = new HashMap<>(4);
         serverState.put("standalone_mode",
                 EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
         
         serverState.put("function_mode", EnvUtil.getFunctionMode());
         serverState.put("version", VersionUtils.version);
-        
         return ResponseEntity.ok().body(serverState);
     }
     
