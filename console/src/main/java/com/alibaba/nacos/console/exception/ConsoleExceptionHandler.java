@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.exception;
 
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+
+import org.apache.catalina.connector.ClientAbortException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -44,6 +46,11 @@ public class ConsoleExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     private ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionUtil.getAllExceptionMsg(e));
+    }
+    
+    @ExceptionHandler(ClientAbortException.class)
+    private void handleClientAbortException(ClientAbortException e) {
+        LOGGER.error("CONSOLE - no response", e);
     }
     
     @ExceptionHandler(Exception.class)
