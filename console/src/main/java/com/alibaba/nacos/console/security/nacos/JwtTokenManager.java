@@ -35,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.SecretKey;
 
 /**
  * JWT token manager.
@@ -52,14 +53,17 @@ public class JwtTokenManager {
     
     private JwtParser jwtParser;
     
+    private SecretKey secretKey;
+    
     /**
-     * Initialize jwtParser.
+     * Initialize jwtParser and secretKey.
      * Call the build() method on the JwtParserBuilder to return a thread-safe JwtParser.
      * https://github.com/jwtk/jjwt
      */
     @PostConstruct
-    public void initJwtParser() {
+    public void init() {
         jwtParser = Jwts.parserBuilder().setSigningKey(authConfigs.getSecretKeyBytes()).build();
+        secretKey = Keys.hmacShaKeyFor(authConfigs.getSecretKeyBytes());
     }
     
     /**
@@ -87,7 +91,7 @@ public class JwtTokenManager {
         
         Claims claims = Jwts.claims().setSubject(userName);
         return Jwts.builder().setClaims(claims).setExpiration(validity)
-                .signWith(Keys.hmacShaKeyFor(authConfigs.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
+                .signWith(secretKey, SignatureAlgorithm.HS256).compact();
     }
     
     /**
