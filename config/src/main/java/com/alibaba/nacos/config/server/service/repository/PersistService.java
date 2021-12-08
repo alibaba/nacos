@@ -404,6 +404,13 @@ public interface PersistService {
      * @param limitSize limit size
      */
     void removeConfigHistory(final Timestamp startTime, final int limitSize);
+
+    /**
+     * remove config history with retention latest rows of threshold value.
+     *
+     * @param retentionThreshold retention latest rows of threshold value
+     */
+    void removeConfigHistoryWithRetentionLatest(final int retentionThreshold);
     
     /**
      * Get the number of configurations before the specified time.

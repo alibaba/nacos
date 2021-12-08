@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.config.server.service.repository.PersistService;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+
+import java.lang.reflect.Method;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -33,8 +37,25 @@ public class DumpServiceTest {
     @Autowired
     DumpService service;
     
+    @Autowired
+    PersistService persistService;
+    
     @Test
     public void init() throws Throwable {
         service.init();
+    }
+    
+    @Test
+    public void testClearConfigHistoryThresholdRead() throws Exception {
+        Class<DumpService> dumpServiceClazz = DumpService.class;
+        Method clearConfigHistoryThresholdMethod = dumpServiceClazz.getDeclaredMethod("getRetentionByConfigThreshold");
+        clearConfigHistoryThresholdMethod.setAccessible(true);
+        int threshold = (int) clearConfigHistoryThresholdMethod.invoke(service);
+        Assert.assertEquals(10, threshold);
+    }
+    
+    @Test
+    public void testClearConfigHistoryByThreshold() throws Exception {
+        persistService.removeConfigHistoryWithRetentionLatest(10);
     }
 }

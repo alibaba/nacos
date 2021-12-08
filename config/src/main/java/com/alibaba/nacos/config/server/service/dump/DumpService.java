@@ -49,9 +49,9 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.TimerContext;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +121,8 @@ public abstract class DumpService {
     Boolean isQuickStart = false;
     
     private int retentionDays = 30;
+    
+    private int retentionByConfigThreshold = -1;
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
@@ -229,9 +231,8 @@ public abstract class DumpService {
                     LOGGER.info("server start, schedule merge end.");
                 }
             } catch (Exception e) {
-                LogUtil.FATAL_LOG
-                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e
-                                .toString());
+                LogUtil.FATAL_LOG.error(
+                        "Nacos Server did not start because dumpservice bean construction failure :\n" + e.toString());
                 throw new NacosException(NacosException.SERVER_ERROR,
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
@@ -254,14 +255,15 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
                 
-                ConfigExecutor
-                        .scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
+                        TimeUnit.MINUTES);
                 
-                ConfigExecutor
-                        .scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
+                        TimeUnit.MINUTES);
             }
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+            ConfigExecutor.scheduleConfigTask(new ClearConfigHistoryByThreshold(), 1, 1, TimeUnit.MINUTES);
         } finally {
             TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
@@ -368,6 +370,25 @@ public abstract class DumpService {
         return retentionDays;
     }
     
+    private int getRetentionByConfigThreshold() {
+        String val = EnvUtil.getProperty("nacos.config.retention.config.threshold");
+        if (null == val) {
+            return retentionByConfigThreshold;
+        }
+        
+        int tmp = 0;
+        try {
+            tmp = Integer.parseInt(val);
+            if (tmp > 0) {
+                retentionByConfigThreshold = tmp;
+            }
+        } catch (NumberFormatException nfe) {
+            FATAL_LOG.error("read nacos.config.retention.config.threshold wrong", nfe);
+        }
+        
+        return retentionByConfigThreshold;
+    }
+    
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
         dump(dataId, group, tenant, tag, lastModified, handleIp, false);
     }
@@ -438,8 +459,8 @@ public abstract class DumpService {
                     int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                        Page<ConfigInfoAggr> page = persistService
-                                .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
+                        Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant,
+                                pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
                             LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
@@ -478,6 +499,26 @@ public abstract class DumpService {
                 }
             }
             LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+        }
+    }
+    
+    class ClearConfigHistoryByThreshold extends Thread {
+        
+        @Override
+        public void run() {
+            if (!canExecute()) {
+                return;
+            }
+            
+            try {
+                int retentionByConfigThreshold = getRetentionByConfigThreshold();
+                if (retentionByConfigThreshold > 0) {
+                    persistService.removeConfigHistoryWithRetentionLatest(retentionByConfigThreshold);
+                }
+            } catch (Exception e) {
+                LOGGER.error("clearConfigHistoryByThreshold error : {}", e.toString());
+                
+            }
         }
     }
     
