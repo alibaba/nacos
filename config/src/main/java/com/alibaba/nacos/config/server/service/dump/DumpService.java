@@ -263,7 +263,7 @@ public abstract class DumpService {
             }
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
-            ConfigExecutor.scheduleConfigTask(new ClearConfigHistoryByThreshold(), 1, 1, TimeUnit.MINUTES);
+            ConfigExecutor.scheduleConfigTask(new ClearConfigHistoryByThreshold(), 30, 30, TimeUnit.MINUTES);
         } finally {
             TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
