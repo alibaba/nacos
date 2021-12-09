@@ -249,14 +249,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     instance.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
                 
-                synchronized (this) {
-                    if (!clusterMap.containsKey(instance.getClusterName())) {
-                        Loggers.SRV_LOG
-                                .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                                        instance.getClusterName(), instance.toJson());
-                        Cluster cluster = new Cluster(instance.getClusterName(), this);
-                        cluster.init();
-                        getClusterMap().put(instance.getClusterName(), cluster);
+                if (!clusterMap.containsKey(instance.getClusterName())) {
+                    synchronized (this) {
+                        if (!clusterMap.containsKey(instance.getClusterName())) {
+                            Loggers.SRV_LOG
+                                    .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                                            instance.getClusterName(), instance.toJson());
+                            Cluster cluster = new Cluster(instance.getClusterName(), this);
+                            cluster.init();
+                            getClusterMap().put(instance.getClusterName(), cluster);
+                        }
                     }
                 }
                 
