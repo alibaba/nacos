@@ -157,10 +157,9 @@
         <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
         <commonOkHttp.version>0.4.1</commonOkHttp.version>
-        <grpc-java.version>1.24.0</grpc-java.version>
+        <grpc-java.version>1.28.0</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.8.0</protobuf-java.version>
-        <protoc-gen-grpc-java.version>1.24.0</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <reflections.version>0.9.11</reflections.version>
         <mockito-all.version>1.10.19</mockito-all.version>
@@ -169,8 +168,8 @@
         <tomcat-embed-jasper.version>9.0.40</tomcat-embed-jasper.version>
         <truth.version>0.30</truth.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.5</jraft-core.version>
-        <rpc-grpc-impl.version>1.3.5</rpc-grpc-impl.version>
+        <jraft-core.version>1.3.9</jraft-core.version>
+        <rpc-grpc-impl.version>1.3.9</rpc-grpc-impl.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->

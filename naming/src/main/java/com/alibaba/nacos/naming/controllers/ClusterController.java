@@ -73,29 +73,30 @@ public class ClusterController {
             throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
         }
         
-        Cluster cluster = service.getClusterMap().get(clusterName);
-        if (cluster == null) {
-            Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName,
-                    serviceName);
-            cluster = new Cluster(clusterName, service);
+        synchronized (service) {
+            Cluster cluster = service.getClusterMap().get(clusterName);
+            if (cluster == null) {
+                Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName,
+                        serviceName);
+                cluster = new Cluster(clusterName, service);
+            }
+        
+            cluster.setDefCkport(NumberUtils.toInt(checkPort));
+            cluster.setUseIPPort4Check(BooleanUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
+        
+            AbstractHealthChecker abstractHealthChecker = HealthCheckerFactory
+                    .deserialize(WebUtils.required(request, "healthChecker"));
+        
+            cluster.setHealthChecker(abstractHealthChecker);
+            cluster.setMetadata(UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+            cluster.init();
+            service.getClusterMap().put(clusterName, cluster);
+            service.setLastModifiedMillis(System.currentTimeMillis());
+            service.recalculateChecksum();
+            service.validate();
+        
+            serviceManager.addOrReplaceService(service);
         }
-        
-        cluster.setDefCkport(NumberUtils.toInt(checkPort));
-        cluster.setUseIPPort4Check(BooleanUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
-        
-        AbstractHealthChecker abstractHealthChecker = HealthCheckerFactory
-                .deserialize(WebUtils.required(request, "healthChecker"));
-        
-        cluster.setHealthChecker(abstractHealthChecker);
-        cluster.setMetadata(UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
-        cluster.init();
-        service.getClusterMap().put(clusterName, cluster);
-        service.setLastModifiedMillis(System.currentTimeMillis());
-        service.recalculateChecksum();
-        service.validate();
-        
-        serviceManager.addOrReplaceService(service);
-        
         return "ok";
     }
     

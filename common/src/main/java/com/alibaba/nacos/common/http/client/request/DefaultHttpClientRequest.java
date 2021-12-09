@@ -44,6 +44,8 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     
     private final CloseableHttpClient client;
     
+    private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 5000;
+    
     public DefaultHttpClientRequest(CloseableHttpClient client) {
         this.client = client;
     }
@@ -79,11 +81,21 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
      */
     private static void replaceDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
         if (httpClientConfig == null) {
+            requestBase.setConfig(RequestConfig.custom()
+                    .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).build());
             return;
         }
-        requestBase.setConfig(RequestConfig.custom()
-                .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
+        if (httpClientConfig.getConnectionRequestTimeout() > 0) {
+            requestBase.setConfig(RequestConfig.custom()
+                    .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout())
+                    .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                    .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
+        } else {
+            requestBase.setConfig(RequestConfig.custom()
+                    .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+                    .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                    .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
+        }
     }
     
     @Override

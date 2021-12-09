@@ -463,7 +463,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @param cluster     cluster
      * @throws NacosException nacos exception
      */
-    public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster)
+    public synchronized void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster)
             throws NacosException {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
@@ -799,13 +799,15 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         for (Instance instance : ips) {
-            if (!service.getClusterMap().containsKey(instance.getClusterName())) {
-                Cluster cluster = new Cluster(instance.getClusterName(), service);
-                cluster.init();
-                service.getClusterMap().put(instance.getClusterName(), cluster);
-                Loggers.SRV_LOG
-                        .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                                instance.getClusterName(), instance.toJson());
+            synchronized (service) {
+                if (!service.getClusterMap().containsKey(instance.getClusterName())) {
+                    Cluster cluster = new Cluster(instance.getClusterName(), service);
+                    cluster.init();
+                    service.getClusterMap().put(instance.getClusterName(), cluster);
+                    Loggers.SRV_LOG
+                            .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                                    instance.getClusterName(), instance.toJson());
+                }
             }
             
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
