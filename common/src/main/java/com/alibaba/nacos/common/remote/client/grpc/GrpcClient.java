@@ -97,14 +97,13 @@ public abstract class GrpcClient extends RpcClient {
      * @return if server check success,return a non-null stub.
      */
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
-        
-        NettyChannelBuilder builder = NettyChannelBuilder.forAddress(serverIp, serverPort);
-        builder.executor(grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
+    
+        NettyChannelBuilder builder = NettyChannelBuilder.forAddress(serverIp, serverPort).executor(grpcExecutor)
+                .compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
-                .maxInboundMessageSize(getInboundMessageSize())
-                .flowControlWindow(getFlowControlWindowSize())
+                .maxInboundMessageSize(getInboundMessageSize()).flowControlWindow(getFlowControlWindowSize())
                 .keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS).usePlaintext();
-        
+    
         ManagedChannel managedChannelTemp = builder.build();
         
         return RequestGrpc.newFutureStub(managedChannelTemp);
