@@ -52,7 +52,9 @@ public class UtilsAndCommons {
     public static final String DEFAULT_NACOS_NAMING_CONTEXT_V2 = NACOS_SERVER_VERSION_2 + "/ns";
     
     public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
-    
+
+    public static final String NACOS_NAMING_CONTEXT_V2 = DEFAULT_NACOS_NAMING_CONTEXT_V2;
+
     public static final String NACOS_NAMING_CATALOG_CONTEXT = "/catalog";
     
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
