@@ -39,6 +39,7 @@ import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +66,8 @@ public abstract class GrpcClient extends RpcClient {
     private static final long DEFAULT_MAX_INBOUND_MESSAGE_SIZE = 10 * 1024 * 1024L;
     
     private static final long DEFAULT_KEEP_ALIVE_TIME = 6 * 60 * 1000;
+    
+    private static final long DEFAULT_FLOW_CONTROL_WINDOW_SIZE = 10 * 1024 * 1024L;
     
     @Override
     public ConnectionType getConnectionType() {
@@ -96,13 +99,14 @@ public abstract class GrpcClient extends RpcClient {
      */
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
-        ManagedChannelBuilder<?> o = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(grpcExecutor)
-                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+        NettyChannelBuilder builder = (NettyChannelBuilder) ManagedChannelBuilder.forAddress(serverIp, serverPort);
+        builder.executor(grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .maxInboundMessageSize(getInboundMessageSize())
+                .flowControlWindow(getFlowControlWindowSize())
                 .keepAliveTime(keepAliveTimeMillis(), TimeUnit.MILLISECONDS).usePlaintext();
         
-        ManagedChannel managedChannelTemp = o.build();
+        ManagedChannel managedChannelTemp = builder.build();
         
         return RequestGrpc.newFutureStub(managedChannelTemp);
         
@@ -114,9 +118,15 @@ public abstract class GrpcClient extends RpcClient {
         return Integer.parseInt(messageSize);
     }
     
+    private int getFlowControlWindowSize() {
+        String windowSize = System.getProperty("nacos.remote.client.grpc.flow.control.window.size",
+                String.valueOf(DEFAULT_FLOW_CONTROL_WINDOW_SIZE));
+        return Integer.parseInt(windowSize);
+    }
+    
     private int keepAliveTimeMillis() {
-        String keepAliveTimeMillis = System
-                .getProperty("nacos.remote.grpc.keep.alive.millis", String.valueOf(DEFAULT_KEEP_ALIVE_TIME));
+        String keepAliveTimeMillis = System.getProperty("nacos.remote.grpc.keep.alive.millis",
+                String.valueOf(DEFAULT_KEEP_ALIVE_TIME));
         return Integer.parseInt(keepAliveTimeMillis);
     }
     
@@ -183,8 +193,8 @@ public abstract class GrpcClient extends RpcClient {
                         } catch (Exception e) {
                             LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
                                     grpcConn.getConnectionId(), payload.toString(), e.getMessage());
-                            Response errResponse = ErrorResponse
-                                    .build(NacosException.CLIENT_ERROR, "Handle server request error");
+                            Response errResponse = ErrorResponse.build(NacosException.CLIENT_ERROR,
+                                    "Handle server request error");
                             errResponse.setRequestId(request.getRequestId());
                             sendResponse(errResponse);
                         }
@@ -252,8 +262,7 @@ public abstract class GrpcClient extends RpcClient {
                 int threadNumber = ThreadUtils.getSuitableThreadCount(8);
                 grpcExecutor = new ThreadPoolExecutor(threadNumber, threadNumber, 10L, TimeUnit.SECONDS,
                         new LinkedBlockingQueue<>(10000),
-                        new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-%d")
-                                .build());
+                        new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-%d").build());
                 grpcExecutor.allowCoreThreadTimeOut(true);
                 
             }
@@ -267,8 +276,8 @@ public abstract class GrpcClient extends RpcClient {
                     return null;
                 }
                 
-                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
-                        .newStub(newChannelStubTemp.getChannel());
+                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(
+                        newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
                 

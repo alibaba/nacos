@@ -40,6 +40,7 @@ import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServerTransportFilter;
 import io.grpc.internal.ServerStream;
+import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
@@ -70,6 +71,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     private static final String GRPC_MAX_INBOUND_MSG_SIZE_PROPERTY = "nacos.remote.server.grpc.maxinbound.message.size";
     
     private static final long DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE = 10 * 1024 * 1024;
+    
+    private static final String GRPC_FLOW_CONTROL_WINDOW_SIZE_PROPERTY = "nacos.remote.server.grpc.flow.control.window.size";
+    
+    private static final long DEFAULT_GRPC_FLOW_CONTROL_WINDOW_SIZE = 10 * 1024 * 1024;
     
     @Autowired
     private GrpcRequestAcceptor grpcCommonRequestAcceptor;
@@ -109,17 +114,19 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         addServices(handlerRegistry, serverInterceptor);
         
-        server = ServerBuilder.forPort(getServicePort()).executor(getRpcExecutor())
-                .maxInboundMessageSize(getInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
+        NettyServerBuilder builder = (NettyServerBuilder) ServerBuilder.forPort(getServicePort());
+        
+        server = builder.executor(getRpcExecutor()).maxInboundMessageSize(getInboundMessageSize())
+                .flowControlWindow(getFlowControlWindowSize()).fallbackHandlerRegistry(handlerRegistry)
                 .compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override
                     public Attributes transportReady(Attributes transportAttrs) {
-                        InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs
-                                .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
-                        InetSocketAddress localAddress = (InetSocketAddress) transportAttrs
-                                .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
+                        InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs.get(
+                                Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+                        InetSocketAddress localAddress = (InetSocketAddress) transportAttrs.get(
+                                Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
                         int remotePort = remoteAddress.getPort();
                         int localPort = localAddress.getPort();
                         String remoteIp = remoteAddress.getAddress().getHostAddress();
@@ -142,8 +149,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                             // Ignore
                         }
                         if (StringUtils.isNotBlank(connectionId)) {
-                            Loggers.REMOTE_DIGEST
-                                    .info("Connection transportTerminated,connectionId = {} ", connectionId);
+                            Loggers.REMOTE_DIGEST.info("Connection transportTerminated,connectionId = {} ",
+                                    connectionId);
                             connectionManager.unregister(connectionId);
                         }
                     }
@@ -152,9 +159,15 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         server.start();
     }
     
+    private int getFlowControlWindowSize() {
+        String windowSize = System.getProperty(GRPC_FLOW_CONTROL_WINDOW_SIZE_PROPERTY,
+                String.valueOf(DEFAULT_GRPC_FLOW_CONTROL_WINDOW_SIZE));
+        return Integer.parseInt(windowSize);
+    }
+    
     private int getInboundMessageSize() {
-        String messageSize = System
-                .getProperty(GRPC_MAX_INBOUND_MSG_SIZE_PROPERTY, String.valueOf(DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE));
+        String messageSize = System.getProperty(GRPC_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                String.valueOf(DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE));
         return Integer.parseInt(messageSize);
     }
     
@@ -172,8 +185,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
         
-        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
-                .asyncUnaryCall((request, responseObserver) -> {
+        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall(
+                (request, responseObserver) -> {
                     grpcCommonRequestAcceptor.request(request, responseObserver);
                 });
         
@@ -186,13 +199,14 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
         
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
-                        .generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME, REQUEST_BI_STREAM_METHOD_NAME))
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(
+                        MethodDescriptor.generateFullMethodName(REQUEST_BI_STREAM_SERVICE_NAME,
+                                REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
         
-        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
-                .builder(REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
+        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition.builder(
+                REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
         
     }
