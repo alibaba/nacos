@@ -32,7 +32,6 @@ import io.grpc.Grpc;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
@@ -114,11 +113,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         
         addServices(handlerRegistry, serverInterceptor);
         
-        NettyServerBuilder builder = (NettyServerBuilder) ServerBuilder.forPort(getServicePort());
-        
-        server = builder.executor(getRpcExecutor()).maxInboundMessageSize(getInboundMessageSize())
-                .flowControlWindow(getFlowControlWindowSize()).fallbackHandlerRegistry(handlerRegistry)
-                .compressorRegistry(CompressorRegistry.getDefaultInstance())
+        server = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor())
+                .maxInboundMessageSize(getInboundMessageSize()).flowControlWindow(getFlowControlWindowSize())
+                .fallbackHandlerRegistry(handlerRegistry).compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .addTransportFilter(new ServerTransportFilter() {
                     @Override

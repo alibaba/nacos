@@ -38,7 +38,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
@@ -99,7 +98,7 @@ public abstract class GrpcClient extends RpcClient {
      */
     private RequestGrpc.RequestFutureStub createNewChannelStub(String serverIp, int serverPort) {
         
-        NettyChannelBuilder builder = (NettyChannelBuilder) ManagedChannelBuilder.forAddress(serverIp, serverPort);
+        NettyChannelBuilder builder = NettyChannelBuilder.forAddress(serverIp, serverPort);
         builder.executor(grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .maxInboundMessageSize(getInboundMessageSize())
