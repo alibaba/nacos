@@ -73,6 +73,12 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
     
     @Override
     public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
+        ((ServerCallStreamObserver) responseObserver).setOnCancelHandler(new Runnable() {
+            @Override
+            public void run() {
+                Loggers.REMOTE_DIGEST.warn("Call already cancel");
+            }
+        });
         
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             
