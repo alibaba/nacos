@@ -454,7 +454,9 @@ public abstract class RpcClient implements Closeable {
         LOGGER.info("Shutdown rpc client, set status to shutdown");
         rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
         LOGGER.info("Shutdown client event executor " + clientEventExecutor);
-        clientEventExecutor.shutdownNow();
+        if (clientEventExecutor != null) {
+            clientEventExecutor.shutdownNow();
+        }
         closeConnection(currentConnection);
     }
     

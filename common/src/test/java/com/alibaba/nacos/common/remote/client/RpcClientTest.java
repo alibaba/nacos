@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConnection;
 import org.junit.After;
 import org.junit.Assert;
@@ -388,5 +389,27 @@ public class RpcClientTest {
         verify(rpcClient).switchServerAsyncOnRequestFail();
         Assert.assertNotNull(exception);
         Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
+    }
+    
+    @Test
+    public void testRpcClientShutdownWhenClientDidntStart() throws NacosException {
+        RpcClient rpcClient = new RpcClient("test-client") {
+            @Override
+            public ConnectionType getConnectionType() {
+                return null;
+            }
+    
+            @Override
+            public int rpcPortOffset() {
+                return 0;
+            }
+    
+            @Override
+            public Connection connectToServer(ServerInfo serverInfo) throws Exception {
+                return null;
+            }
+        };
+        
+        rpcClient.shutdown();
     }
 }
