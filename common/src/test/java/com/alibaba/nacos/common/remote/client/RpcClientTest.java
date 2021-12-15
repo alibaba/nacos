@@ -389,4 +389,26 @@ public class RpcClientTest {
         Assert.assertNotNull(exception);
         Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
     }
+    
+    @Test
+    public void testRpcClientShutdownWhenClientDidntStart() throws NacosException {
+        RpcClient rpcClient = new RpcClient("test-client") {
+            @Override
+            public ConnectionType getConnectionType() {
+                return null;
+            }
+    
+            @Override
+            public int rpcPortOffset() {
+                return 0;
+            }
+    
+            @Override
+            public Connection connectToServer(ServerInfo serverInfo) throws Exception {
+                return null;
+            }
+        };
+        
+        rpcClient.shutdown();
+    }
 }
