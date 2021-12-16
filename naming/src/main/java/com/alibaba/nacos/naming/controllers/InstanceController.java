@@ -379,6 +379,7 @@ public class InstanceController {
      * @return list of instance
      * @throws Exception any error during list
      */
+    @CanDistro
     @GetMapping("/list")
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode list(HttpServletRequest request) throws Exception {
