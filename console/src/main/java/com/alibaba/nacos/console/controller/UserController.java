@@ -34,7 +34,9 @@ import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.console.security.nacos.LockedUsers;
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
+import com.alibaba.nacos.core.exception.KvStorageException;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -68,6 +70,8 @@ import java.util.Objects;
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
     
+	private final LockedUsers lockedusers = new LockedUsers();
+	
     @Autowired
     private JwtTokenManager jwtTokenManager;
     
@@ -205,21 +209,32 @@ public class UserController {
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
             HttpServletRequest request) throws AccessException {
-        
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP
-                .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            NacosUser user = (NacosUser) authManager.login(request);
-            
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
-            
-            ObjectNode result = JacksonUtils.createEmptyJsonNode();
-            result.put(Constants.ACCESS_TOKEN, user.getToken());
-            result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
-            result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
-            result.put(Constants.USERNAME, user.getUserName());
-            return result;
+    	
+    	boolean userallowed;
+    	
+        try {
+        	lockedusers.registerAttempt(username);
+        	userallowed = lockedusers.verifyAllowed(username);
         }
+        catch (KvStorageException ex) {
+        	return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed to KvStorage runtime exception");
+        };
         
+        if(userallowed) {
+	        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP
+	                .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+	            NacosUser user = (NacosUser) authManager.login(request);
+	            
+	            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
+	            
+	            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+	            result.put(Constants.ACCESS_TOKEN, user.getToken());
+	            result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
+	            result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+	            result.put(Constants.USERNAME, user.getUserName());
+	            return result;
+	        }
+        }
         // create Authentication class through username and password, the implement class is UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
                 password);
