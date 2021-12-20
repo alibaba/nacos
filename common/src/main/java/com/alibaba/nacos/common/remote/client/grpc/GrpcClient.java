@@ -250,12 +250,9 @@ public abstract class GrpcClient extends RpcClient {
         try {
             if (grpcExecutor == null) {
                 int threadNumber = ThreadUtils.getSuitableThreadCount(8);
-                grpcExecutor = new ThreadPoolExecutor(threadNumber, threadNumber, 10L, TimeUnit.SECONDS,
-                        new LinkedBlockingQueue<>(10000),
-                        new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-%d")
-                                .build());
-                grpcExecutor.allowCoreThreadTimeOut(true);
-                
+                grpcExecutor = new ThreadPoolExecutor(threadNumber > 2 ? threadNumber / 2 : threadNumber, threadNumber,
+                        60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(10000),
+                        new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-%d").build());
             }
             int port = serverInfo.getServerPort() + rpcPortOffset();
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(serverInfo.getServerIp(), port);
