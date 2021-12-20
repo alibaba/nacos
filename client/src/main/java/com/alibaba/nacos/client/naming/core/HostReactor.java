@@ -487,7 +487,17 @@ public class HostReactor implements Closeable {
                 incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                while (true) {
+                    try {
+                        executor.schedule(this,
+                                Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                        break;
+                    } catch (Exception e) {
+                        incFailCount();
+                        NAMING_LOGGER.error("failed to schedule update task for service: " + serviceName
+                                + ", clusters:" + clusters, e);
+                    }
+                }
             }
         }
     }

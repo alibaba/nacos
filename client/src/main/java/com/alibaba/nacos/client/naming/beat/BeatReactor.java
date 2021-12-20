@@ -46,6 +46,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class BeatReactor implements Closeable {
     
+    private static final long MAX_DELAY_MILLIS = 60000L;
+    
     private final ScheduledExecutorService executorService;
     
     private final NamingProxy serverProxy;
@@ -149,13 +151,27 @@ public class BeatReactor implements Closeable {
     }
     
     class BeatTask implements Runnable {
-        
+
         BeatInfo beatInfo;
         
+        int failCount = 0;
+
         public BeatTask(BeatInfo beatInfo) {
             this.beatInfo = beatInfo;
         }
         
+        private void incFailCount() {
+            int limit = 6;
+            if (failCount == limit) {
+                return;
+            }
+            failCount++;
+        }
+        
+        private void resetFailCount() {
+            failCount = 0;
+        }
+
         @Override
         public void run() {
             if (beatInfo.isStopped()) {
@@ -201,7 +217,18 @@ public class BeatReactor implements Closeable {
                 NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: {}, unknown exception msg: {}",
                         JacksonUtils.toJson(beatInfo), unknownEx.getMessage(), unknownEx);
             } finally {
-                executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
+                resetFailCount();
+                while (!beatInfo.isStopped()) {
+                    try {
+                        executorService.schedule(new BeatTask(beatInfo),
+                                Math.min(nextTime << failCount, MAX_DELAY_MILLIS), TimeUnit.MILLISECONDS);
+                        break;
+                    } catch (Exception e) {
+                        incFailCount();
+                        NAMING_LOGGER.error("[CLIENT-BEAT] failed to schedule beat task: {}",
+                                JacksonUtils.toJson(beatInfo), e);
+                    }
+                }
             }
         }
     }
