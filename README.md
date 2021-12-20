@@ -85,6 +85,7 @@ You can view the full documentation from the [Nacos website](https://nacos.io/en
 
 All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice).
 
+You can also read the Nacos e-book from [NACOS ARCHITECTURE & PRINCIPLES](https://www.yuque.com/nacos/ebook/kbyo6n), which introduces Nacos' design and implementation principles.
 
 ## Contributing
 
