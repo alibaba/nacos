@@ -25,8 +25,6 @@ import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.sys.env.Constants;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -73,13 +71,7 @@ public class AuthFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         
-        if (authConfigs.isEnableUserAgentAuthWhite()) {
-            String userAgent = WebUtils.getUserAgent(req);
-            if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
-                chain.doFilter(request, response);
-                return;
-            }
-        } else if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils
+        if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils
                 .isNotBlank(authConfigs.getServerIdentityValue())) {
             String serverIdentity = req.getHeader(authConfigs.getServerIdentityKey());
             if (authConfigs.getServerIdentityValue().equals(serverIdentity)) {
