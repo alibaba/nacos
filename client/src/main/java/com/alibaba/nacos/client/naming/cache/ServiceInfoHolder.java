@@ -185,6 +185,7 @@ public class ServiceInfoHolder implements Closeable {
         if (oldService.getLastRefTime() > newService.getLastRefTime()) {
             NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
                     newService.getLastRefTime());
+            return false;
         }
         boolean changed = false;
         Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());

@@ -39,6 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
@@ -47,8 +48,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class NamingClientProxyDelegate implements NamingClientProxy {
-    
-    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
     
     private final ServerListManager serverListManager;
     
@@ -87,7 +86,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         });
         this.securityProxy.login(serverListManager.getServerList());
         this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(serverListManager.getServerList()), 0,
-                securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
     @Override
