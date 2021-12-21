@@ -122,9 +122,10 @@ public class DistroFilter implements Filter {
                 
                 if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
                     // This request is sent from peer server, should not be redirected again:
-                    Loggers.SRV_LOG.error("receive invalid redirect request from peer {}", req.getRemoteAddr());
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
-                            "receive invalid redirect request from peer " + req.getRemoteAddr());
+                    Loggers.SRV_LOG.warn("receive invalid redirect request from peer {}", req.getRemoteAddr());
+                    OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
+                    requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
+                    filterChain.doFilter(requestWrapper, resp);
                     return;
                 }
                 

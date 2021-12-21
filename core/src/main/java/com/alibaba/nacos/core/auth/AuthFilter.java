@@ -86,8 +86,6 @@ public class AuthFilter implements Filter {
                 chain.doFilter(request, response);
                 return;
             }
-            Loggers.AUTH.warn("Invalid server identity value for {} from {}", authConfigs.getServerIdentityKey(),
-                    req.getRemoteHost());
         } else {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN,
                     "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
