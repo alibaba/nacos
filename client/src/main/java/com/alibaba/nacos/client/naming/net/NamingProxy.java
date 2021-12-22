@@ -58,6 +58,8 @@ import org.apache.http.HttpStatus;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -616,9 +618,18 @@ public class NamingProxy implements Closeable {
                 return StringUtils.EMPTY;
             }
             throw new NacosException(restResult.getCode(), restResult.getMessage());
-        } catch (Exception e) {
-            NAMING_LOGGER.error("[NA] failed to request", e);
-            throw new NacosException(NacosException.SERVER_ERROR, e);
+        } catch (NacosException ex) {
+            NAMING_LOGGER.warn("[NA] failed to request cause of inner exception");
+            throw ex;
+        } catch (ConnectException connectException) {
+            NAMING_LOGGER.warn("[NA] failed to request cause of connection exception");
+            throw new NacosException(NacosException.SERVER_ERROR, connectException);
+        } catch (SocketTimeoutException timeoutException) {
+            NAMING_LOGGER.warn("[NA] failed to request cause of connection time out exception");
+            throw new NacosException(NacosException.SERVER_ERROR, timeoutException);
+        } catch (Exception unknownEx) {
+            NAMING_LOGGER.error("[NA] failed to request cause of unknown reason", unknownEx);
+            throw new NacosException(NacosException.SERVER_ERROR, unknownEx);
         }
     }
     
