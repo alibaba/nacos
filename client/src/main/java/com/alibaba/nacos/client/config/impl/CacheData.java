@@ -85,7 +85,7 @@ public class CacheData {
             throw new IllegalArgumentException("listener is null");
         }
         ManagerListenerWrap wrap =
-                (listener instanceof AbstractConfigChangeListener) ? new ManagerListenerWrap(listener, md5, content)
+                (listener instanceof AbstractConfigChangeListener) ? new ManagerListenerWrap(listener, md5, content, encryptedDataKey)
                         : new ManagerListenerWrap(listener, md5);
         
         if (listeners.addIfAbsent(wrap)) {
@@ -211,11 +211,20 @@ public class CacheData {
                     
                     // compare lastContent and content
                     if (listener instanceof AbstractConfigChangeListener) {
-                        Map data = ConfigChangeHandler.getInstance()
-                                .parseChangeData(listenerWrap.lastContent, content, type);
+                        // FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
+                        ConfigResponse crLastContent = new ConfigResponse();
+                        crLastContent.setDataId(dataId);
+                        crLastContent.setGroup(group);
+                        crLastContent.setContent(listenerWrap.lastContent);
+                        crLastContent.setEncryptedDataKey(listenerWrap.lastEncryptedDataKey);
+                        configFilterChainManager.doFilter(null, crLastContent);
+                        String lastContentTmp = crLastContent.getContent();
+                        Map data = ConfigChangeHandler.getInstance().parseChangeData(lastContentTmp, contentTmp, type);
                         ConfigChangeEvent event = new ConfigChangeEvent(data);
                         ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
+                        // temporary fix https://github.com/alibaba/nacos/issues/7039, cache original content(which get from nacos server)
                         listenerWrap.lastContent = content;
+                        listenerWrap.lastEncryptedDataKey = encryptedDataKey;
                     }
                     
                     listenerWrap.lastCallMd5 = md5;
@@ -226,7 +235,7 @@ public class CacheData {
                             name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
                 } catch (Throwable t) {
                     LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
-                            group, md5, listener, t.getCause());
+                            group, md5, listener, t.getCause(), t);
                 } finally {
                     Thread.currentThread().setContextClassLoader(myClassLoader);
                 }
@@ -364,6 +373,8 @@ public class CacheData {
         
         String lastContent = null;
         
+        String lastEncryptedDataKey = null;
+        
         ManagerListenerWrap(Listener listener) {
             this.listener = listener;
         }
@@ -373,10 +384,11 @@ public class CacheData {
             this.lastCallMd5 = md5;
         }
         
-        ManagerListenerWrap(Listener listener, String md5, String lastContent) {
+        ManagerListenerWrap(Listener listener, String md5, String lastContent, String encryptedDataKey) {
             this.listener = listener;
             this.lastCallMd5 = md5;
             this.lastContent = lastContent;
+            this.lastEncryptedDataKey = encryptedDataKey;
         }
         
         @Override
