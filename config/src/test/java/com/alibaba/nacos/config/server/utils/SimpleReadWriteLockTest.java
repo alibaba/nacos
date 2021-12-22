@@ -19,13 +19,11 @@ package com.alibaba.nacos.config.server.utils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
 public class SimpleReadWriteLockTest {
     
     @Test
@@ -61,6 +59,14 @@ public class SimpleReadWriteLockTest {
         
         assertTrue(lock.tryReadLock());
         assertFalse(lock.tryWriteLock());
+    }
+    
+    @Test
+    public void testFirstWriteLockThenReadLock() {
+        SimpleReadWriteLock lock = new SimpleReadWriteLock();
+        
+        assertTrue(lock.tryWriteLock());
+        assertFalse(lock.tryReadLock());
     }
     
     @Test
