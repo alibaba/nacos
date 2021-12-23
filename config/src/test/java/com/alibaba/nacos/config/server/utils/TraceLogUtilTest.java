@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 public class TraceLogUtilTest {
 
     @Test
-    public void requestLogTest() {
+    public void testRequestLog() {
 
         Logger requestLog = TraceLogUtil.requestLog;
         Assert.assertTrue(requestLog instanceof Logger);
