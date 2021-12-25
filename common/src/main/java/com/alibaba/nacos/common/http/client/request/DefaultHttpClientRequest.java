@@ -44,21 +44,24 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     
     private final CloseableHttpClient client;
     
+    private final RequestConfig defaultConfig;
+    
     private static final int DEFAULT_CONNECTION_REQUEST_TIMEOUT = 5000;
     
-    public DefaultHttpClientRequest(CloseableHttpClient client) {
+    public DefaultHttpClientRequest(CloseableHttpClient client, RequestConfig defaultConfig) {
         this.client = client;
+        this.defaultConfig = defaultConfig;
     }
     
     @Override
     public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
             throws Exception {
-        HttpRequestBase request = build(uri, httpMethod, requestHttpEntity);
+        HttpRequestBase request = build(uri, httpMethod, requestHttpEntity, defaultConfig);
         CloseableHttpResponse response = client.execute(request);
         return new DefaultClientHttpResponse(response);
     }
     
-    static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity) throws Exception {
+    static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity, RequestConfig defaultConfig) throws Exception {
         final Header headers = requestHttpEntity.getHeaders();
         final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         final HttpRequestBase httpRequestBase = httpMethod.init(uri.toString());
@@ -69,30 +72,37 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         } else {
             HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers);
         }
-        replaceDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig());
+        mergeDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig(), defaultConfig);
         return httpRequestBase;
     }
     
     /**
-     * Replace the HTTP config created by default with the HTTP config specified in the request.
+     * Merge the HTTP config created by default with the HTTP config specified in the request.
      *
      * @param requestBase      requestBase
-     * @param httpClientConfig http config
+     * @param httpClientConfig http config specified in the request
+     * @param defaultConfig    http config created by default
      */
-    private static void replaceDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig) {
+    private static void mergeDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig, RequestConfig defaultConfig) {
         if (httpClientConfig == null) {
-            requestBase.setConfig(RequestConfig.custom()
-                    .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).build());
+            if (defaultConfig.getConnectionRequestTimeout() <= 0) {
+                requestBase.setConfig(RequestConfig.copy(defaultConfig)
+                        .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT).build());
+            }
             return;
         }
         if (httpClientConfig.getConnectionRequestTimeout() > 0) {
-            requestBase.setConfig(RequestConfig.custom()
+            requestBase.setConfig(RequestConfig.copy(defaultConfig)
                     .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout())
                     .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                     .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
-        } else {
-            requestBase.setConfig(RequestConfig.custom()
+        } else if (defaultConfig.getConnectionRequestTimeout() <= 0) {
+            requestBase.setConfig(RequestConfig.copy(defaultConfig)
                     .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
+                    .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                    .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
+        } else {
+            requestBase.setConfig(RequestConfig.copy(defaultConfig)
                     .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                     .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
         }
