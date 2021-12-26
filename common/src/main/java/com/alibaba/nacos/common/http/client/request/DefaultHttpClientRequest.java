@@ -77,7 +77,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
     
     /**
-     * Merge the HTTP config created by default with the HTTP config specified in the request.
+     * Merge the HTTP config created by default with the HTTP config specified in the request, set connection request timeout if needed.
      *
      * @param requestBase      requestBase
      * @param httpClientConfig http config specified in the request
@@ -91,21 +91,13 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
             }
             return;
         }
-        if (httpClientConfig.getConnectionRequestTimeout() > 0) {
-            requestBase.setConfig(RequestConfig.copy(defaultConfig)
-                    .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout())
+        requestBase.setConfig(RequestConfig.copy(defaultConfig)
+                    .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout() > 0
+                            ? httpClientConfig.getConnectionRequestTimeout()
+                            : (defaultConfig.getConnectionRequestTimeout() > 0
+                                    ? defaultConfig.getConnectionRequestTimeout() : DEFAULT_CONNECTION_REQUEST_TIMEOUT))
                     .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
                     .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
-        } else if (defaultConfig.getConnectionRequestTimeout() <= 0) {
-            requestBase.setConfig(RequestConfig.copy(defaultConfig)
-                    .setConnectionRequestTimeout(DEFAULT_CONNECTION_REQUEST_TIMEOUT)
-                    .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                    .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
-        } else {
-            requestBase.setConfig(RequestConfig.copy(defaultConfig)
-                    .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                    .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
-        }
     }
     
     @Override
