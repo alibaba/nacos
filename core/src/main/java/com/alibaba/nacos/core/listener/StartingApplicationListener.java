@@ -221,7 +221,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     private void makeWorkDir() {
         String[] dirNames = new String[] {"logs", "conf", "data"};
         for (String dirName : dirNames) {
-            LOGGER.info("Nacos Log files: {}", Paths.get(EnvUtil.getNacosHome(), dirName).toString());
+            LOGGER.info("Nacos Log files: {}", Paths.get(EnvUtil.getNacosHome(), dirName));
             try {
                 DiskUtils.forceMkdir(new File(Paths.get(EnvUtil.getNacosHome(), dirName).toUri()));
             } catch (Exception e) {
