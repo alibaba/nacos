@@ -36,7 +36,7 @@ import java.util.Set;
 
 public class PayloadRegistry {
     
-    private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<String, Class>();
+    private static final Map<String, Class<?>> REGISTRY_REQUEST = new HashMap<>();
     
     static boolean initialized = false;
     
@@ -55,7 +55,7 @@ public class PayloadRegistry {
         for (String pkg : requestScanPackage) {
             Reflections reflections = new Reflections(pkg);
             Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
-            for (Class clazz : subTypesRequest) {
+            for (Class<?> clazz : subTypesRequest) {
                 register(clazz.getSimpleName(), clazz);
             }
         }
@@ -67,7 +67,7 @@ public class PayloadRegistry {
         for (String pkg : responseScanPackage) {
             Reflections reflections = new Reflections(pkg);
             Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
-            for (Class clazz : subTypesOfResponse) {
+            for (Class<?> clazz : subTypesOfResponse) {
                 register(clazz.getSimpleName(), clazz);
             }
         }
@@ -75,7 +75,7 @@ public class PayloadRegistry {
         initialized = true;
     }
     
-    static void register(String type, Class clazz) {
+    static void register(String type, Class<?> clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
@@ -88,7 +88,7 @@ public class PayloadRegistry {
         REGISTRY_REQUEST.put(type, clazz);
     }
     
-    public static Class getClassByType(String type) {
+    public static Class<?> getClassByType(String type) {
         return REGISTRY_REQUEST.get(type);
     }
 }
