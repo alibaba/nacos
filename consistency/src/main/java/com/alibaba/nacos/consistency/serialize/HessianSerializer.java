@@ -67,9 +67,14 @@ public class HessianSerializer implements Serializer {
         Object resultObject;
         try {
             resultObject = input.readObject();
-            input.close();
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer decode!", e);
+        } finally {
+            try {
+                input.close();
+            } catch (Exception e) {
+                throw new RuntimeException("Close Hessian2Input stream failed", e);
+            }
         }
         return (T) resultObject;
     }
@@ -84,6 +89,12 @@ public class HessianSerializer implements Serializer {
             output.close();
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer encode!", e);
+        } finally {
+            try {
+
+            } catch (Exception e) {
+                throw new RuntimeException("Close Hessian2Output stream failed", e);
+            }
         }
         
         return byteArray.toByteArray();
