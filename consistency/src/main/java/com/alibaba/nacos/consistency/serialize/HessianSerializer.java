@@ -86,12 +86,11 @@ public class HessianSerializer implements Serializer {
         output.setSerializerFactory(serializerFactory);
         try {
             output.writeObject(obj);
-            output.close();
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer encode!", e);
         } finally {
             try {
-
+                output.close();
             } catch (Exception e) {
                 throw new RuntimeException("Close Hessian2Output stream failed", e);
             }
