@@ -41,6 +41,7 @@ public class IstioCrdUtil {
     public static final String VALID_DEFAULT_GROUP_NAME = "DEFAULT-GROUP";
 
     private static final String ISTIO_HOSTNAME = "istio.hostname";
+    private static final String ISTIO_PORT = "istio.port";
 
     public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
     public static final String VALID_LABEL_VALUE_FORMAT = "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
@@ -83,6 +84,11 @@ public class IstioCrdUtil {
                 hostname = metaHostname;
             }
 
+            String metaPort = instance.getMetadata().get(ISTIO_PORT);
+            if (StringUtils.isNotEmpty(metaPort)) {
+                port = Integer.parseInt(metaPort);
+            }
+
             if (!instance.isHealthy() || !instance.isEnabled()) {
                 continue;
             }
@@ -104,7 +110,7 @@ public class IstioCrdUtil {
 
             WorkloadEntry workloadEntry = WorkloadEntry.newBuilder()
                     .setAddress(instance.getIp()).setWeight((int) instance.getWeight())
-                    .putAllLabels(metadata).putPorts(protocol, instance.getPort()).build();
+                    .putAllLabels(metadata).putPorts(protocol, port).build();
             serviceEntryBuilder.addEndpoints(workloadEntry);
         }
 
