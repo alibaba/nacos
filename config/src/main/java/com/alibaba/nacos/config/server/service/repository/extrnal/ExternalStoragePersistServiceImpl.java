@@ -165,7 +165,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public <E> ExternalStoragePaginationHelperImpl<E> createPaginationHelper() {
+    public <E> PaginationHelper<E> createPaginationHelper() {
         return new ExternalStoragePaginationHelperImpl<E>(jt);
     }
     
@@ -632,7 +632,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         String sql = "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?";
-        ExternalStoragePaginationHelperImpl<Object> paginationHelper = createPaginationHelper();
+        ExternalStoragePaginationHelperImpl<Object> paginationHelper = (ExternalStoragePaginationHelperImpl<Object>) createPaginationHelper();
         int count;
         try {
             count = paginationHelper.updateLimitWithResponse(sql, new Object[] {startTime, limitSize});
