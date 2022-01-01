@@ -1028,7 +1028,7 @@ public class ClientWorker implements Closeable {
                 LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", this.getName(), dataId,
                         group, tenant, response);
                 throw new NacosException(response.getErrorCode(),
-                        "http error, code=" + response.getErrorCode() + ",dataId=" + dataId + ",group=" + group
+                        "http error, code=" + response.getErrorCode() + ",msg=" + response.getMessage() + ",dataId=" + dataId + ",group=" + group
                                 + ",tenant=" + tenant);
                 
             }
