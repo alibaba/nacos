@@ -1047,11 +1047,7 @@ public class ClientWorker implements Closeable {
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }
-            
-            Map<String, String> signHeaders = SpasAdapter.getSignHeaders(resourceBuild(request), secretKey);
-            if (signHeaders != null && !signHeaders.isEmpty()) {
-                request.putAllHeader(signHeaders);
-            }
+            request.putAllHeader(SpasAdapter.getSignHeaders(resourceBuild(request), secretKey));
             JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
             asJsonObjectTemp.remove("headers");
             asJsonObjectTemp.remove("requestId");
