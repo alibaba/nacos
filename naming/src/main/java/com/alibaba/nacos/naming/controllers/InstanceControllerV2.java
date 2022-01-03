@@ -62,9 +62,9 @@ import java.util.Map;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME;
 
 /**
- * Instance operation controller.
+ * Instance operation controller for v2.x.
  *
- * @author nkorange
+ * @author hujun
  */
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
