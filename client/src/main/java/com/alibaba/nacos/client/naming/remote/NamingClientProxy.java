@@ -150,6 +150,17 @@ public interface NamingClientProxy extends Closeable {
     void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException;
     
     /**
+     * Judge whether service has been subscribed.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
+     * @return {@code true} if subscribed, otherwise {@code false}
+     * @throws NacosException nacos exception
+     */
+    boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException;
+    
+    /**
      * Update beat info.
      *
      * @param modifiedInstances modified instances

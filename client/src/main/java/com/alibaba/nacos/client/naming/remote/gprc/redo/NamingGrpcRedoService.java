@@ -215,6 +215,22 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     /**
+     * Judge subscriber has registered to server.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param cluster     cluster
+     * @return {@code true} if subscribed, otherwise {@code false}
+     */
+    public boolean isSubscriberRegistered(String serviceName, String groupName, String cluster) {
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
+        synchronized (subscribes) {
+            SubscriberRedoData redoData = subscribes.get(key);
+            return null != redoData && redoData.isRegistered();
+        }
+    }
+    
+    /**
      * Remove subscriber for redo.
      *
      * @param serviceName service name
