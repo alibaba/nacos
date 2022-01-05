@@ -459,9 +459,9 @@ public class ClientWorker implements Closeable {
         init(properties);
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
-        
+        int count = ThreadUtils.getSuitableThreadCount(1);
         ScheduledExecutorService executorService = Executors
-                .newScheduledThreadPool(ThreadUtils.getSuitableThreadCount(1), r -> {
+                .newScheduledThreadPool(count == 1 ? 2 : count, r -> {
                     Thread t = new Thread(r);
                     t.setName("com.alibaba.nacos.client.Worker");
                     t.setDaemon(true);
