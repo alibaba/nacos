@@ -128,7 +128,11 @@ public class ClientWorker implements Closeable {
     private int taskPenaltyTime;
     
     private boolean enableRemoteSyncConfig = false;
-    
+
+    private static final int MIN_THREAD_NUM = 2;
+
+    private static final int THREAD_MULTIPLE = 1;
+
     /**
      * Add listeners for data.
      *
@@ -459,9 +463,9 @@ public class ClientWorker implements Closeable {
         init(properties);
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
-        int count = ThreadUtils.getSuitableThreadCount(1);
+        int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         ScheduledExecutorService executorService = Executors
-                .newScheduledThreadPool(count == 1 ? 2 : count, r -> {
+                .newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM), r -> {
                     Thread t = new Thread(r);
                     t.setName("com.alibaba.nacos.client.Worker");
                     t.setDaemon(true);
