@@ -88,7 +88,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
 
 /**
- * Long polling.
+ * Long polling
  *
  * @author Nacos
  */
