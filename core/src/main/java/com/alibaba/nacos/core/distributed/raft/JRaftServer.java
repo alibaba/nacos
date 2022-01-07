@@ -368,7 +368,7 @@ public class JRaftServer {
                 }
                 Loggers.RAFT.warn("Failed to join the cluster, retry...");
             } catch (Exception e) {
-                Loggers.RAFT.warn("Failed to join the cluster, retry...", e);
+                Loggers.RAFT.error("Failed to join the cluster, retry...", e);
             }
             ThreadUtils.sleep(1_000L);
         }
