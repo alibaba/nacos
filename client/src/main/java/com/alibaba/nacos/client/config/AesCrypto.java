@@ -103,10 +103,10 @@ public class AesCrypto implements CryptoSpi {
     }
 
     /**
-     * IV initial vector size is 16 bytes, take the first 16 bytes of secret Key
+     * IV initial vector size is 16 bytes, take the first 16 bytes of secret Key.
      *
-     * @param secretKey
-     * @return
+     * @param secretKey secretKey
+     * @return IvParameterSpec
      */
     private IvParameterSpec generateIv(String secretKey) {
         if (StringUtils.isBlank(secretKey) || secretKey.length() < IV_LENGTH) {
