@@ -39,7 +39,7 @@ public class NamingPushRequestHandlerTest {
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
         ServiceInfo info = new ServiceInfo("name", "cluster1");
-        Request req = NotifySubscriberRequest.buildSuccessResponse(info);
+        Request req = NotifySubscriberRequest.buildNotifySubscriberRequest(info);
         //when
         Response response = handler.requestReply(req);
         //then
