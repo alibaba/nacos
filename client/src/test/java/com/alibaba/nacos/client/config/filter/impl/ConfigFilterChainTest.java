@@ -28,8 +28,9 @@ public class ConfigFilterChainTest {
         configFilterChainManager.addFilter(new DemoFilter1());
         configFilterChainManager.addFilter(new DemoFilter2());
         ConfigRequest configRequest = new ConfigRequest();
+        ConfigResponse configResponse = new ConfigResponse();
         try {
-            configFilterChainManager.doFilter(configRequest, null);
+            configFilterChainManager.doFilter(configRequest, configResponse);
             Assert.assertEquals(DemoFilter1.class.getName(), configRequest.getParameter("filter1"));
             Assert.assertEquals(DemoFilter2.class.getName(), configRequest.getParameter("filter2"));
         } catch (NacosException e) {

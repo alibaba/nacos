@@ -52,7 +52,7 @@ public class ConfigCryptoFilterTest {
         Mockito.when(configRequest.getDataId()).thenReturn("cipher-aes-test");
         Mockito.when(configRequest.getContent()).thenReturn("nacos");
         
-        Mockito.when(configResponse.getDataId()).thenReturn("cipher-aes-test");
+        Mockito.when(configResponse.getDataId()).thenReturn("test-dataid");
         Mockito.when(configResponse.getContent()).thenReturn("nacos");
         Mockito.when(configResponse.getEncryptedDataKey()).thenReturn("1234567890");
     }
