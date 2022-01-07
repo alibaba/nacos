@@ -632,7 +632,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         String sql = "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?";
-        ExternalStoragePaginationHelperImpl<Object> paginationHelper = (ExternalStoragePaginationHelperImpl<Object>) createPaginationHelper();
+        ExternalStoragePaginationHelperImpl<ConfigInfo> paginationHelper = (ExternalStoragePaginationHelperImpl<ConfigInfo>) createPaginationHelper();
         int count;
         try {
             count = paginationHelper.updateLimitWithResponse(sql, new Object[] {startTime, limitSize});
@@ -640,7 +640,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 try {
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
-                    LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+                    LogUtil.FATAL_LOG.error("[interrupt-error] " + e, e);
                 }
                 count = paginationHelper.updateLimitWithResponse(sql, new Object[] {startTime, limitSize});
             }
