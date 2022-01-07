@@ -32,7 +32,10 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
+import com.alibaba.nacos.core.ability.ServerAbilityInitializerHolder;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -41,7 +44,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.http.HttpStatus;
@@ -86,6 +88,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private static final int DEFAULT_SERVER_PORT = 8848;
     
     private static final String SERVER_PORT_PROPERTY = "server.port";
+    
+    private static final String SPRING_MANAGEMENT_CONTEXT_NAMESPACE = "management";
     
     private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
     
@@ -169,9 +173,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();
-        serverAbilities.getRemoteAbility().setSupportRemoteConnection(true);
-        // TODO naming and config ability should build and init by sub module.
-        serverAbilities.getNamingAbility().setSupportJraft(true);
+        for (ServerAbilityInitializer each : ServerAbilityInitializerHolder.getInstance().getInitializers()) {
+            each.initialize(serverAbilities);
+        }
         return serverAbilities;
     }
     
@@ -196,7 +200,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
-                EnvUtil.getProperty(MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY, Integer.class, DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE));
+                EnvUtil.getProperty(MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY, Integer.class,
+                        DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE));
         
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
@@ -233,7 +238,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * member information update.
      *
      * @param newMember {@link Member}
-     * @return update is successw
+     * @return update is success
      */
     public boolean update(Member newMember) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
@@ -261,17 +266,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     }
     
     void notifyMemberChange(Member member) {
-        NotifyCenter.publishEvent(MembersChangeEvent.builder()
-                .trigger(member)
-                .members(allMembers())
-                .build());
+        NotifyCenter.publishEvent(MembersChangeEvent.builder().trigger(member).members(allMembers()).build());
     }
     
     /**
      * Whether the node exists within the cluster.
      *
      * @param address ip:port
-     * @return is exist
+     * @return is exists
      */
     public boolean hasMember(String address) {
         boolean result = serverList.containsKey(address);
@@ -441,6 +443,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
+        String serverNamespace = event.getApplicationContext().getServerNamespace();
+        if (SPRING_MANAGEMENT_CONTEXT_NAMESPACE.equals(serverNamespace)) {
+            // ignore
+            // fix#issue https://github.com/alibaba/nacos/issues/7230
+            return;
+        }
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, DEFAULT_TASK_DELAY_TIME);
@@ -495,7 +503,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     class MemberInfoReportTask extends Task {
         
-        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() { };
+        private final GenericType<RestResult<String>> reference = new GenericType<RestResult<String>>() {
+        };
         
         private int cursor = 0;
         
@@ -520,66 +529,61 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
                 AuthHeaderUtil.addIdentityToHeader(header);
                 asyncRestTemplate
-                        .post(url, header,
-                                Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
-                                    @Override
-                                    public void onReceive(RestResult<String> result) {
-                                        if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value()
-                                                || result.getCode() == HttpStatus.NOT_FOUND.value()) {
-                                            Loggers.CLUSTER
-                                                    .warn("{} version is too low, it is recommended to upgrade the version : {}",
-                                                            target, VersionUtils.version);
-                                            Member memberNew = null;
-                                            if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
-                                                memberNew = target.copy();
-                                                // Clean up remote version info.
-                                                // This value may still stay in extend info when remote server has been downgraded to old version.
-                                                memberNew.delExtendVal(MemberMetaDataConstants.VERSION);
-                                                memberNew.delExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE);
-                                                Loggers.CLUSTER.warn("{} : Clean up version info,"
-                                                        + " target has been downgrade to old version.", memberNew);
-                                            }
-                                            if (target.getAbilities() != null
-                                                    && target.getAbilities().getRemoteAbility() != null && target
-                                                    .getAbilities().getRemoteAbility().isSupportRemoteConnection()) {
-                                                if (memberNew == null) {
-                                                    memberNew = target.copy();
-                                                }
-                                                memberNew.getAbilities().getRemoteAbility()
-                                                        .setSupportRemoteConnection(false);
-                                                Loggers.CLUSTER
-                                                        .warn("{} : Clear support remote connection flag,target may rollback version ",
-                                                                memberNew);
-                                            }
-                                            if (memberNew != null) {
-                                                update(memberNew);
-                                            }
-                                            return;
-                                        }
-                                        if (result.ok()) {
-                                            MemberUtil.onSuccess(ServerMemberManager.this, target);
-                                        } else {
-                                            Loggers.CLUSTER
-                                                    .warn("failed to report new info to target node : {}, result : {}",
-                                                            target.getAddress(), result);
-                                            MemberUtil.onFail(ServerMemberManager.this, target);
-                                        }
+                        .post(url, header, Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
+                            @Override
+                            public void onReceive(RestResult<String> result) {
+                                if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value()
+                                        || result.getCode() == HttpStatus.NOT_FOUND.value()) {
+                                    Loggers.CLUSTER
+                                            .warn("{} version is too low, it is recommended to upgrade the version : {}",
+                                                    target, VersionUtils.version);
+                                    Member memberNew = null;
+                                    if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
+                                        memberNew = target.copy();
+                                        // Clean up remote version info.
+                                        // This value may still stay in extend info when remote server has been downgraded to old version.
+                                        memberNew.delExtendVal(MemberMetaDataConstants.VERSION);
+                                        memberNew.delExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE);
+                                        Loggers.CLUSTER.warn("{} : Clean up version info,"
+                                                + " target has been downgrade to old version.", memberNew);
                                     }
-                                    
-                                    @Override
-                                    public void onError(Throwable throwable) {
+                                    if (target.getAbilities() != null
+                                            && target.getAbilities().getRemoteAbility() != null && target.getAbilities()
+                                            .getRemoteAbility().isSupportRemoteConnection()) {
+                                        if (memberNew == null) {
+                                            memberNew = target.copy();
+                                        }
+                                        memberNew.getAbilities().getRemoteAbility().setSupportRemoteConnection(false);
                                         Loggers.CLUSTER
-                                                .error("failed to report new info to target node : {}, error : {}",
-                                                        target.getAddress(),
-                                                        ExceptionUtil.getAllExceptionMsg(throwable));
-                                        MemberUtil.onFail(ServerMemberManager.this, target, throwable);
+                                                .warn("{} : Clear support remote connection flag,target may rollback version ",
+                                                        memberNew);
                                     }
-                                    
-                                    @Override
-                                    public void onCancel() {
-                                    
+                                    if (memberNew != null) {
+                                        update(memberNew);
                                     }
-                                });
+                                    return;
+                                }
+                                if (result.ok()) {
+                                    MemberUtil.onSuccess(ServerMemberManager.this, target);
+                                } else {
+                                    Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
+                                            target.getAddress(), result);
+                                    MemberUtil.onFail(ServerMemberManager.this, target);
+                                }
+                            }
+                            
+                            @Override
+                            public void onError(Throwable throwable) {
+                                Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
+                                        target.getAddress(), ExceptionUtil.getAllExceptionMsg(throwable));
+                                MemberUtil.onFail(ServerMemberManager.this, target, throwable);
+                            }
+                            
+                            @Override
+                            public void onCancel() {
+                            
+                            }
+                        });
             } catch (Throwable ex) {
                 Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}", target.getAddress(),
                         ExceptionUtil.getAllExceptionMsg(ex));

@@ -228,7 +228,7 @@ public class NacosNamingService implements NamingService {
         if (subscribe) {
             // 先从本地的缓存serviceInfoMap查询service信息
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-            if (null == serviceInfo) {
+            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                 // 若本地缓存不存在此service信息,则发送rpc请求从服务端查询
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }

@@ -92,7 +92,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<String, AtomicInteger>(16);
     
-    Map<String, Connection> connections = new ConcurrentHashMap<String, Connection>();
+    Map<String, Connection> connections = new ConcurrentHashMap<>();
     
     @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;

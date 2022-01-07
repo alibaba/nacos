@@ -64,7 +64,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     
     @Override
     public DistroData getDistroData(DistroKey distroKey) {
-        Map<String, Datum> result = new HashMap<>(1);
+        Map<String, Datum> result = new HashMap<>(2);
         if (distroKey instanceof DistroHttpCombinedKey) {
             result = dataStore.batchGet(((DistroHttpCombinedKey) distroKey).getActualResourceTypes());
         } else {

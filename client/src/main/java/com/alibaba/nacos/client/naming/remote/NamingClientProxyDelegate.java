@@ -39,6 +39,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
@@ -47,9 +48,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class NamingClientProxyDelegate implements NamingClientProxy {
-    
-    private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
-    
+
     private final ServerListManager serverListManager;
     
     private final ServiceInfoUpdateService serviceInfoUpdateService;
@@ -87,7 +86,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         });
         this.securityProxy.login(serverListManager.getServerList());
         this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(serverListManager.getServerList()), 0,
-                securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
     @Override
@@ -139,12 +138,13 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        NAMING_LOGGER.info("[SUBSCRIBE-SERVICE] service:{}, group:{}, clusters:{} ", serviceName, groupName, clusters);
         String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
         // 将更新服务的任务加入周期性的线程池(即客户端定时从Nacos服务端拉取数据,更新本地的serviceInfoMap,保证即使Nacos服务端宕机,客户端也能正常运行)
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         ServiceInfo result = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
-        if (null == result) {
+        if (null == result || !isSubscribed(serviceName, groupName, clusters)) {
             // 若本地缓存serviceInfoMap无对应的service信息,subscribe()方法将构建一个SubscribeServiceRequest请求发送到Nacos服务端,获取服务端最新的service信息
             result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
@@ -155,10 +155,16 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        NAMING_LOGGER.debug("[UNSUBSCRIBE-SERVICE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, groupName, clusters);
         grpcClientProxy.unsubscribe(serviceName, groupName, clusters);
     }
     
+    @Override
+    public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+        return grpcClientProxy.isSubscribed(serviceName, groupName, clusters);
+    }
+
     @Override
     public void updateBeatInfo(Set<Instance> modifiedInstances) {
         httpClientProxy.updateBeatInfo(modifiedInstances);

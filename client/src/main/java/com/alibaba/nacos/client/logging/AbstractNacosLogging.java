@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.logging;
 
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -33,13 +34,13 @@ public abstract class AbstractNacosLogging {
     
     private static final String NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY = "nacos.logging.default.config.enabled";
     
-    private static final String NACOS_LOGGING_PATH_PROPERTY = "JM.LOG.PATH";
+    private static final String NACOS_LOGGING_PATH_DIR = "logs";
     
     static {
-        String loggingPath = System.getProperty(NACOS_LOGGING_PATH_PROPERTY);
+        String loggingPath = System.getProperty(Constants.SysEnv.JM_LOG_PATH);
         if (StringUtils.isBlank(loggingPath)) {
-            String userHome = System.getProperty("user.home");
-            System.setProperty(NACOS_LOGGING_PATH_PROPERTY, userHome + File.separator + "logs");
+            String userHome = System.getProperty(Constants.SysEnv.USER_HOME);
+            System.setProperty(Constants.SysEnv.JM_LOG_PATH, userHome + File.separator + NACOS_LOGGING_PATH_DIR);
         }
     }
     

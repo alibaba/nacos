@@ -69,9 +69,9 @@ public class ServiceInfoHolder implements Closeable {
     public ServiceInfoHolder(String namespace, Properties properties) {
         initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+            this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
         } else {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
+            this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
@@ -191,6 +191,7 @@ public class ServiceInfoHolder implements Closeable {
         if (oldService.getLastRefTime() > newService.getLastRefTime()) {
             NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
                     newService.getLastRefTime());
+            return false;
         }
         boolean changed = false;
         Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());

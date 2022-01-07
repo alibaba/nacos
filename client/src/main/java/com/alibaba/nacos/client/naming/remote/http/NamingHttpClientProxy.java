@@ -367,6 +367,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
+    public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+        return true;
+    }
+    
+    @Override
     public void updateBeatInfo(Set<Instance> modifiedInstances) {
         for (Instance instance : modifiedInstances) {
             String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());

@@ -36,7 +36,7 @@ import java.util.Set;
 
 public class PayloadRegistry {
     
-    private static final Map<String, Class> REGISTRY_REQUEST = new HashMap<String, Class>();
+    private static final Map<String, Class<?>> REGISTRY_REQUEST = new HashMap<>();
     
     static boolean initialized = false;
     
@@ -56,7 +56,7 @@ public class PayloadRegistry {
             Reflections reflections = new Reflections(pkg);
             // 获取指定包下所有Request.class接口的子类(可能包括抽象类和接口)
             Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
-            for (Class clazz : subTypesRequest) {
+            for (Class<?> clazz : subTypesRequest) {
                 // key=类名,value=class对象,
                 // 缓存当前项目指定的包名requestScanPackage下所有的Request.class接口的子类信息到REGISTRY_REQUEST中
                 register(clazz.getSimpleName(), clazz);
@@ -71,7 +71,7 @@ public class PayloadRegistry {
             Reflections reflections = new Reflections(pkg);
             // 获取指定包下所有Response.class接口的子类(可能包括抽象类和接口)
             Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
-            for (Class clazz : subTypesOfResponse) {
+            for (Class<?> clazz : subTypesOfResponse) {
                 // key=类名,value=class对象,
                 // 缓存当前项目指定的包名responseScanPackage下所有的Response.class接口的子类信息到REGISTRY_REQUEST中
                 register(clazz.getSimpleName(), clazz);
@@ -81,7 +81,7 @@ public class PayloadRegistry {
         initialized = true;
     }
     
-    static void register(String type, Class clazz) {
+    static void register(String type, Class<?> clazz) {
         // 排除抽象类
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
@@ -96,7 +96,7 @@ public class PayloadRegistry {
         REGISTRY_REQUEST.put(type, clazz);
     }
     
-    public static Class getClassByType(String type) {
+    public static Class<?> getClassByType(String type) {
         return REGISTRY_REQUEST.get(type);
     }
 }

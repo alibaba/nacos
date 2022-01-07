@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @author xiweng.yy
  */
-public class InstanceUtil {
+public final class InstanceUtil {
     
     /**
      * Parse {@code InstancePublishInfo} to {@code Instance}.
