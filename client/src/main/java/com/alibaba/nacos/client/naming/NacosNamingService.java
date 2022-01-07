@@ -225,7 +225,7 @@ public class NacosNamingService implements NamingService {
         String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-            if (null == serviceInfo) {
+            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
         } else {

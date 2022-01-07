@@ -138,11 +138,12 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        NAMING_LOGGER.info("[SUBSCRIBE-SERVICE] service:{}, group:{}, clusters:{} ", serviceName, groupName, clusters);
         String serviceNameWithGroup = NamingUtils.getGroupedName(serviceName, groupName);
         String serviceKey = ServiceInfo.getKey(serviceNameWithGroup, clusters);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, groupName, clusters);
         ServiceInfo result = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
-        if (null == result) {
+        if (null == result || !isSubscribed(serviceName, groupName, clusters)) {
             result = grpcClientProxy.subscribe(serviceName, groupName, clusters);
         }
         serviceInfoHolder.processServiceInfo(result);
@@ -151,8 +152,14 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        NAMING_LOGGER.debug("[UNSUBSCRIBE-SERVICE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, groupName, clusters);
         grpcClientProxy.unsubscribe(serviceName, groupName, clusters);
+    }
+    
+    @Override
+    public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+        return grpcClientProxy.isSubscribed(serviceName, groupName, clusters);
     }
     
     @Override

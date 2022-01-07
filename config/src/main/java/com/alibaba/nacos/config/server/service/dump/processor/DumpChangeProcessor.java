@@ -87,9 +87,10 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
         List<ConfigInfoWrapper> changeConfigs = persistService.findChangeConfig(startTime, endTime);
         LogUtil.DEFAULT_LOG.warn("changeConfig count:{}", changeConfigs.size());
         for (ConfigInfoWrapper cf : changeConfigs) {
-            boolean result = ConfigCacheService
-                    .dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(), cf.getLastModified(),
-                            cf.getEncryptedDataKey());
+    
+            ConfigCacheService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
+                    cf.getLastModified(), cf.getEncryptedDataKey());
+
             final String content = cf.getContent();
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             LogUtil.DEFAULT_LOG
