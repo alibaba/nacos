@@ -63,8 +63,8 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
         super(logger);
         tasks = new ConcurrentHashMap<>(initCapacity);
         processingExecutor = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory(name));
-        processingExecutor
-                .scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
+        // 单线程的周期性线程池,用于执行向客户端推送订阅更新的任务,每隔0.1s执行一次
+        processingExecutor.scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
     }
     
     @Override
@@ -136,6 +136,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     /**
      * process tasks in execute engine.
+     * TODO 为什么这里tasks不用阻塞队列,为啥要一次性取出集合中的所有数据?
      */
     protected void processTasks() {
         Collection<Object> keys = getAllTaskKeys();

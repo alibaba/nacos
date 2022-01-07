@@ -43,7 +43,7 @@ public class NamingExample2 {
         
         NamingService naming = NamingFactory.createNamingService(properties);
         
-        naming.registerInstance("nacos.test.1", "11.11.11.12", 8888, "TEST1");
+        naming.registerInstance("nacos.test.2", "22.22.22.12", 8888, "TEST1");
 
         Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
                 new ThreadFactory() {

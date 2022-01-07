@@ -49,6 +49,7 @@ public class PushExecutorDelegate implements PushExecutor {
     
     @Override
     public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        // 向客户端推送被订阅的服务信息
         getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data, callBack);
     }
     

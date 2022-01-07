@@ -55,6 +55,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     @Override
     public void run() {
         try {
+            // 包含了服务的元数据和serviceInfo
             PushDataWrapper wrapper = generatePushData();
             for (String each : getTargetClientIds()) {
                 Client client = delayTaskEngine.getClientManager().getClient(each);
@@ -112,9 +113,13 @@ public class PushExecuteTask extends AbstractExecuteTask {
         
         @Override
         public long getTimeout() {
+            // 默认的推送超时时间5s
             return PushConfig.getInstance().getPushTaskTimeout();
         }
-        
+
+        /**
+         * 推送成功的回调方法
+         * */
         @Override
         public void onSuccess() {
             ServiceInfo serviceInfo = getServiceInfo(service, this.serviceInfo);
@@ -136,15 +141,20 @@ public class PushExecuteTask extends AbstractExecuteTask {
                             serviceLevelAgreementTime, isPushToAll);
             PushResultHookHolder.getInstance().pushSuccess(result);
         }
-        
+
+        /**
+         * 推送失败的回调方法,默认5s超时失败
+         * */
         @Override
         public void onFail(Throwable e) {
             ServiceInfo serviceInfo = getServiceInfo(service, this.serviceInfo);
             long pushCostTime = System.currentTimeMillis() - executeStartTime;
             Loggers.PUSH.error("[PUSH-FAIL] {}ms, {}, reason={}, target={}", pushCostTime, service, e.getMessage(),
                     subscriber.getIp());
+            // 判断是否需要重试
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
+                // 将推送失败的任务再次加入到任务队列中
                 delayTaskEngine.addTask(service,
                         new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
             }

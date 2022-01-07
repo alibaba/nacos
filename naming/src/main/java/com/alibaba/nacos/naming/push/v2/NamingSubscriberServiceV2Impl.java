@@ -67,11 +67,11 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
         this.upgradeJudgement = upgradeJudgement;
+        // 创建PushDelayTaskExecuteEngine,在构造方法中会启动推送订阅的周期性线程池
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
                 metadataManager, pushExecutor, switchDomain);
         // 实例化NamingSubscriberServiceV2Impl(处理服务变更事件和服务订阅事件),会将此订阅者注册到通知中心
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
-        
     }
     
     @Override

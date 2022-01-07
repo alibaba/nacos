@@ -56,7 +56,7 @@ public class NamingExample1 {
                     return thread;
                 });
         
-        naming.subscribe("nacos.test.1", new AbstractEventListener() {
+        naming.subscribe("nacos.test.2", new AbstractEventListener() {
             
             //EventListener onEvent is sync to handle, If process too low in onEvent, maybe block other onEvent callback.
             //So you can override getExecutor() to async handle event.
@@ -72,6 +72,6 @@ public class NamingExample1 {
             }
         });
 
-        Thread.sleep(10000);
+        Thread.sleep(1000000);
     }
 }
