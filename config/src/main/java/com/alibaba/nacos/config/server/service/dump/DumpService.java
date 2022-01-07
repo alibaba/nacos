@@ -230,8 +230,7 @@ public abstract class DumpService {
                 }
             } catch (Exception e) {
                 LogUtil.FATAL_LOG
-                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e
-                                .toString());
+                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e);
                 throw new NacosException(NacosException.SERVER_ERROR,
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
@@ -337,9 +336,9 @@ public abstract class DumpService {
     
     private Boolean isQuickStart() {
         try {
-            String val = null;
+            String val;
             val = EnvUtil.getProperty("isQuickStart");
-            if (val != null && TRUE_STR.equals(val)) {
+            if (TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
             FATAL_LOG.warn("isQuickStart:{}", isQuickStart);
@@ -404,7 +403,7 @@ public abstract class DumpService {
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
         List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
         for (int i = 0; i < count; i++) {
-            result.add(new ArrayList<ConfigInfoChanged>());
+            result.add(new ArrayList<>());
         }
         for (int i = 0; i < list.size(); i++) {
             ConfigInfoChanged config = list.get(i);

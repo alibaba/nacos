@@ -45,20 +45,17 @@ public abstract class BaseRpcServer {
         Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
         
         startServer();
-        
+    
         Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
-                try {
-                    BaseRpcServer.this.stopServer();
-                    Loggers.REMOTE.info("Nacos {} Rpc server stopped successfully...", serverName);
-                } catch (Exception e) {
-                    Loggers.REMOTE.error("Nacos {} Rpc server stopped fail...", serverName, e);
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
+            try {
+                BaseRpcServer.this.stopServer();
+                Loggers.REMOTE.info("Nacos {} Rpc server stopped successfully...", serverName);
+            } catch (Exception e) {
+                Loggers.REMOTE.error("Nacos {} Rpc server stopped fail...", serverName, e);
             }
-        });
+        }));
 
     }
     

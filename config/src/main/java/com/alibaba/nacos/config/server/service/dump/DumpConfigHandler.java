@@ -48,7 +48,7 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
         final long lastModified = event.getLastModifiedTs();
         final String encryptedDataKey = event.getEncryptedDataKey();
         if (event.isBeta()) {
-            boolean result = false;
+            boolean result;
             if (event.isRemove()) {
                 result = ConfigCacheService.removeBeta(dataId, group, namespaceId);
                 if (result) {
