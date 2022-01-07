@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.constant;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * All the constants.
  *
@@ -54,6 +56,12 @@ public class Constants {
         public static final String HTTP = "http://";
         
         public static final String HTTPS = "https://";
+    }
+    
+    public static class Security {
+    
+        public static final long SECURITY_INFO_REFRESH_INTERVAL_MILLS = TimeUnit.SECONDS.toMillis(5);
+        
     }
     
 }
