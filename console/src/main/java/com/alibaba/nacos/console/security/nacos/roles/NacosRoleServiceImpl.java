@@ -162,6 +162,9 @@ public class NacosRoleServiceImpl {
             Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
+                if (!Collections.isEmpty(roleInfoList)) {
+                    roleInfoMap.put(username, roleInfoList);
+                }
             }
         }
         return roleInfoList;
@@ -181,6 +184,9 @@ public class NacosRoleServiceImpl {
             Page<PermissionInfo> permissionInfoPage = getPermissionsFromDatabase(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
                 permissionInfoList = permissionInfoPage.getPageItems();
+                if (!Collections.isEmpty(permissionInfoList)) {
+                    permissionInfoMap.put(role, permissionInfoList);
+                }
             }
         }
         return permissionInfoList;
