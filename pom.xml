@@ -156,7 +156,7 @@
         <commonOkHttp.version>0.4.1</commonOkHttp.version>
         <grpc-java.version>1.24.0</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
-        <protobuf-java.version>3.8.0</protobuf-java.version>
+        <protobuf-java.version>3.16.1</protobuf-java.version>
         <protoc-gen-grpc-java.version>1.24.0</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <reflections.version>0.9.11</reflections.version>
