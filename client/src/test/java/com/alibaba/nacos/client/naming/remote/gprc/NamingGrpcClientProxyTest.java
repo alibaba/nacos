@@ -81,6 +81,8 @@ public class NamingGrpcClientProxyTest {
     
     private static final String CLUSTERS = "cluster1";
     
+    private static final String ORIGIN_SERVER = "www.google.com";
+    
     @Mock
     private SecurityProxy proxy;
     
@@ -106,6 +108,10 @@ public class NamingGrpcClientProxyTest {
     
     @Before
     public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        List<String> serverList = Stream.of(ORIGIN_SERVER, "anotherServer").collect(Collectors.toList());
+        when(factory.getServerList()).thenReturn(serverList);
+        when(factory.genNextServer()).thenReturn(ORIGIN_SERVER);
+        
         prop = new Properties();
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, prop, holder);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
@@ -255,10 +261,6 @@ public class NamingGrpcClientProxyTest {
     
     @Test
     public void testServerListChanged() throws Exception {
-        String originServer = "www.google.com";
-        List<String> serverList = Stream.of(originServer, "anotherServer").collect(Collectors.toList());
-        when(factory.getServerList()).thenReturn(serverList);
-        when(factory.genNextServer()).thenReturn(originServer);
         
         RpcClient rpc = new RpcClient("testServerListHasChanged", factory) {
             @Override
@@ -318,7 +320,7 @@ public class NamingGrpcClientProxyTest {
             }
         }
         
-        Assert.assertEquals(originServer, rpc.getCurrentServer().getServerIp());
+        Assert.assertEquals(ORIGIN_SERVER, rpc.getCurrentServer().getServerIp());
         
         String newServer = "www.aliyun.com";
         when(factory.genNextServer()).thenReturn(newServer);
@@ -326,7 +328,7 @@ public class NamingGrpcClientProxyTest {
         NotifyCenter.publishEvent(new ServerListChangedEvent());
         
         retry = 10;
-        while (originServer.equals(rpc.getCurrentServer().getServerIp())) {
+        while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
             TimeUnit.SECONDS.sleep(1);
             if (--retry < 0) {
                 Assert.fail("failed to auth switch server");
