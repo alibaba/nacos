@@ -82,6 +82,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(Loggers.CORE);
     
+    private static final String SPRING_MANAGEMENT_CONTEXT_NAMESPACE = "management";
+
     /**
      * Cluster node list.
      */
@@ -388,6 +390,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
+        String serverNamespace = event.getApplicationContext().getServerNamespace();
+        if (SPRING_MANAGEMENT_CONTEXT_NAMESPACE.equals(serverNamespace)) {
+            // ignore
+            // fix#issue https://github.com/alibaba/nacos/issues/7230
+            return;
+        }
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
             GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
