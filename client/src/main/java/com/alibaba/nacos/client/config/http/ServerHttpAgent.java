@@ -275,6 +275,7 @@ public class ServerHttpAgent implements HttpAgent {
         this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
         this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
+        this.start();
         this.securityProxy.login(this.serverListMgr.getServerUrls());
         
         // init executorService

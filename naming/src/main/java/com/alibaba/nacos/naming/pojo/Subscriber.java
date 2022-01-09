@@ -38,6 +38,9 @@ public class Subscriber implements Serializable {
     
     private String serviceName;
     
+    /**
+     * for json to obj.
+     */
     public Subscriber() {
     }
     
