@@ -155,7 +155,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
                     retryFailedTask(taskKey, task);
                 }
             } catch (Throwable e) {
-                getEngineLog().error("Nacos task execute error : " + e.toString(), e);
+                getEngineLog().error("Nacos task execute error ", e);
                 retryFailedTask(taskKey, task);
             }
         }

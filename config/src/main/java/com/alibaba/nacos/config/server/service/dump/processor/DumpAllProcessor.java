@@ -67,10 +67,9 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                     if (cf.getDataId().equals(SwitchService.SWITCH_META_DATAID)) {
                         SwitchService.load(cf.getContent());
                     }
-                    
-                    boolean result = ConfigCacheService
-                            .dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(), cf.getLastModified(),
-                                    cf.getType());
+    
+                    ConfigCacheService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
+                            cf.getLastModified(), cf.getType());
                     
                     final String content = cf.getContent();
                     final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
