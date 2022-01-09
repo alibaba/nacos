@@ -22,7 +22,7 @@ import org.junit.Test;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -31,7 +31,7 @@ public class QueryTest {
     
     @Test
     public void testToQueryUrl() {
-        Map<String, String> parameters = new HashMap<String, String>();
+        Map<String, String> parameters = new LinkedHashMap<String, String>();
         parameters.put(CommonParams.NAMESPACE_ID, "namespace");
         parameters.put(CommonParams.SERVICE_NAME, "service");
         parameters.put(CommonParams.GROUP_NAME, "group");
@@ -40,7 +40,7 @@ public class QueryTest {
         parameters.put("port", String.valueOf(9999));
         parameters.put("weight", String.valueOf(1.0));
         parameters.put("ephemeral", String.valueOf(true));
-        String excepted = "groupName=group&namespaceId=namespace&port=9999&ip=1.1.1.1&weight=1.0&ephemeral=true&serviceName=service";
+        String excepted = "namespaceId=namespace&serviceName=service&groupName=group&ip=1.1.1.1&port=9999&weight=1.0&ephemeral=true";
         assertEquals(excepted, Query.newInstance().initParams(parameters).toQueryUrl());
     }
     

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Enumeration;
@@ -75,8 +76,8 @@ public class CollectionUtilsTest {
     
     @Test
     public void testGetMap3() {
-        Map<String, String> map1 = new HashMap(1);
-        Map<String, String> map2 = new HashMap(2);
+        Map<String, String> map1 = new LinkedHashMap(1);
+        Map<String, String> map2 = new LinkedHashMap(2);
         map1.put("key", "value");
         map2.put("key1", "value1");
         map2.put("key2", "value2");
