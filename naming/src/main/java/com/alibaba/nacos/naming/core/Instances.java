@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Package of instance list.
@@ -39,14 +40,14 @@ public class Instances implements Record {
     
     private static final long serialVersionUID = 5500823673993740145L;
     
-    private List<Instance> instanceList = new ArrayList<>();
+    private List<Instance> instanceList = new CopyOnWriteArrayList<>();
     
     public List<Instance> getInstanceList() {
         return instanceList;
     }
     
     public void setInstanceList(List<Instance> instanceList) {
-        this.instanceList = instanceList;
+        this.instanceList = new CopyOnWriteArrayList<>(instanceList);
     }
     
     @Override
