@@ -32,6 +32,7 @@ import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
+import com.alibaba.nacos.client.logging.logback.LogbackAutoRefreshFilter;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
@@ -81,7 +82,8 @@ public class NacosConfigService implements ConfigService {
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, properties);
         // will be deleted in 2.0 later versions
         agent = new ServerHttpAgent(serverListManager);
-        
+    
+        configFilterChainManager.addFilter(new LogbackAutoRefreshFilter());
     }
     
     private void initNamespace(Properties properties) {

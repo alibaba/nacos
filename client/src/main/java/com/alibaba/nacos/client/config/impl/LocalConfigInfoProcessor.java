@@ -43,9 +43,9 @@ public class LocalConfigInfoProcessor {
     
     public static final String LOCAL_SNAPSHOT_PATH;
     
-    private static final String SUFFIX = "_nacos";
+    public static final String SUFFIX = "_nacos";
     
-    private static final String ENV_CHILD = "snapshot";
+    public static final String ENV_CHILD = "snapshot";
     
     private static final String FAILOVER_FILE_CHILD_1 = "data";
     

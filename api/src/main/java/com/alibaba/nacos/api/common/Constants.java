@@ -210,6 +210,8 @@ public class Constants {
     
     public static final String CHARSET_KEY = "charset";
     
+    public static final String AGENT_NAME = "config_rpc_client";
+    
     /**
      * The constants in config directory.
      */
