@@ -57,7 +57,7 @@ public class FailoverClosureImpl implements FailoverClosure {
             return;
         }
         final Throwable throwable = this.throwable;
-        future.completeExceptionally(Objects.nonNull(throwable) ? new ConsistencyException(throwable.toString())
+        future.completeExceptionally(Objects.nonNull(throwable) ? new ConsistencyException(throwable.getMessage())
                 : new ConsistencyException("operation failure"));
     }
     
