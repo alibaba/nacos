@@ -67,7 +67,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -246,18 +245,6 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    private void removeCache(String dataId, String group) {
-        String groupKey = GroupKey.getKey(dataId, group);
-        synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
-            copy.remove(groupKey);
-            cacheMap.set(copy);
-        }
-        LOGGER.info("[{}] [unsubscribe] {}", this.agent.getName(), groupKey);
-        
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
-    }
-    
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         synchronized (cacheMap) {
@@ -410,47 +397,6 @@ public class ClientWorker implements Closeable {
         return this.agent.queryConfig(dataId, group, tenant, readTimeout, notify);
     }
     
-    private void checkLocalConfig(String agentName, CacheData cacheData) {
-        final String dataId = cacheData.dataId;
-        final String group = cacheData.group;
-        final String tenant = cacheData.tenant;
-        File path = LocalConfigInfoProcessor.getFailoverFile(agentName, dataId, group, tenant);
-        
-        if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
-            String content = LocalConfigInfoProcessor.getFailover(agentName, dataId, group, tenant);
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            cacheData.setUseLocalConfigInfo(true);
-            cacheData.setLocalConfigInfoVersion(path.lastModified());
-            cacheData.setContent(content);
-            
-            LOGGER.warn(
-                    "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                    agentName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-            return;
-        }
-        
-        // If use local config info, then it doesn't notify business listener and notify after getting from server.
-        if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
-            cacheData.setUseLocalConfigInfo(false);
-            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agentName,
-                    dataId, group, tenant);
-            return;
-        }
-        
-        // When it changed.
-        if (cacheData.isUseLocalConfigInfo() && path.exists() && cacheData.getLocalConfigInfoVersion() != path
-                .lastModified()) {
-            String content = LocalConfigInfoProcessor.getFailover(agentName, dataId, group, tenant);
-            final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            cacheData.setUseLocalConfigInfo(true);
-            cacheData.setLocalConfigInfoVersion(path.lastModified());
-            cacheData.setContent(content);
-            LOGGER.warn(
-                    "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                    agentName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-        }
-    }
-    
     private String blank2defaultGroup(String group) {
         return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
@@ -599,25 +545,25 @@ public class ClientWorker implements Closeable {
         @Override
         public void shutdown() {
             synchronized (RpcClientFactory.getAllClientEntries()) {
-                LOGGER.info("Trying to shutdown transport client " + this);
+                LOGGER.info("Trying to shutdown transport client {}", this);
                 Set<Map.Entry<String, RpcClient>> allClientEntries = RpcClientFactory.getAllClientEntries();
                 Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntries.iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<String, RpcClient> entry = iterator.next();
                     if (entry.getKey().startsWith(uuid)) {
-                        LOGGER.info("Trying to shutdown rpc client " + entry.getKey());
+                        LOGGER.info("Trying to shutdown rpc client {}", entry.getKey());
                         
                         try {
                             entry.getValue().shutdown();
                         } catch (NacosException nacosException) {
                             nacosException.printStackTrace();
                         }
-                        LOGGER.info("Remove rpc client " + entry.getKey());
+                        LOGGER.info("Remove rpc client {}", entry.getKey());
                         iterator.remove();
                     }
                 }
                 
-                LOGGER.info("Shutdown executor " + executor);
+                LOGGER.info("Shutdown executor {}", executor);
                 executor.shutdown();
                 Map<String, CacheData> stringCacheDataMap = cacheMap.get();
                 for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
@@ -724,9 +670,9 @@ public class ClientWorker implements Closeable {
                 }
             });
             
-            NotifyCenter.registerSubscriber(new Subscriber() {
+            NotifyCenter.registerSubscriber(new Subscriber<ServerlistChangeEvent>() {
                 @Override
-                public void onEvent(Event event) {
+                public void onEvent(ServerlistChangeEvent event) {
                     rpcClientInner.onServerListChange();
                 }
                 
@@ -858,11 +804,9 @@ public class ClientWorker implements Closeable {
                                         if (!cacheData.getListeners().isEmpty()) {
                                             
                                             Long previousTimesStamp = timestampMap.get(groupKey);
-                                            if (previousTimesStamp != null) {
-                                                if (!cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
-                                                        System.currentTimeMillis())) {
-                                                    continue;
-                                                }
+                                            if (previousTimesStamp != null && !cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
+                                                    System.currentTimeMillis())) {
+                                                continue;
                                             }
                                             cacheData.setSyncWithServer(true);
                                         }
