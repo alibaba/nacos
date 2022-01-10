@@ -257,7 +257,7 @@ public class NacosConfigService implements ConfigService {
         if (StringUtils.isNotEmpty(dataKey)) {
             params.put("encryptedDataKey", dataKey);
         }
-        Map<String, String> headers = new HashMap<String, String>(1);
+        Map<String, String> headers = new HashMap<String, String>(2);
         if (StringUtils.isNotEmpty(betaIps)) {
             headers.put("betaIps", betaIps);
         }

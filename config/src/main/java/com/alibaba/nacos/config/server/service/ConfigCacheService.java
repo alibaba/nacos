@@ -501,11 +501,11 @@ public class ConfigCacheService {
     public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
         if (cache.tagMd5 == null) {
-            Map<String, String> tagMd5Tmp = new HashMap<String, String>(1);
+            Map<String, String> tagMd5Tmp = new HashMap<String, String>(2);
             tagMd5Tmp.put(tag, md5);
             cache.tagMd5 = tagMd5Tmp;
             if (cache.tagLastModifiedTs == null) {
-                Map<String, Long> tagLastModifiedTsTmp = new HashMap<String, Long>(1);
+                Map<String, Long> tagLastModifiedTsTmp = new HashMap<String, Long>(2);
                 tagLastModifiedTsTmp.put(tag, lastModifiedTs);
                 cache.tagLastModifiedTs = tagLastModifiedTsTmp;
             } else {

@@ -292,7 +292,7 @@ public class ConfigExportAndImportAPI_CITCase {
         String metaDataStr = "TEST_IMPORT.test1~yml.app=testApp1\rTEST_IMPORT.test2~txt.app=testApp2\r\nTEST_IMPORT.test3~properties.app=testApp3\nTEST_IMPORT_2.test4~properties.app=testApp4";
         zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaDataStr));
         String importUrl = "?import=true&namespace=";
-        Map<String, String> importPrarm = new HashMap<>(1);
+        Map<String, String> importPrarm = new HashMap<>(2);
         importPrarm.put("policy", "OVERWRITE");
         UploadByteFile uploadByteFile = new UploadByteFile();
         uploadByteFile.setFileName("testImport.zip");
@@ -422,7 +422,7 @@ public class ConfigExportAndImportAPI_CITCase {
         
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
-        Map<String, String> importPrarm = new HashMap<>(1);
+        Map<String, String> importPrarm = new HashMap<>(2);
         importPrarm.put("policy", "OVERWRITE");
         UploadByteFile uploadByteFile = new UploadByteFile();
         uploadByteFile.setFileName("testImport.zip");
@@ -456,7 +456,7 @@ public class ConfigExportAndImportAPI_CITCase {
     
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
-        Map<String, String> importPrarm = new HashMap<>(1);
+        Map<String, String> importPrarm = new HashMap<>(2);
         importPrarm.put("policy", "OVERWRITE");
         UploadByteFile uploadByteFile = new UploadByteFile();
         uploadByteFile.setFileName("testImport.zip");
@@ -480,7 +480,7 @@ public class ConfigExportAndImportAPI_CITCase {
     
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
-        Map<String, String> importPrarm = new HashMap<>(1);
+        Map<String, String> importPrarm = new HashMap<>(2);
         importPrarm.put("policy", "OVERWRITE");
         UploadByteFile uploadByteFile = new UploadByteFile();
         uploadByteFile.setFileName("testImport.zip");
@@ -511,7 +511,7 @@ public class ConfigExportAndImportAPI_CITCase {
         
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         String importUrl = "?import=true&namespace=";
-        Map<String, String> importPrarm = new HashMap<>(1);
+        Map<String, String> importPrarm = new HashMap<>(2);
         importPrarm.put("policy", "OVERWRITE");
         UploadByteFile uploadByteFile = new UploadByteFile();
         uploadByteFile.setFileName("testImport.zip");

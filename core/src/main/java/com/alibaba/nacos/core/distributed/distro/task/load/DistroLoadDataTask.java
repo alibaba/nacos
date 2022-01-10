@@ -54,7 +54,7 @@ public class DistroLoadDataTask implements Runnable {
         this.distroComponentHolder = distroComponentHolder;
         this.distroConfig = distroConfig;
         this.loadCallback = loadCallback;
-        loadCompletedMap = new HashMap<>(1);
+        loadCompletedMap = new HashMap<>(2);
     }
     
     @Override

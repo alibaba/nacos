@@ -210,7 +210,7 @@ public class RaftCore implements Closeable {
             ObjectNode params = JacksonUtils.createEmptyJsonNode();
             params.put("key", key);
             params.replace("value", JacksonUtils.transferToJsonNode(value));
-            Map<String, String> parameters = new HashMap<>(1);
+            Map<String, String> parameters = new HashMap<>(2);
             parameters.put("key", key);
             
             final RaftPeer leader = getLeader();
@@ -298,7 +298,7 @@ public class RaftCore implements Closeable {
         try {
             
             if (!isLeader()) {
-                Map<String, String> params = new HashMap<>(1);
+                Map<String, String> params = new HashMap<>(2);
                 params.put("key", URLEncoder.encode(key, "UTF-8"));
                 raftProxy.proxy(getLeader().ip, API_DEL, params, HttpMethod.DELETE);
                 return;
@@ -510,7 +510,7 @@ public class RaftCore implements Closeable {
             local.voteFor = local.ip;
             local.state = RaftPeer.State.CANDIDATE;
             
-            Map<String, String> params = new HashMap<>(1);
+            Map<String, String> params = new HashMap<>(2);
             params.put("vote", JacksonUtils.toJson(local));
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildUrl(server, API_VOTE);
@@ -651,7 +651,7 @@ public class RaftCore implements Closeable {
             
             packet.replace("datums", array);
             // broadcast
-            Map<String, String> params = new HashMap<String, String>(1);
+            Map<String, String> params = new HashMap<String, String>(2);
             params.put("beat", JacksonUtils.toJson(packet));
             
             String content = JacksonUtils.toJson(params);
@@ -823,7 +823,7 @@ public class RaftCore implements Closeable {
                     
                     // update datum entry
                     String url = buildUrl(remote.ip, API_GET);
-                    Map<String, String> queryParam = new HashMap<>(1);
+                    Map<String, String> queryParam = new HashMap<>(2);
                     queryParam.put("keys", URLEncoder.encode(keys, "UTF-8"));
                     HttpClient.asyncHttpGet(url, null, queryParam, new Callback<String>() {
                         @Override
