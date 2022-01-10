@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import java.net.InetAddress;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -222,7 +223,19 @@ public class InternetAddressUtil {
         if (Objects.equals(str, LOCAL_HOST)) {
             return true;
         }
-        return DOMAIN_PATTERN.matcher(str).matches();
+        boolean matches = DOMAIN_PATTERN.matcher(str).matches();
+        if (matches) {
+            return true;
+        }
+        try {
+            InetAddress[] allByName = InetAddress.getAllByName(str);
+            if (allByName != null) {
+                return true;
+            }
+        } catch (Exception ignored) {
+        }
+    
+        return false;
     }
     
 }

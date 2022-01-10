@@ -21,6 +21,8 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * test IpUtil.
@@ -129,7 +131,7 @@ public class InternetAddressUtilTest {
     }
     
     @Test
-    public void testIsDomain() {
+    public void testIsDomain() throws UnknownHostException {
         Assert.assertTrue(InternetAddressUtil.isDomain("localhost"));
         Assert.assertTrue(InternetAddressUtil.isDomain("github.com"));
         Assert.assertTrue(InternetAddressUtil.isDomain("prefix.infix.suffix"));
@@ -137,6 +139,8 @@ public class InternetAddressUtilTest {
         
         Assert.assertFalse(InternetAddressUtil.isDomain(""));
         Assert.assertFalse(InternetAddressUtil.isDomain(null));
+        String hostName = InetAddress.getLocalHost().getHostName();
+        Assert.assertTrue(InternetAddressUtil.isDomain(hostName));
     }
     
     @Test
