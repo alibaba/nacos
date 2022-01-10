@@ -30,7 +30,7 @@ public class StringUtilsTest {
 
     @Test
     public void testJoin() {
-        ArrayList<Object> objects = new ArrayList<>();
+        ArrayList<Object> objects = new ArrayList<Object>();
         objects.add(null);
         Assert.assertNull(StringUtils.join(null, "a"));
         Assert.assertEquals(StringUtils.EMPTY, StringUtils.join(Arrays.asList(), "a"));
