@@ -85,10 +85,20 @@ You can view the full documentation from the [Nacos website](https://nacos.io/en
 
 All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice).
 
-
 ## Contributing
 
 Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./CONTRIBUTING.md) about how to contribute to this project.
+
+### How can I contribute?
+
+* Take a look at issues with tags marked [`good first issue`](https://github.com/alibaba/nacos/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22) or [`contribution welcome`](https://github.com/alibaba/nacos/issues?q=is%3Aopen+is%3Aissue+label%3A%22contribution+welcome%22).
+* Answer questions on [issues](https://github.com/alibaba/nacos/issues).
+* Fix bugs reported on [issues](https://github.com/alibaba/nacos/issues), and send us a pull request.
+* Review the existing [pull request](https://github.com/alibaba/nacos/pulls).
+* Improve the [website](https://github.com/nacos-group/nacos-group.github.io), typically we need
+  * blog post
+  * translation on documentation
+  * use cases around the integration of Nacos in enterprise systems.
 
 ## Other Related Project Repositories
 
