@@ -55,7 +55,7 @@ const authorityControlMenu = {
 };
 
 /**
- * 集群管理
+ * 集群管理,只有globalAdmin用户才可以访问
  */
 const clusterManagementVirtual = {
   key: 'clusterManagementVirtual',
