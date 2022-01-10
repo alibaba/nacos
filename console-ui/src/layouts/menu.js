@@ -54,6 +54,19 @@ const authorityControlMenu = {
   ],
 };
 
+/**
+ * 集群管理
+ */
+const clusterManagementVirtual = {
+  key: 'clusterManagementVirtual',
+  children: [
+    {
+      key: 'clusterManagement',
+      url: '/clusterManagement',
+    },
+  ],
+};
+
 export default function(model) {
   const { token = '{}' } = localStorage;
   const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
@@ -78,14 +91,6 @@ export default function(model) {
       key: 'namespace',
       url: '/namespace',
     },
-    {
-      key: 'clusterManagementVirtual',
-      children: [
-        {
-          key: 'clusterManagement',
-          url: '/clusterManagement',
-        },
-      ],
-    },
+    globalAdmin ? clusterManagementVirtual : undefined,
   ].filter(item => item);
 }
