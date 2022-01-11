@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -26,13 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AggrWhitelistTest {
-    
-    AggrWhitelist service;
-    
-    @Before
-    public void before() throws Exception {
-        service = new AggrWhitelist();
-    }
     
     @Test
     public void testIsAggrDataId() {
