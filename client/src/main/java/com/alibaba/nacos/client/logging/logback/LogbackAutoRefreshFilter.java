@@ -36,7 +36,7 @@ import java.util.Properties;
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 
 /**
- * refresh logback.
+ * logback auto refresh.
  *
  * @author hujun
  */
