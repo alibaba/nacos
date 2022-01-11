@@ -60,16 +60,19 @@ public class LogbackAutoRefreshFilter implements IConfigFilter {
      * reload user logback config.
      */
     public static void loadUserConfiguration() {
-        String location = LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH + File.separator + Constants.AGENT_NAME
-                + LocalConfigInfoProcessor.SUFFIX + File.separator + LocalConfigInfoProcessor.ENV_CHILD + File.separator
-                + DEFAULT_GROUP + File.separator + LogbackAutoRefreshFilter.LOGBACK_DATA_ID;
-        
+        String location = getLocalLocation();
         try {
             LoggerContext loggerContext = (LoggerContext) StaticLoggerBinder.getSingleton().getLoggerFactory();
             new ContextInitializer(loggerContext).configureByResource(ResourceUtils.getResourceUrl(location));
         } catch (Exception e) {
-            throw new IllegalStateException("Could not initialize user Nacos logging from " + location, e);
+            throw new IllegalStateException("Could not initialize user logback config from " + location, e);
         }
+    }
+    
+    private static String getLocalLocation() {
+        return LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH + File.separator + Constants.AGENT_NAME
+                + LocalConfigInfoProcessor.SUFFIX + File.separator + LocalConfigInfoProcessor.ENV_CHILD + File.separator
+                + DEFAULT_GROUP + File.separator + LogbackAutoRefreshFilter.LOGBACK_DATA_ID;
     }
     
     @Override
@@ -89,6 +92,6 @@ public class LogbackAutoRefreshFilter implements IConfigFilter {
     
     @Override
     public String getFilterName() {
-        return "LogbackAutoRefreshFilter";
+        return LogbackAutoRefreshFilter.class.getName();
     }
 }
