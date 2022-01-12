@@ -41,6 +41,7 @@ public class SecurityProxy implements Closeable {
     
     /**
      * Construct from serverList, nacosRestTemplate, init client auth plugin.
+     * // TODO change server list to serverListManager after serverListManager refactor and unite.
      *
      * @param serverList a server list that client request to.
      * @Param nacosRestTemplate http request template.
