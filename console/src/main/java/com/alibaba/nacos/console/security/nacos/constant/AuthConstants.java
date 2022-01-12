@@ -14,36 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.users;
-
-import java.io.Serializable;
+package com.alibaba.nacos.console.security.nacos.constant;
 
 /**
- * User.
+ * All the constants.
  *
- * @author wfnuser
+ * @author onew
  */
-public class User implements Serializable {
+public class AuthConstants {
     
-    private static final long serialVersionUID = 3371769277802700069L;
+    public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
     
-    private String username;
+    public static final String AUTHORIZATION_HEADER = "Authorization";
     
-    private String password;
+    public static final String TOKEN_PREFIX = "Bearer ";
     
-    public String getPassword() {
-        return password;
-    }
+    public static final String PARAM_USERNAME = "username";
     
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public static final String PARAM_PASSWORD = "password";
     
-    public String getUsername() {
-        return username;
-    }
+    public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
     
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
 }

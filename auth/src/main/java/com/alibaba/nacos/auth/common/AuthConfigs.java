@@ -51,7 +51,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      * Authority key set.
      */
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY + ":}")
-    private String[] authorityKey;
+    private  String[] authorityKey;
     
     /**
      * Whether auth enabled.
