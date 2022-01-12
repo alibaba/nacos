@@ -53,7 +53,7 @@ public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest
             // TODO select service by selector
             List<String> serviceNameList = ServiceUtil
                     .pageServiceName(request.getPageNo(), request.getPageSize(), serviceNameSet);
-            result.setCount(serviceNameList.size());
+            result.setCount(serviceNameSet.size());
             result.setServiceNames(serviceNameList);
         }
         return result;
