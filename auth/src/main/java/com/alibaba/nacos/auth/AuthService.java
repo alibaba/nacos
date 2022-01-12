@@ -41,9 +41,8 @@ public interface AuthService {
      * @param identityContext where we can find the user information.
      * @param permission permission to auth.
      * @return Boolean if the user has the resource authority.
-     * @throws AccessException authority authentication error.
      */
-    Boolean authorityAccess(IdentityContext identityContext, Permission permission) throws AccessException;
+    Boolean authorityAccess(IdentityContext identityContext, Permission permission);
     
     /**
      * AuthService Name which for conveniently find AuthService instance.

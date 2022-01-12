@@ -19,7 +19,6 @@ package com.alibaba.nacos.auth.common;
 import com.alibaba.nacos.auth.AuthPluginManager;
 import com.alibaba.nacos.auth.AuthService;
 import com.alibaba.nacos.auth.context.IdentityContext;
-import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import org.junit.Assert;
 import org.junit.Before;
@@ -73,7 +72,7 @@ public class AuthPluginManagerTest {
     }
     
     @Test
-    public void testFindAuthServiceSpiImpl() throws AccessException {
+    public void testFindAuthServiceSpiImpl() {
         Mockito.when(authService.authorityAccess(identityContext, permission)).thenReturn(true);
         Mockito.when(authService.getAuthServiceName()).thenReturn(TYPE);
         Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
