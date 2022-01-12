@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.pojo;
 
+import com.alibaba.nacos.api.selector.Selector;
+
 import java.io.Serializable;
 import java.util.Map;
 
@@ -27,6 +29,8 @@ import java.util.Map;
  */
 public class ServiceDetailInfo implements Serializable {
     
+    private String namespace;
+    
     private String serviceName;
     
     private String groupName;
@@ -34,6 +38,12 @@ public class ServiceDetailInfo implements Serializable {
     private Map<String, ClusterInfo> clusterMap;
     
     private Map<String, String> metadata;
+    
+    private float protectThreshold;
+    
+    private Selector selector;
+    
+    private Boolean ephemeral;
     
     /**
      * Getter method for property <tt>serviceName</tt>.
@@ -95,5 +105,37 @@ public class ServiceDetailInfo implements Serializable {
      */
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
+    }
+    
+    public String getNamespace() {
+        return namespace;
+    }
+    
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+    
+    public float getProtectThreshold() {
+        return protectThreshold;
+    }
+    
+    public void setProtectThreshold(float protectThreshold) {
+        this.protectThreshold = protectThreshold;
+    }
+    
+    public Selector getSelector() {
+        return selector;
+    }
+    
+    public void setSelector(Selector selector) {
+        this.selector = selector;
+    }
+    
+    public Boolean isEphemeral() {
+        return ephemeral;
+    }
+    
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
     }
 }

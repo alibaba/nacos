@@ -183,7 +183,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
         ServiceInfo result = ServiceUtil
-                .selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, healthOnly, true);
+                .selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, healthOnly, true, subscriber.getIp());
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;

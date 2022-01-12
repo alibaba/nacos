@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,6 +71,11 @@ public class ConnectionManagerTest {
     
     @Before
     public void setUp() {
+        // create base file path
+        File baseDir = new File(EnvUtil.getNacosHome(), "data");
+        if (!baseDir.exists()) {
+            baseDir.mkdirs();
+        }
         connectId = UUID.randomUUID().toString();
         connectionManager.start();
         connectionManager.initLimitRue();

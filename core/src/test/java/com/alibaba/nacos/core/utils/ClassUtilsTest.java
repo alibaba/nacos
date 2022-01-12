@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.google.common.reflect.TypeToken;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -30,10 +31,10 @@ public class ClassUtilsTest {
     
     @Test
     public void testGeneric() {
-        GenericType<List<String>> genericType = new GenericType<List<String>>() {
-        };
-        Assert.assertEquals(genericType.getType(), new TypeToken<java.util.List<java.lang.String>>() {
-        }.getType());
+        Type type = new GenericType<List<String>>() {
+        }.getType();
+        Assert.assertEquals("java.util.List<java.lang.String>", type.getTypeName());
+        Assert.assertTrue(type instanceof ParameterizedType);
     }
     
     @Test

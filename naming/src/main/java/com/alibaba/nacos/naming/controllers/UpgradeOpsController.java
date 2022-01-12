@@ -22,11 +22,13 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -44,16 +46,15 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
-import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.NumberUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -68,8 +69,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,6 +108,9 @@ public class UpgradeOpsController {
     private final DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine;
     
     private final UpgradeJudgement upgradeJudgement;
+    
+    @Autowired
+    private SelectorManager selectorManager;
     
     public UpgradeOpsController(SwitchDomain switchDomain, ServiceManager serviceManager,
             ServiceOperatorV1Impl serviceOperatorV1, ServiceOperatorV2Impl serviceOperatorV2,
@@ -299,10 +304,9 @@ public class UpgradeOpsController {
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        List<String> serviceNameList = getServiceOperator(ver)
-                .listService(namespaceId, groupName, selectorString, pageSize, pageNo);
-        result.replace("doms", JacksonUtils.transferToJsonNode(serviceNameList));
+        Collection<String> serviceNameList = getServiceOperator(ver).listService(namespaceId, groupName, selectorString);
         result.put("count", serviceNameList.size());
+        result.replace("doms", JacksonUtils.transferToJsonNode(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList)));
         return result;
     }
     
@@ -366,25 +370,22 @@ public class UpgradeOpsController {
     }
     
     private Selector parseSelector(String selectorJsonString) throws Exception {
-        
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
         }
-        
+    
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        switch (SelectorType.valueOf(selectorJson.get("type").asText())) {
-            case none:
-                return new NoneSelector();
-            case label:
-                String expression = selectorJson.get("expression").asText();
-                Set<String> labels = LabelSelector.parseExpression(expression);
-                LabelSelector labelSelector = new LabelSelector();
-                labelSelector.setExpression(expression);
-                labelSelector.setLabels(labels);
-                return labelSelector;
-            default:
-                throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
+        String type = Optional.ofNullable(selectorJson.get("type"))
+                .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
+                .asText();
+        String expression = Optional.ofNullable(selectorJson.get("expression"))
+                .map(JsonNode::asText)
+                .orElse(null);
+        Selector selector = selectorManager.parseSelector(type, expression);
+        if (Objects.isNull(selector)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
         }
+        return selector;
     }
     
     

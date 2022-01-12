@@ -17,10 +17,8 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.config.server.utils.RegexParser;
-
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.stereotype.Service;
+import com.alibaba.nacos.config.server.utils.RegexParser;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -36,10 +34,12 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  *
  * @author Nacos
  */
-@Service
 public class AggrWhitelist {
     
     public static final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
+    
+    static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
+            new ArrayList<Pattern>());
     
     /**
      * Judge whether specified dataId includes aggregation white list.
@@ -76,7 +76,7 @@ public class AggrWhitelist {
             List<String> lines = IoUtils.readLines(new StringReader(content));
             compile(lines);
         } catch (Exception ioe) {
-            DEFAULT_LOG.error("failed to load aggr whitelist, " + ioe.toString(), ioe);
+            DEFAULT_LOG.error("failed to load aggr whitelist, " + ioe, ioe);
         }
     }
     
@@ -95,7 +95,4 @@ public class AggrWhitelist {
     public static List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }
-    
-    static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
-            new ArrayList<Pattern>());
 }

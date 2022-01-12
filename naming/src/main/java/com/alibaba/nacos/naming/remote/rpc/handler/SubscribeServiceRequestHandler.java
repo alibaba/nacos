@@ -25,11 +25,9 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
-import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -71,28 +69,13 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
                 meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
-        ServiceInfo serviceInfo = handleClusterData(serviceStorage.getData(service),
-                metadataManager.getServiceMetadata(service).orElse(null),
-                subscriber);
+        ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
+                metadataManager.getServiceMetadata(service).orElse(null), subscriber);
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
         } else {
             clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
-    }
-    
-    /**
-     * For adapt push cluster feature. Will be remove after 2.1.x.
-     *
-     * @param data       original data
-     * @param metadata   service metadata
-     * @param subscriber subscriber information
-     * @return cluster filtered data
-     */
-    @Deprecated
-    private ServiceInfo handleClusterData(ServiceInfo data, ServiceMetadata metadata, Subscriber subscriber) {
-        return StringUtils.isBlank(subscriber.getCluster()) ? data
-                : ServiceUtil.selectInstancesWithHealthyProtection(data, metadata, subscriber.getCluster());
     }
 }

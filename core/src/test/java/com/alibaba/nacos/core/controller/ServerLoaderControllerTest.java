@@ -18,7 +18,7 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.api.ability.ServerAbilities;
-import com.alibaba.nacos.api.ability.ServerRemoteAbility;
+import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.cluster.Member;

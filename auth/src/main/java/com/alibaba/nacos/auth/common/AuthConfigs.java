@@ -25,11 +25,13 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -97,7 +99,12 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     public byte[] getSecretKeyBytes() {
         if (secretKeyBytes == null) {
-            secretKeyBytes = Decoders.BASE64.decode(secretKey);
+            try {
+                secretKeyBytes = Decoders.BASE64.decode(secretKey);
+            } catch (DecodingException e) {
+                secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+            }
+            
         }
         return secretKeyBytes;
     }
@@ -162,7 +169,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
             enableUserAgentAuthWhite = EnvUtil.getProperty(
-                    Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
+                    Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class,
+                    false);
             authorityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY, "").split(",");
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
         } catch (Exception e) {

@@ -151,8 +151,8 @@ public class FailoverReactor implements Closeable {
             try {
                 File switchFile = new File(failoverDir + UtilAndComs.FAILOVER_SWITCH);
                 if (!switchFile.exists()) {
-                    switchParams.put("failover-mode", "false");
-                    NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
+                    switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
+                    NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
                     return;
                 }
                 
@@ -227,12 +227,12 @@ public class FailoverReactor implements Closeable {
                             try {
                                 dom = JacksonUtils.toObj(json, ServiceInfo.class);
                             } catch (Exception e) {
-                                NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cached dom : {}", json, e);
                             }
                         }
                         
                     } catch (Exception e) {
-                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: {}", file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {

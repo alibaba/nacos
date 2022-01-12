@@ -17,8 +17,9 @@
 
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.Selector;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import org.junit.Assert;
@@ -51,7 +52,7 @@ public class SelectorManagerTest {
     }
     
     @Test
-    public void testParseSelector() {
+    public void testParseSelector() throws NacosException {
         Selector selector = selectorManager.parseSelector("mock", "key=value");
         Assert.assertTrue(selector instanceof MockSelector);
         
@@ -59,7 +60,7 @@ public class SelectorManagerTest {
     }
     
     @Test
-    public void testSelect() {
+    public void testSelect() throws NacosException {
         Selector selector = selectorManager.parseSelector("mock", "key=value");
         Instance instance = new Instance();
         instance.setIp("2.2.2.2");

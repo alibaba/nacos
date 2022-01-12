@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
@@ -26,8 +27,6 @@ import java.io.File;
  * @author Nacos
  */
 public class AppNameUtils {
-    
-    private static final String PARAM_MARKING_PROJECT = "project.name";
     
     private static final String PARAM_MARKING_JBOSS = "jboss.server.home.dir";
     
@@ -64,7 +63,7 @@ public class AppNameUtils {
     }
     
     private static String getAppNameByProjectName() {
-        return System.getProperty(PARAM_MARKING_PROJECT);
+        return System.getProperty(Constants.SysEnv.PROJECT_NAME);
     }
     
     private static String getAppNameByServerHome() {

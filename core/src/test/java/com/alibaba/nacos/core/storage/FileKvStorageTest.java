@@ -19,11 +19,14 @@ package com.alibaba.nacos.core.storage;
 import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.kv.FileKvStorage;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +52,19 @@ public class FileKvStorageTest {
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail();
+        }
+    }
+    
+    @AfterClass
+    public static void clean() {
+        String dir = System.getProperty("user.home") + File.separator + "nacos_file_kv_storage_test_brotherluxcq";
+        String backupDir = System.getProperty("user.home") + File.separator + "nacos_file_kv_storage_test_backup_brotherluxcq";
+    
+        try {
+            FileUtils.deleteDirectory(new File(dir));
+            FileUtils.deleteDirectory(new File(backupDir));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
     

@@ -25,9 +25,9 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
-import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.Event;
@@ -145,6 +145,11 @@ public class AbstractNamingClientProxyTest {
         @Override
         public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         
+        }
+        
+        @Override
+        public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+            return false;
         }
         
         @Override

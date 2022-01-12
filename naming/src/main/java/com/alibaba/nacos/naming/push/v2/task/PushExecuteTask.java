@@ -75,8 +75,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     private PushDataWrapper generatePushData() {
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
         ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
-        serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
-        return new PushDataWrapper(serviceInfo);
+        return new PushDataWrapper(serviceMetadata, serviceInfo);
     }
     
     private Collection<String> getTargetClientIds() {
@@ -115,6 +114,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onSuccess() {
+            ServiceInfo serviceInfo = getServiceInfo(service, this.serviceInfo);
             long pushFinishTime = System.currentTimeMillis();
             long pushCostTimeForNetWork = pushFinishTime - executeStartTime;
             long pushCostTimeForAll = pushFinishTime - delayTask.getLastProcessTime();
@@ -136,6 +136,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
         
         @Override
         public void onFail(Throwable e) {
+            ServiceInfo serviceInfo = getServiceInfo(service, this.serviceInfo);
             long pushCostTime = System.currentTimeMillis() - executeStartTime;
             Loggers.PUSH.error("[PUSH-FAIL] {}ms, {}, reason={}, target={}", pushCostTime, service, e.getMessage(),
                     subscriber.getIp());
@@ -147,6 +148,11 @@ public class PushExecuteTask extends AbstractExecuteTask {
             PushResult result = PushResult
                     .pushFailed(service, clientId, serviceInfo, subscriber, pushCostTime, e, isPushToAll);
             PushResultHookHolder.getInstance().pushFailed(result);
+        }
+    
+        private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
+            ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
+            return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true, subscriber);
         }
     }
 }

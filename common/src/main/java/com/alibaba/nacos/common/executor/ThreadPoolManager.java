@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.executor;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,9 +82,7 @@ public final class ThreadPoolManager {
      */
     public void register(String namespace, String group, ExecutorService executor) {
         if (!resourcesManager.containsKey(namespace)) {
-            synchronized (this) {
-                lockers.put(namespace, new Object());
-            }
+            lockers.putIfAbsent(namespace, new Object());
         }
         final Object monitor = lockers.get(namespace);
         synchronized (monitor) {
@@ -198,4 +197,13 @@ public final class ThreadPoolManager {
         }
     }
     
+    @JustForTest
+    public Map<String, Map<String, Set<ExecutorService>>> getResourcesManager() {
+        return resourcesManager;
+    }
+    
+    @JustForTest
+    public Map<String, Object> getLockers() {
+        return lockers;
+    }
 }

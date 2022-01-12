@@ -20,6 +20,7 @@ const I18N_CONF = {
     docs: '文档',
     blog: '博客',
     community: '社区',
+    enterprise: 'Nacos企业版',
     languageSwitchButton: 'En',
     logout: '登出',
     changePassword: '修改密码',
@@ -167,6 +168,11 @@ const I18N_CONF = {
     protectThreshold: '保护阈值',
     serviceName: '服务名',
     editService: '编辑服务',
+    InstanceFilter: {
+      title: '元数据过滤',
+      addFilter: '添加过滤',
+      clear: '清空',
+    },
   },
   EditServiceDialog: {
     createService: '创建服务',
