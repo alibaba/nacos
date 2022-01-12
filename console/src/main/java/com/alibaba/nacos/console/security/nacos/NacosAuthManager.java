@@ -25,6 +25,7 @@ import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.console.security.nacos.constant.AuthConstants;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -48,12 +49,6 @@ import java.util.List;
  */
 @Component
 public class NacosAuthManager implements AuthManager {
-    
-    private static final String TOKEN_PREFIX = "Bearer ";
-    
-    private static final String PARAM_USERNAME = "username";
-    
-    private static final String PARAM_PASSWORD = "password";
     
     @Autowired
     private JwtTokenManager tokenManager;
@@ -90,7 +85,7 @@ public class NacosAuthManager implements AuthManager {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
                     user.setGlobalAdmin(true);
                     break;
                 }
@@ -126,7 +121,7 @@ public class NacosAuthManager implements AuthManager {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
                     user.setGlobalAdmin(true);
                     break;
                 }
@@ -150,14 +145,14 @@ public class NacosAuthManager implements AuthManager {
      * Get token from header.
      */
     private String resolveToken(HttpServletRequest request) throws AccessException {
-        String bearerToken = request.getHeader(NacosAuthConfig.AUTHORIZATION_HEADER);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
+        String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
         bearerToken = request.getParameter(Constants.ACCESS_TOKEN);
         if (StringUtils.isBlank(bearerToken)) {
-            String userName = request.getParameter(PARAM_USERNAME);
-            String password = request.getParameter(PARAM_PASSWORD);
+            String userName = request.getParameter(AuthConstants.PARAM_USERNAME);
+            String password = request.getParameter(AuthConstants.PARAM_PASSWORD);
             bearerToken = resolveTokenFromUser(userName, password);
         }
         
@@ -168,14 +163,14 @@ public class NacosAuthManager implements AuthManager {
      * Get token from header.
      */
     private String resolveToken(Request request) throws AccessException {
-        String bearerToken = request.getHeader(NacosAuthConfig.AUTHORIZATION_HEADER);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
+        String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
         bearerToken = request.getHeader(Constants.ACCESS_TOKEN);
         if (StringUtils.isBlank(bearerToken)) {
-            String userName = request.getHeader(PARAM_USERNAME);
-            String password = request.getHeader(PARAM_PASSWORD);
+            String userName = request.getHeader(AuthConstants.PARAM_USERNAME);
+            String password = request.getHeader(AuthConstants.PARAM_PASSWORD);
             bearerToken = resolveTokenFromUser(userName, password);
         }
         

@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.security.nacos;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
+import com.alibaba.nacos.console.security.nacos.constant.AuthConstants;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetails;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
@@ -42,8 +43,6 @@ import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import java.util.Hashtable;
 import java.util.List;
-
-import static com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE;
 
 /**
  * LDAP auth provider.
@@ -118,7 +117,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             return false;
         }
         for (RoleInfo roleinfo : roleInfos) {
-            if (GLOBAL_ADMIN_ROLE.equals(roleinfo.getRole())) {
+            if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleinfo.getRole())) {
                 return true;
             }
         }

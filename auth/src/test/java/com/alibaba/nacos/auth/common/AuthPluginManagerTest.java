@@ -25,8 +25,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
@@ -67,16 +67,14 @@ public class AuthPluginManagerTest {
     @Test
     public void testGetInstance() {
         AuthPluginManager instance = AuthPluginManager.getInstance();
-
+        
         Assert.assertNotNull(instance);
     }
     
     @Test
     public void testFindAuthServiceSpiImpl() {
-        Mockito.when(authService.authorityAccess(identityContext, permission)).thenReturn(true);
-        Mockito.when(authService.getAuthServiceName()).thenReturn(TYPE);
         Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
         Assert.assertTrue(authServiceImpl.isPresent());
     }
-
+    
 }

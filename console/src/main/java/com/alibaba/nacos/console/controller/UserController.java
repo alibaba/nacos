@@ -31,6 +31,7 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
+import com.alibaba.nacos.console.security.nacos.constant.AuthConstants;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
@@ -95,7 +96,7 @@ public class UserController {
      * @throws IllegalArgumentException if user already exist
      * @since 1.2.0
      */
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
     public Object createUser(@RequestParam String username, @RequestParam String password) {
         
@@ -115,12 +116,12 @@ public class UserController {
      * @since 1.2.0
      */
     @DeleteMapping
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Object deleteUser(@RequestParam String username) {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
                     throw new IllegalArgumentException("cannot delete admin: " + username);
                 }
             }
@@ -134,21 +135,21 @@ public class UserController {
      *
      * @param username    username of user
      * @param newPassword new password of user
-     * @param response http response
-     * @param request http request
+     * @param response    http response
+     * @param request     http request
      * @return ok if update succeed
      * @throws IllegalArgumentException if user not exist or oldPassword is incorrect
      * @since 1.2.0
      */
     @PutMapping
-    @Secured(resource = NacosAuthConfig.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         // admin or same user
         if (!hasPermission(username, request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
         }
-
+        
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
@@ -158,7 +159,7 @@ public class UserController {
         
         return RestResultUtils.success("update user ok!");
     }
-
+    
     private boolean hasPermission(String username, HttpServletRequest request) {
         if (!authConfigs.isAuthEnabled()) {
             return true;
@@ -166,7 +167,7 @@ public class UserController {
         if (Objects.isNull(request.getAttribute(RequestUtil.NACOS_USER_KEY))) {
             return false;
         }
-
+        
         NacosUser user = (NacosUser) request.getAttribute(RequestUtil.NACOS_USER_KEY);
         // admin
         if (user.isGlobalAdmin()) {
@@ -185,7 +186,7 @@ public class UserController {
      * @since 1.2.0
      */
     @GetMapping
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
     public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize) {
         return userDetailsService.getUsersFromDatabase(pageNo, pageSize);
     }
@@ -210,7 +211,7 @@ public class UserController {
                 .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             NacosUser user = (NacosUser) authManager.login(request);
             
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
+            response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
@@ -232,7 +233,7 @@ public class UserController {
             // generate Token
             String token = jwtTokenManager.createToken(authentication);
             // write Token to Http header
-            response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, "Bearer " + token);
+            response.addHeader(AuthConstants.AUTHORIZATION_HEADER, "Bearer " + token);
             return RestResultUtils.success("Bearer " + token);
         } catch (BadCredentialsException authentication) {
             return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed");
@@ -266,8 +267,8 @@ public class UserController {
             return RestResultUtils.failed(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Update userpassword failed");
         }
     }
-
-
+    
+    
     /**
      * Fuzzy matching username.
      *
@@ -275,7 +276,7 @@ public class UserController {
      * @return Matched username
      */
     @GetMapping("/search")
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public List<String> searchUsersLikeUsername(@RequestParam String username) {
         return userDetailsService.findUserLikeUsername(username);
     }

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
+import com.alibaba.nacos.console.security.nacos.constant.AuthConstants;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -63,7 +64,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
      * Get token from header.
      */
     private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader(NacosAuthConfig.AUTHORIZATION_HEADER);
+        String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
             return bearerToken.substring(TOKEN_PREFIX.length());
         }
