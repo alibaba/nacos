@@ -52,7 +52,7 @@ public class ConfigFactory {
      *
      * @param serverAddr serverList
      * @return Config
-     * @throws ConfigService Exception
+     * @throws NacosException create configService failed Exception
      */
     public static ConfigService createConfigService(String serverAddr) throws NacosException {
         Properties properties = new Properties();

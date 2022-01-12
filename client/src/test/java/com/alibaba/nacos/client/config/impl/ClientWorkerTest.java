@@ -140,7 +140,7 @@ public class ClientWorkerTest {
             clientWorker.removeConfig(dataId, group, tenant, tag);
             Assert.fail();
         } catch (NacosException e) {
-            Assert.assertEquals("Client not connected,current status:STARTING", e.getErrMsg());
+            Assert.assertEquals("Client not connected, current status:STARTING", e.getErrMsg());
             Assert.assertEquals(-401, e.getErrCode());
             
         }
@@ -148,7 +148,7 @@ public class ClientWorkerTest {
             clientWorker.getServerConfig(dataId, group, tenant, 100, false);
             Assert.fail();
         } catch (NacosException e) {
-            Assert.assertEquals("Client not connected,current status:STARTING", e.getErrMsg());
+            Assert.assertEquals("Client not connected, current status:STARTING", e.getErrMsg());
             Assert.assertEquals(-401, e.getErrCode());
         }
     }

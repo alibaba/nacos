@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -63,7 +64,6 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
 import com.alipay.sofa.jraft.util.Endpoint;
-import com.google.common.base.Joiner;
 import com.google.protobuf.Message;
 import org.springframework.util.CollectionUtils;
 
@@ -306,10 +306,9 @@ public class JRaftServer {
                         return;
                     }
                     MetricsMonitor.raftReadIndexFailed();
-                    Loggers.RAFT.error("ReadIndex has error : {}", status.getErrorMsg());
-                    future.completeExceptionally(new ConsistencyException(
-                            "The conformance protocol is temporarily unavailable for reading, " + status
-                                    .getErrorMsg()));
+                    Loggers.RAFT.error("ReadIndex has error : {}, go to Leader read.", status.getErrorMsg());
+                    MetricsMonitor.raftReadFromLeader();
+                    readFromLeader(request, future);
                 }
             });
             return future;
@@ -323,24 +322,7 @@ public class JRaftServer {
     }
     
     public void readFromLeader(final ReadRequest request, final CompletableFuture<Response> future) {
-        commit(request.getGroup(), request, future).whenComplete(new BiConsumer<Response, Throwable>() {
-            @Override
-            public void accept(Response response, Throwable throwable) {
-                if (Objects.nonNull(throwable)) {
-                    future.completeExceptionally(
-                            new ConsistencyException("The conformance protocol is temporarily unavailable for reading",
-                                    throwable));
-                    return;
-                }
-                if (response.getSuccess()) {
-                    future.complete(response);
-                } else {
-                    future.completeExceptionally(new ConsistencyException(
-                            "The conformance protocol is temporarily unavailable for reading, " + response
-                                    .getErrMsg()));
-                }
-            }
-        });
+        commit(request.getGroup(), request, future);
     }
     
     public CompletableFuture<Response> commit(final String group, final Message data,
@@ -375,15 +357,19 @@ public class JRaftServer {
      */
     void registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
         for (; ; ) {
-            List<PeerId> peerIds = cliService.getPeers(groupId, conf);
-            if (peerIds.contains(selfIp)) {
-                return;
+            try {
+                List<PeerId> peerIds = cliService.getPeers(groupId, conf);
+                if (peerIds.contains(selfIp)) {
+                    return;
+                }
+                Status status = cliService.addPeer(groupId, conf, selfIp);
+                if (status.isOk()) {
+                    return;
+                }
+                Loggers.RAFT.warn("Failed to join the cluster, retry...");
+            } catch (Exception e) {
+                Loggers.RAFT.error("Failed to join the cluster, retry...", e);
             }
-            Status status = cliService.addPeer(groupId, conf, selfIp);
-            if (status.isOk()) {
-                return;
-            }
-            Loggers.RAFT.warn("Failed to join the cluster, retry...");
             ThreadUtils.sleep(1_000L);
         }
     }
@@ -441,6 +427,11 @@ public class JRaftServer {
                         closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
                         return;
                     }
+                    if (!((Response)o).getSuccess()) {
+                        closure.setThrowable(new IllegalStateException(((Response) o).getErrMsg()));
+                        closure.run(new Status(RaftError.UNKNOWN, ((Response) o).getErrMsg()));
+                        return;
+                    }
                     closure.setResponse((Response) o);
                     closure.run(Status.OK());
                 }
@@ -473,7 +464,7 @@ public class JRaftServer {
                 Map<String, String> params = new HashMap<>();
                 params.put(JRaftConstants.GROUP_ID, group);
                 params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
-                params.put(JRaftConstants.COMMAND_VALUE, Joiner.on(",").join(waitRemove));
+                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(waitRemove, StringUtils.COMMA));
                 RestResult<String> result = maintainService.execute(params);
                 if (result.ok()) {
                     successCnt.incrementAndGet();

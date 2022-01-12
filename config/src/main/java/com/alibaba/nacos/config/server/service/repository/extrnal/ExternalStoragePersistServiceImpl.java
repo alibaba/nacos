@@ -42,8 +42,6 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -498,7 +496,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             @Override
             public List<ConfigInfo> doInTransaction(TransactionStatus status) {
                 try {
-                    String idsStr = Joiner.on(",").join(ids);
+                    String idsStr = StringUtils.join(ids, StringUtils.COMMA);
                     List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
                     if (!CollectionUtils.isEmpty(configInfoList)) {
                         removeConfigInfoByIdsAtomic(idsStr);
@@ -1310,7 +1308,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         sql.append(')');
         
-        List<Object> objectList = Lists.<Object>newArrayList(dataId, group, tenantTmp);
+        List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
         objectList.addAll(datumIds);
         Integer result = jt.queryForObject(sql.toString(), Integer.class, objectList.toArray());
         if (result == null) {
@@ -2788,5 +2786,22 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         return result.intValue();
     }
-    
+
+    @Override
+    public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenant) {
+        Assert.hasText(tenant, "tenant can not be null");
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        try {
+            return this.jt.query(
+                    "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info_beta WHERE tenant_id=?",
+                    new Object[]{tenantTmp},
+                    CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
+            return Collections.EMPTY_LIST;
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
 }
