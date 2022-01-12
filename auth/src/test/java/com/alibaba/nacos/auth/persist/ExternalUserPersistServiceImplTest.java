@@ -19,7 +19,7 @@ package com.alibaba.nacos.auth.persist;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.users.User;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.externel.AuthExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.externel.ExternalStoragePersistServiceImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,10 +32,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.lang.reflect.Field;
 
 @RunWith(MockitoJUnitRunner.class)
-public class AuthExternalUserPersistServiceImplTest {
+public class ExternalUserPersistServiceImplTest {
     
     @Mock
-    private AuthExternalStoragePersistServiceImpl persistService;
+    private ExternalStoragePersistServiceImpl persistService;
     
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -43,13 +43,13 @@ public class AuthExternalUserPersistServiceImplTest {
     @Mock
     private PaginationHelper paginationHelper;
     
-    private AuthExternalUserPersistServiceImpl externalUserPersistService;
+    private ExternalUserPersistServiceImpl externalUserPersistService;
     
     @Before
     public void setUp() throws Exception {
-        externalUserPersistService = new AuthExternalUserPersistServiceImpl();
+        externalUserPersistService = new ExternalUserPersistServiceImpl();
         
-        Class<AuthExternalUserPersistServiceImpl> externalUserPersistServiceClass = AuthExternalUserPersistServiceImpl.class;
+        Class<ExternalUserPersistServiceImpl> externalUserPersistServiceClass = ExternalUserPersistServiceImpl.class;
         Field persistServiceClassDeclaredField = externalUserPersistServiceClass.getDeclaredField("persistService");
         persistServiceClassDeclaredField.setAccessible(true);
         persistServiceClassDeclaredField.set(externalUserPersistService, persistService);

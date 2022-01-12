@@ -25,15 +25,15 @@ import org.springframework.stereotype.Component;
  * @author Nacos
  */
 @Component
-public class AuthDynamicDataSource {
+public class DynamicDataSource {
     
     private DataSourceService localDataSourceService = null;
     
     private DataSourceService basicDataSourceService = null;
     
-    private static final AuthDynamicDataSource INSTANCE = new AuthDynamicDataSource();
+    private static final DynamicDataSource INSTANCE = new DynamicDataSource();
     
-    public static AuthDynamicDataSource getInstance() {
+    public static DynamicDataSource getInstance() {
         return INSTANCE;
     }
     

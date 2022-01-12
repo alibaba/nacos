@@ -19,7 +19,7 @@ package com.alibaba.nacos.auth.persist;
 import com.alibaba.nacos.auth.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.externel.AuthExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.externel.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.auth.roles.RoleInfo;
 import com.alibaba.nacos.auth.util.LogUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -44,12 +44,12 @@ import java.util.List;
  */
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
-public class AuthExternalRolePersistServiceImpl implements RolePersistService {
+public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
     
     @Autowired
-    private AuthExternalStoragePersistServiceImpl persistService;
+    private ExternalStoragePersistServiceImpl persistService;
     
     private JdbcTemplate jt;
     

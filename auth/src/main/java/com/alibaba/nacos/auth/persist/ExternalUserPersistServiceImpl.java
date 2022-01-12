@@ -19,7 +19,7 @@ package com.alibaba.nacos.auth.persist;
 import com.alibaba.nacos.auth.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.externel.AuthExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.externel.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.auth.users.User;
 import com.alibaba.nacos.auth.util.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,12 +42,12 @@ import java.util.ArrayList;
  */
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
-public class AuthExternalUserPersistServiceImpl implements UserPersistService {
+public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     public static final RowMapper<User> USER_ROW_MAPPER = new UserRowMapper();
     
     @Autowired
-    private AuthExternalStoragePersistServiceImpl persistService;
+    private ExternalStoragePersistServiceImpl persistService;
     
     private JdbcTemplate jt;
     

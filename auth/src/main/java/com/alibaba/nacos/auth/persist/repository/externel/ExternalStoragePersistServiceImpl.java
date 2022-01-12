@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,44 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.persist.repository.embedded;
+package com.alibaba.nacos.auth.persist.repository.externel;
 
-import com.alibaba.nacos.auth.configuration.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.auth.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.auth.persist.datasource.DataSourceService;
-import com.alibaba.nacos.auth.persist.datasource.AuthDynamicDataSource;
+import com.alibaba.nacos.auth.persist.datasource.DynamicDataSource;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+
 import javax.annotation.PostConstruct;
 
 /**
- * Auth persist service for embedded storage.
+ * Auth persist service for external storage.
  *
  * @author Nacos
  */
-@Conditional(value = ConditionOnEmbeddedStorage.class)
+@SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@Conditional(value = ConditionOnExternalStorage.class)
 @Component
-public class AuthEmbeddedStoragePersistServiceImpl {
+public class ExternalStoragePersistServiceImpl {
     
     private DataSourceService dataSourceService;
     
-    private final DatabaseOperate databaseOperate;
-    
-    public AuthEmbeddedStoragePersistServiceImpl(DatabaseOperate databaseOperate) {
-        this.databaseOperate = databaseOperate;
-    }
+    protected JdbcTemplate jt;
     
     /**
      * init datasource.
      */
     @PostConstruct
     public void init() {
-        dataSourceService = AuthDynamicDataSource.getInstance().getDataSource();
-    }
-    
-    public <E> PaginationHelper<E> createPaginationHelper() {
-        return new EmbeddedPaginationHelperImpl<E>(databaseOperate);
+        dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        
+        jt = getJdbcTemplate();
     }
     
     /**
@@ -61,8 +57,11 @@ public class AuthEmbeddedStoragePersistServiceImpl {
         return this.dataSourceService.getJdbcTemplate();
     }
     
-    public DatabaseOperate getDatabaseOperate() {
-        return databaseOperate;
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new ExternalStoragePaginationHelperImpl<E>(jt);
     }
-    
 }
+
+
+
+

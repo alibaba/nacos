@@ -104,6 +104,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 FATAL_LOG.error("[ExternalDataSourceService] dats source reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
+            /*
+            if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
+                ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+            }
+            ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
+          
+             */
         }
     }
     
@@ -119,6 +126,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                         isHealthList.add(Boolean.TRUE);
                     });
             new SelectMasterTask().run();
+            //new CheckDbHealthTask().run();
         } catch (RuntimeException e) {
             FATAL_LOG.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
@@ -215,8 +223,39 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             
             if (!isFound) {
                 FATAL_LOG.error("[master-db] master db not found.");
+                //MetricsMonitor.getDbException().increment();
             }
         }
     }
-    
+    /*
+    @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+    class CheckDbHealthTask implements Runnable {
+        
+        @Override
+        public void run() {
+            if (DEFAULT_LOG.isDebugEnabled()) {
+                DEFAULT_LOG.debug("check db health.");
+            }
+            String sql = "SELECT * FROM config_info_beta WHERE id = 1";
+            
+            for (int i = 0; i < testJtList.size(); i++) {
+                JdbcTemplate jdbcTemplate = testJtList.get(i);
+                try {
+                    jdbcTemplate.query(sql, CONFIG_INFO4BETA_ROW_MAPPER);
+                    isHealthList.set(i, Boolean.TRUE);
+                } catch (DataAccessException e) {
+                    if (i == masterIndex) {
+                        FATAL_LOG.error("[db-error] master db {} down.",
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                    } else {
+                        FATAL_LOG.error("[db-error] slave db {} down.",
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                    }
+                    isHealthList.set(i, Boolean.FALSE);
+                    
+                    MetricsMonitor.getDbException().increment();
+                }
+            }
+        }
+    }*/
 }

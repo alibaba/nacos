@@ -20,7 +20,7 @@ import com.alibaba.nacos.auth.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.auth.model.Page;
 import com.alibaba.nacos.auth.model.PermissionInfo;
 import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
-import com.alibaba.nacos.auth.persist.repository.externel.AuthExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.auth.persist.repository.externel.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.auth.util.LogUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,12 +44,12 @@ import java.util.List;
  */
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
-public class AuthExternalPermissionPersistServiceImpl implements PermissionPersistService {
+public class ExternalPermissionPersistServiceImpl implements PermissionPersistService {
     
     public static final PermissionRowMapper PERMISSION_ROW_MAPPER = new PermissionRowMapper();
     
     @Autowired
-    private AuthExternalStoragePersistServiceImpl persistService;
+    private ExternalStoragePersistServiceImpl persistService;
     
     private JdbcTemplate jt;
     
