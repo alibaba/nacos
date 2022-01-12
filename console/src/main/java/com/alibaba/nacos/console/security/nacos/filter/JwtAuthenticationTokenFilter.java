@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.filter;
+package com.alibaba.nacos.console.security.nacos.filter;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
