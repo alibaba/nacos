@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth.context;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Identity Context.
@@ -47,12 +46,4 @@ public class IdentityContext {
      */
     public void setParameter(String key, Object value) {
         param.put(key, value); }
-    
-    /**
-     * get all keys of param map.
-     * @return set all param keys.
-     */
-    public Set<String> getAllKey() {
-        return param.keySet();
-    }
 }

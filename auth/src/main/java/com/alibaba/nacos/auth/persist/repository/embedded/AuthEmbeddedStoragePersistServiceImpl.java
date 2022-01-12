@@ -23,7 +23,6 @@ import com.alibaba.nacos.auth.persist.repository.PaginationHelper;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-
 import javax.annotation.PostConstruct;
 
 /**

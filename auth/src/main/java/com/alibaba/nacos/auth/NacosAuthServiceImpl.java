@@ -17,20 +17,20 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.common.AuthSystemTypes;
 import com.alibaba.nacos.auth.context.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.roles.NacosAuthRoleServiceImpl;
 import com.alibaba.nacos.auth.roles.RoleInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.jsonwebtoken.ExpiredJwtException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -39,22 +39,20 @@ import java.util.List;
  *
  * @author wuyfee
  */
+@Component
 public class NacosAuthServiceImpl implements AuthService {
     
-    private final JwtTokenManager jwtTokenManager;
+    @Autowired
+    private JwtTokenManager jwtTokenManager;
     
-    private final AuthenticationManager authenticationManager;
+    @Autowired
+    private AuthenticationManager authenticationManager;
     
-    private final NacosAuthRoleServiceImpl roleService;
-    
-    public NacosAuthServiceImpl() {
-        jwtTokenManager = ApplicationUtils.getBean(JwtTokenManager.class);
-        authenticationManager = ApplicationUtils.getBean(AuthenticationManager.class);
-        roleService = ApplicationUtils.getBean(NacosAuthRoleServiceImpl.class);
-    }
+    @Autowired
+    private NacosAuthRoleServiceImpl roleService;
     
     @Override
-    public IdentityContext login(IdentityContext identityContext) throws AccessException {
+        public IdentityContext login(IdentityContext identityContext) throws AccessException {
         String username = (String) identityContext.getParameter(Constants.USERNAME);
         String password = (String) identityContext.getParameter(
                 com.alibaba.nacos.auth.constant.Constants.Auth.PARAM_PASSWORD);
@@ -62,8 +60,8 @@ public class NacosAuthServiceImpl implements AuthService {
         Authentication authenticate;
         try {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
+                    
                     password);
-            
             authenticate = authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
             throw new AccessException("unknown user!");
@@ -79,8 +77,18 @@ public class NacosAuthServiceImpl implements AuthService {
         SecurityContextHolder.getContext().setAuthentication(jwtTokenManager.getAuthentication(token));
         
         IdentityContext authResult = new IdentityContext();
-        setIdentityContext(finalName, token, identityContext);
-        setIdentityContext(finalName, token, authResult);
+        authResult.setParameter(Constants.USERNAME, finalName);
+        authResult.setParameter(Constants.ACCESS_TOKEN, token);
+        authResult.setParameter(Constants.GLOBAL_ADMIN, false);
+        List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        if (roleInfoList != null) {
+            for (RoleInfo roleInfo : roleInfoList) {
+                if (roleInfo.getRole().equals(NacosAuthRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                    authResult.setParameter(Constants.GLOBAL_ADMIN, true);
+                    break;
+                }
+            }
+        }
         return authResult;
     }
     
@@ -100,7 +108,6 @@ public class NacosAuthServiceImpl implements AuthService {
             username = (String) login(identityContext).getParameter(Constants.USERNAME);
         } else {
             username = getUsernameFromToken(token);
-            setIdentityContext(username, token, identityContext);
         }
         
         if (!roleService.hasPermission(username, permission)) {
@@ -111,7 +118,7 @@ public class NacosAuthServiceImpl implements AuthService {
     
     @Override
     public String getAuthServiceName() {
-        return AuthSystemTypes.USERNAME_PASSWORD.name();
+        return "NacosAuthServiceImpl";
     }
     
     /**

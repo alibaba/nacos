@@ -32,9 +32,5 @@ public enum AuthSystemTypes {
     /**
      * LDAP.
      */
-    LDAP,
-    /**
-     * username password authentication.
-     */
-    USERNAME_PASSWORD
+    LDAP
 }

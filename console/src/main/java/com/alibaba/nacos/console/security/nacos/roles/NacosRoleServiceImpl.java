@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.console.security.nacos.roles;
 
-import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,6 +24,7 @@ import com.alibaba.nacos.config.server.auth.PermissionPersistService;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.jsonwebtoken.lang.Collections;

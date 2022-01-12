@@ -17,21 +17,19 @@
 
 package com.alibaba.nacos.core.auth;
 
+import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -58,15 +56,10 @@ public class AuthFilterTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private ControllerMethodsCache methodsCache;
+    private AuthManager authManager;
     
     @Mock
-    private ConfigurableApplicationContext context;
-    
-    @Before
-    public void setUp() {
-        ApplicationUtils.injectContext(context);
-    }
+    private ControllerMethodsCache methodsCache;
     
     @Test
     public void testDoFilter() {
@@ -80,13 +73,13 @@ public class AuthFilterTest {
             Mockito.when(authConfigs.isEnableUserAgentAuthWhite()).thenReturn(true);
             request.addHeader(HttpHeaderConsts.USER_AGENT_HEADER, Constants.NACOS_SERVER_HEADER);
             authFilter.doFilter(request, response, filterChain);
-            
+    
             Mockito.when(authConfigs.isEnableUserAgentAuthWhite()).thenReturn(false);
             Mockito.when(authConfigs.getServerIdentityKey()).thenReturn("1");
             Mockito.when(authConfigs.getServerIdentityValue()).thenReturn("2");
             request.addHeader("1", "2");
             authFilter.doFilter(request, response, filterChain);
-            
+    
             Mockito.when(authConfigs.getServerIdentityValue()).thenReturn("3");
             authFilter.doFilter(request, response, filterChain);
             
@@ -100,7 +93,7 @@ public class AuthFilterTest {
     }
     
     class MockFilterChain implements FilterChain {
-        
+    
         @Override
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse) throws IOException, ServletException {
             System.out.println("filter chain executed");
