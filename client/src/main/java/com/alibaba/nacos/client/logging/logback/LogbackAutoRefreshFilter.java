@@ -49,6 +49,9 @@ public class LogbackAutoRefreshFilter implements IConfigFilter {
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
             throws NacosException {
+        if(response==null){
+            return;
+        }
         String dataId = response.getParameter(ConfigConstants.DATA_ID).toString();
         if (!isLoad && LOGBACK_DATA_ID.equals(dataId)) {
             loadUserConfiguration();
