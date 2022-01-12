@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.auth.NacosAuthConfig;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.console.security.nacos.constant.AuthConstants;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,7 +52,7 @@ public class PermissionController {
      * @return permission of a role
      */
     @GetMapping
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
     public Object getPermissions(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.getPermissionsFromDatabase(role, pageNo, pageSize);
@@ -67,7 +67,7 @@ public class PermissionController {
      * @return ok if succeed
      */
     @PostMapping
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
     public Object addPermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
         nacosRoleService.addPermission(role, resource, action);
         return RestResultUtils.success("add permission ok!");
@@ -82,7 +82,7 @@ public class PermissionController {
      * @return ok if succeed
      */
     @DeleteMapping
-    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
     public Object deletePermission(@RequestParam String role, @RequestParam String resource,
             @RequestParam String action) {
         nacosRoleService.deletePermission(role, resource, action);
