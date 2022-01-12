@@ -394,7 +394,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
         } else {
-            Loggers.CLUSTER.debug("[serverlist] not updated, is still : {}", finalMembers);
+            if (Loggers.CLUSTER.isDebugEnabled()) {
+                Loggers.CLUSTER.debug("[serverlist] not updated, is still : {}", finalMembers);
+            }
         }
         
         return hasChange;
