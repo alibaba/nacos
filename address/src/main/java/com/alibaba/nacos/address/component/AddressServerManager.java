@@ -33,7 +33,7 @@ public class AddressServerManager {
     
     public String getRawProductName(String name) {
         
-        if (StringUtils.isBlank(name) || AddressServerConstants.DEFAULT_PRODUCT.equals(name)) {
+        if (StringUtils.isBlank(name)) {
             
             return AddressServerConstants.DEFAULT_PRODUCT;
         }
@@ -50,7 +50,7 @@ public class AddressServerManager {
      */
     public String getDefaultClusterNameIfEmpty(String name) {
         
-        if (StringUtils.isEmpty(name) || AddressServerConstants.DEFAULT_GET_CLUSTER.equals(name)) {
+        if (StringUtils.isEmpty(name)) {
             return AddressServerConstants.DEFAULT_GET_CLUSTER;
         }
         
