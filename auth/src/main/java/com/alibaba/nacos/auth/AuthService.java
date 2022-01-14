@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.context.IdentityContext;
+import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.api.Permission;
 
 /**
  * Auth service.

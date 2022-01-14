@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.context;
 
+import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 
 import javax.servlet.http.HttpServletRequest;

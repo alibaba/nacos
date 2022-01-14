@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.auth.api.Resource;
 import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -33,9 +34,14 @@ import java.util.List;
  * @author nkorange
  * @since 1.2.0
  */
-public class ConfigResourceParser implements ResourceParser {
+public class ConfigResourceParser implements ResourceParser<Object> {
     
     private static final String AUTH_CONFIG_PREFIX = "config/";
+    
+    @Override
+    public Resource parse(Object request, String type) {
+        return null;
+    }
     
     @Override
     public String parseName(Object requestObj) {

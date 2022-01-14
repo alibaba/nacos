@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;

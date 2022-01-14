@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.model.User;
 import org.springframework.stereotype.Component;
 
