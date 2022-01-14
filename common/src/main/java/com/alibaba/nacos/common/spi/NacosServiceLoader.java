@@ -55,7 +55,7 @@ public class NacosServiceLoader {
     
     private static <T> void cacheServiceClass(final Class<T> service, final T instance) {
         if (!SERVICES.containsKey(service)) {
-            SERVICES.put(service, new LinkedHashSet<Class<?>>());
+            SERVICES.putIfAbsent(service, Collections.synchronizedSet(new LinkedHashSet<>()));
         }
         SERVICES.get(service).add(instance.getClass());
     }
