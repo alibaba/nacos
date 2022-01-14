@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.security.nacos.roles;
 
 import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;

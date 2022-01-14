@@ -18,8 +18,8 @@ package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.auth.AuthPluginManager;
 import com.alibaba.nacos.auth.AuthService;
-import com.alibaba.nacos.auth.context.IdentityContext;
-import com.alibaba.nacos.auth.model.Permission;
+import com.alibaba.nacos.auth.api.IdentityContext;
+import com.alibaba.nacos.auth.api.Permission;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.auth.api.Resource;
 import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -35,9 +36,14 @@ import javax.servlet.http.HttpServletRequest;
  * @author nkorange
  * @since 1.2.0
  */
-public class NamingResourceParser implements ResourceParser {
+public class NamingResourceParser implements ResourceParser<Object> {
     
     private static final String AUTH_NAMING_PREFIX = "naming/";
+    
+    @Override
+    public Resource parse(Object request, String type) {
+        return null;
+    }
     
     @Override
     public String parseName(Object requestObj) {

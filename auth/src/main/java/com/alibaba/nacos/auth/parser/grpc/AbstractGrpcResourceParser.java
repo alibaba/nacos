@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.parser;
+package com.alibaba.nacos.auth.parser.grpc;
 
-import com.alibaba.nacos.auth.api.Resource;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.auth.parser.AbstractResourceParser;
 
 /**
- * Default resource parser.
+ * Abstract Grpc Resource Parser.
  *
- * @author nkorange
- * @author mai.jh
- * @since 1.2.0
+ * @author xiweng.yy
  */
-public class DefaultResourceParser implements ResourceParser<Object> {
-    
-    @Override
-    public Resource parse(Object request, String type) {
-        return null;
-    }
-    
-    @Override
-    public String parseName(Object request) {
-        return StringUtils.EMPTY;
-    }
+public abstract class AbstractGrpcResourceParser extends AbstractResourceParser<Request> {
+
 }
