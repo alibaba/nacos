@@ -100,7 +100,12 @@ public class EnvUtil {
     private static final String NACOS_TEMP_DIR_1 = "data";
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
-    
+
+    /**
+     * Keys about OIDC
+     */
+    // Todo: move OidcUtil to here
+
     @JustForTest
     private static String confPath = "";
     
