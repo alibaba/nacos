@@ -52,7 +52,7 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException;
-    
+
     /**
      * Update instance to service.
      *
@@ -62,7 +62,7 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException;
-    
+
     /**
      * Query instance list.
      *
