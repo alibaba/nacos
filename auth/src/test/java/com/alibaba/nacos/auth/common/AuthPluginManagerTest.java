@@ -17,7 +17,7 @@
 package com.alibaba.nacos.auth.common;
 
 import com.alibaba.nacos.auth.AuthPluginManager;
-import com.alibaba.nacos.auth.AuthService;
+import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.api.Permission;
 import org.junit.Assert;
@@ -44,7 +44,7 @@ public class AuthPluginManagerTest {
     private AuthPluginManager authPluginManager;
     
     @Mock
-    private AuthService authService;
+    private AuthPluginService authPluginService;
     
     private static final String TYPE = "test";
     
@@ -60,8 +60,8 @@ public class AuthPluginManagerTest {
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<String, AuthService> authServiceMap = (Map<String, AuthService>) authPlugins.get(authPluginManager);
-        authServiceMap.put(TYPE, authService);
+        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
+        authServiceMap.put(TYPE, authPluginService);
     }
     
     @Test
@@ -73,7 +73,7 @@ public class AuthPluginManagerTest {
     
     @Test
     public void testFindAuthServiceSpiImpl() {
-        Optional<AuthService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
+        Optional<AuthPluginService> authServiceImpl = authPluginManager.findAuthServiceSpiImpl(TYPE);
         Assert.assertTrue(authServiceImpl.isPresent());
     }
     

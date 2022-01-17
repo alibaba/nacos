@@ -50,12 +50,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     private static Boolean cachingEnabled = null;
     
     /**
-     * Authority key set.
-     */
-    @Value("${" + Constants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY + ":}")
-    private  String[] authorityKey;
-    
-    /**
      * Whether auth enabled.
      */
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLED + ":false}")
@@ -107,10 +101,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             
         }
         return secretKeyBytes;
-    }
-    
-    public String[] getAuthorityKey() {
-        return authorityKey;
     }
     
     public long getTokenValidityInSeconds() {
@@ -171,7 +161,6 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             enableUserAgentAuthWhite = EnvUtil.getProperty(
                     Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class,
                     false);
-            authorityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_AUTHORITY_KEY, "").split(",");
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
