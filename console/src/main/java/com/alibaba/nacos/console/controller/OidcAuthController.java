@@ -32,6 +32,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,15 +59,18 @@ public class OidcAuthController {
     private AuthConfigs authConfigs;
 
     @GetMapping("/list")
-    public Map<String, String> list() {
-        Map<String, String> oidpMap = new HashMap<>();
-        List<String> oidpList = EnvUtil.getProperty("oidps", List.class);
-        oidpList.forEach(
+    public List<Map<String, String>> list() {
+        List<Map<String, String>> oidpList = new ArrayList<>();
+        List<String> oidpListFromConfig = EnvUtil.getProperty("oidps", List.class);
+        oidpListFromConfig.forEach(
                 oidp -> {
-                    oidpMap.put(oidp, OidcUtil.getAuthUrl(oidp));
+                    Map<String, String> curOidp = new HashMap<>();
+                    curOidp.put("key", oidp);
+                    curOidp.put("name", OidcUtil.getName(oidp));
+                    oidpList.add(curOidp);
                 }
         );
-        return oidpMap;
+        return oidpList;
     }
 
     @GetMapping("/init")
