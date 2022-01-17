@@ -15,13 +15,14 @@
  */
 
 import React from 'react';
-import { Card, Form, Input, Message, ConfigProvider, Field } from '@alifd/next';
+import { Card, Form, Input, Message, ConfigProvider, Field, Button, Divider } from '@alifd/next';
 import { withRouter } from 'react-router-dom';
 
 import './index.scss';
 import Header from '../../layouts/Header';
 import PropTypes from 'prop-types';
 import { login } from '../../reducers/base';
+import request from '../../utils/request';
 
 const FormItem = Form.Item;
 
@@ -38,13 +39,47 @@ class Login extends React.Component {
   constructor(props) {
     super(props);
     this.field = new Field(this);
+    this.state = {
+      oidcList: [],
+    };
   }
 
   componentDidMount() {
     if (localStorage.getItem('token')) {
       const [baseUrl] = location.href.split('#');
       location.href = `${baseUrl}#/`;
+    } else {
+      this.handleOidcLogin();
     }
+  }
+
+  handleOidcLogin() {
+    const qsParse = require('qs/lib/parse');
+
+    const query = qsParse(location.search.slice(1));
+
+    // oidc login will redirect to login page with token param in query
+    if (query.token) {
+      localStorage.setItem('token', query.token);
+
+      const [baseUrl] = location.href.split('?');
+      location.href = `${baseUrl}#/`;
+    } else {
+      this.fetchOIDCList().then(oidcProviders => {
+        this.setState({
+          oidcList: oidcProviders,
+        });
+      });
+    }
+  }
+
+  fetchOIDCList() {
+    return request({
+      url: 'v1/auth/oidc/list',
+      method: 'GET',
+    }).then(res => {
+      return res || [];
+    });
   }
 
   handleSubmit = () => {
@@ -136,8 +171,38 @@ class Login extends React.Component {
                   onKeyDown={this.onKeyDown}
                 />
               </FormItem>
+              {this.state.oidcList.length > 0 && (
+                <FormItem
+                  style={{
+                    marginBottom: 0,
+                  }}
+                >
+                  {this.state.oidcList.map((oidcItem, index) => {
+                    return (
+                      <>
+                        <Button
+                          className="oidc-login-btn"
+                          component="a"
+                          href={`${location.href.split('#')[0]}v1/auth/oidc/init?oidpId=${
+                            oidcItem.key
+                          }`}
+                          primary
+                          text
+                          key={oidcItem.key}
+                        >
+                          {oidcItem.name}
+                        </Button>
+
+                        {index !== this.state.oidcList.length - 1 && <Divider direction="ver" />}
+                      </>
+                    );
+                  })}
+                </FormItem>
+              )}
               <FormItem label=" ">
-                <Form.Submit onClick={this.handleSubmit}>{locale.submit}</Form.Submit>
+                <Form.Submit className="submit-btn" onClick={this.handleSubmit}>
+                  {locale.submit}
+                </Form.Submit>
               </FormItem>
             </Form>
           </Card>
