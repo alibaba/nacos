@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.constant.ActionTypes;
+import com.alibaba.nacos.auth.constant.SignType;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
@@ -65,7 +66,7 @@ public class HistoryController {
      * @return the page of history config.
      */
     @GetMapping(params = "search=accurate")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, parser = ConfigResourceParser.class)
     public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -92,7 +93,7 @@ public class HistoryController {
      * @return history config info
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, parser = ConfigResourceParser.class)
     public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, @RequestParam("nid") Long nid)
             throws AccessException {
@@ -135,7 +136,7 @@ public class HistoryController {
      * @since 1.4.0
      */
     @GetMapping(value = "/previous")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, parser = ConfigResourceParser.class)
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant, @RequestParam("id") Long id)
             throws AccessException {
@@ -155,7 +156,7 @@ public class HistoryController {
      * @return list
      */
     @GetMapping(value = "/configs")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, parser = ConfigResourceParser.class)
     public List<ConfigInfoWrapper> getDataIds(@RequestParam("tenant") String tenant) {
         // check tenant
         ParamUtils.checkTenant(tenant);
