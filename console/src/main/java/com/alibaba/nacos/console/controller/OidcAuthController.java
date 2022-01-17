@@ -1,11 +1,13 @@
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
@@ -20,10 +22,14 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -58,6 +64,10 @@ public class OidcAuthController {
     @Autowired
     private AuthConfigs authConfigs;
 
+    /**
+     *
+     * @return list of oidps in configured
+     */
     @GetMapping("/list")
     public List<Map<String, String>> list() {
         List<Map<String, String>> oidpList = new ArrayList<>();
@@ -73,11 +83,24 @@ public class OidcAuthController {
         return oidpList;
     }
 
+    /**
+     *
+     * @param oidpId oidp id used to auth
+     * @param response a redirect response
+     */
     @GetMapping("/init")
-    public void init(@RequestParam("oidpId") String oidpId, HttpServletResponse response) {
+    public Object init(@RequestParam("oidpId") String oidpId, HttpServletResponse response) {
+
+        String authUrl = OidcUtil.getClientId(oidpId);
+
+        if (authUrl == null) {
+            Loggers.AUTH.error("oidpId {} not found", oidpId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("oidpId not found");
+        }
+
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(OidcUtil.getAuthUrl(oidpId));
         uriBuilder.queryParam("response_type", "code");
-        uriBuilder.queryParam("client_id", OidcUtil.getClientId(oidpId));
+        uriBuilder.queryParam("client_id", authUrl);
         uriBuilder.queryParam("redirect_uri", OIDC_CALLBACK_URL);
 
         String state = null;
@@ -85,6 +108,7 @@ public class OidcAuthController {
             state = new ObjectMapper().writeValueAsString(new OidcState(oidpId));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to serialize state");
         }
 
         if(state != null) {
@@ -93,10 +117,11 @@ public class OidcAuthController {
         }
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.setHeader("Location", uriBuilder.encode().toUriString());
+        return null;
     }
 
     @GetMapping("callback")
-    public void callback(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest request, HttpServletResponse response) {
+    public Object callback(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest request, HttpServletResponse response) {
 
         state = new String(Base64.decodeBase64(state.getBytes()));
 
@@ -105,9 +130,9 @@ public class OidcAuthController {
             oidcState = new ObjectMapper().readValue(state, OidcState.class);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error when deserializing state json");
         }
 
-        assert oidcState != null;
         UriComponentsBuilder tokenUriBuilder = UriComponentsBuilder.fromHttpUrl(OidcUtil.getTokenExchangeUrl(oidcState.getOidpId()));
         tokenUriBuilder.queryParam("grant_type", "authorization_code");
         tokenUriBuilder.queryParam("client_id", OidcUtil.getClientId(oidcState.getOidpId()));
@@ -119,40 +144,37 @@ public class OidcAuthController {
         tokenHeader.addParam("Accept", "application/json");
         tokenHeader.addParam("Content-Type", "application/json");
 
-        String responseToken = null;
         OidcTokenResponse oidcTokenResponse = null;
         try {
             HttpRestResult<String> tokenResult = restTemplate.postJson(tokenUriBuilder.toUriString(), tokenHeader, "", String.class);
-            responseToken = tokenResult.getData();
             oidcTokenResponse = new ObjectMapper().readValue(tokenResult.getData(), OidcTokenResponse.class);
         } catch (Exception e) {
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error when get authentication code");
         }
 
         // TODO: move the code follow to a method
-        String responseUserInfo = null;
         OidcUserInfo oidcUserInfo = null;
-        assert oidcTokenResponse != null;
         UriComponentsBuilder userInfoUriBuilder = UriComponentsBuilder.fromHttpUrl(OidcUtil.getUserInfoUrl(oidcState.getOidpId()));
         Header userInfoHeader = Header.newInstance();
         userInfoHeader.addParam("Authorization", "Bearer " + oidcTokenResponse.getAccessToken());
         try {
             HttpRestResult<String> userInfoResult = restTemplate.get(userInfoUriBuilder.toUriString(), userInfoHeader, null,String.class);
-            responseUserInfo = userInfoResult.getData();
             oidcUserInfo = new ObjectMapper().readValue(userInfoResult.getData(), OidcUserInfo.class);
         } catch (Exception e) {
             // Loggers.AUTH.error("userInfoResult: {}", userInfoResult);
             e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error when getting user info");
         }
 
-        assert oidcUserInfo != null;
         // TODO: get the according user ID field by jsonpath parser
         String username = oidcUserInfo.getUserInfo().get("login");
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        if(userDetails == null) {
+        try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(String.format("user %s is not a nacos user", username));
         }
 
         String token = tokenManager.createToken(username);
@@ -174,12 +196,26 @@ public class OidcAuthController {
         }
         request.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, user);
 
-        UriComponentsBuilder redirectUriBuilder = UriComponentsBuilder.fromPath(EnvUtil.getContextPath());
-        redirectUriBuilder.queryParam("token", token);
-        response.setStatus(HttpServletResponse.SC_FOUND);
-        String toView = redirectUriBuilder.toUriString();
-        response.setHeader("Location", redirectUriBuilder.toUriString());
+        ObjectNode result = JacksonUtils.createEmptyJsonNode();
+        result.put(Constants.ACCESS_TOKEN, user.getToken());
+        result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
+        result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+        result.put(Constants.USERNAME, user.getUserName());
 
+        String resultToken = null;
+        try {
+            resultToken = new ObjectMapper().writeValueAsString(result);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error when serializing the result to json");
+        }
+
+        UriComponentsBuilder redirectUriBuilder = UriComponentsBuilder.fromPath(EnvUtil.getContextPath());
+        redirectUriBuilder.queryParam("token", resultToken);
+
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        response.setHeader("Location", redirectUriBuilder.toUriString());
+        return null;
     }
 
     static class OidcState {
