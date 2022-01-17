@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.api.Resource;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 
