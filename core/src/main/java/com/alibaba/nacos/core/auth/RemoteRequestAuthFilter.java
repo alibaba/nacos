@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;

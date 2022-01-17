@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.common;
+package com.alibaba.nacos.auth.config;
 
 import com.alibaba.nacos.auth.constant.Constants;
 import com.alibaba.nacos.common.JustForTest;

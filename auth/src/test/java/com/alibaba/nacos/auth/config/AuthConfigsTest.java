@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.common;
+package com.alibaba.nacos.auth.config;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
-
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 

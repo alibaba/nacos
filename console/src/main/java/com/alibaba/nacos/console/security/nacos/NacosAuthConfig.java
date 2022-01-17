@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.console.security.nacos;
 
-import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.console.security.nacos.constant.AuthSystemTypes;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.console.security.nacos.filter.JwtAuthenticationTokenFilter;

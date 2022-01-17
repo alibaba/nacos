@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.AuthPluginManager;
 import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

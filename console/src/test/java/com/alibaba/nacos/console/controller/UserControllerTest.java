@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.common.AuthSystemTypes;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.console.security.nacos.constant.AuthSystemTypes;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;

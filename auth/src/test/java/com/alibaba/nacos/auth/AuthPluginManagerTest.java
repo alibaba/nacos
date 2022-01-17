@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.common;
+package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.AuthPluginManager;
-import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.api.Permission;
 import org.junit.Assert;
@@ -60,7 +58,8 @@ public class AuthPluginManagerTest {
         Class<AuthPluginManager> authPluginManagerClass = AuthPluginManager.class;
         Field authPlugins = authPluginManagerClass.getDeclaredField("authServiceMap");
         authPlugins.setAccessible(true);
-        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins.get(authPluginManager);
+        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authPlugins
+                .get(authPluginManager);
         authServiceMap.put(TYPE, authPluginService);
     }
     
