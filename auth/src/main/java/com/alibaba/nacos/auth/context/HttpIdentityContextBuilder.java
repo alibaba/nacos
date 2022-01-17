@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.auth.context;
 
+import com.alibaba.nacos.auth.AuthPluginManager;
+import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 
 import javax.servlet.http.HttpServletRequest;
 
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -33,11 +35,7 @@ import java.util.Set;
  */
 public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpServletRequest> {
     
-    private AuthConfigs authConfigs;
-    
-    public HttpIdentityContextBuilder() {
-        authConfigs = new AuthConfigs();
-    }
+    private final AuthConfigs authConfigs;
     
     public HttpIdentityContextBuilder(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
@@ -51,30 +49,35 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
      */
     @Override
     public IdentityContext build(HttpServletRequest request) {
-        IdentityContext identityContext = new IdentityContext();
-        Set<String> keySet = new HashSet<>(Arrays.asList(authConfigs.getAuthorityKey()));
+        IdentityContext result = new IdentityContext();
+        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
+                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        if (!authPluginService.isPresent()) {
+            return result;
+        }
+        Set<String> identityNames = new HashSet<>(authPluginService.get().identityNames());
+        getIdentityFromHeader(request, result, identityNames);
+        getIdentityFromParameter(request, result, identityNames);
+        return result;
+    }
+    
+    private void getIdentityFromHeader(HttpServletRequest request, IdentityContext result, Set<String> identityNames) {
         Enumeration<String> headerEnu = request.getHeaderNames();
-
         while (headerEnu.hasMoreElements()) {
             String paraName = headerEnu.nextElement();
-            if (keySet.contains(paraName)) {
-                identityContext.setParameter(paraName, request.getHeader(paraName));
-                keySet.remove(paraName);
+            if (identityNames.contains(paraName)) {
+                result.setParameter(paraName, request.getHeader(paraName));
             }
         }
-        
-        if (keySet.isEmpty()) {
-            return identityContext;
-        }
-        
+    }
+    
+    private void getIdentityFromParameter(HttpServletRequest request, IdentityContext result, Set<String> identityNames) {
         Enumeration<String> paramEnu = request.getParameterNames();
         while (paramEnu.hasMoreElements()) {
             String paraName = paramEnu.nextElement();
-            if (keySet.contains(paraName)) {
-                identityContext.setParameter(paraName, request.getParameter(paraName));
-                keySet.remove(paraName);
+            if (identityNames.contains(paraName)) {
+                result.setParameter(paraName, request.getParameter(paraName));
             }
         }
-        return identityContext;
     }
 }

@@ -33,17 +33,41 @@ public class IdentityContext {
     
     /**
      * get key from context.
+     *
      * @param key key of request
      * @return value of param key
      */
     public Object getParameter(String key) {
-        return param.get(key); }
+        return param.get(key);
+    }
+    
+    /**
+     * Get identity by key.
+     *
+     * @param key          identity name
+     * @param defaultValue default value when the value is {@code null} or the value is not expected class type
+     * @param <T>          classes type of identity value
+     * @return identity value
+     */
+    public <T> T getParameter(String key, T defaultValue) {
+        try {
+            T result = (T) param.get(key);
+            if (null != result) {
+                return result;
+            }
+            return defaultValue;
+        } catch (ClassCastException exception) {
+            return defaultValue;
+        }
+    }
     
     /**
      * put key and value to param.
-     * @param key key of request
+     *
+     * @param key   key of request
      * @param value value of request's key
      */
     public void setParameter(String key, Object value) {
-        param.put(key, value); }
+        param.put(key, value);
+    }
 }

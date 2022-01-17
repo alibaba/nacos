@@ -38,40 +38,40 @@ public class AuthPluginManager {
     private static final AuthPluginManager INSTANCE = new AuthPluginManager();
     
     /**
-     * The relationship of context type and {@link AuthService}.
+     * The relationship of context type and {@link AuthPluginService}.
      */
-    private Map<String, AuthService> authServiceMap = new HashMap<>();
+    private final Map<String, AuthPluginService> authServiceMap = new HashMap<>();
     
     public AuthPluginManager() {
         initAuthServices();
+    }
+    
+    private void initAuthServices() {
+        Collection<AuthPluginService> authPluginServices = NacosServiceLoader.load(AuthPluginService.class);
+        for (AuthPluginService each : authPluginServices) {
+            if (StringUtils.isEmpty(each.getAuthServiceName())) {
+                LOGGER.warn(
+                        "[AuthPluginManager] Load AuthPluginService({}) AuthServiceName(null/empty) fail. Please Add AuthServiceName to resolve.",
+                        each.getClass());
+                continue;
+            }
+            authServiceMap.put(each.getAuthServiceName(), each);
+            LOGGER.info("[AuthPluginManager] Load AuthPluginService({}) AuthServiceName({}) successfully.",
+                    each.getClass(), each.getAuthServiceName());
+        }
     }
     
     public static AuthPluginManager getInstance() {
         return INSTANCE;
     }
     
-    private void initAuthServices() {
-        Collection<AuthService> authServices = NacosServiceLoader.load(AuthService.class);
-        for (AuthService authService : authServices) {
-            if (StringUtils.isEmpty(authService.getAuthServiceName())) {
-                LOGGER.warn(
-                        "[AuthPluginManager] Load AuthService({}) AuthServiceName(null/empty) fail. Please Add AuthServiceName to resolve.",
-                        authService.getClass());
-                continue;
-            }
-            authServiceMap.put(authService.getAuthServiceName(), authService);
-            LOGGER.info("[AuthPluginManager] Load AuthService({}) AuthServiceName({}) successfully.",
-                    authService.getClass(), authService.getAuthServiceName());
-        }
-    }
-    
     /**
-     * get AuthService instance which AuthService.getType() is type.
+     * get AuthPluginService instance which AuthPluginService.getType() is type.
      *
-     * @param authServiceName AuthServiceName, mark a AuthService instance.
-     * @return AuthService instance.
+     * @param authServiceName AuthServiceName, mark a AuthPluginService instance.
+     * @return AuthPluginService instance.
      */
-    public Optional<AuthService> findAuthServiceSpiImpl(String authServiceName) {
+    public Optional<AuthPluginService> findAuthServiceSpiImpl(String authServiceName) {
         return Optional.ofNullable(authServiceMap.get(authServiceName));
     }
     

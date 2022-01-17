@@ -17,12 +17,14 @@
 package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.auth.AuthPluginManager;
+import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -32,31 +34,34 @@ import java.util.Set;
  */
 public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Request> {
     
-    AuthConfigs authConfigs;
-    
-    public GrpcIdentityContextBuilder() {
-        authConfigs = new AuthConfigs();
-    }
+    private final AuthConfigs authConfigs;
     
     public GrpcIdentityContextBuilder(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
     }
+    
     /**
      * get identity context from grpc.
+     *
      * @param request grpc request
      * @return IdentityContext request context
      */
     
     @Override
     public IdentityContext build(Request request) {
-        Set<String> keySet = new HashSet<String>(Arrays.asList(authConfigs.getAuthorityKey()));
-        IdentityContext identityContext = new IdentityContext();
+        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
+                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        IdentityContext result = new IdentityContext();
+        if (!authPluginService.isPresent()) {
+            return result;
+        }
+        Set<String> identityNames = new HashSet<>(authPluginService.get().identityNames());
         Map<String, String> map = request.getHeaders();
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            if (keySet.contains(entry.getKey())) {
-                identityContext.setParameter(entry.getKey(), entry.getValue());
+            if (identityNames.contains(entry.getKey())) {
+                result.setParameter(entry.getKey(), entry.getValue());
             }
         }
-        return identityContext;
+        return result;
     }
 }

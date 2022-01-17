@@ -39,8 +39,6 @@ public class AuthConfigsTest {
     
     private static final boolean TEST_ENABLE_UA_WHITE = true;
     
-    private static final String AUTHORITYKEY = "username,password,token,tenant";
-    
     private AuthConfigs authConfigs;
     
     private MockEnvironment environment;
@@ -59,7 +57,6 @@ public class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
         environment.setProperty("nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
         environment.setProperty("nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
-        environment.setProperty("nacos.core.auth.authorityKey", AUTHORITYKEY);
         
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
         assertEquals(TEST_AUTH_ENABLED, authConfigs.isAuthEnabled());
@@ -67,6 +64,5 @@ public class AuthConfigsTest {
         assertEquals(TEST_SERVER_IDENTITY_KEY, authConfigs.getServerIdentityKey());
         assertEquals(TEST_SERVER_IDENTITY_VALUE, authConfigs.getServerIdentityValue());
         assertEquals(TEST_ENABLE_UA_WHITE, authConfigs.isEnableUserAgentAuthWhite());
-        Assert.assertTrue(Arrays.equals(AUTHORITYKEY.split(","), authConfigs.getAuthorityKey()));
     }
 }
