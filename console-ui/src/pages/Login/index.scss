@@ -77,6 +77,14 @@ $contentWidth: 1280px;
           color: white;
           border: 0px;
         }
+
+        .oidc-login-btn {
+          color: #4190ff;
+          &:hover,
+          &:focus {
+            color: #5584ff;
+          }
+        }
       }
     }
     .animation {
