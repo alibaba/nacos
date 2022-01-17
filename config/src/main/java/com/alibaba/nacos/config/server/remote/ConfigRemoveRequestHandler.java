@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.auth.constant.ActionTypes;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;

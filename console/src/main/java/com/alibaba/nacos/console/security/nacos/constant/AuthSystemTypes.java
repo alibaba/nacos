@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.common;
+package com.alibaba.nacos.console.security.nacos.constant;
 
 /**
- * Resource action type definitions.
+ * Types of all auth implementations.
  *
  * @author nkorange
  * @author mai.jh
  * @since 1.2.0
  */
-public enum ActionTypes {
+public enum AuthSystemTypes {
+    
     /**
-     * Read.
+     * Nacos builtin auth system.
      */
-    READ("r"),
+    NACOS,
     /**
-     * Write.
+     * LDAP.
      */
-    WRITE("w");
-    
-    private String action;
-    
-    ActionTypes(String action) {
-        this.action = action;
-    }
-    
-    @Override
-    public String toString() {
-        return action;
-    }
+    LDAP
 }

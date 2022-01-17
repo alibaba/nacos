@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;

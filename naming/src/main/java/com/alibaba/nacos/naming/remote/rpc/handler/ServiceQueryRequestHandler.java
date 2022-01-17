@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.auth.constant.ActionTypes;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;

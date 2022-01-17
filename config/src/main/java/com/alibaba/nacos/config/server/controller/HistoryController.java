@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.auth.constant.ActionTypes;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
