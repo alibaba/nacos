@@ -1,18 +1,14 @@
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
-import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
@@ -24,9 +20,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -46,6 +40,7 @@ import java.util.Map;
 @RequestMapping("/v1/auth/oidc")
 public class OidcAuthController {
 
+    // TODO: get the domain dynamically
     private static final String OIDC_CALLBACK_URL = "http://localhost:8848/nacos/v1/auth/oidc/callback";
 
     NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.AUTH);
@@ -97,7 +92,7 @@ public class OidcAuthController {
     }
 
     @GetMapping("callback")
-    public Object callback(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest request, HttpServletResponse response) {
+    public void callback(@RequestParam("code") String code, @RequestParam("state") String state, HttpServletRequest request, HttpServletResponse response) {
 
         state = new String(Base64.decodeBase64(state.getBytes()));
 
@@ -146,12 +141,14 @@ public class OidcAuthController {
             e.printStackTrace();
         }
 
+        assert oidcUserInfo != null;
+        // TODO: get the according user ID field by jsonpath parser
         String username = oidcUserInfo.getUserInfo().get("login");
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         if(userDetails == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return RestResultUtils.failed(HttpStatus.UNAUTHORIZED.value(), null, "Login failed");
+
         }
 
         String token = tokenManager.createToken(username);
@@ -173,22 +170,12 @@ public class OidcAuthController {
         }
         request.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, user);
 
-        response.addHeader(NacosAuthConfig.AUTHORIZATION_HEADER, NacosAuthConfig.TOKEN_PREFIX + user.getToken());
+        UriComponentsBuilder redirectUriBuilder = UriComponentsBuilder.fromPath(EnvUtil.getContextPath());
+        redirectUriBuilder.queryParam("token", token);
+        response.setStatus(HttpServletResponse.SC_FOUND);
+        String toView = redirectUriBuilder.toUriString();
+        response.setHeader("Location", redirectUriBuilder.toUriString());
 
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(Constants.ACCESS_TOKEN, user.getToken());
-        result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
-        result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
-        result.put(Constants.USERNAME, user.getUserName());
-        return result;
-    }
-
-    static class OidcAuthRequest {
-        String clientId;
-        String clientSecret;
-        String redirectUri;
-        String code;
-        String state;
     }
 
     static class OidcState {
