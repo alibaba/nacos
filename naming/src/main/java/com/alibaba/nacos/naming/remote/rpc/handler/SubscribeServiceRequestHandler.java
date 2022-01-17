@@ -47,11 +47,10 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     private final ServiceStorage serviceStorage;
     
     private final NamingMetadataManager metadataManager;
-
+    
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage,
-            NamingMetadataManager metadataManager,
+    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager,
             EphemeralClientOperationServiceImpl clientOperationService) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
@@ -67,8 +66,8 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         String app = request.getHeader("app", "unknown");
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
-        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
-                meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
+        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),
+                namespaceId, groupedServiceName, 0, request.getClusters());
         ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
                 metadataManager.getServiceMetadata(service).orElse(null), subscriber);
         if (request.isSubscribe()) {

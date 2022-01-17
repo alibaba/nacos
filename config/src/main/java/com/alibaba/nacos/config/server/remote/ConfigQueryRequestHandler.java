@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.constant.ActionTypes;
+import com.alibaba.nacos.auth.constant.SignType;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -70,7 +71,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     
     @Override
     @TpsControl(pointName = "ConfigQuery", parsers = {ConfigQueryGroupKeyParser.class, ConfigQueryGroupParser.class})
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG, parser = ConfigResourceParser.class)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         
         try {

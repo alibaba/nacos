@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.constant.ActionTypes;
+import com.alibaba.nacos.auth.constant.SignType;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -62,7 +63,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     @Override
     @TpsControl(pointName = "ConfigPublish", parsers = {ConfigPublishGroupKeyParser.class,
             ConfigPublishGroupParser.class})
-    @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG, parser = ConfigResourceParser.class)
     public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
         
         try {

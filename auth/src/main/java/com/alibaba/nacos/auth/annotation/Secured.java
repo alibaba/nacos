@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth.annotation;
 
 import com.alibaba.nacos.auth.constant.ActionTypes;
+import com.alibaba.nacos.auth.constant.SignType;
 import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -49,9 +50,17 @@ public @interface Secured {
     String resource() default StringUtils.EMPTY;
     
     /**
-     * Resource name parser. Should have lower priority than resource().
+     * The module of resource related to the request.
+     *
+     * @return module name
+     */
+    String signType() default SignType.NAMING;
+    
+    /**
+     * Custom resource parser. Should have lower priority than resource().
      *
      * @return class type of resource parser
      */
+    @Deprecated
     Class<? extends ResourceParser> parser() default DefaultResourceParser.class;
 }
