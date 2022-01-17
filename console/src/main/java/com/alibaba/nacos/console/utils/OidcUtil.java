@@ -16,6 +16,8 @@ public class OidcUtil {
 
     private static final String OIDP = "oidp";
 
+    private static final String name = "name";
+
     private static final String AUTH_URL = "authUrl";
 
     private static final String EXCHANGE_TOKEN_URL = "exchangeTokenUrl";
@@ -50,6 +52,10 @@ public class OidcUtil {
 
     public static String getClientSecret(String oidp){
         return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, CLIENT_SECRET));
+    }
+
+    public static String getName(String oidp){
+        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, name));
     }
 
     public static List<String> getScopes(String oidp){
