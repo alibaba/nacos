@@ -91,7 +91,7 @@ public class ConfigCacheService {
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             
-            if (md5.equals(ConfigCacheService.getContentMd5(groupKey))) {
+            if (md5.equals(ConfigCacheService.getContentMd5(groupKey)) && DiskUtil.targetFile(dataId, group, tenant).exists()) {
                 DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
