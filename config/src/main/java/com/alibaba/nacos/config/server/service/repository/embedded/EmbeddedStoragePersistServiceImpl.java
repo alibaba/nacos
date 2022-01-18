@@ -48,7 +48,6 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
-import com.google.common.base.Joiner;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -586,7 +585,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         ids.removeAll(Collections.singleton(null));
         final Timestamp time = new Timestamp(System.currentTimeMillis());
         try {
-            String idsStr = Joiner.on(",").join(ids);
+            String idsStr = StringUtils.join(ids, StringUtils.COMMA);
             List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
             if (CollectionUtils.isNotEmpty(configInfoList)) {
                 removeConfigInfoByIdsAtomic(idsStr);
@@ -731,7 +730,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
-        String sql = "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?";
+        String sql = "DELETE FROM his_config_info WHERE id IN( "
+                + "SELECT id FROM his_config_info WHERE gmt_modified < ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY)";
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         helper.updateLimit(sql, new Object[] {startTime, limitSize});
     }
@@ -2563,6 +2563,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         return result;
     }
-    
+
+    @Override
+    public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenantId) {
+        Assert.hasText(tenantId, "tenantId can not be null");
+        String tenantTmp = StringUtils.isBlank(tenantId) ? StringUtils.EMPTY : tenantId;
+        final String sql = "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info WHERE tenant_id=?";
+        return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
+    }
 }
 

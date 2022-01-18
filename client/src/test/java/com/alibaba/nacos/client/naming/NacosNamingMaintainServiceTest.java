@@ -26,7 +26,9 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.security.SecurityProxy;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +39,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -49,15 +52,35 @@ public class NacosNamingMaintainServiceTest {
     
     private NamingHttpClientProxy serverProxy;
     
+    private ServerListManager serverListManager;
+    
+    private SecurityProxy securityProxy;
+    
+    private ScheduledExecutorService executorService;
+    
     @Before
     public void setUp() throws Exception {
         Properties prop = new Properties();
         prop.setProperty(PropertyKeyConst.NAMESPACE, "public");
         nacosNamingMaintainService = new NacosNamingMaintainService(prop);
+        
         serverProxy = mock(NamingHttpClientProxy.class);
+        serverListManager = mock(ServerListManager.class);
+        securityProxy = mock(SecurityProxy.class);
+        executorService = mock(ScheduledExecutorService.class);
+        
         Field serverProxyField = NacosNamingMaintainService.class.getDeclaredField("serverProxy");
         serverProxyField.setAccessible(true);
         serverProxyField.set(nacosNamingMaintainService, serverProxy);
+        Field serverListManagerField = NacosNamingMaintainService.class.getDeclaredField("serverListManager");
+        serverListManagerField.setAccessible(true);
+        serverListManagerField.set(nacosNamingMaintainService, serverListManager);
+        Field securityProxyFiled = NacosNamingMaintainService.class.getDeclaredField("securityProxy");
+        securityProxyFiled.setAccessible(true);
+        securityProxyFiled.set(nacosNamingMaintainService, securityProxy);
+        Field executorServiceField = NacosNamingMaintainService.class.getDeclaredField("executorService");
+        executorServiceField.setAccessible(true);
+        executorServiceField.set(nacosNamingMaintainService, executorService);
     }
     
     @After
@@ -275,8 +298,11 @@ public class NacosNamingMaintainServiceTest {
     
     @Test
     public void testShutDown() throws NacosException {
+        //when
         nacosNamingMaintainService.shutDown();
         //then
         verify(serverProxy, times(1)).shutdown();
+        verify(serverListManager, times(1)).shutdown();
+        verify(executorService, times(1)).shutdown();
     }
 }

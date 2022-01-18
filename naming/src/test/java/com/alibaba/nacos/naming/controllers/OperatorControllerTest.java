@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -35,6 +36,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
+
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * {@link OperatorController} unit test.
@@ -59,6 +63,9 @@ public class OperatorControllerTest {
     
     @Mock
     private ServiceManager serviceManager;
+    
+    @Mock
+    private ClientManager clientManager;
     
     @Mock
     private RaftCore raftCore;
@@ -95,6 +102,12 @@ public class OperatorControllerTest {
         Mockito.when(serviceManager.getResponsibleServiceCount()).thenReturn(1);
         Mockito.when(serviceManager.getResponsibleInstanceCount()).thenReturn(1);
         Mockito.when(raftCore.getNotifyTaskCount()).thenReturn(1);
+        Collection<String> clients = new HashSet<>();
+        clients.add("1628132208793_127.0.0.1_8080");
+        clients.add("127.0.0.1:8081#true");
+        clients.add("127.0.0.1:8082#false");
+        Mockito.when(clientManager.allClientId()).thenReturn(clients);
+        Mockito.when(clientManager.isResponsibleClient(null)).thenReturn(Boolean.TRUE);
         
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter("onlyStatus", "false");
@@ -103,6 +116,11 @@ public class OperatorControllerTest {
         Assert.assertEquals(1, objectNode.get("responsibleServiceCount").asInt());
         Assert.assertEquals(1, objectNode.get("responsibleInstanceCount").asInt());
         Assert.assertEquals(ServerStatus.UP.toString(), objectNode.get("status").asText());
+        Assert.assertEquals(3, objectNode.get("clientCount").asInt());
+        Assert.assertEquals(1, objectNode.get("connectionBasedClientCount").asInt());
+        Assert.assertEquals(1, objectNode.get("ephemeralIpPortClientCount").asInt());
+        Assert.assertEquals(1, objectNode.get("persistentIpPortClientCount").asInt());
+        Assert.assertEquals(3, objectNode.get("responsibleClientCount").asInt());
     }
     
     @Test

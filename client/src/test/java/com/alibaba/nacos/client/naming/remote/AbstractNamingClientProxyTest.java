@@ -112,6 +112,11 @@ public class AbstractNamingClientProxyTest {
             public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
             
             }
+    
+            @Override
+            public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+                return false;
+            }
             
             @Override
             public void updateBeatInfo(Set<Instance> modifiedInstances) {
@@ -211,7 +216,12 @@ public class AbstractNamingClientProxyTest {
             public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
             
             }
-            
+    
+            @Override
+            public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+                return false;
+            }
+    
             @Override
             public void updateBeatInfo(Set<Instance> modifiedInstances) {
             

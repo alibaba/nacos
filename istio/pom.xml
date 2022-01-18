@@ -77,10 +77,6 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
         </dependency>
@@ -132,13 +128,15 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.6.1</version>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginId>grpc-java</pluginId>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:${protoc-gen-grpc-java.version}:exe:${os.detected.classifier}</pluginArtifact>
 
                     <useArgumentFile>true</useArgumentFile>
                     <checkStaleness>true</checkStaleness>
                     <staleMillis>10000</staleMillis>
+
+                    <protoSourceRoot>src/main/resources/proto</protoSourceRoot>
                 </configuration>
                 <executions>
                     <execution>
@@ -150,13 +148,5 @@
                 </executions>
             </plugin>
         </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <!--<excludes>-->
-                <!--<exclude>application.properties</exclude>-->
-                <!--</excludes>-->
-            </resource>
-        </resources>
     </build>
 </project>

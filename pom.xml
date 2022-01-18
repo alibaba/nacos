@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.0.3</revision>
+        <revision>2.0.4</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -136,8 +136,8 @@
         <commons-dbcp.version>1.4</commons-dbcp.version>
         <commons-cli.version>1.2</commons-cli.version>
         <slf4j-api.version>1.7.7</slf4j-api.version>
-        <logback.version>1.2.3</logback.version>
-        <log4j.version>2.13.3</log4j.version>
+        <logback.version>1.2.9</logback.version>
+        <log4j.version>2.17.1</log4j.version>
         
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
         <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
@@ -156,7 +156,7 @@
         <commonOkHttp.version>0.4.1</commonOkHttp.version>
         <grpc-java.version>1.24.0</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
-        <protobuf-java.version>3.8.0</protobuf-java.version>
+        <protobuf-java.version>3.16.1</protobuf-java.version>
         <protoc-gen-grpc-java.version>1.24.0</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <reflections.version>0.9.11</reflections.version>
@@ -167,8 +167,8 @@
         <tomcat-embed-jasper.version>9.0.40</tomcat-embed-jasper.version>
         <truth.version>0.30</truth.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.5</jraft-core.version>
-        <rpc-grpc-impl.version>1.3.5</rpc-grpc-impl.version>
+        <jraft-core.version>1.3.8</jraft-core.version>
+        <rpc-grpc-impl.version>1.3.8</rpc-grpc-impl.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -594,7 +594,7 @@
         </plugins>
     </reporting>
     
-    <!-- 子模块管理 -->
+    <!-- Submodule management -->
     <modules>
         <module>config</module>
         <module>core</module>
@@ -614,7 +614,7 @@
         <module>sys</module>
     </modules>
     
-    <!-- 所有的子项目默认依赖 -->
+    <!-- Default dependencies in all subprojects -->
     <dependencies>
         
         <dependency>
@@ -635,7 +635,8 @@
     
     </dependencies>
     
-    <!-- 管理依赖版本号,子项目不会默认依赖 -->
+    <!-- Manage the version numbers of dependencies,
+    sub-modules will not introduce these dependencies by default -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -1058,7 +1059,8 @@
     
     <distributionManagement>
         <snapshotRepository>
-            <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
+            <!-- The ID here must be exactly the same as the value
+             of the server element id in the settings.xml file of MAVEN -->
             <id>sona</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>

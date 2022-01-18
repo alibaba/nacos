@@ -69,9 +69,9 @@ public class ServiceInfoHolder implements Closeable {
     public ServiceInfoHolder(String namespace, Properties properties) {
         initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+            this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
         } else {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
+            this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
@@ -119,7 +119,7 @@ public class ServiceInfoHolder implements Closeable {
     }
     
     public ServiceInfo getServiceInfo(final String serviceName, final String groupName, final String clusters) {
-        NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
+        NAMING_LOGGER.debug("failover-mode: {}", failoverReactor.isFailoverSwitch());
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         String key = ServiceInfo.getKey(groupedServiceName, clusters);
         if (failoverReactor.isFailoverSwitch()) {
@@ -163,8 +163,8 @@ public class ServiceInfoHolder implements Closeable {
         }
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
         if (changed) {
-            NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
-                    + JacksonUtils.toJson(serviceInfo.getHosts()));
+            NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
+                    JacksonUtils.toJson(serviceInfo.getHosts()));
             NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
                     serviceInfo.getClusters(), serviceInfo.getHosts()));
             DiskCache.write(serviceInfo, cacheDir);
@@ -178,14 +178,14 @@ public class ServiceInfoHolder implements Closeable {
     
     private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
         if (null == oldService) {
-            NAMING_LOGGER.info("init new ips(" + newService.ipCount() + ") service: " + newService.getKey() + " -> "
-                    + JacksonUtils.toJson(newService.getHosts()));
+            NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
+                    JacksonUtils.toJson(newService.getHosts()));
             return true;
         }
         if (oldService.getLastRefTime() > newService.getLastRefTime()) {
-            NAMING_LOGGER
-                    .warn("out of date data received, old-t: " + oldService.getLastRefTime() + ", new-t: " + newService
-                            .getLastRefTime());
+            NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
+                    newService.getLastRefTime());
+            return false;
         }
         boolean changed = false;
         Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
@@ -231,21 +231,20 @@ public class ServiceInfoHolder implements Closeable {
         
         if (newHosts.size() > 0) {
             changed = true;
-            NAMING_LOGGER
-                    .info("new ips(" + newHosts.size() + ") service: " + newService.getKey() + " -> " + JacksonUtils
-                            .toJson(newHosts));
+            NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
+                    JacksonUtils.toJson(newHosts));
         }
         
         if (remvHosts.size() > 0) {
             changed = true;
-            NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: " + newService.getKey() + " -> "
-                    + JacksonUtils.toJson(remvHosts));
+            NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
+                    JacksonUtils.toJson(remvHosts));
         }
         
         if (modHosts.size() > 0) {
             changed = true;
-            NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: " + newService.getKey() + " -> "
-                    + JacksonUtils.toJson(modHosts));
+            NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
+                    JacksonUtils.toJson(modHosts));
         }
         return changed;
     }

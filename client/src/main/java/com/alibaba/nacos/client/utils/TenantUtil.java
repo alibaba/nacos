@@ -28,12 +28,14 @@ public class TenantUtil {
     
     private static final String USER_TENANT;
     
-    private static final String ACM_NAMESPACE_PROPERTY = "acm.namespace";
-    
     private static final String DEFAULT_ACM_NAMESPACE = "";
     
+    private static final String TENANT_ID = "tenant.id";
+    
+    private static final String ACM_NAMESPACE_PROPERTY = "acm.namespace";
+    
     static {
-        USER_TENANT = System.getProperty("tenant.id", "");
+        USER_TENANT = System.getProperty(TENANT_ID, "");
     }
     
     /**

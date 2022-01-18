@@ -16,17 +16,22 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.internal.util.collections.Sets;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,20 +61,32 @@ public class CollectionUtilsTest {
     
     @Test(expected = IndexOutOfBoundsException.class)
     public void testGetMap1() {
-        CollectionUtils.get(ImmutableMap.of("key1", "value1"), -1);
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        CollectionUtils.get(map, -1);
     }
     
     @Test(expected = IndexOutOfBoundsException.class)
     public void testGetMap2() {
-        CollectionUtils.get(ImmutableMap.of("key1", "value1"), 1);
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        CollectionUtils.get(map, -1);
+        CollectionUtils.get(map, 1);
     }
     
     @Test
     public void testGetMap3() {
-        Assert.assertEquals(Maps.immutableEntry("key", "value"),
-                CollectionUtils.get(ImmutableMap.of("key", "value"), 0));
-        Assert.assertEquals(Maps.immutableEntry("key2", "value2"),
-                CollectionUtils.get(ImmutableMap.of("key1", "value1", "key2", "value2"), 1));
+        Map<String, String> map1 = new LinkedHashMap(1);
+        Map<String, String> map2 = new LinkedHashMap(2);
+        map1.put("key", "value");
+        map2.put("key1", "value1");
+        map2.put("key2", "value2");
+        Iterator<Map.Entry<String, String>> iter = map1.entrySet().iterator();
+        Assert.assertEquals(iter.next(), CollectionUtils.get(map1, 0));
+        Iterator<Map.Entry<String, String>> iter2 = map2.entrySet().iterator();
+        iter2.next();
+        Map.Entry<String, String> second = iter2.next();
+        Assert.assertEquals(second, CollectionUtils.get(map2, 1));
     }
     
     @Test(expected = IndexOutOfBoundsException.class)
@@ -133,7 +150,7 @@ public class CollectionUtilsTest {
     @Test
     public void testGetCollection3() {
         Assert.assertEquals("1", CollectionUtils.get(Collections.singleton("1"), 0));
-        Assert.assertEquals("2", CollectionUtils.get(Sets.newSet("1", "2"), 1));
+        Assert.assertEquals("2", CollectionUtils.get(CollectionUtils.set("1", "2"), 1));
     }
     
     @Test(expected = IndexOutOfBoundsException.class)
@@ -172,12 +189,16 @@ public class CollectionUtilsTest {
         Assert.assertEquals(0, CollectionUtils.size(Collections.emptyList()));
         Assert.assertEquals(1, CollectionUtils.size(Collections.singletonList("")));
         Assert.assertEquals(10, CollectionUtils.size(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
-        
+    
         // map
-        Assert.assertEquals(1, CollectionUtils.size(ImmutableMap.of("key", "value")));
-        Assert.assertEquals(2, CollectionUtils.size(ImmutableMap.of("key1", "value1", "key2", "value2")));
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        Assert.assertEquals(1, CollectionUtils.size(map));
+        map.put("key2", "value2");
+        Assert.assertEquals(2, CollectionUtils.size(map));
+        map.put("key3", "value3");
         Assert.assertEquals(3,
-                CollectionUtils.size(ImmutableMap.of("key1", "value1", "key2", "value2", "key3", "value3")));
+                CollectionUtils.size(map));
         
         // array
         Assert.assertEquals(1, CollectionUtils.size(new Object[] {"1"}));
@@ -217,8 +238,11 @@ public class CollectionUtilsTest {
         Assert.assertFalse(CollectionUtils.sizeIsEmpty(Collections.singletonList("")));
         
         // map
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", "value2");
         Assert.assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyMap()));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(ImmutableMap.of("key1", "value1", "key2", "value2")));
+        Assert.assertFalse(CollectionUtils.sizeIsEmpty(map));
         
         // array
         Assert.assertTrue(CollectionUtils.sizeIsEmpty(new Object[] {}));
@@ -299,5 +323,38 @@ public class CollectionUtilsTest {
                 return iterator.next();
             }
         };
+    }
+    
+    @Test
+    public void testSet() {
+        Set<Object> set = new HashSet<>();
+        set.add(null);
+        Assert.assertEquals(set, CollectionUtils.set(null, null, null));
+        Assert.assertEquals(new LinkedHashSet(Arrays.asList("", "a", "b")), CollectionUtils.set("", "a", "b"));
+        Assert.assertEquals(new HashSet(), CollectionUtils.set());
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetNullPointerException() {
+        CollectionUtils.set(null);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetOnlyElementIllegalArgumentException() {
+        List<Integer> list = Arrays.asList(1, 2, 3);
+        CollectionUtils.getOnlyElement(list);
+    }
+    
+    @Test(expected = NoSuchElementException.class)
+    public void testGetOnlyElementNoSuchElementException() {
+        List<Object> list = new ArrayList<>();
+        CollectionUtils.getOnlyElement(list);
+    }
+    
+    @Test
+    public void testGetOnly() {
+        List<Integer> list = Arrays.asList(1);
+        int element = CollectionUtils.getOnlyElement(list);
+        Assert.assertEquals(1, element);
     }
 }

@@ -13,7 +13,7 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import com.google.common.base.Preconditions;
+import com.alibaba.nacos.common.utils.Preconditions;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.bind.Bindable;

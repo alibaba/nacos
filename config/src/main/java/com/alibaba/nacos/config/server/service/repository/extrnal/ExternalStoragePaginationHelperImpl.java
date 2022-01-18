@@ -219,6 +219,20 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
     }
     
+    public int updateLimitWithResponse(final String sql, final Object[] args) {
+        String sqlUpdate = sql;
+        
+        if (isDerby()) {
+            sqlUpdate = sqlUpdate.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        }
+        
+        try {
+            return jdbcTemplate.update(sqlUpdate, args);
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
     private boolean isDerby() {
         return (EnvUtil.getStandaloneMode() && !PropertyUtil.isUseExternalDB()) || PropertyUtil
                 .isEmbeddedStorage();

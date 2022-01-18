@@ -20,12 +20,15 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +47,7 @@ import java.util.stream.Collectors;
  *
  * @author xiweng.yy
  */
-public class ServiceUtil {
+public final class ServiceUtil {
     
     /**
      * Select service name with group name.
@@ -250,13 +253,11 @@ public class ServiceUtil {
      *
      * @param serviceInfo     original service info
      * @param serviceMetadata service meta info
-     * @param cluster         cluster of instances
+     * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-                                                                   ServiceMetadata serviceMetadata,
-                                                                   String cluster) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, false, false);
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), false, false, subscriber.getIp());
     }
 
     /**
@@ -266,13 +267,12 @@ public class ServiceUtil {
      * @param serviceMetadata service meta info
      * @param healthyOnly     whether only select instance which healthy
      * @param enableOnly      whether only select instance which enabled
+     * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-                                                                   ServiceMetadata serviceMetadata,
-                                                                   boolean healthyOnly,
-                                                                   boolean enableOnly) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly);
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, boolean healthyOnly,
+            boolean enableOnly, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly, subscriber.getIp());
     }
 
     /**
@@ -283,23 +283,37 @@ public class ServiceUtil {
      * @param cluster         cluster of instances
      * @param healthyOnly     whether only select instance which healthy
      * @param enableOnly      whether only select instance which enabled
+     * @param subscriberIp subscriber ip address
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-                                                                   ServiceMetadata serviceMetadata,
-                                                                   String cluster,
-                                                                   boolean healthyOnly,
-                                                                   boolean enableOnly) {
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, String cluster,
+            boolean healthyOnly, boolean enableOnly, String subscriberIp) {
         InstancesFilter filter = (filteredResult, allInstances, healthyCount) -> {
             if (serviceMetadata == null) {
                 return;
             }
-            // TODO: filter ips using selector
+            allInstances = filteredResult.getHosts();
+            int originalTotal = allInstances.size();
+            // filter ips using selector
+            SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
+            allInstances = selectorManager.select(serviceMetadata.getSelector(), subscriberIp, allInstances);
+            filteredResult.setHosts(allInstances);
+            
+            // will re-compute healthCount
+            long newHealthyCount = healthyCount;
+            if (originalTotal != allInstances.size()) {
+                for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
+                    if (allInstance.isHealthy()) {
+                        newHealthyCount++;
+                    }
+                }
+            }
+            
             float threshold = serviceMetadata.getProtectThreshold();
             if (threshold < 0) {
                 threshold = 0F;
             }
-            if ((float) healthyCount / allInstances.size() <= threshold) {
+            if ((float) newHealthyCount / allInstances.size() <= threshold) {
                 Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", filteredResult.getName());
                 filteredResult.setReachProtectionThreshold(true);
                 List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = allInstances.stream()

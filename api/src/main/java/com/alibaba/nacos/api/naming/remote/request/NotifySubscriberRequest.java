@@ -19,14 +19,14 @@ package com.alibaba.nacos.api.naming.remote.request;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.request.ServerRequest;
 
+import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
+
 /**
- * Notify subscriber response.
+ * Notify subscriber request.
  *
  * @author xiweng.yy
  */
 public class NotifySubscriberRequest extends ServerRequest {
-    
-    private static final String MODULE = "naming";
     
     private String namespace;
     
@@ -41,25 +41,15 @@ public class NotifySubscriberRequest extends ServerRequest {
     
     @Override
     public String getModule() {
-        return MODULE;
+        return NAMING_MODULE;
     }
     
-    private NotifySubscriberRequest(ServiceInfo serviceInfo, String message) {
+    private NotifySubscriberRequest(ServiceInfo serviceInfo) {
         this.serviceInfo = serviceInfo;
     }
     
-    public static NotifySubscriberRequest buildSuccessResponse(ServiceInfo serviceInfo) {
-        return new NotifySubscriberRequest(serviceInfo, "success");
-    }
-    
-    /**
-     * Build fail response.
-     *
-     * @param message error message
-     * @return fail response
-     */
-    public static NotifySubscriberRequest buildFailResponse(String message) {
-        return new NotifySubscriberRequest();
+    public static NotifySubscriberRequest buildNotifySubscriberRequest(ServiceInfo serviceInfo) {
+        return new NotifySubscriberRequest(serviceInfo);
     }
     
     public ServiceInfo getServiceInfo() {

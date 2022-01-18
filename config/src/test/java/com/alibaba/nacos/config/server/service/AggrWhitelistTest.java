@@ -16,11 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,16 +24,7 @@ import java.util.List;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
 public class AggrWhitelistTest {
-    
-    AggrWhitelist service;
-    
-    @Before
-    public void before() throws Exception {
-        service = new AggrWhitelist();
-    }
     
     @Test
     public void testIsAggrDataId() {

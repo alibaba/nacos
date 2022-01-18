@@ -136,6 +136,8 @@ public class ServiceInfoUpdateService implements Closeable {
         
         long lastRefTime = Long.MAX_VALUE;
         
+        private boolean isCancel;
+        
         private final String serviceName;
         
         private final String groupName;
@@ -145,7 +147,7 @@ public class ServiceInfoUpdateService implements Closeable {
         private final String groupedServiceName;
         
         private final String serviceKey;
-    
+        
         /**
          * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
          */
@@ -164,9 +166,10 @@ public class ServiceInfoUpdateService implements Closeable {
             long delayTime = DEFAULT_DELAY;
             
             try {
-                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(serviceKey)) {
-                    NAMING_LOGGER
-                            .info("update task is stopped, service:" + groupedServiceName + ", clusters:" + clusters);
+                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(
+                        serviceKey)) {
+                    NAMING_LOGGER.info("update task is stopped, service:{}, clusters:{}", groupedServiceName, clusters);
+                    isCancel = true;
                     return;
                 }
                 
@@ -192,12 +195,15 @@ public class ServiceInfoUpdateService implements Closeable {
                 resetFailCount();
             } catch (Throwable e) {
                 incFailCount();
-                NAMING_LOGGER.warn("[NA] failed to update serviceName: " + groupedServiceName, e);
+                NAMING_LOGGER.warn("[NA] failed to update serviceName: {}", groupedServiceName, e);
             } finally {
-                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                if (!isCancel) {
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60),
+                            TimeUnit.MILLISECONDS);
+                }
             }
         }
-    
+        
         private void incFailCount() {
             int limit = 6;
             if (failCount == limit) {
@@ -205,7 +211,7 @@ public class ServiceInfoUpdateService implements Closeable {
             }
             failCount++;
         }
-    
+        
         private void resetFailCount() {
             failCount = 0;
         }

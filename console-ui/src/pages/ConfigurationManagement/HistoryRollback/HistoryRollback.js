@@ -16,7 +16,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
+import { ConfigProvider, Field, Form, Loading, Pagination, Select, Table } from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import { getParams, setParams, request } from '@/globalLib';
 
@@ -94,6 +94,7 @@ class HistoryRollback extends React.Component {
     }
 
     this.getData();
+    this.getConfigList();
   }
 
   getData(pageNo = 1) {
@@ -204,6 +205,35 @@ class HistoryRollback extends React.Component {
     );
   }
 
+  getConfigList() {
+    const { locale = {} } = this.props;
+    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    const self = this;
+    request({
+      url: `v1/cs/history/configs?tenant=${this.tenant}`,
+      success(result) {
+        if (result != null) {
+          const dataIdList = [];
+          const groupList = [];
+          for (let i = 0; i < result.length; i++) {
+            dataIdList.push({
+              value: result[i].dataId,
+              label: result[i].dataId,
+            });
+            groupList.push({
+              value: result[i].group,
+              label: result[i].group,
+            });
+          }
+          self.setState({
+            dataIds: dataIdList,
+            groups: groupList,
+          });
+        }
+      },
+    });
+  }
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
@@ -224,9 +254,21 @@ class HistoryRollback extends React.Component {
           <div>
             <Form inline field={this.field}>
               <Form.Item label="Data ID:" required>
-                <Input
-                  placeholder={locale.dataId}
+                <Select
                   style={{ width: 200 }}
+                  size="medium"
+                  hasArrow
+                  mode="single"
+                  placeholder={locale.dataId}
+                  dataSource={this.state.dataIds}
+                  hasClear
+                  showSearch
+                  onSearch={val => {
+                    const { dataIds } = this.state;
+                    if (!dataIds.includes(val)) {
+                      this.setState({ dataIds: dataIds.concat(val) });
+                    }
+                  }}
                   {...this.init('dataId', {
                     rules: [
                       {
@@ -238,9 +280,21 @@ class HistoryRollback extends React.Component {
                 />
               </Form.Item>
               <Form.Item label="Group:" required>
-                <Input
-                  placeholder={locale.group}
+                <Select
                   style={{ width: 200 }}
+                  size="medium"
+                  hasArrow
+                  mode="single"
+                  placeholder={locale.group}
+                  dataSource={this.state.groups}
+                  hasClear
+                  showSearch
+                  onSearch={val => {
+                    const { groups } = this.state;
+                    if (!groups.includes(val)) {
+                      this.setState({ groups: groups.concat(val) });
+                    }
+                  }}
                   {...this.init('group', {
                     rules: [
                       {
@@ -251,7 +305,6 @@ class HistoryRollback extends React.Component {
                   })}
                 />
               </Form.Item>
-
               <Form.Item label="">
                 <Form.Submit
                   validate

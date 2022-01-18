@@ -97,7 +97,7 @@ public class RpcAckCallbackSynchronizer {
                 return;
             }
         }
-        throw new NacosException(NacosException.INVALID_PARAM, "request id confilict");
+        throw new NacosException(NacosException.INVALID_PARAM, "request id conflict");
         
     }
     

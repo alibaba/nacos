@@ -611,7 +611,7 @@ class ConfigurationManagement extends React.Component {
         onOk: () => {
           const url = `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
             ','
-          )}`;
+          )}&tenant=` + self.state.nownamespace_id;
           request({
             url,
             type: 'delete',
@@ -1132,7 +1132,7 @@ class ConfigurationManagement extends React.Component {
               <Form inline>
                 <Form.Item label="Data ID:">
                   <Input
-                    defaultValue={this.dataId}
+                    value={this.dataId}
                     htmlType="text"
                     placeholder={locale.fuzzyd}
                     style={{ width: 200 }}

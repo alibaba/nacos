@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,13 +42,16 @@ public class PushExecutorRpcImpl implements PushExecutor {
     
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildSuccessResponse(data.getOriginalData()));
+        pushService.pushWithoutAck(clientId, NotifySubscriberRequest.buildNotifySubscriberRequest(getServiceInfo(data, subscriber)));
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
-            PushCallBack callBack) {
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildSuccessResponse(data.getOriginalData()),
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildNotifySubscriberRequest(getServiceInfo(data, subscriber)),
                 callBack, GlobalExecutor.getCallbackExecutor());
+    }
+    
+    private ServiceInfo getServiceInfo(PushDataWrapper data, Subscriber subscriber) {
+        return ServiceUtil.selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true, subscriber);
     }
 }

@@ -42,7 +42,6 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.google.common.base.Joiner;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -76,6 +75,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ALL_INFO_ROW_MAPPER;
@@ -497,7 +497,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             @Override
             public List<ConfigInfo> doInTransaction(TransactionStatus status) {
                 try {
-                    String idsStr = Joiner.on(",").join(ids);
+                    String idsStr = StringUtils.join(ids, StringUtils.COMMA);
                     List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
                     if (!CollectionUtils.isEmpty(configInfoList)) {
                         removeConfigInfoByIdsAtomic(idsStr);
@@ -632,11 +632,20 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         String sql = "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?";
-        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+        ExternalStoragePaginationHelperImpl<ConfigInfo> paginationHelper = (ExternalStoragePaginationHelperImpl<ConfigInfo>) createPaginationHelper();
+        int count;
         try {
-            helper.updateLimit(sql, new Object[] {startTime, limitSize});
+            count = paginationHelper.updateLimitWithResponse(sql, new Object[] {startTime, limitSize});
+            while (count > 0) {
+                try {
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    LogUtil.FATAL_LOG.error("[interrupt-error] " + e, e);
+                }
+                count = paginationHelper.updateLimitWithResponse(sql, new Object[] {startTime, limitSize});
+            }
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
         }
     }
@@ -2787,5 +2796,22 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         return result.intValue();
     }
-    
+
+    @Override
+    public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenant) {
+        Assert.hasText(tenant, "tenant can not be null");
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        try {
+            return this.jt.query(
+                    "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info_beta WHERE tenant_id=?",
+                    new Object[]{tenantTmp},
+                    CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
+            return Collections.EMPTY_LIST;
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
 }

@@ -21,9 +21,9 @@ import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
-import com.alibaba.nacos.api.remote.request.PushAckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -31,10 +31,10 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
@@ -57,6 +57,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class GrpcClient extends RpcClient {
     
     static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
+    
+    protected static final String NACOS_SERVER_GRPC_PORT_OFFSET_KEY = "nacos.server.grpc.port.offset";
     
     private ThreadPoolExecutor grpcExecutor = null;
     
@@ -181,7 +183,10 @@ public abstract class GrpcClient extends RpcClient {
                         } catch (Exception e) {
                             LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
                                     grpcConn.getConnectionId(), payload.toString(), e.getMessage());
-                            sendResponse(request.getRequestId(), false);
+                            Response errResponse = ErrorResponse
+                                    .build(NacosException.CLIENT_ERROR, "Handle server request error");
+                            errResponse.setRequestId(request.getRequestId());
+                            sendResponse(errResponse);
                         }
                         
                     }
@@ -231,15 +236,6 @@ public abstract class GrpcClient extends RpcClient {
         });
     }
     
-    private void sendResponse(String ackId, boolean success) {
-        try {
-            PushAckRequest request = PushAckRequest.build(ackId, success);
-            this.currentConnection.request(request, 3000L);
-        } catch (Exception e) {
-            LOGGER.error("[{}]Error to send ack response, ackId->{}", this.currentConnection.getConnectionId(), ackId);
-        }
-    }
-    
     private void sendResponse(Response response) {
         try {
             ((GrpcConnection) this.currentConnection).sendResponse(response);
@@ -256,7 +252,7 @@ public abstract class GrpcClient extends RpcClient {
                 int threadNumber = ThreadUtils.getSuitableThreadCount(8);
                 grpcExecutor = new ThreadPoolExecutor(threadNumber, threadNumber, 10L, TimeUnit.SECONDS,
                         new LinkedBlockingQueue<>(10000),
-                        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("nacos-grpc-client-executor-%d")
+                        new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-%d")
                                 .build());
                 grpcExecutor.allowCoreThreadTimeOut(true);
                 

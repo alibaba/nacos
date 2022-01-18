@@ -208,6 +208,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        if (NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[GRPC-SUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+        }
         redoService.cacheSubscriberForRedo(serviceName, groupName, clusters);
         return doSubscribe(serviceName, groupName, clusters);
     }
@@ -231,8 +234,16 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
+        if (NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+        }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);
+    }
+    
+    @Override
+    public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
+        return redoService.isSubscriberRegistered(serviceName, groupName, clusters);
     }
     
     /**

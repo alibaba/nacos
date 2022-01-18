@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.google.common.collect.Iterables;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -84,7 +84,7 @@ public class RpcClientFactoryTest {
         
         RpcClientFactory.destroyClient("notExistClientName");
         
-        Map.Entry<String, RpcClient> element = Iterables.getOnlyElement(RpcClientFactory.getAllClientEntries());
+        Map.Entry<String, RpcClient> element = CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries());
         Assert.assertEquals("testClient", element.getKey());
         Assert.assertEquals(rpcClient, element.getValue());
         verify(rpcClient, times(0)).shutdown();
@@ -106,7 +106,7 @@ public class RpcClientFactoryTest {
         
         Assert.assertEquals(Collections.singletonMap("labelKey", "labelValue"), client.labels);
         Assert.assertEquals(ConnectionType.GRPC, client.getConnectionType());
-        Assert.assertEquals("testClient", Iterables.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+        Assert.assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
     
     @Test
@@ -136,7 +136,7 @@ public class RpcClientFactoryTest {
         
         Assert.assertEquals(Collections.singletonMap("labelKey", "labelValue"), client.labels);
         Assert.assertEquals(ConnectionType.GRPC, client.getConnectionType());
-        Assert.assertEquals("testClient", Iterables.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
+        Assert.assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
     
     @Test
@@ -164,4 +164,5 @@ public class RpcClientFactoryTest {
                 Collections.singletonMap("labelKey", "labelValue")
         );
     }
+    
 }

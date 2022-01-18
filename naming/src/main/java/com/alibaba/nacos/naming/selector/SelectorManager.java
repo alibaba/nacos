@@ -17,11 +17,13 @@
 
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.Selector;
-import com.alibaba.nacos.api.naming.selector.context.SelectorContextBuilder;
+import com.alibaba.nacos.api.selector.Selector;
+import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
 
 /**
  * {@link SelectorManager} work on init {@link Selector#parse(Object)}, execute {@link Selector#select(Object)} and maintain
@@ -125,7 +129,10 @@ public class SelectorManager {
      * @param condition the condition provide for {@link Selector#parse(Object)}.
      * @return {@link Selector}.
      */
-    public Selector parseSelector(String type, String condition) {
+    public Selector parseSelector(String type, String condition) throws NacosException {
+        if (StringUtils.isBlank(type)) {
+            return null;
+        }
         Class<? extends Selector> clazz = selectorTypes.get(type);
         if (Objects.isNull(clazz)) {
             return null;
@@ -136,8 +143,8 @@ public class SelectorManager {
             return selector;
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[SelectorManager] Parse Selector failed, type: {}, condition: {}.", type, condition, e);
+            throw new NacosException(SERVER_ERROR, "Selector parses failed: " + e.getMessage());
         }
-        return null;
     }
     
     /**
@@ -157,7 +164,12 @@ public class SelectorManager {
             Loggers.SRV_LOG.info("[SelectorManager] cannot find the contextBuilder of type {}.", selector.getType());
             return providers;
         }
-        Object context = selectorContextBuilder.build(consumerIp, providers);
-        return (List<T>) selector.select(context);
+        try {
+            Object context = selectorContextBuilder.build(consumerIp, providers);
+            return (List<T>) selector.select(context);
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("[SelectorManager] execute select failed, will return all providers.", e);
+            return providers;
+        }
     }
 }

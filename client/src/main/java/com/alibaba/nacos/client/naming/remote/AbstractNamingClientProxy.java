@@ -66,7 +66,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return nacos security access token
      */
     protected Map<String, String> getSecurityHeaders() {
-        Map<String, String> result = new HashMap<>(1);
+        Map<String, String> result = new HashMap<>(2);
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             result.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
         }
@@ -80,7 +80,7 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
      * @return Ak Sk headers.
      */
     protected Map<String, String> getSpasHeaders(String serviceName) {
-        Map<String, String> result = new HashMap<>(2);
+        Map<String, String> result = new HashMap<>(8);
         String ak = getAccessKey();
         String sk = getSecretKey();
         result.put(APP_FILED, AppNameUtils.getAppName());
