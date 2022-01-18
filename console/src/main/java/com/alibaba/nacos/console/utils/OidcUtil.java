@@ -28,7 +28,7 @@ public class OidcUtil {
 
     private static final String CLIENT_SECRET = "clientSecret";
 
-    private static final String SCOPE = "scope";
+    private static final String SCOPES = "scopes";
 
     public static List<String> getOidpList(){
         return EnvUtil.getPropertyList(OIDPS);
@@ -59,7 +59,7 @@ public class OidcUtil {
     }
 
     public static List<String> getScopes(String oidp){
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, SCOPE), List.class);
+        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, SCOPES), List.class);
     }
 
     public static String getJsonpath(String oidp){

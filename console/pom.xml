@@ -49,6 +49,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-istio</artifactId>
         </dependency>
+        <!-- oidc userinfo json parser -->
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
         
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
