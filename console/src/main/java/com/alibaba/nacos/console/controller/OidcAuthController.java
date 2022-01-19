@@ -1,35 +1,22 @@
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.common.codec.Base64;
-import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.RoleInfo;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
-import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
-import com.alibaba.nacos.console.security.nacos.users.NacosUser;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.console.model.OidcTokenResponse;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.console.service.OidcService;
 import com.alibaba.nacos.console.utils.OidcUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.jayway.jsonpath.JsonPath;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,36 +32,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * OIDC auth controller.
+ *
+ * @author Kicey
+ */
 @RestController
 @RequestMapping("/v1/auth/oidc")
 public class OidcAuthController {
     
-    // TODO: get the domain dynamically
-    private static final String OIDC_CALLBACK_URL = "http://localhost:8848/nacos/v1/auth/oidc/callback";
-    
-    NacosRestTemplate restTemplate = HttpClientBeanHolder.getNacosRestTemplate(Loggers.AUTH);
-    
     @Autowired
-    JwtTokenManager tokenManager;
+    private OidcService oidcService;
     
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
     
-    @Autowired
-    private NacosRoleServiceImpl roleService;
-    
-    @Autowired
-    private AuthConfigs authConfigs;
-    
     /**
+     * list all the oidp providers from config file.
+     *
      * @return list of oidps in configured
      */
     @GetMapping("/list")
     public List<Map<String, String>> list() {
         List<Map<String, String>> oidpList = new ArrayList<>();
-        List<String> oidpListFromConfig = EnvUtil.getProperty("oidps", List.class);
+        List<String> oidpListFromConfig = OidcUtil.getOidpList();
         oidpListFromConfig.forEach(oidp -> {
-            Map<String, String> curOidp = new HashMap<>();
+            Map<String, String> curOidp = new HashMap<>(4);
             curOidp.put("key", oidp);
             curOidp.put("name", OidcUtil.getName(oidp));
             oidpList.add(curOidp);
@@ -83,177 +66,137 @@ public class OidcAuthController {
     }
     
     /**
+     * The api used to initiate the oidc auth, it will be set a state, so only the auth initiated from here can
+     * success.
+     *
      * @param oidpId   oidp id used to auth
      * @param response a redirect response
      */
     @GetMapping("/init")
     public Object init(@RequestParam("oidpId") String oidpId, HttpServletResponse response) {
         
-        String authUrl = OidcUtil.getClientId(oidpId);
+        String authUrl = OidcUtil.getAuthUrl(oidpId);
         if (authUrl == null) {
             Loggers.AUTH.error("oidpId {} not found", oidpId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("oidpId not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("oidpId %s not found", oidpId));
         }
+        
+        String clientId = OidcUtil.getClientId(oidpId);
         
         List<String> scopes = OidcUtil.getScopes(oidpId);
-        StringBuilder scope = new StringBuilder();
-        if (scopes != null && scopes.size() > 0) {
-            scopes.forEach(scope_ -> {
-                scope.append(scope_).append(" ");
-            });
-        }
         
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(OidcUtil.getAuthUrl(oidpId));
-        uriBuilder.queryParam("response_type", "code");
-        uriBuilder.queryParam("client_id", authUrl);
-        uriBuilder.queryParam("redirect_uri", OIDC_CALLBACK_URL);
-        if (scopes != null && scopes.size() > 0) {
-            uriBuilder.queryParam("scope", scope.toString());
-        }
-        
-        String state = null;
+        String state;
         try {
             state = new ObjectMapper().writeValueAsString(new OidcState(oidpId));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to serialize state");
         }
+        byte[] stateBase64bytes = Base64.encodeBase64(state.getBytes());
+        String stateBase64 = new String(stateBase64bytes);
         
-        byte[] stateBase64 = Base64.encodeBase64(state.getBytes());
-        uriBuilder.queryParam("state", new String(stateBase64));
+        String authInitUri = oidcService.completeAuthUriWithParameters(authUrl, clientId, OidcUtil.getOidcCallbackUrl(),
+                scopes, stateBase64);
+        
         response.setStatus(HttpServletResponse.SC_FOUND);
-        response.setHeader("Location", uriBuilder.encode().toUriString());
+        response.setHeader("Location", authInitUri);
         return null;
     }
     
+    /**
+     * the callback is request when the browser is redirected back to the server with the code gotten from the idp.
+     *
+     * @param code     the authorization code
+     * @param state    stores the key of the idp used internally
+     * @param request  the http request, may add something to the session
+     * @param response the http response, may redirect to another page
+     * @return error message if failed, null if success and redirect to the context path
+     */
     @GetMapping("callback")
     public Object callback(@RequestParam("code") String code, @RequestParam("state") String state,
             HttpServletRequest request, HttpServletResponse response) {
-        
         state = new String(Base64.decodeBase64(state.getBytes()));
-        
-        OidcState oidcState = null;
+        OidcState oidcState;
         try {
             oidcState = new ObjectMapper().readValue(state, OidcState.class);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error when deserializing state json");
         }
+        String oidp = oidcState.getOidpId();
         
-        UriComponentsBuilder tokenUriBuilder = UriComponentsBuilder.fromHttpUrl(
-                OidcUtil.getTokenExchangeUrl(oidcState.getOidpId()));
-        
-        Map<String, String> params = new HashMap<>();
-        params.put("grant_type", "authorization_code");
-        params.put("client_id", OidcUtil.getClientId(oidcState.getOidpId()));
-        params.put("client_secret", OidcUtil.getClientSecret(oidcState.getOidpId()));
-        params.put("code", code);
-        params.put("redirect_uri", OIDC_CALLBACK_URL);
-        
-        /*
-        tokenUriBuilder.queryParam("grant_type", "authorization_code");
-        tokenUriBuilder.queryParam("client_id", OidcUtil.getClientId(oidcState.getOidpId()));
-        tokenUriBuilder.queryParam("client_secret", OidcUtil.getClientSecret(oidcState.getOidpId()));
-        tokenUriBuilder.queryParam("code", code);
-        tokenUriBuilder.queryParam("redirect_uri", OIDC_CALLBACK_URL);
-        */
-        
-        Header tokenHeader = Header.newInstance();
-        tokenHeader.addParam("Accept", "application/json");
-        tokenHeader.addParam("Content-Type", "application/x-www-form-urlencoded");
-        
-        OidcTokenResponse oidcTokenResponse = null;
+        RestResult<String> tokenResult;
         try {
-            HttpRestResult<String> tokenResult = restTemplate.postForm(tokenUriBuilder.encode().toUriString(), tokenHeader, params,
-                    String.class);
-            oidcTokenResponse = new ObjectMapper().readValue(tokenResult.getData(), OidcTokenResponse.class);
-        } catch (SocketTimeoutException socketTimeoutException) {
+            tokenResult = oidcService.exchangeTokenWithCodeThroughPostForm(oidp, code);
+        } catch (SocketTimeoutException e) {
             return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("timeout when exchanging token");
-        } catch (IllegalArgumentException illegalArgumentException){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("can't get the code");
-        }catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("error when get authentication code");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error when exchanging token");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to exchange token");
+        } finally {
+            Loggers.AUTH.info("failed to exchange token");
         }
         
-        // TODO: move the code follow to a method
-        String userInfoJson = null;
-        OidcUserInfo oidcUserInfo = null;
-        UriComponentsBuilder userInfoUriBuilder = UriComponentsBuilder.fromHttpUrl(
-                OidcUtil.getUserInfoUrl(oidcState.getOidpId()));
-        Header userInfoHeader = Header.newInstance();
-        userInfoHeader.addParam("Authorization", "Bearer " + oidcTokenResponse.getAccessToken());
+        OidcTokenResponse oidcTokenResponse;
         try {
-            HttpRestResult<String> userInfoResult = restTemplate.get(userInfoUriBuilder.toUriString(), userInfoHeader,
-                    null, String.class);
+            oidcTokenResponse = new ObjectMapper().readValue(tokenResult.getData(), OidcTokenResponse.class);
+        } catch (JsonMappingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to mapping returned token");
+        } catch (JsonProcessingException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to process returned token");
+        } finally {
+            Loggers.AUTH.info("failed to extract access token from the result");
+        }
+        String accessToken = oidcTokenResponse.getAccessToken();
+        
+        String userInfoJson;
+        try {
+            HttpRestResult<String> userInfoResult = oidcService.getUserinfoWithAccessToken(oidp, accessToken);
             userInfoJson = userInfoResult.getData();
-            oidcUserInfo = new ObjectMapper().readValue(userInfoResult.getData(), OidcUserInfo.class);
         } catch (Exception e) {
-            // Loggers.AUTH.error("userInfoResult: {}", userInfoResult);
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to get user info");
+        } finally {
+            Loggers.AUTH.info("failed to get user info");
         }
-        
-        // TODO: get the according user ID field by jsonpath parser
-        // String username = oidcUserInfo.getUserInfo().get("login");
-        String username = null;
+        String username;
         try {
-            String jsonpath = OidcUtil.getJsonpath(oidcState.getOidpId());
-            username = JsonPath.read(userInfoJson, OidcUtil.getJsonpath(oidcState.getOidpId()));
+            username = OidcService.getUsernameFromUserinfo(oidp, userInfoJson);
         } catch (Exception e) {
-            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("failed to get username from the userinfo json");
+        } finally {
+            Loggers.AUTH.info("failed to get username from the userinfo json");
         }
         
         try {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            userDetailsService.loadUserByUsername(username);
         } catch (UsernameNotFoundException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(String.format("user %s is not a nacos user", username));
+        } finally {
+            Loggers.AUTH.info("failed to load user {} from oidp {} from the user details service", username, oidp);
         }
         
-        String token = tokenManager.createToken(username);
-        Authentication authentication = tokenManager.getAuthentication(token);
-        
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        NacosUser user = new NacosUser();
-        user.setUserName(username);
-        user.setToken(token);
-        List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        if (roleInfoList != null) {
-            for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
-                    user.setGlobalAdmin(true);
-                    break;
-                }
-            }
-        }
-        request.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, user);
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put(Constants.ACCESS_TOKEN, user.getToken());
-        result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
-        result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
-        result.put(Constants.USERNAME, user.getUserName());
-        
-        String resultToken = null;
+        String resultToken;
         try {
-            resultToken = new ObjectMapper().writeValueAsString(result);
+            resultToken = oidcService.createNacosInternalToken(username, request);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("error when serializing the result to json");
+                    .body("failed to create nacos internal token");
+        } finally {
+            Loggers.AUTH.info("failed to create nacos internal token for user {}", username);
         }
         
         UriComponentsBuilder redirectUriBuilder = UriComponentsBuilder.fromPath(EnvUtil.getContextPath());
         redirectUriBuilder.queryParam("token", resultToken);
-        
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.setHeader("Location", redirectUriBuilder.toUriString());
         return null;
     }
     
+    /**
+     * the field used now is only the oidpId, when extended, move it outside the controller class.
+     */
     static class OidcState {
         
         @JsonProperty("oidp_id")
@@ -279,92 +222,6 @@ public class OidcAuthController {
         @JsonAnyGetter
         public Map<String, String> getState() {
             return state;
-        }
-    }
-    
-    static class OidcTokenResponse {
-        
-        @JsonProperty("access_token")
-        private String accessToken;
-        
-        @JsonProperty("refresh_token")
-        private String refreshToken;
-        
-        @JsonProperty("exprie_in")
-        private String expireIn;
-        
-        @JsonProperty("expires_in")
-        private String expiresIn;
-        
-        @JsonProperty("token_type")
-        private String tokenType;
-        
-        private String scope;
-        
-        @JsonProperty("id_token")
-        private String idToken;
-        
-        public String getAccessToken() {
-            return accessToken;
-        }
-        
-        public void setAccessToken(String accessToken) {
-            this.accessToken = accessToken;
-        }
-        
-        public String getRefreshToken() {
-            return refreshToken;
-        }
-        
-        public void setRefreshToken(String refreshToken) {
-            this.refreshToken = refreshToken;
-        }
-        
-        public String getExpiresIn() {
-            return expiresIn;
-        }
-        
-        public void setExpiresIn(String expiresIn) {
-            this.expiresIn = expiresIn;
-        }
-        
-        public String getTokenType() {
-            return tokenType;
-        }
-        
-        public void setTokenType(String tokenType) {
-            this.tokenType = tokenType;
-        }
-        
-        public String getScope() {
-            return scope;
-        }
-        
-        public void setScope(String scope) {
-            this.scope = scope;
-        }
-        
-        public String getIdToken() {
-            return idToken;
-        }
-        
-        public void setIdToken(String idToken) {
-            this.idToken = idToken;
-        }
-    }
-    
-    static class OidcUserInfo {
-        
-        private final Map<String, String> userInfo = new HashMap<>();
-        
-        @JsonAnyGetter
-        public Map<String, String> getUserInfo() {
-            return userInfo;
-        }
-        
-        @JsonAnySetter
-        public void setUserInfo(String key, String value) {
-            userInfo.put(key, value);
         }
     }
     

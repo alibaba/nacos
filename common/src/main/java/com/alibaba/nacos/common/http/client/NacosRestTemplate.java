@@ -474,7 +474,6 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
         URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
         if (logger.isDebugEnabled()) {
             logger.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
-            System.out.println("HTTP method: \n" + httpMethod + "\n, url: \n" + uri + "\n, body: \n" + requestEntity.getBody());
         }
         
         ResponseHandler<T> responseHandler = super.selectResponseHandler(responseType);
