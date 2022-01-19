@@ -15,15 +15,11 @@ import java.util.Map;
  */
 public class OidcUtil {
     
-    // TODO: get the callback url dynamically
-    /**
-     * call back url.
-     */
-    private static final String OIDC_CALLBACK_URL = "http://localhost:8848/nacos/v1/auth/oidc/callback";
-    
     /**
      * OIDC keys used in configuration file.
      */
+    private static final String DOMAIN = "domain";
+    
     private static final String OIDPS = "oidps";
     
     private static final String OIDP = "oidp";
@@ -42,8 +38,12 @@ public class OidcUtil {
     
     private static final String SCOPES = "scopes";
     
+    public static String getDomain() {
+        return EnvUtil.getProperty(String.format("%s.%s", OIDP, DOMAIN));
+    }
+    
     public static String getOidcCallbackUrl() {
-        return OIDC_CALLBACK_URL;
+        return String.format("http://%s:%d/nacos/v1/auth/oidc/callback", getDomain(), EnvUtil.getPort());
     }
     
     public static List<String> getOidpList() {
@@ -88,7 +88,7 @@ public class OidcUtil {
         params.put("client_id", OidcUtil.getClientId(oidp));
         params.put("client_secret", OidcUtil.getClientSecret(oidp));
         params.put("code", code);
-        params.put("redirect_uri", OIDC_CALLBACK_URL);
+        params.put("redirect_uri", getOidcCallbackUrl());
         return params;
     }
     
