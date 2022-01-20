@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,9 +41,12 @@ import java.util.List;
 @RequestMapping("/v1/auth/roles")
 public class RoleController {
     
-    @Autowired
-    private NacosRoleServiceImpl roleService;
-    
+    private final NacosRoleServiceImpl roleService;
+
+    public RoleController(NacosRoleServiceImpl roleService) {
+        this.roleService = roleService;
+    }
+
     /**
      * Get roles list.
      *
@@ -56,7 +58,7 @@ public class RoleController {
     @GetMapping
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
-            @RequestParam(name = "username", defaultValue = "") String username) {
+                           @RequestParam(name = "username", defaultValue = "") String username) {
         return roleService.getRolesFromDatabase(username, pageNo, pageSize);
     }
     

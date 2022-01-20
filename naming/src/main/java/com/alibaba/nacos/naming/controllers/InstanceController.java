@@ -26,6 +26,7 @@ import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -48,8 +49,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -76,21 +75,24 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
 public class InstanceController {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private InstanceOperatorClientImpl instanceServiceV2;
+    private final InstanceOperatorClientImpl instanceServiceV2;
     
-    @Autowired
-    private InstanceOperatorServiceImpl instanceServiceV1;
+    private final InstanceOperatorServiceImpl instanceServiceV1;
     
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
+    private final UpgradeJudgement upgradeJudgement;
     
-    public InstanceController() {
+    public InstanceController(SwitchDomain switchDomain,
+                              InstanceOperatorClientImpl instanceServiceV2,
+                              InstanceOperatorServiceImpl instanceServiceV1,
+                              UpgradeJudgement upgradeJudgement) {
         Collection<InstanceExtensionHandler> handlers = NacosServiceLoader.load(InstanceExtensionHandler.class);
         Loggers.SRV_LOG.info("Load instance extension handler {}", handlers);
+        this.switchDomain = switchDomain;
+        this.instanceServiceV2 = instanceServiceV2;
+        this.instanceServiceV1 = instanceServiceV1;
+        this.upgradeJudgement = upgradeJudgement;
     }
     
     /**

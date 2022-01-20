@@ -24,7 +24,6 @@ import com.alibaba.nacos.istio.xds.NacosXdsService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -38,20 +37,27 @@ public class IstioServer {
 
     private Server server;
 
-    @Autowired
-    private IstioConfig istioConfig;
+    private final IstioConfig istioConfig;
 
-    @Autowired
-    private ServerInterceptor serverInterceptor;
+    private final ServerInterceptor serverInterceptor;
 
-    @Autowired
-    private NacosMcpService nacosMcpService;
+    private final NacosMcpService nacosMcpService;
 
-    @Autowired
-    private NacosXdsService nacosXdsService;
+    private final NacosXdsService nacosXdsService;
 
-    @Autowired
-    private NacosResourceManager nacosResourceManager;
+    private final NacosResourceManager nacosResourceManager;
+
+    public IstioServer(IstioConfig istioConfig,
+                       ServerInterceptor serverInterceptor,
+                       NacosMcpService nacosMcpService,
+                       NacosXdsService nacosXdsService,
+                       NacosResourceManager nacosResourceManager) {
+        this.istioConfig = istioConfig;
+        this.serverInterceptor = serverInterceptor;
+        this.nacosMcpService = nacosMcpService;
+        this.nacosXdsService = nacosXdsService;
+        this.nacosResourceManager = nacosResourceManager;
+    }
 
     /**
      * Start.

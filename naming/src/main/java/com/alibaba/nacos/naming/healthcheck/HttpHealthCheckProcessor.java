@@ -29,7 +29,6 @@ import com.alibaba.nacos.naming.misc.HttpClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
@@ -50,14 +49,17 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
     
     public static final String TYPE = "HTTP";
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
+    private final HealthCheckCommon healthCheckCommon;
     
     private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getProcessorNacosAsyncRestTemplate();
-    
+
+    public HttpHealthCheckProcessor(SwitchDomain switchDomain, HealthCheckCommon healthCheckCommon) {
+        this.switchDomain = switchDomain;
+        this.healthCheckCommon = healthCheckCommon;
+    }
+
     @Override
     public String getType() {
         return TYPE;

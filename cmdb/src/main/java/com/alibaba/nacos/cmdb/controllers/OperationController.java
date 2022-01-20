@@ -19,7 +19,6 @@ package com.alibaba.nacos.cmdb.controllers;
 import com.alibaba.nacos.cmdb.memory.CmdbProvider;
 import com.alibaba.nacos.cmdb.utils.UtilsAndCommons;
 import com.alibaba.nacos.core.utils.WebUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,9 +35,12 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping(UtilsAndCommons.NACOS_CMDB_CONTEXT + "/ops")
 public class OperationController {
     
-    @Autowired
-    private CmdbProvider cmdbProvider;
-    
+    private final CmdbProvider cmdbProvider;
+
+    public OperationController(CmdbProvider cmdbProvider) {
+        this.cmdbProvider = cmdbProvider;
+    }
+
     /**
      * query label.
      *

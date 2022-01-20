@@ -24,7 +24,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
@@ -59,11 +58,9 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     
     public static final String TYPE = "TCP";
     
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
+    private final HealthCheckCommon healthCheckCommon;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
     public static final int CONNECT_TIMEOUT_MS = 500;
     
@@ -88,7 +85,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
      *
      * @throws IllegalStateException when construct failed
      */
-    public TcpSuperSenseProcessor() {
+    public TcpSuperSenseProcessor(HealthCheckCommon healthCheckCommon, SwitchDomain switchDomain) {
         try {
             selector = Selector.open();
             
@@ -97,6 +94,8 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
         } catch (Exception e) {
             throw new IllegalStateException("Error while initializing SuperSense(TM).");
         }
+        this.healthCheckCommon = healthCheckCommon;
+        this.switchDomain = switchDomain;
     }
     
     @Override

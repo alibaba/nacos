@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,9 +39,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/v1/auth/permissions")
 public class PermissionController {
     
-    @Autowired
-    private NacosRoleServiceImpl nacosRoleService;
-    
+    private final NacosRoleServiceImpl nacosRoleService;
+
+    public PermissionController(NacosRoleServiceImpl nacosRoleService) {
+        this.nacosRoleService = nacosRoleService;
+    }
+
     /**
      * Query permissions of a role.
      *
@@ -54,7 +56,7 @@ public class PermissionController {
     @GetMapping
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
     public Object getPermissions(@RequestParam int pageNo, @RequestParam int pageSize,
-            @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
+                                 @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.getPermissionsFromDatabase(role, pageNo, pageSize);
     }
     

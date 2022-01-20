@@ -18,20 +18,19 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.combined.DistroHttpCombinedKey;
-import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
-import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -52,15 +51,18 @@ import java.util.Map;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)
 public class DistroController {
     
-    @Autowired
-    private DistroProtocol distroProtocol;
+    private final DistroProtocol distroProtocol;
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
     
-    @Autowired
-    private SwitchDomain switchDomain;
-    
+    private final SwitchDomain switchDomain;
+
+    public DistroController(DistroProtocol distroProtocol, ServiceManager serviceManager, SwitchDomain switchDomain) {
+        this.distroProtocol = distroProtocol;
+        this.serviceManager = serviceManager;
+        this.switchDomain = switchDomain;
+    }
+
     /**
      * Synchronize datum.
      *

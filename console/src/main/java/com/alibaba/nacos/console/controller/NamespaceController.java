@@ -27,7 +27,6 @@ import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,8 +51,7 @@ import java.util.regex.Pattern;
 @RequestMapping("/v1/console/namespaces")
 public class NamespaceController {
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
     
@@ -72,7 +70,11 @@ public class NamespaceController {
     private static final String DEFAULT_TENANT = "";
     
     private static final String DEFAULT_KP = "1";
-    
+
+    public NamespaceController(PersistService persistService) {
+        this.persistService = persistService;
+    }
+
     /**
      * Get namespace list.
      *

@@ -23,12 +23,11 @@ import com.alibaba.nacos.address.misc.Loggers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,15 +47,20 @@ import java.util.List;
 @RequestMapping({AddressServerConstants.ADDRESS_SERVER_REQUEST_URL + "/nodes"})
 public class AddressServerClusterController {
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
     
-    @Autowired
-    private AddressServerManager addressServerManager;
+    private final AddressServerManager addressServerManager;
     
-    @Autowired
-    private AddressServerGeneratorManager addressServerGeneratorManager;
-    
+    private final AddressServerGeneratorManager addressServerGeneratorManager;
+
+    public AddressServerClusterController(ServiceManager serviceManager,
+                                          AddressServerManager addressServerManager,
+                                          AddressServerGeneratorManager addressServerGeneratorManager) {
+        this.serviceManager = serviceManager;
+        this.addressServerManager = addressServerManager;
+        this.addressServerGeneratorManager = addressServerGeneratorManager;
+    }
+
     /**
      * Create new cluster.
      *

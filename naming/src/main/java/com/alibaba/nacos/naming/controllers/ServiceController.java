@@ -48,7 +48,6 @@ import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -75,27 +74,36 @@ import java.util.Optional;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
 public class ServiceController {
     
-    @Autowired
-    protected ServiceManager serviceManager;
+    protected final ServiceManager serviceManager;
     
-    @Autowired
-    private ServerMemberManager memberManager;
+    private final ServerMemberManager memberManager;
     
-    @Autowired
-    private SubscribeManager subscribeManager;
+    private final SubscribeManager subscribeManager;
     
-    @Autowired
-    private ServiceOperatorV1Impl serviceOperatorV1;
+    private final ServiceOperatorV1Impl serviceOperatorV1;
     
-    @Autowired
-    private ServiceOperatorV2Impl serviceOperatorV2;
+    private final ServiceOperatorV2Impl serviceOperatorV2;
     
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
+    private final UpgradeJudgement upgradeJudgement;
     
-    @Autowired
-    private SelectorManager selectorManager;
-    
+    private final SelectorManager selectorManager;
+
+    public ServiceController(ServiceManager serviceManager,
+                             ServerMemberManager memberManager,
+                             SubscribeManager subscribeManager,
+                             ServiceOperatorV1Impl serviceOperatorV1,
+                             ServiceOperatorV2Impl serviceOperatorV2,
+                             UpgradeJudgement upgradeJudgement,
+                             SelectorManager selectorManager) {
+        this.serviceManager = serviceManager;
+        this.memberManager = memberManager;
+        this.subscribeManager = subscribeManager;
+        this.serviceOperatorV1 = serviceOperatorV1;
+        this.serviceOperatorV2 = serviceOperatorV2;
+        this.upgradeJudgement = upgradeJudgement;
+        this.selectorManager = selectorManager;
+    }
+
     /**
      * Create a new service. This API will create a persistence service.
      *

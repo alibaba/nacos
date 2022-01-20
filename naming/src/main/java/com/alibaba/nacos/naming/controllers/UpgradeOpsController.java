@@ -54,7 +54,6 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -109,14 +108,13 @@ public class UpgradeOpsController {
     
     private final UpgradeJudgement upgradeJudgement;
     
-    @Autowired
-    private SelectorManager selectorManager;
+    private final SelectorManager selectorManager;
     
     public UpgradeOpsController(SwitchDomain switchDomain, ServiceManager serviceManager,
-            ServiceOperatorV1Impl serviceOperatorV1, ServiceOperatorV2Impl serviceOperatorV2,
-            InstanceOperatorServiceImpl instanceServiceV1, InstanceOperatorClientImpl instanceServiceV2,
-            ServiceStorage serviceStorage, DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine,
-            UpgradeJudgement upgradeJudgement) {
+                                ServiceOperatorV1Impl serviceOperatorV1, ServiceOperatorV2Impl serviceOperatorV2,
+                                InstanceOperatorServiceImpl instanceServiceV1, InstanceOperatorClientImpl instanceServiceV2,
+                                ServiceStorage serviceStorage, DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine,
+                                UpgradeJudgement upgradeJudgement, SelectorManager selectorManager) {
         this.switchDomain = switchDomain;
         this.serviceManager = serviceManager;
         this.serviceOperatorV1 = serviceOperatorV1;
@@ -126,6 +124,7 @@ public class UpgradeOpsController {
         this.serviceStorage = serviceStorage;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         this.upgradeJudgement = upgradeJudgement;
+        this.selectorManager = selectorManager;
     }
     
     /**

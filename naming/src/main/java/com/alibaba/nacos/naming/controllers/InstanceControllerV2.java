@@ -43,7 +43,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -70,12 +69,15 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
 public class InstanceControllerV2 {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private InstanceOperatorClientImpl instanceServiceV2;
-    
+    private final InstanceOperatorClientImpl instanceServiceV2;
+
+    public InstanceControllerV2(SwitchDomain switchDomain, InstanceOperatorClientImpl instanceServiceV2) {
+        this.switchDomain = switchDomain;
+        this.instanceServiceV2 = instanceServiceV2;
+    }
+
     /**
      * Register new instance.
      *
