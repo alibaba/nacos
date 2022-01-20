@@ -23,6 +23,7 @@ import java.io.Serializable;
  *
  * @author nkorange
  * @author mai.jh
+ * @author xiweng.yy
  * @since 1.2.0
  */
 public class Permission implements Serializable {
@@ -32,7 +33,7 @@ public class Permission implements Serializable {
     /**
      * An unique key of resource.
      */
-    private String resource;
+    private Resource resource;
     
     /**
      * Action on resource, refer to class ActionTypes.
@@ -43,16 +44,16 @@ public class Permission implements Serializable {
     
     }
     
-    public Permission(String resource, String action) {
+    public Permission(Resource resource, String action) {
         this.resource = resource;
         this.action = action;
     }
     
-    public String getResource() {
+    public Resource getResource() {
         return resource;
     }
     
-    public void setResource(String resource) {
+    public void setResource(Resource resource) {
         this.resource = resource;
     }
     

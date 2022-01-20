@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.api.Permission;
@@ -125,8 +126,9 @@ public class AuthFilter implements Filter {
                     // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
-                
-                authManager.auth(new Permission(resource, action), authManager.login(req));
+    
+                Resource resourceObj = new Resource(null, null, resource, secured.signType(), null);
+                authManager.auth(new Permission(resourceObj, action), authManager.login(req));
                 
             }
             chain.doFilter(request, response);

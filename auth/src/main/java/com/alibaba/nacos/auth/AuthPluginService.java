@@ -40,10 +40,10 @@ public interface AuthPluginService {
      * To validate whether the identity context from request is legal or illegal.
      *
      * @param identityContext where we can find the user information
-     * @return IdentityContext user auth result
+     * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException if authentication is failed
      */
-    IdentityContext validateIdentity(IdentityContext identityContext) throws AccessException;
+    boolean validateIdentity(IdentityContext identityContext) throws AccessException;
     
     /**
      * Validate the identity whether has the resource authority.
