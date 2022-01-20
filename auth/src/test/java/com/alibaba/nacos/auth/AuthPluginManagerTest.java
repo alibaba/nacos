@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.api.Permission;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,12 +43,6 @@ public class AuthPluginManagerTest {
     private AuthPluginService authPluginService;
     
     private static final String TYPE = "test";
-    
-    @Mock
-    private IdentityContext identityContext;
-    
-    @Mock
-    private Permission permission;
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
