@@ -51,8 +51,9 @@ public interface AuthPluginService {
      * @param identityContext where we can find the user information.
      * @param permission      permission to auth.
      * @return Boolean if the user has the resource authority.
+     * @throws AccessException if authentication is failed
      */
-    Boolean validateAuthority(IdentityContext identityContext, Permission permission);
+    Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
     
     /**
      * AuthPluginService Name which for conveniently find AuthPluginService instance.
