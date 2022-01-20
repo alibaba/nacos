@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.auth.api;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.io.Serializable;
 import java.util.Properties;
 
@@ -29,6 +31,9 @@ import java.util.Properties;
 public class Resource implements Serializable {
     
     private static final long serialVersionUID = 925971662931204553L;
+    
+    public static final Resource EMPTY_RESOURCE = new Resource(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
+            StringUtils.EMPTY, null);
     
     private final String namespaceId;
     

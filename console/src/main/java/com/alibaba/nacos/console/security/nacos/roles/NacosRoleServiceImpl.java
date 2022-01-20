@@ -132,7 +132,7 @@ public class NacosRoleServiceImpl {
         }
         
         // Old global admin can pass resource 'console/':
-        if (permission.getResource().startsWith(AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX)) {
+        if (permission.getResource().getName().startsWith(AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX)) {
             return false;
         }
         
@@ -146,7 +146,7 @@ public class NacosRoleServiceImpl {
                 String permissionResource = permissionInfo.getResource().replaceAll("\\*", ".*");
                 String permissionAction = permissionInfo.getAction();
                 if (permissionAction.contains(permission.getAction()) && Pattern
-                        .matches(permissionResource, permission.getResource())) {
+                        .matches(permissionResource, permission.getResource().getName())) {
                     return true;
                 }
             }

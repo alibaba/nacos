@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.api.Permission;
@@ -75,8 +76,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                     // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
-                
-                authManager.auth(new Permission(resource, action), authManager.loginRemote(request));
+    
+                Resource resourceObj = new Resource(null, null, resource, secured.signType(), null);
+                authManager.auth(new Permission(resourceObj, action), authManager.loginRemote(request));
                 
             }
         } catch (AccessException e) {
