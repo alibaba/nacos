@@ -19,8 +19,10 @@ package com.alibaba.nacos.console.security.nacos;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.AuthManager;
-import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.auth.AuthPluginService;
+import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.api.Permission;
+import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
@@ -39,6 +41,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -48,7 +52,21 @@ import java.util.List;
  * @since 1.2.0
  */
 @Component
-public class NacosAuthManager implements AuthManager {
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
+public class NacosAuthManager implements AuthManager, AuthPluginService {
+    
+    private static final String AUTH_PLUGIN_TYPE = "nacos";
+    
+    private static final String USER_IDENTITY_PARAM_KEY = "user";
+    
+    private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
+        {
+            add(AuthConstants.AUTHORIZATION_HEADER);
+            add(Constants.ACCESS_TOKEN);
+            add(AuthConstants.PARAM_USERNAME);
+            add(AuthConstants.PARAM_PASSWORD);
+        }
+    };
     
     @Autowired
     private JwtTokenManager tokenManager;
@@ -63,34 +81,8 @@ public class NacosAuthManager implements AuthManager {
     public User login(Object request) throws AccessException {
         HttpServletRequest req = (HttpServletRequest) request;
         String token = resolveToken(req);
-        if (StringUtils.isBlank(token)) {
-            throw new AccessException("user not found!");
-        }
-        
-        try {
-            tokenManager.validateToken(token);
-        } catch (ExpiredJwtException e) {
-            throw new AccessException("token expired!");
-        } catch (Exception e) {
-            throw new AccessException("token invalid!");
-        }
-        
-        Authentication authentication = tokenManager.getAuthentication(token);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        String username = authentication.getName();
-        NacosUser user = new NacosUser();
-        user.setUserName(username);
-        user.setToken(token);
-        List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        if (roleInfoList != null) {
-            for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
-                    user.setGlobalAdmin(true);
-                    break;
-                }
-            }
-        }
+        validate0(token);
+        NacosUser user = getNacosUser(token);
         req.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, user);
         return user;
     }
@@ -99,46 +91,39 @@ public class NacosAuthManager implements AuthManager {
     public User loginRemote(Object request) throws AccessException {
         Request req = (Request) request;
         String token = resolveToken(req);
-        if (StringUtils.isBlank(token)) {
-            throw new AccessException("user not found!");
-        }
-        
-        try {
-            tokenManager.validateToken(token);
-        } catch (ExpiredJwtException e) {
-            throw new AccessException("token expired!");
-        } catch (Exception e) {
-            throw new AccessException("token invalid!");
-        }
-        
-        Authentication authentication = tokenManager.getAuthentication(token);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        
-        String username = authentication.getName();
-        NacosUser user = new NacosUser();
-        user.setUserName(username);
-        user.setToken(token);
-        List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        if (roleInfoList != null) {
-            for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
-                    user.setGlobalAdmin(true);
-                    break;
-                }
-            }
-        }
-        return user;
+        validate0(token);
+        return getNacosUser(token);
     }
     
     @Override
     public void auth(Permission permission, User user) throws AccessException {
-        if (Loggers.AUTH.isDebugEnabled()) {
-            Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
-        }
-        
-        if (!roleService.hasPermission(user.getUserName(), permission)) {
-            throw new AccessException("authorization failed!");
-        }
+        auth0(permission, user);
+    }
+    
+    @Override
+    public Collection<String> identityNames() {
+        return IDENTITY_NAMES;
+    }
+    
+    @Override
+    public boolean validateIdentity(IdentityContext identityContext) throws AccessException {
+        String token = resolveToken(identityContext);
+        validate0(token);
+        NacosUser user = getNacosUser(token);
+        identityContext.setParameter(USER_IDENTITY_PARAM_KEY, user);
+        return true;
+    }
+    
+    @Override
+    public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+        NacosUser user = (NacosUser) identityContext.getParameter(USER_IDENTITY_PARAM_KEY);
+        auth0(permission, user);
+        return true;
+    }
+    
+    @Override
+    public String getAuthServiceName() {
+        return AUTH_PLUGIN_TYPE;
     }
     
     /**
@@ -173,7 +158,20 @@ public class NacosAuthManager implements AuthManager {
             String password = request.getHeader(AuthConstants.PARAM_PASSWORD);
             bearerToken = resolveTokenFromUser(userName, password);
         }
-        
+        return bearerToken;
+    }
+    
+    private String resolveToken(IdentityContext identityContext) throws AccessException {
+        String bearerToken = identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
+            return bearerToken.substring(7);
+        }
+        bearerToken = identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
+        if (StringUtils.isBlank(bearerToken)) {
+            String userName = (String) identityContext.getParameter(AuthConstants.PARAM_USERNAME);
+            String password = (String) identityContext.getParameter(AuthConstants.PARAM_PASSWORD);
+            bearerToken = resolveTokenFromUser(userName, password);
+        }
         return bearerToken;
     }
     
@@ -195,5 +193,49 @@ public class NacosAuthManager implements AuthManager {
         }
         
         return tokenManager.createToken(finalName);
+    }
+    
+    private void validate0(String token) throws AccessException {
+        if (StringUtils.isBlank(token)) {
+            throw new AccessException("user not found!");
+        }
+        
+        try {
+            tokenManager.validateToken(token);
+        } catch (ExpiredJwtException e) {
+            throw new AccessException("token expired!");
+        } catch (Exception e) {
+            throw new AccessException("token invalid!");
+        }
+    }
+    
+    private NacosUser getNacosUser(String token) {
+        Authentication authentication = tokenManager.getAuthentication(token);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        
+        String username = authentication.getName();
+        NacosUser user = new NacosUser();
+        user.setUserName(username);
+        user.setToken(token);
+        List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        if (roleInfoList != null) {
+            for (RoleInfo roleInfo : roleInfoList) {
+                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
+                    user.setGlobalAdmin(true);
+                    break;
+                }
+            }
+        }
+        return user;
+    }
+    
+    private void auth0(Permission permission, User user) throws AccessException {
+        if (Loggers.AUTH.isDebugEnabled()) {
+            Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
+        }
+    
+        if (!roleService.hasPermission(user.getUserName(), permission)) {
+            throw new AccessException("authorization failed!");
+        }
     }
 }

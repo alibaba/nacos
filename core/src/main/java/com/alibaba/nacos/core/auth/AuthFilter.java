@@ -16,20 +16,20 @@
 
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.HttpProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.api.IdentityContext;
+import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.sys.env.Constants;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -51,16 +51,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class AuthFilter implements Filter {
     
-    @Autowired
-    private AuthConfigs authConfigs;
+    private final AuthConfigs authConfigs;
     
-    @Autowired
-    private AuthManager authManager;
+    private final ControllerMethodsCache methodsCache;
     
-    @Autowired
-    private ControllerMethodsCache methodsCache;
+    private final HttpProtocolAuthService protocolAuthService;
     
-    private Map<Class<? extends ResourceParser>, ResourceParser> parserInstance = new ConcurrentHashMap<>();
+    private final Map<Class<? extends ResourceParser>, ResourceParser> parserInstance = new ConcurrentHashMap<>();
+    
+    public AuthFilter(AuthConfigs authConfigs, ControllerMethodsCache methodsCache) {
+        this.authConfigs = authConfigs;
+        this.methodsCache = methodsCache;
+        this.protocolAuthService = new HttpProtocolAuthService(authConfigs);
+        this.protocolAuthService.initialize();
+    }
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -114,22 +118,19 @@ public class AuthFilter implements Filter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                Resource resource = protocolAuthService.parseResource(req, secured);
+                IdentityContext identityContext = protocolAuthService.parseIdentity(req);
+                boolean result = protocolAuthService.validateIdentity(identityContext);
+                if (!result) {
+                    // TODO Get reason of failure
+                    throw new AccessException("Validate Identity failed.");
+                }
                 String action = secured.action().toString();
-                String resource = secured.resource();
-                
-                if (StringUtils.isBlank(resource)) {
-                    ResourceParser parser = getResourceParser(secured.parser());
-                    resource = parser.parseName(req);
+                result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
+                if (!result) {
+                    // TODO Get reason of failure
+                    throw new AccessException("Validate Authority failed.");
                 }
-                
-                if (StringUtils.isBlank(resource)) {
-                    // deny if we don't find any resource:
-                    throw new AccessException("resource name invalid!");
-                }
-    
-                Resource resourceObj = new Resource(null, null, resource, secured.signType(), null);
-                authManager.auth(new Permission(resourceObj, action), authManager.login(req));
-                
             }
             chain.doFilter(request, response);
         } catch (AccessException e) {
@@ -143,15 +144,5 @@ public class AuthFilter implements Filter {
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
         }
-    }
-    
-    private ResourceParser getResourceParser(Class<? extends ResourceParser> parseClass)
-            throws IllegalAccessException, InstantiationException {
-        ResourceParser parser = parserInstance.get(parseClass);
-        if (parser == null) {
-            parser = parseClass.newInstance();
-            parserInstance.put(parseClass, parser);
-        }
-        return parser;
     }
 }

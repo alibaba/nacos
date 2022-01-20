@@ -43,7 +43,7 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
     
     private final HttpIdentityContextBuilder identityContextBuilder;
     
-    protected HttpProtocolAuthService(AuthConfigs authConfigs) {
+    public HttpProtocolAuthService(AuthConfigs authConfigs) {
         super(authConfigs);
         resourceParserMap = new HashMap<>(2);
         identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);

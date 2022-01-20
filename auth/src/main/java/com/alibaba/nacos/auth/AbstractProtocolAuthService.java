@@ -58,7 +58,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     @Override
-    public boolean validateAuthority(IdentityContext identityContext, Permission permission) {
+    public boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
