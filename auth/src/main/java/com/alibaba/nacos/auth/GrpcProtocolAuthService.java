@@ -43,7 +43,7 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
     
     private final GrpcIdentityContextBuilder identityContextBuilder;
     
-    protected GrpcProtocolAuthService(AuthConfigs authConfigs) {
+    public GrpcProtocolAuthService(AuthConfigs authConfigs) {
         super(authConfigs);
         resourceParserMap = new HashMap<>(2);
         identityContextBuilder = new GrpcIdentityContextBuilder(authConfigs);
