@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.auth.context;
 
-import com.alibaba.nacos.auth.AuthPluginManager;
-import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import org.junit.Before;
@@ -27,10 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
-import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -49,9 +44,6 @@ public class HtppIdentityContextBuilderTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private AuthPluginService authPluginService;
-    
-    @Mock
     private HttpServletRequest request;
     
     @Mock
@@ -65,13 +57,7 @@ public class HtppIdentityContextBuilderTest {
     @Before
     public void setUp() throws Exception {
         identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
-        Field authServiceMapField = AuthPluginManager.class.getDeclaredField("authServiceMap");
-        authServiceMapField.setAccessible(true);
-        Map<String, AuthPluginService> authServiceMap = (Map<String, AuthPluginService>) authServiceMapField
-                .get(AuthPluginManager.getInstance());
-        authServiceMap.put(TEST_PLUGIN, authPluginService);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
-        when(authPluginService.identityNames()).thenReturn(Collections.singletonList(IDENTITY_TEST_KEY));
     }
     
     @Test
