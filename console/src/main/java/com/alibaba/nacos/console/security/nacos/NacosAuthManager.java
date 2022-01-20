@@ -19,7 +19,6 @@ package com.alibaba.nacos.console.security.nacos;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.AuthManager;
-import com.alibaba.nacos.auth.AuthPluginService;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.exception.AccessException;
@@ -41,8 +40,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -52,21 +49,7 @@ import java.util.List;
  * @since 1.2.0
  */
 @Component
-@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosAuthManager implements AuthManager, AuthPluginService {
-    
-    private static final String AUTH_PLUGIN_TYPE = "nacos";
-    
-    private static final String USER_IDENTITY_PARAM_KEY = "user";
-    
-    private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
-        {
-            add(AuthConstants.AUTHORIZATION_HEADER);
-            add(Constants.ACCESS_TOKEN);
-            add(AuthConstants.PARAM_USERNAME);
-            add(AuthConstants.PARAM_PASSWORD);
-        }
-    };
+public class NacosAuthManager implements AuthManager {
     
     @Autowired
     private JwtTokenManager tokenManager;
@@ -87,6 +70,12 @@ public class NacosAuthManager implements AuthManager, AuthPluginService {
         return user;
     }
     
+    User login(IdentityContext identityContext) throws AccessException {
+        String token = resolveToken(identityContext);
+        validate0(token);
+        return getNacosUser(token);
+    }
+    
     @Override
     public User loginRemote(Object request) throws AccessException {
         Request req = (Request) request;
@@ -97,33 +86,13 @@ public class NacosAuthManager implements AuthManager, AuthPluginService {
     
     @Override
     public void auth(Permission permission, User user) throws AccessException {
-        auth0(permission, user);
-    }
-    
-    @Override
-    public Collection<String> identityNames() {
-        return IDENTITY_NAMES;
-    }
-    
-    @Override
-    public boolean validateIdentity(IdentityContext identityContext) throws AccessException {
-        String token = resolveToken(identityContext);
-        validate0(token);
-        NacosUser user = getNacosUser(token);
-        identityContext.setParameter(USER_IDENTITY_PARAM_KEY, user);
-        return true;
-    }
-    
-    @Override
-    public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
-        NacosUser user = (NacosUser) identityContext.getParameter(USER_IDENTITY_PARAM_KEY);
-        auth0(permission, user);
-        return true;
-    }
-    
-    @Override
-    public String getAuthServiceName() {
-        return AUTH_PLUGIN_TYPE;
+        if (Loggers.AUTH.isDebugEnabled()) {
+            Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
+        }
+        
+        if (!roleService.hasPermission(user.getUserName(), permission)) {
+            throw new AccessException("authorization failed!");
+        }
     }
     
     /**
@@ -227,15 +196,5 @@ public class NacosAuthManager implements AuthManager, AuthPluginService {
             }
         }
         return user;
-    }
-    
-    private void auth0(Permission permission, User user) throws AccessException {
-        if (Loggers.AUTH.isDebugEnabled()) {
-            Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
-        }
-    
-        if (!roleService.hasPermission(user.getUserName(), permission)) {
-            throw new AccessException("authorization failed!");
-        }
     }
 }
