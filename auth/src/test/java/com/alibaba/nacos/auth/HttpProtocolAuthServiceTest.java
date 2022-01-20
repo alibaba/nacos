@@ -73,7 +73,7 @@ public class HttpProtocolAuthServiceTest {
         Secured secured = getMethodSecure("testParseResourceWithSpecifiedResource");
         Resource actual = httpProtocolAuthService.parseResource(request, secured);
         assertEquals("testResource", actual.getName());
-        assertEquals(SignType.NAMING, actual.getType());
+        assertEquals(SignType.SPECIFIED, actual.getType());
         assertNull(actual.getNamespaceId());
         assertNull(actual.getGroup());
         assertNull(actual.getProperties());
@@ -131,13 +131,13 @@ public class HttpProtocolAuthServiceTest {
     }
     
     @Test
-    public void testValidateAuthorityWithoutPlugin() {
+    public void testValidateAuthorityWithoutPlugin() throws AccessException {
         assertTrue(httpProtocolAuthService
                 .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
     }
     
     @Test
-    public void testValidateAuthorityWithPlugin() {
+    public void testValidateAuthorityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(httpProtocolAuthService
                 .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));

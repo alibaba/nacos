@@ -83,7 +83,7 @@ public class GrpcProtocolAuthServiceTest {
         Secured secured = getMethodSecure("testParseResourceWithSpecifiedResource");
         Resource actual = protocolAuthService.parseResource(namingRequest, secured);
         assertEquals("testResource", actual.getName());
-        assertEquals(SignType.NAMING, actual.getType());
+        assertEquals(SignType.SPECIFIED, actual.getType());
         assertNull(actual.getNamespaceId());
         assertNull(actual.getGroup());
         assertNull(actual.getProperties());
@@ -141,13 +141,13 @@ public class GrpcProtocolAuthServiceTest {
     }
     
     @Test
-    public void testValidateAuthorityWithoutPlugin() {
+    public void testValidateAuthorityWithoutPlugin() throws AccessException {
         assertTrue(protocolAuthService
                 .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
     }
     
     @Test
-    public void testValidateAuthorityWithPlugin() {
+    public void testValidateAuthorityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(protocolAuthService
                 .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));

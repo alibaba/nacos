@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.SignType;
 import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.util.Loggers;
 
@@ -79,6 +80,6 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
      * @return resource
      */
     protected Resource parseSpecifiedResource(Secured secured) {
-        return new Resource(null, null, secured.resource(), secured.signType(), null);
+        return new Resource(null, null, secured.resource(), SignType.SPECIFIED, null);
     }
 }

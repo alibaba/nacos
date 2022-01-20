@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.console.security.nacos.roles;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.auth.api.Permission;
+import com.alibaba.nacos.auth.api.Resource;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.auth.constant.SignType;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;
@@ -115,7 +118,7 @@ public class NacosRoleServiceImpl {
      */
     public boolean hasPermission(String username, Permission permission) {
         //update password
-        if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource())) {
+        if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource().getName())) {
             return true;
         }
         
@@ -146,7 +149,7 @@ public class NacosRoleServiceImpl {
                 String permissionResource = permissionInfo.getResource().replaceAll("\\*", ".*");
                 String permissionAction = permissionInfo.getAction();
                 if (permissionAction.contains(permission.getAction()) && Pattern
-                        .matches(permissionResource, permission.getResource().getName())) {
+                        .matches(permissionResource, joinResource(permission.getResource()))) {
                     return true;
                 }
             }
@@ -250,5 +253,30 @@ public class NacosRoleServiceImpl {
     
     public List<String> findRolesLikeRoleName(String role) {
         return rolePersistService.findRolesLikeRoleName(role);
+    }
+    
+    private String joinResource(Resource resource) {
+        if (SignType.SPECIFIED.equals(resource.getType())) {
+            return resource.getName();
+        }
+        StringBuilder result = new StringBuilder();
+        String namespaceId = resource.getNamespaceId();
+        if (StringUtils.isNotBlank(namespaceId)) {
+            result.append(namespaceId);
+        }
+        String group = resource.getGroup();
+        if (StringUtils.isBlank(group)) {
+            result.append(Constants.Resource.SPLITTER).append('*');
+        } else {
+            result.append(Constants.Resource.SPLITTER).append(group);
+        }
+        String resourceName = resource.getName();
+        if (StringUtils.isBlank(resourceName)) {
+            result.append(Constants.Resource.SPLITTER).append(resource.getType().toLowerCase()).append("/*");
+        } else {
+            result.append(Constants.Resource.SPLITTER).append(resource.getType().toLowerCase()).append('/')
+                    .append(resourceName);
+        }
+        return result.toString();
     }
 }
