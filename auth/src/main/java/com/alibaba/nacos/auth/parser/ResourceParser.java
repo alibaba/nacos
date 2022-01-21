@@ -35,15 +35,4 @@ public interface ResourceParser<R> {
      * @return resource
      */
     Resource parse(R request, String type);
-    
-    /**
-     * Parse a unique name of the resource from the request.
-     *
-     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request, we use a
-     *                Object type for future accommodation.
-     * @return resource name
-     * @deprecated replaced by {@link ResourceParser#parse(Object, String)}
-     */
-    @Deprecated
-    String parseName(Object request);
 }

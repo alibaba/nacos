@@ -68,9 +68,4 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return custom properties
      */
     protected abstract Properties getProperties(R request);
-    
-    @Override
-    public String parseName(Object request) {
-        return null;
-    }
 }
