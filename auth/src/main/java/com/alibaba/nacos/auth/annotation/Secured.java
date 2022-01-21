@@ -57,10 +57,9 @@ public @interface Secured {
     String signType() default SignType.NAMING;
     
     /**
-     * Custom resource parser. Should have lower priority than resource().
+     * Custom resource parser. Should have lower priority than resource() and typed parser.
      *
      * @return class type of resource parser
      */
-    @Deprecated
     Class<? extends ResourceParser> parser() default DefaultResourceParser.class;
 }
