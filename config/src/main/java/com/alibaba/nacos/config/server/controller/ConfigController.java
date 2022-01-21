@@ -118,22 +118,21 @@ public class ConfigController {
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
-            @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "desc", required = false) String desc,
-            @RequestParam(value = "use", required = false) String use,
-            @RequestParam(value = "effect", required = false) String effect,
-            @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "schema", required = false) String schema) throws NacosException {
+    public Boolean publishConfig(HttpServletRequest request,
+                                 @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
+                                 @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+                                 @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
+                                 @RequestParam(value = "appName", required = false) String appName,
+                                 @RequestParam(value = "config_tags", required = false) String configTags,
+                                 @RequestParam(value = "desc", required = false) String desc,
+                                 @RequestParam(value = "use", required = false) String use,
+                                 @RequestParam(value = "effect", required = false) String effect,
+                                 @RequestParam(value = "type", required = false) String type,
+                                 @RequestParam(value = "schema", required = false) String schema) throws NacosException {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
-        srcUser = RequestUtil.getSrcUserName(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
         //check type
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
@@ -216,8 +215,7 @@ public class ConfigController {
      */
     @GetMapping(params = "show=all")
     @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    public ConfigAllInfo detailConfigInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
             throws NacosException {
         // check tenant
@@ -268,8 +266,7 @@ public class ConfigController {
      */
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(value = "ids") List<Long> ids) {
+    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
@@ -778,8 +775,8 @@ public class ConfigController {
     @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "tenant", required = true) String namespace,
-            @RequestBody(required = true) List<SameNamespaceCloneConfigBean> configBeansList,
+            @RequestParam(value = "tenant") String namespace,
+            @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
