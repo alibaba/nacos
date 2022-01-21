@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import org.junit.Before;
 import org.junit.Test;
 

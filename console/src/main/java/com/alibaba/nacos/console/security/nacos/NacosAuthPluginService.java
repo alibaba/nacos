@@ -17,10 +17,10 @@
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.AuthPluginService;
-import com.alibaba.nacos.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.api.Permission;
-import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.console.security.nacos.constant.AuthConstants;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;

@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.auth.context;
 
-import com.alibaba.nacos.auth.AuthPluginManager;
-import com.alibaba.nacos.auth.AuthPluginService;
-import com.alibaba.nacos.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 
 import javax.servlet.http.HttpServletRequest;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.api;
+package com.alibaba.nacos.plugin.auth.api;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 

@@ -14,20 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.constant;
+package com.alibaba.nacos.plugin.auth.constant;
 
 /**
- * Auth sign type.
+ * Resource action type definitions.
  *
- * @author xiweng.yy
+ * @author nkorange
+ * @author mai.jh
+ * @since 1.2.0
  */
-public class SignType {
+public enum ActionTypes {
+    /**
+     * Read.
+     */
+    READ("r"),
+    /**
+     * Write.
+     */
+    WRITE("w");
     
-    public static final String NAMING = "naming";
+    private final String action;
     
-    public static final String CONFIG = "config";
+    ActionTypes(String action) {
+        this.action = action;
+    }
     
-    public static final String CONSOLE = "console";
-    
-    public static final String SPECIFIED = "specified";
+    @Override
+    public String toString() {
+        return action;
+    }
 }

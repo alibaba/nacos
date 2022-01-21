@@ -41,6 +41,11 @@
             <artifactId>nacos-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-auth-plugin</artifactId>
+            <version>${version}</version>
+        </dependency>
+        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-sys</artifactId>
         </dependency>

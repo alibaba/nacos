@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.parser;
 
-import com.alibaba.nacos.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 
 /**
  * Resource parser.

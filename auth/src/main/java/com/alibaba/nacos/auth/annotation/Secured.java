@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.auth.annotation;
 
-import com.alibaba.nacos.auth.constant.ActionTypes;
-import com.alibaba.nacos.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.StringUtils;

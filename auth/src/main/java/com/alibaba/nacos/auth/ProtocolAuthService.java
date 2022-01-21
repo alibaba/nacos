@@ -17,10 +17,10 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.api.Permission;
-import com.alibaba.nacos.auth.api.Resource;
-import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 
 /**
  * Protocol auth service.

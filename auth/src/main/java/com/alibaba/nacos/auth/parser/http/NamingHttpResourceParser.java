@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
