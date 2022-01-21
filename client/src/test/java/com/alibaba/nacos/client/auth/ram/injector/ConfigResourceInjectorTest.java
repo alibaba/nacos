@@ -17,10 +17,11 @@
 package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,7 +46,7 @@ public class ConfigResourceInjectorTest {
         ramContext.setAccessKey(PropertyKeyConst.ACCESS_KEY);
         ramContext.setSecretKey(PropertyKeyConst.SECRET_KEY);
         resource = new RequestResource();
-        resource.setType(RequestResource.CONFIG);
+        resource.setType(SignType.CONFIG);
         resource.setNamespace("tenant");
         resource.setGroup("group");
         cachedSecurityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();

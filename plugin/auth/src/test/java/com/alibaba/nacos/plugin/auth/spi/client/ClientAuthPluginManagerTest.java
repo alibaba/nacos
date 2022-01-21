@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth;
+package com.alibaba.nacos.plugin.auth.spi.client;
 
-import com.alibaba.nacos.client.auth.spi.ClientAuthService;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,7 +28,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * {@link com.alibaba.nacos.client.auth.ClientAuthPluginManager} unit test.
+ * {@link ClientAuthPluginManager} unit test.
  *
  * @author wuyfee
  * @date 2021-08-12 12:56
@@ -39,7 +38,7 @@ import java.util.Set;
 public class ClientAuthPluginManagerTest {
     
     private ClientAuthPluginManager clientAuthPluginManager;
-
+    
     @Mock
     private List<String> serverlist;
     

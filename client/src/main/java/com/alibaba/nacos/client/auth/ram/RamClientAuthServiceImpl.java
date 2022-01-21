@@ -18,15 +18,16 @@ package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.ConfigResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.NamingResourceInjector;
-import com.alibaba.nacos.client.auth.spi.AbstractClientAuthService;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
-import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +51,8 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
     public RamClientAuthServiceImpl() {
         ramContext = new RamContext();
         resourceInjectors = new HashMap<>();
-        resourceInjectors.put(RequestResource.NAMING, new NamingResourceInjector());
-        resourceInjectors.put(RequestResource.CONFIG, new ConfigResourceInjector());
+        resourceInjectors.put(SignType.NAMING, new NamingResourceInjector());
+        resourceInjectors.put(SignType.CONFIG, new ConfigResourceInjector());
     }
     
     @Override

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth.spi;
+package com.alibaba.nacos.plugin.auth.api;
+
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 
 /**
  * Request resources.
@@ -22,10 +24,6 @@ package com.alibaba.nacos.client.auth.spi;
  * @author xiweng.yy
  */
 public class RequestResource {
-    
-    public static final String NAMING = "naming";
-    
-    public static final String CONFIG = "config";
     
     /**
      * Request type: naming or config.
@@ -81,7 +79,7 @@ public class RequestResource {
      */
     public static Builder namingBuilder() {
         Builder result = new Builder();
-        result.setType(NAMING);
+        result.setType(SignType.NAMING);
         return result;
     }
     
@@ -92,7 +90,7 @@ public class RequestResource {
      */
     public static Builder configBuilder() {
         Builder result = new Builder();
-        result.setType(CONFIG);
+        result.setType(SignType.CONFIG);
         return result;
     }
     

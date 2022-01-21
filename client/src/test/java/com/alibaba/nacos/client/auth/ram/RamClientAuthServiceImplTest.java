@@ -17,9 +17,9 @@
 package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.junit.Before;
 import org.junit.Test;
