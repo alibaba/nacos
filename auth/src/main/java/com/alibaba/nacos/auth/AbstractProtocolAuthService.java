@@ -17,14 +17,14 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 
@@ -83,5 +83,22 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
      */
     protected Resource parseSpecifiedResource(Secured secured) {
         return new Resource(null, null, secured.resource(), SignType.SPECIFIED, null);
+    }
+    
+    /**
+     * Parse resource by specified resource parser.
+     *
+     * @param secured secured annotation
+     * @param request request
+     * @return resource
+     */
+    protected Resource useSpecifiedParserToParse(Secured secured, R request) {
+        try {
+            return secured.parser().newInstance().parse(request, secured.signType());
+        } catch (Exception e) {
+            Loggers.AUTH.error("Use specified resource parser {} parse resource failed.",
+                    secured.parser().getCanonicalName(), e);
+            return Resource.EMPTY_RESOURCE;
+        }
     }
 }
