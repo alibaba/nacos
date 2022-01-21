@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.exception;
-
-import com.alibaba.nacos.api.exception.NacosException;
+package com.alibaba.nacos.plugin.auth.constant;
 
 /**
- * Exception to be thrown if authorization is failed.
+ * Auth sign type.
  *
- * @author nkorange
- * @author mai.jh
- * @since 1.2.0
+ * @author xiweng.yy
  */
-public class AccessException extends NacosException {
+public class SignType {
     
-    private static final long serialVersionUID = -2926344920552803270L;
+    public static final String NAMING = "naming";
     
-    public AccessException() {
+    public static final String CONFIG = "config";
     
-    }
+    public static final String CONSOLE = "console";
     
-    public AccessException(int code) {
-        this.setErrCode(code);
-    }
-    
-    public AccessException(String msg) {
-        this.setErrMsg(msg);
-    }
-    
+    public static final String SPECIFIED = "specified";
 }

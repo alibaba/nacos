@@ -612,6 +612,7 @@
         <module>consistency</module>
         <module>auth</module>
         <module>sys</module>
+        <module>plugin</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->

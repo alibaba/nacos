@@ -17,10 +17,10 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.parser.http.AbstractHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.ConfigHttpResourceParser;

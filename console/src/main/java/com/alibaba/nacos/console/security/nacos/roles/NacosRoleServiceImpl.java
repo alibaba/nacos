@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.console.security.nacos.roles;
 
-import com.alibaba.nacos.auth.api.Permission;
-import com.alibaba.nacos.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.auth.constant.Constants;
-import com.alibaba.nacos.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;

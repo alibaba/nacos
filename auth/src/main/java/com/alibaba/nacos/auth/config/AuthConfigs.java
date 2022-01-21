@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.config;
 
-import com.alibaba.nacos.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;

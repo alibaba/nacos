@@ -18,10 +18,10 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.console.security.nacos.constant.AuthSystemTypes;
-import com.alibaba.nacos.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;

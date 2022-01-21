@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth;
+package com.alibaba.nacos.plugin.auth.spi.server;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * {@link com.alibaba.nacos.auth.AuthPluginManager} unit test.
+ * {@link AuthPluginManager} unit test.
  *
  * @author wuyfee
  * @date 2021-08-12 12:56

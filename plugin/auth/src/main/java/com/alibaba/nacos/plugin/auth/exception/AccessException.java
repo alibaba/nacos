@@ -14,33 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.constant;
+package com.alibaba.nacos.plugin.auth.exception;
+
+import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Resource action type definitions.
+ * Exception to be thrown if authorization is failed.
  *
  * @author nkorange
  * @author mai.jh
  * @since 1.2.0
  */
-public enum ActionTypes {
-    /**
-     * Read.
-     */
-    READ("r"),
-    /**
-     * Write.
-     */
-    WRITE("w");
+public class AccessException extends NacosException {
     
-    private final String action;
+    private static final long serialVersionUID = -2926344920552803270L;
     
-    ActionTypes(String action) {
-        this.action = action;
+    public AccessException() {
+    
     }
     
-    @Override
-    public String toString() {
-        return action;
+    public AccessException(int code) {
+        this.setErrCode(code);
     }
+    
+    public AccessException(String msg) {
+        this.setErrMsg(msg);
+    }
+    
 }

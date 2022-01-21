@@ -18,7 +18,7 @@ package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,7 +97,7 @@ public class NamingHttpResourceParserTest {
         Resource actual = resourceParser.parse(request, Constants.Naming.NAMING_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
-        assertEquals(com.alibaba.nacos.auth.constant.Constants.Resource.ANY, actual.getName());
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
     
@@ -106,8 +106,8 @@ public class NamingHttpResourceParserTest {
         Mockito.when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNs");
         Resource actual = resourceParser.parse(request, Constants.Naming.NAMING_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
-        assertEquals(com.alibaba.nacos.auth.constant.Constants.Resource.ANY, actual.getGroup());
-        assertEquals(com.alibaba.nacos.auth.constant.Constants.Resource.ANY, actual.getName());
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getGroup());
+        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
 }
