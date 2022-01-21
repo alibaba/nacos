@@ -17,8 +17,6 @@
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.api.Permission;
 import com.alibaba.nacos.auth.exception.AccessException;
@@ -49,7 +47,7 @@ import java.util.List;
  * @since 1.2.0
  */
 @Component
-public class NacosAuthManager implements AuthManager {
+public class NacosAuthManager {
     
     @Autowired
     private JwtTokenManager tokenManager;
@@ -60,7 +58,13 @@ public class NacosAuthManager implements AuthManager {
     @Autowired
     private NacosRoleServiceImpl roleService;
     
-    @Override
+    /**
+     * Authentication of request, identify the user who request the resource.
+     *
+     * @param request where we can find the user information
+     * @return user related to this request, null if no user info is found.
+     * @throws AccessException if authentication is failed
+     */
     public User login(Object request) throws AccessException {
         HttpServletRequest req = (HttpServletRequest) request;
         String token = resolveToken(req);
@@ -76,15 +80,13 @@ public class NacosAuthManager implements AuthManager {
         return getNacosUser(token);
     }
     
-    @Override
-    public User loginRemote(Object request) throws AccessException {
-        Request req = (Request) request;
-        String token = resolveToken(req);
-        validate0(token);
-        return getNacosUser(token);
-    }
-    
-    @Override
+    /**
+     * Authorization of request, constituted with resource and user.
+     *
+     * @param permission permission to auth
+     * @param user       user who wants to access the resource.
+     * @throws AccessException if authorization is failed
+     */
     public void auth(Permission permission, User user) throws AccessException {
         if (Loggers.AUTH.isDebugEnabled()) {
             Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
@@ -110,23 +112,6 @@ public class NacosAuthManager implements AuthManager {
             bearerToken = resolveTokenFromUser(userName, password);
         }
         
-        return bearerToken;
-    }
-    
-    /**
-     * Get token from header.
-     */
-    private String resolveToken(Request request) throws AccessException {
-        String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
-            return bearerToken.substring(7);
-        }
-        bearerToken = request.getHeader(Constants.ACCESS_TOKEN);
-        if (StringUtils.isBlank(bearerToken)) {
-            String userName = request.getHeader(AuthConstants.PARAM_USERNAME);
-            String password = request.getHeader(AuthConstants.PARAM_PASSWORD);
-            bearerToken = resolveTokenFromUser(userName, password);
-        }
         return bearerToken;
     }
     
