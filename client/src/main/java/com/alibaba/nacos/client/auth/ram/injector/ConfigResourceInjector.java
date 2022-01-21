@@ -18,9 +18,9 @@ package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;

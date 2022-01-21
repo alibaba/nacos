@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.auth.spi;
+package com.alibaba.nacos.plugin.auth.spi.client;
 
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 

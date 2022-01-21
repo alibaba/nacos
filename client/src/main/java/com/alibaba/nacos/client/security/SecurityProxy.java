@@ -17,10 +17,10 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.auth.ClientAuthPluginManager;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
-import com.alibaba.nacos.client.auth.spi.ClientAuthService;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 

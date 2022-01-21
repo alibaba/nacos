@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.auth.impl.process;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
-import com.alibaba.nacos.client.auth.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;

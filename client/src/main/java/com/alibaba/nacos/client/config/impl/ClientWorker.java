@@ -37,7 +37,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;

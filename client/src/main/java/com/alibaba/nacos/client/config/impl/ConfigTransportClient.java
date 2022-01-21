@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.auth.spi.RequestResource;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ParamUtil;
