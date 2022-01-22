@@ -45,8 +45,8 @@ public class MetricsMonitor {
         return NACOS_MONITOR.labels("naming", "listenConfigCount");
     }
     
-    public static Histogram.Timer getConfigRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("config", method, url, code).startTimer();
+    public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
+        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("config", method, url, code);
     }
     
     public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
