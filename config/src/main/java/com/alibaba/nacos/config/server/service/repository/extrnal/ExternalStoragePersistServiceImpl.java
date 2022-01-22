@@ -111,7 +111,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
     
     private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
-    
+
     private static final String PATTERN_STR = "*";
     
     private static final int QUERY_LIMIT_SIZE = 50;
@@ -2583,6 +2583,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
