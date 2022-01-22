@@ -148,9 +148,9 @@ public class HttpClientManager {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConnectionTimeToLive(500, TimeUnit.MILLISECONDS)
-                    .setMaxConnTotal(Runtime.getRuntime().availableProcessors() * 2)
-                    .setMaxConnPerRoute(Runtime.getRuntime().availableProcessors()).setMaxRedirects(0).build();
+            return HttpClientConfig.builder().setConnectionTimeToLive(-1, TimeUnit.MILLISECONDS)
+                    .setMaxConnTotal(2000)
+                    .setMaxConnPerRoute(200).setMaxRedirects(0).build();
         }
         
         @Override
