@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.heartbeat.BeatCheckTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -93,7 +94,10 @@ public class ClientBeatCheckTask implements BeatCheckTask {
                 return;
             }
             
-            List<Instance> instances = service.allIPs(true);
+            // only all the instances of the service in container have latest lastBeat.
+            ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
+            Service serviceInContainer = serviceManager.getService(service.getNamespaceId(), service.getName());
+            List<Instance> instances = serviceInContainer.allIPs(true);
             
             // first set health status of instances:
             for (Instance instance : instances) {
