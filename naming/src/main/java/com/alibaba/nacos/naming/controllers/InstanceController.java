@@ -352,6 +352,9 @@ public class InstanceController {
         result.put("weight", instance.getWeight());
         result.put("healthy", instance.isHealthy());
         result.put("instanceId", instance.getInstanceId());
+        if (instance instanceof com.alibaba.nacos.naming.core.Instance) {
+            result.put("lastBeat", ((com.alibaba.nacos.naming.core.Instance) instance).getLastBeat());
+        }
         result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
         return result;
     }
