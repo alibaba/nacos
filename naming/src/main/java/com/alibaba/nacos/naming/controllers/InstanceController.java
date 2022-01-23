@@ -446,6 +446,7 @@ public class InstanceController {
                 result.put("weight", instance.getWeight());
                 result.put("healthy", instance.isHealthy());
                 result.put("instanceId", instance.getInstanceId());
+                result.put("lastBeat", instance.getLastBeat());
                 result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
                 return result;
             }

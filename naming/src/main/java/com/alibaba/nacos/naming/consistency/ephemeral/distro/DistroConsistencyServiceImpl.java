@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
@@ -191,6 +192,14 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 if (!dataStore.contains(entry.getKey()) || dataStore.get(entry.getKey()).value == null || !dataStore
                         .get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
                     toUpdateKeys.add(entry.getKey());
+                } else {
+                    // update lastBeat of the healthy instances of the service which checksum is equal.
+                    Instances instances = (Instances) dataStore.get(entry.getKey()).value;
+                    for (Instance instance : instances.getInstanceList()) {
+                        if (instance.isHealthy()) {
+                            instance.setLastBeat(System.currentTimeMillis());
+                        }
+                    }
                 }
             }
             
