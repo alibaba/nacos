@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.push.v2.task;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -83,7 +84,7 @@ public class PushDelayTaskExecuteEngine extends NacosDelayTaskExecuteEngine {
     
     @Override
     protected void processTasks() {
-        if (!switchDomain.isPushEnabled()) {
+        if (!switchDomain.isPushEnabled() || ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
             return;
         }
         super.processTasks();

@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -300,7 +301,7 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
      */
     public boolean canEnablePush(String agent) {
         
-        if (!switchDomain.isPushEnabled()) {
+        if (!switchDomain.isPushEnabled() || ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
             return false;
         }
         

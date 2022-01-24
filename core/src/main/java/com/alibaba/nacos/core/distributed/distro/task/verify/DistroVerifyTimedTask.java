@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteTaskExecuteEngine;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 
 import java.util.List;
 
@@ -50,6 +51,10 @@ public class DistroVerifyTimedTask implements Runnable {
     @Override
     public void run() {
         try {
+            if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+                Loggers.DISTRO.warn("server is temporarily waiting for first beat from all clients ...");
+                return;
+            }
             List<Member> targetServer = serverMemberManager.allMembersWithoutSelf();
             if (Loggers.DISTRO.isDebugEnabled()) {
                 Loggers.DISTRO.debug("server list is: {}", targetServer);
