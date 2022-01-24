@@ -70,7 +70,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-auth-plugin</artifactId>
-            <version>${version}</version>
         </dependency>
         
         <dependency>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth.condition;
+package com.alibaba.nacos.core.code.condition;
 
 import org.springframework.util.ObjectUtils;
 

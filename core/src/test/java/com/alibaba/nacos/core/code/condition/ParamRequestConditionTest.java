@@ -15,7 +15,7 @@
  *
  */
 
-package com.alibaba.nacos.core.auth.condition;
+package com.alibaba.nacos.core.code.condition;
 
 import org.junit.Assert;
 import org.junit.Before;

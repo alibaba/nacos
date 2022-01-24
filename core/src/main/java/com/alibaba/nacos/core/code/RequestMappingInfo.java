@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.auth;
+package com.alibaba.nacos.core.code;
 
-import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
-import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
+import com.alibaba.nacos.core.code.condition.ParamRequestCondition;
+import com.alibaba.nacos.core.code.condition.PathRequestCondition;
 
 import java.util.Comparator;
 
