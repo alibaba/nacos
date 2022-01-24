@@ -17,10 +17,10 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.console.security.nacos.constant.AuthSystemTypes;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.console.security.nacos.NacosAuthManager;
-import com.alibaba.nacos.console.security.nacos.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;
