@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -383,6 +384,12 @@ public class InstanceController {
     @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode list(HttpServletRequest request) throws Exception {
         
+        if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+            result.put("listFailedCause", "server is temporarily waiting for first beat from all clients, retry later");
+            Loggers.SRV_LOG.info("LIST: server is temporarily waiting for first beat from all clients, the query request is rejected.");
+            return result;
+        }
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         NamingUtils.checkServiceNameFormat(serviceName);

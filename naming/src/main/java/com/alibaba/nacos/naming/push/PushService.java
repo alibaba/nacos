@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -388,7 +389,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      */
     public boolean canEnablePush(String agent) {
         
-        if (!switchDomain.isPushEnabled()) {
+        if (!switchDomain.isPushEnabled() || ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
             return false;
         }
         

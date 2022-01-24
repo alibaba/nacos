@@ -53,6 +53,8 @@ public class DistroProtocol {
     
     private volatile boolean isInitialized = false;
     
+    private volatile long initializedTime;
+    
     public DistroProtocol(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroTaskEngineHolder distroTaskEngineHolder, DistroConfig distroConfig) {
         this.memberManager = memberManager;
@@ -65,6 +67,7 @@ public class DistroProtocol {
     private void startDistroTask() {
         if (EnvUtil.getStandaloneMode()) {
             isInitialized = true;
+            initializedTime = System.currentTimeMillis();
             return;
         }
         startVerifyTask();
@@ -76,6 +79,7 @@ public class DistroProtocol {
             @Override
             public void onSuccess() {
                 isInitialized = true;
+                initializedTime = System.currentTimeMillis();
             }
             
             @Override
@@ -94,6 +98,14 @@ public class DistroProtocol {
     
     public boolean isInitialized() {
         return isInitialized;
+    }
+    
+    public long getInitializedTime() {
+        return initializedTime;
+    }
+    
+    public void resetInitializedTime() {
+        initializedTime = System.currentTimeMillis();
     }
     
     /**

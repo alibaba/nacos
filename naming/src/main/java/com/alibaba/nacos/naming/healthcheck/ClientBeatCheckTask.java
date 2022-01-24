@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -85,6 +86,10 @@ public class ClientBeatCheckTask implements Runnable {
                 return;
             }
             
+            if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+                return;
+            }
+
             // only all the instances of the service in container have latest lastBeat.
             ServiceManager serviceManager = ApplicationUtils.getBean(ServiceManager.class);
             Service serviceInContainer = serviceManager.getService(service.getNamespaceId(), service.getName());

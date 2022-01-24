@@ -22,9 +22,12 @@ import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -131,6 +134,8 @@ public class DistroMapper extends MemberChangeListener {
     
     @Override
     public void onEvent(MembersChangeEvent event) {
+        DistroProtocol distroProtocol = ApplicationUtils.getBean(DistroProtocol.class);
+        distroProtocol.resetInitializedTime();
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
         List<String> list = MemberUtil.simpleMembers(MemberUtil.selectTargetMembers(event.getMembers(),
