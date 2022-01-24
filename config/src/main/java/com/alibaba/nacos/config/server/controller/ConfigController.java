@@ -132,7 +132,13 @@ public class ConfigController {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
+
         String srcUser = RequestUtil.getSrcUserName(request);
+
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(request);
+        }
+
         //check type
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();

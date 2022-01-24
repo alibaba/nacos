@@ -82,12 +82,14 @@ public class AuthFilter implements Filter {
         } else if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils
                 .isNotBlank(authConfigs.getServerIdentityValue())) {
             String serverIdentity = req.getHeader(authConfigs.getServerIdentityKey());
-            if (authConfigs.getServerIdentityValue().equals(serverIdentity)) {
-                chain.doFilter(request, response);
-                return;
+            if (StringUtils.isNotBlank(serverIdentity)) {
+                if (authConfigs.getServerIdentityValue().equals(serverIdentity)) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+                Loggers.AUTH.warn("Invalid server identity value for {} from {}", authConfigs.getServerIdentityKey(),
+                        req.getRemoteHost());
             }
-            Loggers.AUTH.warn("Invalid server identity value for {} from {}", authConfigs.getServerIdentityKey(),
-                    req.getRemoteHost());
         } else {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN,
                     "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
