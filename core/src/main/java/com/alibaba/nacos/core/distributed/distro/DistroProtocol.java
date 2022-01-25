@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
 import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTimedTask;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
@@ -124,6 +125,9 @@ public class DistroProtocol {
      * @param delay     delay time for sync
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
+        if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+            return;
+        }
         for (Member each : memberManager.allMembersWithoutSelf()) {
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }
@@ -137,7 +141,7 @@ public class DistroProtocol {
      * @param targetServer target server
      * @param delay        delay time for sync
      */
-    public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
+    private void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
         DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                 targetServer);
         DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
