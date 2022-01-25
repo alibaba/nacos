@@ -19,7 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.auth.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;

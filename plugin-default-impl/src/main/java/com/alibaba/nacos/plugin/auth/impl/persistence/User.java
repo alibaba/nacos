@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import java.io.Serializable;
 
 /**
- * Role Info.
+ * User.
  *
- * @author nkorange
- * @since 1.2.0
+ * @author wfnuser
  */
-public class RoleInfo implements Serializable {
+public class User implements Serializable {
     
-    private static final long serialVersionUID = 5946986388047856568L;
-    
-    private String role;
+    private static final long serialVersionUID = 3371769277802700069L;
     
     private String username;
     
-    public String getRole() {
-        return role;
+    private String password;
+    
+    public String getPassword() {
+        return password;
     }
     
-    public void setRole(String role) {
-        this.role = role;
+    public void setPassword(String password) {
+        this.password = password;
     }
     
     public String getUsername() {
@@ -46,10 +45,5 @@ public class RoleInfo implements Serializable {
     
     public void setUsername(String username) {
         this.username = username;
-    }
-    
-    @Override
-    public String toString() {
-        return "RoleInfo{" + "role='" + role + '\'' + ", username='" + username + '\'' + '}';
     }
 }

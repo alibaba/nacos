@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.PERMISSION_ROW_MAPPER;
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.PERMISSION_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key.
@@ -53,9 +53,9 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
-
+        
         String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
-    
+        
         String where = " role= ? ";
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(role)) {
@@ -65,8 +65,8 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         }
         
         Page<PermissionInfo> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
-                        pageSize, PERMISSION_ROW_MAPPER);
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                        PERMISSION_ROW_MAPPER);
         
         if (pageInfo == null) {
             pageInfo = new Page<>();
@@ -79,9 +79,9 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute ddd user permission operation.
      *
-     * @param role role info string value.
+     * @param role     role info string value.
      * @param resource resource info string value.
-     * @param action action info string value.
+     * @param action   action info string value.
      */
     @Override
     public void addPermission(String role, String resource, String action) {
@@ -93,9 +93,9 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     /**
      * Execute delete user permission operation.
      *
-     * @param role role info string value.
+     * @param role     role info string value.
      * @param resource resource info string value.
-     * @param action action info string value.
+     * @param action   action info string value.
      */
     @Override
     public void deletePermission(String role, String resource, String action) {

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.users;
 
-import com.alibaba.nacos.config.server.model.User;
+import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
