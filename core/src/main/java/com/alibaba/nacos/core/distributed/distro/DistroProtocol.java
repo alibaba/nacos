@@ -32,6 +32,7 @@ import com.alibaba.nacos.core.distributed.distro.task.load.DistroLoadDataTask;
 import com.alibaba.nacos.core.distributed.distro.task.verify.DistroVerifyTask;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
@@ -125,6 +126,9 @@ public class DistroProtocol {
      * @param action    the action of data operation
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
+        if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+            return;
+        }
         for (Member each : memberManager.allMembersWithoutSelf()) {
             DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                     each.getAddress());
