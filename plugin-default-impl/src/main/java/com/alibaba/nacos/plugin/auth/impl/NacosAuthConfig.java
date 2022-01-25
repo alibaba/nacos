@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
@@ -36,6 +37,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsUtils;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Spring security config.
@@ -69,6 +72,17 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     @Autowired
     private LdapAuthenticationProvider ldapAuthenticationProvider;
+    
+    @Autowired
+    private ControllerMethodsCache methodsCache;
+    
+    /**
+     * Init.
+     */
+    @PostConstruct
+    public void init() {
+        methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
+    }
     
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
