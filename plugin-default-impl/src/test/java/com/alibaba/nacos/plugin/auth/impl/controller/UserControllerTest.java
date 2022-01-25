@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.controller;
+package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
-import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;

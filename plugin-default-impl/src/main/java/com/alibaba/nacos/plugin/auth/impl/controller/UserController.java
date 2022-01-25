@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.controller;
+package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
-import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
