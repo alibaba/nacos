@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
@@ -30,7 +29,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.USER_ROW_MAPPER;
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
 
 /**
  * There is no self-augmented primary key.
@@ -110,7 +109,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         PaginationHelper<User> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users WHERE ";
-
+        
         String sqlFetchRows = "SELECT username,password FROM users WHERE ";
         
         String where = " 1=1 ";

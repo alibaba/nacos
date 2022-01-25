@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;

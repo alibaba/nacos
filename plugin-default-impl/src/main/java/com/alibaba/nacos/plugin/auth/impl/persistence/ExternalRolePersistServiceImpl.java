@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.ROLE_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.ROLE_INFO_ROW_MAPPER;
 
 /**
  * Implemetation of ExternalRolePersistServiceImpl.
@@ -63,7 +63,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
-
+        
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " 1=1 ";
@@ -88,9 +88,9 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
-
+        
         String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
-
+        
         String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
         
         String where = " username= ? ";
