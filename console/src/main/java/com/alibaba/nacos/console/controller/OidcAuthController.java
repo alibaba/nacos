@@ -3,16 +3,14 @@ package com.alibaba.nacos.console.controller;
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.console.model.OidcTokenResponse;
 import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.console.service.OidcService;
 import com.alibaba.nacos.console.utils.OidcUtil;
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -77,8 +75,8 @@ public class OidcAuthController {
         
         String authUrl = OidcUtil.getAuthUrl(oidpId);
         if (authUrl == null) {
-            Loggers.AUTH.error("oidpId {} not found", oidpId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(String.format("oidpId %s not found", oidpId));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(String.format("oidpId %s not found in config", oidpId));
         }
         
         String clientId = OidcUtil.getClientId(oidpId);
@@ -89,9 +87,9 @@ public class OidcAuthController {
         try {
             state = new ObjectMapper().writeValueAsString(new OidcState(oidpId));
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to serialize state");
         }
+        
         byte[] stateBase64bytes = Base64.encodeBase64(state.getBytes());
         String stateBase64 = new String(stateBase64bytes);
         
@@ -120,7 +118,7 @@ public class OidcAuthController {
         try {
             oidcState = new ObjectMapper().readValue(state, OidcState.class);
         } catch (JsonProcessingException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error when deserializing state json");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("fail to get the state");
         }
         String oidp = oidcState.getOidpId();
         
@@ -128,25 +126,19 @@ public class OidcAuthController {
         try {
             tokenResult = oidcService.exchangeTokenWithCodeThroughPostForm(oidp, code);
         } catch (SocketTimeoutException e) {
-            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT).body("timeout when exchanging token");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error when exchanging token");
+            return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
+                    .body("timeout when exchanging token, please try again");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to exchange token");
-        } finally {
-            Loggers.AUTH.info("failed to exchange token");
         }
         
         OidcTokenResponse oidcTokenResponse;
         try {
             oidcTokenResponse = new ObjectMapper().readValue(tokenResult.getData(), OidcTokenResponse.class);
-        } catch (JsonMappingException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to mapping returned token");
         } catch (JsonProcessingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to process returned token");
-        } finally {
-            Loggers.AUTH.info("failed to extract access token from the result");
         }
+        
         String accessToken = oidcTokenResponse.getAccessToken();
         
         String userInfoJson;
@@ -154,18 +146,15 @@ public class OidcAuthController {
             HttpRestResult<String> userInfoResult = oidcService.getUserinfoWithAccessToken(oidp, accessToken);
             userInfoJson = userInfoResult.getData();
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to get user info");
-        } finally {
-            Loggers.AUTH.info("failed to get user info");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed to get user info");
         }
+        
         String username;
         try {
             username = OidcService.getUsernameFromUserinfo(oidp, userInfoJson);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("failed to get username from the userinfo json");
-        } finally {
-            Loggers.AUTH.info("failed to get username from the userinfo json");
+                    .body("failed to get username from the userinfo through jsonpath");
         }
         
         try {
@@ -173,8 +162,6 @@ public class OidcAuthController {
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(String.format("user %s is not a nacos user", username));
-        } finally {
-            Loggers.AUTH.info("failed to load user {} from oidp {} from the user details service", username, oidp);
         }
         
         String resultToken;
@@ -182,9 +169,7 @@ public class OidcAuthController {
             resultToken = oidcService.createNacosInternalToken(username, request);
         } catch (JsonProcessingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("failed to create nacos internal token");
-        } finally {
-            Loggers.AUTH.info("failed to create nacos internal token for user {}", username);
+                    .body("failed to create a nacos internal token");
         }
         
         UriComponentsBuilder redirectUriBuilder = UriComponentsBuilder.fromPath(EnvUtil.getContextPath());
@@ -225,4 +210,55 @@ public class OidcAuthController {
         }
     }
     
+    /**
+     * The response including OIDC token returned from the oidp.
+     *
+     * @author Kicey
+     */
+    public static class OidcTokenResponse {
+        @JsonProperty("access_token")
+        private String accessToken;
+        
+        @JsonProperty("refresh_token")
+        private String refreshToken;
+        
+        @JsonProperty("id_token")
+        private String idToken;
+        
+        private final Map<String, String> others = new HashMap<>();
+        
+        @JsonAnyGetter
+        public Map<String, String> getOthers() {
+            return others;
+        }
+        
+        @JsonAnySetter
+        public void setOthers(String key, String value) {
+            others.put(key, value);
+        }
+        
+        public String getAccessToken() {
+            return accessToken;
+        }
+        
+        public void setAccessToken(String accessToken) {
+            this.accessToken = accessToken;
+        }
+        
+        public String getRefreshToken() {
+            return refreshToken;
+        }
+        
+        public void setRefreshToken(String refreshToken) {
+            this.refreshToken = refreshToken;
+        }
+        
+        public String getIdToken() {
+            return idToken;
+        }
+        
+        public void setIdToken(String idToken) {
+            this.idToken = idToken;
+        }
+    }
 }

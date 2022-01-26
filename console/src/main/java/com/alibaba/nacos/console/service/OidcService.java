@@ -7,10 +7,8 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
-import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.utils.OidcUtil;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -43,9 +41,6 @@ public class OidcService {
     private JwtTokenManager tokenManager;
     
     @Autowired
-    private NacosRoleServiceImpl roleService;
-    
-    @Autowired
     private AuthConfigs authConfigs;
     
     /**
@@ -61,18 +56,19 @@ public class OidcService {
     public String completeAuthUriWithParameters(String authUrl, String clientId, String redirectUrl,
             List<String> scopes, String stateBase64) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(authUrl);
-        uriBuilder.queryParam("response_type", "code");
-        uriBuilder.queryParam("client_id", clientId);
-        uriBuilder.queryParam("redirect_uri", redirectUrl);
+        uriBuilder.queryParam(OidcUtil.RESPONSE_TYPE, OidcUtil.CODE);
+        uriBuilder.queryParam(OidcUtil.CLIENT_ID, clientId);
+        uriBuilder.queryParam(OidcUtil.REDIRECT_URI, redirectUrl);
         
         StringBuilder scopesString = new StringBuilder();
+        // separate scopes by ' ' in default
         if (scopes != null && scopes.size() > 0) {
             scopes.forEach(scope -> scopesString.append(scope).append(" "));
         }
         if (scopes != null && scopes.size() > 0) {
-            uriBuilder.queryParam("scope", scopesString.toString());
+            uriBuilder.queryParam(OidcUtil.SCOPE, scopesString.toString());
         }
-        uriBuilder.queryParam("state", stateBase64);
+        uriBuilder.queryParam(OidcUtil.STATE, stateBase64);
         return uriBuilder.encode().toUriString();
     }
     
@@ -106,10 +102,8 @@ public class OidcService {
      */
     public HttpRestResult<String> getUserinfoWithAccessToken(String oidp, String accessToken)
             throws IllegalArgumentException, Exception {
-        UriComponentsBuilder userInfoUriBuilder = UriComponentsBuilder.fromHttpUrl(OidcUtil.getUserInfoUrl(oidp));
-        String userInfoUrl = userInfoUriBuilder.encode().toUriString();
-        Header userInfoHeader = Header.newInstance();
-        userInfoHeader.addParam("Authorization", "Bearer " + accessToken);
+        String userInfoUrl = OidcUtil.getCompletedUserinfoUrl(oidp);
+        Header userInfoHeader = OidcUtil.getHeaderWithAccessToken(accessToken);
         return restTemplate.get(userInfoUrl, userInfoHeader, null, String.class);
     }
     
@@ -136,20 +130,13 @@ public class OidcService {
         String token = tokenManager.createToken(username);
         Authentication authentication = tokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-    
+        
         NacosUser nacosUser = new NacosUser();
         nacosUser.setUserName(username);
         nacosUser.setToken(token);
-        List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        if (roleInfoList != null) {
-            roleInfoList.forEach(roleInfo -> {
-                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
-                    nacosUser.setGlobalAdmin(true);
-                }
-            });
-        }
+        
         request.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, nacosUser);
-    
+        
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put(Constants.ACCESS_TOKEN, nacosUser.getToken());
         result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());

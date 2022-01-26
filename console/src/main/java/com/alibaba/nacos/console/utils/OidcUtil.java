@@ -26,17 +26,30 @@ public class OidcUtil {
     
     private static final String NAME = "name";
     
-    private static final String AUTH_URL = "authUrl";
+    private static final String AUTH_URL = "auth_url";
     
-    private static final String EXCHANGE_TOKEN_URL = "exchangeTokenUrl";
+    private static final String EXCHANGE_TOKEN_URL = "exchange_token_url";
     
-    private static final String USER_INFO_URL = "userInfoUrl";
+    private static final String USER_INFO_URL = "userinfo_url";
     
-    private static final String CLIENT_ID = "clientId";
+    private static final String JSONPATH = "jsonpath";
     
-    private static final String CLIENT_SECRET = "clientSecret";
+    /**
+     * OIDC keys used in configuration file or other classes.
+     */
+    public static final String CLIENT_ID = "client_id";
     
-    private static final String SCOPES = "scopes";
+    public static final String CLIENT_SECRET = "client_secret";
+    
+    public static final String SCOPE = "scope";
+    
+    public static final String REDIRECT_URI = "redirect_uri";
+    
+    public static final String CODE = "code";
+    
+    public static final String RESPONSE_TYPE = "response_type";
+    
+    public static final String STATE = "state";
     
     public static String getDomain() {
         return EnvUtil.getProperty(String.format("%s.%s", OIDP, DOMAIN));
@@ -75,11 +88,11 @@ public class OidcUtil {
     }
     
     public static List<String> getScopes(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, SCOPES), List.class);
+        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, SCOPE), List.class);
     }
     
     public static String getJsonpath(String oidp) {
-        return EnvUtil.getProperty("oidp." + oidp + ".jsonpath");
+        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, JSONPATH));
     }
     
     public static Map<String, String> getExchangeTokenParams(String oidp, String code) {
@@ -92,6 +105,10 @@ public class OidcUtil {
         return params;
     }
     
+    /**
+     * add Accept: application/json, Content-Type:application/x-www-form-urlencoded to header.
+     * @return header with Accept and Content-Type
+     */
     public static Header getExchangeTokenHeader() {
         Header tokenHeader = Header.newInstance();
         tokenHeader.addParam("Accept", "application/json");
@@ -99,9 +116,26 @@ public class OidcUtil {
         return tokenHeader;
     }
     
+    public static Header getHeaderWithAccessToken(String accessToken) {
+        Header header = Header.newInstance();
+        header.addParam("Authorization", String.format("Bearer %s", accessToken));
+        return header;
+    }
+    
+    /**
+     * get url as {@link String}encoded from config.
+     * @param oidp the key of the oidp
+     * @return url as {@link String}
+     */
     public static String getCompletedExchangeTokenUrl(String oidp) {
         String rawExchangeTokenUrl = getTokenExchangeUrl(oidp);
         UriComponentsBuilder tokenUriBuilder = UriComponentsBuilder.fromHttpUrl(rawExchangeTokenUrl);
         return tokenUriBuilder.encode().toUriString();
+    }
+    
+    public static String getCompletedUserinfoUrl(String oidp) {
+        String rawUserinfoUrl = getUserInfoUrl(oidp);
+        UriComponentsBuilder userinfoUriBuilder = UriComponentsBuilder.fromHttpUrl(rawUserinfoUrl);
+        return userinfoUriBuilder.encode().toUriString();
     }
 }
