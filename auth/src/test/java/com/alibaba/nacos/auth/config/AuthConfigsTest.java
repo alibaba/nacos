@@ -44,6 +44,7 @@ public class AuthConfigsTest {
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        environment.setProperty("nacos.core.auth.plugin.test.key", "test");
         authConfigs = new AuthConfigs();
     }
     

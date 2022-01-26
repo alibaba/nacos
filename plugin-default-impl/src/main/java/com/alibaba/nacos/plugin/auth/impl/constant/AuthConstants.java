@@ -23,6 +23,8 @@ package com.alibaba.nacos.plugin.auth.impl.constant;
  */
 public class AuthConstants {
     
+    public static final String AUTH_PLUGIN_TYPE = "nacos";
+    
     public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
     
     public static final String AUTHORIZATION_HEADER = "Authorization";
@@ -38,4 +40,12 @@ public class AuthConstants {
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
     
     public static final String NACOS_USER_KEY = "nacosuser";
+    
+    public static final String TOKEN_SECRET_KEY = "token.secret.key";
+    
+    public static final String DEFAULT_TOKEN_SECRET_KEY = "";
+    
+    public static final String TOKEN_EXPIRE_SECONDS = "token.expire.seconds";
+    
+    public static final String DEFAULT_TOKEN_EXPIRE_SECONDS = "18000";
 }
