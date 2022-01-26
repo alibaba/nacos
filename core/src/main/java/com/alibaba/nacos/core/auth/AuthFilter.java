@@ -120,6 +120,7 @@ public class AuthFilter implements Filter {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");
                 }
+                injectIdentityId(req, identityContext);
                 String action = secured.action().toString();
                 result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
                 if (!result) {
@@ -139,5 +140,20 @@ public class AuthFilter implements Filter {
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
         }
+    }
+    
+    /**
+     * Set identity id to request session, make sure some actual logic can get identity information.
+     *
+     * <p>May be replaced with whole identityContext.
+     *
+     * @param request         http request
+     * @param identityContext identity context
+     */
+    private void injectIdentityId(HttpServletRequest request, IdentityContext identityContext) {
+        String identityId = identityContext
+                .getParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, StringUtils.EMPTY);
+        request.getSession()
+                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, identityId);
     }
 }

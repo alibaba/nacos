@@ -17,13 +17,13 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
+import com.alibaba.nacos.plugin.auth.impl.users.User;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Collection;
@@ -63,6 +63,8 @@ public class NacosAuthPluginService implements AuthPluginService {
         checkNacosAuthManager();
         User user = nacosAuthManager.login(identityContext);
         identityContext.setParameter(USER_IDENTITY_PARAM_KEY, user);
+        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
+                user.getUserName());
         return true;
     }
     

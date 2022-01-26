@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.plugin.auth.impl.users;
 
-import com.alibaba.nacos.auth.model.User;
-
 /**
  * Nacos User.
  *

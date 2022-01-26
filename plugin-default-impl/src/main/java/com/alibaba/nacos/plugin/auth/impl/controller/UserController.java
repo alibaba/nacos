@@ -22,15 +22,14 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
@@ -147,6 +146,7 @@ public class UserController {
         // admin or same user
         if (!hasPermission(username, request)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+            return null;
         }
         
         User user = userDetailsService.getUserFromDatabase(username);
@@ -163,11 +163,11 @@ public class UserController {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (Objects.isNull(request.getAttribute(RequestUtil.NACOS_USER_KEY))) {
+        if (Objects.isNull(request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY))) {
             return false;
         }
         
-        NacosUser user = (NacosUser) request.getAttribute(RequestUtil.NACOS_USER_KEY);
+        NacosUser user = (NacosUser) request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY);
         // admin
         if (user.isGlobalAdmin()) {
             return true;
