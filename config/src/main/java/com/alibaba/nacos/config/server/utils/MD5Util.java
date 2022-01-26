@@ -52,7 +52,7 @@ public class MD5Util {
     public static List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
             Map<String, String> clientMd5Map) {
         List<String> changedGroupKeys = new ArrayList<String>();
-        String tag = request.getHeader("Vipserver-Tag");
+        String tag = request.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();

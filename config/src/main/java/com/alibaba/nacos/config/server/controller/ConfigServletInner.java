@@ -124,7 +124,7 @@ public class ConfigServletInner {
         }
         
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String autoTag = request.getHeader("Vipserver-Tag");
+        String autoTag = request.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = tryConfigReadLock(groupKey);

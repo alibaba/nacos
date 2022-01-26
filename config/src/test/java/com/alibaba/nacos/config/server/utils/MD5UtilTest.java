@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
@@ -54,7 +55,7 @@ public class MD5UtilTest {
         clientMd5Map.put("test", "test");
         
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Vipserver-Tag", "test");
+        request.addHeader(Constants.VIPSERVER_TAG, "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         List<String> changedGroupKeys = MD5Util.compareMd5(request, response, clientMd5Map);

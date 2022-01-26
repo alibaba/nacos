@@ -222,7 +222,7 @@ public class ConfigServletInnerTest {
         Map<String, String> tagMd5 = new HashMap<>();
         tagMd5.put("auto-tag-test", "auto-tag-test");
         cacheItem.setTagMd5(tagMd5);
-        request.addHeader("Vipserver-Tag", "auto-tag-test");
+        request.addHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG, "auto-tag-test");
         configInfoTagWrapper.setContent("auto tag mode and direct read is true");
         when(persistService.findConfigInfo4Tag(anyString(), anyString(), anyString(), eq("auto-tag-test"))).thenReturn(configInfoTagWrapper);
         response = new MockHttpServletResponse();
