@@ -17,15 +17,29 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.jsonwebtoken.lang.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
+import java.util.Properties;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JwtTokenManagerTest {
+    
+    @Mock
+    private AuthConfigs authConfigs;
+    
+    @Mock
+    private ControllerMethodsCache methodsCache;
+    
+    private NacosAuthConfig nacosAuthConfig;
     
     @Test
     public void testCreateTokenAndSecretKeyWithoutSpecialSymbol() throws NoSuchFieldException, IllegalAccessException {
@@ -39,11 +53,16 @@ public class JwtTokenManagerTest {
     }
     
     private void createToken(String secretKey) throws NoSuchFieldException, IllegalAccessException {
-        AuthConfigs authConfigs = new AuthConfigs();
-        injectProperty(authConfigs, "secretKey", secretKey);
-        injectProperty(authConfigs, "tokenValidityInSeconds", 300);
+        Properties properties = new Properties();
+        properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, secretKey);
+        properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
+        when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
+        nacosAuthConfig = new NacosAuthConfig();
+        injectProperty(nacosAuthConfig, "methodsCache", methodsCache);
+        injectProperty(nacosAuthConfig, "authConfigs", authConfigs);
+        nacosAuthConfig.init();
         JwtTokenManager jwtTokenManager = new JwtTokenManager();
-        injectProperty(jwtTokenManager, "authConfigs", authConfigs);
+        injectProperty(jwtTokenManager, "nacosAuthConfig", nacosAuthConfig);
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.notNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);
