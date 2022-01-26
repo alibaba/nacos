@@ -49,4 +49,8 @@ public class Constants {
         public static final String ANY = "*";
     }
     
+    public static class Identity {
+        
+        public static final String IDENTITY_ID = "identity_id";
+    }
 }

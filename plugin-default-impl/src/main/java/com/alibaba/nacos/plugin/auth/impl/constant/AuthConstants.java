@@ -36,4 +36,6 @@ public class AuthConstants {
     public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
     
     public static final String UPDATE_PASSWORD_ENTRY_POINT = CONSOLE_RESOURCE_NAME_PREFIX + "user/password";
+    
+    public static final String NACOS_USER_KEY = "nacosuser";
 }
