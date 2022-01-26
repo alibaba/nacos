@@ -27,10 +27,6 @@ public class Constants {
         
         public static final String NACOS_CORE_AUTH_ENABLED = "nacos.core.auth.enabled";
         
-        public static final String NACOS_CORE_AUTH_DEFAULT_TOKEN_SECRET_KEY = "nacos.core.auth.default.token.secret.key";
-        
-        public static final String NACOS_CORE_AUTH_DEFAULT_TOKEN_EXPIRE_SECONDS = "nacos.core.auth.default.token.expire.seconds";
-        
         public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
         
         public static final String NACOS_CORE_AUTH_CACHING_ENABLED = "nacos.core.auth.caching.enabled";
