@@ -38,8 +38,6 @@ import java.util.List;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
     
-    private static final String AUTH_PLUGIN_TYPE = "nacos";
-    
     private static final String USER_IDENTITY_PARAM_KEY = "user";
     
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
@@ -77,7 +75,7 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     @Override
     public String getAuthServiceName() {
-        return AUTH_PLUGIN_TYPE;
+        return AuthConstants.AUTH_PLUGIN_TYPE;
     }
     
     private void checkNacosAuthManager() {

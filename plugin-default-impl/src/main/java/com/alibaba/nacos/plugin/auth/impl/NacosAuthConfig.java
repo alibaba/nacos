@@ -19,9 +19,12 @@ package com.alibaba.nacos.plugin.auth.impl;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
@@ -39,6 +42,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsUtils;
 
 import javax.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 
 /**
  * Spring security config.
@@ -77,11 +82,35 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     private ControllerMethodsCache methodsCache;
     
     /**
+     * secret key.
+     */
+    private String secretKey;
+    
+    /**
+     * secret key byte array.
+     */
+    private byte[] secretKeyBytes;
+    
+    /**
+     * Token validity time(seconds).
+     */
+    private long tokenValidityInSeconds;
+    
+    /**
      * Init.
      */
     @PostConstruct
     public void init() {
         methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
+        initProperties();
+    }
+    
+    private void initProperties() {
+        Properties properties = authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE);
+        String validitySeconds = properties
+                .getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
+        tokenValidityInSeconds = Long.parseLong(validitySeconds);
+        secretKey = properties.getProperty(AuthConstants.TOKEN_SECRET_KEY, AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
     }
     
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
@@ -141,4 +170,19 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         return new BCryptPasswordEncoder();
     }
     
+    public byte[] getSecretKeyBytes() {
+        if (secretKeyBytes == null) {
+            try {
+                secretKeyBytes = Decoders.BASE64.decode(secretKey);
+            } catch (DecodingException e) {
+                secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+            }
+            
+        }
+        return secretKeyBytes;
+    }
+    
+    public long getTokenValidityInSeconds() {
+        return tokenValidityInSeconds;
+    }
 }

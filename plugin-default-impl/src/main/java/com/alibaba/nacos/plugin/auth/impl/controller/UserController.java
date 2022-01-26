@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
@@ -81,6 +82,9 @@ public class UserController {
     
     @Autowired
     private AuthConfigs authConfigs;
+    
+    @Autowired
+    private NacosAuthConfig nacosAuthConfig;
     
     @Autowired
     private NacosAuthManager authManager;
@@ -214,7 +218,7 @@ public class UserController {
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
-            result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
+            result.put(Constants.TOKEN_TTL, nacosAuthConfig.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
             result.put(Constants.USERNAME, user.getUserName());
             return result;
