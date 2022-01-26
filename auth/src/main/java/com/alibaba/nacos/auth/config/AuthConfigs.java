@@ -82,7 +82,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     private void refreshPluginProperties() {
         try {
-            Map<String, Properties> newProperties = new HashMap<>();
+            Map<String, Properties> newProperties = new HashMap<>(1);
             Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
             for (String each : properties.stringPropertyNames()) {
                 int typeIndex = each.indexOf('.');
