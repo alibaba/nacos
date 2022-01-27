@@ -20,12 +20,11 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -45,14 +44,17 @@ import java.util.concurrent.locks.ReentrantLock;
 @Component
 public class SwitchManager implements RecordListener<SwitchDomain> {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
     
     ReentrantLock lock = new ReentrantLock();
-    
+
+    public SwitchManager(SwitchDomain switchDomain) {
+        this.switchDomain = switchDomain;
+    }
+
     /**
      * Init switch manager.
      */

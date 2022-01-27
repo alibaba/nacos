@@ -25,6 +25,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.HealthOperator;
 import com.alibaba.nacos.naming.core.HealthOperatorV1Impl;
@@ -37,8 +38,6 @@ import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -66,15 +65,18 @@ import static com.alibaba.nacos.naming.constants.RequestConstant.VALID_KEY;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
 public class HealthController {
     
-    @Autowired
-    private HealthOperatorV1Impl healthOperatorV1;
+    private final HealthOperatorV1Impl healthOperatorV1;
     
-    @Autowired
-    private HealthOperatorV2Impl healthOperatorV2;
+    private final HealthOperatorV2Impl healthOperatorV2;
     
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
-    
+    private final UpgradeJudgement upgradeJudgement;
+
+    public HealthController(HealthOperatorV1Impl healthOperatorV1, HealthOperatorV2Impl healthOperatorV2, UpgradeJudgement upgradeJudgement) {
+        this.healthOperatorV1 = healthOperatorV1;
+        this.healthOperatorV2 = healthOperatorV2;
+        this.upgradeJudgement = upgradeJudgement;
+    }
+
     /**
      * Just a health check.
      *

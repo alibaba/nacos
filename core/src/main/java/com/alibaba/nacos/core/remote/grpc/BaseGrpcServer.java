@@ -173,9 +173,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
         
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
-                .asyncUnaryCall((request, responseObserver) -> {
-                    grpcCommonRequestAcceptor.request(request, responseObserver);
-                });
+                .asyncUnaryCall((request, responseObserver) -> grpcCommonRequestAcceptor.request(request, responseObserver));
         
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(REQUEST_SERVICE_NAME)
                 .addMethod(unaryPayloadMethod, payloadHandler).build();

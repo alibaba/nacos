@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,9 +33,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class GrpcRequestFilter extends AbstractRequestFilter {
     
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
-    
+    private final UpgradeJudgement upgradeJudgement;
+
+    public GrpcRequestFilter(UpgradeJudgement upgradeJudgement) {
+        this.upgradeJudgement = upgradeJudgement;
+    }
+
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
         if (request instanceof AbstractNamingRequest && !upgradeJudgement.isUseGrpcFeatures()) {

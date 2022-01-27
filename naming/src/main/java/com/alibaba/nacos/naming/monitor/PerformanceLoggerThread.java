@@ -23,11 +23,9 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientData
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -44,17 +42,17 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class PerformanceLoggerThread {
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final RaftCore raftCore;
     
-    @Autowired
-    private RaftCore raftCore;
-    
-    @Autowired
-    private ClusterVersionJudgement versionJudgement;
+    private final ClusterVersionJudgement versionJudgement;
     
     private static final long PERIOD = 60;
-    
+
+    public PerformanceLoggerThread(RaftCore raftCore, ClusterVersionJudgement versionJudgement) {
+        this.raftCore = raftCore;
+        this.versionJudgement = versionJudgement;
+    }
+
     @PostConstruct
     public void init() {
         start();

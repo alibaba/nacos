@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.SocketTimeoutException;
@@ -52,11 +51,9 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     
     public static final String TYPE = "MYSQL";
     
-    @Autowired
-    private HealthCheckCommon healthCheckCommon;
+    private final HealthCheckCommon healthCheckCommon;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
     public static final int CONNECT_TIMEOUT_MS = 500;
     
@@ -66,7 +63,9 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     
     private static final ConcurrentMap<String, Connection> CONNECTION_POOL = new ConcurrentHashMap<String, Connection>();
     
-    public MysqlHealthCheckProcessor() {
+    public MysqlHealthCheckProcessor(HealthCheckCommon healthCheckCommon, SwitchDomain switchDomain) {
+        this.healthCheckCommon = healthCheckCommon;
+        this.switchDomain = switchDomain;
     }
     
     @Override

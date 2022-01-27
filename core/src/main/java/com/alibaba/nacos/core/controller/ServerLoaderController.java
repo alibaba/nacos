@@ -38,7 +38,6 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,21 +78,28 @@ public class ServerLoaderController {
     
     private static final String FAIL_RESULT = "Fail";
     
-    @Autowired
-    private ConnectionManager connectionManager;
+    private final ConnectionManager connectionManager;
     
-    @Autowired
-    private ServerMemberManager serverMemberManager;
+    private final ServerMemberManager serverMemberManager;
     
-    @Autowired
-    private ClusterRpcClientProxy clusterRpcClientProxy;
+    private final ClusterRpcClientProxy clusterRpcClientProxy;
     
-    @Autowired
-    private ServerReloaderRequestHandler serverReloaderRequestHandler;
+    private final ServerReloaderRequestHandler serverReloaderRequestHandler;
     
-    @Autowired
-    private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
-    
+    private final ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
+
+    public ServerLoaderController(ConnectionManager connectionManager,
+                                  ServerMemberManager serverMemberManager,
+                                  ClusterRpcClientProxy clusterRpcClientProxy,
+                                  ServerReloaderRequestHandler serverReloaderRequestHandler,
+                                  ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler) {
+        this.connectionManager = connectionManager;
+        this.serverMemberManager = serverMemberManager;
+        this.clusterRpcClientProxy = clusterRpcClientProxy;
+        this.serverReloaderRequestHandler = serverReloaderRequestHandler;
+        this.serverLoaderInfoRequestHandler = serverLoaderInfoRequestHandler;
+    }
+
     /**
      * Get current clients.
      *

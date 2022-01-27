@@ -50,14 +50,7 @@ public class SimpleFlowData {
         for (int i = 0; i < data.length; i++) {
             data[i] = new AtomicInteger(0);
         }
-        timer.scheduleAtFixedRate(new Runnable() {
-            
-            @Override
-            public void run() {
-                rotateSlot();
-            }
-            
-        }, interval, interval, TimeUnit.MILLISECONDS);
+        timer.scheduleAtFixedRate(this::rotateSlot, interval, interval, TimeUnit.MILLISECONDS);
     }
     
     public int addAndGet(int count) {

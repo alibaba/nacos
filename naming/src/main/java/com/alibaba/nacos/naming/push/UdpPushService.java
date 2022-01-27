@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -34,12 +35,10 @@ import com.alibaba.nacos.naming.push.v1.ServiceChangeEvent;
 import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.naming.remote.udp.AckPacket;
 import com.alibaba.nacos.naming.remote.udp.UdpConnector;
-import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.MapUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
@@ -71,11 +70,9 @@ import java.util.zip.GZIPOutputStream;
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class UdpPushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private NamingSubscriberServiceV1Impl subscriberServiceV1;
+    private final NamingSubscriberServiceV1Impl subscriberServiceV1;
     
     private ApplicationContext applicationContext;
     
@@ -105,8 +102,10 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
         }
     }
     
-    public UdpPushService(UdpConnector udpConnector) {
+    public UdpPushService(UdpConnector udpConnector, SwitchDomain switchDomain, NamingSubscriberServiceV1Impl subscriberServiceV1) {
         this.udpConnector = udpConnector;
+        this.switchDomain = switchDomain;
+        this.subscriberServiceV1 = subscriberServiceV1;
     }
     
     @Override

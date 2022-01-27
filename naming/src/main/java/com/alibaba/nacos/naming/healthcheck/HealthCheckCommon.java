@@ -24,7 +24,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.UdpPushService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,15 +36,18 @@ import org.springframework.stereotype.Component;
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckCommon {
     
-    @Autowired
-    private DistroMapper distroMapper;
+    private final DistroMapper distroMapper;
     
-    @Autowired
-    private SwitchDomain switchDomain;
+    private final SwitchDomain switchDomain;
     
-    @Autowired
-    private UdpPushService pushService;
-    
+    private final UdpPushService pushService;
+
+    public HealthCheckCommon(DistroMapper distroMapper, SwitchDomain switchDomain, UdpPushService pushService) {
+        this.distroMapper = distroMapper;
+        this.switchDomain = switchDomain;
+        this.pushService = pushService;
+    }
+
     /**
      * Re-evaluate check responsce time.
      *

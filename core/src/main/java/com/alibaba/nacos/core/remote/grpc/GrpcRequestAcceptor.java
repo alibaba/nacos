@@ -142,6 +142,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+            return;
         }
         
         if (!(parseObj instanceof Request)) {
