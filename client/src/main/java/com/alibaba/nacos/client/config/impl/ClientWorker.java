@@ -730,28 +730,10 @@ public class ClientWorker implements Closeable {
                         }
                     }
                     
-                    if (!CollectionUtils.isEmpty(cache.getListeners())) {
-                        //get listen  config
-                        if (!cache.isUseLocalConfigInfo()) {
-                            List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
-                            if (cacheDatas == null) {
-                                cacheDatas = new LinkedList<>();
-                                listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                            }
-                            cacheDatas.add(cache);
-                            
-                        }
-                    } else if (CollectionUtils.isEmpty(cache.getListeners())) {
-                        
-                        if (!cache.isUseLocalConfigInfo()) {
-                            List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
-                            if (cacheDatas == null) {
-                                cacheDatas = new LinkedList<>();
-                                removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                            }
-                            cacheDatas.add(cache);
-                            
-                        }
+                    //get listen  config
+                    if (!cache.isUseLocalConfigInfo()) {
+                        List<CacheData> cacheDatas = listenCachesMap.computeIfAbsent(String.valueOf(cache.getTaskId()), k -> new LinkedList<>());
+                        cacheDatas.add(cache);
                     }
                 }
                 
