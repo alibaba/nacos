@@ -16,7 +16,7 @@
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;

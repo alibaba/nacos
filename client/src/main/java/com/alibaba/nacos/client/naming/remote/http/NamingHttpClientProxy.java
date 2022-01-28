@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
@@ -103,8 +102,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
     
-    private static final String SERVICE_NAME_PARAM = "serviceName";
-    
     private final String namespaceId;
     
     private final ServerListManager serverListManager;
@@ -119,7 +116,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
             Properties properties, ServiceInfoHolder serviceInfoHolder) {
-        super(securityProxy, properties);
+        super(securityProxy);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
@@ -466,8 +463,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
-        params.putAll(getSecurityHeaders());
-        params.putAll(getSpasHeaders(params.get(SERVICE_NAME_PARAM)));
+        String namespace = params.get(CommonParams.NAMESPACE_ID);
+        String group = params.get(CommonParams.GROUP_NAME);
+        String serviceName = params.get(CommonParams.SERVICE_NAME);
+        params.putAll(getSecurityHeaders(namespace, group, serviceName));
         Header header = NamingHttpUtil.builderHeader();
         
         String url;
@@ -524,7 +523,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
-        SpasAdapter.freeCredentialInstance();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }
