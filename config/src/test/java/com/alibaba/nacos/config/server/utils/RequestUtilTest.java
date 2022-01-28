@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.model.User;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -63,12 +64,24 @@ public class RequestUtilTest {
     }
     
     @Test
+    public void testGetUser() {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        HttpSession session = Mockito.mock(HttpSession.class);
+        User user = new User();
+        user.setUserName("test");
+        Mockito.when(request.getSession()).thenReturn(session);
+        Mockito.when(session.getAttribute(eq(RequestUtil.NACOS_USER_KEY))).thenReturn(user);
+        Assert.assertEquals("test", RequestUtil.getUser(request).getUserName());
+    }
+    
+    @Test
     public void testGetSrcUserNameV1() {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         HttpSession session = Mockito.mock(HttpSession.class);
+        User user = new User();
+        user.setUserName("test");
         Mockito.when(request.getSession()).thenReturn(session);
-        Mockito.when(session.getAttribute(eq(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID)))
-                .thenReturn("test");
+        Mockito.when(session.getAttribute(eq(RequestUtil.NACOS_USER_KEY))).thenReturn(user);
         Assert.assertEquals("test", RequestUtil.getSrcUserName(request));
     }
     
@@ -77,8 +90,7 @@ public class RequestUtilTest {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(request.getSession()).thenReturn(session);
-        Mockito.when(session.getAttribute(eq(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID)))
-                .thenReturn(null);
+        Mockito.when(session.getAttribute(eq(RequestUtil.NACOS_USER_KEY))).thenReturn(null);
         Mockito.when(request.getParameter(eq(Constants.USERNAME))).thenReturn("parameterName");
         Assert.assertEquals("parameterName", RequestUtil.getSrcUserName(request));
     }

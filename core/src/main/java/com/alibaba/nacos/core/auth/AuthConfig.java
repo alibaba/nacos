@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,9 +29,9 @@ import org.springframework.context.annotation.Configuration;
 public class AuthConfig {
     
     @Bean
-    public FilterRegistrationBean authFilterRegistration(AuthFilter authFilter) {
+    public FilterRegistrationBean authFilterRegistration() {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(authFilter);
+        registration.setFilter(authFilter());
         registration.addUrlPatterns("/*");
         registration.setName("authFilter");
         registration.setOrder(6);
@@ -42,7 +40,7 @@ public class AuthConfig {
     }
     
     @Bean
-    public AuthFilter authFilter(AuthConfigs authConfigs, ControllerMethodsCache methodsCache) {
-        return new AuthFilter(authConfigs, methodsCache);
+    public AuthFilter authFilter() {
+        return new AuthFilter();
     }
 }

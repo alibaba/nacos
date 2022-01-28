@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+import com.alibaba.nacos.config.server.auth.PermissionInfo;
+import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -30,8 +32,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.springframework.jdbc.core.RowMapper;
+import com.alibaba.nacos.config.server.model.User;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -39,6 +40,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Manager RowMapper {@link RowMapper} for database object mapping.
@@ -48,6 +51,8 @@ import java.util.Map;
 public final class RowMapperManager {
     
     public static final RowMapper<TenantInfo> TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
+    
+    public static final RowMapper<User> USER_ROW_MAPPER = new UserRowMapper();
     
     public static final RowMapper<ConfigInfoWrapper> CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
     
@@ -77,6 +82,10 @@ public final class RowMapperManager {
     
     public static final ConfigHistoryDetailRowMapper HISTORY_DETAIL_ROW_MAPPER = new ConfigHistoryDetailRowMapper();
     
+    public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
+    
+    public static final PermissionRowMapper PERMISSION_ROW_MAPPER = new PermissionRowMapper();
+    
     public static final MapRowMapper MAP_ROW_MAPPER = new MapRowMapper();
     
     public static Map<String, RowMapper> mapperMap = new HashMap<>(16);
@@ -86,6 +95,10 @@ public final class RowMapperManager {
         // TENANT_INFO_ROW_MAPPER
         
         mapperMap.put(TENANT_INFO_ROW_MAPPER.getClass().getCanonicalName(), TENANT_INFO_ROW_MAPPER);
+        
+        // USER_ROW_MAPPER
+        
+        mapperMap.put(USER_ROW_MAPPER.getClass().getCanonicalName(), USER_ROW_MAPPER);
         
         // CONFIG_INFO_WRAPPER_ROW_MAPPER
         
@@ -145,6 +158,14 @@ public final class RowMapperManager {
         
         mapperMap.put(HISTORY_DETAIL_ROW_MAPPER.getClass().getCanonicalName(), HISTORY_DETAIL_ROW_MAPPER);
         
+        // ROLE_INFO_ROW_MAPPER
+        
+        mapperMap.put(ROLE_INFO_ROW_MAPPER.getClass().getCanonicalName(), ROLE_INFO_ROW_MAPPER);
+        
+        // PERMISSION_ROW_MAPPER
+        
+        mapperMap.put(PERMISSION_ROW_MAPPER.getClass().getCanonicalName(), PERMISSION_ROW_MAPPER);
+        
         // MAP_ROW_MAPPER
         
         mapperMap.put(MAP_ROW_MAPPER.getClass().getCanonicalName(), MAP_ROW_MAPPER);
@@ -154,23 +175,8 @@ public final class RowMapperManager {
         return (RowMapper<D>) mapperMap.get(classFullName);
     }
     
-    /**
-     * Register custom row mapper to manager.
-     *
-     * @param classFullName full class name of row mapper handled.
-     * @param rowMapper     row mapper
-     * @param <D>           class of row mapper handled
-     */
-    public static synchronized <D> void registerRowMapper(String classFullName, RowMapper<D> rowMapper) {
-        if (mapperMap.containsKey(classFullName)) {
-            LogUtil.DEFAULT_LOG.warn("row mapper {} conflicts, {} will be replaced by {}", classFullName,
-                    mapperMap.get(classFullName).getClass().getCanonicalName(),
-                    rowMapper.getClass().getCanonicalName());
-        }
-    }
-    
     public static final class MapRowMapper implements RowMapper<Map<String, Object>> {
-        
+    
         @Override
         public Map<String, Object> mapRow(ResultSet resultSet, int rowNum) throws SQLException {
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -528,6 +534,40 @@ public final class RowMapperManager {
             info.setTenantId(rs.getString("tenant_id"));
             info.setTenantName(rs.getString("tenant_name"));
             info.setTenantDesc(rs.getString("tenant_desc"));
+            return info;
+        }
+    }
+    
+    public static final class UserRowMapper implements RowMapper<User> {
+        
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User();
+            user.setUsername(rs.getString("username"));
+            user.setPassword(rs.getString("password"));
+            return user;
+        }
+    }
+    
+    public static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
+        
+        @Override
+        public RoleInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            RoleInfo roleInfo = new RoleInfo();
+            roleInfo.setRole(rs.getString("role"));
+            roleInfo.setUsername(rs.getString("username"));
+            return roleInfo;
+        }
+    }
+    
+    public static final class PermissionRowMapper implements RowMapper<PermissionInfo> {
+        
+        @Override
+        public PermissionInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            PermissionInfo info = new PermissionInfo();
+            info.setResource(rs.getString("resource"));
+            info.setAction(rs.getString("action"));
+            info.setRole(rs.getString("role"));
             return info;
         }
     }

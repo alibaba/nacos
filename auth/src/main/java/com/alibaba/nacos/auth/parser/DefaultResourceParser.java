@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.parser;
 
-import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Default resource parser.
@@ -25,10 +25,10 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
  * @author mai.jh
  * @since 1.2.0
  */
-public class DefaultResourceParser implements ResourceParser<Object> {
+public class DefaultResourceParser implements ResourceParser {
     
     @Override
-    public Resource parse(Object request, String type) {
-        return Resource.EMPTY_RESOURCE;
+    public String parseName(Object request) {
+        return StringUtils.EMPTY;
     }
 }
