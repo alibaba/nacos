@@ -22,7 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
@@ -36,9 +37,8 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.control.TpsControl;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.apache.commons.io.FileUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -70,13 +70,14 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     
     @Override
     @TpsControl(pointName = "ConfigQuery", parsers = {ConfigQueryGroupKeyParser.class, ConfigQueryGroupParser.class})
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         
         try {
             return getContext(request, meta, request.isNotify());
         } catch (Exception e) {
-            return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
+            return ConfigQueryResponse
+                    .buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
         }
         
     }

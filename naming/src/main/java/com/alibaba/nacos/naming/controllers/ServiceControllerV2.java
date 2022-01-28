@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -37,7 +38,7 @@ import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -85,7 +86,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @PostMapping(value = "/{serviceName}")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public RestResult<String> create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(required = false, defaultValue = "false") boolean ephemeral,
@@ -110,7 +111,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @DeleteMapping(value = "/{serviceName}")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public RestResult<String> remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
@@ -127,7 +128,7 @@ public class ServiceControllerV2 {
      * @throws NacosException nacos exception
      */
     @GetMapping(value = "/{serviceName}")
-    @Secured(action = ActionTypes.READ)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public RestResult<ServiceDetailInfo> detail(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
@@ -145,7 +146,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public RestResult<ServiceNameView> list(HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
@@ -172,7 +173,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @PutMapping(value = "/{serviceName}")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public RestResult<String> update(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,

@@ -187,10 +187,7 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceFilter
-                setFilters={this.setFilters(cluster.name)}
-                locale={locale.InstanceFilter}
-              />
+              <InstanceFilter setFilters={this.setFilters(cluster.name)} locale={locale.InstanceFilter} />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}

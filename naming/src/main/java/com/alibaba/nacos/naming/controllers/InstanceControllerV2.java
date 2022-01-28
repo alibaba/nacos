@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -37,7 +38,7 @@ import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -93,7 +94,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PostMapping
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String register(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
@@ -131,7 +132,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @DeleteMapping
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String deregister(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
@@ -169,7 +170,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String update(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
@@ -203,7 +204,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public ObjectNode batchUpdateInstanceMetadata(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = "") String consistencyType,
@@ -213,8 +214,8 @@ public class InstanceControllerV2 {
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
         
-        List<String> operatedInstances = instanceServiceV2
-                .batchUpdateMetadata(namespaceId, instanceOperationInfo, targetMetadata);
+        List<String> operatedInstances = instanceServiceV2.batchUpdateMetadata(namespaceId, instanceOperationInfo,
+                targetMetadata);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
         for (String ip : operatedInstances) {
@@ -238,7 +239,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public ObjectNode batchDeleteInstanceMetadata(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = "") String consistencyType,
@@ -247,8 +248,8 @@ public class InstanceControllerV2 {
         List<Instance> targetInstances = parseBatchInstances(instances);
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
         InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
-        List<String> operatedInstances = instanceServiceV2
-                .batchDeleteMetadata(namespaceId, instanceOperationInfo, targetMetadata);
+        List<String> operatedInstances = instanceServiceV2.batchDeleteMetadata(namespaceId, instanceOperationInfo,
+                targetMetadata);
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
@@ -298,7 +299,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PatchMapping
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String patch(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
@@ -336,7 +337,7 @@ public class InstanceControllerV2 {
      * @throws Exception any error during list
      */
     @GetMapping("/list")
-    @Secured(action = ActionTypes.READ)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public Object list(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String clusters,
             @RequestParam(defaultValue = StringUtils.EMPTY) String clientIP,
@@ -364,7 +365,7 @@ public class InstanceControllerV2 {
      * @throws Exception any error during get
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
     public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
@@ -399,7 +400,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping("/beat")
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public ObjectNode beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
@@ -427,8 +428,8 @@ public class InstanceControllerV2 {
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}, namespaceId: {}", clientBeat,
                 serviceName, namespaceId);
         BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
-        int resultCode = instanceServiceV2
-                .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, builder);
+        int resultCode = instanceServiceV2.handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat,
+                builder);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
                 instanceServiceV2.getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));

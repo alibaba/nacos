@@ -22,8 +22,9 @@ import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,15 +49,17 @@ public class RemoteRequestAuthFilterTest {
     @Mock
     private AuthConfigs authConfigs;
     
+    @Mock
+    private AuthManager authManager;
+    
     @Test
     public void testFilter() {
         Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
         
         Request healthCheckRequest = new HealthCheckRequest();
-        
+    
         try {
-            Response healthCheckResponse = remoteRequestAuthFilter
-                    .filter(healthCheckRequest, new RequestMeta(), MockRequestHandler.class);
+            Response healthCheckResponse = remoteRequestAuthFilter.filter(healthCheckRequest, new RequestMeta(), MockRequestHandler.class);
             Assert.assertNull(healthCheckResponse);
         } catch (NacosException e) {
             e.printStackTrace();
@@ -65,7 +68,7 @@ public class RemoteRequestAuthFilterTest {
     }
     
     class MockRequestHandler extends RequestHandler {
-        
+    
         @Secured(resource = "xxx")
         @Override
         public Response handle(Request request, RequestMeta meta) throws NacosException {
