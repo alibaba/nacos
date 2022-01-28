@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.controller.v2;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;

@@ -69,23 +69,23 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
-        this.securityProxy = new SecurityProxy(properties, NamingHttpClientManager.getInstance().getNacosRestTemplate());
-        initSecurityProxy();
+        this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(), NamingHttpClientManager.getInstance().getNacosRestTemplate());
+        initSecurityProxy(properties);
         this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties,
                 serviceInfoHolder);
         this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
                 serviceInfoHolder);
     }
     
-    private void initSecurityProxy() {
+    private void initSecurityProxy(Properties properties) {
         this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.client.naming.security");
             t.setDaemon(true);
             return t;
         });
-        this.securityProxy.login(serverListManager.getServerList());
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(serverListManager.getServerList()), 0,
+        this.securityProxy.login(properties);
+        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
@@ -184,6 +184,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         serverListManager.shutdown();
         httpClientProxy.shutdown();
         grpcClientProxy.shutdown();
+        securityProxy.shutdown();
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
