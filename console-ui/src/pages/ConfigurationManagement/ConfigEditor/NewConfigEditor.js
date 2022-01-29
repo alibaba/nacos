@@ -230,7 +230,7 @@ class ConfigEditor extends React.Component {
     if (validateContent.validate({ content, type })) {
       return this._publishConfig();
     } else {
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         Dialog.confirm({
           content: locale.codeValErrorPrompt,
           onOk: () => resolve(this._publishConfig()),

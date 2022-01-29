@@ -19,13 +19,12 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -51,8 +50,9 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,7 +117,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -133,7 +133,9 @@ public class ConfigController {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
-        srcUser = RequestUtil.getSrcUserName(request);
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(request);
+        }
         //check type
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
@@ -191,7 +193,7 @@ public class ConfigController {
      * @throws NacosException   NacosException.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -215,7 +217,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @GetMapping(params = "show=all")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
@@ -233,7 +235,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @DeleteMapping
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -267,7 +269,7 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      */
     @DeleteMapping(params = "delType=ids")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
@@ -281,14 +283,14 @@ public class ConfigController {
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
             ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), null,
+                            time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         }
         return RestResultUtils.success(true);
     }
     
     @GetMapping("/catalog")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
@@ -300,7 +302,7 @@ public class ConfigController {
      * The client listens for configuration changes.
      */
     @PostMapping("/listener")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public void listener(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
@@ -328,7 +330,7 @@ public class ConfigController {
      * Subscribe to configured client information.
      */
     @GetMapping("/listener")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public GroupkeyListenserStatus getListeners(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "tenant", required = false) String tenant,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
@@ -346,7 +348,7 @@ public class ConfigController {
      * Query the configuration information and return it in JSON format.
      */
     @GetMapping(params = "search=accurate")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -373,7 +375,7 @@ public class ConfigController {
      * and group are NULL, but content is not NULL. In this case, all configurations are returned.
      */
     @GetMapping(params = "search=blur")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -404,7 +406,7 @@ public class ConfigController {
      * @return Execute to operate result.
      */
     @DeleteMapping(params = "beta=true")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
@@ -428,7 +430,7 @@ public class ConfigController {
      * @return RestResult for ConfigInfo4Beta.
      */
     @GetMapping(params = "beta=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
@@ -452,7 +454,7 @@ public class ConfigController {
      * @return ResponseEntity.
      */
     @GetMapping(params = "export=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
@@ -504,7 +506,7 @@ public class ConfigController {
      * @return ResponseEntity.
      */
     @GetMapping(params = "exportV2=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ResponseEntity<byte[]> exportConfigV2(@RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
@@ -528,7 +530,7 @@ public class ConfigController {
         }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
-    
+        
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
                 YamlParserUtil.dumpObject(configMetadata)));
         HttpHeaders headers = new HttpHeaders();
@@ -551,7 +553,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping(params = "import=true")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespace", required = false) String namespace,
@@ -576,11 +578,9 @@ public class ConfigController {
             RestResult<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                errorResult = parseImportDataV2(unziped, configInfoList,
-                        unrecognizedList, namespace);
+                errorResult = parseImportDataV2(unziped, configInfoList, unrecognizedList, namespace);
             } else {
-                errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
-                        namespace);
+                errorResult = parseImportData(unziped, configInfoList, unrecognizedList, namespace);
             }
             if (errorResult != null) {
                 return errorResult;
@@ -775,7 +775,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping(params = "clone=true")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "tenant", required = true) String namespace,
