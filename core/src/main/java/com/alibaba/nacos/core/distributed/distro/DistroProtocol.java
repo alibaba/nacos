@@ -125,9 +125,6 @@ public class DistroProtocol {
      * @param delay     delay time for sync
      */
     public void sync(DistroKey distroKey, DataOperation action, long delay) {
-        if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
-            return;
-        }
         for (Member each : memberManager.allMembersWithoutSelf()) {
             syncToTarget(distroKey, action, each.getAddress(), delay);
         }
@@ -141,7 +138,10 @@ public class DistroProtocol {
      * @param targetServer target server
      * @param delay        delay time for sync
      */
-    private void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
+    public void syncToTarget(DistroKey distroKey, DataOperation action, String targetServer, long delay) {
+        if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+            return;
+        }
         DistroKey distroKeyWithTarget = new DistroKey(distroKey.getResourceKey(), distroKey.getResourceType(),
                 targetServer);
         DistroDelayTask distroDelayTask = new DistroDelayTask(distroKeyWithTarget, action, delay);
