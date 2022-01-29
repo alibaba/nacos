@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -68,6 +69,9 @@ public abstract class AbstractInstanceOperate_ITCase {
             }
             break;
         }
+    
+        // Nacos server will not work temporarily if it just started in less than DEFAULT_HEART_BEAT_TIMEOUT ms.   
+        Thread.sleep(Constants.DEFAULT_HEART_BEAT_TIMEOUT + 1000L);
     }
     
     /**
