@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
 import com.alibaba.nacos.core.distributed.distro.component.DistroDataProcessor;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
+import com.alibaba.nacos.core.utils.ServerStateUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -212,6 +213,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 if (!checksumMap.containsKey(key)) {
                     toRemoveKeys.add(key);
                 }
+            }
+            
+            if (ServerStateUtils.isWaitingForFirstBeatFromAllClients()) {
+                return;
             }
             
             Loggers.DISTRO
