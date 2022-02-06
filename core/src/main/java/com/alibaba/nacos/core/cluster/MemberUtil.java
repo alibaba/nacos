@@ -159,7 +159,6 @@ public class MemberUtil {
     public static void onFail(final ServerMemberManager manager, final Member member, Throwable ex) {
         manager.getMemberAddressInfos().remove(member.getAddress());
         final NodeState old = member.getState();
-        member.setState(NodeState.SUSPICIOUS);
         member.setFailAccessCnt(member.getFailAccessCnt() + 1);
         int maxFailAccessCnt = EnvUtil.getProperty(MEMBER_FAIL_ACCESS_CNT_PROPERTY, Integer.class, DEFAULT_MEMBER_FAIL_ACCESS_CNT);
         
@@ -168,6 +167,12 @@ public class MemberUtil {
         if (member.getFailAccessCnt() > maxFailAccessCnt || StringUtils
                 .containsIgnoreCase(ex.getMessage(), TARGET_MEMBER_CONNECT_REFUSE_ERRMSG)) {
             member.setState(NodeState.DOWN);
+        } else {
+            // Fixes concurrent issue:
+            // The state of member must be set only once in this function,
+            // otherwise DistroMapper#onEvent running by the other thread concurrently might add the member
+            // - which state is SUSPICIOUS but will be set to DOWN eventually - to healthy list.
+            member.setState(NodeState.SUSPICIOUS);
         }
         if (!Objects.equals(old, member.getState())) {
             manager.notifyMemberChange(member);
