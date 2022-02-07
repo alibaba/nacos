@@ -62,13 +62,14 @@ public class NacosNamingMaintainServiceTest {
     public void setUp() throws Exception {
         Properties prop = new Properties();
         prop.setProperty(PropertyKeyConst.NAMESPACE, "public");
+        prop.setProperty("serverAddr", "localhost");
+
         nacosNamingMaintainService = new NacosNamingMaintainService(prop);
-        
         serverProxy = mock(NamingHttpClientProxy.class);
         serverListManager = mock(ServerListManager.class);
         securityProxy = mock(SecurityProxy.class);
         executorService = mock(ScheduledExecutorService.class);
-        
+
         Field serverProxyField = NacosNamingMaintainService.class.getDeclaredField("serverProxy");
         serverProxyField.setAccessible(true);
         serverProxyField.set(nacosNamingMaintainService, serverProxy);
