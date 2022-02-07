@@ -66,11 +66,6 @@
             <artifactId>nacos-common</artifactId>
             <optional>true</optional>
         </dependency>
-    
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-auth-plugin</artifactId>
-        </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>

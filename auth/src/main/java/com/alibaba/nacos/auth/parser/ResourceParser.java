@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.auth.parser;
 
-import com.alibaba.nacos.plugin.auth.api.Resource;
-
 /**
  * Resource parser.
  *
@@ -25,14 +23,14 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
  * @author mai.jh
  * @since 1.2.0
  */
-public interface ResourceParser<R> {
+public interface ResourceParser {
     
     /**
-     * Parse resource from request.
+     * Parse a unique name of the resource from the request.
      *
-     * @param request request
-     * @param type    request type, like naming or config
-     * @return resource
+     * @param request where we can find the resource info. Given it may vary from Http request to gRPC request, we use a
+     *                Object type for future accommodation.
+     * @return resource name
      */
-    Resource parse(R request, String type);
+    String parseName(Object request);
 }

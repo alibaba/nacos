@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -47,6 +48,10 @@ public class ServerHttpAgent implements HttpAgent {
     
     private static final NacosRestTemplate NACOS_RESTTEMPLATE = ConfigHttpClientManager.getInstance()
             .getNacosRestTemplate();
+    
+    private String accessKey;
+    
+    private String secretKey;
     
     private String encode;
     
@@ -274,6 +279,7 @@ public class ServerHttpAgent implements HttpAgent {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         ConfigHttpClientManager.getInstance().shutdown();
+        SpasAdapter.freeCredentialInstance();
         LOGGER.info("{} do shutdown stop", className);
     }
 }
