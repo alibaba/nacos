@@ -31,7 +31,6 @@ import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
@@ -77,7 +76,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             Properties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
-        super(securityProxy, properties);
+        super(securityProxy);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));
@@ -273,9 +272,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
         try {
-            request.putAllHeader(getSecurityHeaders());
-            request.putAllHeader(getSpasHeaders(
-                    NamingUtils.getGroupedNameOptional(request.getServiceName(), request.getGroupName())));
+            request.putAllHeader(
+                    getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             Response response =
                     requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {

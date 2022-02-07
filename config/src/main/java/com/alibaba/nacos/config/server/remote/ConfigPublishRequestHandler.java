@@ -22,9 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.MapUtil;
-import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
@@ -36,8 +35,9 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -62,7 +62,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     @Override
     @TpsControl(pointName = "ConfigPublish", parsers = {ConfigPublishGroupKeyParser.class,
             ConfigPublishGroupParser.class})
-    @Secured(action = ActionTypes.WRITE, resource = "", parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
         
         try {
