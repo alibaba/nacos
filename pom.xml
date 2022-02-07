@@ -612,6 +612,8 @@
         <module>consistency</module>
         <module>auth</module>
         <module>sys</module>
+        <module>plugin</module>
+        <module>plugin-default-impl</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -632,7 +634,7 @@
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
         </dependency>
-    
+        
     </dependencies>
     
     <!-- Manage the version numbers of dependencies,
@@ -718,6 +720,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-consistency</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-auth-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -21,12 +21,11 @@ import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -44,7 +43,7 @@ import java.util.Objects;
 public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest, ServiceListResponse> {
     
     @Override
-    @Secured(action = ActionTypes.READ, parser = NamingResourceParser.class)
+    @Secured(action = ActionTypes.READ)
     public ServiceListResponse handle(ServiceListRequest request, RequestMeta meta) throws NacosException {
         Collection<Service> serviceSet = ServiceManager.getInstance().getSingletons(request.getNamespace());
         ServiceListResponse result = ServiceListResponse.buildSuccessResponse(0, new LinkedList<>());

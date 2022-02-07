@@ -135,17 +135,17 @@ class EditServiceDialog extends React.Component {
 
   getSelectorTypes() {
     request({
-        method: 'GET',
-        url: 'v1/ns/service/selector/types',
-        success: response => {
-          if (response.code !== 200) {
-            Message.error(response.message);
-            return;
-          }
-          this.setState({
-            selectorTypes: response.data
-          });
+      method: 'GET',
+      url: 'v1/ns/service/selector/types',
+      success: response => {
+        if (response.code !== 200) {
+          Message.error(response.message);
+          return;
         }
+        this.setState({
+          selectorTypes: response.data,
+        });
+      },
     });
   }
 
@@ -216,9 +216,9 @@ class EditServiceDialog extends React.Component {
               defaultValue={selector.type}
               onChange={type => this.onChangeCluster({ selector: { ...selector, type } })}
             >
-              {
-                selectorTypes.map((selectorType) => (<Select.Option value={selectorType}>{selectorType}</Select.Option>))
-              }
+              {selectorTypes.map(selectorType => (
+                <Select.Option value={selectorType}>{selectorType}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
           {selector.type !== 'none' && (
