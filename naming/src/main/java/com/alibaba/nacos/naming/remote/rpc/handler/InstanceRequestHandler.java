@@ -22,10 +22,11 @@ import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.springframework.stereotype.Component;
 
 /**
@@ -43,7 +44,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     }
     
     @Override
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
