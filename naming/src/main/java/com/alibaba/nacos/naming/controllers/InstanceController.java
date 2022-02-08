@@ -26,6 +26,8 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -90,6 +92,9 @@ public class InstanceController {
     
     @Autowired
     private ServiceManager serviceManager;
+
+    @Autowired
+    private DistroConsistencyServiceImpl consistencyService;
     
     private DataSource pushDataSource = new DataSource() {
         
@@ -493,7 +498,17 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clusterName, ip, port);
-        
+        // auto fix when service exist but datum not exists
+        if (clientBeat != null && clientBeat.isEphemeral()) {
+            String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, clientBeat.isEphemeral());
+            if (consistencyService.get(key) == null) {
+                Loggers.SRV_LOG.warn("dataStore serviceMap not consistent, key = {}, auto register instance = {}",
+                                     key,
+                                     clientBeat);
+                serviceManager.registerInstance(namespaceId, serviceName, parseInstance(clientBeat, request, instance));
+            }
+        }
+
         if (instance == null) {
             if (clientBeat == null) {
                 result.put(CommonParams.CODE, NamingResponseCode.RESOURCE_NOT_FOUND);
@@ -577,7 +592,29 @@ public class InstanceController {
         result.replace("ips", ipArray);
         return result;
     }
-    
+
+    private Instance parseInstance(RsInfo clientBeat, HttpServletRequest request, Instance serviceInstance) throws Exception {
+        String app = WebUtils.optional(request, "app", "DEFAULT");
+        Instance instance = new Instance();
+        instance.setPort(clientBeat.getPort());
+        instance.setIp(clientBeat.getIp());
+        instance.setWeight(clientBeat.getWeight());
+        instance.setClusterName(clientBeat.getCluster());
+        instance.setHealthy(true);
+        instance.setEnabled(serviceInstance.isEnabled());
+        instance.setEphemeral(clientBeat.isEphemeral());
+
+        instance.setApp(app);
+        instance.setServiceName(clientBeat.getServiceName());
+        instance.setInstanceId(instance.generateInstanceId());
+        instance.setLastBeat(System.currentTimeMillis());
+        if (clientBeat.getMetadata() != null && clientBeat.getMetadata().size() > 0) {
+            instance.setMetadata(clientBeat.getMetadata());
+        }
+        instance.validate();
+        return instance;
+    }
+
     private Instance parseInstance(HttpServletRequest request) throws Exception {
         
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);

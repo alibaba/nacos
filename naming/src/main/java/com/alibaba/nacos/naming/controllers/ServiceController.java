@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
@@ -391,6 +392,7 @@ public class ServiceController {
                 Service service = serviceManager.getService(checksums.namespaceId, serviceName);
                 
                 if (service == null) {
+                    Loggers.SRV_LOG.warn("service :{} exist in remote:{}, but not in local:{}", serviceName, serverIp, NetUtils.localServer());
                     continue;
                 }
                 
