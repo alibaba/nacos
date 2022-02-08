@@ -66,7 +66,7 @@ public class ConfigCacheService {
     /**
      * groupKey -> cacheItem.
      */
-    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<String, CacheItem>();
+    private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     @Autowired
     private static PersistService persistService;
@@ -116,7 +116,7 @@ public class ConfigCacheService {
             updateMd5(groupKey, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
                 if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
@@ -170,7 +170,7 @@ public class ConfigCacheService {
             updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -214,7 +214,7 @@ public class ConfigCacheService {
             updateTagMd5(groupKey, tag, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -258,7 +258,7 @@ public class ConfigCacheService {
             updateMd5(groupKey, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
+            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -516,11 +516,11 @@ public class ConfigCacheService {
     public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
         if (cache.tagMd5 == null) {
-            Map<String, String> tagMd5Tmp = new HashMap<String, String>(1);
+            Map<String, String> tagMd5Tmp = new HashMap<>(1);
             tagMd5Tmp.put(tag, md5);
             cache.tagMd5 = tagMd5Tmp;
             if (cache.tagLastModifiedTs == null) {
-                Map<String, Long> tagLastModifiedTsTmp = new HashMap<String, Long>(1);
+                Map<String, Long> tagLastModifiedTsTmp = new HashMap<>(1);
                 tagLastModifiedTsTmp.put(tag, lastModifiedTs);
                 cache.tagLastModifiedTs = tagLastModifiedTsTmp;
             } else {
