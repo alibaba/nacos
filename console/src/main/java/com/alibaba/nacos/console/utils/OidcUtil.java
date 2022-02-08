@@ -14,95 +14,72 @@ import java.util.Map;
  * @author kicey
  */
 public class OidcUtil {
+
+    private static final String PREFIX = "nacos.core.auth.oidc-idp";
+    private static final String EXPOSED_HOST = "nacos.core.auth.oidc-exposed-host";
     
     /**
-     * OIDC keys used in configuration file.
+     * IDP-Specified OIDC configuration keys.
      */
-    private static final String DOMAIN = "domain";
-    
-    private static final String OIDPS = "oidps";
-    
-    private static final String OIDP = "oidp";
-    
     private static final String NAME = "name";
     
-    private static final String AUTH_URL = "auth_url";
+    private static final String AUTH_URL = "auth-url";
     
-    private static final String EXCHANGE_TOKEN_URL = "exchange_token_url";
+    private static final String EXCHANGE_TOKEN_URL = "exchange-token-url";
     
-    private static final String USER_INFO_URL = "userinfo_url";
+    private static final String USER_INFO_URL = "userinfo-url";
     
-    private static final String JSONPATH = "jsonpath";
+    private static final String USERNAME_JSON_PATH = "username-json-path";
+
+    private static final String CLIENT_ID = "client-id";
+    
+    private static final String CLIENT_SECRET = "client-secret";
+
+    private static final String SCOPE = "scope";
     
     /**
-     * OIDC keys used in configuration file or other classes.
+     * Callback handling endpoint path 
      */
-    public static final String CLIENT_ID = "client_id";
+    public static final String CALLBACK_PATH = "/nacos/v1/auth/oidc/callback";
     
-    public static final String CLIENT_SECRET = "client_secret";
-    
-    public static final String SCOPE = "scope";
-    
-    public static final String REDIRECT_URI = "redirect_uri";
-    
-    public static final String CODE = "code";
-    
-    public static final String RESPONSE_TYPE = "response_type";
-    
-    public static final String STATE = "state";
-    
-    public static String getDomain() {
-        return EnvUtil.getProperty(String.format("%s.%s", OIDP, DOMAIN));
-    }
-    
-    public static String getOidcCallbackUrl() {
-        return String.format("http://%s:%d/nacos/v1/auth/oidc/callback", getDomain(), EnvUtil.getPort());
+    public static String getExposedHost() {
+        return EnvUtil.getProperty(EXPOSED_HOST);
     }
     
     public static List<String> getOidpList() {
-        return EnvUtil.getProperty(OIDPS, List.class);
+        return EnvUtil.getProperty(PREFIX, List.class);
     }
     
     public static String getAuthUrl(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, AUTH_URL));
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, AUTH_URL));
     }
     
     public static String getTokenExchangeUrl(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, EXCHANGE_TOKEN_URL));
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, EXCHANGE_TOKEN_URL));
     }
     
     public static String getUserInfoUrl(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, USER_INFO_URL));
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, USER_INFO_URL));
     }
     
     public static String getClientId(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, CLIENT_ID));
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, CLIENT_ID));
     }
     
     public static String getClientSecret(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, CLIENT_SECRET));
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, CLIENT_SECRET));
     }
     
     public static String getName(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, NAME));
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, NAME));
     }
     
     public static List<String> getScopes(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, SCOPE), List.class);
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, SCOPE), List.class);
     }
     
     public static String getJsonpath(String oidp) {
-        return EnvUtil.getProperty(String.format("%s.%s.%s", OIDP, oidp, JSONPATH));
-    }
-    
-    public static Map<String, String> getExchangeTokenParams(String oidp, String code) {
-        Map<String, String> params = new HashMap<>(16);
-        params.put("grant_type", "authorization_code");
-        params.put("client_id", OidcUtil.getClientId(oidp));
-        params.put("client_secret", OidcUtil.getClientSecret(oidp));
-        params.put("code", code);
-        params.put("redirect_uri", getOidcCallbackUrl());
-        return params;
+        return EnvUtil.getProperty(getIdpCfgKey(oidp, USERNAME_JSON_PATH));
     }
     
     /**
@@ -137,5 +114,9 @@ public class OidcUtil {
         String rawUserinfoUrl = getUserInfoUrl(oidp);
         UriComponentsBuilder userinfoUriBuilder = UriComponentsBuilder.fromHttpUrl(rawUserinfoUrl);
         return userinfoUriBuilder.encode().toUriString();
+    }
+
+    private static String getIdpCfgKey(String name, String key) {
+        return String.format("%s.%s.%s", PREFIX, name, key);
     }
 }

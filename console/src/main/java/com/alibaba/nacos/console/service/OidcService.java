@@ -24,6 +24,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.SocketTimeoutException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,25 +51,23 @@ public class OidcService {
      * @param clientId    client id
      * @param redirectUrl redirect url
      * @param scopes      scopes, will be joined by ' '
-     * @param stateBase64 state base64 encoded
+     * @param state       relay state, unused by now
      * @return the complete authorize url in String
      */
     public String completeAuthUriWithParameters(String authUrl, String clientId, String redirectUrl,
-            List<String> scopes, String stateBase64) {
+            List<String> scopes, String state) {
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(authUrl);
-        uriBuilder.queryParam(OidcUtil.RESPONSE_TYPE, OidcUtil.CODE);
-        uriBuilder.queryParam(OidcUtil.CLIENT_ID, clientId);
-        uriBuilder.queryParam(OidcUtil.REDIRECT_URI, redirectUrl);
+        uriBuilder.queryParam("response_type", "code");
+        uriBuilder.queryParam("client_id", clientId);
+        uriBuilder.queryParam("redirect_uri", redirectUrl);
         
         StringBuilder scopesString = new StringBuilder();
         // separate scopes by ' ' in default
         if (scopes != null && scopes.size() > 0) {
             scopes.forEach(scope -> scopesString.append(scope).append(" "));
+            uriBuilder.queryParam("scope", scopesString.toString());
         }
-        if (scopes != null && scopes.size() > 0) {
-            uriBuilder.queryParam(OidcUtil.SCOPE, scopesString.toString());
-        }
-        uriBuilder.queryParam(OidcUtil.STATE, stateBase64);
+        uriBuilder.queryParam("state", state);
         return uriBuilder.encode().toUriString();
     }
     
@@ -82,11 +81,18 @@ public class OidcService {
      * @throws IllegalArgumentException fail to get access token because of content returned by the oidp
      * @throws Exception                other exception
      */
-    public HttpRestResult<String> exchangeTokenWithCodeThroughPostForm(String oidp, String code)
+    public HttpRestResult<String> exchangeTokenWithCodeThroughPostForm(String oidp, String code, String redirectUrl)
             throws SocketTimeoutException, IllegalArgumentException, Exception {
         String completeExchangeTokenUrl = OidcUtil.getCompletedExchangeTokenUrl(oidp);
         Header tokenHeader = OidcUtil.getExchangeTokenHeader();
-        Map<String, String> params = OidcUtil.getExchangeTokenParams(oidp, code);
+
+        Map<String, String> params = new HashMap<>(16);
+        params.put("grant_type", "authorization_code");
+        params.put("client_id", OidcUtil.getClientId(oidp));
+        params.put("client_secret", OidcUtil.getClientSecret(oidp));
+        params.put("code", code);
+        params.put("redirect_uri", redirectUrl);
+
         return restTemplate.postForm(completeExchangeTokenUrl, tokenHeader, params, String.class);
     }
     

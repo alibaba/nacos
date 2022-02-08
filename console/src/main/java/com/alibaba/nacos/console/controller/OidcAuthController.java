@@ -46,9 +46,9 @@ public class OidcAuthController {
     private NacosUserDetailsServiceImpl userDetailsService;
     
     /**
-     * list all the oidp providers from config file.
+     * List all OIDC IDP configurations.
      *
-     * @return list of oidps in configured
+     * @return OIDC IDP configurations
      */
     @GetMapping("/list")
     public List<Map<String, String>> list() {
@@ -64,28 +64,35 @@ public class OidcAuthController {
     }
     
     /**
-     * The api used to initiate the oidc auth, it will be set a state, so only the auth initiated from here can
-     * success.
+     * Initiate OIDC authentication flow.
+     * A state object will be initialized here, which will be base64-encoded, passed to the IDP and eventually relayed to the callback endpoint.
      *
-     * @param oidpId   oidp id used to auth
-     * @param response a redirect response
+     * @param id       id of the IDP
+     * @param origin   origin of the request from browser
+     * @param response response object
      */
     @GetMapping("/init")
-    public Object init(@RequestParam("oidpId") String oidpId, HttpServletResponse response) {
+    public Object init(@RequestParam("id") String id, @RequestParam("origin") String origin, HttpServletResponse response) {
         
-        String authUrl = OidcUtil.getAuthUrl(oidpId);
+        String authUrl = OidcUtil.getAuthUrl(id);
         if (authUrl == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(String.format("oidpId %s not found in config", oidpId));
+                    .body(String.format("OIDC IDP %s not found in config", id));
         }
         
-        String clientId = OidcUtil.getClientId(oidpId);
+        String clientId = OidcUtil.getClientId(id);
         
-        List<String> scopes = OidcUtil.getScopes(oidpId);
+        List<String> scopes = OidcUtil.getScopes(id);
+
+        String host = OidcUtil.getExposedHost();
+        if (host == null) {
+            host = origin;
+        }
+        String redirectUrl = host + OidcUtil.CALLBACK_PATH;
         
         String state;
         try {
-            state = new ObjectMapper().writeValueAsString(new OidcState(oidpId));
+            state = new ObjectMapper().writeValueAsString(new OidcState().setOidpId(id).setRedirectUrl(redirectUrl));
         } catch (JsonProcessingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to serialize state");
         }
@@ -93,7 +100,7 @@ public class OidcAuthController {
         byte[] stateBase64bytes = Base64.encodeBase64(state.getBytes());
         String stateBase64 = new String(stateBase64bytes);
         
-        String authInitUri = oidcService.completeAuthUriWithParameters(authUrl, clientId, OidcUtil.getOidcCallbackUrl(),
+        String authInitUri = oidcService.completeAuthUriWithParameters(authUrl, clientId, redirectUrl,
                 scopes, stateBase64);
         
         response.setStatus(HttpServletResponse.SC_FOUND);
@@ -102,15 +109,14 @@ public class OidcAuthController {
     }
     
     /**
-     * the callback is request when the browser is redirected back to the server with the code gotten from the idp.
+     * Handle callback from OIDC IDP after a successful authentication.
      *
-     * @param code     the authorization code
-     * @param state    stores the key of the idp used internally
-     * @param request  the http request, may add something to the session
-     * @param response the http response, may redirect to another page
-     * @return error message if failed, null if success and redirect to the context path
+     * @param code     authorization code
+     * @param state    base64-encoded state object
+     * @param request  request object
+     * @param response response object
      */
-    @GetMapping("callback")
+    @GetMapping("/callback")
     public Object callback(@RequestParam("code") String code, @RequestParam("state") String state,
             HttpServletRequest request, HttpServletResponse response) {
         state = new String(Base64.decodeBase64(state.getBytes()));
@@ -118,13 +124,14 @@ public class OidcAuthController {
         try {
             oidcState = new ObjectMapper().readValue(state, OidcState.class);
         } catch (JsonProcessingException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("fail to get the state");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("failed to get the state");
         }
         String oidp = oidcState.getOidpId();
+        String redirectUrl = oidcState.getRedirectUrl();
         
         RestResult<String> tokenResult;
         try {
-            tokenResult = oidcService.exchangeTokenWithCodeThroughPostForm(oidp, code);
+            tokenResult = oidcService.exchangeTokenWithCodeThroughPostForm(oidp, code, redirectUrl);
         } catch (SocketTimeoutException e) {
             return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
                     .body("timeout when exchanging token, please try again");
@@ -179,29 +186,32 @@ public class OidcAuthController {
         return null;
     }
     
-    /**
-     * the field used now is only the oidpId, when extended, move it outside the controller class.
-     */
     static class OidcState {
         
         @JsonProperty("oidp_id")
         private String oidpId;
+
+        @JsonProperty("redirect_url")
+        private String redirectUrl;
         
         private final Map<String, String> state = new HashMap<>();
-        
-        public OidcState() {
-        }
-        
-        public OidcState(String oidpId) {
-            this.oidpId = oidpId;
-        }
         
         public String getOidpId() {
             return oidpId;
         }
         
-        public String setOidpId(String oidpId) {
-            return this.oidpId = oidpId;
+        public OidcState setOidpId(String oidpId) {
+            this.oidpId = oidpId;
+            return this;
+        }
+
+        public String getRedirectUrl() {
+            return redirectUrl;
+        }
+        
+        public OidcState setRedirectUrl(String redirectUrl) {
+            this.redirectUrl = redirectUrl;
+            return this;
         }
         
         @JsonAnyGetter
@@ -211,7 +221,7 @@ public class OidcAuthController {
     }
     
     /**
-     * The response including OIDC token returned from the oidp.
+     * The response including OIDC token returned from the OIDC IDP.
      *
      * @author Kicey
      */
