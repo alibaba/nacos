@@ -100,7 +100,7 @@ public class EnvUtil {
     private static final String NACOS_TEMP_DIR_1 = "data";
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
-
+    
     @JustForTest
     private static String confPath = "";
     

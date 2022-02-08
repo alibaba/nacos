@@ -48,8 +48,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     @Autowired
     private AuthConfigs authConfigs;
-
-    // refresh the user map every 15s
+    
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
