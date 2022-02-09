@@ -35,7 +35,6 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,7 +65,6 @@ public class ConfigOpsController {
     
     private final DumpService dumpService;
     
-    @Autowired
     public ConfigOpsController(PersistService persistService, DumpService dumpService) {
         this.persistService = persistService;
         this.dumpService = dumpService;

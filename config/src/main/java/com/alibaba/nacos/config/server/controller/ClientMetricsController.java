@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.core.cluster.Member;
@@ -34,8 +35,6 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -61,11 +60,14 @@ import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequ
 @RequestMapping(Constants.METRICS_CONTROLLER_PATH)
 public class ClientMetricsController {
     
-    @Autowired
-    private ServerMemberManager serverMemberManager;
+    private final ServerMemberManager serverMemberManager;
     
-    @Autowired
-    private ConnectionManager connectionManager;
+    private final ConnectionManager connectionManager;
+    
+    public ClientMetricsController(ServerMemberManager serverMemberManager, ConnectionManager connectionManager) {
+        this.serverMemberManager = serverMemberManager;
+        this.connectionManager = connectionManager;
+    }
     
     /**
      * get client metric.
