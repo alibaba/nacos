@@ -118,9 +118,8 @@ public class ConfigController {
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
-                                 @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-                                 @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+    public Boolean publishConfig(HttpServletRequest request, @RequestParam(value = "dataId") String dataId,
+                                 @RequestParam(value = "group") String group, @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
                                  @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
                                  @RequestParam(value = "appName", required = false) String appName,
                                  @RequestParam(value = "src_user", required = false) String srcUser,
