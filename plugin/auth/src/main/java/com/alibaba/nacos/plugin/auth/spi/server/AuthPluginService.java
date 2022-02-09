@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.spi.server;
 
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 
 import java.util.Collection;
@@ -40,10 +41,11 @@ public interface AuthPluginService {
      * To validate whether the identity context from request is legal or illegal.
      *
      * @param identityContext where we can find the user information
+     * @param resource        resource about this user information
      * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException if authentication is failed
      */
-    boolean validateIdentity(IdentityContext identityContext) throws AccessException;
+    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
     
     /**
      * Validate the identity whether has the resource authority.
