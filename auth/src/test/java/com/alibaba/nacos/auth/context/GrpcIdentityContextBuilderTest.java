@@ -19,6 +19,7 @@ package com.alibaba.nacos.auth.context;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +57,7 @@ public class GrpcIdentityContextBuilderTest {
         Map<String, String> headers = new HashMap<>();
         headers.put(IDENTITY_TEST_KEY, IDENTITY_TEST_VALUE);
         when(request.getHeaders()).thenReturn(headers);
+        when(request.getHeader(Constants.Identity.X_REAL_IP)).thenReturn("1.1.1.1");
     }
     
     @Test
@@ -69,5 +71,6 @@ public class GrpcIdentityContextBuilderTest {
     public void testBuild() {
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
+        assertEquals("1.1.1.1", actual.getParameter(Constants.Identity.REMOTE_IP));
     }
 }

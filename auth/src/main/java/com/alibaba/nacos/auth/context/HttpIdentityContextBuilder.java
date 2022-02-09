@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.auth.context;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -35,6 +37,10 @@ import java.util.Set;
  */
 public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpServletRequest> {
     
+    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    
+    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
+    
     private final AuthConfigs authConfigs;
     
     public HttpIdentityContextBuilder(AuthConfigs authConfigs) {
@@ -50,6 +56,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     @Override
     public IdentityContext build(HttpServletRequest request) {
         IdentityContext result = new IdentityContext();
+        getRemoteIp(request, result);
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (!authPluginService.isPresent()) {
@@ -79,5 +86,18 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
                 result.setParameter(paraName, request.getParameter(paraName));
             }
         }
+    }
+    
+    private void getRemoteIp(HttpServletRequest request, IdentityContext result) {
+        String remoteIp = StringUtils.EMPTY;
+        String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
+        if (!StringUtils.isBlank(xForwardedFor)) {
+            remoteIp = xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
+        }
+        if (StringUtils.isBlank(remoteIp)) {
+            String nginxHeader = request.getHeader(Constants.Identity.X_REAL_IP);
+            remoteIp = StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
+        }
+        result.setParameter(Constants.Identity.REMOTE_IP, remoteIp);
     }
 }

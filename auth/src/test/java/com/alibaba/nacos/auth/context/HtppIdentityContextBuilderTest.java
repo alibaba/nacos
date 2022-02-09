@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth.context;
 
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,6 +76,7 @@ public class HtppIdentityContextBuilderTest {
         mockParameter(false);
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
+        assertEquals("1.1.1.1", actual.getParameter(Constants.Identity.REMOTE_IP));
     }
     
     @Test
@@ -91,6 +93,7 @@ public class HtppIdentityContextBuilderTest {
             when(headerNames.hasMoreElements()).thenReturn(true, false);
             when(headerNames.nextElement()).thenReturn(IDENTITY_TEST_KEY, (String) null);
             when(request.getHeader(IDENTITY_TEST_KEY)).thenReturn(IDENTITY_TEST_VALUE);
+            when(request.getHeader(Constants.Identity.X_REAL_IP)).thenReturn("1.1.1.1");
         }
     }
     
