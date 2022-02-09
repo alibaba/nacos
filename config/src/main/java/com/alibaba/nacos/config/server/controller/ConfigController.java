@@ -123,6 +123,7 @@ public class ConfigController {
                                  @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
                                  @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
                                  @RequestParam(value = "appName", required = false) String appName,
+                                 @RequestParam(value = "src_user", required = false) String srcUser,
                                  @RequestParam(value = "config_tags", required = false) String configTags,
                                  @RequestParam(value = "desc", required = false) String desc,
                                  @RequestParam(value = "use", required = false) String use,
@@ -132,8 +133,6 @@ public class ConfigController {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
-
-        String srcUser = RequestUtil.getSrcUserName(request);
 
         if (StringUtils.isBlank(srcUser)) {
             srcUser = RequestUtil.getSrcUserName(request);
