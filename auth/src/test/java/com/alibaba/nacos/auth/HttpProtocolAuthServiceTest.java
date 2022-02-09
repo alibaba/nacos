@@ -120,14 +120,14 @@ public class HttpProtocolAuthServiceTest {
     @Test
     public void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(httpProtocolAuthService.validateIdentity(identityContext));
+        assertTrue(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     public void testValidateIdentityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(httpProtocolAuthService.validateIdentity(identityContext));
+        assertFalse(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test

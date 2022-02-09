@@ -68,7 +68,7 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 Secured secured = method.getAnnotation(Secured.class);
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
-                boolean result = protocolAuthService.validateIdentity(identityContext);
+                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");
