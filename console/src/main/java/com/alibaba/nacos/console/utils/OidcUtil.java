@@ -1,12 +1,26 @@
+/*
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.console.utils;
 
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Util to get config about the OIDC.
@@ -14,8 +28,9 @@ import java.util.Map;
  * @author kicey
  */
 public class OidcUtil {
-
+    
     private static final String PREFIX = "nacos.core.auth.oidc-idp";
+    
     private static final String EXPOSED_HOST = "nacos.core.auth.oidc-exposed-host";
     
     /**
@@ -30,15 +45,15 @@ public class OidcUtil {
     private static final String USER_INFO_URL = "userinfo-url";
     
     private static final String USERNAME_JSON_PATH = "username-json-path";
-
+    
     private static final String CLIENT_ID = "client-id";
     
     private static final String CLIENT_SECRET = "client-secret";
-
+    
     private static final String SCOPE = "scope";
     
     /**
-     * Callback handling endpoint path 
+     * Callback handling endpoint path.
      */
     public static final String CALLBACK_PATH = "/nacos/v1/auth/oidc/callback";
     
@@ -84,6 +99,7 @@ public class OidcUtil {
     
     /**
      * add Accept: application/json, Content-Type:application/x-www-form-urlencoded to header.
+     *
      * @return header with Accept and Content-Type
      */
     public static Header getExchangeTokenHeader() {
@@ -101,6 +117,7 @@ public class OidcUtil {
     
     /**
      * get url as {@link String}encoded from config.
+     *
      * @param oidp the key of the oidp
      * @return url as {@link String}
      */
@@ -115,7 +132,7 @@ public class OidcUtil {
         UriComponentsBuilder userinfoUriBuilder = UriComponentsBuilder.fromHttpUrl(rawUserinfoUrl);
         return userinfoUriBuilder.encode().toUriString();
     }
-
+    
     private static String getIdpCfgKey(String name, String key) {
         return String.format("%s.%s.%s", PREFIX, name, key);
     }

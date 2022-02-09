@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.api.common.Constants;
@@ -83,16 +99,17 @@ public class OidcService {
      */
     public HttpRestResult<String> exchangeTokenWithCodeThroughPostForm(String oidp, String code, String redirectUrl)
             throws SocketTimeoutException, IllegalArgumentException, Exception {
-        String completeExchangeTokenUrl = OidcUtil.getCompletedExchangeTokenUrl(oidp);
-        Header tokenHeader = OidcUtil.getExchangeTokenHeader();
-
+        
         Map<String, String> params = new HashMap<>(16);
         params.put("grant_type", "authorization_code");
         params.put("client_id", OidcUtil.getClientId(oidp));
         params.put("client_secret", OidcUtil.getClientSecret(oidp));
         params.put("code", code);
         params.put("redirect_uri", redirectUrl);
-
+        
+        String completeExchangeTokenUrl = OidcUtil.getCompletedExchangeTokenUrl(oidp);
+        Header tokenHeader = OidcUtil.getExchangeTokenHeader();
+        
         return restTemplate.postForm(completeExchangeTokenUrl, tokenHeader, params, String.class);
     }
     
@@ -126,13 +143,13 @@ public class OidcService {
     
     /**
      * user username to create a Nacos internal token for the user.
+     *
      * @param username the username in Nacos
-     * @param request request's session will be added a result
+     * @param request  request's session will be added a result
      * @return the Nacos internal token
      * @throws JsonProcessingException fail to map the result to a json as the token
      */
-    public  String createNacosInternalToken(String username, HttpServletRequest request)
-            throws JsonProcessingException {
+    public String createNacosInternalToken(String username, HttpServletRequest request) throws JsonProcessingException {
         String token = tokenManager.createToken(username);
         Authentication authentication = tokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
