@@ -55,7 +55,6 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -102,14 +101,18 @@ public class ConfigController {
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
     
-    @Autowired
-    private ConfigServletInner inner;
+    private final ConfigServletInner inner;
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
     
-    @Autowired
-    private ConfigSubService configSubService;
+    private final ConfigSubService configSubService;
+    
+    public ConfigController(ConfigServletInner inner, PersistService persistService,
+            ConfigSubService configSubService) {
+        this.inner = inner;
+        this.persistService = persistService;
+        this.configSubService = configSubService;
+    }
     
     /**
      * Adds or updates non-aggregated data.
@@ -144,7 +147,7 @@ public class ConfigController {
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(10);
         MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
         MapUtil.putIfValNoNull(configAdvanceInfo, "desc", desc);
         MapUtil.putIfValNoNull(configAdvanceInfo, "use", use);
@@ -354,7 +357,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -381,7 +384,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -492,7 +495,7 @@ public class ConfigController {
                 EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
                         + EXPORT_CONFIG_FILE_NAME_EXT;
         headers.add("Content-Disposition", "attachment;filename=" + fileName);
-        return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
     /**
@@ -827,11 +830,7 @@ public class ConfigController {
             ci4save.setDesc(ci.getDesc());
             configInfoList4Clone.add(ci4save);
         }
-        
-        if (configInfoList4Clone.isEmpty()) {
-            failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
-        }
+    
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
