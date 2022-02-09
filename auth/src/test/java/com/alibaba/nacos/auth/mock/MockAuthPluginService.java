@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.mock;
 
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -36,7 +37,7 @@ public class MockAuthPluginService implements AuthPluginService {
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext) throws AccessException {
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         return false;
     }
     
