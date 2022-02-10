@@ -223,8 +223,7 @@ private static final long serialVersionUID = 0L;
       if (!getBody()
           .equals(other.getBody())) return false;
     }
-    if (!unknownFields.equals(other.unknownFields)) return false;
-    return true;
+    return unknownFields.equals(other.unknownFields);
   }
 
   @Override
@@ -334,8 +333,7 @@ private static final long serialVersionUID = 0L;
   @Override
   protected Builder newBuilderForType(
       BuilderParent parent) {
-    Builder builder = new Builder(parent);
-    return builder;
+    return new Builder(parent);
   }
   /**
    * Protobuf type {@code Payload}
@@ -368,9 +366,6 @@ private static final long serialVersionUID = 0L;
       maybeForceBuilderInitialization();
     }
     private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3
-              .alwaysUseFieldBuilders) {
-      }
     }
     @Override
     public Builder clear() {

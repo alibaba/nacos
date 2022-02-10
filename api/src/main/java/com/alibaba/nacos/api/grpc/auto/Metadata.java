@@ -65,13 +65,11 @@ private static final long serialVersionUID = 0L;
             done = true;
             break;
           case 26: {
-            String s = input.readStringRequireUtf8();
-
-            type_ = s;
+            type_ = input.readStringRequireUtf8();
             break;
           }
           case 58: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               headers_ = com.google.protobuf.MapField.newMapField(
                   HeadersDefaultEntryHolder.defaultEntry);
               mutable_bitField0_ |= 0x00000001;
@@ -84,9 +82,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 66: {
-            String s = input.readStringRequireUtf8();
-
-            clientIp_ = s;
+            clientIp_ = input.readStringRequireUtf8();
             break;
           }
           default: {
@@ -117,13 +113,11 @@ private static final long serialVersionUID = 0L;
   @Override
   protected com.google.protobuf.MapField internalGetMapField(
       int number) {
-    switch (number) {
-      case 7:
-        return internalGetHeaders();
-      default:
-        throw new RuntimeException(
-            "Invalid map field number: " + number);
+    if (number == 7) {
+      return internalGetHeaders();
     }
+    throw new RuntimeException(
+            "Invalid map field number: " + number);
   }
   @Override
   protected FieldAccessorTable
@@ -206,7 +200,7 @@ private static final long serialVersionUID = 0L;
     static final com.google.protobuf.MapEntry<
         String, String> defaultEntry =
             com.google.protobuf.MapEntry
-            .<String, String>newDefaultInstance(
+            .newDefaultInstance(
                 NacosGrpcService.internal_static_Metadata_HeadersEntry_descriptor,
                 com.google.protobuf.WireFormat.FieldType.STRING,
                 "",
@@ -260,7 +254,7 @@ private static final long serialVersionUID = 0L;
     if (key == null) { throw new NullPointerException(); }
     java.util.Map<String, String> map =
         internalGetHeaders().getMap();
-    return map.containsKey(key) ? map.get(key) : defaultValue;
+    return map.getOrDefault(key, defaultValue);
   }
   /**
    * <code>map&lt;string, string&gt; headers = 7;</code>
@@ -349,8 +343,7 @@ private static final long serialVersionUID = 0L;
         .equals(other.getClientIp())) return false;
     if (!internalGetHeaders().equals(
         other.internalGetHeaders())) return false;
-    if (!unknownFields.equals(other.unknownFields)) return false;
-    return true;
+    return unknownFields.equals(other.unknownFields);
   }
 
   @Override
@@ -460,8 +453,7 @@ private static final long serialVersionUID = 0L;
   @Override
   protected Builder newBuilderForType(
       BuilderParent parent) {
-    Builder builder = new Builder(parent);
-    return builder;
+    return new Builder(parent);
   }
   /**
    * Protobuf type {@code Metadata}
@@ -478,24 +470,20 @@ private static final long serialVersionUID = 0L;
     @SuppressWarnings({"rawtypes"})
     protected com.google.protobuf.MapField internalGetMapField(
         int number) {
-      switch (number) {
-        case 7:
-          return internalGetHeaders();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
+      if (number == 7) {
+        return internalGetHeaders();
       }
+      throw new RuntimeException(
+              "Invalid map field number: " + number);
     }
     @SuppressWarnings({"rawtypes"})
     protected com.google.protobuf.MapField internalGetMutableMapField(
         int number) {
-      switch (number) {
-        case 7:
-          return internalGetMutableHeaders();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
+      if (number == 7) {
+        return internalGetMutableHeaders();
       }
+      throw new RuntimeException(
+              "Invalid map field number: " + number);
     }
     @Override
     protected FieldAccessorTable
@@ -516,9 +504,6 @@ private static final long serialVersionUID = 0L;
       maybeForceBuilderInitialization();
     }
     private void maybeForceBuilderInitialization() {
-      if (com.google.protobuf.GeneratedMessageV3
-              .alwaysUseFieldBuilders) {
-      }
     }
     @Override
     public Builder clear() {
@@ -554,7 +539,6 @@ private static final long serialVersionUID = 0L;
     @Override
     public Metadata buildPartial() {
       Metadata result = new Metadata(this);
-      int from_bitField0_ = bitField0_;
       result.type_ = type_;
       result.clientIp_ = clientIp_;
       result.headers_ = internalGetHeaders();
@@ -645,7 +629,6 @@ private static final long serialVersionUID = 0L;
       }
       return this;
     }
-    private int bitField0_;
 
     private Object type_ = "";
     /**
@@ -797,7 +780,7 @@ private static final long serialVersionUID = 0L;
     }
     private com.google.protobuf.MapField<String, String>
     internalGetMutableHeaders() {
-      onChanged();;
+      onChanged();
       if (headers_ == null) {
         headers_ = com.google.protobuf.MapField.newMapField(
             HeadersDefaultEntryHolder.defaultEntry);
@@ -844,7 +827,7 @@ private static final long serialVersionUID = 0L;
       if (key == null) { throw new NullPointerException(); }
       java.util.Map<String, String> map =
           internalGetHeaders().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
+      return map.getOrDefault(key, defaultValue);
     }
     /**
      * <code>map&lt;string, string&gt; headers = 7;</code>
