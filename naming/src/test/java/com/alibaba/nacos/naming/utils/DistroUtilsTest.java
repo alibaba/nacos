@@ -21,11 +21,13 @@ import static org.junit.Assert.assertEquals;
  */
 public class DistroUtilsTest {
     
-    private static final String NAMESPACE = "testNamespace-1";
+    private static final String NAMESPACE = "testNamespace-";
     
-    private static final String GROUP = "testGroup-1";
+    private static final String GROUP = "testGroup-";
     
-    private static final String SERVICE = "testName-1";
+    private static final String SERVICE = "testName-";
+    
+    private static final int n = 100000;
     
     private IpPortBasedClient client0;
     
@@ -42,11 +44,16 @@ public class DistroUtilsTest {
         metadata.put("Custom.metadataId2", 123);
         metadata.put("Custom.metadataId3", null);
         client1 = buildClient("127.0.0.2", 8848, true, true, "cluster1",
-                metadata);
+                metadata, 20);
     }
     
     private IpPortBasedClient buildClient(String ip, int port, boolean ephemeral, boolean healthy, String cluster,
                                           HashMap<String, Object> extendDatum) {
+        return buildClient(ip, port, ephemeral, healthy, cluster, extendDatum, 1);
+    }
+    
+    private IpPortBasedClient buildClient(String ip, int port, boolean ephemeral, boolean healthy, String cluster,
+                                          HashMap<String, Object> extendDatum, int serviceCount) {
         InstancePublishInfo instance = new InstancePublishInfo(ip, port);
         instance.setCluster(cluster);
         instance.setHealthy(healthy);
@@ -54,9 +61,11 @@ public class DistroUtilsTest {
         if (extendDatum != null) {
             instance.setExtendDatum(extendDatum);
         }
-        client.addServiceInstance(Service.newService(DistroUtilsTest.NAMESPACE,
-                        DistroUtilsTest.GROUP, DistroUtilsTest.SERVICE, ephemeral),
-                instance);
+        for (int i = 1; i < serviceCount + 1; i++) {
+            client.putServiceInstance(Service.newService(DistroUtilsTest.NAMESPACE + i,
+                            DistroUtilsTest.GROUP + i, DistroUtilsTest.SERVICE + i, ephemeral),
+                    instance);
+        }
         return client;
     }
     
@@ -115,7 +124,6 @@ public class DistroUtilsTest {
     
     @Test
     public void performanceTestOfChecksum() {
-        int n = 2000000;
         long start = System.nanoTime();
         for (int i = 0; i < n; i++) {
             DistroUtils.checksum(client1);
@@ -125,7 +133,6 @@ public class DistroUtilsTest {
     
     @Test
     public void performanceTestOfRevision() {
-        int n = 2000000;
         long start = System.nanoTime();
         for (int i = 0; i < n; i++) {
             DistroUtils.revision(client1);
@@ -135,7 +142,6 @@ public class DistroUtilsTest {
     
     @Test
     public void performanceTestOfHashCode() {
-        int n = 2000000;
         long start = System.nanoTime();
         for (int i = 0; i < n; i++) {
             DistroUtils.hash(client1);

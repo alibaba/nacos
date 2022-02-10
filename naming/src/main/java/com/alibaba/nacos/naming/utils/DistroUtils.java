@@ -61,7 +61,6 @@ public class DistroUtils {
         }
         return Objects.hash(client.getClientId(),
                 client.getAllPublishedService().stream()
-                        .sorted(Comparator.comparing(DistroUtils::serviceKey))
                         .map(s -> {
                             InstancePublishInfo ip = client.getInstancePublishInfo(s);
                             double weight = getWeight(ip);
@@ -79,7 +78,6 @@ public class DistroUtils {
                         })
                         .collect(Collectors.toSet()),
                 client.getAllSubscribeService().stream()
-                        .sorted(Comparator.comparing(DistroUtils::serviceKey))
                         .map(s -> {
                             Subscriber subscriber = client.getSubscriber(s);
                             String cluster = StringUtils.defaultIfBlank(subscriber.getCluster(), DEFAULT_CLUSTER_NAME);
