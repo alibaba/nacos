@@ -230,3 +230,24 @@ nacos.istio.mcp.server.enabled=false
 
 ### Distro data load retry delay when load snapshot data failed, default 30 seconds.
 # nacos.core.protocol.distro.data.load.retryDelayMs=30000
+
+#*************** OIDC Related Configurations ***************#
+
+### OpenId providers' key, list is supported(separated by comma)
+# nacos.core.auth.oidc-idp=github
+### corresponding OpenId providers' name, displayed in the login page
+# nacos.core.auth.oidc-idp.github.name=Github
+### the url of the corresponding OpenId provider used to initialize the authentication
+# nacos.core.auth.oidc-idp.github.auth-url=https://github.com/login/oauth/authorize
+### the url of the corresponding OpenId provider used to get the access token
+# nacos.core.auth.oidc-idp.github.exchange-token-url=https://github.com/login/oauth/access_token
+### the url of the corresponding OpenId provider used to get the user information
+# nacos.core.auth.oidc-idp.github.userinfo-url=https://api.github.com/user
+### the client_id of the corresponding OpenId provider
+# nacos.core.auth.oidc-idp.github.client-id=<YOUR CLIENT ID>
+### the client_secret of the corresponding OpenId provider
+# nacos.core.auth.oidc-idp.github.client-secret=<YOUR CLIENT SECRET>
+### the scopes of the corresponding OpenId provider, sometimes it can be omitted  (e.g. Github)
+# nacos.core.auth.oidc-idp.github.scope=<SCOPES NEEDED>
+### the jsonpath expression of the corresponding OpenId provider used to extract the user's unique identifier from the user information
+# nacos.core.auth.oidc-idp.github.username-json-path=$.login
