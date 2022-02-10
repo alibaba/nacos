@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
@@ -40,7 +41,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.utils.DistroUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -159,7 +159,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {
-        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}", clientSyncData.getClientId());
+        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}, revision={}",
+                clientSyncData.getClientId(),
+                clientSyncData.getAttributes().getClientAttribute(ClientConstants.REVISION, 0L));
         clientManager.syncClientConnected(clientSyncData.getClientId(), clientSyncData.getAttributes());
         Client client = clientManager.getClient(clientSyncData.getClientId());
         upgradeClient(client, clientSyncData);
@@ -280,7 +282,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             }
             if (clientManager.isResponsibleClient(client)) {
                 DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(),
-                        DistroUtils.hash(client));
+                        client.recalculateRevision());
                 DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
                 DistroData data = new DistroData(distroKey,
                         ApplicationUtils.getBean(Serializer.class).serialize(verifyData));

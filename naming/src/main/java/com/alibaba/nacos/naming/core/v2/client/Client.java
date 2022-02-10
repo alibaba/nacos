@@ -141,4 +141,15 @@ public interface Client {
      * Release current client and release resources if neccessary.
      */
     void release();
+    
+    /**
+     * Recalculate client revision and get its value.
+     */
+    long recalculateRevision();
+    
+    /**
+     * Get client revision.
+     */
+    long getRevision();
+    
 }

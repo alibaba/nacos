@@ -35,6 +35,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.utils.DistroUtils;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -123,10 +124,15 @@ public class EphemeralIpPortClientManager implements ClientManager {
     public boolean verifyClient(DistroClientVerifyInfo verifyData) {
         String clientId = verifyData.getClientId();
         IpPortBasedClient client = clients.get(clientId);
-        if (null != client && DistroUtils.hash(client) == (int) verifyData.getRevision()) {
-            NamingExecuteTaskDispatcher.getInstance()
-                    .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
-            return true;
+        if (null != client) {
+            if (client.getRevision() == verifyData.getRevision()) {
+                NamingExecuteTaskDispatcher.getInstance()
+                        .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
+                return true;
+            } else {
+                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] IpPortBasedClient revision local={}, remote={}",
+                        client.getRevision(), verifyData.getRevision());
+            }
         }
         return false;
     }

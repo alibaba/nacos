@@ -130,8 +130,13 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     public boolean verifyClient(DistroClientVerifyInfo verifyData) {
         ConnectionBasedClient client = clients.get(verifyData.getClientId());
         if (null != client) {
-            client.setLastRenewTime();
-            return true;
+            if (client.getRevision() == verifyData.getRevision()) {
+                client.setLastRenewTime();
+                return true;
+            } else {
+                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] ConnectionBasedClient revision local={}, remote={}",
+                        client.getRevision(), verifyData.getRevision());
+            }
         }
         return false;
     }
