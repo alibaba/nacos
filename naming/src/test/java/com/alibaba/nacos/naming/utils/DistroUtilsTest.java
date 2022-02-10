@@ -132,7 +132,7 @@ public class DistroUtilsTest {
     }
     
     @Test
-    public void performanceTestOfRevision() {
+    public void performanceTestOfStringHash() {
         long start = System.nanoTime();
         for (int i = 0; i < n; i++) {
             DistroUtils.stringHash(client1);
@@ -141,7 +141,7 @@ public class DistroUtilsTest {
     }
     
     @Test
-    public void performanceTestOfHashCode() {
+    public void performanceTestOfHash() {
         long start = System.nanoTime();
         for (int i = 0; i < n; i++) {
             DistroUtils.hash(client1);

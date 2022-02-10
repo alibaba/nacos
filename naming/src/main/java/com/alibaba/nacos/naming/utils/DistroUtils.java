@@ -65,7 +65,10 @@ public class DistroUtils {
                             double weight = getWeight(ip);
                             Boolean enabled = getEnabled(ip);
                             String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
-                            return Objects.hash(serviceKey(s),
+                            return Objects.hash(
+                                    s.getNamespace(),
+                                    s.getGroupedServiceName(),
+                                    s.isEphemeral(),
                                     ip.getIp(),
                                     ip.getPort(),
                                     weight,
