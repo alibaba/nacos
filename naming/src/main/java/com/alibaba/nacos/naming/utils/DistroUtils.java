@@ -6,7 +6,6 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -42,9 +41,9 @@ public class DistroUtils {
     }
     
     /**
-     * Calculate revision for client.
+     * Calculate hash of unique string built by client's metadata.
      */
-    public static int revision(Client client) {
+    public static int stringHash(Client client) {
         String s = buildUniqueString(client);
         if (s == null) {
             return 0;
@@ -76,22 +75,7 @@ public class DistroUtils {
                                     ip.getExtendDatum()
                             );
                         })
-                        .collect(Collectors.toSet()),
-                client.getAllSubscribeService().stream()
-                        .map(s -> {
-                            Subscriber subscriber = client.getSubscriber(s);
-                            String cluster = StringUtils.defaultIfBlank(subscriber.getCluster(), DEFAULT_CLUSTER_NAME);
-                            String agent = StringUtils.defaultIfBlank(subscriber.getAgent(), StringUtils.EMPTY);
-                            String app = StringUtils.defaultIfBlank(subscriber.getApp(), StringUtils.EMPTY);
-                            return Objects.hash(serviceKey(s),
-                                    subscriber.getAddrStr(),
-                                    cluster,
-                                    agent,
-                                    app
-                            );
-                        })
-                        .collect(Collectors.toSet())
-        );
+                        .collect(Collectors.toSet()));
     }
     
     /**
@@ -130,22 +114,6 @@ public class DistroUtils {
                             .append(convertMap2String(ip.getExtendDatum()))
                             .append(',');
                 });
-        sb.append('|');
-        client.getAllSubscribeService().stream()
-                .sorted(Comparator.comparing(DistroUtils::serviceKey))
-                .forEach(s -> {
-                    Subscriber subscriber = client.getSubscriber(s);
-                    String cluster = StringUtils.defaultIfBlank(subscriber.getCluster(), DEFAULT_CLUSTER_NAME);
-                    String agent = StringUtils.defaultIfBlank(subscriber.getAgent(), StringUtils.EMPTY);
-                    String app = StringUtils.defaultIfBlank(subscriber.getApp(), StringUtils.EMPTY);
-                    sb.append(serviceKey(s)).append('_')
-                            .append(subscriber.getAddrStr()).append('_')
-                            .append(cluster).append('_')
-                            .append(agent).append('_')
-                            .append(app)
-                            .append(',');
-                });
-        sb.append('|');
         return sb.toString();
     }
     
