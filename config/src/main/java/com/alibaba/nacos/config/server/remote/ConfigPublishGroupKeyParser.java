@@ -47,7 +47,7 @@ public class ConfigPublishGroupKeyParser extends MonitorKeyParser {
         
     }
     
-    class ConfigGroupKey extends MonitorKey {
+    static class ConfigGroupKey extends MonitorKey {
         
         public ConfigGroupKey(String key) {
             this.setKey(key);
