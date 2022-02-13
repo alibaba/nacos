@@ -167,7 +167,13 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     public Response onApply(WriteRequest request) {
         final byte[] data = request.getData().toByteArray();
         final BatchWriteRequest bwRequest = serializer.deserialize(data, BatchWriteRequest.class);
-        final Op op = Op.valueOf(request.getOperation());
+        final Op op;
+        try {
+            op = Op.valueOf(request.getOperation());
+        } catch (Exception e) {
+            Loggers.RAFT.error("unsupport operation: {}, request: {}", request.getOperation(), request, e);
+            return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + request.getOperation()).build();
+        }
         final Lock lock = readLock;
         lock.lock();
         try {
