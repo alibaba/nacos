@@ -16,20 +16,17 @@
 
 package com.alibaba.nacos.auth.context;
 
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.config.AuthConfigs;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
