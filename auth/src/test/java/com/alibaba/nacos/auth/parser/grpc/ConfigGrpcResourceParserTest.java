@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +61,7 @@ public class ConfigGrpcResourceParserTest {
         Request request = mockConfigRequest("testNs", "", "testD");
         Resource actual = resourceParser.parse(request, Constants.Config.CONFIG_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
-        assertEquals("*", actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
@@ -71,7 +72,7 @@ public class ConfigGrpcResourceParserTest {
         Resource actual = resourceParser.parse(request, Constants.Config.CONFIG_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
-        assertEquals("*", actual.getName());
+        assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
     
@@ -81,8 +82,8 @@ public class ConfigGrpcResourceParserTest {
         request.addConfigListenContext("testG", "testD", "testNs", "111");
         Resource actual = resourceParser.parse(request, Constants.Config.CONFIG_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
-        assertEquals("*", actual.getGroup());
-        assertEquals("*", actual.getName());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
     
