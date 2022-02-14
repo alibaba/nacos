@@ -34,5 +34,9 @@ public interface HttpHeaderConsts {
     String CONNECTION = "Requester";
     String REQUEST_ID = "RequestId";
     String REQUEST_MODULE = "Request-Module";
+    String PRAGMA = "Pragma";
+    String EXPIRES = "Expires";
+    String CACHE_CONTROL = "Cache-Control";
+    String LAST_MODIFIED = "Last-Modified";
     
 }

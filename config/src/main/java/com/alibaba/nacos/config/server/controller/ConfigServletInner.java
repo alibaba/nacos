@@ -16,38 +16,25 @@
 
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.ConfigContentWriter;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URLEncoder;
-import java.nio.channels.Channels;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -61,15 +48,18 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 @Service
 public class ConfigServletInner {
     
-    @Autowired
-    private LongPollingService longPollingService;
-    
-    @Autowired
-    private PersistService persistService;
-    
     private static final int TRY_GET_LOCK_TIMES = 9;
     
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
+    
+    private final LongPollingService longPollingService;
+    
+    private final PersistService persistService;
+    
+    public ConfigServletInner(LongPollingService longPollingService, PersistService persistService) {
+        this.longPollingService = longPollingService;
+        this.persistService = persistService;
+    }
     
     /**
      * long polling the config.
@@ -118,190 +108,62 @@ public class ConfigServletInner {
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String tag, String isNotify, String clientIp) throws IOException, ServletException {
         
-        boolean notify = false;
-        if (StringUtils.isNotBlank(isNotify)) {
-            notify = Boolean.valueOf(isNotify);
-        }
-        
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String autoTag = request.getHeader("Vipserver-Tag");
-        
-        String requestIpApp = RequestUtil.getAppName(request);
-        int lockResult = tryConfigReadLock(groupKey);
-        
+        final String vipServerTag = request.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
+    
+        final String requestIpApp = RequestUtil.getAppName(request);
         final String requestIp = RequestUtil.getRemoteIp(request);
-        boolean isBeta = false;
-        boolean isSli = false;
-        if (lockResult > 0) {
-            // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
-            FileInputStream fis = null;
-            try {
-                String md5 = Constants.NULL;
-                long lastModified = 0L;
-                CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
-                if (cacheItem.isBeta() && cacheItem.getIps4Beta().contains(clientIp)) {
-                    isBeta = true;
-                }
-                
-                final String configType =
-                        (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
-                response.setHeader("Config-Type", configType);
-                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
-                String contentTypeHeader = fileTypeEnum.getContentType();
-                response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-                
-                File file = null;
-                ConfigInfoBase configInfoBase = null;
-                PrintWriter out = null;
-                if (isBeta) {
-                    md5 = cacheItem.getMd54Beta();
-                    lastModified = cacheItem.getLastModifiedTs4Beta();
-                    if (PropertyUtil.isDirectRead()) {
-                        configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
-                    } else {
-                        file = DiskUtil.targetBetaFile(dataId, group, tenant);
-                    }
-                    response.setHeader("isBeta", "true");
-                } else {
-                    if (StringUtils.isBlank(tag)) {
-                        if (isUseTag(cacheItem, autoTag)) {
-                            if (cacheItem.tagMd5 != null) {
-                                md5 = cacheItem.tagMd5.get(autoTag);
-                            }
-                            if (cacheItem.tagLastModifiedTs != null) {
-                                lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
-                            }
-                            if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
-                            } else {
-                                file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
-                            }
-                            
-                            response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
-                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
-                        } else {
-                            md5 = cacheItem.getMd5();
-                            lastModified = cacheItem.getLastModifiedTs();
-                            if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
-                            } else {
-                                file = DiskUtil.targetFile(dataId, group, tenant);
-                            }
-                            if (configInfoBase == null && fileNotExist(file)) {
-                                // FIXME CacheItem
-                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
-                                
-                                // pullLog.info("[client-get] clientIp={}, {},
-                                // no data",
-                                // new Object[]{clientIp, groupKey});
-                                
-                                return get404Result(response);
-                            }
-                            isSli = true;
-                        }
-                    } else {
-                        if (cacheItem.tagMd5 != null) {
-                            md5 = cacheItem.tagMd5.get(tag);
-                        }
-                        if (cacheItem.tagLastModifiedTs != null) {
-                            Long lm = cacheItem.tagLastModifiedTs.get(tag);
-                            if (lm != null) {
-                                lastModified = lm;
-                            }
-                        }
-                        if (PropertyUtil.isDirectRead()) {
-                            configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
-                        } else {
-                            file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
-                        }
-                        if (configInfoBase == null && fileNotExist(file)) {
-                            // FIXME CacheItem
-                            // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify && isSli);
-                            
-                            // pullLog.info("[client-get] clientIp={}, {},
-                            // no data",
-                            // new Object[]{clientIp, groupKey});
-                            
-                            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                            response.getWriter().println("config data not exist");
-                            return HttpServletResponse.SC_NOT_FOUND + "";
-                        }
-                    }
-                }
-                
-                response.setHeader(Constants.CONTENT_MD5, md5);
-                
-                // Disable cache.
-                response.setHeader("Pragma", "no-cache");
-                response.setDateHeader("Expires", 0);
-                response.setHeader("Cache-Control", "no-cache,no-store");
-                if (PropertyUtil.isDirectRead()) {
-                    response.setDateHeader("Last-Modified", lastModified);
-                } else {
-                    fis = new FileInputStream(file);
-                    response.setDateHeader("Last-Modified", file.lastModified());
-                }
-                
-                if (PropertyUtil.isDirectRead()) {
-                    out = response.getWriter();
-                    out.print(configInfoBase.getContent());
-                    out.flush();
-                    out.close();
-                } else {
-                    fis.getChannel()
-                            .transferTo(0L, fis.getChannel().size(), Channels.newChannel(response.getOutputStream()));
-                }
-                
-                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
-                
-                final long delayed = System.currentTimeMillis() - lastModified;
-                
-                // TODO distinguish pull-get && push-get
-                /*
-                 Otherwise, delayed cannot be used as the basis of push delay directly,
-                 because the delayed value of active get requests is very large.
-                 */
-                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp, notify && isSli);
-                
-            } finally {
-                releaseConfigReadLock(groupKey);
-                IoUtils.closeQuietly(fis);
-            }
-        } else if (lockResult == 0) {
-            
-            // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-            ConfigTraceService
-                    .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            requestIp, notify && isSli);
-            
-            return get404Result(response);
-            
-        } else {
-            
-            PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-            
-            response.setStatus(HttpServletResponse.SC_CONFLICT);
-            response.getWriter().println("requested file is being modified, please try later.");
-            return HttpServletResponse.SC_CONFLICT + "";
-            
+        final int lockResult = tryConfigReadLock(groupKey);
+        
+        // lockResult == 0 No data and failed
+        if (lockResult == 0) {
+            ConfigContentWriter writer = ConfigContentWriter.Builder.build(null, dataId, group, tenant, tag,
+                    vipServerTag, clientIp, requestIp, requestIpApp, isNotify);
+            // 404 not found
+            return writer.write404(response);
         }
         
-        return HttpServletResponse.SC_OK + "";
+        // lockResult < 0  Negative number - lock failed。
+        if (lockResult < 0) {
+            PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
+    
+            ConfigContentWriter writer = ConfigContentWriter.Builder.build(null, dataId, group, tenant, tag,
+                    vipServerTag, clientIp, requestIp, requestIpApp, isNotify);
+            // 409 conflict
+            return writer.write409(response);
+        }
+        
+        // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
+        try {
+            CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
+            // build contentWriter
+            ConfigContentWriter contentWriter = ConfigContentWriter.Builder.build(cacheItem, dataId, group, tenant, tag,
+                    vipServerTag, clientIp, requestIp, requestIpApp, isNotify);
+            // write
+            String responseRet = contentWriter.write(response, persistService);
+        
+            LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, contentWriter.getMd5(),
+                    TimeUtils.getCurrentTimeStr());
+        
+            final long delayed = System.currentTimeMillis() - contentWriter.getLastModified();
+        
+            // TODO distinguish pull-get && push-get
+            /*
+             Otherwise, delayed cannot be used as the basis of push delay directly,
+             because the delayed value of active get requests is very large.
+             */
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, contentWriter.getLastModified(),
+                    ConfigTraceService.PULL_EVENT_OK, delayed, requestIp,
+                    contentWriter.isNotify() && contentWriter.isSli());
+            
+            return responseRet;
+        } finally {
+            releaseConfigReadLock(groupKey);
+        }
     }
     
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
-    }
-    
-    private String get404Result(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.getWriter().println("config data not exist");
-        return HttpServletResponse.SC_NOT_FOUND + "";
     }
     
     /**
@@ -341,16 +203,4 @@ public class ConfigServletInner {
         
         return lockResult;
     }
-    
-    private static boolean isUseTag(CacheItem cacheItem, String tag) {
-        if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
-            return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);
-        }
-        return false;
-    }
-    
-    private static boolean fileNotExist(File file) {
-        return file == null || !file.exists();
-    }
-    
 }
