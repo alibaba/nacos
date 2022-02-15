@@ -59,7 +59,6 @@ public class GrpcProtocolAuthServiceTest {
         protocolAuthService.initialize();
         mockConfigRequest();
         mockNamingRequest();
-        Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
     }
     
     private void mockConfigRequest() {
