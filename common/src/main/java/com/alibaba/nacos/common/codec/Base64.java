@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.codec;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Provides Base64 encoding and decoding as defined by <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
@@ -109,7 +109,7 @@ public class Base64 {
     
     /**
      * Encode table to use: either STANDARD or URL_SAFE. Note: the DECODE_TABLE above remains static because it is able
-     * to decode both STANDARD and URL_SAFE streams, but the encodeTable must be a member variable so we can switch
+     * to decode both STANDARD and URL_SAFE streams, but the encodeTable must be a member variable. So we can switch
      * between the two modes.
      */
     private final byte[] encodeTable;
@@ -137,7 +137,7 @@ public class Base64 {
     private final int encodeSize;
     
     /**
-     * Place holder for the bytes we're dealing with for our based logic. Bitwise operations store and extract the
+     * Placeholder for the bytes we're dealing with for our based logic. Bitwise operations store and extract the
      * encoding or decoding from this variable.
      */
     private int bitWorkArea;
@@ -178,8 +178,8 @@ public class Base64 {
         // @see test case Base64Test.testConstructors()
         if (lineSeparator != null) {
             if (containsAlphabetOrPad(lineSeparator)) {
-                String sep = null;
-                sep = new String(lineSeparator, Charset.forName("UTF-8"));
+                String sep;
+                sep = new String(lineSeparator, StandardCharsets.UTF_8);
                 throw new IllegalArgumentException("lineSeparator must not contain base64 characters: [" + sep + "]");
             }
             if (lineLength > 0) {
@@ -432,10 +432,10 @@ public class Base64 {
     }
     
     /**
-     * Returns whether or not the <code>octet</code> is in the Base32 alphabet.
+     * Returns whether the <code>octet</code> is in the Base32 alphabet or not.
      *
      * @param octet The value to test
-     * @return <code>true</code> if the value is defined in the the Base32 alphabet <code>false</code> otherwise.
+     * @return <code>true</code> if the value is defined in the Base32 alphabet <code>false</code> otherwise.
      */
     protected boolean isInAlphabet(byte octet) {
         return octet >= 0 && octet < decodeTable.length && decodeTable[octet] != -1;
@@ -482,8 +482,8 @@ public class Base64 {
     private final int encodedBlockSize;
     
     /**
-     * Chunksize for encoding. Not used when decoding. A value of zero or less implies no chunking of the encoded data.
-     * Rounded down to nearest multiple of encodedBlockSize.
+     * Chunk size for encoding. Not used when decoding. A value of zero or less implies no chunking of the encoded data.
+     * Rounded down to the nearest multiple of encodedBlockSize.
      */
     private final int lineLength;
     
@@ -590,8 +590,8 @@ public class Base64 {
         if (arrayOctet == null) {
             return false;
         }
-        for (int i = 0; i < arrayOctet.length; i++) {
-            if (PAD == arrayOctet[i] || isInAlphabet(arrayOctet[i])) {
+        for (byte b : arrayOctet) {
+            if (PAD == b || isInAlphabet(b)) {
                 return true;
             }
         }
@@ -611,7 +611,7 @@ public class Base64 {
         long len = ((pArray.length + unencodedBlockSize - 1) / unencodedBlockSize) * (long) encodedBlockSize;
         if (lineLength > 0) {
             /*
-             Round up to nearest multiple
+             Round up to the nearest multiple
              */
             len += ((len + lineLength - 1) / lineLength) * chunkSeparatorLength;
         }
