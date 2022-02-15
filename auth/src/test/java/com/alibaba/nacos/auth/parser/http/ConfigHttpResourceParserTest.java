@@ -17,8 +17,8 @@
 package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.Resource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -73,7 +73,7 @@ public class ConfigHttpResourceParserTest {
         Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, Constants.Config.CONFIG_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
-        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
@@ -85,7 +85,7 @@ public class ConfigHttpResourceParserTest {
         Resource actual = resourceParser.parse(request, Constants.Config.CONFIG_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
-        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getName());
+        assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
 }
