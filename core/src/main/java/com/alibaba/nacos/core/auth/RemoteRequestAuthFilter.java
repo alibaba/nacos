@@ -67,6 +67,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                if (!protocolAuthService.enableAuth(secured)) {
+                    return null;
+                }
                 String clientIp = meta.getClientIp();
                 request.putHeader(Constants.Identity.X_REAL_IP, clientIp);
                 Resource resource = protocolAuthService.parseResource(request, secured);
