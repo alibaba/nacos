@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.users.User;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -55,6 +56,12 @@ public class NacosAuthPluginService implements AuthPluginService {
     @Override
     public Collection<String> identityNames() {
         return IDENTITY_NAMES;
+    }
+    
+    @Override
+    public boolean enableAuth(ActionTypes action, String type) {
+        // enable all of action and type
+        return true;
     }
     
     @Override

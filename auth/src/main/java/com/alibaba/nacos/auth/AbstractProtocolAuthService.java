@@ -46,32 +46,34 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
-        if (!authConfigs.isAuthEnabled()) {
-            return true;
+    public boolean enableAuth(Secured secured) {
+        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
+                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        if (authPluginService.isPresent()) {
+            return authPluginService.get().enableAuth(secured.action(), secured.signType());
         }
+        Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
+                authConfigs.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
+        return false;
+    }
+    
+    @Override
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateIdentity(identityContext, resource);
         }
-        Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
-                authConfigs.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return true;
     }
     
     @Override
     public boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
-        if (!authConfigs.isAuthEnabled()) {
-            return true;
-        }
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateAuthority(identityContext, permission);
         }
-        Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
-                authConfigs.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return true;
     }
     
