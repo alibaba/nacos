@@ -64,7 +64,6 @@ public class HttpProtocolAuthServiceTest {
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testCNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testCG");
         Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
-        Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
     }
     
     @Test
