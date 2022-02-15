@@ -67,7 +67,8 @@ public class DistroUtils {
                             String cluster = StringUtils.defaultIfBlank(ip.getCluster(), DEFAULT_CLUSTER_NAME);
                             return Objects.hash(
                                     s.getNamespace(),
-                                    s.getGroupedServiceName(),
+                                    s.getGroup(),
+                                    s.getName(),
                                     s.isEphemeral(),
                                     ip.getIp(),
                                     ip.getPort(),

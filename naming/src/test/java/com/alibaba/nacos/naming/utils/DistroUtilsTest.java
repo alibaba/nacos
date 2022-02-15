@@ -70,6 +70,11 @@ public class DistroUtilsTest {
     }
     
     @Test
+    public void testHash0() {
+        assertEquals(-1320954445, DistroUtils.hash(client0));
+    }
+    
+    @Test
     public void testRevision0() {
         assertEquals(-1713189600L, DistroUtils.stringHash(client0));
     }

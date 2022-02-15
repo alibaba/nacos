@@ -152,4 +152,9 @@ public interface Client {
      */
     long getRevision();
     
+    /**
+     * Set client revision.
+     */
+    void setRevision(long revision);
+    
 }

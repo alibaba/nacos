@@ -159,7 +159,7 @@ public abstract class AbstractClient implements Client {
             }
         }
         ClientSyncData data = new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
-        data.getAttributes().addClientAttribute(REVISION, recalculateRevision());
+        data.getAttributes().addClientAttribute(REVISION, getRevision());
         return data;
     }
     
@@ -198,6 +198,11 @@ public abstract class AbstractClient implements Client {
     @Override
     public long getRevision() {
         return revision.get();
+    }
+    
+    @Override
+    public void setRevision(long revision) {
+        this.revision.set(revision);
     }
     
 }

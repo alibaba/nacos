@@ -223,6 +223,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
+        client.setRevision(
+                clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
     }
     
     @Override
