@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth.parser.grpc;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -42,7 +41,7 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
                 namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0).getTenant();
             }
         } else {
-            namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", "");
+            namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", StringUtils.EMPTY);
         }
         return namespaceId;
     }
@@ -50,14 +49,15 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
     @Override
     protected String getGroup(Request request) {
         String groupName = (String) ReflectUtils
-                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP, "");
-        return StringUtils.isBlank(groupName) ? Constants.Resource.ANY : groupName;
+                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP, StringUtils.EMPTY);
+        return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
     
     @Override
     protected String getResourceName(Request request) {
-        String dataId = (String) ReflectUtils.getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, "");
-        return StringUtils.isBlank(dataId) ? Constants.Resource.ANY : dataId;
+        String dataId = (String) ReflectUtils
+                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, StringUtils.EMPTY);
+        return StringUtils.isBlank(dataId) ? StringUtils.EMPTY : dataId;
     }
     
     @Override

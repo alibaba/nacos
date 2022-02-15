@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +82,7 @@ public class NamingGrpcResourceParserTest {
         AbstractNamingRequest request = mockNamingRequest("testNs", null, "testS");
         Resource actual = resourceParser.parse(request, Constants.Naming.NAMING_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
-        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
@@ -91,7 +92,7 @@ public class NamingGrpcResourceParserTest {
         Request request = mockOtherRequest("testNs", null, "testS");
         Resource actual = resourceParser.parse(request, Constants.Naming.NAMING_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
-        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getGroup());
+        assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
@@ -102,7 +103,7 @@ public class NamingGrpcResourceParserTest {
         Resource actual = resourceParser.parse(request, Constants.Naming.NAMING_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
-        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getName());
+        assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
     
@@ -112,7 +113,7 @@ public class NamingGrpcResourceParserTest {
         Resource actual = resourceParser.parse(request, Constants.Naming.NAMING_MODULE);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
-        assertEquals(com.alibaba.nacos.plugin.auth.constant.Constants.Resource.ANY, actual.getName());
+        assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
     
