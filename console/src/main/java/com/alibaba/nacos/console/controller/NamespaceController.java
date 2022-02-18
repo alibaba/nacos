@@ -133,7 +133,7 @@ public class NamespaceController {
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean createNamespace(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("customNamespaceId") String namespaceId, @RequestParam("namespaceName") String namespaceName,
+            @RequestParam("namespaceId") String namespaceId, @RequestParam("namespaceName") String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
         if (StringUtils.isBlank(namespaceId)) {
