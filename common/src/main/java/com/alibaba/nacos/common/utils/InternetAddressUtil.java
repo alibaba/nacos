@@ -130,7 +130,7 @@ public class InternetAddressUtil {
                 serverAddrArr[1] = str.substring((str.indexOf(IPV6_END_MARK) + 2));
             }
         } else {
-            serverAddrArr = str.split(":");
+            serverAddrArr = str.split(IP_PORT_SPLITER);
         }
         return serverAddrArr;
     }
@@ -166,18 +166,16 @@ public class InternetAddressUtil {
      * @return 'ok' if check passed, otherwise illegal ip
      */
     public static String checkIPs(String... ips) {
-        
         if (ips == null || ips.length == 0) {
-            
             return CHECK_OK;
         }
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (InternetAddressUtil.isIP(ip)) {
+            if (InternetAddressUtil.isIP(ip) || InternetAddressUtil.isIP(ip.split(IP_PORT_SPLITER)[0])) {
                 continue;
             }
-            illegalResponse.append(ip + ",");
+            illegalResponse.append(ip).append(",");
         }
         
         if (illegalResponse.length() == 0) {
