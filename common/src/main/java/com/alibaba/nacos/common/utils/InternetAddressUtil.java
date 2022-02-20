@@ -166,6 +166,7 @@ public class InternetAddressUtil {
      * @return 'ok' if check passed, otherwise illegal ip
      */
     public static String checkIPs(String... ips) {
+
         if (ips == null || ips.length == 0) {
             return CHECK_OK;
         }
