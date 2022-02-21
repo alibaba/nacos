@@ -125,7 +125,8 @@ public class EphemeralIpPortClientManager implements ClientManager {
         String clientId = verifyData.getClientId();
         IpPortBasedClient client = clients.get(clientId);
         if (null != client) {
-            if (client.getRevision() == verifyData.getRevision()) {
+            // remote node of old version will always verify with zero revision
+            if (0 == verifyData.getRevision() || client.getRevision() == verifyData.getRevision()) {
                 NamingExecuteTaskDispatcher.getInstance()
                         .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
                 return true;
