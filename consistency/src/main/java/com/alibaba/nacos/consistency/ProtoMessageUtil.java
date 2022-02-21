@@ -40,12 +40,12 @@ public class ProtoMessageUtil {
     public static Message parse(byte[] bytes) {
         Message result;
         try {
-            result = WriteRequest.parseFrom(bytes);
+            result = ReadRequest.parseFrom(bytes);
             return result;
         } catch (Throwable ignore) {
         }
         try {
-            result = ReadRequest.parseFrom(bytes);
+            result = WriteRequest.parseFrom(bytes);
             return result;
         } catch (Throwable ignore) {
         }
