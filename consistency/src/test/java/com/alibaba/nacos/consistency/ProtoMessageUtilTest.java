@@ -21,7 +21,6 @@ import com.alibaba.nacos.consistency.entity.Log;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.google.protobuf.ByteString;
-import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -30,9 +29,7 @@ public class ProtoMessageUtilTest {
     
     @Test
     public void testProto() throws Exception {
-        WriteRequest request = WriteRequest.newBuilder()
-                .setKey("test-proto-new")
-                .build();
+        WriteRequest request = WriteRequest.newBuilder().setKey("test-proto-new").build();
         
         byte[] bytes = request.toByteArray();
         Log log = Log.parseFrom(bytes);
@@ -66,11 +63,7 @@ public class ProtoMessageUtilTest {
         ByteString data = ByteString.copyFrom("data".getBytes());
         String group = "test";
         
-        GetRequest getRequest = GetRequest.newBuilder()
-                .setGroup(group)
-                .setData(data)
-                .putExtendInfo("k", "v")
-                .build();
+        GetRequest getRequest = GetRequest.newBuilder().setGroup(group).setData(data).putExtendInfo("k", "v").build();
         ReadRequest readRequest = ProtoMessageUtil.convertToReadRequest(getRequest);
         
         assertEquals(group, readRequest.getGroup());
@@ -83,13 +76,8 @@ public class ProtoMessageUtilTest {
     @Test
     public void testConvertToWriteRequest() {
         ByteString data = ByteString.copyFrom("data".getBytes());
-        Log log = Log.newBuilder()
-                .setKey("key")
-                .setGroup("group")
-                .setData(data)
-                .setOperation("o")
-                .putExtendInfo("k", "v")
-                .build();
+        Log log = Log.newBuilder().setKey("key").setGroup("group").setData(data).setOperation("o")
+                .putExtendInfo("k", "v").build();
         WriteRequest writeRequest = ProtoMessageUtil.convertToWriteRequest(log);
         
         assertEquals(1, writeRequest.getExtendInfoCount());
