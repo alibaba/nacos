@@ -24,6 +24,8 @@ import com.google.protobuf.ByteString;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 public class ProtoMessageUtilTest {
     
     @Test
@@ -34,7 +36,29 @@ public class ProtoMessageUtilTest {
         
         byte[] bytes = request.toByteArray();
         Log log = Log.parseFrom(bytes);
-        Assert.assertEquals(request.getKey(), log.getKey());
+        assertEquals(request.getKey(), log.getKey());
+    }
+    
+    @Test
+    public void testParseReadRequest() {
+        String group = "test";
+        ByteString data = ByteString.copyFrom("data".getBytes());
+        ReadRequest testCase = ReadRequest.newBuilder().setGroup(group).setData(data).build();
+        Object actual = ProtoMessageUtil.parse(testCase.toByteArray());
+        assertEquals(ReadRequest.class, testCase.getClass());
+        assertEquals(group, ((ReadRequest) actual).getGroup());
+        assertEquals(data, ((ReadRequest) actual).getData());
+    }
+    
+    @Test
+    public void testParseWriteRequest() {
+        String group = "test";
+        ByteString data = ByteString.copyFrom("data".getBytes());
+        WriteRequest testCase = WriteRequest.newBuilder().setGroup(group).setData(data).build();
+        Object actual = ProtoMessageUtil.parse(testCase.toByteArray());
+        assertEquals(WriteRequest.class, testCase.getClass());
+        assertEquals(group, ((WriteRequest) actual).getGroup());
+        assertEquals(data, ((WriteRequest) actual).getData());
     }
     
     @Test
@@ -49,11 +73,11 @@ public class ProtoMessageUtilTest {
                 .build();
         ReadRequest readRequest = ProtoMessageUtil.convertToReadRequest(getRequest);
         
-        Assert.assertEquals(group, readRequest.getGroup());
+        assertEquals(group, readRequest.getGroup());
         
-        Assert.assertEquals(data, readRequest.getData());
+        assertEquals(data, readRequest.getData());
         
-        Assert.assertEquals(1, readRequest.getExtendInfoCount());
+        assertEquals(1, readRequest.getExtendInfoCount());
     }
     
     @Test
@@ -68,14 +92,14 @@ public class ProtoMessageUtilTest {
                 .build();
         WriteRequest writeRequest = ProtoMessageUtil.convertToWriteRequest(log);
         
-        Assert.assertEquals(1, writeRequest.getExtendInfoCount());
+        assertEquals(1, writeRequest.getExtendInfoCount());
         
-        Assert.assertEquals(data, writeRequest.getData());
+        assertEquals(data, writeRequest.getData());
         
-        Assert.assertEquals("key", writeRequest.getKey());
+        assertEquals("key", writeRequest.getKey());
         
-        Assert.assertEquals("group", writeRequest.getGroup());
+        assertEquals("group", writeRequest.getGroup());
         
-        Assert.assertEquals("o", writeRequest.getOperation());
+        assertEquals("o", writeRequest.getOperation());
     }
 }
