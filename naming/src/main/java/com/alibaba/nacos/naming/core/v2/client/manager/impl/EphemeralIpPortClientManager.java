@@ -131,8 +131,8 @@ public class EphemeralIpPortClientManager implements ClientManager {
                         .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
                 return true;
             } else {
-                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] IpPortBasedClient revision local={}, remote={}",
-                        client.getRevision(), verifyData.getRevision());
+                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] IpPortBasedClient[{}] revision local={}, remote={}",
+                        client.getClientId(), client.getRevision(), verifyData.getRevision());
             }
         }
         return false;

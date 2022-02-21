@@ -135,8 +135,8 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
                 client.setLastRenewTime();
                 return true;
             } else {
-                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] ConnectionBasedClient revision local={}, remote={}",
-                        client.getRevision(), verifyData.getRevision());
+                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] ConnectionBasedClient[{}] revision local={}, remote={}",
+                        client.getClientId(), client.getRevision(), verifyData.getRevision());
             }
         }
         return false;
