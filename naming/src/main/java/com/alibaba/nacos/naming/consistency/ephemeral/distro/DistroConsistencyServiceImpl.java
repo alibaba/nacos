@@ -380,11 +380,14 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          */
         public void addTask(String datumKey, DataOperation action) {
             
-            if (services.containsKey(datumKey) && action == DataOperation.CHANGE) {
-                return;
-            }
             if (action == DataOperation.CHANGE) {
-                services.put(datumKey, StringUtils.EMPTY);
+                if (services.putIfAbsent(datumKey, StringUtils.EMPTY) != null) {
+                    // if previous change task is waiting for handling.
+                    return;
+                }
+            } else if (action == DataOperation.DELETE) {
+                // remove previous change task to permit new change task.
+                services.remove(datumKey);
             }
             tasks.offer(Pair.with(datumKey, action));
         }
@@ -412,7 +415,18 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 String datumKey = pair.getValue0();
                 DataOperation action = pair.getValue1();
                 
-                services.remove(datumKey);
+                if (action == DataOperation.CHANGE) {
+                    // remove current change task to permit new change task.
+                    if (services.remove(datumKey) == null) {
+                        // if current change task is removed by other.
+                        return;
+                    }
+                } else if (action == DataOperation.DELETE) {
+                    if (services.contains(datumKey)) {
+                        // if new change task is waiting for handling.
+                        return;
+                    }
+                }
                 
                 int count = 0;
                 
