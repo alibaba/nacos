@@ -468,24 +468,28 @@ public class ServiceManager implements RecordListener<Service> {
             throws NacosException {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
-            
-            Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
-            service = new Service();
-            service.setName(serviceName);
-            service.setNamespaceId(namespaceId);
-            service.setGroupName(NamingUtils.getGroupName(serviceName));
-            // now validate the service. if failed, exception will be thrown
-            service.setLastModifiedMillis(System.currentTimeMillis());
-            service.recalculateChecksum();
-            if (cluster != null) {
-                cluster.setService(service);
-                service.getClusterMap().put(cluster.getName(), cluster);
-            }
-            service.validate();
-            
-            putServiceAndInit(service);
-            if (!local) {
-                addOrReplaceService(service);
+            synchronized (this) {
+                service = getService(namespaceId, serviceName);
+                if (service == null) {
+                    Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
+                    service = new Service();
+                    service.setName(serviceName);
+                    service.setNamespaceId(namespaceId);
+                    service.setGroupName(NamingUtils.getGroupName(serviceName));
+                    // now validate the service. if failed, exception will be thrown
+                    service.setLastModifiedMillis(System.currentTimeMillis());
+                    service.recalculateChecksum();
+                    if (cluster != null) {
+                        cluster.setService(service);
+                        service.getClusterMap().put(cluster.getName(), cluster);
+                    }
+                    service.validate();
+
+                    boolean success = putServiceAndInit(service);
+                    if (success && !local) {
+                        addOrReplaceService(service);
+                    }
+                }
             }
         }
     }
@@ -801,12 +805,16 @@ public class ServiceManager implements RecordListener<Service> {
         
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
-                Cluster cluster = new Cluster(instance.getClusterName(), service);
-                cluster.init();
-                service.getClusterMap().put(instance.getClusterName(), cluster);
-                Loggers.SRV_LOG
-                        .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                                instance.getClusterName(), instance.toJson());
+                synchronized (service) {
+                    if (!service.getClusterMap().containsKey(instance.getClusterName())) {
+                        Cluster cluster = new Cluster(instance.getClusterName(), service);
+                        cluster.init();
+                        service.getClusterMap().put(instance.getClusterName(), cluster);
+                        Loggers.SRV_LOG
+                                .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                                        instance.getClusterName(), instance.toJson());
+                    }
+                }
             }
             
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
@@ -882,15 +890,20 @@ public class ServiceManager implements RecordListener<Service> {
         serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
-    private void putServiceAndInit(Service service) throws NacosException {
+    private boolean putServiceAndInit(Service service) throws NacosException {
         putService(service);
-        service = getService(service.getNamespaceId(), service.getName());
+        Service existedService = getService(service.getNamespaceId(), service.getName());
+        if (existedService != service) {
+            Loggers.SRV_LOG.warn("[NEW-SERVICE] {} failed as the same service is already existed.", service.toJson());
+            return false;
+        }
         service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
         Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJson());
+        return true;
     }
     
     /**
