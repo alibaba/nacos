@@ -59,6 +59,7 @@ public class ConfigChangeBatchListenRequestHandlerTest extends TestCase {
             for (ConfigChangeBatchListenResponse.ConfigContext changedConfig : configChangeBatchListenResponse.getChangedConfigs()) {
                 if (changedConfig.getDataId().equals(dataId)) {
                     hasChange = true;
+                    break;
                 }
             }
             assertTrue(hasChange);
