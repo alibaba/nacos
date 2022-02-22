@@ -34,15 +34,15 @@ public class MetricsMonitor {
             .register();
     
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
+        return NACOS_MONITOR.labels("serviceInfo", "serviceInfoMapSize");
     }
     
     public static Gauge.Child getDom2BeatSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "dom2BeatSize");
+        return NACOS_MONITOR.labels("dom2Beat", "dom2BeatSize");
     }
     
     public static Gauge.Child getListenConfigCountMonitor() {
-        return NACOS_MONITOR.labels("naming", "listenConfigCount");
+        return NACOS_MONITOR.labels("listenConfig", "listenConfigCount");
     }
     
     public static Histogram.Timer getConfigRequestMonitor(String method, String url, String code) {
