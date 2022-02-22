@@ -448,32 +448,27 @@ public class JRaftServer {
     }
     
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
-        // This is only dealing with node deletion, the Raft protocol, where the node adds itself to the cluster when it starts up
-        Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
         this.raftConfig.setMembers(localPeerId.toString(), newPeers);
-        oldPeers.removeAll(newPeers);
-        if (oldPeers.isEmpty()) {
-            return true;
-        }
-        
-        Set<String> waitRemove = oldPeers;
-        AtomicInteger successCnt = new AtomicInteger(0);
-        multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
-            @Override
-            public void accept(String group, RaftGroupTuple tuple) {
-                Map<String, String> params = new HashMap<>();
-                params.put(JRaftConstants.GROUP_ID, group);
-                params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
-                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(waitRemove, StringUtils.COMMA));
-                RestResult<String> result = maintainService.execute(params);
-                if (result.ok()) {
-                    successCnt.incrementAndGet();
-                } else {
-                    Loggers.RAFT.error("Node removal failed : {}", result);
+        if (!newPeers.isEmpty()) {
+            AtomicInteger successCnt = new AtomicInteger(0);
+            multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
+                @Override
+                public void accept(String group, RaftGroupTuple tuple) {
+                    Map<String, String> params = new HashMap<>();
+                    params.put(JRaftConstants.GROUP_ID, group);
+                    params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.CHANGE_PEERS);
+                    params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(newPeers, StringUtils.COMMA));
+                    RestResult<String> result = maintainService.execute(params);
+                    if (result.ok()) {
+                        successCnt.incrementAndGet();
+                    } else {
+                        Loggers.RAFT.error("Node removal failed : {}", result);
+                    }
                 }
-            }
-        });
-        return successCnt.get() == multiRaftGroup.size();
+            });
+        }
+
+        return true;
     }
     
     void refreshRouteTable(String group) {

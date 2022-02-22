@@ -174,7 +174,7 @@ public class InternetAddressUtil {
         // illegal response
         StringBuilder illegalResponse = new StringBuilder();
         for (String ip : ips) {
-            if (InternetAddressUtil.isIP(ip)) {
+            if (InternetAddressUtil.isIP(ip) || InternetAddressUtil.isIP(ip.split(":")[0])) {
                 continue;
             }
             illegalResponse.append(ip + ",");
