@@ -44,6 +44,10 @@
                     <groupId>${project.groupId}</groupId>
                     <artifactId>nacos-cmdb</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-security</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>
