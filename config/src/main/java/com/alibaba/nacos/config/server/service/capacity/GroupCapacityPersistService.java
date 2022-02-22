@@ -31,7 +31,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -118,23 +117,20 @@ public class GroupCapacityPersistService {
     private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity) {
         try {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
-            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
-                @Override
-                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                    String group = capacity.getGroup();
-                    ps.setString(1, group);
-                    ps.setInt(2, capacity.getQuota());
-                    ps.setInt(3, capacity.getMaxSize());
-                    ps.setInt(4, capacity.getMaxAggrCount());
-                    ps.setInt(5, capacity.getMaxAggrSize());
-                    ps.setTimestamp(6, capacity.getGmtCreate());
-                    ps.setTimestamp(7, capacity.getGmtModified());
-                    if (!CLUSTER.equals(group)) {
-                        ps.setString(8, group);
-                    }
-                    return ps;
+            PreparedStatementCreator preparedStatementCreator = connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                String group = capacity.getGroup();
+                ps.setString(1, group);
+                ps.setInt(2, capacity.getQuota());
+                ps.setInt(3, capacity.getMaxSize());
+                ps.setInt(4, capacity.getMaxAggrCount());
+                ps.setInt(5, capacity.getMaxAggrSize());
+                ps.setTimestamp(6, capacity.getGmtCreate());
+                ps.setTimestamp(7, capacity.getGmtModified());
+                if (!CLUSTER.equals(group)) {
+                    ps.setString(8, group);
                 }
+                return ps;
             };
             jdbcTemplate.update(preparedStatementCreator, generatedKeyHolder);
             return generatedKeyHolder.getKey() != null;
@@ -237,7 +233,7 @@ public class GroupCapacityPersistService {
      * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
      * @param maxAggrSize  maxAggrSize int value.
-     * @return
+     * @return operate result.
      */
     public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
@@ -348,14 +344,11 @@ public class GroupCapacityPersistService {
      */
     public boolean deleteGroupCapacity(final String group) {
         try {
-            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
-                @Override
-                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection
-                            .prepareStatement("DELETE FROM group_capacity WHERE group_id = ?;");
-                    ps.setString(1, group);
-                    return ps;
-                }
+            PreparedStatementCreator preparedStatementCreator = connection -> {
+                PreparedStatement ps = connection
+                        .prepareStatement("DELETE FROM group_capacity WHERE group_id = ?;");
+                ps.setString(1, group);
+                return ps;
             };
             return jdbcTemplate.update(preparedStatementCreator) == 1;
         } catch (CannotGetJdbcConnectionException e) {
