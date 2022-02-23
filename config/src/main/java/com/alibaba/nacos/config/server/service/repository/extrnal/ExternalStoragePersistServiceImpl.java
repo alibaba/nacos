@@ -2803,7 +2803,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
             return this.jt.query(
-                    "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info_beta WHERE tenant_id=?",
+                    "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info WHERE tenant_id=?",
                     new Object[]{tenantTmp},
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
