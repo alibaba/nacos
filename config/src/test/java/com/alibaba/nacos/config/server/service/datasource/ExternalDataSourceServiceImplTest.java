@@ -108,7 +108,6 @@ public class ExternalDataSourceServiceImplTest {
         service.new CheckDbHealthTask().run();
         Assert.assertEquals(1, isHealthList.size());
         Assert.assertTrue(isHealthList.get(0));
-        
     }
     
 }
