@@ -231,6 +231,10 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroClientVerifyInfo verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), DistroClientVerifyInfo.class);
+        // If not upgraded to 2.0.X, just renew client and return.
+        if (!upgradeJudgement.isUseGrpcFeatures()) {
+            verifyData.setRevision(0L);
+        }
         if (clientManager.verifyClient(verifyData)) {
             return true;
         }
