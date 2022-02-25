@@ -76,5 +76,4 @@ public class LocalDataSourceServiceImplTest {
         service.setHealthStatus("UP");
         Assert.assertEquals("UP", service.getHealth());
     }
-    
 }
