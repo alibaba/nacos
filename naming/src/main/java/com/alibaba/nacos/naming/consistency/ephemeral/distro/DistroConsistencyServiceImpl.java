@@ -39,8 +39,6 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
 import org.springframework.context.annotation.DependsOn;
 
 import javax.annotation.PostConstruct;
@@ -368,9 +366,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     public class Notifier implements Runnable {
         
-        private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
+        private ConcurrentHashMap<String, DataOperation> services = new ConcurrentHashMap<>(10 * 1024);
         
-        private BlockingQueue<Pair<String, DataOperation>> tasks = new ArrayBlockingQueue<>(1024 * 1024);
+        private BlockingQueue<String> tasks = new ArrayBlockingQueue<>(1024 * 1024);
         
         /**
          * Add new notify task to queue.
@@ -380,16 +378,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          */
         public void addTask(String datumKey, DataOperation action) {
             
-            if (action == DataOperation.CHANGE) {
-                if (services.putIfAbsent(datumKey, StringUtils.EMPTY) != null) {
-                    // if previous change task is waiting for handling.
-                    return;
-                }
-            } else if (action == DataOperation.DELETE) {
-                // remove previous change task to permit new change task.
-                services.remove(datumKey);
-            }
-            tasks.offer(Pair.with(datumKey, action));
+            services.put(datumKey, action);
+            tasks.offer(datumKey);
         }
         
         public int getTaskSize() {
@@ -402,30 +392,20 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             
             for (; ; ) {
                 try {
-                    Pair<String, DataOperation> pair = tasks.take();
-                    handle(pair);
+                    String datumKey = tasks.take();
+                    handle(datumKey);
                 } catch (Throwable e) {
                     Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
                 }
             }
         }
         
-        private void handle(Pair<String, DataOperation> pair) {
+        private void handle(String datumKey) {
             try {
-                String datumKey = pair.getValue0();
-                DataOperation action = pair.getValue1();
-                
-                if (action == DataOperation.CHANGE) {
-                    // remove current change task to permit new change task.
-                    if (services.remove(datumKey) == null) {
-                        // if current change task is removed by other.
-                        return;
-                    }
-                } else if (action == DataOperation.DELETE) {
-                    if (services.contains(datumKey)) {
-                        // if new change task is waiting for handling.
-                        return;
-                    }
+                DataOperation action = services.remove(datumKey);
+                if (action == null) {
+                    // if task is already executed.
+                    return;
                 }
                 
                 int count = 0;
