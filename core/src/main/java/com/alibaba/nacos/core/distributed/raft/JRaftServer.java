@@ -462,7 +462,7 @@ public class JRaftServer {
                     if (result.ok()) {
                         successCnt.incrementAndGet();
                     } else {
-                        Loggers.RAFT.error("Node removal failed : {}", result);
+                        Loggers.RAFT.error("Node change failed : {}", result);
                     }
                 }
             });
