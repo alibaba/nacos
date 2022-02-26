@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
