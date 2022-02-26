@@ -446,29 +446,30 @@ public class JRaftServer {
             closure.run(new Status(RaftError.UNKNOWN, e.toString()));
         }
     }
-    
+
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
         this.raftConfig.setMembers(localPeerId.toString(), newPeers);
-        if (!newPeers.isEmpty()) {
-            AtomicInteger successCnt = new AtomicInteger(0);
-            multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
-                @Override
-                public void accept(String group, RaftGroupTuple tuple) {
-                    Map<String, String> params = new HashMap<>();
-                    params.put(JRaftConstants.GROUP_ID, group);
-                    params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.CHANGE_PEERS);
-                    params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(newPeers, StringUtils.COMMA));
-                    RestResult<String> result = maintainService.execute(params);
-                    if (result.ok()) {
-                        successCnt.incrementAndGet();
-                    } else {
-                        Loggers.RAFT.error("Node change failed : {}", result);
-                    }
-                }
-            });
+        if (newPeers.isEmpty()) {
+            return true;
         }
+        AtomicInteger successCnt = new AtomicInteger(0);
+        multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
+            @Override
+            public void accept(String group, RaftGroupTuple tuple) {
+                Map<String, String> params = new HashMap<>();
+                params.put(JRaftConstants.GROUP_ID, group);
+                params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.CHANGE_PEERS);
+                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(newPeers, StringUtils.COMMA));
+                RestResult<String> result = maintainService.execute(params);
+                if (result.ok()) {
+                    successCnt.incrementAndGet();
+                } else {
+                    Loggers.RAFT.error("Node change failed : {}", result);
+                }
+            }
+        });
 
-        return true;
+        return successCnt.get() == multiRaftGroup.size();
     }
     
     void refreshRouteTable(String group) {
