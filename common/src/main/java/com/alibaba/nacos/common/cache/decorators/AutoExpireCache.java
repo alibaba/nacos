@@ -55,10 +55,18 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
         }
         return this.delegate.get(key);
     }
-    
+
     @Override
     public V get(K key, Callable<? extends V> call) throws Exception {
-        return this.delegate.get(key, call);
+        V cachedValue = this.get(key);
+        if (null == cachedValue) {
+            V v2 = call.call();
+            this.put(key, v2);
+            return v2;
+
+        }
+        return cachedValue;
+
     }
     
     @Override

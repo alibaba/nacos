@@ -37,6 +37,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -106,8 +107,6 @@ public class ClientWorker implements Closeable {
     private static final String TYPE_PARAM = "type";
     
     private static final String ENCRYPTED_DATA_KEY_PARAM = "encryptedDataKey";
-    
-    private static final String DEFAULT_RESOURCE = "";
     
     /**
      * groupKey -> cacheData.
@@ -543,7 +542,8 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void shutdown() {
+        public void shutdown() throws NacosException {
+            super.shutdown();
             synchronized (RpcClientFactory.getAllClientEntries()) {
                 LOGGER.info("Trying to shutdown transport client {}", this);
                 Set<Map.Entry<String, RpcClient>> allClientEntries = RpcClientFactory.getAllClientEntries();
@@ -989,13 +989,11 @@ public class ClientWorker implements Closeable {
         private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
                 throws NacosException {
             try {
-                request.putAllHeader(super.getSecurityHeaders());
-                request.putAllHeader(super.getSpasHeaders());
+                request.putAllHeader(super.getSecurityHeaders(resourceBuild(request)));
                 request.putAllHeader(super.getCommonHeader());
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }
-            request.putAllHeader(SpasAdapter.getSignHeaders(resourceBuild(request), secretKey));
             JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
             asJsonObjectTemp.remove("headers");
             asJsonObjectTemp.remove("requestId");
@@ -1007,37 +1005,27 @@ public class ClientWorker implements Closeable {
             return rpcClientInner.request(request, timeoutMills);
         }
         
-        private String resourceBuild(Request request) {
+        private RequestResource resourceBuild(Request request) {
             if (request instanceof ConfigQueryRequest) {
                 String tenant = ((ConfigQueryRequest) request).getTenant();
                 String group = ((ConfigQueryRequest) request).getGroup();
-                return getResource(tenant, group);
+                String dataId = ((ConfigQueryRequest) request).getGroup();
+                return buildResource(tenant, group, dataId);
             }
             if (request instanceof ConfigPublishRequest) {
                 String tenant = ((ConfigPublishRequest) request).getTenant();
                 String group = ((ConfigPublishRequest) request).getGroup();
-                return getResource(tenant, group);
+                String dataId = ((ConfigPublishRequest) request).getGroup();
+                return buildResource(tenant, group, dataId);
             }
             
             if (request instanceof ConfigRemoveRequest) {
                 String tenant = ((ConfigRemoveRequest) request).getTenant();
                 String group = ((ConfigRemoveRequest) request).getGroup();
-                return getResource(tenant, group);
+                String dataId = ((ConfigRemoveRequest) request).getGroup();
+                return buildResource(tenant, group, dataId);
             }
-            return DEFAULT_RESOURCE;
-        }
-        
-        private String getResource(String tenant, String group) {
-            if (StringUtils.isNotBlank(tenant) && StringUtils.isNotBlank(group)) {
-                return tenant + "+" + group;
-            }
-            if (StringUtils.isNotBlank(group)) {
-                return group;
-            }
-            if (StringUtils.isNotBlank(tenant)) {
-                return tenant;
-            }
-            return DEFAULT_RESOURCE;
+            return RequestResource.configBuilder().build();
         }
         
         RpcClient getOneRunningClient() throws NacosException {

@@ -182,19 +182,9 @@ public abstract class DumpService {
                 if (canExecute()) {
                     try {
                         Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                        int totalCount = persistService.findConfigHistoryCountByTime(startTime);
-                        if (totalCount > 0) {
-                            int pageSize = 1000;
-                            int removeTime = (totalCount + pageSize - 1) / pageSize;
-                            LOGGER.warn(
-                                    "clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-                                    startTime, totalCount, pageSize, removeTime);
-                            while (removeTime > 0) {
-                                // delete paging to avoid reporting errors in batches
-                                persistService.removeConfigHistory(startTime, pageSize);
-                                removeTime--;
-                            }
-                        }
+                        int pageSize = 1000;
+                        LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
+                        persistService.removeConfigHistory(startTime, pageSize);
                     } catch (Throwable e) {
                         LOGGER.error("clearConfigHistory error : {}", e.toString());
                     }

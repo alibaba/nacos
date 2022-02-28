@@ -20,17 +20,17 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.auth.AuthManager;
+import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.AuthConfigs;
-import com.alibaba.nacos.auth.exception.AccessException;
-import com.alibaba.nacos.auth.model.Permission;
-import com.alibaba.nacos.auth.parser.ResourceParser;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -44,11 +44,15 @@ import java.lang.reflect.Method;
 @Component
 public class RemoteRequestAuthFilter extends AbstractRequestFilter {
     
-    @Autowired
-    private AuthConfigs authConfigs;
+    private final AuthConfigs authConfigs;
     
-    @Autowired
-    private AuthManager authManager;
+    private final GrpcProtocolAuthService protocolAuthService;
+    
+    public RemoteRequestAuthFilter(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
+        this.protocolAuthService = new GrpcProtocolAuthService(authConfigs);
+        this.protocolAuthService.initialize();
+    }
     
     @Override
     public Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
@@ -63,21 +67,24 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                if (!protocolAuthService.enableAuth(secured)) {
+                    return null;
+                }
+                String clientIp = meta.getClientIp();
+                request.putHeader(Constants.Identity.X_REAL_IP, clientIp);
+                Resource resource = protocolAuthService.parseResource(request, secured);
+                IdentityContext identityContext = protocolAuthService.parseIdentity(request);
+                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+                if (!result) {
+                    // TODO Get reason of failure
+                    throw new AccessException("Validate Identity failed.");
+                }
                 String action = secured.action().toString();
-                String resource = secured.resource();
-                
-                if (StringUtils.isBlank(resource)) {
-                    ResourceParser parser = secured.parser().newInstance();
-                    resource = parser.parseName(request);
+                result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
+                if (!result) {
+                    // TODO Get reason of failure
+                    throw new AccessException("Validate Authority failed.");
                 }
-                
-                if (StringUtils.isBlank(resource)) {
-                    // deny if we don't find any resource:
-                    throw new AccessException("resource name invalid!");
-                }
-                
-                authManager.auth(new Permission(resource, action), authManager.loginRemote(request));
-                
             }
         } catch (AccessException e) {
             if (Loggers.AUTH.isDebugEnabled()) {

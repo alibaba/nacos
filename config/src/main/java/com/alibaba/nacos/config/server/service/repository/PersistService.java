@@ -411,6 +411,7 @@ public interface PersistService {
      * @param startTime start time
      * @return count of history config that meet the conditions
      */
+    @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
     
     /**

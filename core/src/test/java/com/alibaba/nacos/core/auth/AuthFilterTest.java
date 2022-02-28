@@ -17,9 +17,8 @@
 
 package com.alibaba.nacos.core.auth;
 
-import com.alibaba.nacos.auth.AuthManager;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
@@ -56,9 +55,6 @@ public class AuthFilterTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private AuthManager authManager;
-    
-    @Mock
     private ControllerMethodsCache methodsCache;
     
     @Test
@@ -73,17 +69,18 @@ public class AuthFilterTest {
             Mockito.when(authConfigs.isEnableUserAgentAuthWhite()).thenReturn(true);
             request.addHeader(HttpHeaderConsts.USER_AGENT_HEADER, Constants.NACOS_SERVER_HEADER);
             authFilter.doFilter(request, response, filterChain);
-    
+            
             Mockito.when(authConfigs.isEnableUserAgentAuthWhite()).thenReturn(false);
             Mockito.when(authConfigs.getServerIdentityKey()).thenReturn("1");
             Mockito.when(authConfigs.getServerIdentityValue()).thenReturn("2");
             request.addHeader("1", "2");
             authFilter.doFilter(request, response, filterChain);
-    
+            
             Mockito.when(authConfigs.getServerIdentityValue()).thenReturn("3");
             authFilter.doFilter(request, response, filterChain);
             
-            Mockito.when(methodsCache.getMethod(Mockito.any())).thenReturn(filterChain.getClass().getMethod("testSecured"));
+            Mockito.when(methodsCache.getMethod(Mockito.any()))
+                    .thenReturn(filterChain.getClass().getMethod("testSecured"));
             authFilter.doFilter(request, response, filterChain);
             
         } catch (Exception e) {
@@ -93,9 +90,10 @@ public class AuthFilterTest {
     }
     
     class MockFilterChain implements FilterChain {
-    
+        
         @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse) throws IOException, ServletException {
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse)
+                throws IOException, ServletException {
             System.out.println("filter chain executed");
         }
         

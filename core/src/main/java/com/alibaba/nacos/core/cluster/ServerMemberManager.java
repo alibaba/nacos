@@ -385,15 +385,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         
         Collection<Member> finalMembers = allMembers();
         
-        Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
-        
         // Persist the current cluster node information to cluster.conf
         // <important> need to put the event publication into a synchronized block to ensure
         // that the event publication is sequential
         if (hasChange) {
+            Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
             MemberUtil.syncToFile(finalMembers);
             Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
+        } else {
+            if (Loggers.CLUSTER.isDebugEnabled()) {
+                Loggers.CLUSTER.debug("[serverlist] not updated, is still : {}", finalMembers);
+            }
         }
         
         return hasChange;
