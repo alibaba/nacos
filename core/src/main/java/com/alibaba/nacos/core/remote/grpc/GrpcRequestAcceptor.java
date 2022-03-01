@@ -36,8 +36,6 @@ import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
-
 /**
  * rpc request acceptor of grpc.
  *
@@ -55,7 +53,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
     
     private void traceIfNecessary(Payload grpcRequest, boolean receive) {
         String clientIp = grpcRequest.getMetadata().getClientIp();
-        String connectionId = CONTEXT_KEY_CONN_ID.get();
+        String connectionId = GrpcServerConstants.CONTEXT_KEY_CONN_ID.get();
         try {
             if (connectionManager.traced(clientIp)) {
                 Loggers.REMOTE_DIGEST.info("[{}]Payload {},meta={},body={}", connectionId, receive ? "receive" : "send",
@@ -88,7 +86,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         // server check.
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
-            Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get()));
+            Payload serverCheckResponseP = GrpcUtils.convert(
+                    new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get()));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
             responseObserver.onCompleted();
@@ -99,8 +98,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         //no handler found.
         if (requestHandler == null) {
             Loggers.REMOTE_DIGEST.warn(String.format("[%s] No handler for request type : %s :", "grpc", type));
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.NO_HANDLER, "RequestHandler Not Found"));
+            Payload payloadResponse = GrpcUtils.convert(
+                    ErrorResponse.build(NacosException.NO_HANDLER, "RequestHandler Not Found"));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
@@ -108,13 +107,13 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         }
         
         //check connection status.
-        String connectionId = CONTEXT_KEY_CONN_ID.get();
+        String connectionId = GrpcServerConstants.CONTEXT_KEY_CONN_ID.get();
         boolean requestValid = connectionManager.checkValid(connectionId);
         if (!requestValid) {
-            Loggers.REMOTE_DIGEST
-                    .warn("[{}] Invalid connection Id ,connection [{}] is un registered ,", "grpc", connectionId);
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.UN_REGISTER, "Connection is unregistered."));
+            Loggers.REMOTE_DIGEST.warn("[{}] Invalid connection Id ,connection [{}] is un registered ,", "grpc",
+                    connectionId);
+            Payload payloadResponse = GrpcUtils.convert(
+                    ErrorResponse.build(NacosException.UN_REGISTER, "Connection is unregistered."));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
@@ -125,9 +124,10 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         try {
             parseObj = GrpcUtils.parse(grpcRequest);
         } catch (Exception e) {
-            Loggers.REMOTE_DIGEST
-                    .warn("[{}] Invalid request receive from connection [{}] ,error={}", "grpc", connectionId, e);
-            Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(NacosException.BAD_GATEWAY, e.getMessage()));
+            Loggers.REMOTE_DIGEST.warn("[{}] Invalid request receive from connection [{}] ,error={}", "grpc",
+                    connectionId, e);
+            Payload payloadResponse = GrpcUtils.convert(
+                    ErrorResponse.build(NacosException.BAD_GATEWAY, e.getMessage()));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
@@ -136,8 +136,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         if (parseObj == null) {
             Loggers.REMOTE_DIGEST.warn("[{}] Invalid request receive  ,parse request is null", connectionId);
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request"));
+            Payload payloadResponse = GrpcUtils.convert(
+                    ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request"));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
@@ -145,11 +145,10 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         }
         
         if (!(parseObj instanceof Request)) {
-            Loggers.REMOTE_DIGEST
-                    .warn("[{}] Invalid request receive  ,parsed payload is not a request,parseObj={}", connectionId,
-                            parseObj);
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request"));
+            Loggers.REMOTE_DIGEST.warn("[{}] Invalid request receive  ,parsed payload is not a request,parseObj={}",
+                    connectionId, parseObj);
+            Payload payloadResponse = GrpcUtils.convert(
+                    ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request"));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
@@ -158,10 +157,10 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         Request request = (Request) parseObj;
         try {
-            Connection connection = connectionManager.getConnection(CONTEXT_KEY_CONN_ID.get());
+            Connection connection = connectionManager.getConnection(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get());
             RequestMeta requestMeta = new RequestMeta();
             requestMeta.setClientIp(connection.getMetaInfo().getClientIp());
-            requestMeta.setConnectionId(CONTEXT_KEY_CONN_ID.get());
+            requestMeta.setConnectionId(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get());
             requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
             requestMeta.setLabels(connection.getMetaInfo().getLabels());
             connectionManager.refreshActiveTime(requestMeta.getConnectionId());
@@ -171,9 +170,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
         } catch (Throwable e) {
-            Loggers.REMOTE_DIGEST
-                    .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
-                            e);
+            Loggers.REMOTE_DIGEST.error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc",
+                    connectionId, e);
             Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(e));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);

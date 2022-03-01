@@ -17,12 +17,11 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import io.grpc.netty.shaded.io.netty.channel.Channel;
+import io.grpc.stub.ServerCallStreamObserver;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -59,8 +58,11 @@ public class ConnectionManagerTest {
     @InjectMocks
     private GrpcConnection connection;
     
+    /*@Mock
+    private Channel channel;*/
+    
     @Mock
-    private Channel channel;
+    private ServerCallStreamObserver streamObserver;
     
     @Mock
     private ConnectionMeta connectionMeta;
@@ -94,8 +96,8 @@ public class ConnectionManagerTest {
         }
         connectId = UUID.randomUUID().toString();
         connectionManager.start();
-        Mockito.when(channel.isOpen()).thenReturn(true);
-        Mockito.when(channel.isActive()).thenReturn(true);
+        Mockito.when(streamObserver.isCancelled()).thenReturn(false);
+        Mockito.when(streamObserver.isReady()).thenReturn(true);
         
         connectionMeta.clientIp = clientIp;
         Map<String, String> labels = new HashMap<>();
@@ -105,6 +107,7 @@ public class ConnectionManagerTest {
         connectionManager.loadCount(1, clientIp);
         
         connectionManager.register(connectId, connection);
+        
     }
     
     @After
@@ -149,7 +152,7 @@ public class ConnectionManagerTest {
     }
     
     @Test
-    public void testLoadSingle() throws NacosException {
+    public void testLoadSingle() {
         Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
         connectionManager.loadSingle(connectId, clientIp);
     }

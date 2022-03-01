@@ -50,11 +50,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_IP;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_PORT;
-
 /**
  * {@link GrpcBiStreamRequestAcceptor} unit test.
  *
@@ -85,22 +80,22 @@ public class GrpcBiStreamRequestAcceptorTest {
     public void setUp() throws IOException {
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
-        Server mockServer = InProcessServerBuilder
-                .forName(serverName).directExecutor().addService(acceptor)
+        Server mockServer = InProcessServerBuilder.forName(serverName).directExecutor().addService(acceptor)
                 .intercept(new ServerInterceptor() {
                     @Override
                     public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
                             ServerCallHandler<R, S> serverCallHandler) {
-                        Context ctx = Context.current().withValue(CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
-                                .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
-                                .withValue(CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
-                                .withValue(CONTEXT_KEY_CONN_REMOTE_IP, remoteIp);
+                        Context ctx = Context.current()
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_IP, remoteIp);
                         return Contexts.interceptCall(ctx, serverCall, metadata, serverCallHandler);
                     }
-                })
-                .build();
+                }).build();
         grpcCleanupRule.register(mockServer.start());
-        streamStub = BiRequestStreamGrpc.newStub(grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+        streamStub = BiRequestStreamGrpc.newStub(
+                grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
         Mockito.doReturn(true).when(connectionManager).traced(Mockito.any());
     }
     
@@ -118,12 +113,12 @@ public class GrpcBiStreamRequestAcceptorTest {
                 payloadStreamObserver.onNext(res);
                 payloadStreamObserver.onCompleted();
             }
-    
+            
             @Override
             public void onError(Throwable throwable) {
                 Assert.fail(throwable.getMessage());
             }
-    
+            
             @Override
             public void onCompleted() {
                 System.out.println("complete");
@@ -133,7 +128,7 @@ public class GrpcBiStreamRequestAcceptorTest {
         RequestMeta metadata = new RequestMeta();
         metadata.setClientIp("127.0.0.1");
         metadata.setConnectionId(connectId);
-
+        
         ConnectionSetupRequest connectionSetupRequest = new ConnectionSetupRequest();
         connectionSetupRequest.setRequestId(requestId);
         connectionSetupRequest.setClientVersion("2.0.3");

@@ -46,7 +46,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.ServletContext;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,25 +94,27 @@ public class CommunicationControllerTest {
     @Test
     public void testNotifyConfigInfo() throws Exception {
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange")
-                .param("dataId", "test").param("group", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange").param("dataId", "test").param("group", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("true", actualValue);
     }
     
     @Test
     public void testGetSubClientConfig1x() throws Exception {
-    
+        
         SampleResult result = new SampleResult();
         Map<String, String> lisentersGroupkeyStatus = new HashMap<>();
         lisentersGroupkeyStatus.put("test", "test");
         result.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
         when(longPollingService.getCollectSubscribleInfo("test", "test", "test")).thenReturn(result);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers")
-                .param("dataId", "test").param("group", "test").param("tenant", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                        Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers").param("dataId", "test")
+                .param("group", "test").param("tenant", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("{\"test\":\"test\"}", JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
+        Assert.assertEquals("{\"test\":\"test\"}",
+                JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
     }
     
     @Test
@@ -127,37 +128,41 @@ public class CommunicationControllerTest {
         String connectionId = "127.0.0.1";
         listenersClients.add(connectionId);
         when(configChangeListenContext.getListeners(groupKey)).thenReturn(listenersClients);
-        ConnectionMeta connectionMeta = new ConnectionMeta(connectionId, connectionId, connectionId, 8888, 9848, "GRPC", "", "", new HashMap<>());
-        Connection client = new GrpcConnection(connectionMeta, null, null);
+        ConnectionMeta connectionMeta = new ConnectionMeta(connectionId, connectionId, connectionId, 8888, 9848, "GRPC",
+                "", "", new HashMap<>());
+        Connection client = new GrpcConnection(connectionMeta, null);
         when(connectionManager.getConnection(connectionId)).thenReturn(client);
         when(configChangeListenContext.getListenKeyMd5(connectionId, groupKey)).thenReturn("md5");
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers")
-                .param("dataId", "test").param("group", "test").param("tenant", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                        Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers").param("dataId", "test")
+                .param("group", "test").param("tenant", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("{\"127.0.0.1\":\"md5\"}", JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
+        Assert.assertEquals("{\"127.0.0.1\":\"md5\"}",
+                JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
     }
     
     @Test
     public void testGetSubClientConfigByIp() throws Exception {
-    
+        
         String ip = "127.0.0.1";
         SampleResult result = new SampleResult();
         result.setLisentersGroupkeyStatus(new HashMap<>());
         when(longPollingService.getCollectSubscribleInfoByIp(ip)).thenReturn(result);
         ConnectionMeta connectionMeta = new ConnectionMeta(ip, ip, ip, 8888, 9848, "GRPC", "", "", new HashMap<>());
-        Connection connection = new GrpcConnection(connectionMeta, null, null);
+        Connection connection = new GrpcConnection(connectionMeta, null);
         List<Connection> connectionList = new ArrayList<>();
         connectionList.add(connection);
         when(connectionManager.getConnectionByIp(ip)).thenReturn(connectionList);
         Map<String, String> map = new HashMap<>();
         map.put("test", "test");
         when(configChangeListenContext.getListenKeys(ip)).thenReturn(map);
-    
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs")
-                .param("ip", ip);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
+                Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs").param("ip", ip);
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("{\"test\":\"test\"}", JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
-    
+        Assert.assertEquals("{\"test\":\"test\"}",
+                JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
+        
     }
 }

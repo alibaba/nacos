@@ -31,12 +31,12 @@ import java.util.HashMap;
  * @date 2021-07-01 13:39
  */
 public class RpcAckCallbackInitorOrCleanerTest {
-   
+    
     @Test
     public void testInitAndCleaner() {
         String connectId = "11";
         ConnectionMeta meta = new ConnectionMeta(connectId, "", "", 80, 80, "GRPC", "", "", new HashMap<>());
-        Connection connection = new GrpcConnection(meta, null, null);
+        Connection connection = new GrpcConnection(meta, null);
         
         RpcAckCallbackInitorOrCleaner initorOrCleaner = new RpcAckCallbackInitorOrCleaner();
         initorOrCleaner.clientConnected(connection);

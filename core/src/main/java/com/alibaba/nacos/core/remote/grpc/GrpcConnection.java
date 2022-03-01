@@ -30,9 +30,7 @@ import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.StatusRuntimeException;
-import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
-import io.grpc.stub.StreamObserver;
 
 /**
  * grpc connection.
@@ -42,14 +40,11 @@ import io.grpc.stub.StreamObserver;
  */
 public class GrpcConnection extends Connection {
     
-    private StreamObserver streamObserver;
+    private final ServerCallStreamObserver streamObserver;
     
-    private Channel channel;
-    
-    public GrpcConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel) {
+    public GrpcConnection(ConnectionMeta metaInfo, ServerCallStreamObserver streamObserver) {
         super(metaInfo);
         this.streamObserver = streamObserver;
-        this.channel = channel;
     }
     
     private void sendRequestNoAck(Request request) throws NacosException {
@@ -77,8 +72,8 @@ public class GrpcConnection extends Connection {
                 Loggers.REMOTE_DIGEST.info("[{}]Send request to client ,payload={}", connectionId,
                         payload.toByteString().toStringUtf8());
             } catch (Throwable throwable) {
-                Loggers.REMOTE_DIGEST
-                        .warn("[{}]Send request to client trace error, ,error={}", connectionId, throwable);
+                Loggers.REMOTE_DIGEST.warn("[{}]Send request to client trace error, ,error={}", connectionId,
+                        throwable);
             }
         }
     }
@@ -129,7 +124,6 @@ public class GrpcConnection extends Connection {
             }
             
             closeBiStream();
-            channel.close();
             
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.warn("[{}] connection  close exception  : {}", connectionId, e);
@@ -137,16 +131,14 @@ public class GrpcConnection extends Connection {
     }
     
     private void closeBiStream() {
-        if (streamObserver instanceof ServerCallStreamObserver) {
-            ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) streamObserver);
-            if (!serverCallStreamObserver.isCancelled()) {
-                serverCallStreamObserver.onCompleted();
-            }
+        if (streamObserver.isCancelled()) {
+            return;
         }
+        streamObserver.onCompleted();
     }
     
     @Override
     public boolean isConnected() {
-        return channel != null && channel.isOpen() && channel.isActive();
+        return streamObserver.isReady();
     }
 }

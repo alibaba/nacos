@@ -60,11 +60,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_IP;
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_PORT;
-
 /**
  * {@link GrpcRequestAcceptor} unit test.
  *
@@ -103,10 +98,11 @@ public class GrpcRequestAcceptorTest {
                     @Override
                     public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
                             ServerCallHandler<R, S> serverCallHandler) {
-                        Context ctx = Context.current().withValue(CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
-                                .withValue(CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
-                                .withValue(CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
-                                .withValue(CONTEXT_KEY_CONN_REMOTE_IP, remoteIp);
+                        Context ctx = Context.current()
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
+                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_IP, remoteIp);
                         return Contexts.interceptCall(ctx, serverCall, metadata, serverCallHandler);
                     }
                 }).build().start());
@@ -297,7 +293,7 @@ public class GrpcRequestAcceptorTest {
         String ip = "1.1.1.1";
         ConnectionMeta connectionMeta = new ConnectionMeta(connectId, ip, ip, 8888, 9848, "GRPC", "", "",
                 new HashMap<>());
-        Connection connection = new GrpcConnection(connectionMeta, null, null);
+        Connection connection = new GrpcConnection(connectionMeta, null);
         Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(connection);
         
         RequestMeta metadata = new RequestMeta();

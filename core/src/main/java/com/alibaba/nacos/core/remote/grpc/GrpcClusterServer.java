@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadPoolExecutor;
@@ -42,5 +44,62 @@ public class GrpcClusterServer extends BaseGrpcServer {
             GlobalExecutor.clusterRpcExecutor.allowCoreThreadTimeOut(true);
         }
         return GlobalExecutor.clusterRpcExecutor;
+    }
+    
+    @Override
+    protected long getKeepAliveTime() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
+                Long.class);
+        if (property != null) {
+            return property;
+        }
+        return super.getKeepAliveTime();
+    }
+    
+    @Override
+    protected long getKeepAliveTimeout() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
+                Long.class);
+        if (property != null) {
+            return property;
+        }
+        return super.getKeepAliveTimeout();
+    }
+    
+    @Override
+    protected long getMaxConnectionIdle() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_CONNECTION_IDLE_PROPERTY,
+                Long.class);
+        if (property != null) {
+            return property;
+        }
+        return super.getMaxConnectionIdle();
+    }
+    
+    @Override
+    protected long getPermitKeepAliveTime() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_PERMIT_KEEP_ALIVE_TIME,
+                Long.class);
+        if (property != null) {
+            return property;
+        }
+        return super.getPermitKeepAliveTime();
+    }
+    
+    @Override
+    protected int getMaxInboundMessageSize() {
+        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                Integer.class);
+        if (property != null) {
+            return property;
+        }
+        
+        int size = super.getMaxInboundMessageSize();
+        if (Loggers.REMOTE.isWarnEnabled()) {
+            Loggers.REMOTE.warn("Recommended use '{}' property instead '{}', now property value is {}",
+                    GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                    GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
+        }
+        return size;
     }
 }
