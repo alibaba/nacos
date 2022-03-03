@@ -79,9 +79,6 @@ public class PayloadRegistry {
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
-        if (Modifier.isInterface(clazz.getModifiers())) {
-            return;
-        }
         if (REGISTRY_REQUEST.containsKey(type)) {
             throw new RuntimeException(String.format("Fail to register, type:%s ,clazz:%s ", type, clazz.getName()));
         }

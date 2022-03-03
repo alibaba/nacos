@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.parser;
 
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 
 /**
@@ -31,8 +32,8 @@ public interface ResourceParser<R> {
      * Parse resource from request.
      *
      * @param request request
-     * @param type    request type, like naming or config
+     * @param secured request secured
      * @return resource
      */
-    Resource parse(R request, String type);
+    Resource parse(R request, Secured secured);
 }

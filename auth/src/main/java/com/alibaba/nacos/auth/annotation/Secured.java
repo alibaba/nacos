@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.auth.annotation;
 
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.auth.parser.DefaultResourceParser;
 import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -62,4 +62,12 @@ public @interface Secured {
      * @return class type of resource parser
      */
     Class<? extends ResourceParser> parser() default DefaultResourceParser.class;
+    
+    /**
+     * Specified tags for this secured, these tags will be injected into {@link com.alibaba.nacos.plugin.auth.api.Resource}
+     * as the keys and values of properties.
+     *
+     * @return tags
+     */
+    String[] tags() default {};
 }

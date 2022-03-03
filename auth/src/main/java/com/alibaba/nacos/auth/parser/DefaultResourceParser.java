@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.parser;
 
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 
 /**
@@ -28,7 +29,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 public class DefaultResourceParser implements ResourceParser<Object> {
     
     @Override
-    public Resource parse(Object request, String type) {
+    public Resource parse(Object request, Secured secured) {
         return Resource.EMPTY_RESOURCE;
     }
 }
