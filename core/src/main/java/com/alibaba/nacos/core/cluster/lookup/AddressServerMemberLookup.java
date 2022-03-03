@@ -154,7 +154,7 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
     }
     
     @Override
-    public void destroy() throws NacosException {
+    protected void doDestroy() throws NacosException {
         shutdown = true;
     }
     
