@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -85,6 +86,8 @@ public class ServerListManager implements ServerListFactory, Closeable {
         initServerAddr(properties);
         if (!serverList.isEmpty()) {
             currentIndex.set(new Random().nextInt(serverList.size()));
+        } else {
+            throw new NacosLoadException("serverList is empty,please check configuration");
         }
     }
     
@@ -149,10 +152,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
             }
             if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
+                serversFromEndpoint = list;
+                lastServerListRefreshTime = System.currentTimeMillis();
+                NotifyCenter.publishEvent(new ServerListChangedEvent());
             }
-            serversFromEndpoint = list;
-            lastServerListRefreshTime = System.currentTimeMillis();
-            NotifyCenter.publishEvent(new ServerListChangedEvent());
         } catch (Throwable e) {
             NAMING_LOGGER.warn("failed to update server list", e);
         }

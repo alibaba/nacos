@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;

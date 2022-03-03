@@ -101,7 +101,6 @@ public class CPInstancesAPI_ITCase {
     @Test
     public void registerInstance_ephemeral_true() throws Exception {
         String serviceName = NamingBase.randomDomainName();
-        namingServiceCreate(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
 
         Instance instance = new Instance();
         instance.setEphemeral(true);  //是否临时实例
@@ -178,7 +177,6 @@ public class CPInstancesAPI_ITCase {
     @Test
     public void deleteService_hasInstace() {
         String serviceName = NamingBase.randomDomainName();
-        namingServiceCreate(serviceName, TEST_NAMESPACE_1);
 
         ResponseEntity<String> registerResponse = request(NamingBase.NAMING_CONTROLLER_PATH + "/instance",
             Params.newParams()
@@ -340,7 +338,7 @@ public class CPInstancesAPI_ITCase {
     }
 
     /**
-     * @TCDescription : 根据serviceName创建服务，注册不同group的2个持久化实例, 注销实例，删除服务
+     * @TCDescription : 根据serviceName创建服务，注册不同group的2个非持久化实例, 注销实例，删除服务
      * @TestStep :
      * @ExpectResult :
      */
@@ -382,6 +380,7 @@ public class CPInstancesAPI_ITCase {
                 .appendParam("port", port)
                 .appendParam("namespaceId", namespace)
                 .appendParam("groupName", groupName)
+                .appendParam("ephemeral", "false")
                 .done(),
             String.class,
             HttpMethod.DELETE);
@@ -396,6 +395,7 @@ public class CPInstancesAPI_ITCase {
                 .appendParam("port", port)
                 .appendParam("namespaceId", namespace)
                 .appendParam("groupName", groupName)
+                .appendParam("ephemeral", "false")
                 .done(),
             String.class,
             HttpMethod.POST);

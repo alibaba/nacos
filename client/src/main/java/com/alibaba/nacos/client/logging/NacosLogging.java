@@ -44,6 +44,10 @@ public class NacosLogging {
         }
     }
     
+    public boolean isLogback() {
+        return isLogback;
+    }
+    
     private static class NacosLoggingInstance {
         
         private static final NacosLogging INSTANCE = new NacosLogging();

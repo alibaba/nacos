@@ -101,12 +101,12 @@ public final class ConfigExecutor {
         return ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR;
     }
     
-    public static void scheduleLongPolling(Runnable runnable, long initialDelay, long period, TimeUnit unit) {
-        LONG_POLLING_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, period, unit);
+    public static void scheduleLongPolling(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+        LONG_POLLING_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }
     
-    public static ScheduledFuture<?> scheduleLongPolling(Runnable runnable, long period, TimeUnit unit) {
-        return LONG_POLLING_EXECUTOR.schedule(runnable, period, unit);
+    public static ScheduledFuture<?> scheduleLongPolling(Runnable runnable, long delay, TimeUnit unit) {
+        return LONG_POLLING_EXECUTOR.schedule(runnable, delay, unit);
     }
     
     public static void executeLongPolling(Runnable runnable) {

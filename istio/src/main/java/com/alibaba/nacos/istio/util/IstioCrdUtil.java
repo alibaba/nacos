@@ -40,7 +40,7 @@ public class IstioCrdUtil {
 
     public static final String VALID_DEFAULT_GROUP_NAME = "DEFAULT-GROUP";
 
-    private static final String SUFFIX_DOMAIN = "nacos";
+    private static final String ISTIO_HOSTNAME = "istio.hostname";
 
     public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
     public static final String VALID_LABEL_VALUE_FORMAT = "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
@@ -52,18 +52,18 @@ public class IstioCrdUtil {
         return service.getName() + "." + group + "." + service.getNamespace();
     }
 
-    public static ServiceEntryWrapper buildServiceEntry(String serviceName, IstioService istioService) {
+    public static ServiceEntryWrapper buildServiceEntry(String serviceName, String domainSuffix,IstioService istioService) {
         if (istioService.getHosts().isEmpty()) {
             return null;
         }
 
         ServiceEntry.Builder serviceEntryBuilder = ServiceEntry
                 .newBuilder().setResolution(ServiceEntry.Resolution.STATIC)
-                .setLocation(ServiceEntry.Location.MESH_INTERNAL)
-                .addHosts(serviceName + "." + SUFFIX_DOMAIN);
+                .setLocation(ServiceEntry.Location.MESH_INTERNAL);
 
         int port = 0;
         String protocol = "http";
+        String hostname = serviceName;
 
         for (Instance instance : istioService.getHosts()) {
             if (port == 0) {
@@ -76,6 +76,11 @@ public class IstioCrdUtil {
                 if (protocol.equals("triple")||protocol.equals("tri")){
                     protocol = "grpc";
                 }
+            }
+
+            String metaHostname = instance.getMetadata().get(ISTIO_HOSTNAME);
+            if (StringUtils.isNotEmpty(metaHostname)) {
+                hostname = metaHostname;
             }
 
             if (!instance.isHealthy() || !instance.isEnabled()) {
@@ -103,7 +108,7 @@ public class IstioCrdUtil {
             serviceEntryBuilder.addEndpoints(workloadEntry);
         }
 
-        serviceEntryBuilder.addPorts(
+        serviceEntryBuilder.addHosts(hostname + "." + domainSuffix).addPorts(
                 GatewayOuterClass.Port.newBuilder().setNumber(port).setName(protocol).setProtocol(protocol.toUpperCase()).build());
         ServiceEntry serviceEntry = serviceEntryBuilder.build();
 

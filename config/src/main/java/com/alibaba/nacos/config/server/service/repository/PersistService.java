@@ -411,6 +411,7 @@ public interface PersistService {
      * @param startTime start time
      * @return count of history config that meet the conditions
      */
+    @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
     
     /**
@@ -1337,5 +1338,12 @@ public interface PersistService {
      * @return count by tenantId
      */
     int tenantInfoCountByTenantId(String tenantId);
-    
+
+    /**
+     * Query dataId list by namespace.
+     *
+     * @param tenantId tenantId
+     * @return {@link ConfigInfoBase}
+     */
+    List<ConfigInfoWrapper> queryConfigInfoByNamespace(final String tenantId);
 }

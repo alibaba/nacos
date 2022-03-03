@@ -69,17 +69,14 @@ public class CapacityService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // All servers have jobs that modify usage, idempotent.
-        ConfigExecutor.scheduleCorrectUsageTask(new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.info("[capacityManagement] start correct usage");
-                StopWatch watch = new StopWatch();
-                watch.start();
-                correctUsage();
-                watch.stop();
-                LOGGER.info("[capacityManagement] end correct usage, cost: {}s", watch.getTotalTimeSeconds());
-                
-            }
+        ConfigExecutor.scheduleCorrectUsageTask(() -> {
+            LOGGER.info("[capacityManagement] start correct usage");
+            StopWatch watch = new StopWatch();
+            watch.start();
+            correctUsage();
+            watch.stop();
+            LOGGER.info("[capacityManagement] end correct usage, cost: {}s", watch.getTotalTimeSeconds());
+            
         }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
     }
     

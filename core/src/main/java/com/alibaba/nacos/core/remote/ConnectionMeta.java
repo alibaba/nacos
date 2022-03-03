@@ -73,7 +73,7 @@ public class ConnectionMeta {
     Date createTime;
     
     /**
-     * astActiveTime.
+     * lastActiveTime.
      */
     long lastActiveTime;
     

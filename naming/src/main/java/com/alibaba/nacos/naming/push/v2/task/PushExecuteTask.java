@@ -152,7 +152,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
     
         private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
             ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
-            return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true);
+            return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true, subscriber);
         }
     }
 }

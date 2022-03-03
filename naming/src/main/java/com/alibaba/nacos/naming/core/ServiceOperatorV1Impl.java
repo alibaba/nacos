@@ -122,8 +122,7 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
     }
     
     @Override
-    public List<String> listService(String namespaceId, String groupName, String selector, int pageSize, int pageNo)
-            throws NacosException {
+    public Collection<String> listService(String namespaceId, String groupName, String selector) throws NacosException {
         Map<String, com.alibaba.nacos.naming.core.Service> serviceMap = serviceManager.chooseServiceMap(namespaceId);
         if (serviceMap == null || serviceMap.isEmpty()) {
             return Collections.emptyList();
@@ -134,7 +133,7 @@ public class ServiceOperatorV1Impl implements ServiceOperator {
             serviceMap.entrySet()
                     .removeIf(entry -> !entry.getKey().startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
         }
-        return ServiceUtil.pageServiceName(pageNo, pageSize, serviceMap);
+        return serviceMap.keySet();
     }
     
     @Override

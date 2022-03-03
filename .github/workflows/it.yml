@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        java: [8, 11]
+        java: [8, 8.0.192, 11, 11.0.3]
     steps:
       - name: Cache Maven Repos
         uses: actions/cache@v2
@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: ${{ matrix.java }}
-          distribution: 'adopt'
+          distribution: 'zulu'
           architecture: x64
       - name: Test Config
         run: mvn clean package -Pcit-test
