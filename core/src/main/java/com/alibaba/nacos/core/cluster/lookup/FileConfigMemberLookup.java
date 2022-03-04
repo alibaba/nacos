@@ -71,7 +71,7 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     }
     
     @Override
-    public void destroy() throws NacosException {
+    protected void doDestroy() throws NacosException {
         WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
     }
     
