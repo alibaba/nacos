@@ -47,8 +47,6 @@ public class IPUtil {
     
     private static final String CHECK_OK = "ok";
     
-    private static final Pattern DOMAIN_PATTERN = Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
-    
     private static final String IPV4_TUPLE = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
     
     private static final Pattern IPV4_PATTERN = Pattern
@@ -129,14 +127,7 @@ public class IPUtil {
                 throw new IllegalArgumentException("The IPv6 address(\"" + serverAddrArr[0] + "\") is incorrect.");
             }
         } else {
-            serverAddrArr = str.split(":");
-            if (serverAddrArr.length > SPLIT_IP_PORT_RESULT_LENGTH) {
-                throw new IllegalArgumentException("The IP address(\"" + str
-                        + "\") is incorrect. If it is an IPv6 address, please use [] to enclose the IP part!");
-            }
-            if (!isIPv4(serverAddrArr[0]) && !DOMAIN_PATTERN.matcher(serverAddrArr[0]).matches()) {
-                throw new IllegalArgumentException("The IPv4 or Domain address(\"" + serverAddrArr[0] + "\") is incorrect.");
-            }
+            serverAddrArr = str.split(IP_PORT_SPLITER);
         }
         return serverAddrArr;
     }
