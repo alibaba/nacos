@@ -96,7 +96,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
      */
     protected Resource useSpecifiedParserToParse(Secured secured, R request) {
         try {
-            return secured.parser().newInstance().parse(request, secured.signType());
+            return secured.parser().newInstance().parse(request, secured);
         } catch (Exception e) {
             Loggers.AUTH.error("Use specified resource parser {} parse resource failed.",
                     secured.parser().getCanonicalName(), e);

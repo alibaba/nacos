@@ -14,26 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.auth.parser;
+package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.api.Resource;
+import junit.framework.TestCase;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Resource parser.
- *
- * @author nkorange
- * @author mai.jh
- * @since 1.2.0
- */
-public interface ResourceParser<R> {
-    
-    /**
-     * Parse resource from request.
-     *
-     * @param request request
-     * @param secured request secured
-     * @return resource
-     */
-    Resource parse(R request, Secured secured);
+public class PayloadRegistryTest extends TestCase {
+
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+
+    public void tearDown() throws Exception {
+    }
+
+    @Test
+    public void testInit() {
+        PayloadRegistry.init();
+        Assert.assertNotNull(PayloadRegistry.getClassByType("NotifySubscriberResponse"));
+        Assert.assertNotNull(PayloadRegistry.getClassByType("InstanceRequest"));
+    }
 }
