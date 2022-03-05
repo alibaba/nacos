@@ -16,17 +16,13 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 
 /**
  * Strategy interface for loading resources (e.g., class path or file system
- * resources). An {@link org.springframework.context.ApplicationContext}
- * is required to provide this functionality plus extended
- * {@link ResourcePatternResolver} support.
+ * resources).
  *
- * <p>{@link DefaultResourceLoader} is a standalone implementation that is
- * usable outside an ApplicationContext and is also used by {@link ResourceEditor}.
+ * <p>{@link DefaultResourceLoader} is a standalone implementation
  *
  * <p>Bean properties of type {@code Resource} and {@code Resource[]} can be populated
  * from Strings when running in an ApplicationContext, using the particular
@@ -35,8 +31,6 @@ import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
  * @author Juergen Hoeller
  * @see Resource
  * @see ResourcePatternResolver
- * @see org.springframework.context.ApplicationContext
- * @see org.springframework.context.ResourceLoaderAware
  * @since 10.03.2004
  */
 public interface ResourceLoader {
@@ -49,8 +43,10 @@ public interface ResourceLoader {
 
     /**
      * Return a {@code Resource} handle for the specified resource location.
+     *
      * <p>The handle should always be a reusable resource descriptor,
      * allowing for multiple {@link Resource#getInputStream()} calls.
+     *
      * <p><ul>
      * <li>Must support fully qualified URLs, e.g. "file:C:/test.dat".
      * <li>Must support classpath pseudo-URLs, e.g. "classpath:test.dat".
@@ -58,6 +54,7 @@ public interface ResourceLoader {
      * (This will be implementation-specific, typically provided by an
      * ApplicationContext implementation.)
      * </ul>
+     *
      * <p>Note that a {@code Resource} handle does not imply an existing resource;
      * you need to invoke {@link Resource#exists} to check for existence.
      *
@@ -71,14 +68,13 @@ public interface ResourceLoader {
 
     /**
      * Expose the {@link ClassLoader} used by this {@code ResourceLoader}.
+     *
      * <p>Clients which need to access the {@code ClassLoader} directly can do so
      * in a uniform manner with the {@code ResourceLoader}, rather than relying
      * on the thread context {@code ClassLoader}.
      *
      * @return the {@code ClassLoader}
      * (only {@code null} if even the system {@code ClassLoader} isn't accessible)
-     * @see ClassUtils#getDefaultClassLoader()
-     * @see ClassUtils#forName(String, ClassLoader)
      */
 
     ClassLoader getClassLoader();

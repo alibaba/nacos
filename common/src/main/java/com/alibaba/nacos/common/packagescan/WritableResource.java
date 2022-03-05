@@ -34,6 +34,7 @@ public interface WritableResource extends Resource {
     /**
      * Indicate whether the contents of this resource can be written
      * via {@link #getOutputStream()}.
+     *
      * <p>Will be {@code true} for typical resource descriptors;
      * note that actual content writing may still fail when attempted.
      * However, a value of {@code false} is a definitive indication
@@ -57,7 +58,9 @@ public interface WritableResource extends Resource {
 
     /**
      * Return a {@link WritableByteChannel}.
+     *
      * <p>It is expected that each call creates a <i>fresh</i> channel.
+     *
      * <p>The default implementation returns {@link Channels#newChannel(OutputStream)}
      * with the result of {@link #getOutputStream()}.
      *

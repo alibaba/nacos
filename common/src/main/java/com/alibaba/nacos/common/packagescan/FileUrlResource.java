@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 
 import java.io.File;
@@ -49,11 +48,12 @@ public class FileUrlResource extends UrlResource implements WritableResource {
 
     /**
      * Create a new {@code FileUrlResource} based on the given URL object.
+     *
      * <p>Note that this does not enforce "file" as URL protocol. If a protocol
      * is known to be resolvable to a file, it is acceptable for this purpose.
      *
      * @param url a URL
-     * @see ResourceUtils#isFileURL(URL)
+     * @see ResourceUtils#isFileUrl(URL)
      * @see #getFile()
      */
     public FileUrlResource(URL url) {
@@ -63,6 +63,7 @@ public class FileUrlResource extends UrlResource implements WritableResource {
     /**
      * Create a new {@code FileUrlResource} based on the given file location,
      * using the URL protocol "file".
+     *
      * <p>The given parts will automatically get encoded if necessary.
      *
      * @param location the location (i.e. the file path within that protocol)
@@ -73,7 +74,6 @@ public class FileUrlResource extends UrlResource implements WritableResource {
     public FileUrlResource(String location) throws MalformedURLException {
         super(ResourceUtils.URL_PROTOCOL_FILE, location);
     }
-
 
     @Override
     public File getFile() throws IOException {
@@ -108,7 +108,7 @@ public class FileUrlResource extends UrlResource implements WritableResource {
 
     @Override
     public Resource createRelative(String relativePath) throws MalformedURLException {
-        return new FileUrlResource(createRelativeURL(relativePath));
+        return new FileUrlResource(createRelativeUrl(relativePath));
     }
 
 }

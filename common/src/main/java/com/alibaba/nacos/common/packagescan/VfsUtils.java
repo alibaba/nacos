@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.packagescan.util.ReflectionUtils;
 
 import java.io.File;
@@ -45,23 +44,35 @@ import java.net.URL;
 public abstract class VfsUtils {
 
     private static final String VFS3_PKG = "org.jboss.vfs.";
+
     private static final String VFS_NAME = "VFS";
 
     private static final Method VFS_METHOD_GET_ROOT_URL;
+
     private static final Method VFS_METHOD_GET_ROOT_URI;
 
     private static final Method VIRTUAL_FILE_METHOD_EXISTS;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_INPUT_STREAM;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_SIZE;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_LAST_MODIFIED;
+
     private static final Method VIRTUAL_FILE_METHOD_TO_URL;
+
     private static final Method VIRTUAL_FILE_METHOD_TO_URI;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_NAME;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_PATH_NAME;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_PHYSICAL_FILE;
+
     private static final Method VIRTUAL_FILE_METHOD_GET_CHILD;
 
     protected static final Class<?> VIRTUAL_FILE_VISITOR_INTERFACE;
+
     protected static final Method VIRTUAL_FILE_METHOD_VISIT;
 
     private static final Field VISITOR_ATTRIBUTES_FIELD_RECURSE;
@@ -139,11 +150,11 @@ public abstract class VfsUtils {
         return (InputStream) invokeVfsMethod(VIRTUAL_FILE_METHOD_GET_INPUT_STREAM, vfsResource);
     }
 
-    static URL getURL(Object vfsResource) throws IOException {
+    static URL getUrl(Object vfsResource) throws IOException {
         return (URL) invokeVfsMethod(VIRTUAL_FILE_METHOD_TO_URL, vfsResource);
     }
 
-    static URI getURI(Object vfsResource) throws IOException {
+    static URI getUri(Object vfsResource) throws IOException {
         return (URI) invokeVfsMethod(VIRTUAL_FILE_METHOD_TO_URI, vfsResource);
     }
 
@@ -177,11 +188,9 @@ public abstract class VfsUtils {
         return invokeVfsMethod(VFS_METHOD_GET_ROOT_URL, null, url);
     }
 
-
     protected static Object doGetVisitorAttributes() {
         return ReflectionUtils.getField(VISITOR_ATTRIBUTES_FIELD_RECURSE, null);
     }
-
 
     protected static String doGetPath(Object resource) {
         return (String) ReflectionUtils.invokeMethod(VIRTUAL_FILE_METHOD_GET_PATH_NAME, resource);

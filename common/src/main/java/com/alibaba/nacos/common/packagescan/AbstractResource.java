@@ -106,19 +106,19 @@ public abstract class AbstractResource implements Resource {
      * that the resource cannot be resolved to a URL.
      */
     @Override
-    public URL getURL() throws IOException {
+    public URL getUrl() throws IOException {
         throw new FileNotFoundException(getDescription() + " cannot be resolved to URL");
     }
 
     /**
      * This implementation builds a URI based on the URL returned
-     * by {@link #getURL()}.
+     * by {@link #getUrl()}.
      */
     @Override
-    public URI getURI() throws IOException {
-        URL url = getURL();
+    public URI getUri() throws IOException {
+        URL url = getUrl();
         try {
-            return ResourceUtils.toURI(url);
+            return ResourceUtils.toUri(url);
         } catch (URISyntaxException ex) {
             throw new NestedIOException("Invalid URI [" + url + "]", ex);
         }

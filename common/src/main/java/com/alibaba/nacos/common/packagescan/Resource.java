@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,8 +34,8 @@ import java.nio.channels.ReadableByteChannel;
  *
  * @author Juergen Hoeller
  * @see #getInputStream()
- * @see #getURL()
- * @see #getURI()
+ * @see #getUrl()
+ * @see #getUri()
  * @see #getFile()
  * @see WritableResource
  * @see ContextResource
@@ -52,6 +51,7 @@ public interface Resource extends InputStreamSource {
 
     /**
      * Determine whether this resource actually exists in physical form.
+     *
      * <p>This method performs a definitive existence check, whereas the
      * existence of a {@code Resource} handle only guarantees a valid
      * descriptor handle.
@@ -61,6 +61,7 @@ public interface Resource extends InputStreamSource {
     /**
      * Indicate whether non-empty contents of this resource can be read via
      * {@link #getInputStream()}.
+     *
      * <p>Will be {@code true} for typical resource descriptors that exist
      * since it strictly implies {@link #exists()} semantics as of 5.1.
      * Note that actual content reading may still fail when attempted.
@@ -78,6 +79,7 @@ public interface Resource extends InputStreamSource {
      * Indicate whether this resource represents a handle with an open stream.
      * If {@code true}, the InputStream cannot be read multiple times,
      * and must be read and closed to avoid resource leaks.
+     *
      * <p>Will be {@code false} for typical resource descriptors.
      */
     default boolean isOpen() {
@@ -88,6 +90,7 @@ public interface Resource extends InputStreamSource {
      * Determine whether this resource represents a file in a file system.
      * A value of {@code true} strongly suggests (but does not guarantee)
      * that a {@link #getFile()} call will succeed.
+     *
      * <p>This is conservatively {@code false} by default.
      *
      * @see #getFile()
@@ -103,7 +106,7 @@ public interface Resource extends InputStreamSource {
      * @throws IOException if the resource cannot be resolved as URL,
      *                     i.e. if the resource is not available as descriptor
      */
-    URL getURL() throws IOException;
+    URL getUrl() throws IOException;
 
     /**
      * Return a URI handle for this resource.
@@ -112,7 +115,7 @@ public interface Resource extends InputStreamSource {
      *                     i.e. if the resource is not available as descriptor
      * @since 2.5
      */
-    URI getURI() throws IOException;
+    URI getUri() throws IOException;
 
     /**
      * Return a File handle for this resource.
@@ -126,7 +129,9 @@ public interface Resource extends InputStreamSource {
 
     /**
      * Return a {@link ReadableByteChannel}.
+     *
      * <p>It is expected that each call creates a <i>fresh</i> channel.
+     *
      * <p>The default implementation returns {@link Channels#newChannel(InputStream)}
      * with the result of {@link #getInputStream()}.
      *
@@ -168,6 +173,7 @@ public interface Resource extends InputStreamSource {
     /**
      * Determine a filename for this resource, i.e. typically the last
      * part of the path: for example, "myfile.txt".
+     *
      * <p>Returns {@code null} if this type of resource does not
      * have a filename.
      */
@@ -177,6 +183,7 @@ public interface Resource extends InputStreamSource {
     /**
      * Return a description for this resource,
      * to be used for error output when working with the resource.
+     *
      * <p>Implementations are also encouraged to return this value
      * from their {@code toString} method.
      *

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;

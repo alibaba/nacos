@@ -16,18 +16,24 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.FileSystem;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 /**
  * {@link Resource} implementation for {@code java.io.File} and
@@ -52,13 +58,13 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 
     private final String path;
 
-
     private final File file;
 
     private final Path filePath;
 
     /**
      * Create a new {@code FileSystemResource} from a file path.
+     *
      * <p>Note: When building relative resources via {@link #createRelative},
      * it makes a difference whether the specified resource base path here
      * ends with a slash or not. In the case of "C:/dir1/", relative paths
@@ -78,6 +84,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
 
     /**
      * Create a new {@code FileSystemResource} from a {@link File} handle.
+     *
      * <p>Note: When building relative resources via {@link #createRelative},
      * the relative path will apply <i>at the same directory level</i>:
      * e.g. new File("C:/dir1"), relative path "dir2" &rarr; "C:/dir2"!
@@ -100,9 +107,11 @@ public class FileSystemResource extends AbstractResource implements WritableReso
     /**
      * Create a new {@code FileSystemResource} from a {@link Path} handle,
      * performing all file system interactions via NIO.2 instead of {@link File}.
-     * <p>In contrast to {@link PathResource}, this variant strictly follows the
+     *
+     *  <p>In contrast to {@link PathResource}, this variant strictly follows the
      * general {@link FileSystemResource} conventions, in particular in terms of
      * path cleaning and {@link #createRelative(String)} handling.
+     *
      * <p>Note: When building relative resources via {@link #createRelative},
      * the relative path will apply <i>at the same directory level</i>:
      * e.g. Paths.get("C:/dir1"), relative path "dir2" &rarr; "C:/dir2"!
@@ -127,6 +136,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
     /**
      * Create a new {@code FileSystemResource} from a {@link FileSystem} handle,
      * locating the specified path.
+     *
      * <p>This is an alternative to {@link #FileSystemResource(String)},
      * performing all file system interactions via NIO.2 instead of {@link File}.
      *
@@ -142,7 +152,6 @@ public class FileSystemResource extends AbstractResource implements WritableReso
         this.file = null;
         this.filePath = fileSystem.getPath(this.path).normalize();
     }
-
 
     /**
      * Return the file path for this resource.
@@ -177,7 +186,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
     /**
      * This implementation opens a NIO file stream for the underlying file.
      *
-     * @see FileInputStream
+     * @see java.io.FileInputStream
      */
     @Override
     public InputStream getInputStream() throws IOException {
@@ -204,7 +213,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
     /**
      * This implementation opens a FileOutputStream for the underlying file.
      *
-     * @see FileOutputStream
+     * @see java.io.FileOutputStream
      */
     @Override
     public OutputStream getOutputStream() throws IOException {
@@ -217,7 +226,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      * @see File#toURI()
      */
     @Override
-    public URL getURL() throws IOException {
+    public URL getUrl() throws IOException {
         return (this.file != null ? this.file.toURI().toURL() : this.filePath.toUri().toURL());
     }
 
@@ -227,7 +236,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      * @see File#toURI()
      */
     @Override
-    public URI getURI() throws IOException {
+    public URI getUri() throws IOException {
         return (this.file != null ? this.file.toURI() : this.filePath.toUri());
     }
 
@@ -279,8 +288,8 @@ public class FileSystemResource extends AbstractResource implements WritableReso
         if (this.file != null) {
             long length = this.file.length();
             if (length == 0L && !this.file.exists()) {
-                throw new FileNotFoundException(getDescription() +
-                        " cannot be resolved in the file system for checking its content length");
+                throw new FileNotFoundException(getDescription()
+                        + " cannot be resolved in the file system for checking its content length");
             }
             return length;
         } else {
@@ -348,8 +357,8 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof FileSystemResource &&
-                this.path.equals(((FileSystemResource) other).path)));
+        return (this == other || (other instanceof FileSystemResource
+                && this.path.equals(((FileSystemResource) other).path)));
     }
 
     /**

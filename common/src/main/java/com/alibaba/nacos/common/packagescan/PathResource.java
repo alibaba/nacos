@@ -16,15 +16,24 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.utils.Assert;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 /**
  * {@link Resource} implementation for {@link Path} handles,
@@ -50,9 +59,9 @@ public class PathResource extends AbstractResource implements WritableResource {
 
     private final Path path;
 
-
     /**
      * Create a new PathResource from a Path handle.
+     *
      * <p>Note: Unlike {@link FileSystemResource}, when building relative resources
      * via {@link #createRelative}, the relative path will be built <i>underneath</i>
      * the given root: e.g. Paths.get("C:/dir1/"), relative path "dir2" &rarr; "C:/dir1/dir2"!
@@ -66,6 +75,7 @@ public class PathResource extends AbstractResource implements WritableResource {
 
     /**
      * Create a new PathResource from a Path handle.
+     *
      * <p>Note: Unlike {@link FileSystemResource}, when building relative resources
      * via {@link #createRelative}, the relative path will be built <i>underneath</i>
      * the given root: e.g. Paths.get("C:/dir1/"), relative path "dir2" &rarr; "C:/dir1/dir2"!
@@ -80,6 +90,7 @@ public class PathResource extends AbstractResource implements WritableResource {
 
     /**
      * Create a new PathResource from a Path handle.
+     *
      * <p>Note: Unlike {@link FileSystemResource}, when building relative resources
      * via {@link #createRelative}, the relative path will be built <i>underneath</i>
      * the given root: e.g. Paths.get("C:/dir1/"), relative path "dir2" &rarr; "C:/dir1/dir2"!
@@ -91,7 +102,6 @@ public class PathResource extends AbstractResource implements WritableResource {
         Assert.notNull(uri, "URI must not be null");
         this.path = Paths.get(uri).normalize();
     }
-
 
     /**
      * Return the file path for this resource.
@@ -170,7 +180,7 @@ public class PathResource extends AbstractResource implements WritableResource {
      * @see URI#toURL()
      */
     @Override
-    public URL getURL() throws IOException {
+    public URL getUrl() throws IOException {
         return this.path.toUri().toURL();
     }
 
@@ -180,7 +190,7 @@ public class PathResource extends AbstractResource implements WritableResource {
      * @see Path#toUri()
      */
     @Override
-    public URI getURI() throws IOException {
+    public URI getUri() throws IOException {
         return this.path.toUri();
     }
 
@@ -282,8 +292,8 @@ public class PathResource extends AbstractResource implements WritableResource {
      */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof PathResource &&
-                this.path.equals(((PathResource) other).path)));
+        return (this == other || (other instanceof PathResource
+                && this.path.equals(((PathResource) other).path)));
     }
 
     /**

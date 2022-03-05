@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.utils.Assert;
 
 import java.io.ByteArrayInputStream;
@@ -26,6 +25,7 @@ import java.util.Arrays;
 
 /**
  * {@link Resource} implementation for a given byte array.
+ *
  * <p>Creates a {@link ByteArrayInputStream} for the given byte array.
  *
  * <p>Useful for loading content from any given byte array,
@@ -37,7 +37,6 @@ import java.util.Arrays;
  * @author Sam Brannen
  * @see ByteArrayInputStream
  * @see InputStreamResource
- * @see org.springframework.mail.javamail.MimeMessageHelper#addAttachment(String, InputStreamSource)
  * @since 1.2.3
  */
 public class ByteArrayResource extends AbstractResource {
@@ -66,7 +65,6 @@ public class ByteArrayResource extends AbstractResource {
         this.byteArray = byteArray;
         this.description = (description != null ? description : "");
     }
-
 
     /**
      * Return the underlying byte array.
@@ -119,8 +117,8 @@ public class ByteArrayResource extends AbstractResource {
      */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof ByteArrayResource &&
-                Arrays.equals(((ByteArrayResource) other).byteArray, this.byteArray)));
+        return (this == other || (other instanceof ByteArrayResource
+                && Arrays.equals(((ByteArrayResource) other).byteArray, this.byteArray)));
     }
 
     /**

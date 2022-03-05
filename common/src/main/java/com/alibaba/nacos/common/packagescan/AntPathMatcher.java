@@ -723,16 +723,16 @@ public class AntPathMatcher implements PathMatcher {
                 if (matcher.matches()) {
                     if (uriTemplateVariables != null) {
                         if (this.variableNames.size() != matcher.groupCount()) {
-                            throw new IllegalArgumentException("The number of capturing groups in the pattern segment " +
-                                    this.pattern + " does not match the number of URI template variables it defines, " +
-                                    "which can occur if capturing groups are used in a URI template regex. " +
-                                    "Use non-capturing groups instead.");
+                            throw new IllegalArgumentException("The number of capturing groups in the pattern segment "
+                                    + this.pattern + " does not match the number of URI template variables it defines, "
+                                    + "which can occur if capturing groups are used in a URI template regex. "
+                                    + "Use non-capturing groups instead.");
                         }
                         for (int i = 1; i <= matcher.groupCount(); i++) {
                             String name = this.variableNames.get(i - 1);
                             if (name.startsWith("*")) {
-                                throw new IllegalArgumentException("Capturing patterns (" + name + ") are not " +
-                                        "supported by the AntPathMatcher. Use the PathPatternParser instead.");
+                                throw new IllegalArgumentException("Capturing patterns (" + name + ") are not "
+                                        + "supported by the AntPathMatcher. Use the PathPatternParser instead.");
                             }
                             String value = matcher.group(i);
                             uriTemplateVariables.put(name, value);
@@ -745,7 +745,6 @@ public class AntPathMatcher implements PathMatcher {
         }
 
     }
-
 
     /**
      * The default {@link Comparator} implementation returned by
@@ -829,13 +828,11 @@ public class AntPathMatcher implements PathMatcher {
             return 0;
         }
 
-
         /**
          * Value class that holds information about the pattern, e.g. number of
          * occurrences of "*", "**", and "{" pattern elements.
          */
         private static class PatternInfo {
-
 
             private final String pattern;
 
@@ -848,7 +845,6 @@ public class AntPathMatcher implements PathMatcher {
             private boolean catchAllPattern;
 
             private boolean prefixPattern;
-
 
             private Integer length;
 
@@ -917,14 +913,13 @@ public class AntPathMatcher implements PathMatcher {
              */
             public int getLength() {
                 if (this.length == null) {
-                    this.length = (this.pattern != null ?
-                            VARIABLE_PATTERN.matcher(this.pattern).replaceAll("#").length() : 0);
+                    this.length = (this.pattern != null
+                            ? VARIABLE_PATTERN.matcher(this.pattern).replaceAll("#").length() : 0);
                 }
                 return this.length;
             }
         }
     }
-
 
     /**
      * A simple cache for patterns that depend on the configured path separator.

@@ -54,7 +54,6 @@ public class VfsResource extends AbstractResource {
         this.resource = resource;
     }
 
-
     @Override
     public InputStream getInputStream() throws IOException {
         return VfsUtils.getInputStream(this.resource);
@@ -71,18 +70,18 @@ public class VfsResource extends AbstractResource {
     }
 
     @Override
-    public URL getURL() throws IOException {
+    public URL getUrl() throws IOException {
         try {
-            return VfsUtils.getURL(this.resource);
+            return VfsUtils.getUrl(this.resource);
         } catch (Exception ex) {
             throw new NestedIOException("Failed to obtain URL for file " + this.resource, ex);
         }
     }
 
     @Override
-    public URI getURI() throws IOException {
+    public URI getUri() throws IOException {
         try {
-            return VfsUtils.getURI(this.resource);
+            return VfsUtils.getUri(this.resource);
         } catch (Exception ex) {
             throw new NestedIOException("Failed to obtain URI for " + this.resource, ex);
         }
@@ -113,7 +112,7 @@ public class VfsResource extends AbstractResource {
             }
         }
 
-        return new VfsResource(VfsUtils.getRelative(new URL(getURL(), relativePath)));
+        return new VfsResource(VfsUtils.getRelative(new URL(getUrl(), relativePath)));
     }
 
     @Override
@@ -128,8 +127,8 @@ public class VfsResource extends AbstractResource {
 
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof VfsResource &&
-                this.resource.equals(((VfsResource) other).resource)));
+        return (this == other || (other instanceof VfsResource
+                && this.resource.equals(((VfsResource) other).resource)));
     }
 
     @Override

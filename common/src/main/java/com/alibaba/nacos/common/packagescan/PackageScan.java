@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * package scan
+ * package scan.
  * @author hujun
  */
 public class PackageScan {
@@ -44,8 +44,8 @@ public class PackageScan {
 
     public <T> Set<Class<T>> getSubTypesOf(Class<T> requestClass) {
         Set<Class<T>> set = new HashSet<>(16);
-        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
-                ClassUtils.convertClassNameToResourcePath(pkg) + '/' + "**/*.class";
+        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
+                + ClassUtils.convertClassNameToResourcePath(pkg) + '/' + "**/*.class";
         try {
             Resource[] resources = resourcePatternResolver.getResources(packageSearchPath);
             for (Resource resource : resources) {
@@ -62,8 +62,8 @@ public class PackageScan {
 
     public <T> Set<Class<T>> getTypesAnnotatedWith(final Class<? extends Annotation> annotation) {
         Set<Class<T>> set = new HashSet<>(16);
-        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
-                ClassUtils.convertClassNameToResourcePath(pkg) + '/' + "**/*.class";
+        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
+                + ClassUtils.convertClassNameToResourcePath(pkg) + '/' + "**/*.class";
         try {
             Resource[] resources = resourcePatternResolver.getResources(packageSearchPath);
             for (Resource resource : resources) {

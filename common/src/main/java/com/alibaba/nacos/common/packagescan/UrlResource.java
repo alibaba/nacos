@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -24,7 +23,12 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * {@link Resource} implementation for {@code java.net.URL} locators.
@@ -54,7 +58,6 @@ public class UrlResource extends AbstractFileResolvingResource {
 
     private volatile URL cleanedUrl;
 
-
     /**
      * Create a new {@code UrlResource} based on the given URI object.
      *
@@ -81,6 +84,7 @@ public class UrlResource extends AbstractFileResolvingResource {
 
     /**
      * Create a new {@code UrlResource} based on a URL path.
+     *
      * <p>Note: The given path needs to be pre-encoded if necessary.
      *
      * @param path a URL path
@@ -96,6 +100,7 @@ public class UrlResource extends AbstractFileResolvingResource {
 
     /**
      * Create a new {@code UrlResource} based on a URI specification.
+     *
      * <p>The given parts will automatically get encoded if necessary.
      *
      * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon);
@@ -111,6 +116,7 @@ public class UrlResource extends AbstractFileResolvingResource {
 
     /**
      * Create a new {@code UrlResource} based on a URI specification.
+     *
      * <p>The given parts will automatically get encoded if necessary.
      *
      * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon);
@@ -132,7 +138,6 @@ public class UrlResource extends AbstractFileResolvingResource {
             throw exToThrow;
         }
     }
-
 
     /**
      * Determine a cleaned URL for the given original URL.
@@ -172,6 +177,7 @@ public class UrlResource extends AbstractFileResolvingResource {
 
     /**
      * This implementation opens an InputStream for the given URL.
+     *
      * <p>It sets the {@code useCaches} flag to {@code false},
      * mainly to avoid jar file locking on Windows.
      *
@@ -198,7 +204,7 @@ public class UrlResource extends AbstractFileResolvingResource {
      * This implementation returns the underlying URL reference.
      */
     @Override
-    public URL getURL() {
+    public URL getUrl() {
         return this.url;
     }
 
@@ -207,11 +213,11 @@ public class UrlResource extends AbstractFileResolvingResource {
      * if possible.
      */
     @Override
-    public URI getURI() throws IOException {
+    public URI getUri() throws IOException {
         if (this.uri != null) {
             return this.uri;
         } else {
-            return super.getURI();
+            return super.getUri();
         }
     }
 
@@ -241,13 +247,13 @@ public class UrlResource extends AbstractFileResolvingResource {
 
     /**
      * This implementation creates a {@code UrlResource}, delegating to
-     * {@link #createRelativeURL(String)} for adapting the relative path.
+     * {@link #createRelativeUrl(String)} for adapting the relative path.
      *
-     * @see #createRelativeURL(String)
+     * @see #createRelativeUrl(String)
      */
     @Override
     public Resource createRelative(String relativePath) throws MalformedURLException {
-        return new UrlResource(createRelativeURL(relativePath));
+        return new UrlResource(createRelativeUrl(relativePath));
     }
 
     /**
@@ -256,10 +262,9 @@ public class UrlResource extends AbstractFileResolvingResource {
      * A leading slash will get dropped; a "#" symbol will get encoded.
      *
      * @see #createRelative(String)
-     * @see URL#URL(URL, String)
      * @since 5.2
      */
-    protected URL createRelativeURL(String relativePath) throws MalformedURLException {
+    protected URL createRelativeUrl(String relativePath) throws MalformedURLException {
         if (relativePath.startsWith("/")) {
             relativePath = relativePath.substring(1);
         }
@@ -293,8 +298,8 @@ public class UrlResource extends AbstractFileResolvingResource {
      */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof UrlResource &&
-                getCleanedUrl().equals(((UrlResource) other).getCleanedUrl())));
+        return (this == other || (other instanceof UrlResource
+                && getCleanedUrl().equals(((UrlResource) other).getCleanedUrl())));
     }
 
     /**

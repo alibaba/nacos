@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.packagescan.util.ObjectUtils;
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.ClassUtils;
@@ -45,17 +44,15 @@ public class ClassPathResource extends AbstractFileResolvingResource {
 
     private final String path;
 
-
     private ClassLoader classLoader;
 
-
     private Class<?> clazz;
-
 
     /**
      * Create a new {@code ClassPathResource} for {@code ClassLoader} usage.
      * A leading slash will be removed, as the ClassLoader resource access
      * methods will not accept it.
+     *
      * <p>The thread context class loader will be used for
      * loading the resource.
      *
@@ -119,7 +116,6 @@ public class ClassPathResource extends AbstractFileResolvingResource {
         this.clazz = clazz;
     }
 
-
     /**
      * Return the path for this resource (as resource path within the class path).
      */
@@ -144,7 +140,7 @@ public class ClassPathResource extends AbstractFileResolvingResource {
      */
     @Override
     public boolean exists() {
-        return (resolveURL() != null);
+        return (resolveUrl() != null);
     }
 
     /**
@@ -156,7 +152,7 @@ public class ClassPathResource extends AbstractFileResolvingResource {
      */
     @Override
     public boolean isReadable() {
-        URL url = resolveURL();
+        URL url = resolveUrl();
         return (url != null && checkReadable(url));
     }
 
@@ -166,7 +162,7 @@ public class ClassPathResource extends AbstractFileResolvingResource {
      * @return the resolved URL, or {@code null} if not resolvable
      */
 
-    protected URL resolveURL() {
+    protected URL resolveUrl() {
         try {
             if (this.clazz != null) {
                 return this.clazz.getResource(this.path);
@@ -212,8 +208,8 @@ public class ClassPathResource extends AbstractFileResolvingResource {
      * @see Class#getResource(String)
      */
     @Override
-    public URL getURL() throws IOException {
-        URL url = resolveURL();
+    public URL getUrl() throws IOException {
+        URL url = resolveUrl();
         if (url == null) {
             throw new FileNotFoundException(getDescription() + " cannot be resolved to URL because it does not exist");
         }
@@ -277,9 +273,9 @@ public class ClassPathResource extends AbstractFileResolvingResource {
             return false;
         }
         ClassPathResource otherRes = (ClassPathResource) other;
-        return (this.path.equals(otherRes.path) &&
-                ObjectUtils.nullSafeEquals(this.classLoader, otherRes.classLoader) &&
-                ObjectUtils.nullSafeEquals(this.clazz, otherRes.clazz));
+        return (this.path.equals(otherRes.path)
+                && ObjectUtils.nullSafeEquals(this.classLoader, otherRes.classLoader)
+                && ObjectUtils.nullSafeEquals(this.clazz, otherRes.clazz));
     }
 
     /**

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.ClassUtils;
@@ -44,16 +43,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DefaultResourceLoader implements ResourceLoader {
 
-
     private ClassLoader classLoader;
 
     private final Set<ProtocolResolver> protocolResolvers = new LinkedHashSet<>(4);
 
     private final Map<Class<?>, Map<Resource, ?>> resourceCaches = new ConcurrentHashMap<>(4);
 
-
     /**
      * Create a new DefaultResourceLoader.
+     *
      * <p>ClassLoader access will happen using the thread context class loader
      * at the time of actual resource access (since 5.3). For more control, pass
      * a specific ClassLoader to {@link #DefaultResourceLoader(ClassLoader)}.
@@ -73,10 +71,10 @@ public class DefaultResourceLoader implements ResourceLoader {
         this.classLoader = classLoader;
     }
 
-
     /**
      * Specify the ClassLoader to load class path resources with, or {@code null}
      * for using the thread context class loader at the time of actual resource access.
+     *
      * <p>The default is that ClassLoader access will happen using the thread context
      * class loader at the time of actual resource access (since 5.3).
      */
@@ -86,6 +84,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 
     /**
      * Return the ClassLoader to load class path resources with.
+     *
      * <p>Will get passed to ClassPathResource's constructor for all
      * ClassPathResource objects created by this resource loader.
      *
@@ -100,6 +99,7 @@ public class DefaultResourceLoader implements ResourceLoader {
     /**
      * Register the given resolver with this resource loader, allowing for
      * additional protocols to be handled.
+     *
      * <p>Any such resolver will be invoked ahead of this loader's standard
      * resolution rules. It may therefore also override any default rules.
      *
@@ -143,7 +143,6 @@ public class DefaultResourceLoader implements ResourceLoader {
         this.resourceCaches.clear();
     }
 
-
     @Override
     public Resource getResource(String location) {
         Assert.notNull(location, "Location must not be null");
@@ -163,7 +162,7 @@ public class DefaultResourceLoader implements ResourceLoader {
             try {
                 // Try to parse the location as a URL...
                 URL url = new URL(location);
-                return (ResourceUtils.isFileURL(url) ? new FileUrlResource(url) : new UrlResource(url));
+                return (ResourceUtils.isFileUrl(url) ? new FileUrlResource(url) : new UrlResource(url));
             } catch (MalformedURLException ex) {
                 // No URL -> resolve as resource path.
                 return getResourceByPath(location);
@@ -173,6 +172,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 
     /**
      * Return a Resource handle for the resource at the given path.
+     *
      * <p>The default implementation supports class path locations. This should
      * be appropriate for standalone implementations but can be overridden,
      * e.g. for implementations targeted at a Servlet container.
@@ -184,7 +184,6 @@ public class DefaultResourceLoader implements ResourceLoader {
     protected Resource getResourceByPath(String path) {
         return new ClassPathContextResource(path, getClassLoader());
     }
-
 
     /**
      * ClassPathResource that explicitly expresses a context-relative path

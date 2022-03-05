@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-
 import com.alibaba.nacos.common.utils.Assert;
 
 import java.io.IOException;
@@ -24,6 +23,7 @@ import java.io.InputStream;
 
 /**
  * {@link Resource} implementation for a given {@link InputStream}.
+ *
  * <p>Should only be used if no other specific {@code Resource} implementation
  * is applicable. In particular, prefer {@link ByteArrayResource} or any of the
  * file-based {@code Resource} implementations where possible.
@@ -49,7 +49,6 @@ public class InputStreamResource extends AbstractResource {
     private final String description;
 
     private boolean read = false;
-
 
     /**
      * Create a new InputStreamResource.
@@ -96,8 +95,8 @@ public class InputStreamResource extends AbstractResource {
     @Override
     public InputStream getInputStream() throws IOException, IllegalStateException {
         if (this.read) {
-            throw new IllegalStateException("InputStream has already been read - " +
-                    "do not use InputStreamResource if a stream needs to be read multiple times");
+            throw new IllegalStateException("InputStream has already been read - "
+                    + "do not use InputStreamResource if a stream needs to be read multiple times");
         }
         this.read = true;
         return this.inputStream;
@@ -118,8 +117,8 @@ public class InputStreamResource extends AbstractResource {
      */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof InputStreamResource &&
-                ((InputStreamResource) other).inputStream.equals(this.inputStream)));
+        return (this == other || (other instanceof InputStreamResource
+                && ((InputStreamResource) other).inputStream.equals(this.inputStream)));
     }
 
     /**

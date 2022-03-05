@@ -24,13 +24,10 @@ import java.io.IOException;
  *
  * <p>This is an extension to the {@link ResourceLoader}
  * interface. A passed-in {@code ResourceLoader} (for example, an
- * {@link org.springframework.context.ApplicationContext} passed in via
- * {@link org.springframework.context.ResourceLoaderAware} when running in a context)
  * can be checked whether it implements this extended interface too.
  *
  * <p>{@link PathMatchingResourcePatternResolver} is a standalone implementation
  * that is usable outside an {@code ApplicationContext}, also used by
- * {@link ResourceArrayPropertyEditor} for populating {@code Resource} array bean
  * properties.
  *
  * <p>Can be used with any sort of location pattern (e.g. "/WEB-INF/*-context.xml"):
@@ -46,14 +43,13 @@ import java.io.IOException;
  * @author Juergen Hoeller
  * @see Resource
  * @see ResourceLoader
- * @see org.springframework.context.ApplicationContext
- * @see org.springframework.context.ResourceLoaderAware
  * @since 1.0.2
  */
 public interface ResourcePatternResolver extends ResourceLoader {
 
     /**
      * Pseudo URL prefix for all matching resources from the class path: "classpath*:"
+     *
      * <p>This differs from ResourceLoader's classpath URL prefix in that it
      * retrieves all matching resources for a given name (e.g. "/beans.xml"),
      * for example in the root of all deployed JAR files.
@@ -64,6 +60,7 @@ public interface ResourcePatternResolver extends ResourceLoader {
 
     /**
      * Resolve the given location pattern into {@code Resource} objects.
+     *
      * <p>Overlapping resource entries that point to the same physical
      * resource should be avoided, as far as possible. The result should
      * have set semantics.
