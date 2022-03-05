@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-import com.alibaba.nacos.common.packagescan.util.NestedIOException;
+import com.alibaba.nacos.common.packagescan.util.NestedIoException;
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -120,7 +120,7 @@ public abstract class AbstractResource implements Resource {
         try {
             return ResourceUtils.toUri(url);
         } catch (URISyntaxException ex) {
-            throw new NestedIOException("Invalid URI [" + url + "]", ex);
+            throw new NestedIoException("Invalid URI [" + url + "]", ex);
         }
     }
 

@@ -34,7 +34,7 @@ import java.net.URLConnection;
  *
  * <p>Consider using Spring's Resource abstraction in the core package
  * for handling all kinds of file resources in a uniform manner.
- * method can resolve any location to a {@link Resource}
+ * method can resolve any location to a {@link com.alibaba.nacos.common.packagescan.Resource}
  * object, which in turn allows one to obtain a {@code java.io.File} in the
  * file system through its {@code getFile()} method.
  *

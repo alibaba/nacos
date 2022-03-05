@@ -24,7 +24,7 @@ package com.alibaba.nacos.common.packagescan.util;
  * <p>Mainly for use within the framework.
  *
  * @author Juergen Hoeller
- * @see NestedIOException
+ * @see NestedIoException
  * @since 2.0
  */
 public abstract class NestedExceptionUtils {

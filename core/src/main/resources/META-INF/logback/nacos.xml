@@ -241,8 +241,9 @@
     </appender>
     
     <root>
-        <level value="INFO"/>
+        <level value="info"/>
         <appender-ref ref="rootFile"/>
+<!--        <appender-ref ref="CONSOLE"/>-->
     </root>
     
     <logger name="com.alibaba.nacos.core.auth" additivity="false">

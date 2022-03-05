@@ -22,7 +22,6 @@ import java.io.Closeable;
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -44,87 +43,66 @@ import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ClassUtils {
-    /** Suffix for array class names: {@code "[]"}. */
+
     public static final String ARRAY_SUFFIX = "[]";
 
-    /** Prefix for internal array class names: {@code "["}. */
     private static final String INTERNAL_ARRAY_PREFIX = "[";
 
-    /** Prefix for internal non-primitive array class names: {@code "[L"}. */
     private static final String NON_PRIMITIVE_ARRAY_PREFIX = "[L";
 
-    /** A reusable empty class array constant. */
-    private static final Class<?>[] EMPTY_CLASS_ARRAY = {};
-
-    /** The package separator character: {@code '.'}. */
     private static final char PACKAGE_SEPARATOR = '.';
 
-    /** The path separator character: {@code '/'}. */
     private static final char PATH_SEPARATOR = '/';
 
-    /** The nested class separator character: {@code '$'}. */
     private static final char NESTED_CLASS_SEPARATOR = '$';
-
-    /** The CGLIB class separator: {@code "$$"}. */
-    public static final String CGLIB_CLASS_SEPARATOR = "$$";
-
-    /** The ".class" file suffix. */
-    public static final String CLASS_FILE_SUFFIX = ".class";
-
 
     /**
      * Map with primitive wrapper type as key and corresponding primitive
      * type as value, for example: Integer.class -> int.class.
      */
-    private static final Map<Class<?>, Class<?>> primitiveWrapperTypeMap = new IdentityHashMap<>(9);
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_WRAPPER_TYPE_MAP = new IdentityHashMap<>(9);
 
     /**
      * Map with primitive type as key and corresponding wrapper
      * type as value, for example: int.class -> Integer.class.
      */
-    private static final Map<Class<?>, Class<?>> primitiveTypeToWrapperMap = new IdentityHashMap<>(9);
+    private static final Map<Class<?>, Class<?>> PRIMITIVE_TYPE_TO_WRAPPER_MAP = new IdentityHashMap<>(9);
 
     /**
      * Map with primitive type name as key and corresponding primitive
      * type as value, for example: "int" -> "int.class".
      */
-    private static final Map<String, Class<?>> primitiveTypeNameMap = new HashMap<>(32);
+    private static final Map<String, Class<?>> PRIMITIVE_TYPE_NAME_MAP = new HashMap<>(32);
 
     /**
      * Map with common Java language class name as key and corresponding Class as value.
      * Primarily for efficient deserialization of remote invocations.
      */
-    private static final Map<String, Class<?>> commonClassCache = new HashMap<>(64);
-
-    /**
-     * Common Java language interfaces which are supposed to be ignored
-     * when searching for 'primary' user-level interfaces.
-     */
-    private static final Set<Class<?>> javaLanguageInterfaces;
+    private static final Map<String, Class<?>> COMMON_CLASS_CACHE = new HashMap<>(64);
 
     static {
-        primitiveWrapperTypeMap.put(Boolean.class, boolean.class);
-        primitiveWrapperTypeMap.put(Byte.class, byte.class);
-        primitiveWrapperTypeMap.put(Character.class, char.class);
-        primitiveWrapperTypeMap.put(Double.class, double.class);
-        primitiveWrapperTypeMap.put(Float.class, float.class);
-        primitiveWrapperTypeMap.put(Integer.class, int.class);
-        primitiveWrapperTypeMap.put(Long.class, long.class);
-        primitiveWrapperTypeMap.put(Short.class, short.class);
-        primitiveWrapperTypeMap.put(Void.class, void.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Boolean.class, boolean.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Byte.class, byte.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Character.class, char.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Double.class, double.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Float.class, float.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Integer.class, int.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Long.class, long.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Short.class, short.class);
+        PRIMITIVE_WRAPPER_TYPE_MAP.put(Void.class, void.class);
 
         // Map entry iteration is less expensive to initialize than forEach with lambdas
-        for (Map.Entry<Class<?>, Class<?>> entry : primitiveWrapperTypeMap.entrySet()) {
-            primitiveTypeToWrapperMap.put(entry.getValue(), entry.getKey());
+        for (Map.Entry<Class<?>, Class<?>> entry : PRIMITIVE_WRAPPER_TYPE_MAP.entrySet()) {
+            PRIMITIVE_TYPE_TO_WRAPPER_MAP.put(entry.getValue(), entry.getKey());
             registerCommonClasses(entry.getKey());
         }
 
         Set<Class<?>> primitiveTypes = new HashSet<>(32);
-        primitiveTypes.addAll(primitiveWrapperTypeMap.values());
+        primitiveTypes.addAll(PRIMITIVE_WRAPPER_TYPE_MAP.values());
         Collections.addAll(primitiveTypes, boolean[].class, byte[].class, char[].class,
                 double[].class, float[].class, int[].class, long[].class, short[].class);
         for (Class<?> primitiveType : primitiveTypes) {
-            primitiveTypeNameMap.put(primitiveType.getName(), primitiveType);
+            PRIMITIVE_TYPE_NAME_MAP.put(primitiveType.getName(), primitiveType);
         }
 
         registerCommonClasses(Boolean[].class, Byte[].class, Character[].class, Double[].class,
@@ -139,7 +117,6 @@ public final class ClassUtils {
         Class<?>[] javaLanguageInterfaceArray = {Serializable.class, Externalizable.class,
                 Closeable.class, AutoCloseable.class, Cloneable.class, Comparable.class};
         registerCommonClasses(javaLanguageInterfaceArray);
-        javaLanguageInterfaces = new HashSet<>(Arrays.asList(javaLanguageInterfaceArray));
     }
 
     /**
@@ -147,7 +124,7 @@ public final class ClassUtils {
      */
     private static void registerCommonClasses(Class<?>... commonClasses) {
         for (Class<?> clazz : commonClasses) {
-            commonClassCache.put(clazz.getName(), clazz);
+            COMMON_CLASS_CACHE.put(clazz.getName(), clazz);
         }
     }
 
@@ -164,7 +141,7 @@ public final class ClassUtils {
             throw new NacosRuntimeException(SERVER_ERROR, "this class name not found");
         }
     }
-    
+
     /**
      * Determines if the class or interface represented by this object is either the same as, or is a superclass or
      * superinterface of, the class or interface represented by the specified parameter.
@@ -177,7 +154,7 @@ public final class ClassUtils {
         Objects.requireNonNull(cls, "cls");
         return clazz.isAssignableFrom(cls);
     }
-    
+
     /**
      * Gets and returns the class name.
      *
@@ -188,7 +165,7 @@ public final class ClassUtils {
         Objects.requireNonNull(cls, "cls");
         return cls.getName();
     }
-    
+
     /**
      * Gets and returns className.
      *
@@ -199,7 +176,7 @@ public final class ClassUtils {
         Objects.requireNonNull(obj, "obj");
         return obj.getClass().getName();
     }
-    
+
     /**
      * Gets and returns the canonical name of the underlying class.
      *
@@ -210,7 +187,7 @@ public final class ClassUtils {
         Objects.requireNonNull(cls, "cls");
         return cls.getCanonicalName();
     }
-    
+
     /**
      * Gets and returns the canonical name of the underlying class.
      *
@@ -221,7 +198,7 @@ public final class ClassUtils {
         Objects.requireNonNull(obj, "obj");
         return obj.getClass().getCanonicalName();
     }
-    
+
     /**
      * Gets and returns the simple name of the underlying class.
      *
@@ -232,7 +209,7 @@ public final class ClassUtils {
         Objects.requireNonNull(cls, "cls");
         return cls.getSimpleName();
     }
-    
+
     /**
      * Gets and returns the simple name of the underlying class as given in the source code.
      *
@@ -249,22 +226,23 @@ public final class ClassUtils {
      * for primitives (e.g. "int") and array class names (e.g. "String[]").
      * Furthermore, it is also capable of resolving nested class names in Java source
      * style (e.g. "java.lang.Thread.State" instead of "java.lang.Thread$State").
-     * @param name the name of the Class
+     *
+     * @param name        the name of the Class
      * @param classLoader the class loader to use
-     * (may be {@code null}, which indicates the default class loader)
+     *                    (may be {@code null}, which indicates the default class loader)
      * @return a class instance for the supplied name
      * @throws ClassNotFoundException if the class was not found
-     * @throws LinkageError if the class file could not be loaded
+     * @throws LinkageError           if the class file could not be loaded
      * @see Class#forName(String, boolean, ClassLoader)
      */
-    public static Class<?> forName(String name,  ClassLoader classLoader)
+    public static Class<?> forName(String name, ClassLoader classLoader)
             throws ClassNotFoundException, LinkageError {
 
         Assert.notNull(name, "Name must not be null");
 
         Class<?> clazz = resolvePrimitiveClassName(name);
         if (clazz == null) {
-            clazz = commonClassCache.get(name);
+            clazz = COMMON_CLASS_CACHE.get(name);
         }
         if (clazz != null) {
             return clazz;
@@ -297,16 +275,14 @@ public final class ClassUtils {
         }
         try {
             return Class.forName(name, false, clToUse);
-        }
-        catch (ClassNotFoundException ex) {
+        } catch (ClassNotFoundException ex) {
             int lastDotIndex = name.lastIndexOf(PACKAGE_SEPARATOR);
             if (lastDotIndex != -1) {
                 String nestedClassName =
                         name.substring(0, lastDotIndex) + NESTED_CLASS_SEPARATOR + name.substring(lastDotIndex + 1);
                 try {
                     return Class.forName(nestedClassName, false, clToUse);
-                }
-                catch (ClassNotFoundException ex2) {
+                } catch (ClassNotFoundException e) {
                     // Swallow - let original exception get through
                 }
             }
@@ -317,21 +293,23 @@ public final class ClassUtils {
     /**
      * Resolve the given class name as primitive class, if appropriate,
      * according to the JVM's naming rules for primitive classes.
+     *
      * <p>Also supports the JVM's internal class names for primitive arrays.
      * Does <i>not</i> support the "[]" suffix notation for primitive arrays;
      * this is only supported by {@link #forName(String, ClassLoader)}.
+     *
      * @param name the name of the potentially primitive class
      * @return the primitive class, or {@code null} if the name does not denote
      * a primitive class or primitive array class
      */
 
-    public static Class<?> resolvePrimitiveClassName( String name) {
+    public static Class<?> resolvePrimitiveClassName(String name) {
         Class<?> result = null;
         // Most class names will be quite long, considering that they
         // SHOULD sit in a package, so a length check is worthwhile.
         if (name != null && name.length() <= 7) {
             // Could be a primitive - likely.
-            result = primitiveTypeNameMap.get(name);
+            result = PRIMITIVE_TYPE_NAME_MAP.get(name);
         }
         return result;
     }
@@ -340,11 +318,13 @@ public final class ClassUtils {
      * Return the default ClassLoader to use: typically the thread context
      * ClassLoader, if available; the ClassLoader that loaded the ClassUtils
      * class will be used as fallback.
+     *
      * <p>Call this method if you intend to use the thread context ClassLoader
      * in a scenario where you clearly prefer a non-null ClassLoader reference:
      * for example, for class path resource loading (but not necessarily for
      * {@code Class.forName}, which accepts a {@code null} ClassLoader
      * reference as well).
+     *
      * @return the default ClassLoader (only {@code null} if even the system
      * ClassLoader isn't accessible)
      * @see Thread#getContextClassLoader()
@@ -355,8 +335,7 @@ public final class ClassUtils {
         ClassLoader cl = null;
         try {
             cl = Thread.currentThread().getContextClassLoader();
-        }
-        catch (Throwable ex) {
+        } catch (Throwable ex) {
             // Cannot access thread context ClassLoader - falling back...
         }
         if (cl == null) {
@@ -366,8 +345,7 @@ public final class ClassUtils {
                 // getClassLoader() returning null indicates the bootstrap ClassLoader
                 try {
                     cl = ClassLoader.getSystemClassLoader();
-                }
-                catch (Throwable ex) {
+                } catch (Throwable ex) {
                     // Cannot access system ClassLoader - oh well, maybe the caller can live with null...
                 }
             }
@@ -383,13 +361,14 @@ public final class ClassUtils {
      * directly to {@code ClassLoader.getResource()}. For it to be fed to
      * {@code Class.getResource} instead, a leading slash would also have
      * to be prepended to the returned value.
+     *
      * @param clazz the input class. A {@code null} value or the default
-     * (empty) package will result in an empty string ("") being returned.
+     *              (empty) package will result in an empty string ("") being returned.
      * @return a path which represents the package name
      * @see ClassLoader#getResource
      * @see Class#getResource
      */
-    public static String classPackageAsResourcePath( Class<?> clazz) {
+    public static String classPackageAsResourcePath(Class<?> clazz) {
         if (clazz == null) {
             return "";
         }
@@ -404,6 +383,7 @@ public final class ClassUtils {
 
     /**
      * Convert a "."-based fully qualified class name to a "/"-based resource path.
+     *
      * @param className the fully qualified class name
      * @return the corresponding resource path, pointing to the class
      */
@@ -414,6 +394,7 @@ public final class ClassUtils {
 
     /**
      * Convert a "."-based fully qualified class name to a "/"-based resource path.
+     *
      * @param className the fully qualified class name
      * @return the corresponding resource path, pointing to the class
      */

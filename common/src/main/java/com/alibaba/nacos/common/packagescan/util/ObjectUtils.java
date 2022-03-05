@@ -19,7 +19,11 @@ package com.alibaba.nacos.common.packagescan.util;
 import com.alibaba.nacos.common.utils.Assert;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.StringJoiner;
 
 /**
  * Miscellaneous object utility methods.
@@ -115,14 +119,14 @@ public abstract class ObjectUtils {
 
     /**
      * Determine whether the given object is empty.
+     *
      * <p>This method supports the following object types.
      * <ul>
      * <li>{@code Optional}: considered empty if not {@link Optional#isPresent()}</li>
      * <li>{@code Array}: considered empty if its length is zero</li>
      * <li>{@link CharSequence}: considered empty if its length is zero</li>
-     * <li>{@link Collection}: delegates to {@link Collection#isEmpty()}</li>
-     * <li>{@link Map}: delegates to {@link Map#isEmpty()}</li>
      * </ul>
+     *
      * <p>If the given object is non-null and not one of the aforementioned
      * supported types, this method returns {@code false}.
      *
@@ -130,9 +134,6 @@ public abstract class ObjectUtils {
      * @return {@code true} if the object is {@code null} or <em>empty</em>
      * @see Optional#isPresent()
      * @see ObjectUtils#isEmpty(Object[])
-     * @see StringUtils#hasLength(CharSequence)
-     * @see CollectionUtils#isEmpty(Collection)
-     * @see CollectionUtils#isEmpty(Map)
      * @since 4.2
      */
     public static boolean isEmpty(Object obj) {
@@ -247,7 +248,8 @@ public abstract class ObjectUtils {
                 return candidate;
             }
         }
-        throw new IllegalArgumentException("Constant [" + constant + "] does not exist in enum type " +
+        throw new IllegalArgumentException("Constant [" + constant + "] does not exist in enum type "
+                +
                 enumValues.getClass().getComponentType().getName());
     }
 
@@ -279,6 +281,7 @@ public abstract class ObjectUtils {
     /**
      * Convert the given array (which may be a primitive array) to an
      * object array (if necessary of primitive wrapper objects).
+     *
      * <p>A {@code null} source value will be converted to an
      * empty Object array.
      *
@@ -308,7 +311,6 @@ public abstract class ObjectUtils {
         return newArray;
     }
 
-
     //---------------------------------------------------------------------
     // Convenience methods for content-based equality/hash-code handling
     //---------------------------------------------------------------------
@@ -316,6 +318,7 @@ public abstract class ObjectUtils {
     /**
      * Determine if the given objects are equal, returning {@code true} if
      * both are {@code null} or {@code false} if only one is {@code null}.
+     *
      * <p>Compares arrays with {@code Arrays.equals}, performing an equality
      * check based on the array elements rather than the array reference.
      *
@@ -611,7 +614,6 @@ public abstract class ObjectUtils {
         return Long.hashCode(lng);
     }
 
-
     //---------------------------------------------------------------------
     // Convenience methods for toString output
     //---------------------------------------------------------------------
@@ -643,6 +645,7 @@ public abstract class ObjectUtils {
     /**
      * Return a content-based String representation if {@code obj} is
      * not {@code null}; otherwise returns an empty String.
+     *
      * <p>Differs from {@link #nullSafeToString(Object)} in that it returns
      * an empty String rather than "null" for a {@code null} value.
      *
@@ -659,6 +662,7 @@ public abstract class ObjectUtils {
 
     /**
      * Determine the class name for the given object.
+     *
      * <p>Returns a {@code "null"} String if {@code obj} is {@code null}.
      *
      * @param obj the object to introspect (may be {@code null})
@@ -670,6 +674,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the specified Object.
+     *
      * <p>Builds a String representation of the contents in case of an array.
      * Returns a {@code "null"} String if {@code obj} is {@code null}.
      *
@@ -716,6 +721,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -741,6 +747,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -766,6 +773,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -791,6 +799,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -816,6 +825,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -841,6 +851,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -866,6 +877,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -891,6 +903,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).
@@ -916,6 +929,7 @@ public abstract class ObjectUtils {
 
     /**
      * Return a String representation of the contents of the specified array.
+     *
      * <p>The String representation consists of a list of the array's elements,
      * enclosed in curly braces ({@code "{}"}). Adjacent elements are separated
      * by the characters {@code ", "} (a comma followed by a space).

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.packagescan;
 
 import com.alibaba.nacos.common.utils.Assert;
-import com.alibaba.nacos.common.packagescan.util.NestedIOException;
+import com.alibaba.nacos.common.packagescan.util.NestedIoException;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class VfsResource extends AbstractResource {
         try {
             return VfsUtils.getUrl(this.resource);
         } catch (Exception ex) {
-            throw new NestedIOException("Failed to obtain URL for file " + this.resource, ex);
+            throw new NestedIoException("Failed to obtain URL for file " + this.resource, ex);
         }
     }
 
@@ -83,7 +83,7 @@ public class VfsResource extends AbstractResource {
         try {
             return VfsUtils.getUri(this.resource);
         } catch (Exception ex) {
-            throw new NestedIOException("Failed to obtain URI for " + this.resource, ex);
+            throw new NestedIoException("Failed to obtain URI for " + this.resource, ex);
         }
     }
 

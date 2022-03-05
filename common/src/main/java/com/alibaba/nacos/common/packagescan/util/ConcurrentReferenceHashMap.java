@@ -276,24 +276,24 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         return put(key, value, true);
     }
 
-	private V put(final K key, final V value, final boolean overwriteExisting) {
-		return doTask(key, new Task<V>(TaskOption.RESTRUCTURE_BEFORE, TaskOption.RESIZE) {
-			@Override
+    private V put(final K key, final V value, final boolean overwriteExisting) {
+        return doTask(key, new Task<V>(TaskOption.RESTRUCTURE_BEFORE, TaskOption.RESIZE) {
+            @Override
 
-			protected V execute(Reference<K, V> ref, Entry<K, V> entry, Entries<V> entries) {
-				if (entry != null) {
-					V oldValue = entry.getValue();
-					if (overwriteExisting) {
-						entry.setValue(value);
-					}
-					return oldValue;
-				}
-				Assert.state(entries != null, "No entries segment");
-				entries.add(value);
-				return null;
-			}
-		});
-	}
+            protected V execute(Reference<K, V> ref, Entry<K, V> entry, Entries<V> entries) {
+                if (entry != null) {
+                    V oldValue = entry.getValue();
+                    if (overwriteExisting) {
+                        entry.setValue(value);
+                    }
+                    return oldValue;
+                }
+                Assert.state(entries != null, "No entries segment");
+                entries.add(value);
+                return null;
+            }
+        });
+    }
 
     @Override
     public V putIfAbsent(K key, V value) {
@@ -765,8 +765,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
                 return false;
             }
             Map.Entry otherEntry = (Map.Entry) other;
-            return (ObjectUtils.nullSafeEquals(getKey(), otherEntry.getKey()) &&
-                    ObjectUtils.nullSafeEquals(getValue(), otherEntry.getValue()));
+            return (ObjectUtils.nullSafeEquals(getKey(), otherEntry.getKey())
+                    && ObjectUtils.nullSafeEquals(getValue(), otherEntry.getValue()));
         }
 
         @Override
@@ -1005,14 +1005,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         }
     }
 
-
     /**
      * Internal {@link Reference} implementation for {@link SoftReference SoftReferences}.
      */
     private static final class SoftEntryReference<K, V> extends SoftReference<Entry<K, V>> implements Reference<K, V> {
 
         private final int hash;
-
 
         private final Reference<K, V> nextReference;
 
@@ -1042,14 +1040,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
         }
     }
 
-
     /**
      * Internal {@link Reference} implementation for {@link WeakReference WeakReferences}.
      */
     private static final class WeakEntryReference<K, V> extends WeakReference<Entry<K, V>> implements Reference<K, V> {
 
         private final int hash;
-
 
         private final Reference<K, V> nextReference;
 

@@ -346,12 +346,12 @@ public abstract class Assert {
      * @throws IllegalArgumentException if the text contains the substring
      * @since 5.0
      */
-	public static void doesNotContain(String textToSearch, String substring, Supplier<String> messageSupplier) {
-		if (StringUtils.hasLength(textToSearch) && StringUtils.hasLength(substring)
-				&& textToSearch.contains(substring)) {
-			throw new IllegalArgumentException(nullSafeGet(messageSupplier));
-		}
-	}
+    public static void doesNotContain(String textToSearch, String substring, Supplier<String> messageSupplier) {
+        if (StringUtils.hasLength(textToSearch) && StringUtils.hasLength(substring)
+                && textToSearch.contains(substring)) {
+            throw new IllegalArgumentException(nullSafeGet(messageSupplier));
+        }
+    }
 
     /**
      * Assert that the given text does not contain the given substring.
@@ -410,6 +410,99 @@ public abstract class Assert {
     }
 
     /**
+     * Assert that a collection contains elements; that is, it must not be
+     * {@code null} and must contain at least one element.
+     * <pre class="code">
+     * Assert.notEmpty(collection, () -&gt; "The " + collectionType + " collection must contain elements");
+     * </pre>
+     *
+     * @param collection      the collection to check
+     * @param messageSupplier a supplier for the exception message to use if the
+     *                        assertion fails
+     * @throws IllegalArgumentException if the collection is {@code null} or
+     *                                  contains no elements
+     * @since 5.0
+     */
+    public static void notEmpty(Collection<?> collection, Supplier<String> messageSupplier) {
+        if (CollectionUtils.isEmpty(collection)) {
+            throw new IllegalArgumentException(nullSafeGet(messageSupplier));
+        }
+    }
+
+    /**
+     * Assert that a collection contains elements; that is, it must not be
+     * {@code null} and must contain at least one element.
+     * <pre class="code">Assert.notEmpty(collection, "Collection must contain elements");</pre>
+     *
+     * @param collection the collection to check
+     * @param message    the exception message to use if the assertion fails
+     * @throws IllegalArgumentException if the collection is {@code null} or
+     *                                  contains no elements
+     */
+    public static void notEmpty(Collection<?> collection, String message) {
+        if (CollectionUtils.isEmpty(collection)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Assert that a collection contains elements; that is, it must not be
+     * {@code null} and must contain at least one element.
+     *
+     * @deprecated as of 4.3.7, in favor of {@link #notEmpty(Collection, String)}
+     */
+    @Deprecated
+    public static void notEmpty(Collection<?> collection) {
+        notEmpty(collection,
+                "[Assertion failed] - this collection must not be empty: it must contain at least 1 element");
+    }
+
+    /**
+     * Assert that a Map contains entries; that is, it must not be {@code null}
+     * and must contain at least one entry.
+     * <pre class="code">Assert.notEmpty(map, "Map must contain entries");</pre>
+     *
+     * @param map     the map to check
+     * @param message the exception message to use if the assertion fails
+     * @throws IllegalArgumentException if the map is {@code null} or contains no entries
+     */
+    public static void notEmpty(Map<?, ?> map, String message) {
+        if (CollectionUtils.isMapEmpty(map)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Assert that a Map contains entries; that is, it must not be {@code null}
+     * and must contain at least one entry.
+     * <pre class="code">
+     * Assert.notEmpty(map, () -&gt; "The " + mapType + " map must contain entries");
+     * </pre>
+     *
+     * @param map             the map to check
+     * @param messageSupplier a supplier for the exception message to use if the
+     *                        assertion fails
+     * @throws IllegalArgumentException if the map is {@code null} or contains no entries
+     * @since 5.0
+     */
+    public static void notEmpty(Map<?, ?> map, Supplier<String> messageSupplier) {
+        if (CollectionUtils.isMapEmpty(map)) {
+            throw new IllegalArgumentException(nullSafeGet(messageSupplier));
+        }
+    }
+
+    /**
+     * Assert that a Map contains entries; that is, it must not be {@code null}
+     * and must contain at least one entry.
+     *
+     * @deprecated as of 4.3.7, in favor of {@link #notEmpty(Map, String)}
+     */
+    @Deprecated
+    public static void notEmpty(Map<?, ?> map) {
+        notEmpty(map, "[Assertion failed] - this map must not be empty; it must contain at least one entry");
+    }
+
+    /**
      * Assert that an array contains no {@code null} elements.
      * Note: Does not complain if the array is empty!
      * <pre class="code">Assert.noNullElements(array, "The array must contain non-null elements");</pre>
@@ -462,54 +555,6 @@ public abstract class Assert {
     }
 
     /**
-     * Assert that a collection contains elements; that is, it must not be
-     * {@code null} and must contain at least one element.
-     * <pre class="code">Assert.notEmpty(collection, "Collection must contain elements");</pre>
-     *
-     * @param collection the collection to check
-     * @param message    the exception message to use if the assertion fails
-     * @throws IllegalArgumentException if the collection is {@code null} or
-     *                                  contains no elements
-     */
-    public static void notEmpty(Collection<?> collection, String message) {
-        if (CollectionUtils.isEmpty(collection)) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    /**
-     * Assert that a collection contains elements; that is, it must not be
-     * {@code null} and must contain at least one element.
-     * <pre class="code">
-     * Assert.notEmpty(collection, () -&gt; "The " + collectionType + " collection must contain elements");
-     * </pre>
-     *
-     * @param collection      the collection to check
-     * @param messageSupplier a supplier for the exception message to use if the
-     *                        assertion fails
-     * @throws IllegalArgumentException if the collection is {@code null} or
-     *                                  contains no elements
-     * @since 5.0
-     */
-    public static void notEmpty(Collection<?> collection, Supplier<String> messageSupplier) {
-        if (CollectionUtils.isEmpty(collection)) {
-            throw new IllegalArgumentException(nullSafeGet(messageSupplier));
-        }
-    }
-
-    /**
-     * Assert that a collection contains elements; that is, it must not be
-     * {@code null} and must contain at least one element.
-     *
-     * @deprecated as of 4.3.7, in favor of {@link #notEmpty(Collection, String)}
-     */
-    @Deprecated
-    public static void notEmpty(Collection<?> collection) {
-        notEmpty(collection,
-                "[Assertion failed] - this collection must not be empty: it must contain at least 1 element");
-    }
-
-    /**
      * Assert that a collection contains no {@code null} elements.
      * Note: Does not complain if the collection is empty!
      * <pre class="code">Assert.noNullElements(collection, "Collection must contain non-null elements");</pre>
@@ -550,51 +595,6 @@ public abstract class Assert {
                 }
             }
         }
-    }
-
-    /**
-     * Assert that a Map contains entries; that is, it must not be {@code null}
-     * and must contain at least one entry.
-     * <pre class="code">Assert.notEmpty(map, "Map must contain entries");</pre>
-     *
-     * @param map     the map to check
-     * @param message the exception message to use if the assertion fails
-     * @throws IllegalArgumentException if the map is {@code null} or contains no entries
-     */
-    public static void notEmpty(Map<?, ?> map, String message) {
-        if (CollectionUtils.isMapEmpty(map)) {
-            throw new IllegalArgumentException(message);
-        }
-    }
-
-    /**
-     * Assert that a Map contains entries; that is, it must not be {@code null}
-     * and must contain at least one entry.
-     * <pre class="code">
-     * Assert.notEmpty(map, () -&gt; "The " + mapType + " map must contain entries");
-     * </pre>
-     *
-     * @param map             the map to check
-     * @param messageSupplier a supplier for the exception message to use if the
-     *                        assertion fails
-     * @throws IllegalArgumentException if the map is {@code null} or contains no entries
-     * @since 5.0
-     */
-    public static void notEmpty(Map<?, ?> map, Supplier<String> messageSupplier) {
-        if (CollectionUtils.isMapEmpty(map)) {
-            throw new IllegalArgumentException(nullSafeGet(messageSupplier));
-        }
-    }
-
-    /**
-     * Assert that a Map contains entries; that is, it must not be {@code null}
-     * and must contain at least one entry.
-     *
-     * @deprecated as of 4.3.7, in favor of {@link #notEmpty(Map, String)}
-     */
-    @Deprecated
-    public static void notEmpty(Map<?, ?> map) {
-        notEmpty(map, "[Assertion failed] - this map must not be empty; it must contain at least one entry");
     }
 
     /**
@@ -701,7 +701,6 @@ public abstract class Assert {
         isAssignable(superType, subType, "");
     }
 
-
     private static void instanceCheckFailed(Class<?> type, Object obj, String msg) {
         String className = (obj != null ? obj.getClass().getName() : "null");
         String result = "";
@@ -744,7 +743,6 @@ public abstract class Assert {
     private static String messageWithTypeName(String msg, Object typeName) {
         return msg + (msg.endsWith(" ") ? "" : ": ") + typeName;
     }
-
 
     private static String nullSafeGet(Supplier<String> messageSupplier) {
         return (messageSupplier != null ? messageSupplier.get() : null);
