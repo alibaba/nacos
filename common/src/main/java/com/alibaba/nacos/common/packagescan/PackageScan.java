@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * package scan.
+ * a class for package scan.
  * @author hujun
  */
 public class PackageScan {
