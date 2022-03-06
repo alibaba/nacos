@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Subclass of {@link UrlResource} which assumes file resolution, to the degree
  * of implementing the {@link WritableResource} interface for it. This resource
  * variant also caches resolved {@link File} handles from {@link #getFile()}.

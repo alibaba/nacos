@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.packagescan;
 
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * A resolution strategy for protocol-specific resource handles.
  *
  * <p>Used as an SPI for {@link DefaultResourceLoader}, allowing for

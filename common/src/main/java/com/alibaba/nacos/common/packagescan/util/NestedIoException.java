@@ -20,6 +20,7 @@ import java.io.IOException;
 
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Subclass of {@link IOException} that properly handles a root cause,
  * exposing the root cause just like NestedChecked/RuntimeException does.
  *

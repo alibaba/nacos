@@ -32,6 +32,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Convenience base class for {@link Resource} implementations,
  * pre-implementing typical behavior.
  *

@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * {@link Resource} implementation for {@link Path} handles,
  * performing all operations and transformations via the {@code Path} API.
  * Supports resolution as a {@link File} and also as a {@link URL}.

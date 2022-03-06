@@ -31,6 +31,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * {@link Resource} implementation for {@code java.net.URL} locators.
  * Supports resolution as a {@code URL} and also as a {@code File} in
  * case of the {@code "file:"} protocol.

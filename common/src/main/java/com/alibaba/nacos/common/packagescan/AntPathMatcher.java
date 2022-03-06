@@ -30,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * {@link PathMatcher} implementation for Ant-style path patterns.
  * Part of this mapping code has been kindly borrowed from <a href="https://ant.apache.org">Apache Ant</a>.
  * The mapping matches URLs using the following rules:<br>

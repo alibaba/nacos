@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * {@link Resource} implementation for class path resources. Uses either a
  * given {@link ClassLoader} or a given {@link Class} for loading resources.
  *

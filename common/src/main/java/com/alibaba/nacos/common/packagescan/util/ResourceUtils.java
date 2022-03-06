@@ -29,6 +29,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Utility methods for resolving resource locations to files in the
  * file system. Mainly for internal use within the framework.
  *

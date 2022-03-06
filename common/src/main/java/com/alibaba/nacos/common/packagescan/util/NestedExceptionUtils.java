@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.packagescan.util;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Helper class for implementing exception classes which are capable of
  * holding nested exceptions. Necessary because we can't share a base
  * class among different exception types.

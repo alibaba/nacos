@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.URL;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * JBoss VFS based {@link Resource} implementation.
  *
  * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+

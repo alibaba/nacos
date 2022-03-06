@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.packagescan;
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Strategy interface for loading resources (e.g., class path or file system
  * resources).
  *

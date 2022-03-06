@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Default implementation of the {@link ResourceLoader} interface.
  * Can also be used standalone.
  *

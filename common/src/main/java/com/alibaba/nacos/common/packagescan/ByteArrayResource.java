@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * {@link Resource} implementation for a given byte array.
  *
  * <p>Creates a {@link ByteArrayInputStream} for the given byte array.

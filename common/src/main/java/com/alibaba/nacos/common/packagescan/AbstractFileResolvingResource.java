@@ -31,6 +31,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardOpenOption;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Abstract base class for resources which resolve URLs into File references,
  * such as {@link UrlResource} or {@link ClassPathResource}.
  *

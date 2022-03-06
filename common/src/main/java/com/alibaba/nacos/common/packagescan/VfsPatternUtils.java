@@ -22,6 +22,7 @@ import java.lang.reflect.Proxy;
 import java.net.URL;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Artificial class used for accessing the {@link VfsUtils} methods
  * without exposing them to the entire world.
  *

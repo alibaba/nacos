@@ -23,11 +23,10 @@ import java.util.Comparator;
 import java.util.Map;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Strategy interface for {@code String}-based path matching.
  *
  * <p>Used by {@link PathMatchingResourcePatternResolver},
- * {@link org.springframework.web.servlet.handler.AbstractUrlHandlerMapping},
- * and {@link org.springframework.web.servlet.mvc.WebContentInterceptor}.
  *
  * <p>The default implementation is {@link AntPathMatcher}, supporting the
  * Ant-style pattern syntax.

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * {@link Resource} implementation for a given {@link InputStream}.
  *
  * <p>Should only be used if no other specific {@code Resource} implementation

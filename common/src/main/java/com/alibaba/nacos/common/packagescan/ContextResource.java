@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.packagescan;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Extended interface for a resource that is loaded from an enclosing
  * 'context', e.g. from a {@link javax.servlet.ServletContext} but also
  * from plain classpath paths or relative file system paths (specified

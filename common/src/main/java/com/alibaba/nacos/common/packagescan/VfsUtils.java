@@ -28,6 +28,7 @@ import java.net.URI;
 import java.net.URL;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Utility for detecting and accessing JBoss VFS in the classpath.
  *
  * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+

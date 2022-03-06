@@ -31,6 +31,7 @@ package com.alibaba.nacos.common.packagescan.classreading;
 import jdk.internal.org.objectweb.asm.Type;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * An entry of the constant pool, of the BootstrapMethods attribute, or of the (ASM specific) type
  * table of a class.
  *

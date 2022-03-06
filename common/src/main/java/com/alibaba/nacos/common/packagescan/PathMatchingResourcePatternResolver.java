@@ -47,6 +47,7 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipException;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * A {@link ResourcePatternResolver} implementation that is able to resolve a
  * specified resource location path into one or more matching Resources.
  * The source path may be a simple path which has a one-to-one mapping to a

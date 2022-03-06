@@ -19,6 +19,7 @@ package com.alibaba.nacos.common.packagescan;
 import java.io.IOException;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Strategy interface for resolving a location pattern (for example,
  * an Ant-style path pattern) into {@link Resource} objects.
  *
