@@ -38,7 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * "classpath:" pseudo-URL.
  *
  * @author Juergen Hoeller
- * @see FileSystemResourceLoader
  * @since 10.03.2004
  */
 public class DefaultResourceLoader implements ResourceLoader {

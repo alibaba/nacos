@@ -141,9 +141,6 @@ abstract class Symbol {
      */
     static final int TYPE_TAG = 128;
 
-    /**
-     * The tag value of an {@link Frame#ITEM_UNINITIALIZED} type entry in the type table of a class.
-     */
     static final int UNINITIALIZED_TYPE_TAG = 129;
 
     /**
@@ -211,8 +208,7 @@ abstract class Symbol {
      *       #CONSTANT_INVOKE_DYNAMIC_TAG} symbols,
      *   <li>the offset of a bootstrap method in the BootstrapMethods boostrap_methods array, for
      *       {@link #CONSTANT_DYNAMIC_TAG} or {@link #BOOTSTRAP_METHOD_TAG} symbols,
-     *   <li>the bytecode offset of the NEW instruction that created an {@link
-     *       Frame#ITEM_UNINITIALIZED} type for {@link #UNINITIALIZED_TYPE_TAG} symbols,
+     *   <li>the bytecode offset of the NEW instruction that created an  type for {@link #UNINITIALIZED_TYPE_TAG} symbols,
      *   <li>the indices (in the class' type table) of two {@link #TYPE_TAG} source types for {@link
      *       #MERGED_TYPE_TAG} symbols,
      *   <li>0 for the other types of symbol.
@@ -241,7 +237,7 @@ abstract class Symbol {
 
     /**
      * Constructs a new Symbol. This constructor can't be used directly because the Symbol class is
-     * abstract. Instead, use the factory methods of the {@link SymbolTable} class.
+     * abstract. Instead, use the factory methods of the  class.
      *
      * @param index the symbol index in the constant pool, in the BootstrapMethods attribute, or in
      *              the (ASM specific) type table of a class (depending on 'tag').
