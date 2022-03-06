@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-import com.alibaba.nacos.common.packagescan.util.ReflectionUtils;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,9 +114,9 @@ public abstract class VfsUtils {
             if (targetEx instanceof IOException) {
                 throw (IOException) targetEx;
             }
-            ReflectionUtils.handleInvocationTargetException(ex);
+            ReflectUtils.handleInvocationTargetException(ex);
         } catch (Exception ex) {
-            ReflectionUtils.handleReflectionException(ex);
+            ReflectUtils.handleReflectionException(ex);
         }
 
         throw new IllegalStateException("Invalid code path reached");
@@ -189,11 +189,11 @@ public abstract class VfsUtils {
     }
 
     protected static Object doGetVisitorAttributes() {
-        return ReflectionUtils.getField(VISITOR_ATTRIBUTES_FIELD_RECURSE, null);
+        return ReflectUtils.getField(VISITOR_ATTRIBUTES_FIELD_RECURSE, null);
     }
 
     protected static String doGetPath(Object resource) {
-        return (String) ReflectionUtils.invokeMethod(VIRTUAL_FILE_METHOD_GET_PATH_NAME, resource);
+        return (String) ReflectUtils.invokeMethod(VIRTUAL_FILE_METHOD_GET_PATH_NAME, resource);
     }
 
 }

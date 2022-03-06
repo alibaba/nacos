@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan;
 
-import com.alibaba.nacos.common.packagescan.util.ObjectUtils;
+import com.alibaba.nacos.common.utils.ObjectUtils;
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;

@@ -17,10 +17,10 @@
 package com.alibaba.nacos.common.packagescan;
 
 import com.alibaba.nacos.common.packagescan.util.PathMatcher;
-import com.alibaba.nacos.common.packagescan.util.ReflectionUtils;
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -490,7 +490,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
             rootDirResource = resolveRootDirResource(rootDirResource);
             URL rootDirUrl = rootDirResource.getUrl();
             if (equinoxResolveMethod != null && rootDirUrl.getProtocol().startsWith("bundle")) {
-                URL resolvedUrl = (URL) ReflectionUtils.invokeMethod(equinoxResolveMethod, null, rootDirUrl);
+                URL resolvedUrl = (URL) ReflectUtils.invokeMethod(equinoxResolveMethod, null, rootDirUrl);
                 if (resolvedUrl != null) {
                     rootDirUrl = resolvedUrl;
                 }

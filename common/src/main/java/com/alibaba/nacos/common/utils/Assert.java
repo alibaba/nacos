@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.common.packagescan.util.ObjectUtils;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;

@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.packagescan.util;
-
-import com.alibaba.nacos.common.utils.Assert;
+package com.alibaba.nacos.common.utils;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
