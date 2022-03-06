@@ -28,8 +28,6 @@
 
 package com.alibaba.nacos.common.packagescan.classreading;
 
-import jdk.internal.org.objectweb.asm.Type;
-
 /**
  * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * An entry of the constant pool, of the BootstrapMethods attribute, or of the (ASM specific) type
@@ -264,18 +262,4 @@ abstract class Symbol {
         this.data = data;
     }
 
-    /**
-     * Returns the result {@link Type#getArgumentsAndReturnSizes} on {@link #value}.
-     *
-     * @return the result {@link Type#getArgumentsAndReturnSizes} on {@link #value} (memoized in
-     * {@link #info} for efficiency). This should only be used for {@link
-     * #CONSTANT_METHODREF_TAG}, {@link #CONSTANT_INTERFACE_METHODREF_TAG} and {@link
-     * #CONSTANT_INVOKE_DYNAMIC_TAG} symbols.
-     */
-    int getArgumentsAndReturnSizes() {
-        if (info == 0) {
-            info = Type.getArgumentsAndReturnSizes(value);
-        }
-        return info;
-    }
 }
