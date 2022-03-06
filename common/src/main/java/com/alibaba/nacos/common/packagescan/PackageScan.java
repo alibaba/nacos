@@ -93,8 +93,8 @@ public class PackageScan {
             try {
                 return new ClassReader(is);
             } catch (IllegalArgumentException ex) {
-                throw new NestedIoException("ASM ClassReader failed to parse class file - " +
-                        "probably due to a new Java class file version that isn't supported yet: " + resource, ex);
+                throw new NestedIoException("ASM ClassReader failed to parse class file - "
+                        + "probably due to a new Java class file version that isn't supported yet: " + resource, ex);
             }
         }
     }
