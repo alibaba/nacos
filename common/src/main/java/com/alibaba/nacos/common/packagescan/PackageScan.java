@@ -17,11 +17,14 @@
 package com.alibaba.nacos.common.packagescan;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.packagescan.classreading.ClassReader;
+import com.alibaba.nacos.common.packagescan.util.NestedIoException;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
@@ -81,11 +84,19 @@ public class PackageScan {
     }
 
     private Class<?> getClassByResource(Resource resource) throws IOException, ClassNotFoundException {
-        String path = resource.getFile().getPath();
-        int packageIndex = path.indexOf(ClassUtils.convertClassNameToResourcePath(pkg));
-        String originPath = path.substring(packageIndex).replace(".class", "");
-        String className = ClassUtils.resourcePathToConvertClassName(originPath);
-        return Class.forName(className);
+        String className = getClassReader(resource).getClassName();
+        return Class.forName(ClassUtils.resourcePathToConvertClassName(className));
+    }
+
+    private static ClassReader getClassReader(Resource resource) throws IOException {
+        try (InputStream is = resource.getInputStream()) {
+            try {
+                return new ClassReader(is);
+            } catch (IllegalArgumentException ex) {
+                throw new NestedIoException("ASM ClassReader failed to parse class file - " +
+                        "probably due to a new Java class file version that isn't supported yet: " + resource, ex);
+            }
+        }
     }
 
 }
