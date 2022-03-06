@@ -28,21 +28,15 @@
 
 package com.alibaba.nacos.common.packagescan.classreading;
 
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Type;
-import jdk.internal.org.objectweb.asm.TypeReference;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * A parser to make a {@link ClassVisitor} visit a ClassFile structure, as defined in the Java
+ * A parser to make a  visit a ClassFile structure, as defined in the Java
  * Virtual Machine Specification (JVMS). This class parses the ClassFile content and calls the
- * appropriate visit methods of a given {@link ClassVisitor} for each field, method and bytecode
+ * appropriate visit methods of a given ClassVisitor for each field, method and bytecode
  * instruction encountered.
  *
  * @author Eric Bruneton
@@ -60,17 +54,13 @@ public class ClassReader {
     public static final int V19 = 0 << 16 | 63;
 
     /**
-     * A flag to skip the SourceFile, SourceDebugExtension, LocalVariableTable,
-     * LocalVariableTypeTable, LineNumberTable and MethodParameters attributes. If this flag is set
-     * these attributes are neither parsed nor visited (i.e. {@link ClassVisitor#visitSource}, {@link
-     * MethodVisitor#visitLocalVariable}, {@link MethodVisitor#visitLineNumber} and {@link
-     * MethodVisitor#visitParameter} are not called).
+     * A flag to skip the SourceFile.
      */
     public static final int SKIP_DEBUG = 2;
 
     /**
      * A flag to skip the StackMap and StackMapTable attributes. If this flag is set these attributes
-     * are neither parsed nor visited (i.e. {@link MethodVisitor#visitFrame} is not called). This flag
+     * are neither parsed nor visited  is not called). This flag
      * is useful when the option is used: it avoids visiting frames
      * that will be ignored and recomputed from scratch.
      */
@@ -124,7 +114,7 @@ public class ClassReader {
 
     /**
      * A byte array containing the JVMS ClassFile structure to be parsed. <i>The content of this array
-     * must not be modified. This field is intended for {@link Attribute} sub classes, and is normally
+     * must not be modified. This field is intended for  Attribute sub classes, and is normally
      * not needed by class visitors.</i>
      *
      * <p>NOTE: the ClassFile structure can start at any offset within this array, i.e. it does not
@@ -352,41 +342,27 @@ public class ClassReader {
      * and Synthetic flags when bytecode is before 1.5 and those flags are represented by attributes.
      *
      * @return the class access flags.
-     * @see ClassVisitor#visit(int, int, String, String, String, String[])
      */
     public int getAccess() {
         return readUnsignedShort(header);
     }
 
     /**
-     * Returns the internal name of the class (see {@link Type#getInternalName()}).
-     *
-     * @return the internal class name.
-     * @see ClassVisitor#visit(int, int, String, String, String, String[])
+     * the internal class name.
      */
     public String getClassName() {
         // this_class is just after the access_flags field (using 2 bytes).
         return readClass(header + 2, new char[maxStringLength]);
     }
 
-    /**
-     * Returns the internal of name of the super class (see {@link Type#getInternalName()}). For
-     * interfaces, the super class is {@link Object}.
-     *
-     * @return the internal name of the super class, or {@literal null} for {@link Object} class.
-     * @see ClassVisitor#visit(int, int, String, String, String, String[])
-     */
     public String getSuperName() {
         // super_class is after the access_flags and this_class fields (2 bytes each).
         return readClass(header + 4, new char[maxStringLength]);
     }
 
     /**
-     * Returns the internal names of the implemented interfaces (see {@link Type#getInternalName()}).
-     *
-     * @return the internal names of the directly implemented interfaces. Inherited implemented
+     * the internal names of the directly implemented interfaces. Inherited implemented
      * interfaces are not returned.
-     * @see ClassVisitor#visit(int, int, String, String, String, String[])
      */
     public String[] getInterfaces() {
         // interfaces_count is after the access_flags, this_class and super_class fields (2 bytes each).
@@ -401,26 +377,6 @@ public class ClassReader {
             }
         }
         return interfaces;
-    }
-
-    /**
-     * Returns the bytecode offset corresponding to the specified JVMS 'type_annotation' structure, or
-     * -1 if there is no such type_annotation of if it does not have a bytecode offset.
-     *
-     * @param typeAnnotationOffsets the offset of each 'type_annotation' entry in a
-     *                              Runtime[In]VisibleTypeAnnotations attribute, or {@literal null}.
-     * @param typeAnnotationIndex   the index a 'type_annotation' entry in typeAnnotationOffsets.
-     * @return bytecode offset corresponding to the specified JVMS 'type_annotation' structure, or -1
-     * if there is no such type_annotation of if it does not have a bytecode offset.
-     */
-    private int getTypeAnnotationBytecodeOffset(
-            final int[] typeAnnotationOffsets, final int typeAnnotationIndex) {
-        if (typeAnnotationOffsets == null
-                || typeAnnotationIndex >= typeAnnotationOffsets.length
-                || readByte(typeAnnotationOffsets[typeAnnotationIndex]) < TypeReference.INSTANCEOF) {
-            return -1;
-        }
-        return readUnsignedShort(typeAnnotationOffsets[typeAnnotationIndex] + 1);
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -489,7 +445,7 @@ public class ClassReader {
 
     /**
      * Returns the start offset in this {@link ClassReader} of a JVMS 'cp_info' structure (i.e. a
-     * constant pool entry), plus one. <i>This method is intended for {@link Attribute} sub classes,
+     * constant pool entry), plus one. <i>This method is intended for  Attribute sub classes,
      * and is normally not needed by class generators or adapters.</i>
      *
      * @param constantPoolEntryIndex the index a constant pool entry in the class's constant pool
@@ -513,8 +469,8 @@ public class ClassReader {
     }
 
     /**
-     * Reads a byte value in this {@link ClassReader}. <i>This method is intended for {@link
-     * Attribute} sub classes, and is normally not needed by class generators or adapters.</i>
+     * Reads a byte value in this {@link ClassReader}. <i>This method is intended for
+     * Attribute sub classes, and is normally not needed by class generators or adapters.</i>
      *
      * @param offset the start offset of the value to be read in this {@link ClassReader}.
      * @return the read value.
@@ -525,7 +481,7 @@ public class ClassReader {
 
     /**
      * Reads an unsigned short value in this {@link ClassReader}. <i>This method is intended for
-     * {@link Attribute} sub classes, and is normally not needed by class generators or adapters.</i>
+     *  Attribute sub classes, and is normally not needed by class generators or adapters.</i>
      *
      * @param offset the start index of the value to be read in this {@link ClassReader}.
      * @return the read value.
@@ -536,8 +492,8 @@ public class ClassReader {
     }
 
     /**
-     * Reads a signed short value in this {@link ClassReader}. <i>This method is intended for {@link
-     * Attribute} sub classes, and is normally not needed by class generators or adapters.</i>
+     * Reads a signed short value in this {@link ClassReader}. <i>This method is intended for
+     * Attribute sub classes, and is normally not needed by class generators or adapters.</i>
      *
      * @param offset the start offset of the value to be read in this {@link ClassReader}.
      * @return the read value.
@@ -548,8 +504,8 @@ public class ClassReader {
     }
 
     /**
-     * Reads a signed int value in this {@link ClassReader}. <i>This method is intended for {@link
-     * Attribute} sub classes, and is normally not needed by class generators or adapters.</i>
+     * Reads a signed int value in this {@link ClassReader}. <i>This method is intended for
+     * Attribute sub classes, and is normally not needed by class generators or adapters.</i>
      *
      * @param offset the start offset of the value to be read in this {@link ClassReader}.
      * @return the read value.
@@ -563,8 +519,8 @@ public class ClassReader {
     }
 
     /**
-     * Reads a signed long value in this {@link ClassReader}. <i>This method is intended for {@link
-     * Attribute} sub classes, and is normally not needed by class generators or adapters.</i>
+     * Reads a signed long value in this {@link ClassReader}. <i>This method is intended for
+     * Attribute sub classes, and is normally not needed by class generators or adapters.</i>
      *
      * @param offset the start offset of the value to be read in this {@link ClassReader}.
      * @return the read value.
@@ -577,7 +533,7 @@ public class ClassReader {
 
     /**
      * Reads a CONSTANT_Utf8 constant pool entry in this {@link ClassReader}. <i>This method is
-     * intended for {@link Attribute} sub classes, and is normally not needed by class generators or
+     * intended for Attribute sub classes, and is normally not needed by class generators or
      * adapters.</i>
      *
      * @param offset     the start offset of an unsigned short value in this {@link ClassReader}, whose
@@ -649,7 +605,7 @@ public class ClassReader {
     /**
      * Reads a CONSTANT_Class, CONSTANT_String, CONSTANT_MethodType, CONSTANT_Module or
      * CONSTANT_Package constant pool entry in {@link #classFileBuffer}. <i>This method is intended
-     * for {@link Attribute} sub classes, and is normally not needed by class generators or
+     * for  Attribute sub classes, and is normally not needed by class generators or
      * adapters.</i>
      *
      * @param offset     the start offset of an unsigned short value in {@link #classFileBuffer}, whose
@@ -667,7 +623,7 @@ public class ClassReader {
 
     /**
      * Reads a CONSTANT_Class constant pool entry in this {@link ClassReader}. <i>This method is
-     * intended for {@link Attribute} sub classes, and is normally not needed by class generators or
+     * intended for  Attribute sub classes, and is normally not needed by class generators or
      * adapters.</i>
      *
      * @param offset     the start offset of an unsigned short value in this {@link ClassReader}, whose
@@ -682,7 +638,7 @@ public class ClassReader {
 
     /**
      * Reads a CONSTANT_Module constant pool entry in this {@link ClassReader}. <i>This method is
-     * intended for {@link Attribute} sub classes, and is normally not needed by class generators or
+     * intended for Attribute sub classes, and is normally not needed by class generators or
      * adapters.</i>
      *
      * @param offset     the start offset of an unsigned short value in this {@link ClassReader}, whose
@@ -697,7 +653,7 @@ public class ClassReader {
 
     /**
      * Reads a CONSTANT_Package constant pool entry in this {@link ClassReader}. <i>This method is
-     * intended for {@link Attribute} sub classes, and is normally not needed by class generators or
+     * intended for Attribute sub classes, and is normally not needed by class generators or
      * adapters.</i>
      *
      * @param offset     the start offset of an unsigned short value in this {@link ClassReader}, whose
