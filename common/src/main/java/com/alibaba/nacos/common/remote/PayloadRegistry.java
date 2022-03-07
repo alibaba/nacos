@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.packagescan.PackageScan;
+import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -53,8 +53,8 @@ public class PayloadRegistry {
                 .asList("com.alibaba.nacos.api.naming.remote.request", "com.alibaba.nacos.api.config.remote.request",
                         "com.alibaba.nacos.api.remote.request", "com.alibaba.nacos.naming.cluster.remote.request");
         for (String pkg : requestScanPackage) {
-            PackageScan packageScan = new PackageScan(pkg);
-            Set<Class<Request>> subTypesRequest = packageScan.getSubTypesOf(Request.class);
+            DefaultPackageScan packageScan = new DefaultPackageScan();
+            Set<Class<Request>> subTypesRequest = packageScan.getSubTypesOf(pkg, Request.class);
             for (Class<?> clazz : subTypesRequest) {
                 register(clazz.getSimpleName(), clazz);
             }
@@ -65,8 +65,8 @@ public class PayloadRegistry {
                 "com.alibaba.nacos.api.config.remote.response", "com.alibaba.nacos.api.remote.response",
                 "com.alibaba.nacos.naming.cluster.remote.response");
         for (String pkg : responseScanPackage) {
-            PackageScan packageScan = new PackageScan(pkg);
-            Set<Class<Response>> subTypesResponse = packageScan.getSubTypesOf(Response.class);
+            DefaultPackageScan packageScan = new DefaultPackageScan();
+            Set<Class<Response>> subTypesResponse = packageScan.getSubTypesOf(pkg, Response.class);
             for (Class<?> clazz : subTypesResponse) {
                 register(clazz.getSimpleName(), clazz);
             }

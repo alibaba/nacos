@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.code;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.packagescan.PackageScan;
+import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
 import com.alibaba.nacos.common.utils.ArrayUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.code.RequestMappingInfo.RequestMappingInfoComparator;
@@ -119,8 +119,8 @@ public class ControllerMethodsCache {
      * @param packageName package name
      */
     public void initClassMethod(String packageName) {
-        PackageScan packageScan = new PackageScan(packageName);
-        Set<Class<Object>> classesList = packageScan.getTypesAnnotatedWith(RequestMapping.class);
+        DefaultPackageScan packageScan = new DefaultPackageScan();
+        Set<Class<Object>> classesList = packageScan.getTypesAnnotatedWith(packageName, RequestMapping.class);
         for (Class clazz : classesList) {
             initClassMethod(clazz);
         }

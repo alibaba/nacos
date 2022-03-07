@@ -34,8 +34,8 @@ public class PackageScanTest extends TestCase {
      * testGetSubTypesOf.
      */
     public void testGetSubTypesOf() {
-        PackageScan packageScan = new PackageScan("com.alibaba.nacos.api.naming.remote.request");
-        Set<Class<Request>> subTypesOf = packageScan.getSubTypesOf(Request.class);
+        DefaultPackageScan packageScan = new DefaultPackageScan();
+        Set<Class<Request>> subTypesOf = packageScan.getSubTypesOf("com.alibaba.nacos.api.naming.remote.request", Request.class);
         assertTrue(subTypesOf.size() > 0);
     }
 
