@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
+ * Copy from ASM, with less modifications
  * A parser to make a  visit a ClassFile structure, as defined in the Java
  * Virtual Machine Specification (JVMS). This class parses the ClassFile content and calls the
  * appropriate visit methods of a given ClassVisitor for each field, method and bytecode
