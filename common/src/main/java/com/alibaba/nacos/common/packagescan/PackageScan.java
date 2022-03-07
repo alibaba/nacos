@@ -42,7 +42,7 @@ public class PackageScan {
 
     private final PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
 
-    private String pkg;
+    private final String pkg;
 
     public PackageScan(String pkg) {
         this.pkg = pkg;
