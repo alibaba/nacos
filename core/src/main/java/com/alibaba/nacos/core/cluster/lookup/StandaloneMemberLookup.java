@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.cluster.lookup;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -34,6 +35,11 @@ public class StandaloneMemberLookup extends AbstractMemberLookup {
     public void doStart() {
         String url = InetUtils.getSelfIP() + ":" + EnvUtil.getPort();
         afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
+    }
+    
+    @Override
+    protected void doDestroy() throws NacosException {
+    
     }
     
     @Override
