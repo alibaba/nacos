@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.StringJoiner;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Miscellaneous object utility methods.
  *
  * <p>Mainly for internal use within the framework.

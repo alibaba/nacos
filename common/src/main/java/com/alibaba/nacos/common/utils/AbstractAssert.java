@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Assertion utility class that assists in validating arguments.
  *
  * <p>Useful for identifying programmer errors early and clearly at runtime.
