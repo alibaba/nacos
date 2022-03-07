@@ -293,7 +293,7 @@ public class JRaftServerTest {
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.2").port(81).build(),
                 Member.builder().ip("127.0.0.3").port(82).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(firstEvent));
-        Assert.assertTrue(changed.get());
+        Assert.assertFalse(changed.get());
         changed.set(false);
         
         Collection<Member> secondEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
@@ -319,7 +319,7 @@ public class JRaftServerTest {
         Collection<Member> fiveEvent = Arrays.asList(Member.builder().ip("1.1.1.1").port(7848).build(),
                 Member.builder().ip("127.0.0.1").port(80).build(), Member.builder().ip("127.0.0.3").port(81).build());
         server.peerChange(service, ProtocolManager.toCPMembersInfo(fiveEvent));
-        Assert.assertTrue(changed.get());
+        Assert.assertFalse(changed.get());
         changed.set(false);
     }
     
