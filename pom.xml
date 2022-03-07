@@ -345,6 +345,7 @@
                         <exclude>/console-ui/**</exclude>
                         <exclude>**/gogo.proto</exclude>
                         <exclude>**/any.proto</exclude>
+                        <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>

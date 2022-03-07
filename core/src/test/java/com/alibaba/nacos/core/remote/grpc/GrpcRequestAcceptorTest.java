@@ -60,7 +60,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
-import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.*;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_ID;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_LOCAL_PORT;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_IP;
+import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN_REMOTE_PORT;
+
 
 /**
  * {@link GrpcRequestAcceptor} unit test.
