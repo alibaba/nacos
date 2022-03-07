@@ -38,7 +38,7 @@ import java.util.StringJoiner;
  * @author Sam Brannen
  * @since 19.03.2004
  */
-public abstract class ObjectUtils {
+public abstract class AbstractObjectUtils {
 
     private static final int INITIAL_HASH = 7;
 
@@ -131,7 +131,7 @@ public abstract class ObjectUtils {
      * @param obj the object to check
      * @return {@code true} if the object is {@code null} or <em>empty</em>
      * @see Optional#isPresent()
-     * @see ObjectUtils#isEmpty(Object[])
+     * @see AbstractObjectUtils#isEmpty(Object[])
      * @since 4.2
      */
     public static boolean isEmpty(Object obj) {
@@ -175,7 +175,7 @@ public abstract class ObjectUtils {
                 return null;
             }
             Object result = optional.get();
-            Assert.isTrue(!(result instanceof Optional), "Multi-level Optional usage not supported");
+            AbstractAssert.isTrue(!(result instanceof Optional), "Multi-level Optional usage not supported");
             return result;
         }
         return obj;

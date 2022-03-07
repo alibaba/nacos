@@ -588,7 +588,7 @@ public class StringUtils {
         String pathToUse = normalizedPath;
 
         // Shortcut if there is no work to do
-        if (pathToUse.indexOf('.') == -1) {
+        if (pathToUse.indexOf(DOT) == -1) {
             return pathToUse;
         }
 
@@ -830,7 +830,7 @@ public class StringUtils {
         }
         StringBuilder sb = new StringBuilder(capacity);
 
-        int pos = 0;  // our position in the old string
+        int pos = 0;
         int patLen = oldPattern.length();
         while (index >= 0) {
             sb.append(inString, pos, index);

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
@@ -77,7 +77,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      * @see #FileSystemResource(Path)
      */
     public FileSystemResource(String path) {
-        Assert.notNull(path, "Path must not be null");
+        AbstractAssert.notNull(path, "Path must not be null");
         this.path = StringUtils.cleanPath(path);
         this.file = new File(path);
         this.filePath = this.file.toPath();
@@ -99,7 +99,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      * @see #getFile()
      */
     public FileSystemResource(File file) {
-        Assert.notNull(file, "File must not be null");
+        AbstractAssert.notNull(file, "File must not be null");
         this.path = StringUtils.cleanPath(file.getPath());
         this.file = file;
         this.filePath = file.toPath();
@@ -128,7 +128,7 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      * @since 5.1
      */
     public FileSystemResource(Path filePath) {
-        Assert.notNull(filePath, "Path must not be null");
+        AbstractAssert.notNull(filePath, "Path must not be null");
         this.path = StringUtils.cleanPath(filePath.toString());
         this.file = null;
         this.filePath = filePath;
@@ -147,8 +147,8 @@ public class FileSystemResource extends AbstractResource implements WritableReso
      * @since 5.1.1
      */
     public FileSystemResource(FileSystem fileSystem, String path) {
-        Assert.notNull(fileSystem, "FileSystem must not be null");
-        Assert.notNull(path, "Path must not be null");
+        AbstractAssert.notNull(fileSystem, "FileSystem must not be null");
+        AbstractAssert.notNull(path, "Path must not be null");
         this.path = StringUtils.cleanPath(path);
         this.file = null;
         this.filePath = fileSystem.getPath(this.path).normalize();

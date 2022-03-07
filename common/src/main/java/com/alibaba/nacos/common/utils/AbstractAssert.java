@@ -55,7 +55,7 @@ import java.util.function.Supplier;
  * @author Rob Harrop
  * @since 1.1.2
  */
-public abstract class Assert {
+public abstract class AbstractAssert {
 
     /**
      * Assert a boolean expression, throwing an {@code IllegalStateException}
@@ -372,7 +372,7 @@ public abstract class Assert {
      * @throws IllegalArgumentException if the object array is {@code null} or contains no elements
      */
     public static void notEmpty(Object[] array, String message) {
-        if (ObjectUtils.isEmpty(array)) {
+        if (AbstractObjectUtils.isEmpty(array)) {
             throw new IllegalArgumentException(message);
         }
     }
@@ -391,7 +391,7 @@ public abstract class Assert {
      * @since 5.0
      */
     public static void notEmpty(Object[] array, Supplier<String> messageSupplier) {
-        if (ObjectUtils.isEmpty(array)) {
+        if (AbstractObjectUtils.isEmpty(array)) {
             throw new IllegalArgumentException(nullSafeGet(messageSupplier));
         }
     }

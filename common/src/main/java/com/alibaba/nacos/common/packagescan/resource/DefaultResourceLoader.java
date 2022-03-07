@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -107,7 +107,7 @@ public class DefaultResourceLoader implements ResourceLoader {
      * @since 4.3
      */
     public void addProtocolResolver(ProtocolResolver resolver) {
-        Assert.notNull(resolver, "ProtocolResolver must not be null");
+        AbstractAssert.notNull(resolver, "ProtocolResolver must not be null");
         this.protocolResolvers.add(resolver);
     }
 
@@ -145,7 +145,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 
     @Override
     public Resource getResource(String location) {
-        Assert.notNull(location, "Location must not be null");
+        AbstractAssert.notNull(location, "Location must not be null");
 
         for (ProtocolResolver protocolResolver : getProtocolResolvers()) {
             Resource resource = protocolResolver.resolve(location, this);

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -62,7 +62,7 @@ public class ByteArrayResource extends AbstractResource {
      * @param description where the byte array comes from
      */
     public ByteArrayResource(byte[] byteArray, String description) {
-        Assert.notNull(byteArray, "Byte array must not be null");
+        AbstractAssert.notNull(byteArray, "Byte array must not be null");
         this.byteArray = byteArray;
         this.description = (description != null ? description : "");
     }

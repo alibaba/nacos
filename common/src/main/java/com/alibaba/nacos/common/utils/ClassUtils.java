@@ -56,6 +56,8 @@ public final class ClassUtils {
 
     private static final char NESTED_CLASS_SEPARATOR = '$';
 
+    private static final String SEMICOLON_SEPARATOR = ";";
+
     /**
      * Map with primitive wrapper type as key and corresponding primitive
      * type as value, for example: Integer.class -> int.class.
@@ -73,6 +75,8 @@ public final class ClassUtils {
      * type as value, for example: "int" -> "int.class".
      */
     private static final Map<String, Class<?>> PRIMITIVE_TYPE_NAME_MAP = new HashMap<>(32);
+
+    private static final int PRIMITIVE_TYPE_NAME_MAP_LENGTH = 7;
 
     /**
      * Map with common Java language class name as key and corresponding Class as value.
@@ -238,7 +242,7 @@ public final class ClassUtils {
     public static Class<?> forName(String name, ClassLoader classLoader)
             throws ClassNotFoundException, LinkageError {
 
-        Assert.notNull(name, "Name must not be null");
+        AbstractAssert.notNull(name, "Name must not be null");
 
         Class<?> clazz = resolvePrimitiveClassName(name);
         if (clazz == null) {
@@ -256,7 +260,7 @@ public final class ClassUtils {
         }
 
         // "[Ljava.lang.String;" style arrays
-        if (name.startsWith(NON_PRIMITIVE_ARRAY_PREFIX) && name.endsWith(";")) {
+        if (name.startsWith(NON_PRIMITIVE_ARRAY_PREFIX) && name.endsWith(SEMICOLON_SEPARATOR)) {
             String elementName = name.substring(NON_PRIMITIVE_ARRAY_PREFIX.length(), name.length() - 1);
             Class<?> elementClass = forName(elementName, classLoader);
             return Array.newInstance(elementClass, 0).getClass();
@@ -307,7 +311,7 @@ public final class ClassUtils {
         Class<?> result = null;
         // Most class names will be quite long, considering that they
         // SHOULD sit in a package, so a length check is worthwhile.
-        if (name != null && name.length() <= 7) {
+        if (name != null && name.length() <= PRIMITIVE_TYPE_NAME_MAP_LENGTH) {
             // Could be a primitive - likely.
             result = PRIMITIVE_TYPE_NAME_MAP.get(name);
         }
@@ -388,7 +392,7 @@ public final class ClassUtils {
      * @return the corresponding resource path, pointing to the class
      */
     public static String convertClassNameToResourcePath(String className) {
-        Assert.notNull(className, "Class name must not be null");
+        AbstractAssert.notNull(className, "Class name must not be null");
         return className.replace(PACKAGE_SEPARATOR, PATH_SEPARATOR);
     }
 
@@ -399,7 +403,7 @@ public final class ClassUtils {
      * @return the corresponding resource path, pointing to the class
      */
     public static String resourcePathToConvertClassName(String className) {
-        Assert.notNull(className, "Class name must not be null");
+        AbstractAssert.notNull(className, "Class name must not be null");
         return className.replace(PATH_SEPARATOR, PACKAGE_SEPARATOR);
     }
 }

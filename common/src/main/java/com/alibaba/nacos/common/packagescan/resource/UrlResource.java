@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
@@ -67,7 +67,7 @@ public class UrlResource extends AbstractFileResolvingResource {
      * @since 2.5
      */
     public UrlResource(URI uri) throws MalformedURLException {
-        Assert.notNull(uri, "URI must not be null");
+        AbstractAssert.notNull(uri, "URI must not be null");
         this.uri = uri;
         this.url = uri.toURL();
     }
@@ -78,7 +78,7 @@ public class UrlResource extends AbstractFileResolvingResource {
      * @param url a URL
      */
     public UrlResource(URL url) {
-        Assert.notNull(url, "URL must not be null");
+        AbstractAssert.notNull(url, "URL must not be null");
         this.uri = null;
         this.url = url;
     }
@@ -93,7 +93,7 @@ public class UrlResource extends AbstractFileResolvingResource {
      * @see URL#URL(String)
      */
     public UrlResource(String path) throws MalformedURLException {
-        Assert.notNull(path, "Path must not be null");
+        AbstractAssert.notNull(path, "Path must not be null");
         this.uri = null;
         this.url = new URL(path);
         this.cleanedUrl = getCleanedUrl(this.url, path);

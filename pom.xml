@@ -280,8 +280,9 @@
                         <exclude>**/istio/mcp/**</exclude>
                         <exclude>**/istio/networking/**</exclude>
                         <exclude>**/google/protobuf/**</exclude>
-                        <exclude>**/common/packagescan/classreading/**</exclude>
-                        <exclude>**/common/packagescan/resource/**</exclude>
+                        <exclude>**/common/packagescan/classreading/*.java</exclude>
+                        <exclude>**/common/packagescan/resource/*.java</exclude>
+                        <exclude>**/common/packagescan/util/*.java</exclude>
                     </excludes>
                 </configuration>
                 <executions>

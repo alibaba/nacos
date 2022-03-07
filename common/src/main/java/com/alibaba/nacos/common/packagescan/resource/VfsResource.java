@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.packagescan.util.NestedIoException;
 
 import java.io.File;
@@ -51,7 +51,7 @@ public class VfsResource extends AbstractResource {
      *                 (untyped in order to avoid a static dependency on the VFS API)
      */
     public VfsResource(Object resource) {
-        Assert.notNull(resource, "VirtualFile must not be null");
+        AbstractAssert.notNull(resource, "VirtualFile must not be null");
         this.resource = resource;
     }
 

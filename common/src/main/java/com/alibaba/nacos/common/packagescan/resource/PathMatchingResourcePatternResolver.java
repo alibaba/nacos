@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.PathMatcher;
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -214,7 +214,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
      *                       actual resources with
      */
     public PathMatchingResourcePatternResolver(ResourceLoader resourceLoader) {
-        Assert.notNull(resourceLoader, "ResourceLoader must not be null");
+        AbstractAssert.notNull(resourceLoader, "ResourceLoader must not be null");
         this.resourceLoader = resourceLoader;
     }
 
@@ -250,7 +250,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
      * @see AntPathMatcher
      */
     public void setPathMatcher(PathMatcher pathMatcher) {
-        Assert.notNull(pathMatcher, "PathMatcher must not be null");
+        AbstractAssert.notNull(pathMatcher, "PathMatcher must not be null");
         this.pathMatcher = pathMatcher;
     }
 
@@ -268,7 +268,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 
     @Override
     public Resource[] getResources(String locationPattern) throws IOException {
-        Assert.notNull(locationPattern, "Location pattern must not be null");
+        AbstractAssert.notNull(locationPattern, "Location pattern must not be null");
         if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {
             // a class path resource (multiple resources for same name possible)
             if (getPathMatcher().isPattern(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()))) {

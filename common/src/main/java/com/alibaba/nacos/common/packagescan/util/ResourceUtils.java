@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.packagescan.util;
 
 import com.alibaba.nacos.common.packagescan.resource.Resource;
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -158,7 +158,7 @@ public abstract class ResourceUtils {
      *                               a file in the file system
      */
     public static File getFile(String resourceLocation) throws FileNotFoundException {
-        Assert.notNull(resourceLocation, "Resource location must not be null");
+        AbstractAssert.notNull(resourceLocation, "Resource location must not be null");
         if (resourceLocation.startsWith(CLASSPATH_URL_PREFIX)) {
             String path = resourceLocation.substring(CLASSPATH_URL_PREFIX.length());
             String description = "class path resource [" + path + "]";
@@ -204,7 +204,7 @@ public abstract class ResourceUtils {
      *                               a file in the file system
      */
     public static File getFile(URL resourceUrl, String description) throws FileNotFoundException {
-        Assert.notNull(resourceUrl, "Resource URL must not be null");
+        AbstractAssert.notNull(resourceUrl, "Resource URL must not be null");
         if (!URL_PROTOCOL_FILE.equals(resourceUrl.getProtocol())) {
             throw new FileNotFoundException(
                     description + " cannot be resolved to absolute file path "
@@ -245,7 +245,7 @@ public abstract class ResourceUtils {
      * @since 2.5
      */
     public static File getFile(URI resourceUri, String description) throws FileNotFoundException {
-        Assert.notNull(resourceUri, "Resource URI must not be null");
+        AbstractAssert.notNull(resourceUri, "Resource URI must not be null");
         if (!URL_PROTOCOL_FILE.equals(resourceUri.getScheme())) {
             throw new FileNotFoundException(
                     description + " cannot be resolved to absolute file path "

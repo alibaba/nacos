@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.ObjectUtils;
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractObjectUtils;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -76,7 +76,7 @@ public class ClassPathResource extends AbstractFileResolvingResource {
      * @see ClassLoader#getResourceAsStream(String)
      */
     public ClassPathResource(String path, ClassLoader classLoader) {
-        Assert.notNull(path, "Path must not be null");
+        AbstractAssert.notNull(path, "Path must not be null");
         String pathToUse = StringUtils.cleanPath(path);
         if (pathToUse.startsWith("/")) {
             pathToUse = pathToUse.substring(1);
@@ -95,7 +95,7 @@ public class ClassPathResource extends AbstractFileResolvingResource {
      * @see Class#getResourceAsStream
      */
     public ClassPathResource(String path, Class<?> clazz) {
-        Assert.notNull(path, "Path must not be null");
+        AbstractAssert.notNull(path, "Path must not be null");
         this.path = StringUtils.cleanPath(path);
         this.clazz = clazz;
     }
@@ -275,8 +275,8 @@ public class ClassPathResource extends AbstractFileResolvingResource {
         }
         ClassPathResource otherRes = (ClassPathResource) other;
         return (this.path.equals(otherRes.path)
-                && ObjectUtils.nullSafeEquals(this.classLoader, otherRes.classLoader)
-                && ObjectUtils.nullSafeEquals(this.clazz, otherRes.clazz));
+                && AbstractObjectUtils.nullSafeEquals(this.classLoader, otherRes.classLoader)
+                && AbstractObjectUtils.nullSafeEquals(this.clazz, otherRes.clazz));
     }
 
     /**

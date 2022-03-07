@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +67,7 @@ public class InputStreamResource extends AbstractResource {
      * @param description where the InputStream comes from
      */
     public InputStreamResource(InputStream inputStream, String description) {
-        Assert.notNull(inputStream, "InputStream must not be null");
+        AbstractAssert.notNull(inputStream, "InputStream must not be null");
         this.inputStream = inputStream;
         this.description = (description != null ? description : "");
     }

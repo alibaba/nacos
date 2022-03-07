@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.PathMatcher;
-import com.alibaba.nacos.common.utils.Assert;
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -114,7 +114,7 @@ public class AntPathMatcher implements PathMatcher {
      * @since 4.1
      */
     public AntPathMatcher(String pathSeparator) {
-        Assert.notNull(pathSeparator, "'pathSeparator' is required");
+        AbstractAssert.notNull(pathSeparator, "'pathSeparator' is required");
         this.pathSeparator = pathSeparator;
         this.pathSeparatorPatternCache = new PathSeparatorPatternCache(pathSeparator);
     }
