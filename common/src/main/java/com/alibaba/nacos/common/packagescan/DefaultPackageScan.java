@@ -45,6 +45,13 @@ public class DefaultPackageScan implements PackageScan {
     public DefaultPackageScan() {
     }
 
+    /**
+     * Scan all appropriate Class object through the package name and Class object.
+     * @param pkg package name,for example, com.alibaba.nacos.common
+     * @param requestClass super class
+     * @param <T> Class type
+     * @return a set contains Class
+     */
     @Override
     public <T> Set<Class<T>> getSubTypesOf(String pkg, Class<T> requestClass) {
         Set<Class<T>> set = new HashSet<>(16);
@@ -64,6 +71,13 @@ public class DefaultPackageScan implements PackageScan {
         return set;
     }
 
+    /**
+     * Scan all appropriate Class object through the package name and annotation.
+     * @param pkg package name,for example, com.alibaba.nacos.common
+     * @param annotation annotation
+     * @param <T> Class type
+     * @return a set contains Class object
+     */
     @Override
     public <T> Set<Class<T>> getTypesAnnotatedWith(String pkg, Class<? extends Annotation> annotation) {
         Set<Class<T>> set = new HashSet<>(16);
