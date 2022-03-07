@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.common.packagescan.util;
 
-import com.alibaba.nacos.common.packagescan.AntPathMatcher;
-import com.alibaba.nacos.common.packagescan.PathMatchingResourcePatternResolver;
+import com.alibaba.nacos.common.packagescan.resource.AntPathMatcher;
+import com.alibaba.nacos.common.packagescan.resource.PathMatchingResourcePatternResolver;
 
 import java.util.Comparator;
 import java.util.Map;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.packagescan;
+package com.alibaba.nacos.common.packagescan.resource;
 
 /**
  * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications

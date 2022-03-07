@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.packagescan;
+package com.alibaba.nacos.common.packagescan.resource;
 
 import java.io.File;
 import java.io.IOException;

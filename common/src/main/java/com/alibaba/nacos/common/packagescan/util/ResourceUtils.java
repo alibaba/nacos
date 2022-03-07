@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan.util;
 
+import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.utils.Assert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -35,7 +36,7 @@ import java.net.URLConnection;
  *
  * <p>Consider using Spring's Resource abstraction in the core package
  * for handling all kinds of file resources in a uniform manner.
- * method can resolve any location to a {@link com.alibaba.nacos.common.packagescan.Resource}
+ * method can resolve any location to a {@link Resource}
  * object, which in turn allows one to obtain a {@code java.io.File} in the
  * file system through its {@code getFile()} method.
  *

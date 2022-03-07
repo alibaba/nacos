@@ -18,6 +18,9 @@ package com.alibaba.nacos.common.packagescan;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.packagescan.classreading.ClassReader;
+import com.alibaba.nacos.common.packagescan.resource.PathMatchingResourcePatternResolver;
+import com.alibaba.nacos.common.packagescan.resource.Resource;
+import com.alibaba.nacos.common.packagescan.resource.ResourcePatternResolver;
 import com.alibaba.nacos.common.packagescan.util.NestedIoException;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import org.slf4j.Logger;
