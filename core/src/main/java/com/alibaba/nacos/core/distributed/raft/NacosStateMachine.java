@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 
@@ -310,5 +311,9 @@ class NacosStateMachine extends StateMachineAdapter {
         
         this.operations = Collections.unmodifiableList(tmp);
     }
-    
+
+    public void raftEvent(Set<String> newPeers) {
+        NotifyCenter.publishEvent(
+                RaftEvent.builder().groupId(groupId).leader(leaderIp).term(term).raftClusterInfo(new ArrayList<>(newPeers)).build());
+    }
 }
