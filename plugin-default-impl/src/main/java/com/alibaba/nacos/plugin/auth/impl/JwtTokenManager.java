@@ -17,10 +17,10 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -42,9 +42,14 @@ public class JwtTokenManager {
     
     private static final String AUTHORITIES_KEY = "auth";
     
-    @Autowired
     private NacosAuthConfig nacosAuthConfig;
     
+    private JwtParser parser;
+    
+    public JwtTokenManager(NacosAuthConfig nacosAuthConfig){
+        this.nacosAuthConfig = nacosAuthConfig;
+        this.parser = Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build();
+    }
     /**
      * Create token.
      *
@@ -81,8 +86,7 @@ public class JwtTokenManager {
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build()
-                .parseClaimsJws(token).getBody();
+        Claims claims = parser.parseClaimsJws(token).getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
                 .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
@@ -97,7 +101,7 @@ public class JwtTokenManager {
      * @param token token
      */
     public void validateToken(String token) {
-        Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build().parseClaimsJws(token);
+        parser.parseClaimsJws(token);
     }
     
 }
