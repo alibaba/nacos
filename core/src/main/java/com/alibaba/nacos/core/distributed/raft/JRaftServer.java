@@ -123,7 +123,7 @@ public class JRaftServer {
     // Ordinary member variable
     
     private Map<String, RaftGroupTuple> multiRaftGroup = new ConcurrentHashMap<>();
-
+    
     private volatile boolean isStarted = false;
     
     private volatile boolean isShutdown = false;
@@ -249,7 +249,7 @@ public class JRaftServer {
             // Here, the LogProcessor is passed into StateMachine, and when the StateMachine
             // triggers onApply, the onApply of the LogProcessor is actually called
             NacosStateMachine machine = new NacosStateMachine(this, processor);
-
+            
             copy.setFsm(machine);
             copy.setInitialConf(configuration);
             
@@ -448,34 +448,27 @@ public class JRaftServer {
     }
 
     boolean peerChange(JRaftMaintainService maintainService, Set<String> newPeers) {
-        // This is only dealing with node deletion, the Raft protocol, where the node adds itself to the cluster when it starts up
-        Set<String> oldPeers = new HashSet<>(this.raftConfig.getMembers());
         this.raftConfig.setMembers(localPeerId.toString(), newPeers);
-        for (Map.Entry<String, RaftGroupTuple> stringRaftGroupTupleEntry : multiRaftGroup.entrySet()) {
-            stringRaftGroupTupleEntry.getValue().machine.raftEvent(newPeers);
-        }
-        oldPeers.removeAll(newPeers);
-        if (oldPeers.isEmpty()) {
+        if (newPeers.isEmpty()) {
             return true;
         }
-        
-        Set<String> waitRemove = oldPeers;
         AtomicInteger successCnt = new AtomicInteger(0);
         multiRaftGroup.forEach(new BiConsumer<String, RaftGroupTuple>() {
             @Override
             public void accept(String group, RaftGroupTuple tuple) {
                 Map<String, String> params = new HashMap<>();
                 params.put(JRaftConstants.GROUP_ID, group);
-                params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
-                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(waitRemove, StringUtils.COMMA));
+                params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.CHANGE_PEERS);
+                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(newPeers, StringUtils.COMMA));
                 RestResult<String> result = maintainService.execute(params);
                 if (result.ok()) {
                     successCnt.incrementAndGet();
                 } else {
-                    Loggers.RAFT.error("Node removal failed : {}", result);
+                    Loggers.RAFT.error("Node change failed : {}", result);
                 }
             }
         });
+
         return successCnt.get() == multiRaftGroup.size();
     }
     
