@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.remote;
+package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.reflections.Reflections;
+import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
@@ -53,8 +53,8 @@ public class PayloadRegistry {
                 .asList("com.alibaba.nacos.api.naming.remote.request", "com.alibaba.nacos.api.config.remote.request",
                         "com.alibaba.nacos.api.remote.request", "com.alibaba.nacos.naming.cluster.remote.request");
         for (String pkg : requestScanPackage) {
-            Reflections reflections = new Reflections(pkg);
-            Set<Class<? extends Request>> subTypesRequest = reflections.getSubTypesOf(Request.class);
+            DefaultPackageScan packageScan = new DefaultPackageScan();
+            Set<Class<Request>> subTypesRequest = packageScan.getSubTypesOf(pkg, Request.class);
             for (Class<?> clazz : subTypesRequest) {
                 register(clazz.getSimpleName(), clazz);
             }
@@ -65,9 +65,9 @@ public class PayloadRegistry {
                 "com.alibaba.nacos.api.config.remote.response", "com.alibaba.nacos.api.remote.response",
                 "com.alibaba.nacos.naming.cluster.remote.response");
         for (String pkg : responseScanPackage) {
-            Reflections reflections = new Reflections(pkg);
-            Set<Class<? extends Response>> subTypesOfResponse = reflections.getSubTypesOf(Response.class);
-            for (Class<?> clazz : subTypesOfResponse) {
+            DefaultPackageScan packageScan = new DefaultPackageScan();
+            Set<Class<Response>> subTypesResponse = packageScan.getSubTypesOf(pkg, Response.class);
+            for (Class<?> clazz : subTypesResponse) {
                 register(clazz.getSimpleName(), clazz);
             }
         }
