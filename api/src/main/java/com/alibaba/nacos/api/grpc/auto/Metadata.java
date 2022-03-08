@@ -65,13 +65,11 @@ private static final long serialVersionUID = 0L;
             done = true;
             break;
           case 26: {
-            String s = input.readStringRequireUtf8();
-
-            type_ = s;
+            type_ = input.readStringRequireUtf8();
             break;
           }
           case 58: {
-            if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+            if ((mutable_bitField0_ & 0x00000001) == 0) {
               headers_ = com.google.protobuf.MapField.newMapField(
                   HeadersDefaultEntryHolder.defaultEntry);
               mutable_bitField0_ |= 0x00000001;
@@ -84,9 +82,7 @@ private static final long serialVersionUID = 0L;
             break;
           }
           case 66: {
-            String s = input.readStringRequireUtf8();
-
-            clientIp_ = s;
+            clientIp_ = input.readStringRequireUtf8();
             break;
           }
           default: {
@@ -260,7 +256,7 @@ private static final long serialVersionUID = 0L;
     if (key == null) { throw new NullPointerException(); }
     java.util.Map<String, String> map =
         internalGetHeaders().getMap();
-    return map.containsKey(key) ? map.get(key) : defaultValue;
+    return map.getOrDefault(key, defaultValue);
   }
   /**
    * <code>map&lt;string, string&gt; headers = 7;</code>
@@ -554,7 +550,6 @@ private static final long serialVersionUID = 0L;
     @Override
     public Metadata buildPartial() {
       Metadata result = new Metadata(this);
-      int from_bitField0_ = bitField0_;
       result.type_ = type_;
       result.clientIp_ = clientIp_;
       result.headers_ = internalGetHeaders();
@@ -844,7 +839,7 @@ private static final long serialVersionUID = 0L;
       if (key == null) { throw new NullPointerException(); }
       java.util.Map<String, String> map =
           internalGetHeaders().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
+      return map.getOrDefault(key, defaultValue);
     }
     /**
      * <code>map&lt;string, string&gt; headers = 7;</code>
