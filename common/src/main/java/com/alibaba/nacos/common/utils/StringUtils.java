@@ -38,25 +38,25 @@ import java.util.StringTokenizer;
  * @author zzq
  */
 public class StringUtils {
-
+    
     public static final String DOT = ".";
-
+    
     private static final int INDEX_NOT_FOUND = -1;
-
+    
     public static final String COMMA = ",";
-
+    
     public static final String EMPTY = "";
-
+    
     public static final String LF = "\n";
-
+    
     private static final String[] EMPTY_STRING_ARRAY = {};
-
+    
     private static final String TOP_PATH = "..";
-
+    
     private static final String FOLDER_SEPARATOR = "/";
-
+    
     private static final String WINDOWS_FOLDER_SEPARATOR = "\\";
-
+    
     /**
      * <p>Create a string with encoding format as utf8.</p>
      *
@@ -66,7 +66,7 @@ public class StringUtils {
     public static String newStringForUtf8(byte[] bytes) {
         return new String(bytes, Charset.forName(Constants.ENCODE));
     }
-
+    
     /**
      * <p>Checks if a string is  empty (""), null and  whitespace only.</p>
      *
@@ -85,7 +85,7 @@ public class StringUtils {
         }
         return true;
     }
-
+    
     /**
      * <p>Checks if a string is not empty (""), not null and not whitespace only.</p>
      *
@@ -95,7 +95,7 @@ public class StringUtils {
     public static boolean isNotBlank(String str) {
         return !isBlank(str);
     }
-
+    
     /**
      * <p>Checks if a str is not empty ("") or not null.</p>
      *
@@ -105,7 +105,7 @@ public class StringUtils {
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
     }
-
+    
     /**
      * <p>Checks if a str is empty ("") or null.</p>
      *
@@ -115,7 +115,7 @@ public class StringUtils {
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
-
+    
     /**
      * <p>Returns either the passed in CharSequence, or if the CharSequence is
      * empty or {@code null}, the value of {@code defaultStr}.</p>
@@ -127,7 +127,7 @@ public class StringUtils {
     public static String defaultIfEmpty(String str, String defaultStr) {
         return isEmpty(str) ? defaultStr : str;
     }
-
+    
     /**
      * <p>Compares two CharSequences, returning {@code true} if they represent
      * equal sequences of characters.</p>
@@ -140,7 +140,7 @@ public class StringUtils {
     public static boolean equals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
-
+    
     /**
      * <p>Removes control characters (char &lt;= 32) from both
      * ends of this String, handling {@code null} by returning {@code null}.</p>
@@ -151,7 +151,7 @@ public class StringUtils {
     public static String trim(final String str) {
         return str == null ? null : str.trim();
     }
-
+    
     /**
      * Substring between two index.
      *
@@ -173,7 +173,7 @@ public class StringUtils {
         }
         return null;
     }
-
+    
     /**
      * <p>Joins the elements of the provided array into a single String
      * containing the provided list of elements.</p>
@@ -186,10 +186,10 @@ public class StringUtils {
         if (collection == null) {
             return null;
         }
-
+        
         StringBuilder stringBuilder = new StringBuilder();
         Object[] objects = collection.toArray();
-
+        
         for (int i = 0; i < collection.size(); i++) {
             if (objects[i] != null) {
                 stringBuilder.append(objects[i]);
@@ -200,14 +200,14 @@ public class StringUtils {
                 }
             }
         }
-
+        
         return stringBuilder.toString();
     }
-
+    
     public static String escapeJavaScript(String str) {
         return escapeJavaStyleString(str, true, true);
     }
-
+    
     private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes, boolean escapeForwardSlash) {
         if (str == null) {
             return null;
@@ -221,9 +221,9 @@ public class StringUtils {
             return null;
         }
     }
-
+    
     private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,
-                                              boolean escapeForwardSlash) throws IOException {
+            boolean escapeForwardSlash) throws IOException {
         if (out == null) {
             throw new IllegalArgumentException("The Writer must not be null");
         }
@@ -234,7 +234,7 @@ public class StringUtils {
         sz = str.length();
         for (int i = 0; i < sz; i++) {
             char ch = str.charAt(i);
-
+            
             // handle unicode
             if (ch > 0xfff) {
                 out.write("\\u" + hex(ch));
@@ -301,11 +301,11 @@ public class StringUtils {
             }
         }
     }
-
+    
     private static String hex(char ch) {
         return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
     }
-
+    
     /**
      * Checks if CharSequence contains a search CharSequence irrespective of case, handling {@code null}.
      * Case-insensitivity is defined as by {@link String#equalsIgnoreCase(String)}.
@@ -325,7 +325,7 @@ public class StringUtils {
         String str2 = searchStr.toString().toLowerCase();
         return str1.contains(str2);
     }
-
+    
     /**
      * Checks if CharSequence contains a search CharSequence.
      *
@@ -339,7 +339,7 @@ public class StringUtils {
         }
         return str.toString().contains(searchStr);
     }
-
+    
     /**
      * <p>Checks if none of the CharSequences are blank ("") or null and whitespace only..</p>
      *
@@ -349,7 +349,7 @@ public class StringUtils {
     public static boolean isNoneBlank(final CharSequence... css) {
         return !isAnyBlank(css);
     }
-
+    
     /**
      * <p>Checks if any one of the CharSequences are blank ("") or null and not whitespace only..</p>
      *
@@ -367,7 +367,7 @@ public class StringUtils {
         }
         return false;
     }
-
+    
     /**
      * <p>Check if a CharSequence starts with a specified prefix.</p>
      *
@@ -382,7 +382,7 @@ public class StringUtils {
     public static boolean startsWith(final CharSequence str, final CharSequence prefix) {
         return startsWith(str, prefix, false);
     }
-
+    
     /**
      * <p>Check if a CharSequence starts with a specified prefix (optionally case insensitive).</p>
      *
@@ -407,7 +407,7 @@ public class StringUtils {
             return str.toString().startsWith(prefix.toString());
         }
     }
-
+    
     /**
      * <p>Case insensitive check if a CharSequence starts with a specified prefix.</p>
      *
@@ -422,7 +422,7 @@ public class StringUtils {
     public static boolean startsWithIgnoreCase(final CharSequence str, final CharSequence prefix) {
         return startsWith(str, prefix, true);
     }
-
+    
     /**
      * <p>Deletes all whitespaces from a String as defined by
      * {@link Character#isWhitespace(char)}.</p>
@@ -447,7 +447,7 @@ public class StringUtils {
         }
         return new String(chs, 0, count);
     }
-
+    
     /**
      * <p>Compares two CharSequences, returning {@code true} if they represent
      * equal sequences of characters, ignoring case.</p>
@@ -459,11 +459,10 @@ public class StringUtils {
     public static boolean equalsIgnoreCase(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equalsIgnoreCase(str2);
     }
-
+    
     /**
-     * Splits the provided text into an array with a maximum length,
-     * separators specified.
-     * If separatorChars is empty, divide by blank.
+     * Splits the provided text into an array with a maximum length, separators specified. If separatorChars is empty,
+     * divide by blank.
      *
      * @param str the String to parse, may be null
      * @return an array of parsed Strings
@@ -481,37 +480,36 @@ public class StringUtils {
         }
         return str.split(separatorChars);
     }
-
+    
     private static String[] tokenizeLocaleSource(String localeSource) {
         return tokenizeToStringArray(localeSource, "_ ", false, false);
     }
-
+    
     /**
-     * Tokenize the given {@code String} into a {@code String} array via a
-     * {@link StringTokenizer}.
+     * Tokenize the given {@code String} into a {@code String} array via a {@link StringTokenizer}.
      *
      * <p>The given {@code delimiters} string can consist of any number of
-     * delimiter characters. Each of those characters can be used to separate
-     * tokens. A delimiter is always a single character;
+     * delimiter characters. Each of those characters can be used to separate tokens. A delimiter is always a single
+     * character;
      *
      * @param str               the {@code String} to tokenize (potentially {@code null} or empty)
-     * @param delimiters        the delimiter characters, assembled as a {@code String}
-     *                          (each of the characters is individually considered as a delimiter)
+     * @param delimiters        the delimiter characters, assembled as a {@code String} (each of the characters is
+     *                          individually considered as a delimiter)
      * @param trimTokens        trim the tokens via {@link String#trim()}
-     * @param ignoreEmptyTokens omit empty tokens from the result array
-     *                          (only applies to tokens that are empty after trimming; StringTokenizer
-     *                          will not consider subsequent delimiters as token in the first place).
+     * @param ignoreEmptyTokens omit empty tokens from the result array (only applies to tokens that are empty after
+     *                          trimming; StringTokenizer will not consider subsequent delimiters as token in the first
+     *                          place).
      * @return an array of the tokens
      * @see java.util.StringTokenizer
      * @see String#trim()
      */
-    public static String[] tokenizeToStringArray(
-            String str, String delimiters, boolean trimTokens, boolean ignoreEmptyTokens) {
-
+    public static String[] tokenizeToStringArray(String str, String delimiters, boolean trimTokens,
+            boolean ignoreEmptyTokens) {
+        
         if (str == null) {
             return EMPTY_STRING_ARRAY;
         }
-
+        
         StringTokenizer st = new StringTokenizer(str, delimiters);
         List<String> tokens = new ArrayList<>();
         while (st.hasMoreTokens()) {
@@ -525,36 +523,35 @@ public class StringUtils {
         }
         return toStringArray(tokens);
     }
-
+    
     /**
      * Copy the given {@link Collection} into a {@code String} array.
      *
      * <p>The {@code Collection} must contain {@code String} elements only.
      *
-     * @param collection the {@code Collection} to copy
-     *                   (potentially {@code null} or empty)
+     * @param collection the {@code Collection} to copy (potentially {@code null} or empty)
      * @return the resulting {@code String} array
      */
     public static String[] toStringArray(Collection<String> collection) {
         return (!CollectionUtils.isEmpty(collection) ? collection.toArray(EMPTY_STRING_ARRAY) : EMPTY_STRING_ARRAY);
     }
-
+    
     /**
      * Check whether the given {@code String} contains actual <em>text</em>.
      *
      * <p>More specifically, this method returns {@code true} if the
-     * {@code String} is not {@code null}, its length is greater than 0,
-     * and it contains at least one non-whitespace character.
+     * {@code String} is not {@code null}, its length is greater than 0, and it contains at least one non-whitespace
+     * character.
      *
      * @param str the {@code String} to check (may be {@code null})
-     * @return {@code true} if the {@code String} is not {@code null}, its
-     * length is greater than 0, and it does not contain whitespace only
+     * @return {@code true} if the {@code String} is not {@code null}, its length is greater than 0, and it does not
+     * contain whitespace only
      * @see Character#isWhitespace
      */
     public static boolean hasText(String str) {
         return (str != null && !str.isEmpty() && containsText(str));
     }
-
+    
     private static boolean containsText(CharSequence str) {
         int strLen = str.length();
         for (int i = 0; i < strLen; i++) {
@@ -564,17 +561,15 @@ public class StringUtils {
         }
         return false;
     }
-
+    
     /**
-     * Normalize the path by suppressing sequences like "path/.." and
-     * inner simple dots.
+     * Normalize the path by suppressing sequences like "path/.." and inner simple dots.
      *
      * <p>The result is convenient for path comparison. For other uses,
      * notice that Windows separators ("\") are replaced by simple slashes.
      *
      * <p><strong>NOTE</strong> that {@code cleanPath} should not be depended
-     * upon in a security context. Other mechanisms should be used to prevent
-     * path-traversal issues.
+     * upon in a security context. Other mechanisms should be used to prevent path-traversal issues.
      *
      * @param path the original path
      * @return the normalized path
@@ -583,15 +578,15 @@ public class StringUtils {
         if (!hasLength(path)) {
             return path;
         }
-
+        
         String normalizedPath = replace(path, WINDOWS_FOLDER_SEPARATOR, FOLDER_SEPARATOR);
         String pathToUse = normalizedPath;
-
+        
         // Shortcut if there is no work to do
         if (pathToUse.indexOf(DOT) == -1) {
             return pathToUse;
         }
-
+        
         // Strip prefix from path to analyze, to not treat it as part of the
         // first path element. This is necessary to correctly parse paths like
         // "file:core/../core/io/Resource.class", where the ".." should just
@@ -610,12 +605,12 @@ public class StringUtils {
             prefix = prefix + FOLDER_SEPARATOR;
             pathToUse = pathToUse.substring(1);
         }
-
+        
         String[] pathArray = delimitedListToStringArray(pathToUse, FOLDER_SEPARATOR);
         // we never require more elements than pathArray and in the common case the same number
         Deque<String> pathElements = new ArrayDeque<>(pathArray.length);
         int tops = 0;
-
+        
         for (int i = pathArray.length - 1; i >= 0; i--) {
             String element = pathArray[i];
             if (DOT.equals(element)) {
@@ -633,7 +628,7 @@ public class StringUtils {
                 }
             }
         }
-
+        
         // All path elements stayed the same - shortcut
         if (pathArray.length == pathElements.size()) {
             return normalizedPath;
@@ -646,12 +641,12 @@ public class StringUtils {
         if (pathElements.size() == 1 && pathElements.getLast().isEmpty() && !prefix.endsWith(FOLDER_SEPARATOR)) {
             pathElements.addFirst(DOT);
         }
-
+        
         final String joined = collectionToDelimitedString(pathElements, FOLDER_SEPARATOR);
         // avoid string concatenation with empty prefix
         return prefix.isEmpty() ? joined : prefix + joined;
     }
-
+    
     /**
      * Convert a {@code Collection} into a delimited {@code String} (e.g. CSV).
      *
@@ -664,7 +659,7 @@ public class StringUtils {
     public static String collectionToDelimitedString(Collection<?> coll, String delim) {
         return collectionToDelimitedString(coll, delim, "", "");
     }
-
+    
     /**
      * Convert a {@link Collection} to a delimited {@code String} (e.g. CSV).
      *
@@ -676,18 +671,17 @@ public class StringUtils {
      * @param suffix the {@code String} to end each element with
      * @return the delimited {@code String}
      */
-    public static String collectionToDelimitedString(
-            Collection<?> coll, String delim, String prefix, String suffix) {
-
+    public static String collectionToDelimitedString(Collection<?> coll, String delim, String prefix, String suffix) {
+        
         if (CollectionUtils.isEmpty(coll)) {
             return "";
         }
-
+        
         int totalLength = coll.size() * (prefix.length() + suffix.length()) + (coll.size() - 1) * delim.length();
         for (Object element : coll) {
             totalLength += String.valueOf(element).length();
         }
-
+        
         StringBuilder sb = new StringBuilder(totalLength);
         Iterator<?> it = coll.iterator();
         while (it.hasNext()) {
@@ -698,7 +692,7 @@ public class StringUtils {
         }
         return sb.toString();
     }
-
+    
     /**
      * Check that the given {@code String} is neither {@code null} nor of length 0.
      *
@@ -712,53 +706,48 @@ public class StringUtils {
     public static boolean hasLength(String str) {
         return (str != null && !str.isEmpty());
     }
-
+    
     /**
-     * Take a {@code String} that is a delimited list and convert it into a
-     * {@code String} array.
+     * Take a {@code String} that is a delimited list and convert it into a {@code String} array.
      *
      * <p>A single {@code delimiter} may consist of more than one character,
-     * but it will still be considered as a single delimiter string, rather
-     * than as bunch of potential delimiter characters, in contrast to
-     * {@link #tokenizeToStringArray}.
+     * but it will still be considered as a single delimiter string, rather than as bunch of potential delimiter
+     * characters, in contrast to {@link #tokenizeToStringArray}.
      *
      * @param str       the input {@code String} (potentially {@code null} or empty)
-     * @param delimiter the delimiter between elements (this is a single delimiter,
-     *                  rather than a bunch individual delimiter characters)
+     * @param delimiter the delimiter between elements (this is a single delimiter, rather than a bunch individual
+     *                  delimiter characters)
      * @return an array of the tokens in the list
      * @see #tokenizeToStringArray
      */
     public static String[] delimitedListToStringArray(String str, String delimiter) {
         return delimitedListToStringArray(str, delimiter, null);
     }
-
+    
     /**
-     * Take a {@code String} that is a delimited list and convert it into
-     * a {@code String} array.
+     * Take a {@code String} that is a delimited list and convert it into a {@code String} array.
      *
      * <p>A single {@code delimiter} may consist of more than one character,
-     * but it will still be considered as a single delimiter string, rather
-     * than as bunch of potential delimiter characters, in contrast to
-     * {@link #tokenizeToStringArray}.
+     * but it will still be considered as a single delimiter string, rather than as bunch of potential delimiter
+     * characters, in contrast to {@link #tokenizeToStringArray}.
      *
      * @param str           the input {@code String} (potentially {@code null} or empty)
-     * @param delimiter     the delimiter between elements (this is a single delimiter,
-     *                      rather than a bunch individual delimiter characters)
-     * @param charsToDelete a set of characters to delete; useful for deleting unwanted
-     *                      line breaks: e.g. "\r\n\f" will delete all new lines and line feeds in a {@code String}
+     * @param delimiter     the delimiter between elements (this is a single delimiter, rather than a bunch individual
+     *                      delimiter characters)
+     * @param charsToDelete a set of characters to delete; useful for deleting unwanted line breaks: e.g. "\r\n\f" will
+     *                      delete all new lines and line feeds in a {@code String}
      * @return an array of the tokens in the list
      * @see #tokenizeToStringArray
      */
-    public static String[] delimitedListToStringArray(
-            String str, String delimiter, String charsToDelete) {
-
+    public static String[] delimitedListToStringArray(String str, String delimiter, String charsToDelete) {
+        
         if (str == null) {
             return EMPTY_STRING_ARRAY;
         }
         if (delimiter == null) {
-            return new String[]{str};
+            return new String[] {str};
         }
-
+        
         List<String> result = new ArrayList<>();
         if (delimiter.isEmpty()) {
             for (int i = 0; i < str.length(); i++) {
@@ -778,20 +767,19 @@ public class StringUtils {
         }
         return toStringArray(result);
     }
-
+    
     /**
      * Delete any character in a given {@code String}.
      *
      * @param inString      the original {@code String}
-     * @param charsToDelete a set of characters to delete.
-     *                      E.g. "az\n" will delete 'a's, 'z's and new lines.
+     * @param charsToDelete a set of characters to delete. E.g. "az\n" will delete 'a's, 'z's and new lines.
      * @return the resulting {@code String}
      */
     public static String deleteAny(String inString, String charsToDelete) {
         if (!hasLength(inString) || !hasLength(charsToDelete)) {
             return inString;
         }
-
+        
         int lastCharIndex = 0;
         char[] result = new char[inString.length()];
         for (int i = 0; i < inString.length(); i++) {
@@ -805,7 +793,7 @@ public class StringUtils {
         }
         return new String(result, 0, lastCharIndex);
     }
-
+    
     /**
      * Replace all occurrences of a substring within a string with another string.
      *
@@ -823,13 +811,13 @@ public class StringUtils {
             // no occurrence -> can return input as-is
             return inString;
         }
-
+        
         int capacity = inString.length();
         if (newPattern.length() > oldPattern.length()) {
             capacity += 16;
         }
         StringBuilder sb = new StringBuilder(capacity);
-
+        
         int pos = 0;
         int patLen = oldPattern.length();
         while (index >= 0) {
@@ -838,19 +826,18 @@ public class StringUtils {
             pos = index + patLen;
             index = inString.indexOf(oldPattern, pos);
         }
-
+        
         // append any characters to the right of a match
         sb.append(inString, pos, inString.length());
         return sb.toString();
     }
-
+    
     /**
-     * Apply the given relative path to the given Java resource path,
-     * assuming standard Java folder separation (i.e. "/" separators).
+     * Apply the given relative path to the given Java resource path, assuming standard Java folder separation (i.e. "/"
+     * separators).
      *
      * @param path         the path to start from (usually a full file path)
-     * @param relativePath the relative path to apply
-     *                     (relative to the full file path above)
+     * @param relativePath the relative path to apply (relative to the full file path above)
      * @return the full file path that results from applying the relative path
      */
     public static String applyRelativePath(String path, String relativePath) {
@@ -865,27 +852,25 @@ public class StringUtils {
             return relativePath;
         }
     }
-
+    
     /**
-     * Extract the filename from the given Java resource path,
-     * e.g. {@code "mypath/myfile.txt" &rarr; "myfile.txt"}.
+     * Extract the filename from the given Java resource path, e.g. {@code "mypath/myfile.txt" &rarr; "myfile.txt"}.
      *
      * @param path the file path (may be {@code null})
      * @return the extracted filename, or {@code null} if none
      */
-
+    
     public static String getFilename(String path) {
         if (path == null) {
             return null;
         }
-
+        
         int separatorIndex = path.lastIndexOf(FOLDER_SEPARATOR);
         return (separatorIndex != -1 ? path.substring(separatorIndex + 1) : path);
     }
-
+    
     /**
-     * Capitalize a {@code String}, changing the first letter to
-     * upper case as per {@link Character#toUpperCase(char)}.
+     * Capitalize a {@code String}, changing the first letter to upper case as per {@link Character#toUpperCase(char)}.
      * No other letters are changed.
      *
      * @param str the {@code String} to capitalize
@@ -894,12 +879,12 @@ public class StringUtils {
     public static String capitalize(String str) {
         return changeFirstCharacterCase(str, true);
     }
-
+    
     private static String changeFirstCharacterCase(String str, boolean capitalize) {
         if (!hasLength(str)) {
             return str;
         }
-
+        
         char baseChar = str.charAt(0);
         char updatedChar;
         if (capitalize) {
@@ -910,7 +895,7 @@ public class StringUtils {
         if (baseChar == updatedChar) {
             return str;
         }
-
+        
         char[] chars = str.toCharArray();
         chars[0] = updatedChar;
         return new String(chars);

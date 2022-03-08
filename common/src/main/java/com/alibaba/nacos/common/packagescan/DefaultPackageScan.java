@@ -37,26 +37,28 @@ import java.util.Set;
  * @author hujun
  */
 public class DefaultPackageScan implements PackageScan {
-
+    
     protected static final Logger LOGGER = LoggerFactory.getLogger(DefaultPackageScan.class);
-
+    
     private final PathMatchingResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver();
-
+    
     public DefaultPackageScan() {
     }
-
+    
     /**
      * Scan all appropriate Class object through the package name and Class object.
-     * @param pkg package name,for example, com.alibaba.nacos.common
+     *
+     * @param pkg          package name,for example, com.alibaba.nacos.common
      * @param requestClass super class
-     * @param <T> Class type
+     * @param <T>          Class type
      * @return a set contains Class
      */
     @Override
     public <T> Set<Class<T>> getSubTypesOf(String pkg, Class<T> requestClass) {
         Set<Class<T>> set = new HashSet<>(16);
-        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
-                + ClassUtils.convertClassNameToResourcePath(pkg) + '/' + "**/*.class";
+        String packageSearchPath =
+                ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX + ClassUtils.convertClassNameToResourcePath(pkg) + '/'
+                        + "**/*.class";
         try {
             Resource[] resources = resourcePatternResolver.getResources(packageSearchPath);
             for (Resource resource : resources) {
@@ -70,19 +72,21 @@ public class DefaultPackageScan implements PackageScan {
         }
         return set;
     }
-
+    
     /**
      * Scan all appropriate Class object through the package name and annotation.
-     * @param pkg package name,for example, com.alibaba.nacos.common
+     *
+     * @param pkg        package name,for example, com.alibaba.nacos.common
      * @param annotation annotation
-     * @param <T> Class type
+     * @param <T>        Class type
      * @return a set contains Class object
      */
     @Override
     public <T> Set<Class<T>> getTypesAnnotatedWith(String pkg, Class<? extends Annotation> annotation) {
         Set<Class<T>> set = new HashSet<>(16);
-        String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX
-                + ClassUtils.convertClassNameToResourcePath(pkg) + '/' + "**/*.class";
+        String packageSearchPath =
+                ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX + ClassUtils.convertClassNameToResourcePath(pkg) + '/'
+                        + "**/*.class";
         try {
             Resource[] resources = resourcePatternResolver.getResources(packageSearchPath);
             for (Resource resource : resources) {
@@ -98,12 +102,12 @@ public class DefaultPackageScan implements PackageScan {
         }
         return set;
     }
-
+    
     private Class<?> getClassByResource(Resource resource) throws IOException, ClassNotFoundException {
         String className = getClassReader(resource).getClassName();
         return Class.forName(ClassUtils.resourcePathToConvertClassName(className));
     }
-
+    
     private static ClassReader getClassReader(Resource resource) throws IOException {
         try (InputStream is = resource.getInputStream()) {
             try {
@@ -114,5 +118,5 @@ public class DefaultPackageScan implements PackageScan {
             }
         }
     }
-
+    
 }
