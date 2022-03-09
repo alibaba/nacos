@@ -75,7 +75,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
     
     /**
-     * Merge the HTTP config created by default with the HTTP config specified in the request, set connection request timeout if needed.
+     * Merge the HTTP config created by default with the HTTP config specified in the request.
      *
      * @param requestBase      requestBase
      * @param httpClientConfig http config
@@ -84,13 +84,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         if (httpClientConfig == null) {
             return;
         }
-        RequestConfig.Builder builder = RequestConfig.copy(defaultConfig)
+        requestBase.setConfig(RequestConfig.copy(defaultConfig)
                 .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis());
-        if (httpClientConfig.getConnectionRequestTimeout() > 0) {
-            builder.setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout());
-        }
-        requestBase.setConfig(builder.build());
+                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
     }
     
     @Override
