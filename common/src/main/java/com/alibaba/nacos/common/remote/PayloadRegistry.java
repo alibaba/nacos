@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.remote.Payload;
 import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -47,13 +48,15 @@ public class PayloadRegistry {
         }
         
         ServiceLoader<PayloadPackageProvider> payloadPackages = ServiceLoader.load(PayloadPackageProvider.class);
+        Set<String> result = new HashSet<>();
         for (PayloadPackageProvider payloadPackage : payloadPackages) {
-            for (String pkg : payloadPackage.getScanPackage()) {
-                DefaultPackageScan packageScan = new DefaultPackageScan();
-                Set<Class<Payload>> subTypesResponse = packageScan.getSubTypesOf(pkg, Payload.class);
-                for (Class<?> clazz : subTypesResponse) {
-                    register(clazz.getSimpleName(), clazz);
-                }
+            result.addAll(payloadPackage.getScanPackage());
+        }
+        for (String pkg : result) {
+            DefaultPackageScan packageScan = new DefaultPackageScan();
+            Set<Class<Payload>> subTypesResponse = packageScan.getSubTypesOf(pkg, Payload.class);
+            for (Class<?> clazz : subTypesResponse) {
+                register(clazz.getSimpleName(), clazz);
             }
         }
         initialized = true;
