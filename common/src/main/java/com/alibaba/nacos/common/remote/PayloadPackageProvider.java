@@ -25,6 +25,10 @@ import java.util.Set;
  */
 public interface PayloadPackageProvider {
     
+    /**
+     * get scan package.
+     * @return scan package list
+     */
     Set<String> getScanPackage();
     
 }
