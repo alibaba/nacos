@@ -75,7 +75,7 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
     }
     
     /**
-     * Merge the HTTP config created by default with the HTTP config specified in the request, set connection request timeout if needed.
+     * Merge the HTTP config created by default with the HTTP config specified in the request.
      *
      * @param requestBase      requestBase
      * @param httpClientConfig http config
