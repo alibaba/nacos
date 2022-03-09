@@ -76,7 +76,9 @@ public class JwtTokenManagerTest {
     }
     
     private void createToken(String secretKey) throws NoSuchFieldException, IllegalAccessException {
-        if (secretKey != null) initJwtTokenManager(secretKey);
+        if (secretKey != null) {
+            initJwtTokenManager(secretKey);
+        }
         String nacosToken = jwtTokenManager.createToken(RandomStringUtils.random(6));
         Assert.notNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);

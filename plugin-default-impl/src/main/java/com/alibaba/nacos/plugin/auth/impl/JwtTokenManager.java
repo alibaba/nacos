@@ -46,10 +46,11 @@ public class JwtTokenManager {
     
     private JwtParser parser;
     
-    public JwtTokenManager(NacosAuthConfig nacosAuthConfig){
+    public JwtTokenManager(NacosAuthConfig nacosAuthConfig) {
         this.nacosAuthConfig = nacosAuthConfig;
         this.parser = Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build();
     }
+    
     /**
      * Create token.
      *
