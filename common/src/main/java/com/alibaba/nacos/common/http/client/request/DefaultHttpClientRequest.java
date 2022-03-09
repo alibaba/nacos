@@ -84,13 +84,9 @@ public class DefaultHttpClientRequest implements HttpClientRequest {
         if (httpClientConfig == null) {
             return;
         }
-        RequestConfig.Builder builder = RequestConfig.copy(defaultConfig)
+        requestBase.setConfig(RequestConfig.copy(defaultConfig)
                 .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis());
-        if (httpClientConfig.getConnectionRequestTimeout() > 0) {
-            builder.setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout());
-        }
-        requestBase.setConfig(builder.build());
+                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
     }
     
     @Override
