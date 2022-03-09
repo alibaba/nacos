@@ -35,5 +35,5 @@ public class PayloadRegistryTest extends TestCase {
         Assert.assertNotNull(PayloadRegistry.getClassByType("NotifySubscriberResponse"));
         Assert.assertNotNull(PayloadRegistry.getClassByType("InstanceRequest"));
     }
-
+    
 }
