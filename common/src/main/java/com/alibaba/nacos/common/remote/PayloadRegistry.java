@@ -26,9 +26,10 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * payload regitry,include all request and response.
+ * payload regitry,Define basic scan behavior request and response.
  *
  * @author liuzunfei
+ * @author hujun
  * @version $Id: PayloadRegistry.java, v 0.1 2020年09月01日 10:56 AM liuzunfei Exp $
  */
 
