@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.api.remote.ability;
 
+import java.io.Serializable;
+
 /**
  * remote abilities of nacos client.
  *
  * @author liuzunfei
  * @version $Id: ClientRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ClientRemoteAbility {
-    
+public class ClientRemoteAbility implements Serializable {
+
+    private static final long serialVersionUID = -5794603724540260652L;
+
     /**
      * if support remote connection.
      */
