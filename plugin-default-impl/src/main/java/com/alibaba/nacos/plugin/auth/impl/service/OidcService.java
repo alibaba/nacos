@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.service;
+package com.alibaba.nacos.plugin.auth.impl.service;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.common.AuthConfigs;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
-import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.console.utils.OidcUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -58,7 +58,7 @@ public class OidcService {
     private JwtTokenManager tokenManager;
     
     @Autowired
-    private AuthConfigs authConfigs;
+    private NacosAuthConfig authConfigs;
     
     /**
      * Get OIDC authorize url with params.
@@ -157,8 +157,10 @@ public class OidcService {
         NacosUser nacosUser = new NacosUser();
         nacosUser.setUserName(username);
         nacosUser.setToken(token);
-        
-        request.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, nacosUser);
+    
+        request.getSession().setAttribute(AuthConstants.NACOS_USER_KEY, nacosUser);
+        request.getSession().setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
+                nacosUser.getUserName());
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         result.put(Constants.ACCESS_TOKEN, nacosUser.getToken());

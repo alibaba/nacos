@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.controller;
+package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
-import com.alibaba.nacos.console.service.OidcService;
 import com.alibaba.nacos.console.utils.OidcUtil;
+import com.alibaba.nacos.plugin.auth.impl.service.OidcService;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
