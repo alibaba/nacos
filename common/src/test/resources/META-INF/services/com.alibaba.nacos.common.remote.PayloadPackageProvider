@@ -15,4 +15,4 @@
 #
 #
 
-com.alibaba.nacos.common.remote.TestPayloadPackageProvider
+com.alibaba.nacos.common.remote.MockPayloadPackageProvider

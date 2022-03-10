@@ -19,7 +19,7 @@ package com.alibaba.nacos.common.remote;
 import java.util.HashSet;
 import java.util.Set;
 
-public class TestPayloadPackageProvider implements PayloadPackageProvider {
+public class MockPayloadPackageProvider implements PayloadPackageProvider {
     
     private final Set<String> scanPackage = new HashSet<>();
     

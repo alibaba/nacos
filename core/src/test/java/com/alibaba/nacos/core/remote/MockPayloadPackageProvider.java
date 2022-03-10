@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * @author hujun
  */
-public class TestPayloadPackageProvider implements PayloadPackageProvider {
+public class MockPayloadPackageProvider implements PayloadPackageProvider {
     
     private final Set<String> scanPackage = new HashSet<>();
     

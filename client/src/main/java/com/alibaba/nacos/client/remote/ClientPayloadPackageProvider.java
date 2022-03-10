@@ -33,12 +33,10 @@ public class ClientPayloadPackageProvider implements PayloadPackageProvider {
     {
         scanPackage.add("com.alibaba.nacos.api.naming.remote.request");
         scanPackage.add("com.alibaba.nacos.api.remote.request");
-        scanPackage.add("com.alibaba.nacos.naming.cluster.remote.request");
         scanPackage.add("com.alibaba.nacos.api.config.remote.request");
         scanPackage.add("com.alibaba.nacos.api.naming.remote.response");
         scanPackage.add("com.alibaba.nacos.api.config.remote.response");
         scanPackage.add("com.alibaba.nacos.api.remote.response");
-        scanPackage.add("com.alibaba.nacos.naming.cluster.remote.response");
     }
     
     @Override
