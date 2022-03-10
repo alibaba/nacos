@@ -22,12 +22,12 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.console.utils.OidcUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.utils.OidcUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -116,12 +116,12 @@ public class OidcService {
     /**
      * get the userinfo with access token.
      *
-     * @param oidp oidp key
+     * @param oidp        oidp key
      * @param accessToken the access token returned after the user interact with the oidp
      * @return the result including the user info
-     * @throws SocketTimeoutException when timeout
+     * @throws SocketTimeoutException   when timeout
      * @throws IllegalArgumentException fail to get userinfo because of content returned by the oidp
-     * @throws Exception other exception
+     * @throws Exception                other exception
      */
     public HttpRestResult<String> getUserinfoWithAccessToken(String oidp, String accessToken)
             throws IllegalArgumentException, Exception {
@@ -157,7 +157,7 @@ public class OidcService {
         NacosUser nacosUser = new NacosUser();
         nacosUser.setUserName(username);
         nacosUser.setToken(token);
-    
+        
         request.getSession().setAttribute(AuthConstants.NACOS_USER_KEY, nacosUser);
         request.getSession().setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
                 nacosUser.getUserName());

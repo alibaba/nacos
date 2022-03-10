@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.utils;
+package com.alibaba.nacos.plugin.auth.impl.utils;
 
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -56,6 +56,10 @@ public class OidcUtil {
      * Callback handling endpoint path.
      */
     public static final String CALLBACK_PATH = "/nacos/v1/auth/oidc/callback";
+    
+    public static final String STATE_RANDOM_COOKIE_NAME = "state_random";
+    
+    public static final int STATE_RANDOM_COOKIE_MAX_AGE = 60;
     
     public static String getExposedHost() {
         return EnvUtil.getProperty(EXPOSED_HOST);

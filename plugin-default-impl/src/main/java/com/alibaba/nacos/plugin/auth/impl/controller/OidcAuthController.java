@@ -19,9 +19,10 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.console.utils.OidcUtil;
+import com.alibaba.nacos.common.utils.RandomUtils;
 import com.alibaba.nacos.plugin.auth.impl.service.OidcService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.utils.OidcUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -38,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.SocketTimeoutException;
@@ -80,15 +82,16 @@ public class OidcAuthController {
     }
     
     /**
-     * Initiate OIDC authentication flow.
-     * A state object will be initialized here, which will be base64-encoded, passed to the IDP and eventually relayed to the callback endpoint.
+     * Initiate OIDC authentication flow. A state object will be initialized here, which will be base64-encoded, passed
+     * to the IDP and eventually relayed to the callback endpoint.
      *
      * @param id       id of the IDP
      * @param origin   origin of the request from browser
      * @param response response object
      */
     @GetMapping("/init")
-    public Object init(@RequestParam("id") String id, @RequestParam("origin") String origin, HttpServletResponse response) {
+    public Object init(@RequestParam("id") String id, @RequestParam(value = "origin", required = false) String origin,
+            HttpServletResponse response) {
         
         String authUrl = OidcUtil.getAuthUrl(id);
         if (authUrl == null) {
@@ -96,28 +99,33 @@ public class OidcAuthController {
                     .body(String.format("OIDC IDP %s not found in config", id));
         }
         
-        String clientId = OidcUtil.getClientId(id);
-        
-        List<String> scopes = OidcUtil.getScopes(id);
-
         String host = OidcUtil.getExposedHost();
         if (host == null) {
             host = origin;
         }
         String redirectUrl = host + OidcUtil.CALLBACK_PATH;
         
+        Long random = RandomUtils.nextLong(0L, Long.MAX_VALUE);
         String state;
         try {
-            state = new ObjectMapper().writeValueAsString(new OidcState().setOidpId(id).setRedirectUrl(redirectUrl));
+            state = new ObjectMapper().writeValueAsString(
+                    new OidcState().setOidpId(id).setRedirectUrl(redirectUrl).setRandom(random));
         } catch (JsonProcessingException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("failed to serialize state");
         }
+        Cookie cookie = new Cookie(OidcUtil.STATE_RANDOM_COOKIE_NAME, random.toString());
+        cookie.setPath(String.format("%s/v1/auth/oidc", EnvUtil.getContextPath()));
+        cookie.setMaxAge(OidcUtil.STATE_RANDOM_COOKIE_MAX_AGE);
+        response.addCookie(cookie);
         
         byte[] stateBase64bytes = Base64.encodeBase64(state.getBytes());
         String stateBase64 = new String(stateBase64bytes);
         
-        String authInitUri = oidcService.completeAuthUriWithParameters(authUrl, clientId, redirectUrl,
-                scopes, stateBase64);
+        String clientId = OidcUtil.getClientId(id);
+        List<String> scopes = OidcUtil.getScopes(id);
+        
+        String authInitUri = oidcService.completeAuthUriWithParameters(authUrl, clientId, redirectUrl, scopes,
+                stateBase64);
         
         response.setStatus(HttpServletResponse.SC_FOUND);
         response.setHeader("Location", authInitUri);
@@ -144,6 +152,20 @@ public class OidcAuthController {
         }
         String oidp = oidcState.getOidpId();
         String redirectUrl = oidcState.getRedirectUrl();
+        Long random = oidcState.getRandom();
+        
+        boolean stateValid = false;
+        if (random != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals(OidcUtil.STATE_RANDOM_COOKIE_NAME) && cookie.getValue()
+                        .equals(random.toString())) {
+                    stateValid = true;
+                }
+            }
+        }
+        if (!stateValid) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("invalid state");
+        }
         
         RestResult<String> tokenResult;
         try {
@@ -206,9 +228,12 @@ public class OidcAuthController {
         
         @JsonProperty("oidp_id")
         private String oidpId;
-
+        
         @JsonProperty("redirect_url")
         private String redirectUrl;
+        
+        @JsonProperty("random")
+        private Long random;
         
         private final Map<String, String> state = new HashMap<>();
         
@@ -220,13 +245,22 @@ public class OidcAuthController {
             this.oidpId = oidpId;
             return this;
         }
-
+        
         public String getRedirectUrl() {
             return redirectUrl;
         }
         
         public OidcState setRedirectUrl(String redirectUrl) {
             this.redirectUrl = redirectUrl;
+            return this;
+        }
+        
+        public Long getRandom() {
+            return random;
+        }
+        
+        public OidcState setRandom(Long random) {
+            this.random = random;
             return this;
         }
         
@@ -242,6 +276,7 @@ public class OidcAuthController {
      * @author Kicey
      */
     public static class OidcTokenResponse {
+        
         @JsonProperty("access_token")
         private String accessToken;
         
