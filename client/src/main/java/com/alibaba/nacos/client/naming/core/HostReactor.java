@@ -62,7 +62,7 @@ public class HostReactor implements Closeable {
     
     private static final long UPDATE_HOLD_INTERVAL = 5000L;
     
-    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
+    private final Map<String, ScheduledFuture<?>> futureMap = new ConcurrentHashMap<String, ScheduledFuture<?>>();
     
     private final Map<String, ServiceInfo> serviceInfoMap;
     
@@ -450,6 +450,7 @@ public class HostReactor implements Closeable {
         
         @Override
         public void run() {
+            boolean stop = false;
             long delayTime = DEFAULT_DELAY;
             
             try {
@@ -471,9 +472,12 @@ public class HostReactor implements Closeable {
                 
                 lastRefTime = serviceObj.getLastRefTime();
                 
-                if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
-                        .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
+                if (!notifier.isSubscribed(serviceName, clusters)) {
                     // abort the update task
+                    stop = true;
+                    String serviceKey = ServiceInfo.getKey(serviceName, clusters);
+                    serviceInfoMap.remove(serviceKey);
+                    futureMap.remove(serviceKey);
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
@@ -487,7 +491,9 @@ public class HostReactor implements Closeable {
                 incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                if (!stop) {
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                }
             }
         }
     }

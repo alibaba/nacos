@@ -174,6 +174,11 @@ public class HostReactorTest {
         hostReactor.processServiceJson(CHANGE_DATA_EXAMPLE);
         
         Assert.assertEquals(0, count.intValue());
+
+        Thread.sleep(1000);
+
+        Assert.assertEquals(false, hostReactor.getServiceInfoMap().containsKey(
+                ServiceInfo.getKey("testName", "testClusters")));
     }
     
     @Test
