@@ -37,6 +37,7 @@ import java.security.SecureRandom;
  *
  * @author lixiaoshuang
  */
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class AesEncryptionPluginService implements EncryptionPluginService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AesEncryptionPluginService.class);

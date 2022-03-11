@@ -29,7 +29,6 @@ import java.util.Optional;
  */
 public class EncryptionPluginManagerTest {
     
-    
     @Test
     public void testInstance() {
         EncryptionPluginManager instance = EncryptionPluginManager.instance();

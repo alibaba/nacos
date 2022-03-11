@@ -74,7 +74,7 @@
     
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-encryption-plugin</artifactId>
+            <artifactId>nacos-plugin-default-impl</artifactId>
         </dependency>
         
         <dependency>
