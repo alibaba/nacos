@@ -17,8 +17,6 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.api.config.ConfigType;
-import com.alibaba.nacos.api.config.CryptoExecutor;
-import com.alibaba.nacos.api.config.CryptoSpi;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
@@ -26,6 +24,7 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -54,6 +53,7 @@ import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,12 +142,12 @@ public class ConfigController {
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
         }
-        CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
-        String encryptedDataKey = "";
-        if (Objects.nonNull(cryptoSpi)) {
-            encryptedDataKey = cryptoSpi.generateSecretKey();
-            content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, encryptedDataKey, content);
-        }
+        
+        // encrypted
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+        String encryptedDataKey = pair.getFirst();
+        content = pair.getSecond();
+        
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -236,10 +236,12 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
     
+        // decrypted
         if (Objects.nonNull(configAllInfo)) {
             String encryptedDataKey = configAllInfo.getEncryptedDataKey();
-            String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, configAllInfo.getContent());
-            configAllInfo.setContent(decrypt);
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                    configAllInfo.getContent());
+            configAllInfo.setContent(pair.getSecond());
         }
         return configAllInfo;
     }
@@ -369,7 +371,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -396,7 +398,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -454,8 +456,8 @@ public class ConfigController {
     
             if (Objects.nonNull(ci)) {
                 String encryptedDataKey = ci.getEncryptedDataKey();
-                String decrypt = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, ci.getContent());
-                ci.setContent(decrypt);
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
+                ci.setContent(pair.getSecond());
             }
             return RestResultUtils.success("stop beta ok", ci);
         } catch (Throwable e) {
@@ -501,9 +503,10 @@ public class ConfigController {
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
-            String decryptContent = CryptoExecutor.executeDecrypt(ci.getDataId(), ci.getEncryptedDataKey(), ci.getContent());
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, decryptContent));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
         }
         if (metaData != null) {
             zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
@@ -547,9 +550,10 @@ public class ConfigController {
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
             configMetadataItems.add(configMetadataItem);
-            String decryptContent = CryptoExecutor.executeDecrypt(ci.getDataId(), ci.getEncryptedDataKey(), ci.getContent());
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, decryptContent));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
         }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
@@ -685,13 +689,13 @@ public class ConfigController {
                             tempDataId.lastIndexOf(".") + 1);
                 }
                 final String metaDataId = group + "." + tempDataId + ".app";
-                String encryptedDataKey = "";
+    
+                //encrypted
                 String content = item.getItemData();
-                CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
-                if (null != cryptoSpi) {
-                    encryptedDataKey = cryptoSpi.generateSecretKey();
-                    content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, encryptedDataKey, content);
-                }
+                Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+                String encryptedDataKey = pair.getFirst();
+                content = pair.getSecond();
+                
                 ConfigAllInfo ci = new ConfigAllInfo();
                 ci.setGroup(group);
                 ci.setDataId(dataId);
@@ -779,12 +783,11 @@ public class ConfigController {
                 unrecognizedList.add(unrecognizedItem);
                 continue;
             }
-            String encryptedDataKey = "";
-            CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
-            if (null != cryptoSpi) {
-                encryptedDataKey = cryptoSpi.generateSecretKey();
-                content = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, encryptedDataKey, content);
-            }
+            // encrypted
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+            String encryptedDataKey = pair.getFirst();
+            content = pair.getSecond();
+            
             ConfigAllInfo ci = new ConfigAllInfo();
             ci.setGroup(group);
             ci.setDataId(dataId);
