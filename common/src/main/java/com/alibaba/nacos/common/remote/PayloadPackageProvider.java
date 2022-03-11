@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,19 @@
 
 package com.alibaba.nacos.common.remote;
 
-import junit.framework.TestCase;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Set;
 
-public class PayloadRegistryTest extends TestCase {
+/**
+ * package provider.
+ *
+ * @author hujun
+ */
+public interface PayloadPackageProvider {
     
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-    
-    public void tearDown() throws Exception {
-    }
-    
-    @Test
-    public void testInit() {
-        PayloadRegistry.init();
-        Assert.assertNotNull(PayloadRegistry.getClassByType("NotifySubscriberResponse"));
-        Assert.assertNotNull(PayloadRegistry.getClassByType("InstanceRequest"));
-    }
+    /**
+     * get scan package.
+     * @return scan package list
+     */
+    Set<String> getScanPackage();
     
 }
