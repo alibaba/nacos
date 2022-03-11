@@ -37,6 +37,10 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-encryption-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-common</artifactId>
         </dependency>
         
