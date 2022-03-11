@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * OIDC auth controller.
@@ -86,12 +87,10 @@ public class OidcAuthController {
      * to the IDP and eventually relayed to the callback endpoint.
      *
      * @param id       id of the IDP
-     * @param origin   origin of the request from browser
      * @param response response object
      */
     @GetMapping("/init")
-    public Object init(@RequestParam("id") String id, @RequestParam(value = "origin", required = false) String origin,
-            HttpServletResponse response) {
+    public Object init(@RequestParam("id") String id, HttpServletRequest request, HttpServletResponse response) {
         
         String authUrl = OidcUtil.getAuthUrl(id);
         if (authUrl == null) {
@@ -99,11 +98,12 @@ public class OidcAuthController {
                     .body(String.format("OIDC IDP %s not found in config", id));
         }
         
-        String host = OidcUtil.getExposedHost();
-        if (host == null) {
-            host = origin;
-        }
-        String redirectUrl = host + OidcUtil.CALLBACK_PATH;
+        String host = Optional.ofNullable(
+                        Optional.ofNullable(OidcUtil.getExposedHost()).orElse(request.getHeader("X-Forwarded-host")))
+                .orElse(request.getHeader("Host"));
+        
+        String protocol = Optional.ofNullable(request.getHeader("X-Forwarded-Proto")).orElse(request.getScheme());
+        String redirectUrl = String.format("%s://%s%s", protocol, host, OidcUtil.CALLBACK_PATH);
         
         Long random = RandomUtils.nextLong(0L, Long.MAX_VALUE);
         String state;

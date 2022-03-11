@@ -183,7 +183,7 @@ class Login extends React.Component {
                         <Button
                           className="oidc-login-btn"
                           component="a"
-                          href={`${location.origin}/nacos/v1/auth/oidc/init?id=${oidcItem.key}&origin=${location.origin}`}
+                          href={`${location.origin}/nacos/v1/auth/oidc/init?id=${oidcItem.key}`}
                           primary
                           text
                           key={oidcItem.key}
