@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.client.config.filter.impl.ConfigCryptoFilter
+com.alibaba.nacos.client.config.filter.impl.ConfigEncryptionFilter

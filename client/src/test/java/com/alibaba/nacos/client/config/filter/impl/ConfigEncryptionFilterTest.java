@@ -32,9 +32,9 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author lixiaoshuang
  */
 @RunWith(MockitoJUnitRunner.class)
-public class ConfigCryptoFilterTest {
+public class ConfigEncryptionFilterTest {
     
-    private ConfigCryptoFilter configCryptoFilter;
+    private ConfigEncryptionFilter configEncryptionFilter;
     
     @Mock
     private ConfigRequest configRequest;
@@ -47,7 +47,7 @@ public class ConfigCryptoFilterTest {
     
     @Before
     public void setUp() throws Exception {
-        configCryptoFilter = new ConfigCryptoFilter();
+        configEncryptionFilter = new ConfigEncryptionFilter();
         
         Mockito.when(configRequest.getDataId()).thenReturn("cipher-aes-test");
         Mockito.when(configRequest.getContent()).thenReturn("nacos");
@@ -59,12 +59,12 @@ public class ConfigCryptoFilterTest {
     
     @Test
     public void testDoFilter() throws NacosException {
-        configCryptoFilter.doFilter(configRequest, null, iConfigFilterChain);
+        configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
         
         Mockito.verify(configRequest).getDataId();
         Mockito.verify(configRequest).getContent();
         
-        configCryptoFilter.doFilter(null, configResponse, iConfigFilterChain);
+        configEncryptionFilter.doFilter(null, configResponse, iConfigFilterChain);
         
         Mockito.verify(configResponse).getDataId();
         Mockito.verify(configResponse).getContent();
@@ -73,7 +73,7 @@ public class ConfigCryptoFilterTest {
     
     @Test
     public void testGetOrder() {
-        int order = configCryptoFilter.getOrder();
+        int order = configEncryptionFilter.getOrder();
         Assert.assertEquals(order, 0);
     }
 }

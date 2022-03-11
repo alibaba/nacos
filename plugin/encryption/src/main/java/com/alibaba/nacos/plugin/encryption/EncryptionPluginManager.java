@@ -40,7 +40,6 @@ public class EncryptionPluginManager {
     
     private static final EncryptionPluginManager INSTANCE = new EncryptionPluginManager();
     
-    
     public EncryptionPluginManager() {
         loadInitial();
     }
@@ -53,9 +52,8 @@ public class EncryptionPluginManager {
                 EncryptionPluginService.class);
         for (EncryptionPluginService encryptionPluginService : encryptionPluginServices) {
             if (StringUtils.isBlank(encryptionPluginService.algorithmName())) {
-                LOGGER.warn(
-                        "[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName(null/empty) fail. Please Add algorithmName to resolve.",
-                        encryptionPluginService.getClass());
+                LOGGER.warn("[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName(null/empty) fail."
+                        + " Please Add algorithmName to resolve.", encryptionPluginService.getClass());
                 continue;
             }
             ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(), encryptionPluginService);

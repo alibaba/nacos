@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.client.config.filter.impl;
 
-import com.alibaba.nacos.api.config.CryptoSpi;
 import com.alibaba.nacos.api.config.filter.AbstractConfigFilter;
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
-import com.alibaba.nacos.api.config.filter.IFilterConfig;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.config.CryptoExecutor;
+import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 
 import java.util.Objects;
 import java.util.Properties;
@@ -33,14 +32,9 @@ import java.util.Properties;
  *
  * @author lixiaoshuang
  */
-public class ConfigCryptoFilter extends AbstractConfigFilter {
+public class ConfigEncryptionFilter extends AbstractConfigFilter {
     
-    private static final String DEFAULT_NAME = ConfigCryptoFilter.class.getName();
-    
-    @Override
-    public void init(IFilterConfig filterConfig) {
-    
-    }
+    private static final String DEFAULT_NAME = ConfigEncryptionFilter.class.getName();
     
     @Override
     public void init(Properties properties) {
@@ -57,13 +51,12 @@ public class ConfigCryptoFilter extends AbstractConfigFilter {
             String dataId = configRequest.getDataId();
             String content = configRequest.getContent();
             
-            CryptoSpi cryptoSpi = CryptoExecutor.cryptoInstance(dataId);
-            if (Objects.nonNull(cryptoSpi)) {
-                String secretKey = cryptoSpi.generateSecretKey();
-                String encrypt = CryptoExecutor.executeEncrypt(cryptoSpi::encrypt, secretKey, content);
-                ((ConfigRequest) request).setContent(encrypt);
-                ((ConfigRequest) request).setEncryptedDataKey(secretKey);
-            }
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+            String secretKey = pair.getFirst();
+            String encryptContent = pair.getSecond();
+            
+            ((ConfigRequest) request).setContent(encryptContent);
+            ((ConfigRequest) request).setEncryptedDataKey(secretKey);
         }
         if (Objects.nonNull(response) && response instanceof ConfigResponse && Objects.isNull(request)) {
             
@@ -74,7 +67,8 @@ public class ConfigCryptoFilter extends AbstractConfigFilter {
             String encryptedDataKey = configResponse.getEncryptedDataKey();
             String content = configResponse.getContent();
             
-            String decryptContent = CryptoExecutor.executeDecrypt(dataId, encryptedDataKey, content);
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+            String decryptContent = pair.getSecond();
             ((ConfigResponse) response).setContent(decryptContent);
         }
         filterChain.doFilter(request, response);
