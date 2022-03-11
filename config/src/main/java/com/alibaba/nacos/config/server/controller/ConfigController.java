@@ -145,7 +145,6 @@ public class ConfigController {
         
         // encrypted
         Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-        String encryptedDataKey = pair.getFirst();
         content = pair.getSecond();
         
         // check tenant
@@ -171,6 +170,7 @@ public class ConfigController {
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setType(type);
+        String encryptedDataKey = pair.getFirst();
         configInfo.setEncryptedDataKey(encryptedDataKey);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
@@ -693,7 +693,6 @@ public class ConfigController {
                 //encrypted
                 String content = item.getItemData();
                 Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-                String encryptedDataKey = pair.getFirst();
                 content = pair.getSecond();
                 
                 ConfigAllInfo ci = new ConfigAllInfo();
@@ -704,7 +703,7 @@ public class ConfigController {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
                 ci.setTenant(namespace);
-                ci.setEncryptedDataKey(encryptedDataKey);
+                ci.setEncryptedDataKey(pair.getFirst());
                 configInfoList.add(ci);
             }
         }
@@ -785,7 +784,6 @@ public class ConfigController {
             }
             // encrypted
             Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
-            String encryptedDataKey = pair.getFirst();
             content = pair.getSecond();
             
             ConfigAllInfo ci = new ConfigAllInfo();
@@ -796,7 +794,7 @@ public class ConfigController {
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
-            ci.setEncryptedDataKey(encryptedDataKey);
+            ci.setEncryptedDataKey(pair.getFirst());
             configInfoList.add(ci);
         }
         return null;

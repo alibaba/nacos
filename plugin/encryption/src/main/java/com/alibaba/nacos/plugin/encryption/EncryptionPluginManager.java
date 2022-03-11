@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -79,6 +80,19 @@ public class EncryptionPluginManager {
      */
     public Optional<EncryptionPluginService> findEncryptionService(String algorithmName) {
         return Optional.ofNullable(ENCRYPTION_SPI_MAP.get(algorithmName));
+    }
+    
+    /**
+     * Injection realization.
+     *
+     * @param encryptionPluginService Encryption implementation
+     */
+    public static synchronized void join(EncryptionPluginService encryptionPluginService) {
+        if (Objects.isNull(encryptionPluginService)) {
+            return;
+        }
+        ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(), encryptionPluginService);
+        LOGGER.info("[EncryptionPluginManager] join successfully.");
     }
     
 }
