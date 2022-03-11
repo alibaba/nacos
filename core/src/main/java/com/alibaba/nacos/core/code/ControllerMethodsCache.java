@@ -18,14 +18,13 @@ package com.alibaba.nacos.core.code;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.core.auth.RequestMappingInfo;
-import com.alibaba.nacos.core.auth.RequestMappingInfo.RequestMappingInfoComparator;
-import com.alibaba.nacos.core.auth.condition.ParamRequestCondition;
-import com.alibaba.nacos.core.auth.condition.PathRequestCondition;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
 import com.alibaba.nacos.common.utils.ArrayUtils;
-import org.reflections.Reflections;
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.core.code.RequestMappingInfo.RequestMappingInfoComparator;
+import com.alibaba.nacos.core.code.condition.ParamRequestCondition;
+import com.alibaba.nacos.core.code.condition.PathRequestCondition;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -120,9 +119,8 @@ public class ControllerMethodsCache {
      * @param packageName package name
      */
     public void initClassMethod(String packageName) {
-        Reflections reflections = new Reflections(packageName);
-        Set<Class<?>> classesList = reflections.getTypesAnnotatedWith(RequestMapping.class);
-        
+        DefaultPackageScan packageScan = new DefaultPackageScan();
+        Set<Class<Object>> classesList = packageScan.getTypesAnnotatedWith(packageName, RequestMapping.class);
         for (Class clazz : classesList) {
             initClassMethod(clazz);
         }

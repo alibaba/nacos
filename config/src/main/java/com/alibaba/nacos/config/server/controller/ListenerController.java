@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,7 +42,6 @@ public class ListenerController {
     
     private final ConfigSubService configSubService;
     
-    @Autowired
     public ListenerController(ConfigSubService configSubService) {
         this.configSubService = configSubService;
     }
@@ -55,12 +53,11 @@ public class ListenerController {
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "tenant", required = false) String tenant,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
-            throws Exception {
+            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
-        Map<String, String> configMd5Status = new HashMap<String, String>(100);
+        Map<String, String> configMd5Status = new HashMap<>(100);
         if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
             return gls;
         }

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,8 +35,6 @@ public class RequestUtil {
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     
     public static final String CLIENT_APPNAME_HEADER = "Client-AppName";
-    
-    public static final String NACOS_USER_KEY = "nacosuser";
     
     /**
      * get real client ip
@@ -68,30 +65,16 @@ public class RequestUtil {
     }
     
     /**
-     * Gets the user of the client application in the Attribute.
-     *
-     * @param request {@link HttpServletRequest}
-     * @return may be return null
-     */
-    public static User getUser(HttpServletRequest request) {
-        Object userObj = request.getSession().getAttribute(NACOS_USER_KEY);
-        if (userObj == null) {
-            return null;
-        }
-    
-        return (User) userObj;
-    }
-    
-    /**
      * Gets the username of the client application in the Attribute.
      *
      * @param request {@link HttpServletRequest}
      * @return may be return null
      */
     public static String getSrcUserName(HttpServletRequest request) {
-        User user = getUser(request);
+        String result = (String) request.getSession()
+                .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID);
         // If auth is disabled, get username from parameters by agreed key
-        return user == null ? request.getParameter(Constants.USERNAME) : user.getUserName();
+        return StringUtils.isBlank(result) ? request.getParameter(Constants.USERNAME) : result;
     }
     
 }
