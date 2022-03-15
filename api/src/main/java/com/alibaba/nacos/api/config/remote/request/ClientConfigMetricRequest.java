@@ -48,7 +48,8 @@ public class ClientConfigMetricRequest extends ServerRequest {
     }
     
     public static class MetricsKey implements Serializable {
-        
+
+        private static final long serialVersionUID = 7728112344899621164L;
         String type;
         
         String key;

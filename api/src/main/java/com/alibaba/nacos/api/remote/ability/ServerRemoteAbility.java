@@ -26,7 +26,8 @@ import java.util.Objects;
  * @version $Id: ServerRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerRemoteAbility implements Serializable {
-    
+
+    private static final long serialVersionUID = 3877438779358853000L;
     /**
      * if support remote connection.
      */

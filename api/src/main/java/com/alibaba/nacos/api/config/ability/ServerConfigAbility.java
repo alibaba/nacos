@@ -26,7 +26,8 @@ import java.util.Objects;
  * @version $Id: ServerConfigAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerConfigAbility implements Serializable {
-    
+
+    private static final long serialVersionUID = -2224932553504475980L;
     /**
      * support remote metrics get.
      */
