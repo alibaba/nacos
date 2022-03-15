@@ -31,6 +31,7 @@ import java.util.Map;
 public class ClusterInfo implements Serializable {
 
     private static final long serialVersionUID = 2146881454057032105L;
+
     private String clusterName;
     
     private AbstractHealthChecker healthChecker;

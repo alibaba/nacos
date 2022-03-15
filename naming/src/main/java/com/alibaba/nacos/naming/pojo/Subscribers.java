@@ -28,12 +28,13 @@ import java.util.List;
 public class Subscribers implements Serializable {
 
     private static final long serialVersionUID = -3075690233070417052L;
+
     private List<Subscriber> subscribers;
-    
+
     public List<Subscriber> getSubscribers() {
         return subscribers;
     }
-    
+
     public void setSubscribers(List<Subscriber> subscribers) {
         this.subscribers = subscribers;
     }

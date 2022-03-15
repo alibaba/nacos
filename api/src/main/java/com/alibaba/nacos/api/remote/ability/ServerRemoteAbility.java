@@ -28,6 +28,7 @@ import java.util.Objects;
 public class ServerRemoteAbility implements Serializable {
 
     private static final long serialVersionUID = 3877438779358853000L;
+
     /**
      * if support remote connection.
      */

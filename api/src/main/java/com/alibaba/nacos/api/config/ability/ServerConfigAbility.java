@@ -28,6 +28,7 @@ import java.util.Objects;
 public class ServerConfigAbility implements Serializable {
 
     private static final long serialVersionUID = -2224932553504475980L;
+
     /**
      * support remote metrics get.
      */

@@ -28,6 +28,7 @@ import java.util.Map;
 public class IpAddressInfo implements Serializable {
 
     private static final long serialVersionUID = 6961930421629345179L;
+
     private boolean valid;
     
     private Map<String, String> metadata;
