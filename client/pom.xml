@@ -73,8 +73,8 @@
         </dependency>
     
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-plugin-default-impl</artifactId>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-encryption-plugin</artifactId>
         </dependency>
         
         <dependency>
