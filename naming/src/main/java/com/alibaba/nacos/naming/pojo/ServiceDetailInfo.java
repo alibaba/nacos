@@ -30,6 +30,7 @@ import java.util.Map;
 public class ServiceDetailInfo implements Serializable {
 
     private static final long serialVersionUID = 6351606608785841722L;
+
     private String namespace;
     
     private String serviceName;
