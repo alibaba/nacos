@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.api.config.ability;
 
+import java.io.Serializable;
+
 /**
  * config abilities of nacos client.
  *
  * @author liuzunfei
  * @version $Id: ClientConfigAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ClientConfigAbility {
-    
+public class ClientConfigAbility implements Serializable {
+
+    private static final long serialVersionUID = 2442741206510725737L;
+
     /**
      * support remote metrics get.
      */

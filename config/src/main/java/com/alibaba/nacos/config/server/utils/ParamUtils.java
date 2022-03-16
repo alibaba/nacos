@@ -46,6 +46,8 @@ public class ParamUtils {
     
     private static final String SCHEMA = "schema";
     
+    private static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
+    
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
      * cannot be empty.
@@ -147,6 +149,8 @@ public class ParamUtils {
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32768) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long schema, over 32768");
                 }
+            } else if (ENCRYPTED_DATA_KEY.equals(configAdvanceInfoTmp.getKey())) {
+                // No verification required
             } else {
                 throw new NacosException(NacosException.INVALID_PARAM, "invalid param");
             }

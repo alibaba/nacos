@@ -71,6 +71,11 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-auth-plugin</artifactId>
         </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-encryption-plugin</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -107,10 +112,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpasyncclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
         </dependency>
         <dependency>
             <groupId>net.jcip</groupId>

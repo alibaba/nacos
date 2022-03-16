@@ -280,6 +280,9 @@
                         <exclude>**/istio/mcp/**</exclude>
                         <exclude>**/istio/networking/**</exclude>
                         <exclude>**/google/protobuf/**</exclude>
+                        <exclude>**/common/packagescan/classreading/*.java</exclude>
+                        <exclude>**/common/packagescan/resource/*.java</exclude>
+                        <exclude>**/common/packagescan/util/*.java</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -345,6 +348,7 @@
                         <exclude>/console-ui/**</exclude>
                         <exclude>**/gogo.proto</exclude>
                         <exclude>**/any.proto</exclude>
+                        <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -729,6 +733,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-encryption-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1012,12 +1021,6 @@
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf-java.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>org.reflections</groupId>
-                <artifactId>reflections</artifactId>
-                <version>${reflections.version}</version>
             </dependency>
             
             <dependency>

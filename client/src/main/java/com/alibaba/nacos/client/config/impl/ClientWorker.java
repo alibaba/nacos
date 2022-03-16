@@ -247,7 +247,7 @@ public class ClientWorker implements Closeable {
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         synchronized (cacheMap) {
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
@@ -320,7 +320,7 @@ public class ClientWorker implements Closeable {
                 cache.setTaskId(taskId);
             }
             
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
+            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
             copy.put(key, cache);
             cacheMap.set(copy);
         }
@@ -366,7 +366,7 @@ public class ClientWorker implements Closeable {
                 }
             }
             
-            Map<String, CacheData> copy = new HashMap<String, CacheData>(this.cacheMap.get());
+            Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
             copy.put(key, cache);
             cacheMap.set(copy);
         }
@@ -473,7 +473,7 @@ public class ClientWorker implements Closeable {
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
-        Map<String, Object> metrics = new HashMap<String, Object>(1);
+        Map<String, Object> metrics = new HashMap<>(1);
         metrics.put(uuid, JacksonUtils.toJson(metric));
         return metrics;
     }
@@ -684,7 +684,7 @@ public class ClientWorker implements Closeable {
         }
         
         @Override
-        public void startInternal() throws NacosException {
+        public void startInternal() {
             executor.schedule(() -> {
                 while (!executor.isShutdown() && !executor.isTerminated()) {
                     try {
@@ -873,7 +873,7 @@ public class ClientWorker implements Closeable {
             synchronized (ClientWorker.this) {
                 
                 Map<String, String> labels = getLabels();
-                Map<String, String> newLabels = new HashMap<String, String>(labels);
+                Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
                 
                 RpcClient rpcClient = RpcClientFactory
@@ -1043,7 +1043,7 @@ public class ClientWorker implements Closeable {
                 request.putAdditionalParam(APP_NAME_PARAM, appName);
                 request.putAdditionalParam(BETAIPS_PARAM, betaIps);
                 request.putAdditionalParam(TYPE_PARAM, type);
-                request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey);
+                request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey == null ? "" : encryptedDataKey);
                 ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
