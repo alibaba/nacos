@@ -207,6 +207,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 if (PropertyUtil.isDirectRead()) {
                     response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
+                    response.setEncryptedDataKey(configInfoBase.getEncryptedDataKey());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
                     
                 } else {
@@ -217,6 +218,11 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         response.setContent(content);
                         response.setLastModified(lastModified);
                         response.setResultCode(ResponseCode.SUCCESS.getCode());
+                        if (isBeta) {
+                            response.setEncryptedDataKey(cacheItem.getEncryptedDataKeyBeta());
+                        } else {
+                            response.setEncryptedDataKey(cacheItem.getEncryptedDataKey());
+                        }
                     } catch (IOException e) {
                         response.setErrorInfo(ResponseCode.FAIL.getCode(), e.getMessage());
                         return response;

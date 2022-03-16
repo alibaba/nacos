@@ -31,6 +31,7 @@
     <url>http://nacos.io</url>
     <modules>
         <module>auth</module>
+        <module>encryption</module>
     </modules>
     <packaging>pom</packaging>
 
