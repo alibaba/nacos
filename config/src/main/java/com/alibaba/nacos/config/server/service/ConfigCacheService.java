@@ -52,17 +52,17 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  * @author Nacos
  */
 public class ConfigCacheService {
-
+    
     static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
-
+    
     private static final String NO_SPACE_CN = "设备上没有空间";
-
+    
     private static final String NO_SPACE_EN = "No space left on device";
-
+    
     private static final String DISK_QUATA_CN = "超出磁盘限额";
-
+    
     private static final String DISK_QUATA_EN = "Disk quota exceeded";
-
+    
     /**
      * groupKey -> cacheItem.
      */
@@ -91,9 +91,9 @@ public class ConfigCacheService {
      * @return dumpChange success or not.
      */
     public static boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs,
-            String type) {
+            String type, String encryptedDataKey) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        CacheItem ci = makeSure(groupKey);
+        CacheItem ci = makeSure(groupKey, encryptedDataKey, false);
         ci.setType(type);
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
@@ -113,7 +113,7 @@ public class ConfigCacheService {
             } else if (!PropertyUtil.isDirectRead()) {
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
-            updateMd5(groupKey, md5, lastModifiedTs);
+            updateMd5(groupKey, md5, lastModifiedTs, encryptedDataKey);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
@@ -144,10 +144,10 @@ public class ConfigCacheService {
      * @return dumpChange success or not.
      */
     public static boolean dumpBeta(String dataId, String group, String tenant, String content, long lastModifiedTs,
-            String betaIps) {
+            String betaIps, String encryptedDataKey) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        
-        makeSure(groupKey);
+    
+        makeSure(groupKey, encryptedDataKey, true);
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
         
@@ -167,7 +167,7 @@ public class ConfigCacheService {
             }
             String[] betaIpsArr = betaIps.split(",");
             
-            updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs);
+            updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs, encryptedDataKey);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-beta-exception] save disk error. " + groupKey + ", " + ioe);
@@ -189,10 +189,10 @@ public class ConfigCacheService {
      * @return dumpChange success or not.
      */
     public static boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
-            long lastModifiedTs) {
+            long lastModifiedTs, String encryptedDataKey) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        
-        makeSure(groupKey);
+    
+        makeSure(groupKey, encryptedDataKey, false);
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
         
@@ -211,7 +211,7 @@ public class ConfigCacheService {
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
             
-            updateTagMd5(groupKey, tag, md5, lastModifiedTs);
+            updateTagMd5(groupKey, tag, md5, lastModifiedTs, encryptedDataKey);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe);
@@ -231,10 +231,11 @@ public class ConfigCacheService {
      * @param lastModifiedTs lastModifiedTs.
      * @return dumpChange success or not.
      */
-    public static boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs) {
+    public static boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs,
+            String encryptedDataKey) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        
-        makeSure(groupKey);
+    
+        makeSure(groupKey, encryptedDataKey, false);
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
         
@@ -255,7 +256,7 @@ public class ConfigCacheService {
                     DiskUtil.saveToDisk(dataId, group, tenant, content);
                 }
             }
-            updateMd5(groupKey, md5, lastModifiedTs);
+            updateMd5(groupKey, md5, lastModifiedTs, encryptedDataKey);
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
@@ -477,8 +478,8 @@ public class ConfigCacheService {
      * @param md5            md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateMd5(String groupKey, String md5, long lastModifiedTs) {
-        CacheItem cache = makeSure(groupKey);
+    public static void updateMd5(String groupKey, String md5, long lastModifiedTs, String encryptedDataKey) {
+        CacheItem cache = makeSure(groupKey, encryptedDataKey, false);
         if (cache.md5 == null || !cache.md5.equals(md5)) {
             cache.md5 = md5;
             cache.lastModifiedTs = lastModifiedTs;
@@ -494,8 +495,9 @@ public class ConfigCacheService {
      * @param ips4Beta       ips4Beta List.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs) {
-        CacheItem cache = makeSure(groupKey);
+    public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs,
+            String encryptedDataKey) {
+        CacheItem cache = makeSure(groupKey, encryptedDataKey, true);
         if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
             cache.isBeta = true;
             cache.md54Beta = md5;
@@ -513,8 +515,9 @@ public class ConfigCacheService {
      * @param md5            md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
-        CacheItem cache = makeSure(groupKey);
+    public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs,
+            String encryptedDataKey) {
+        CacheItem cache = makeSure(groupKey, encryptedDataKey, false);
         if (cache.tagMd5 == null) {
             Map<String, String> tagMd5Tmp = new HashMap<>(1);
             tagMd5Tmp.put(tag, md5);
@@ -672,14 +675,24 @@ public class ConfigCacheService {
         }
     }
     
-    static CacheItem makeSure(final String groupKey) {
+    static CacheItem makeSure(final String groupKey, String encryptedDataKey, boolean isBeta) {
         CacheItem item = CACHE.get(groupKey);
         if (null != item) {
+            setEncryptDateKey(item, encryptedDataKey, isBeta);
             return item;
         }
         CacheItem tmp = new CacheItem(groupKey);
+        setEncryptDateKey(tmp, encryptedDataKey, isBeta);
         item = CACHE.putIfAbsent(groupKey, tmp);
         return (null == item) ? tmp : item;
+    }
+    
+    private static void setEncryptDateKey(CacheItem cacheItem, String encryptedDataKey, boolean isBeta) {
+        if (isBeta) {
+            cacheItem.setEncryptedDataKeyBeta(encryptedDataKey);
+        } else {
+            cacheItem.setEncryptedDataKey(encryptedDataKey);
+        }
     }
 }
 

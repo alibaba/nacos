@@ -54,7 +54,7 @@ public class DumpAllBetaProcessor implements NacosTaskProcessor {
                 for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
                     boolean result = ConfigCacheService
                             .dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                                    cf.getLastModified(), cf.getBetaIps());
+                                    cf.getLastModified(), cf.getBetaIps(), cf.getEncryptedDataKey());
                     LogUtil.DUMP_LOG.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             cf.getContent().length(), cf.getMd5());
