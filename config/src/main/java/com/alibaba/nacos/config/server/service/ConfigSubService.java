@@ -27,6 +27,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
@@ -55,6 +56,7 @@ public class ConfigSubService {
     
     private ServerMemberManager memberManager;
     
+    @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ConfigSubService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
