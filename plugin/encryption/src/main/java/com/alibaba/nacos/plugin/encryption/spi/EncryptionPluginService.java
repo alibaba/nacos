@@ -54,4 +54,18 @@ public interface EncryptionPluginService {
      * @return name
      */
     String algorithmName();
+    
+    /**
+     * encrypt secretKey.
+     * @param secretKey secretKey
+     * @return
+     */
+    String encryptSecretKey(String secretKey);
+    
+    /**
+     * decrypt secretKey.
+     * @param secretKey secretKey
+     * @return
+     */
+    String decryptSecretKey(String secretKey);
 }

@@ -37,6 +37,7 @@ import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.stereotype.Component;
 
@@ -101,7 +102,8 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setMd5(request.getCasMd5());
             configInfo.setType(type);
-            configInfo.setEncryptedDataKey(encryptedDataKey);
+            //执行秘钥加密
+            configInfo.setEncryptedDataKey(EncryptionHandler.encryptSecretHandler(dataId, encryptedDataKey));
             String betaIps = request.getAdditionParam("betaIps");
             if (StringUtils.isBlank(betaIps)) {
                 if (StringUtils.isBlank(tag)) {

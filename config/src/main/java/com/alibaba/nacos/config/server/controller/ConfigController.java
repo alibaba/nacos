@@ -171,7 +171,7 @@ public class ConfigController {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setType(type);
         String encryptedDataKey = pair.getFirst();
-        configInfo.setEncryptedDataKey(encryptedDataKey);
+        configInfo.setEncryptedDataKey(EncryptionHandler.encryptSecretHandler(dataId, encryptedDataKey));
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
@@ -703,7 +703,7 @@ public class ConfigController {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
                 ci.setTenant(namespace);
-                ci.setEncryptedDataKey(pair.getFirst());
+                ci.setEncryptedDataKey(EncryptionHandler.encryptSecretHandler(dataId, pair.getFirst()));
                 configInfoList.add(ci);
             }
         }
@@ -794,7 +794,7 @@ public class ConfigController {
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
-            ci.setEncryptedDataKey(pair.getFirst());
+            ci.setEncryptedDataKey(EncryptionHandler.encryptSecretHandler(dataId, pair.getFirst()));
             configInfoList.add(ci);
         }
         return null;

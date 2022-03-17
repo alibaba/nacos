@@ -38,6 +38,7 @@ import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.remote.control.TpsControl;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
 
@@ -258,6 +259,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             response.setErrorInfo(ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
                     "requested file is being modified, please try later.");
         }
+        //执行秘钥解密
+        response.setEncryptedDataKey(EncryptionHandler.decryptSecretHandler(dataId, response.getEncryptedDataKey()));
         return response;
     }
     

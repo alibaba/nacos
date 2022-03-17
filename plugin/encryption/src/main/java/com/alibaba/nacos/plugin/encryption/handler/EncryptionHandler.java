@@ -89,6 +89,52 @@ public class EncryptionHandler {
     }
     
     /**
+     * Execute secret encryption.
+     *
+     * @param dataId    dataId
+     * @param secretKey Decryption key.
+     * @return Return key and plaintext.
+     */
+    public static String encryptSecretHandler(String dataId, String secretKey) {
+        if (!checkCipher(dataId)) {
+            return secretKey;
+        }
+        String algorithmName = parseAlgorithmName(dataId);
+        Optional<EncryptionPluginService> optional = EncryptionPluginManager.instance()
+                .findEncryptionService(algorithmName);
+        if (!optional.isPresent()) {
+            LOGGER.warn("[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
+            return secretKey;
+        }
+        EncryptionPluginService encryptionPluginService = optional.get();
+        String decrypt = encryptionPluginService.encryptSecretKey(secretKey);
+        return decrypt;
+    }
+    
+    /**
+     * Execute secret decryption.
+     *
+     * @param dataId    dataId
+     * @param secretKey Decryption key.
+     * @return Return key and plaintext.
+     */
+    public static String decryptSecretHandler(String dataId, String secretKey) {
+        if (!checkCipher(dataId)) {
+            return secretKey;
+        }
+        String algorithmName = parseAlgorithmName(dataId);
+        Optional<EncryptionPluginService> optional = EncryptionPluginManager.instance()
+                .findEncryptionService(algorithmName);
+        if (!optional.isPresent()) {
+            LOGGER.warn("[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
+            return secretKey;
+        }
+        EncryptionPluginService encryptionPluginService = optional.get();
+        String decrypt = encryptionPluginService.decryptSecretKey(secretKey);
+        return decrypt;
+    }
+    
+    /**
      * Parse encryption algorithm name.
      *
      * @param dataId dataId
