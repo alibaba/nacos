@@ -102,7 +102,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setMd5(request.getCasMd5());
             configInfo.setType(type);
-            //执行秘钥加密
+            //Perform secret key encryption before pushing to the client
             configInfo.setEncryptedDataKey(EncryptionHandler.encryptSecretHandler(dataId, encryptedDataKey));
             String betaIps = request.getAdditionParam("betaIps");
             if (StringUtils.isBlank(betaIps)) {

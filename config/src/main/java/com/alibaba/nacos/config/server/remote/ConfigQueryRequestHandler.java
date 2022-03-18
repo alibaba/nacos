@@ -259,7 +259,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             response.setErrorInfo(ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
                     "requested file is being modified, please try later.");
         }
-        //执行秘钥解密
+        //Perform secret key decryption before pushing to the client
         response.setEncryptedDataKey(EncryptionHandler.decryptSecretHandler(dataId, response.getEncryptedDataKey()));
         return response;
     }
