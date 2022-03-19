@@ -35,6 +35,21 @@ public interface ProtocolAuthService<R> {
     void initialize();
     
     /**
+     * Judgement whether enable auth feature according to secured information.
+     * <p>
+     *     configuration authEnabled in {@link com.alibaba.nacos.auth.config.AuthConfigs} is the main switch.
+     *     If authEnabled is {@code false}, this method and other follow methods should not be called.
+     *
+     *     This method is only for plugin to judge whether auth this {@link Secured}.
+     *     For example, plugins can only auth for write action or only for naming type request.
+     * </p>
+     *
+     * @param secured secured information
+     * @return {@code true} if enable auth, otherwise {@code false}
+     */
+    boolean enableAuth(Secured secured);
+    
+    /**
      * Parse resource from protocol request and secured annotation.
      *
      * @param request protocol request
@@ -55,16 +70,17 @@ public interface ProtocolAuthService<R> {
      * Validate identity whether is legal.
      *
      * @param identityContext identity context
+     * @param resource        resource
      * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException exception during validating
      */
-    boolean validateIdentity(IdentityContext identityContext) throws AccessException;
+    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
     
     /**
      * Validate identity whether had permission for the resource and action.
      *
      * @param identityContext identity context
-     * @param permission      permssion include resource and action
+     * @param permission      permission include resource and action
      * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException exception during validating
      */

@@ -213,7 +213,7 @@ public class NacosConfigService implements ConfigService {
         cr.setType(type);
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
-        String encryptedDataKey = (String) cr.getParameter("encryptedDataKey");
+        String encryptedDataKey = cr.getEncryptedDataKey();
         
         return worker
                 .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);

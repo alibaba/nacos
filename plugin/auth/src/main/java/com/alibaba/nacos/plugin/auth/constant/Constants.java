@@ -43,10 +43,16 @@ public class Constants {
         public static final String SPLITTER = ":";
         
         public static final String ANY = "*";
+        
+        public static final String ACTION = "action";
     }
     
     public static class Identity {
         
         public static final String IDENTITY_ID = "identity_id";
+    
+        public static final String X_REAL_IP = "X-Real-IP";
+        
+        public static final String REMOTE_IP = "remote_ip";
     }
 }
