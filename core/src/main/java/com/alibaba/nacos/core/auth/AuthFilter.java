@@ -113,9 +113,13 @@ public class AuthFilter implements Filter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                if (!protocolAuthService.enableAuth(secured)) {
+                    chain.doFilter(request, response);
+                    return;
+                }
                 Resource resource = protocolAuthService.parseResource(req, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(req);
-                boolean result = protocolAuthService.validateIdentity(identityContext);
+                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");

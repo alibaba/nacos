@@ -29,6 +29,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import org.springframework.stereotype.Component;
 
@@ -66,9 +67,14 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 }
                 
                 Secured secured = method.getAnnotation(Secured.class);
+                if (!protocolAuthService.enableAuth(secured)) {
+                    return null;
+                }
+                String clientIp = meta.getClientIp();
+                request.putHeader(Constants.Identity.X_REAL_IP, clientIp);
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
-                boolean result = protocolAuthService.validateIdentity(identityContext);
+                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");

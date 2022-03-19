@@ -59,7 +59,6 @@ public class GrpcProtocolAuthServiceTest {
         protocolAuthService.initialize();
         mockConfigRequest();
         mockNamingRequest();
-        Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
     }
     
     private void mockConfigRequest() {
@@ -130,14 +129,14 @@ public class GrpcProtocolAuthServiceTest {
     @Test
     public void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(protocolAuthService.validateIdentity(identityContext));
+        assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     public void testValidateIdentityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(protocolAuthService.validateIdentity(identityContext));
+        assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test

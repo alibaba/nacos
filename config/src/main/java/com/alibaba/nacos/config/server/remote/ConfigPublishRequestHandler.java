@@ -77,6 +77,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             final String appName = request.getAdditionParam("appName");
             final String type = request.getAdditionParam("type");
             final String srcUser = request.getAdditionParam("src_user");
+            final String encryptedDataKey = request.getAdditionParam("encryptedDataKey");
             
             // check tenant
             ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -97,10 +98,11 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             }
             
             final Timestamp time = TimeUtils.getCurrentTime();
-            String betaIps = request.getAdditionParam("betaIps");
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setMd5(request.getCasMd5());
             configInfo.setType(type);
+            configInfo.setEncryptedDataKey(encryptedDataKey);
+            String betaIps = request.getAdditionParam("betaIps");
             if (StringUtils.isBlank(betaIps)) {
                 if (StringUtils.isBlank(tag)) {
                     if (StringUtils.isNotBlank(request.getCasMd5())) {

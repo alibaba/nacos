@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
@@ -48,18 +47,18 @@ public class NamingHttpResourceParser extends AbstractHttpResourceParser {
     @Override
     protected String getGroup(HttpServletRequest request) {
         String groupName = request.getParameter(CommonParams.GROUP_NAME);
-        String serviceName = request.getParameter(CommonParams.SERVICE_NAME);
         if (StringUtils.isBlank(groupName)) {
+            String serviceName = request.getParameter(CommonParams.SERVICE_NAME);
             groupName = NamingUtils.getGroupName(serviceName);
         }
-        return StringUtils.isBlank(groupName) ? Constants.Resource.ANY : groupName;
+        return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
     
     @Override
     protected String getResourceName(HttpServletRequest request) {
         // See comment in #getGroup
         String serviceName = NamingUtils.getServiceName(request.getParameter(CommonParams.SERVICE_NAME));
-        return StringUtils.isBlank(serviceName) ? Constants.Resource.ANY : serviceName;
+        return StringUtils.isBlank(serviceName) ? StringUtils.EMPTY : serviceName;
     }
     
     @Override

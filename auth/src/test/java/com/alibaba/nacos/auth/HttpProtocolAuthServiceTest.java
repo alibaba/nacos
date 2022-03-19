@@ -64,7 +64,6 @@ public class HttpProtocolAuthServiceTest {
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testCNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testCG");
         Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
-        Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
     }
     
     @Test
@@ -120,14 +119,14 @@ public class HttpProtocolAuthServiceTest {
     @Test
     public void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(httpProtocolAuthService.validateIdentity(identityContext));
+        assertTrue(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     public void testValidateIdentityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
-        assertFalse(httpProtocolAuthService.validateIdentity(identityContext));
+        assertFalse(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test

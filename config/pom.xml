@@ -68,6 +68,11 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-encryption-plugin</artifactId>
+        </dependency>
         
         <!-- for aop -->
         <dependency>

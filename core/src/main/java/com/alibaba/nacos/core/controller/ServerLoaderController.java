@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
@@ -36,9 +35,9 @@ import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.RemoteUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -79,20 +78,27 @@ public class ServerLoaderController {
     
     private static final String FAIL_RESULT = "Fail";
     
-    @Autowired
-    private ConnectionManager connectionManager;
+    private static final String SDK_CONNECTION_COUNT_METRIC = "sdkConCount";
     
-    @Autowired
-    private ServerMemberManager serverMemberManager;
+    private final ConnectionManager connectionManager;
     
-    @Autowired
-    private ClusterRpcClientProxy clusterRpcClientProxy;
+    private final ServerMemberManager serverMemberManager;
     
-    @Autowired
-    private ServerReloaderRequestHandler serverReloaderRequestHandler;
+    private final ClusterRpcClientProxy clusterRpcClientProxy;
     
-    @Autowired
-    private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
+    private final ServerReloaderRequestHandler serverReloaderRequestHandler;
+    
+    private final ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
+    
+    public ServerLoaderController(ConnectionManager connectionManager, ServerMemberManager serverMemberManager,
+            ClusterRpcClientProxy clusterRpcClientProxy, ServerReloaderRequestHandler serverReloaderRequestHandler,
+            ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler) {
+        this.connectionManager = connectionManager;
+        this.serverMemberManager = serverMemberManager;
+        this.clusterRpcClientProxy = clusterRpcClientProxy;
+        this.serverReloaderRequestHandler = serverReloaderRequestHandler;
+        this.serverLoaderInfoRequestHandler = serverLoaderInfoRequestHandler;
+    }
     
     /**
      * Get current clients.
@@ -115,7 +121,6 @@ public class ServerLoaderController {
     @GetMapping("/reloadCurrent")
     public ResponseEntity<String> reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
-        Map<String, String> responseMap = new HashMap<>(3);
         connectionManager.loadCount(count, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
@@ -134,7 +139,7 @@ public class ServerLoaderController {
         LOGGER.info("Smart reload request receive,requestIp={}", getRemoteIp(request));
         
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
-        Object avgString = (Object) serverLoadMetrics.get("avg");
+        Object avgString = serverLoadMetrics.get("avg");
         List<ServerLoaderMetrics> details = (List<ServerLoaderMetrics>) serverLoadMetrics.get("detail");
         int avg = Integer.parseInt(avgString.toString());
         float loaderFactor =
@@ -142,11 +147,11 @@ public class ServerLoaderController {
         int overLimitCount = (int) (avg * (1 + loaderFactor));
         int lowLimitCount = (int) (avg * (1 - loaderFactor));
         
-        List<ServerLoaderMetrics> overLimitServer = new ArrayList<ServerLoaderMetrics>();
-        List<ServerLoaderMetrics> lowLimitServer = new ArrayList<ServerLoaderMetrics>();
+        List<ServerLoaderMetrics> overLimitServer = new ArrayList<>();
+        List<ServerLoaderMetrics> lowLimitServer = new ArrayList<>();
         
         for (ServerLoaderMetrics metrics : details) {
-            int sdkCount = Integer.parseInt(metrics.getMetric().get("sdkConCount"));
+            int sdkCount = Integer.parseInt(metrics.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             if (sdkCount > overLimitCount) {
                 overLimitServer.add(metrics);
             }
@@ -157,8 +162,8 @@ public class ServerLoaderController {
         
         // desc by sdkConCount
         overLimitServer.sort((o1, o2) -> {
-            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get("sdkConCount"));
-            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get("sdkConCount"));
+            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             return sdkCount1.compareTo(sdkCount2) * -1;
         });
         
@@ -166,8 +171,8 @@ public class ServerLoaderController {
         
         //asc by sdkConCount
         lowLimitServer.sort((o1, o2) -> {
-            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get("sdkConCount"));
-            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get("sdkConCount"));
+            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             return sdkCount1.compareTo(sdkCount2);
         });
         
@@ -259,7 +264,7 @@ public class ServerLoaderController {
     
     private Map<String, Object> getServerLoadMetrics() {
         
-        List<ServerLoaderMetrics> responseList = new LinkedList<ServerLoaderMetrics>();
+        List<ServerLoaderMetrics> responseList = new LinkedList<>();
         
         // default include self.
         int memberSize = serverMemberManager.allMembersWithoutSelf().size();
@@ -340,7 +345,7 @@ public class ServerLoaderController {
                 total += sdkConCount;
             }
         }
-        Map<String, Object> responseMap = new HashMap<>(3);
+        Map<String, Object> responseMap = new HashMap<>(9);
         responseList.sort(Comparator.comparing(ServerLoaderMetrics::getAddress));
         responseMap.put("detail", responseList);
         responseMap.put("memberCount", serverMemberManager.allMembers().size());

@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.auth.parser;
 
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
 
 import java.util.Properties;
 
@@ -29,12 +31,15 @@ import java.util.Properties;
 public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
     
     @Override
-    public Resource parse(R request, String type) {
+    public Resource parse(R request, Secured secured) {
         String namespaceId = getNamespaceId(request);
         String group = getGroup(request);
         String name = getResourceName(request);
         Properties properties = getProperties(request);
-        return new Resource(namespaceId, group, name, type, properties);
+        String action = secured.action().toString();
+        properties.putIfAbsent(Constants.Resource.ACTION, action);
+        injectTagsToProperties(properties, secured);
+        return new Resource(namespaceId, group, name, secured.signType(), properties);
     }
     
     /**
@@ -68,4 +73,16 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return custom properties
      */
     protected abstract Properties getProperties(R request);
+    
+    /**
+     * Inject tags defined in {@link Secured#tags()} into Resource properties, both key and value.
+     *
+     * @param properties properties in resource
+     * @param secured    secured
+     */
+    protected void injectTagsToProperties(Properties properties, Secured secured) {
+        for (String each : secured.tags()) {
+            properties.put(each, each);
+        }
+    }
 }

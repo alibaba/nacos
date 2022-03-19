@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
@@ -52,6 +53,7 @@ import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,8 +123,8 @@ public class ConfigController {
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
+    public Boolean publishConfig(HttpServletRequest request, @RequestParam(value = "dataId") String dataId,
+            @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
             @RequestParam(value = "appName", required = false) String appName,
@@ -143,6 +145,11 @@ public class ConfigController {
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
         }
+        
+        // encrypted
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+        content = pair.getSecond();
+        
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -166,11 +173,13 @@ public class ConfigController {
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setType(type);
+        String encryptedDataKey = pair.getFirst();
+        configInfo.setEncryptedDataKey(encryptedDataKey);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
-                ConfigChangePublisher
-                        .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
+                ConfigChangePublisher.notifyConfigChange(
+                        new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
                 persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
                 ConfigChangePublisher.notifyConfigChange(
@@ -178,13 +187,13 @@ public class ConfigController {
             }
         } else {
             // beta publish
+            configInfo.setEncryptedDataKey(encryptedDataKey);
             persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
-            ConfigChangePublisher
-                    .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
+            ConfigChangePublisher.notifyConfigChange(
+                    new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
         }
-        ConfigTraceService
-                .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                        ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
+                InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
         return true;
     }
     
@@ -221,15 +230,23 @@ public class ConfigController {
      */
     @GetMapping(params = "show=all")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    public ConfigAllInfo detailConfigInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
             throws NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
-        return persistService.findConfigAllInfo(dataId, group, tenant);
+        ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
+    
+        // decrypted
+        if (Objects.nonNull(configAllInfo)) {
+            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                    configAllInfo.getContent());
+            configAllInfo.setContent(pair.getSecond());
+        }
+        return configAllInfo;
     }
     
     /**
@@ -239,8 +256,8 @@ public class ConfigController {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    public Boolean deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
@@ -257,8 +274,8 @@ public class ConfigController {
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
                 ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
         return true;
     }
     
@@ -273,8 +290,7 @@ public class ConfigController {
      */
     @DeleteMapping(params = "delType=ids")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(value = "ids") List<Long> ids) {
+    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
@@ -285,9 +301,10 @@ public class ConfigController {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-            ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), null,
-                            time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE,
+                    null);
         }
         return RestResultUtils.success(true);
     }
@@ -419,8 +436,8 @@ public class ConfigController {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");
         }
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
         return RestResultUtils.success("stop beta ok", true);
     }
     
@@ -439,6 +456,12 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         try {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
+    
+            if (Objects.nonNull(ci)) {
+                String encryptedDataKey = ci.getEncryptedDataKey();
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
+                ci.setContent(pair.getSecond());
+            }
             return RestResultUtils.success("stop beta ok", ci);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
@@ -476,15 +499,17 @@ public class ConfigController {
                 }
                 String metaDataId = ci.getDataId();
                 if (metaDataId.contains(".")) {
-                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId
-                            .substring(metaDataId.lastIndexOf(".") + 1);
+                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId.substring(
+                            metaDataId.lastIndexOf(".") + 1);
                 }
                 metaData.append(ci.getGroup()).append('.').append(metaDataId).append(".app=")
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
         }
         if (metaData != null) {
             zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
@@ -528,14 +553,15 @@ public class ConfigController {
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
             configMetadataItems.add(configMetadataItem);
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
         }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
-        
-        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
-                YamlParserUtil.dumpObject(configMetadata)));
+        zipItemList.add(
+                new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
         HttpHeaders headers = new HttpHeaders();
         String fileName =
                 EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
@@ -601,16 +627,15 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = persistService
-                .batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false, policy);
+        Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time,
+                false, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-            ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                            ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
+                    ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         // unrecognizedCount
         if (!unrecognizedList.isEmpty()) {
@@ -663,18 +688,25 @@ public class ConfigController {
                 String dataId = groupAdnDataId[1];
                 String tempDataId = dataId;
                 if (tempDataId.contains(".")) {
-                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId
-                            .substring(tempDataId.lastIndexOf(".") + 1);
+                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(
+                            tempDataId.lastIndexOf(".") + 1);
                 }
                 final String metaDataId = group + "." + tempDataId + ".app";
+    
+                //encrypted
+                String content = item.getItemData();
+                Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+                content = pair.getSecond();
+                
                 ConfigAllInfo ci = new ConfigAllInfo();
                 ci.setGroup(group);
                 ci.setDataId(dataId);
-                ci.setContent(item.getItemData());
+                ci.setContent(content);
                 if (metaDataMap.get(metaDataId) != null) {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
                 ci.setTenant(namespace);
+                ci.setEncryptedDataKey(pair.getFirst());
                 configInfoList.add(ci);
             }
         }
@@ -753,6 +785,10 @@ public class ConfigController {
                 unrecognizedList.add(unrecognizedItem);
                 continue;
             }
+            // encrypted
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+            content = pair.getSecond();
+            
             ConfigAllInfo ci = new ConfigAllInfo();
             ci.setGroup(group);
             ci.setDataId(dataId);
@@ -761,6 +797,7 @@ public class ConfigController {
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
+            ci.setEncryptedDataKey(pair.getFirst());
             configInfoList.add(ci);
         }
         return null;
@@ -781,8 +818,8 @@ public class ConfigController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "tenant", required = true) String namespace,
-            @RequestBody(required = true) List<SameNamespaceCloneConfigBean> configBeansList,
+            @RequestParam(value = "tenant") String namespace,
+            @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
@@ -828,22 +865,22 @@ public class ConfigController {
                 ci4save.setAppName(ci.getAppName());
             }
             ci4save.setDesc(ci.getDesc());
+            ci4save.setEncryptedDataKey(ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
     
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = persistService
-                .batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp, null, time, false, policy);
+        Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp, null,
+                time, false, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-            ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                            ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
+                    ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }

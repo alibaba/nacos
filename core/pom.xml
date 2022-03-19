@@ -149,11 +149,6 @@
             <artifactId>commons-collections</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-        </dependency>
-
         <!--   micrometer  start   -->
         <dependency>
             <groupId>io.micrometer</groupId>

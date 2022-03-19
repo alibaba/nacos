@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.api.naming.ability;
 
+import java.io.Serializable;
+
 /**
  * naming abilities of nacos client.
  *
  * @author liuzunfei
  * @version $Id: ClientNamingAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ClientNamingAbility {
-    
+public class ClientNamingAbility implements Serializable {
+
+    private static final long serialVersionUID = 7643941846828882862L;
+
     private boolean supportDeltaPush;
     
     private boolean supportRemoteMetric;
