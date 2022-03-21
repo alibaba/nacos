@@ -142,8 +142,7 @@ public class DistroFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
                     "no such api:" + req.getMethod() + ":" + req.getRequestURI());
         } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Server failed," + ExceptionUtil.getAllExceptionMsg(e));
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed in DistroFilter, " + ExceptionUtil.getAllExceptionMsg(e));
         }
         
     }

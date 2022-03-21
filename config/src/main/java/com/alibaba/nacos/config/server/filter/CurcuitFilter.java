@@ -99,7 +99,7 @@ public class CurcuitFilter implements Filter {
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
         } catch (Throwable e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.toString());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed in CurcuitFilter, " + ExceptionUtil.getAllExceptionMsg(e));
         }
     }
     
