@@ -315,6 +315,10 @@ public final class RowMapperManager {
                 info.setType(rs.getString("type"));
             } catch (SQLException ignore) {
             }
+            try {
+                info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
+            } catch (SQLException ignore) {
+            }
             return info;
         }
     }

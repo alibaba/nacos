@@ -48,7 +48,7 @@ public class Page<E> implements Serializable {
     /**
      * pageItems.
      */
-    private List<E> pageItems = new ArrayList<E>();
+    private List<E> pageItems = new ArrayList<>();
     
     public void setPageNumber(int pageNumber) {
         this.pageNumber = pageNumber;
