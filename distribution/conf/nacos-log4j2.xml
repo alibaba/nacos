@@ -1,0 +1,711 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<Configuration status="WARN">
+    <Appenders>
+        
+        <RollingFile name="cmdb-main" fileName="logs/cmdb-main.log"
+            filePattern="logs/cmdb-main.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-cmdb-main">
+            <appender-ref ref="cmdb-main" />
+        </Async>
+        
+        <Console name="CONSOLE" target="SYSTEM_OUT">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+        </Console>
+        
+        <RollingFile name="naming-server" fileName="logs/naming-server.log"
+            filePattern="logs/naming-server.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+        <Async name="async-naming-server">
+            <appender-ref ref="naming-server" />
+        </Async>
+        
+        <RollingFile name="naming-raft" fileName="logs/naming-raft.log"
+            filePattern="logs/naming-raft.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+        <Async name="async-naming-raft">
+            <appender-ref ref="naming-raft" />
+        </Async>
+        
+        <RollingFile name="naming-distro" fileName="logs/naming-distro.log"
+            filePattern="logs/naming-distro.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+        <Async name="async-naming-distro">
+            <appender-ref ref="naming-distro" />
+        </Async>
+        
+        <RollingFile name="naming-event" fileName="logs/naming-event.log"
+            filePattern="logs/naming-event.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-naming-event">
+            <appender-ref ref="naming-event" />
+        </Async>
+        
+        <RollingFile name="naming-push" fileName="logs/naming-push.log"
+            filePattern="logs/naming-push.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-naming-push">
+            <appender-ref ref="naming-push" />
+        </Async>
+        
+        <RollingFile name="naming-rt" fileName="logs/naming-rt.log"
+            filePattern="logs/naming-rt.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-naming-rt">
+            <appender-ref ref="naming-rt" />
+        </Async>
+        
+        <RollingFile name="naming-performance" fileName="logs/naming-performance.log"
+            filePattern="logs/naming-performance.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-naming-performance">
+            <appender-ref ref="naming-performance" />
+        </Async>
+        
+        <RollingFile name="dumpFile" fileName="logs/config-dump.log"
+            filePattern="logs/config-dump.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-dumpFile">
+            <appender-ref ref="dumpFile" />
+        </Async>
+        
+        <RollingFile name="pullFile" fileName="logs/config-pull.log"
+            filePattern="logs/config-pull.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-pullFile">
+            <appender-ref ref="pullFile" />
+        </Async>
+        
+        <RollingFile name="fatalFile" fileName="logs/config-fatal.log"
+            filePattern="logs/config-fatal.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-fatalFile">
+            <appender-ref ref="fatalFile" />
+        </Async>
+        
+        <RollingFile name="memoryFile" fileName="logs/config-memory.log"
+            filePattern="logs/config-memory.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-memoryFile">
+            <appender-ref ref="memoryFile" />
+        </Async>
+        
+        <RollingFile name="pullCheckFile" fileName="logs/config-pull-check.log"
+            filePattern="logs/config-pull-check.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-pullCheckFile">
+            <appender-ref ref="pullCheckFile" />
+        </Async>
+        
+        <RollingFile name="clientLog" fileName="logs/config-client-request.log"
+            filePattern="logs/config-client-request.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-clientLog">
+            <appender-ref ref="clientLog" />
+        </Async>
+        
+        <RollingFile name="traceLog" fileName="logs/config-trace.log"
+            filePattern="logs/config-trace.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-traceLog">
+            <appender-ref ref="traceLog" />
+        </Async>
+        
+        <RollingFile name="notifyLog" fileName="logs/config-notify.log"
+            filePattern="logs/config-notify.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-notifyLog">
+            <appender-ref ref="notifyLog" />
+        </Async>
+        
+        <RollingFile name="startLog" fileName="logs/config-server.log"
+            filePattern="logs/config-server.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-startLog">
+            <appender-ref ref="startLog" />
+        </Async>
+        
+        <RollingFile name="nacos-address" fileName="logs/nacos-address.log"
+            filePattern="logs/nacos-address.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-nacos-address">
+            <appender-ref ref="nacos-address" />
+        </Async>
+        
+        <RollingFile name="istio-main" fileName="logs/istio-main.log"
+            filePattern="logs/istio-main.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-istio-main">
+            <appender-ref ref="istio-main" />
+        </Async>
+        
+        <RollingFile name="core-auth" fileName="logs/core-auth.log"
+            filePattern="logs/core-auth.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-core-auth">
+            <appender-ref ref="core-auth" />
+        </Async>
+        
+        <RollingFile name="protocol-raft" fileName="logs/protocol-raft.log"
+            filePattern="logs/protocol-raft.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-protocol-raft">
+            <appender-ref ref="protocol-raft" />
+        </Async>
+        
+        <RollingFile name="protocol-distro" fileName="logs/protocol-distro.log"
+            filePattern="logs/protocol-distro.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-protocol-distro">
+            <appender-ref ref="protocol-distro" />
+        </Async>
+        
+        <RollingFile name="nacos-cluster" fileName="logs/nacos-cluster.log"
+            filePattern="logs/nacos-cluster.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-nacos-cluster">
+            <appender-ref ref="nacos-cluster" />
+        </Async>
+        
+        <RollingFile name="alipay-jraft" fileName="logs/alipay-jraft.log"
+            filePattern="logs/alipay-jraft.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-alipay-jraft">
+            <appender-ref ref="alipay-jraft" />
+        </Async>
+        
+        <RollingFile name="rootFile" fileName="logs/nacos.log"
+            filePattern="logs/nacos.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="1 GB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="7">
+                <Delete basePath="logs" maxDepth="1">
+                    <IfLastModified age="7d"/>
+                </Delete>
+            </DefaultRolloverStrategy>
+        
+        </RollingFile>
+        <Async name="async-rootFile">
+            <appender-ref ref="rootFile" />
+        </Async>
+    </Appenders>
+    
+    <Loggers>
+        
+        <Logger name="com.alibaba.nacos.address.main" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-nacos-address"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.cmdb.main" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-cmdb-main"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.naming.main" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-server"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.naming.raft" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-raft"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.naming.distro" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-distro"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.naming.event" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-event"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.naming.push" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-push"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.naming.rt" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-rt"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.naming.performance" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-naming-performance"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.config.dumpLog" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-dumpFile"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.config.pullLog" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-pullFile"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.config.pullCheckLog" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-pullCheckFile"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.config.fatal" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-fatalFile"/>
+        </Logger>
+        <Logger name="com.alibaba.nacos.config.monitorLog" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-memoryFile"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.config.clientLog" additivity="false">
+            <level value="info"/>
+            <appender-ref ref="async-clientLog"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.config.notifyLog" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-notifyLog"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.config.traceLog" additivity="false">
+            <level value="info"/>
+            <appender-ref ref="async-traceLog"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.config.startLog" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-startLog"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.istio.main" additivity="false">
+            <level value="DEBUG"/>
+            <appender-ref ref="async-istio-main"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.core.auth" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-core-auth"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-protocol-raft"/>
+        </Logger>
+        
+        <Logger name="com.alipay.sofa.jraft" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-alipay-jraft"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.core.protocol.distro" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-protocol-distro"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.core.cluster" additivity="false">
+            <level value="INFO"/>
+            <appender-ref ref="async-nacos-cluster"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.core.listener.StartingApplicationListener">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.common.notify.NotifyCenter">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.sys.file.WatchFileCenter">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </Logger>
+        
+        <Logger name="com.alibaba.nacos.common.executor.ThreadPoolManager">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </Logger>
+        
+        <Root level="INFO">
+            <AppenderRef ref="async-rootFile"/>
+        </Root>
+    </Loggers>
+</Configuration>
