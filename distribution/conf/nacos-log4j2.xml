@@ -17,7 +17,6 @@
 
 <Configuration status="WARN">
     <Appenders>
-        
         <RollingFile name="cmdb-main" fileName="logs/cmdb-main.log"
             filePattern="logs/cmdb-main.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
