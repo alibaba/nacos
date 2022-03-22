@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.plugin.auth.impl.users.User;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -27,6 +26,7 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.users.User;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,7 +37,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Builtin access control entry of Nacos.
@@ -173,14 +175,17 @@ public class NacosAuthManager {
         user.setUserName(username);
         user.setToken(token);
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        Set<String> roles = new HashSet<>();
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
+                roles.add(roleInfo.getRole());
                 if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
                     user.setGlobalAdmin(true);
-                    break;
+                    continue;
                 }
             }
         }
+        user.setRoles(roles);
         return user;
     }
 }

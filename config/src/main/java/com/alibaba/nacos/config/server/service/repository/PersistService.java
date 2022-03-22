@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Database service, providing access to ConfigInfo in the database
@@ -1346,4 +1347,12 @@ public interface PersistService {
      * @return {@link ConfigInfoBase}
      */
     List<ConfigInfoWrapper> queryConfigInfoByNamespace(final String tenantId);
+    
+    /**
+     * query by tenantids.
+     *
+     * @param ids tenantId set
+     * @return {@link TenantInfo}
+     */
+    List<TenantInfo> findTenantByIds(Set<String> ids);
 }

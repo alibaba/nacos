@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.users;
 
+import java.util.Set;
+
 /**
  * Nacos User.
  *
@@ -27,7 +29,17 @@ public class NacosUser extends User {
     private String token;
     
     private boolean globalAdmin = false;
-    
+
+    private Set<String> roles;
+
+    public Set<String> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<String> roles) {
+        this.roles = roles;
+    }
+
     public String getToken() {
         return token;
     }
@@ -46,6 +58,11 @@ public class NacosUser extends User {
     
     @Override
     public String toString() {
-        return "NacosUser{" + "token='" + token + '\'' + ", globalAdmin=" + globalAdmin + '}';
+        final StringBuilder sb = new StringBuilder("NacosUser{");
+        sb.append("token='").append(token).append('\'');
+        sb.append(", globalAdmin=").append(globalAdmin);
+        sb.append(", roles=").append(roles);
+        sb.append('}');
+        return sb.toString();
     }
 }

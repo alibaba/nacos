@@ -69,6 +69,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -2599,6 +2600,22 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenantId) ? StringUtils.EMPTY : tenantId;
         final String sql = "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info WHERE tenant_id=?";
         return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
+    }
+    
+    @Override
+    public List<TenantInfo> findTenantByIds(Set<String> ids) {
+        int size = ids.size();
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE tenant_id in (");
+        for (int i = 0; i < size; i++) {
+            buffer.append("?");
+            if (i != size - 1) {
+                buffer.append(",");
+            }
+        }
+        buffer.append(")");
+        
+        return databaseOperate.queryMany(buffer.toString(), ids.toArray(new String[0]), TENANT_INFO_ROW_MAPPER);
     }
 }
 

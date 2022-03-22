@@ -55,6 +55,7 @@ import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
@@ -77,6 +78,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
@@ -2846,5 +2848,24 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             throw e;
         }
     }
-
+    
+    @Override
+    public List<TenantInfo> findTenantByIds(Set<String> ids) {
+        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE tenant_id in (:ids)";
+        try {
+            Map<String, Object> param = new HashMap<>();
+            param.put("ids", ids);
+            NamedParameterJdbcTemplate jdbcTemplate = new NamedParameterJdbcTemplate(this.jt);
+            return jdbcTemplate.query(sql, param, TENANT_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        } catch (EmptyResultDataAccessException e) {
+            return Collections.emptyList();
+        } catch (Exception e) {
+            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+    
 }

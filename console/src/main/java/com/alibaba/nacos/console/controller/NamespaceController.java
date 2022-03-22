@@ -17,7 +17,7 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -26,7 +26,14 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,8 +46,12 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -52,8 +63,19 @@ import java.util.regex.Pattern;
 @RequestMapping("/v1/console/namespaces")
 public class NamespaceController {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(NamespaceController.class);
+    
     @Autowired
     private PersistService persistService;
+    
+    @Autowired
+    private AuthConfigs authConfigs;
+    
+    @Autowired
+    private NacosRoleServiceImpl nacosRoleService;
+    
+    @Autowired
+    private NacosAuthManager nacosAuthManager;
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
     
@@ -73,6 +95,8 @@ public class NamespaceController {
     
     private static final String DEFAULT_KP = "1";
     
+    private static final Pattern TENANT_ID_PTN = Pattern.compile("(.*):(.*):(.*)");
+    
     /**
      * Get namespace list.
      *
@@ -82,12 +106,25 @@ public class NamespaceController {
      */
     @GetMapping
     public RestResult<List<Namespace>> getNamespaces(HttpServletRequest request, HttpServletResponse response) {
-        // TODO 获取用kp
-        List<TenantInfo> tenantInfos = persistService.findTenantByKp(DEFAULT_KP);
-        Namespace namespace0 = new Namespace("", DEFAULT_NAMESPACE, DEFAULT_QUOTA,
-                persistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
+        NacosUser user = getUserFromRequest(request);
+        if (Objects.isNull(user)) {
+            return RestResultUtils.failed("Not login ");
+        }
+        List<TenantInfo> tenantInfos;
         List<Namespace> namespaces = new ArrayList<Namespace>();
-        namespaces.add(namespace0);
+        if (!authConfigs.isAuthEnabled() || user.isGlobalAdmin()) {
+            //query all
+            namespaces.add(createDefaultNamespace());
+            tenantInfos = persistService.findTenantByKp(DEFAULT_KP);
+        } else {
+            // query by user
+            Set<String> tenantIds = getTenantIdsByRole(user.getRoles());
+            if (tenantIds.contains(DEFAULT_TENANT)) {
+                namespaces.add(createDefaultNamespace());
+                tenantIds.remove(DEFAULT_TENANT);
+            }
+            tenantInfos = persistService.findTenantByIds(tenantIds);
+        }
         for (TenantInfo tenantInfo : tenantInfos) {
             int configCount = persistService.configInfoCount(tenantInfo.getTenantId());
             Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(), tenantInfo.getTenantName(), DEFAULT_QUOTA,
@@ -202,6 +239,43 @@ public class NamespaceController {
             @RequestParam("namespaceId") String namespaceId) {
         persistService.removeTenantInfoAtomic(DEFAULT_KP, namespaceId);
         return true;
+    }
+    
+    private NacosUser getUserFromRequest(HttpServletRequest request) {
+        NacosUser user = (NacosUser) request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY);
+        if (Objects.isNull(user)) {
+            try {
+                user = (NacosUser) nacosAuthManager.login(request);
+            } catch (Exception e) {
+                LOGGER.error("login error");
+            }
+        }
+        return user;
+    }
+    
+    private Set<String> getTenantIdsByRole(Set<String> roles) {
+        List<PermissionInfo> allPermission = new ArrayList<>();
+        for (String role : roles) {
+            allPermission.addAll(nacosRoleService.getPermissions(role));
+        }
+        return getTenantIds(allPermission);
+    }
+    
+    private Namespace createDefaultNamespace() {
+        return new Namespace("", DEFAULT_NAMESPACE, DEFAULT_QUOTA, persistService.configInfoCount(DEFAULT_TENANT),
+                NamespaceTypeEnum.GLOBAL.getType());
+    }
+    
+    private Set<String> getTenantIds(List<PermissionInfo> permissionInfos) {
+        Set<String> tenantIds = new HashSet<>();
+        for (PermissionInfo info : permissionInfos) {
+            Matcher matcher = TENANT_ID_PTN.matcher(info.getResource());
+            if (matcher.matches()) {
+                tenantIds.add(matcher.group(1));
+            }
+            
+        }
+        return tenantIds;
     }
     
 }
