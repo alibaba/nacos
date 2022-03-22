@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -48,6 +49,7 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -1040,9 +1042,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper
-                .fetchPage(sqlCount + where.toString(), sql + where.toString(), paramList.toArray(), pageNo, pageSize,
-                        CONFIG_INFO_ROW_MAPPER);
+        Page<ConfigInfo> page = helper.fetchPage(sqlCount + where, sql + where, paramList.toArray(), pageNo, pageSize,
+                CONFIG_INFO_ROW_MAPPER);
+    
+        for (ConfigInfo configInfo : page.getPageItems()) {
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
+                    configInfo.getEncryptedDataKey(), configInfo.getContent());
+            configInfo.setContent(pair.getSecond());
+        }
+    
+        return page;
     }
     
     @Override
@@ -1629,7 +1638,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sqlCountRows = "SELECT count(*) FROM config_info";
-        String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info";
+        String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         List<String> params = new ArrayList<String>();
         params.add(generateLikeArgument(tenantTmp));
@@ -1687,8 +1696,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+        Page<ConfigInfo> page = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
+                pageSize, CONFIG_INFO_ROW_MAPPER);
+        for (ConfigInfo configInfo : page.getPageItems()) {
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
+                    configInfo.getEncryptedDataKey(), configInfo.getContent());
+            configInfo.setContent(pair.getSecond());
+        }
+        return page;
         
     }
     

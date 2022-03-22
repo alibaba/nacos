@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -35,6 +36,9 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import org.apache.commons.codec.Charsets;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
@@ -45,7 +49,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
-import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -249,13 +252,21 @@ public class ConfigServletInner {
                 }
                 
                 if (PropertyUtil.isDirectRead()) {
+                    Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId,
+                            configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
                     out = response.getWriter();
-                    out.print(configInfoBase.getContent());
+                    out.print(pair.getSecond());
                     out.flush();
                     out.close();
                 } else {
-                    fis.getChannel()
-                            .transferTo(0L, fis.getChannel().size(), Channels.newChannel(response.getOutputStream()));
+                    String fileContent = IoUtils.toString(fis, Charsets.UTF_8.name());
+                    String encryptedDataKey = cacheItem.getEncryptedDataKey();
+                    Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, fileContent);
+                    String decryptContent = pair.getSecond();
+                    out = response.getWriter();
+                    out.println(decryptContent);
+                    out.flush();
+                    out.close();
                 }
                 
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
