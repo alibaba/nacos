@@ -18,6 +18,9 @@ package com.alibaba.nacos.auth.parser.grpc;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.parser.AbstractResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+
+import java.util.Properties;
 
 /**
  * Abstract Grpc Resource Parser.
@@ -25,5 +28,11 @@ import com.alibaba.nacos.auth.parser.AbstractResourceParser;
  * @author xiweng.yy
  */
 public abstract class AbstractGrpcResourceParser extends AbstractResourceParser<Request> {
-
+    
+    @Override
+    protected Properties getProperties(Request request) {
+        Properties properties = new Properties();
+        properties.setProperty(Constants.Resource.REQUEST_CLASS, request.getClass().getSimpleName());
+        return properties;
+    }
 }
