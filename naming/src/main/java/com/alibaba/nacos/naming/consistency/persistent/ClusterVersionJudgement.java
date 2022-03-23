@@ -74,7 +74,7 @@ public class ClusterVersionJudgement {
         try {
             finish = judge();
         } finally {
-            if(!finish){
+            if (!finish) {
                 GlobalExecutor.submitClusterVersionJudge(this::runVersionListener, TimeUnit.SECONDS.toMillis(5));
             }
         }
