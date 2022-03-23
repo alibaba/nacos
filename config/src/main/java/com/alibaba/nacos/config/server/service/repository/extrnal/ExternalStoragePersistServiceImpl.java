@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -42,6 +43,7 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
@@ -991,9 +993,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sqlCount = "SELECT count(*) FROM config_info";
-        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info";
+        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
-        List<String> paramList = new ArrayList<String>();
+        List<String> paramList = new ArrayList<>();
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
@@ -1041,10 +1043,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
         }
         try {
-            return helper.fetchPage(sqlCount + where, sql + where, paramList.toArray(), pageNo, pageSize,
-                    CONFIG_INFO_ROW_MAPPER);
+            Page<ConfigInfo> page = helper.fetchPage(sqlCount + where, sql + where, paramList.toArray(), pageNo,
+                    pageSize, CONFIG_INFO_ROW_MAPPER);
+            for (ConfigInfo configInfo : page.getPageItems()) {
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
+                        configInfo.getEncryptedDataKey(), configInfo.getContent());
+                configInfo.setContent(pair.getSecond());
+            }
+            return page;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] ", e);
             throw e;
         }
     }
@@ -1691,7 +1699,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         String sqlCountRows = "SELECT count(*) FROM config_info";
-        String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info";
+        String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         List<String> params = new ArrayList<String>();
         params.add(generateLikeArgument(tenantTmp));
@@ -1748,10 +1756,17 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                    CONFIG_INFO_ROW_MAPPER);
+            Page<ConfigInfo> page = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                    pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+    
+            for (ConfigInfo configInfo : page.getPageItems()) {
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
+                        configInfo.getEncryptedDataKey(), configInfo.getContent());
+                configInfo.setContent(pair.getSecond());
+            }
+            return page;
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
         }
     }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Config Grpc resource parser.
@@ -58,10 +57,5 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
         String dataId = (String) ReflectUtils
                 .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, StringUtils.EMPTY);
         return StringUtils.isBlank(dataId) ? StringUtils.EMPTY : dataId;
-    }
-    
-    @Override
-    protected Properties getProperties(Request request) {
-        return new Properties();
     }
 }
