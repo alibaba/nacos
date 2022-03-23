@@ -225,7 +225,8 @@ public class ServerHttpAgent implements HttpAgent {
     private boolean isFail(HttpRestResult<String> result) {
         return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
                 || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
-                || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE;
+                || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
+                || result.getCode() == HttpURLConnection.HTTP_NOT_FOUND;
     }
     
     public static String getAppname() {
