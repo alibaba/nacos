@@ -50,6 +50,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -62,6 +64,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -74,6 +78,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -86,6 +92,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -98,6 +106,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -110,6 +120,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -122,6 +134,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     @Test
@@ -134,6 +148,8 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
+        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
     }
     
     private AbstractNamingRequest mockNamingRequest(String testNs, String testG, String testS) {

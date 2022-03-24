@@ -23,8 +23,6 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.util.Properties;
-
 /**
  * Naming Grpc resource parser.
  *
@@ -60,10 +58,5 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
             serviceName = (String) ReflectUtils.getFieldValue(request, CommonParams.SERVICE_NAME, "");
         }
         return StringUtils.isBlank(serviceName) ? StringUtils.EMPTY : serviceName;
-    }
-    
-    @Override
-    protected Properties getProperties(Request request) {
-        return new Properties();
     }
 }
