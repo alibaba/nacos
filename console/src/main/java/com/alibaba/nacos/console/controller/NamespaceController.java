@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
@@ -69,10 +70,27 @@ public class NamespaceController {
     
     private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Public Namespace";
     
-    private static final String DEFAULT_TENANT = "";
-    
     private static final String DEFAULT_KP = "1";
-    
+
+    /**
+     * description: Initialize the public namespace if it doesn't exist. <br/>
+     * This method is a transitional temporary method for compatibility with previous versions.
+     * param []
+     * return void
+     * author Qingfeng Li
+     * createTime 2022/3/24 10:03
+     **/
+    @PostConstruct
+    void initDefaultNamespace(){
+        int count = persistService.tenantInfoCountByTenantId(DEFAULT_NAMESPACE);
+        if (count == 0) {
+            persistService
+                    .insertTenantInfoAtomic(DEFAULT_KP, DEFAULT_NAMESPACE, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION, DEFAULT_CREATE_SOURCE,
+                            System.currentTimeMillis());
+        }
+    }
+
+
     /**
      * Get namespace list.
      *
@@ -84,10 +102,7 @@ public class NamespaceController {
     public RestResult<List<Namespace>> getNamespaces(HttpServletRequest request, HttpServletResponse response) {
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = persistService.findTenantByKp(DEFAULT_KP);
-        Namespace namespace0 = new Namespace("", DEFAULT_NAMESPACE, DEFAULT_QUOTA,
-                persistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
         List<Namespace> namespaces = new ArrayList<Namespace>();
-        namespaces.add(namespace0);
         for (TenantInfo tenantInfo : tenantInfos) {
             int configCount = persistService.configInfoCount(tenantInfo.getTenantId());
             Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(), tenantInfo.getTenantName(), DEFAULT_QUOTA,
@@ -109,16 +124,10 @@ public class NamespaceController {
     public NamespaceAllInfo getNamespace(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("namespaceId") String namespaceId) {
         // TODO 获取用kp
-        if (StringUtils.isBlank(namespaceId)) {
-            return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
-                    persistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType(),
-                    DEFAULT_NAMESPACE_DESCRIPTION);
-        } else {
-            TenantInfo tenantInfo = persistService.findTenantByKp(DEFAULT_KP, namespaceId);
-            int configCount = persistService.configInfoCount(namespaceId);
-            return new NamespaceAllInfo(namespaceId, tenantInfo.getTenantName(), DEFAULT_QUOTA, configCount,
-                    NamespaceTypeEnum.CUSTOM.getType(), tenantInfo.getTenantDesc());
-        }
+        TenantInfo tenantInfo = persistService.findTenantByKp(DEFAULT_KP, namespaceId);
+        int configCount = persistService.configInfoCount(namespaceId);
+        return new NamespaceAllInfo(namespaceId, tenantInfo.getTenantName(), DEFAULT_QUOTA, configCount,
+                NamespaceTypeEnum.CUSTOM.getType(), tenantInfo.getTenantDesc());
     }
     
     /**

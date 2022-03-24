@@ -666,13 +666,8 @@ class ConfigurationManagement extends React.Component {
           if (self.state.nownamespace_id === item.namespace) {
             dataItem.isCurrent = true;
           }
-          if (item.namespaceShowName === 'public') {
-            dataItem.label = 'public | public';
-            dataItem.value = 'public';
-          } else {
-            dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
-            dataItem.value = item.namespace;
-          }
+          dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
+          dataItem.value = item.namespace;
           namespaceSelectData.push(dataItem);
         });
 

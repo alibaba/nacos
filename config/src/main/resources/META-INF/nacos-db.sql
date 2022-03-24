@@ -219,3 +219,5 @@ CREATE TABLE permissions (
 INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
 
 INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');
+
+INSERT INTO tenant_info (kp, tenant_id, tenant_name, tenant_desc, create_source, gmt_create, gmt_modified) VALUES (1, 'public', 'public', 'default', 'nacos', UNIX_TIMESTAMP() * 1000, UNIX_TIMESTAMP() * 1000)
