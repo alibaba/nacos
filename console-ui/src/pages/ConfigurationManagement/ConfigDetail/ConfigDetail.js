@@ -226,7 +226,7 @@ class ConfigDetail extends React.Component {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
-    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}`;
+    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
