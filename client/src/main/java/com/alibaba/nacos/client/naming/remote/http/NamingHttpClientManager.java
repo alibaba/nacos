@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -28,6 +29,8 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.slf4j.Logger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * http Manager.
@@ -58,9 +61,9 @@ public class NamingHttpClientManager implements Closeable {
     
     public String getPrefix() {
         if (ENABLE_HTTPS) {
-            return "https://";
+            return HTTPS_PREFIX;
         }
-        return "http://";
+        return HTTP_PREFIX;
     }
     
     public NacosRestTemplate getNacosRestTemplate() {

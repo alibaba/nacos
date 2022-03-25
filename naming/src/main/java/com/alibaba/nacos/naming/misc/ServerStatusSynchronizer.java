@@ -26,6 +26,8 @@ import org.springframework.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Report local server status to other server.
  *
@@ -44,11 +46,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
     
         params.put(FieldsConstants.SERVICE_STATUS, msg.getData());
         
-        String url = "http://" + serverIp + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
+        String url = HTTP_PREFIX + serverIp + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
         
         if (InternetAddressUtil.containsPort(serverIp)) {
-            url = "http://" + serverIp + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+            url = HTTP_PREFIX + serverIp + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
         

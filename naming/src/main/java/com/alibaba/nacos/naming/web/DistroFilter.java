@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -47,6 +48,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Distro filter.
@@ -128,7 +131,7 @@ public class DistroFilter implements Filter {
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
             
             RestResult<String> result = HttpClient
-                    .request("http://" + targetServer + req.getRequestURI(), headerList, paramsValue, body,
+                    .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
                             PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
             String data = result.ok() ? result.getData() : result.getMessage();
             try {

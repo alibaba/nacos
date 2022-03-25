@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.model.RestResult;
@@ -75,6 +76,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Raft core code.
@@ -1011,7 +1014,7 @@ public class RaftCore implements Closeable {
         if (!InternetAddressUtil.containsPort(ip)) {
             ip = ip + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        return "http://" + ip + EnvUtil.getContextPath() + api;
+        return HTTP_PREFIX + ip + EnvUtil.getContextPath() + api;
     }
     
     public Datum<?> getDatum(String key) {
