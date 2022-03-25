@@ -33,6 +33,7 @@ import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -117,11 +118,11 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         Map<String, String> labels = new HashMap<String, String>(2);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_CLUSTER);
         String memberClientKey = memberClientKey(member);
-        RpcClient client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
+        RpcClient client = buildRpcClient(type, labels, memberClientKey);
         if (!client.getConnectionType().equals(type)) {
             Loggers.CLUSTER.info(",connection type changed,destroy client of member - > : {}", member);
             RpcClientFactory.destroyClient(memberClientKey);
-            client = RpcClientFactory.createClusterClient(memberClientKey, type, labels);
+            client = buildRpcClient(type, labels, memberClientKey);
         }
         
         if (client.isWaitInitiated()) {
@@ -147,6 +148,14 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             
             client.start();
         }
+    }
+    
+    /**
+     * Using {@link EnvUtil#getAvailableProcessors(int)} to build cluster clients' grpc thread pool.
+     */
+    private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
+        return RpcClientFactory.createClusterClient(memberClientKey, type,
+                EnvUtil.getAvailableProcessors(2), EnvUtil.getAvailableProcessors(8), labels);
     }
     
     /**
