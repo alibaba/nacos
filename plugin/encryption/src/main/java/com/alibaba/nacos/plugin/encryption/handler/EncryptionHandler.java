@@ -61,7 +61,7 @@ public class EncryptionHandler {
         EncryptionPluginService encryptionPluginService = optional.get();
         String secretKey = encryptionPluginService.generateSecretKey();
         String encrypt = encryptionPluginService.encrypt(secretKey, content);
-        return Pair.with(secretKey, encrypt);
+        return Pair.with(secretKey, encryptionPluginService.encryptSecretKey(encrypt));
     }
     
     /**
@@ -84,8 +84,9 @@ public class EncryptionHandler {
             return Pair.with("", content);
         }
         EncryptionPluginService encryptionPluginService = optional.get();
-        String decrypt = encryptionPluginService.decrypt(secretKey, content);
-        return Pair.with(secretKey, decrypt);
+        String decryptSecretKey = encryptionPluginService.decryptSecretKey(secretKey);
+        String decryptContent = encryptionPluginService.decrypt(decryptSecretKey, content);
+        return Pair.with(decryptSecretKey, decryptContent);
     }
     
     /**
