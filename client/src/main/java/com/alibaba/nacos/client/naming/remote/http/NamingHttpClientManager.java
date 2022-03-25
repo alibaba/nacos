@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
