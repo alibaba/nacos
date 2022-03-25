@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Server list manager.
@@ -113,7 +114,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private List<String> getServerListFromEndpoint() {
         try {
-            String urlString = "http://" + endpoint + "/nacos/serverlist";
+            String urlString = HTTP_PREFIX + endpoint + "/nacos/serverlist";
             Header header = NamingHttpUtil.builderHeader();
             Query query = StringUtils.isNotBlank(namespace)
                     ? Query.newInstance().addParam("namespace", namespace)

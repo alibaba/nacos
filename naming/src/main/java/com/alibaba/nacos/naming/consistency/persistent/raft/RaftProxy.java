@@ -25,6 +25,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Raft http proxy.
  *
@@ -48,7 +50,7 @@ public class RaftProxy {
         if (!InternetAddressUtil.containsPort(server)) {
             server = server + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = HTTP_PREFIX + server + EnvUtil.getContextPath() + api;
         
         RestResult<String> result = HttpClient.httpGet(url, null, params);
         if (!result.ok()) {
@@ -70,7 +72,7 @@ public class RaftProxy {
         if (!InternetAddressUtil.containsPort(server)) {
             server = server + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = HTTP_PREFIX + server + EnvUtil.getContextPath() + api;
         RestResult<String> result;
         switch (method) {
             case GET:
@@ -106,7 +108,7 @@ public class RaftProxy {
         if (!InternetAddressUtil.containsPort(server)) {
             server = server + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = HTTP_PREFIX + server + EnvUtil.getContextPath() + api;
         
         RestResult<String> result = HttpClient.httpPostLarge(url, headers, content);
         if (!result.ok()) {

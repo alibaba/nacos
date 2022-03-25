@@ -76,6 +76,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Raft core code.
  *
@@ -1011,7 +1013,7 @@ public class RaftCore implements Closeable {
         if (!InternetAddressUtil.containsPort(ip)) {
             ip = ip + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        return "http://" + ip + EnvUtil.getContextPath() + api;
+        return HTTP_PREFIX + ip + EnvUtil.getContextPath() + api;
     }
     
     public Datum<?> getDatum(String key) {
