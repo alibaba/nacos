@@ -28,6 +28,7 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -40,7 +41,7 @@ public class NamingHttpClientManagerTest {
     
     @Test
     public void testGetPrefix() {
-        Assert.assertEquals("http://", NamingHttpClientManager.getInstance().getPrefix());
+        Assert.assertEquals(HTTP_PREFIX, NamingHttpClientManager.getInstance().getPrefix());
     }
     
     @Test

@@ -64,6 +64,8 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Naming proxy.
@@ -472,7 +474,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Header header = NamingHttpUtil.builderHeader();
         
         String url;
-        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+        if (curServer.startsWith(HTTPS_PREFIX) || curServer.startsWith(HTTP_PREFIX)) {
             url = curServer + api;
         } else {
             if (!InternetAddressUtil.containsPort(curServer)) {

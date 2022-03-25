@@ -36,6 +36,8 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Cluster member addressing mode for the address server.
  *
@@ -122,8 +124,8 @@ public class AddressServerMemberLookup extends AbstractMemberLookup {
         } else {
             addressUrl = envAddressUrl;
         }
-        addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
-        envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
+        addressServerUrl = HTTP_PREFIX + domainName + ":" + addressPort + addressUrl;
+        envIdUrl = HTTP_PREFIX + domainName + ":" + addressPort + "/env";
         
         Loggers.CORE.info("ServerListService address-server port:" + addressPort);
         Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
