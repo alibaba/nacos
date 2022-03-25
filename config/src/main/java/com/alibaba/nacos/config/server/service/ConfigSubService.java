@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
