@@ -107,7 +107,7 @@ public final class ThreadUtils {
      * @return thread count
      */
     public static int getSuitableThreadCount(int threadMultiple) {
-        final int coreCount = Runtime.getRuntime().availableProcessors();
+        final int coreCount = PropertyUtils.getProcessorsCount();
         int workerCount = 1;
         while (workerCount < coreCount * threadMultiple) {
             workerCount <<= 1;
