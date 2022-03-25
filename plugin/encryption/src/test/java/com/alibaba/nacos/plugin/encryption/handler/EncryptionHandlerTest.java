@@ -52,6 +52,16 @@ public class EncryptionHandlerTest {
             public String algorithmName() {
                 return "aes";
             }
+    
+            @Override
+            public String encryptSecretKey(String secretKey) {
+                return secretKey;
+            }
+    
+            @Override
+            public String decryptSecretKey(String secretKey) {
+                return secretKey;
+            }
         });
     }
     
