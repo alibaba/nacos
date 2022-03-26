@@ -26,12 +26,12 @@ public class NamingUtilsTest {
     @Test
     public void testGetGroupedNameOptional() {
         String onlyGroupName = NamingUtils.getGroupedNameOptional(StringUtils.EMPTY, "groupA");
-        assertEquals( "groupA@@",onlyGroupName);
+        assertEquals("groupA@@", onlyGroupName);
         
         String onlyServiceName = NamingUtils.getGroupedNameOptional("serviceA", StringUtils.EMPTY);
-        assertEquals("@@serviceA",onlyServiceName);
+        assertEquals("@@serviceA", onlyServiceName);
         
         String groupNameAndServiceName = NamingUtils.getGroupedNameOptional("serviceA", "groupA");
-        assertEquals("groupA@@serviceA",groupNameAndServiceName);
+        assertEquals("groupA@@serviceA", groupNameAndServiceName);
     }
 }
