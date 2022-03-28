@@ -65,8 +65,8 @@ public class ClusterVersionJudgement {
     }
     
     protected void runVersionListener() {
-        // Single machine mode, do upgrade operation directly.
-        if (EnvUtil.getStandaloneMode()) {
+        // Single machine mode or close upgrade feature, do upgrade operation directly.
+        if (EnvUtil.getStandaloneMode() || !EnvUtil.isSupportUpgradeFrom1X()) {
             notifyAllListener();
             return;
         }
