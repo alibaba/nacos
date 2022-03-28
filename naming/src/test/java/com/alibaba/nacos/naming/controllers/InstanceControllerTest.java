@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -71,6 +73,9 @@ public class InstanceControllerTest extends BaseTest {
     private DoubleWriteEventListener doubleWriteEventListener;
     
     @Mock
+    private InstanceUpgradeHelper instanceUpgradeHelper;
+    
+    @Mock
     private RaftPeerSet peerSet;
     
     private MockMvc mockmvc;
@@ -82,6 +87,7 @@ public class InstanceControllerTest extends BaseTest {
         ReflectionTestUtils.setField(instanceController, "upgradeJudgement", upgradeJudgement);
         ReflectionTestUtils.setField(instanceController, "instanceServiceV1", instanceOperatorService);
         when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
+        when(instanceUpgradeHelper.toV1(any())).thenReturn(new Instance("1.1.1.1", 9999));
         mockmvc = MockMvcBuilders.standaloneSetup(instanceController).build();
     }
     
