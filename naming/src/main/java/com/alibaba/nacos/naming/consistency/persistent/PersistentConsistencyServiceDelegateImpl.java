@@ -56,7 +56,11 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     }
     
     private void init() {
-        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
+        if (EnvUtil.isSupportUpgradeFrom1X()) {
+            this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
+            return;
+        }
+        this.switchNewPersistentService = true;
     }
     
     @Override
