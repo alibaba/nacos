@@ -54,7 +54,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
         this.upgradeJudgement = upgradeJudgement;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
-        stopDoubleWrite = EnvUtil.getStandaloneMode();
+        stopDoubleWrite = EnvUtil.getStandaloneMode() || !EnvUtil.isSupportUpgradeFrom1X();
         if (!stopDoubleWrite) {
             Thread doubleWriteEnabledChecker = new DoubleWriteEnabledChecker();
             doubleWriteEnabledChecker.start();
