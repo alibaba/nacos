@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -289,6 +290,10 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
             
             if (entry.equals(SwitchEntry.DOUBLE_WRITE_ENABLED)) {
+                if (!EnvUtil.isSupportUpgradeFrom1X()) {
+                    throw new IllegalAccessException("Upgrade from 1X feature has closed, "
+                            + "please set `nacos.core.support.upgrade.from.1x=true` in application.properties");
+                }
                 switchDomain.setDoubleWriteEnabled(ConvertUtils.toBoolean(value));
             }
             

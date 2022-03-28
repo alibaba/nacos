@@ -100,12 +100,13 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         Boolean upgraded = upgradeStates.isUpgraded();
         upgraded = upgraded != null && upgraded;
         boolean isStandaloneMode = EnvUtil.getStandaloneMode();
-        if (isStandaloneMode || upgraded) {
+        boolean isSupportUpgradeFrom1X = EnvUtil.isSupportUpgradeFrom1X();
+        if (isStandaloneMode || upgraded || !isSupportUpgradeFrom1X) {
             useGrpcFeatures.set(true);
             useJraftFeatures.set(true);
             all20XVersion.set(true);
         }
-        if (!isStandaloneMode) {
+        if (!isStandaloneMode && isSupportUpgradeFrom1X) {
             initUpgradeChecker();
         }
         NotifyCenter.registerSubscriber(this);

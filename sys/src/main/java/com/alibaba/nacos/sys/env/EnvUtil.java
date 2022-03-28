@@ -17,6 +17,7 @@
 package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -210,6 +211,17 @@ public class EnvUtil {
     @JustForTest
     public static void setIsStandalone(Boolean isStandalone) {
         EnvUtil.isStandalone = isStandalone;
+    }
+    
+    /**
+     * Whether open upgrade from 1.X nacos server. Might effect `doubleWrite` and `Old raft`.
+     *
+     * @since 2.1.0
+     * @return {@code true} open upgrade feature, otherwise {@code false}, default {@code false}
+     * @deprecated 2.2.0
+     */
+    public static boolean isSupportUpgradeFrom1X() {
+        return ConvertUtils.toBoolean(getProperty(Constants.SUPPORT_UPGRADE_FROM_1X), false);
     }
     
     /**
