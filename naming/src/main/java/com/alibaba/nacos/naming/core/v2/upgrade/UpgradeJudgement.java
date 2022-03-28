@@ -108,8 +108,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         }
         if (!isStandaloneMode && isSupportUpgradeFrom1X) {
             initUpgradeChecker();
+            NotifyCenter.registerSubscriber(this);
         }
-        NotifyCenter.registerSubscriber(this);
     }
     
     private void initUpgradeChecker() {
