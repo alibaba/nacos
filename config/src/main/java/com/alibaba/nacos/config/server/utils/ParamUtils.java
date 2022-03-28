@@ -32,7 +32,7 @@ public class ParamUtils {
     
     private static final int TAG_MAX_LEN = 16;
     
-    private static final int TANANT_MAX_LEN = 128;
+    private static final int TENANT_MAX_LEN = 128;
     
     private static final String CONFIG_TAGS = "config_tags";
     
@@ -165,7 +165,7 @@ public class ParamUtils {
             if (!isValid(tenant.trim())) {
                 throw new IllegalArgumentException("invalid tenant");
             }
-            if (tenant.length() > TANANT_MAX_LEN) {
+            if (tenant.length() > TENANT_MAX_LEN) {
                 throw new IllegalArgumentException("too long tag, over 128");
             }
         }
