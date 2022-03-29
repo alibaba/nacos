@@ -78,9 +78,6 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     @Value(("${nacos.core.auth.ldap.timeout:3000}"))
     private String time;
 
-    @Value(("${nacos.core.auth.ldap.userdn:cn={0},ou=user,dc=company,dc=com}"))
-    private String userNamePattern;
-
     @Value(("${nacos.core.auth.ldap.binduser:cn=admin,ou=user,dc=company,dc=com}"))
     private String bindLdapUser;
 
@@ -107,9 +104,6 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             }
         }
 
-//        if (!ldapLogin(username, password)) {
-//            return null;
-//        }
         if (!ldapLogin(bindLdapUser, bindLdapPwd, ldapBaseDN, attrName, username, password)) {
             return null;
         }
@@ -141,32 +135,6 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         return false;
     }
 
-    //    private boolean ldapLogin(String username, String password) throws AuthenticationException {
-//        Hashtable<String, String> env = new Hashtable<>();
-//        env.put(Context.INITIAL_CONTEXT_FACTORY, FACTORY);
-//        env.put(Context.PROVIDER_URL, ldapUrl);
-//        env.put(Context.SECURITY_AUTHENTICATION, DEFAULT_SECURITY_AUTH);
-//
-//        env.put(Context.SECURITY_PRINCIPAL, userNamePattern.replace("{0}", username));
-//        env.put(Context.SECURITY_CREDENTIALS, password);
-//        env.put(TIMEOUT, time);
-//        LdapContext ctx = null;
-//        try {
-//            ctx = new InitialLdapContext(env, null);
-//        } catch (CommunicationException e) {
-//            LOG.error("LDAP Service connect timeout:{}", e.getMessage());
-//            throw new RuntimeException("LDAP Service connect timeout");
-//        } catch (javax.naming.AuthenticationException e) {
-//            LOG.error("login error:{}", e.getMessage());
-//            throw new RuntimeException("login error!");
-//        } catch (Exception e) {
-//            LOG.warn("Exception cause by:{}", e.getMessage());
-//            return false;
-//        } finally {
-//            closeContext(ctx);
-//        }
-//        return true;
-//    }
     private boolean ldapLogin(String bindLdapUser, String bindLdapPwd, String ldapBaseDN, String attrName, String username, String password) throws AuthenticationException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, FACTORY);
