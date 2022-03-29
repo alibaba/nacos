@@ -58,7 +58,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     /**
      * Only when all cluster upgrade upper 2.0.0, this features is true.
      */
-    private final AtomicBoolean useGrpcFeatures = new AtomicBoolean(false);
+    private final AtomicBoolean useGrpcFeatures = new AtomicBoolean(true);
     
     /**
      * Only when all cluster upgrade upper 1.4.0, this features is true.
