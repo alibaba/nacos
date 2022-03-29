@@ -24,6 +24,7 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import jdk.jpackage.internal.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,8 @@ import org.springframework.stereotype.Component;
 
 import javax.naming.CommunicationException;
 import javax.naming.Context;
-import javax.naming.directory.DirContext;
+import javax.naming.NamingEnumeration;
+import javax.naming.directory.*;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 import java.util.Hashtable;
@@ -75,9 +77,18 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     
     @Value(("${nacos.core.auth.ldap.timeout:3000}"))
     private String time;
-    
-    @Value(("${nacos.core.auth.ldap.userdn:cn={0},ou=user,dc=company,dc=com}"))
-    private String userNamePattern;
+
+    @Value(("${nacos.core.auth.ldap.binduser:cn=admin,ou=user,dc=company,dc=com}"))
+    private String bindLdapUser;
+
+    @Value(("${nacos.core.auth.ldap.bindpwd:123456}"))
+    private String bindLdapPwd;
+
+    @Value(("${nacos.core.auth.ldap.basedn:ou=people,dc=company,dc=com}"))
+    private String ldapBaseDN;
+
+    @Value(("${nacos.core.auth.ldap.attrname:userPrincipalName}"))
+    private String attrName;
     
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -92,8 +103,8 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
                 return null;
             }
         }
-        
-        if (!ldapLogin(username, password)) {
+
+        if (!ldapLogin(bindLdapUser, bindLdapPwd, ldapBaseDN, attrName, username, password)) {
             return null;
         }
         
@@ -123,19 +134,57 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         }
         return false;
     }
-    
-    private boolean ldapLogin(String username, String password) throws AuthenticationException {
+
+    private boolean ldapLogin(String bindLdapUser, String bindLdapPwd, String ldapBaseDN, String attrName, String username, String password) throws AuthenticationException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, FACTORY);
         env.put(Context.PROVIDER_URL, ldapUrl);
         env.put(Context.SECURITY_AUTHENTICATION, DEFAULT_SECURITY_AUTH);
-        
-        env.put(Context.SECURITY_PRINCIPAL, userNamePattern.replace("{0}", username));
-        env.put(Context.SECURITY_CREDENTIALS, password);
+
+        env.put(Context.SECURITY_CREDENTIALS, bindLdapPwd);
+        env.put(Context.SECURITY_PRINCIPAL, bindLdapUser);
         env.put(TIMEOUT, time);
+
         LdapContext ctx = null;
+
         try {
             ctx = new InitialLdapContext(env, null);
+            SearchControls searchControls = new SearchControls();
+            searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            String searchFileter = attrName + "=" + username;
+            NamingEnumeration<?> nameEnu = ctx.search(ldapBaseDN, searchFileter, searchControls);
+
+            if (nameEnu == null) {
+                Log.error("DirContext.search() return null. filter : " + searchFileter);
+            } else {
+                while (nameEnu.hasMoreElements()) {
+                    Object obj = nameEnu.nextElement();
+                    if (obj instanceof SearchResult) {
+                        SearchResult result = (SearchResult) obj;
+                        Attributes attrs = result.getAttributes();
+                        if (attrs == null) {
+                            Log.error("can not find user!");
+                            return false;
+                        } else {
+                            Attribute attr = attrs.get(attrName);
+                            if (attr != null) {
+                                String distinguishedName = (String) attr.get();
+                                Hashtable<String, String> envUser = new Hashtable<String, String>();
+                                envUser.put(javax.naming.Context.INITIAL_CONTEXT_FACTORY, FACTORY);
+                                envUser.put(javax.naming.Context.PROVIDER_URL, ldapUrl);
+                                envUser.put(javax.naming.Context.SECURITY_AUTHENTICATION, DEFAULT_SECURITY_AUTH);
+                                envUser.put(javax.naming.Context.SECURITY_PRINCIPAL, distinguishedName);
+                                envUser.put(javax.naming.Context.SECURITY_CREDENTIALS, password);
+                                ctx = new InitialLdapContext(envUser, null);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+
+
         } catch (CommunicationException e) {
             LOG.error("LDAP Service connect timeout:{}", e.getMessage());
             throw new RuntimeException("LDAP Service connect timeout");
@@ -148,9 +197,9 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         } finally {
             closeContext(ctx);
         }
-        return true;
+
     }
-    
+
     @Override
     public boolean supports(Class<?> aClass) {
         return aClass.equals(UsernamePasswordAuthenticationToken.class);
