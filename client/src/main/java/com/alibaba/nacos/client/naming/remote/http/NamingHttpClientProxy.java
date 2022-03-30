@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
@@ -65,6 +64,8 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Naming proxy.
@@ -102,8 +103,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     private static final String CLIENT_IP_PARAM = "clientIP";
     
     private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
-    
-    private static final String SERVICE_NAME_PARAM = "serviceName";
+
+    private static final String REGISTER_ENABLE_PARAM = "enable";
     
     private final String namespaceId;
     
@@ -119,7 +120,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
             Properties properties, ServiceInfoHolder serviceInfoHolder) {
-        super(securityProxy, properties);
+        super(securityProxy);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
@@ -157,7 +158,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(IP_PARAM, instance.getIp());
         params.put(PORT_PARAM, String.valueOf(instance.getPort()));
         params.put(WEIGHT_PARAM, String.valueOf(instance.getWeight()));
-        params.put("enable", String.valueOf(instance.isEnabled()));
+        params.put(REGISTER_ENABLE_PARAM, String.valueOf(instance.isEnabled()));
         params.put(HEALTHY_PARAM, String.valueOf(instance.isHealthy()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
@@ -466,12 +467,14 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
-        params.putAll(getSecurityHeaders());
-        params.putAll(getSpasHeaders(params.get(SERVICE_NAME_PARAM)));
+        String namespace = params.get(CommonParams.NAMESPACE_ID);
+        String group = params.get(CommonParams.GROUP_NAME);
+        String serviceName = params.get(CommonParams.SERVICE_NAME);
+        params.putAll(getSecurityHeaders(namespace, group, serviceName));
         Header header = NamingHttpUtil.builderHeader();
         
         String url;
-        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+        if (curServer.startsWith(HTTPS_PREFIX) || curServer.startsWith(HTTP_PREFIX)) {
             url = curServer + api;
         } else {
             if (!InternetAddressUtil.containsPort(curServer)) {
@@ -524,7 +527,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         NAMING_LOGGER.info("{} do shutdown begin", className);
         beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
-        SpasAdapter.freeCredentialInstance();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

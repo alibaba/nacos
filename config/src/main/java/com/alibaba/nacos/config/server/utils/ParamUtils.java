@@ -32,7 +32,7 @@ public class ParamUtils {
     
     private static final int TAG_MAX_LEN = 16;
     
-    private static final int TANANT_MAX_LEN = 128;
+    private static final int TENANT_MAX_LEN = 128;
     
     private static final String CONFIG_TAGS = "config_tags";
     
@@ -45,6 +45,8 @@ public class ParamUtils {
     private static final String TYPE = "type";
     
     private static final String SCHEMA = "schema";
+    
+    private static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
@@ -147,6 +149,8 @@ public class ParamUtils {
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32768) {
                     throw new NacosException(NacosException.INVALID_PARAM, "too long schema, over 32768");
                 }
+            } else if (ENCRYPTED_DATA_KEY.equals(configAdvanceInfoTmp.getKey())) {
+                // No verification required
             } else {
                 throw new NacosException(NacosException.INVALID_PARAM, "invalid param");
             }
@@ -161,7 +165,7 @@ public class ParamUtils {
             if (!isValid(tenant.trim())) {
                 throw new IllegalArgumentException("invalid tenant");
             }
-            if (tenant.length() > TANANT_MAX_LEN) {
+            if (tenant.length() > TENANT_MAX_LEN) {
                 throw new IllegalArgumentException("too long tag, over 128");
             }
         }

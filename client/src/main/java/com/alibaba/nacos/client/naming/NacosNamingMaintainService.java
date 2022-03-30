@@ -77,21 +77,21 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(properties);
         serverListManager = new ServerListManager(properties, namespace);
-        securityProxy = new SecurityProxy(properties,
+        securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
-        initSecurityProxy();
+        initSecurityProxy(properties);
         serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties, null);
     }
     
-    private void initSecurityProxy() {
+    private void initSecurityProxy(Properties properties) {
         this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.client.naming.maintainService.security");
             t.setDaemon(true);
             return t;
         });
-        this.securityProxy.login(serverListManager.getServerList());
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(serverListManager.getServerList()), 0,
+        this.securityProxy.login(properties);
+        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     
     }

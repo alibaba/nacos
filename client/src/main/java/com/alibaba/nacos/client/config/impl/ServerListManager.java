@@ -48,6 +48,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Serverlist Manager.
  *
@@ -56,10 +59,6 @@ import java.util.concurrent.TimeUnit;
 public class ServerListManager implements Closeable {
     
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
-    
-    private static final String HTTPS = "https://";
-    
-    private static final String HTTP = "http://";
     
     private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
@@ -199,15 +198,15 @@ public class ServerListManager implements Closeable {
             StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
             while (serverAddrsTokens.hasMoreTokens()) {
                 String serverAddr = serverAddrsTokens.nextToken().trim();
-                if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
+                if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTP_PREFIX)) {
                     serverAddrs.add(serverAddr);
                 } else {
                     String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
+                        serverAddrs.add(HTTP_PREFIX + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
                                 .getDefaultServerPort());
                     } else {
-                        serverAddrs.add(HTTP + serverAddr);
+                        serverAddrs.add(HTTP_PREFIX + serverAddr);
                     }
                 }
             }
@@ -362,10 +361,10 @@ public class ServerListManager implements Closeable {
         
         List<String> newServerAddrList = new ArrayList<>();
         for (String server : newList) {
-            if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
+            if (server.startsWith(HTTP_PREFIX) || server.startsWith(HTTPS_PREFIX)) {
                 newServerAddrList.add(server);
             } else {
-                newServerAddrList.add(HTTP + server);
+                newServerAddrList.add(HTTP_PREFIX + server);
             }
         }
         

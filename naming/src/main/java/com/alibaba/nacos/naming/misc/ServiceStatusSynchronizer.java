@@ -27,6 +27,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Service status ynchronizer.
  *
@@ -45,11 +47,11 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         params.put(FieldsConstants.STATUSES, msg.getData());
         params.put(FieldsConstants.CLIENT_IP, NetUtils.localServer());
         
-        String url = "http://" + serverIp + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
+        String url = HTTP_PREFIX + serverIp + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/status";
         
         if (InternetAddressUtil.containsPort(serverIp)) {
-            url = "http://" + serverIp + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+            url = HTTP_PREFIX + serverIp + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/service/status";
         }
         

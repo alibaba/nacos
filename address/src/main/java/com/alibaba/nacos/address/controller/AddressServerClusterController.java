@@ -113,10 +113,10 @@ public class AddressServerClusterController {
      * @param product Ip list of products to be associated
      * @param cluster Ip list of product cluster to be associated
      * @param ips     will delete ips.
-     * @return delete result
+     * @return delete result (the cluster information is return if success, exception information is return if  fail)
      */
     @RequestMapping(value = "", method = RequestMethod.DELETE)
-    public ResponseEntity deleteCluster(@RequestParam(required = false) String product,
+    public ResponseEntity<String> deleteCluster(@RequestParam(required = false) String product,
             @RequestParam(required = false) String cluster, @RequestParam String ips) {
         //1. prepare the storage name for product and cluster
         String productName = addressServerGeneratorManager.generateProductName(product);
