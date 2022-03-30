@@ -26,20 +26,22 @@ import java.util.Objects;
  * @version $Id: ServerConfigAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerConfigAbility implements Serializable {
-    
+
+    private static final long serialVersionUID = -2224932553504475980L;
+
     /**
      * support remote metrics get.
      */
     private boolean supportRemoteMetrics;
-    
+
     public boolean isSupportRemoteMetrics() {
         return supportRemoteMetrics;
     }
-    
+
     public void setSupportRemoteMetrics(boolean supportRemoteMetrics) {
         this.supportRemoteMetrics = supportRemoteMetrics;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -51,7 +53,7 @@ public class ServerConfigAbility implements Serializable {
         ServerConfigAbility that = (ServerConfigAbility) o;
         return supportRemoteMetrics == that.supportRemoteMetrics;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(supportRemoteMetrics);

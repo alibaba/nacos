@@ -26,20 +26,22 @@ import java.util.Objects;
  * @version $Id: ServerRemoteAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerRemoteAbility implements Serializable {
-    
+
+    private static final long serialVersionUID = 3877438779358853000L;
+
     /**
      * if support remote connection.
      */
     private boolean supportRemoteConnection;
-    
+
     public boolean isSupportRemoteConnection() {
         return this.supportRemoteConnection;
     }
-    
+
     public void setSupportRemoteConnection(boolean supportRemoteConnection) {
         this.supportRemoteConnection = supportRemoteConnection;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -51,7 +53,7 @@ public class ServerRemoteAbility implements Serializable {
         ServerRemoteAbility that = (ServerRemoteAbility) o;
         return supportRemoteConnection == that.supportRemoteConnection;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(supportRemoteConnection);

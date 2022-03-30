@@ -31,32 +31,34 @@ import java.util.Objects;
  * @version $Id: ClientConfigMetricRequest.java, v 0.1 2020年12月30日 9:05 PM liuzunfei Exp $
  */
 public class ClientConfigMetricRequest extends ServerRequest {
-    
+
     private List<MetricsKey> metricsKeys = new ArrayList<>();
-    
+
     @Override
     public String getModule() {
         return Constants.Config.CONFIG_MODULE;
     }
-    
+
     public List<MetricsKey> getMetricsKeys() {
         return metricsKeys;
     }
-    
+
     public void setMetricsKeys(List<MetricsKey> metricsKeys) {
         this.metricsKeys = metricsKeys;
     }
-    
+
     public static class MetricsKey implements Serializable {
-        
+
+        private static final long serialVersionUID = 7728112344899621164L;
+
         String type;
-        
+
         String key;
-        
+
         public static final String CACHE_DATA = "cacheData";
-        
+
         public static final String SNAPSHOT_DATA = "snapshotData";
-        
+
         /**
          * build metrics key.
          *
@@ -70,28 +72,28 @@ public class ClientConfigMetricRequest extends ServerRequest {
             metricsKey.key = key;
             return metricsKey;
         }
-        
+
         public String getType() {
             return type;
         }
-        
+
         public void setType(String type) {
             this.type = type;
         }
-        
+
         public String getKey() {
             return key;
         }
-        
+
         public void setKey(String key) {
             this.key = key;
         }
-        
+
         @Override
         public String toString() {
             return "MetricsKey{" + "type='" + type + '\'' + ", key='" + key + '\'' + '}';
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -103,11 +105,11 @@ public class ClientConfigMetricRequest extends ServerRequest {
             MetricsKey that = (MetricsKey) o;
             return Objects.equals(type, that.type) && Objects.equals(key, that.key);
         }
-        
+
         @Override
         public int hashCode() {
             return Objects.hash(type, key);
         }
     }
-    
+
 }
