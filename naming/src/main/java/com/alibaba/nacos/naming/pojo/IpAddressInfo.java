@@ -26,7 +26,9 @@ import java.util.Map;
  * @version $Id: IpAddressInfo.java, v 0.1 2018-09-17 上午10:52 caogu.wyp Exp $$
  */
 public class IpAddressInfo implements Serializable {
-    
+
+    private static final long serialVersionUID = 6961930421629345179L;
+
     private boolean valid;
     
     private Map<String, String> metadata;
