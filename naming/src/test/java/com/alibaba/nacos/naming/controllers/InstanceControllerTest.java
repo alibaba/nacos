@@ -139,7 +139,7 @@ public class InstanceControllerTest extends BaseTest {
     public void updateInstanceTest() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
-                .param("ip", "1.1.1.1").param("port", "9999").param("enabled","false");
+                .param("ip", "1.1.1.1").param("port", "9999").param("enabled", "false");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
 
         Assert.assertEquals("ok", actualValue);
@@ -293,11 +293,11 @@ public class InstanceControllerTest extends BaseTest {
 
     @Test
     public void patchInstanceTest() throws Exception {
-        when(serviceManager.getInstance(anyString(),anyString(),anyString(),anyString(),anyInt()))
+        when(serviceManager.getInstance(anyString(), anyString(), anyString(), anyString(), anyInt()))
                 .thenReturn(new Instance("1.1.1.1", 9999));
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .patch(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
-                .param("ip", "1.1.1.1").param("port", "9999").param("enabled","false");
+                .param("ip", "1.1.1.1").param("port", "9999").param("enabled", "false");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
 
         Assert.assertEquals("ok", actualValue);
@@ -326,9 +326,9 @@ public class InstanceControllerTest extends BaseTest {
         JsonNode jsonNode = JacksonUtils.toObj(actualValue);
 
         Assert.assertEquals("1.1.1.1", jsonNode.get("ip").asText());
-        Assert.assertEquals("9999",jsonNode.get("port").asText());
-        Assert.assertEquals("1.0",jsonNode.get("weight").asText());
-        Assert.assertEquals("true",jsonNode.get("healthy").asText());
+        Assert.assertEquals("9999", jsonNode.get("port").asText());
+        Assert.assertEquals("1.0", jsonNode.get("weight").asText());
+        Assert.assertEquals("true", jsonNode.get("healthy").asText());
     }
 
     @Test
@@ -347,7 +347,7 @@ public class InstanceControllerTest extends BaseTest {
         service.updateIPs(ipList, false);
 
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
-        when(serviceManager.getInstance(anyString(),anyString(),anyString(),anyString(),anyInt()))
+        when(serviceManager.getInstance(anyString(), anyString(), anyString(), anyString(), anyInt()))
                 .thenReturn(new Instance("1.1.1.1", 9999));
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
@@ -355,9 +355,9 @@ public class InstanceControllerTest extends BaseTest {
                 .param("ip", "1.1.1.1").param("port", "9999");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         JsonNode jsonNode = JacksonUtils.toObj(actualValue);
-        Assert.assertEquals("10200",jsonNode.get("code").asText());
-        Assert.assertEquals("5000",jsonNode.get("clientBeatInterval").asText());
-        Assert.assertEquals("true",jsonNode.get("lightBeatEnabled").asText());
+        Assert.assertEquals("10200", jsonNode.get("code").asText());
+        Assert.assertEquals("5000", jsonNode.get("clientBeatInterval").asText());
+        Assert.assertEquals("true", jsonNode.get("lightBeatEnabled").asText());
     }
 
     @Test
@@ -377,7 +377,7 @@ public class InstanceControllerTest extends BaseTest {
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/statuses").param("serviceName", TEST_SERVICE_NAME)
-                .param("ip", "1.1.1.1").param("port", "9999").param("key",TEST_SERVICE_NAME);
+                .param("ip", "1.1.1.1").param("port", "9999").param("key", TEST_SERVICE_NAME);
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         JsonNode jsonNode = JacksonUtils.toObj(actualValue);
         Assert.assertNotNull(jsonNode.get("ips").get(0));
