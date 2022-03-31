@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -56,6 +57,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -74,6 +77,9 @@ public class InstanceControllerTest extends BaseTest {
     
     @Mock
     private InstanceUpgradeHelper instanceUpgradeHelper;
+
+    @Mock
+    private ClientManager clientManager;
     
     @Mock
     private RaftPeerSet peerSet;
@@ -116,7 +122,7 @@ public class InstanceControllerTest extends BaseTest {
         
         Assert.assertEquals("ok", actualValue);
     }
-    
+
     @Test
     public void deregisterInstance() throws Exception {
         
@@ -126,6 +132,16 @@ public class InstanceControllerTest extends BaseTest {
                 .param("clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         
+        Assert.assertEquals("ok", actualValue);
+    }
+
+    @Test
+    public void updateInstanceTest() throws Exception {
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1").param("port", "9999").param("enabled","false");
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+
         Assert.assertEquals("ok", actualValue);
     }
     
@@ -273,5 +289,97 @@ public class InstanceControllerTest extends BaseTest {
         Assert.assertTrue(updated.get(1).asText().contains("8080"));
         Assert.assertTrue(updated.get(1).asText().contains(TEST_CLUSTER_NAME));
         Assert.assertTrue(updated.get(1).asText().contains("ephemeral"));
+    }
+
+    @Test
+    public void patchInstanceTest() throws Exception {
+        when(serviceManager.getInstance(anyString(),anyString(),anyString(),anyString(),anyInt()))
+                .thenReturn(new Instance("1.1.1.1", 9999));
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .patch(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1").param("port", "9999").param("enabled","false");
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        Assert.assertEquals("ok", actualValue);
+    }
+
+    @Test
+    public void instanceDetailTest() throws Exception {
+        Service service = new Service();
+        service.setName(TEST_SERVICE_NAME);
+
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
+        service.addCluster(cluster);
+
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(9999);
+        List<Instance> ipList = new ArrayList<>();
+        ipList.add(instance);
+        service.updateIPs(ipList, false);
+
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1").param("port", "9999");
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        JsonNode jsonNode = JacksonUtils.toObj(actualValue);
+
+        Assert.assertEquals("1.1.1.1", jsonNode.get("ip").asText());
+        Assert.assertEquals("9999",jsonNode.get("port").asText());
+        Assert.assertEquals("1.0",jsonNode.get("weight").asText());
+        Assert.assertEquals("true",jsonNode.get("healthy").asText());
+    }
+
+    @Test
+    public void beatTest() throws Exception {
+        Service service = new Service();
+        service.setName(TEST_SERVICE_NAME);
+
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
+        service.addCluster(cluster);
+
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(9999);
+        List<Instance> ipList = new ArrayList<>();
+        ipList.add(instance);
+        service.updateIPs(ipList, false);
+
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
+        when(serviceManager.getInstance(anyString(),anyString(),anyString(),anyString(),anyInt()))
+                .thenReturn(new Instance("1.1.1.1", 9999));
+
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/beat").param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1").param("port", "9999");
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        JsonNode jsonNode = JacksonUtils.toObj(actualValue);
+        Assert.assertEquals("10200",jsonNode.get("code").asText());
+        Assert.assertEquals("5000",jsonNode.get("clientBeatInterval").asText());
+        Assert.assertEquals("true",jsonNode.get("lightBeatEnabled").asText());
+    }
+
+    @Test
+    public void listWithHealthStatusTest() throws Exception {
+        Service service = new Service();
+        service.setName(TEST_SERVICE_NAME);
+
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
+        service.addCluster(cluster);
+
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(9999);
+        List<Instance> ipList = new ArrayList<>();
+        ipList.add(instance);
+        service.updateIPs(ipList, false);
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
+                .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/statuses").param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1").param("port", "9999").param("key",TEST_SERVICE_NAME);
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        JsonNode jsonNode = JacksonUtils.toObj(actualValue);
+        Assert.assertNotNull(jsonNode.get("ips").get(0));
     }
 }
