@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -51,7 +53,6 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.apache.commons.collections.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -717,7 +718,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         datumString.deleteCharAt(datumString.length() - 1);
         final String sql =
                 "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN ("
-                        + datumString.toString() + ")";
+                        + datumString + ")";
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         
@@ -2176,14 +2177,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String contentType = StringUtils.isBlank(configInfo.getType()) ? ConfigType.getDefaultType().getType()
+                : configInfo.getType();
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         
         final String sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
-                + "src_ip,src_user,gmt_modified,op_type,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+                + "src_ip,src_user,gmt_modified,type,op_type,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
         final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey};
+                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, contentType, ops, encryptedDataKey};
         
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
@@ -2193,7 +2196,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,type,op_type,gmt_create,gmt_modified FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";
         
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
@@ -2235,13 +2238,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = ?";
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,type,op_type,gmt_create,gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = ?";
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
     }
     
     @Override
     public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
-        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)";
+        String sqlFetchRows = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,type,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)";
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
     }
     
