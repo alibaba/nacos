@@ -26,7 +26,9 @@ import java.util.List;
  * @version $Id: Subscribers.java, v 0.1 2019-05-28 下午10:47 nicholas Exp $$
  */
 public class Subscribers implements Serializable {
-    
+
+    private static final long serialVersionUID = -3075690233070417052L;
+
     private List<Subscriber> subscribers;
     
     public List<Subscriber> getSubscribers() {
