@@ -63,7 +63,6 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     private LdapTemplate ldapTemplate;
 
-
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = (String) authentication.getPrincipal();

@@ -28,11 +28,9 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.DecodingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.env.Environment;
-import org.springframework.ldap.core.AuthenticationSource;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -73,19 +71,19 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
 
     @Value(("${nacos.core.auth.ldap.url:ldap://localhost:389}"))
-    private String LDAP_URL;
+    private String ldapUrl;
 
     @Value(("${nacos.core.auth.ldap.basedc:dc=example,dc=org}"))
-    private String LDAP_BASEDC;
+    private String ldapBaseDc;
 
     @Value(("${nacos.core.auth.ldap.timeout:3000}"))
-    private String LDAP_TIMEOUT;
+    private String ldapTimeOut;
 
     @Value(("${nacos.core.auth.ldap.userDn:cn=admin,dc=example,dc=org}"))
-    private String USERDN;
+    private String userDn;
 
     @Value(("${nacos.core.auth.ldap.password:password}"))
-    private String PASSWORD;
+    private String password;
 
     @Autowired
     private Environment env;
@@ -198,13 +196,13 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate() {
         LdapContextSource contextSource = new LdapContextSource();
-        Map<String, Object> config = new HashMap();
-        contextSource.setUrl(LDAP_URL);
-        contextSource.setBase(LDAP_BASEDC);
-        contextSource.setUserDn(USERDN);
-        contextSource.setPassword(PASSWORD);
+        final Map<String, Object> config = new HashMap(16);
+        contextSource.setUrl(ldapUrl);
+        contextSource.setBase(ldapBaseDc);
+        contextSource.setUserDn(userDn);
+        contextSource.setPassword(password);
         config.put("java.naming.ldap.attributes.binary", "objectGUID");
-        config.put("com.sun.jndi.ldap.connect.timeout",LDAP_TIMEOUT);
+        config.put("com.sun.jndi.ldap.connect.timeout", ldapTimeOut);
         contextSource.setPooled(true);
         contextSource.setBaseEnvironmentProperties(config);
         contextSource.afterPropertiesSet();
