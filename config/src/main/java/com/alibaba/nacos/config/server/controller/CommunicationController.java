@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -26,8 +27,6 @@ import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,18 +54,16 @@ public class CommunicationController {
     
     private final LongPollingService longPollingService;
     
-    private String trueStr = "true";
+    private final ConfigChangeListenContext configChangeListenContext;
     
-    @Autowired
-    private ConfigChangeListenContext configChangeListenContext;
+    private final ConnectionManager connectionManager;
     
-    @Autowired
-    private ConnectionManager connectionManager;
-    
-    @Autowired
-    public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
+    public CommunicationController(DumpService dumpService, LongPollingService longPollingService,
+            ConfigChangeListenContext configChangeListenContext, ConnectionManager connectionManager) {
         this.dumpService = dumpService;
         this.longPollingService = longPollingService;
+        this.configChangeListenContext = configChangeListenContext;
+        this.connectionManager = connectionManager;
     }
     
     /**
@@ -83,7 +80,7 @@ public class CommunicationController {
         long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
         String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
         String isBetaStr = request.getHeader("isBeta");
-        if (StringUtils.isNotBlank(isBetaStr) && trueStr.equals(isBetaStr)) {
+        if (StringUtils.isNotBlank(isBetaStr) && Boolean.parseBoolean(isBetaStr)) {
             dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
         } else {
             dumpService.dump(dataId, group, tenant, tag, lastModifiedTs, handleIp);
@@ -106,7 +103,7 @@ public class CommunicationController {
         if (CollectionUtils.isEmpty(listenersClients)) {
             return result;
         }
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(listenersClients.size(), 1);
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(listenersClients.size(), 1);
         for (String connectionId : listenersClients) {
             Connection client = connectionManager.getConnection(connectionId);
             if (client != null) {
