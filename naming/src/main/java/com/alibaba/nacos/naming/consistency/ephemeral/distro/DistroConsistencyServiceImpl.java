@@ -415,18 +415,25 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 services.remove(datumKey);
                 
                 int count = 0;
-                
-                if (!listeners.containsKey(datumKey)) {
+
+                ConcurrentLinkedQueue<RecordListener> recordListeners = listeners.get(datumKey);
+                if (recordListeners == null) {
+                    Loggers.DISTRO.info("[DISTRO-WARN] RecordListener not found, key: {}", datumKey);
                     return;
                 }
                 
-                for (RecordListener listener : listeners.get(datumKey)) {
+                for (RecordListener listener : recordListeners) {
                     
                     count++;
                     
                     try {
                         if (action == DataOperation.CHANGE) {
-                            listener.onChange(datumKey, dataStore.get(datumKey).value);
+                            Datum datum = dataStore.get(datumKey);
+                            if (datum != null) {
+                                listener.onChange(datumKey, datum.value);
+                            } else {
+                                Loggers.DISTRO.info("[DISTRO-WARN] data not found, key: {}", datumKey);
+                            }
                             continue;
                         }
                         
