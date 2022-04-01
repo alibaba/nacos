@@ -17,9 +17,9 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
@@ -27,7 +27,8 @@ import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -36,12 +37,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
-import javax.naming.CommunicationException;
-import javax.naming.Context;
-import javax.naming.directory.DirContext;
-import javax.naming.ldap.InitialLdapContext;
-import javax.naming.ldap.LdapContext;
-import java.util.Hashtable;
 import java.util.List;
 
 /**
@@ -51,39 +46,28 @@ import java.util.List;
  */
 @Component
 public class LdapAuthenticationProvider implements AuthenticationProvider {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(LdapAuthenticationProvider.class);
-    
-    private static final String FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
-    
-    private static final String TIMEOUT = "com.sun.jndi.ldap.connect.timeout";
-    
+
     private static final String DEFAULT_PASSWORD = "nacos";
-    
+
     private static final String LDAP_PREFIX = "LDAP_";
-    
-    private static final String DEFAULT_SECURITY_AUTH = "simple";
-    
+
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
-    
+
     @Autowired
     private NacosRoleServiceImpl nacosRoleService;
-    
-    @Value(("${nacos.core.auth.ldap.url:ldap://localhost:389}"))
-    private String ldapUrl;
-    
-    @Value(("${nacos.core.auth.ldap.timeout:3000}"))
-    private String time;
-    
-    @Value(("${nacos.core.auth.ldap.userdn:cn={0},ou=user,dc=company,dc=com}"))
-    private String userNamePattern;
-    
+
+    @Lazy
+    @Autowired
+    private LdapTemplate ldapTemplate;
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
-        
+
         if (isAdmin(username)) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (PasswordEncoderUtil.matches(password, userDetails.getPassword())) {
@@ -92,11 +76,11 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
                 return null;
             }
         }
-        
+
         if (!ldapLogin(username, password)) {
             return null;
         }
-        
+
         UserDetails userDetails;
         try {
             userDetails = userDetailsService.loadUserByUsername(LDAP_PREFIX + username);
@@ -110,7 +94,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         }
         return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     }
-    
+
     private boolean isAdmin(String username) {
         List<RoleInfo> roleInfos = nacosRoleService.getRoles(username);
         if (CollectionUtils.isEmpty(roleInfos)) {
@@ -123,46 +107,14 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         }
         return false;
     }
-    
+
     private boolean ldapLogin(String username, String password) throws AuthenticationException {
-        Hashtable<String, String> env = new Hashtable<>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, FACTORY);
-        env.put(Context.PROVIDER_URL, ldapUrl);
-        env.put(Context.SECURITY_AUTHENTICATION, DEFAULT_SECURITY_AUTH);
-        
-        env.put(Context.SECURITY_PRINCIPAL, userNamePattern.replace("{0}", username));
-        env.put(Context.SECURITY_CREDENTIALS, password);
-        env.put(TIMEOUT, time);
-        LdapContext ctx = null;
-        try {
-            ctx = new InitialLdapContext(env, null);
-        } catch (CommunicationException e) {
-            LOG.error("LDAP Service connect timeout:{}", e.getMessage());
-            throw new RuntimeException("LDAP Service connect timeout");
-        } catch (javax.naming.AuthenticationException e) {
-            LOG.error("login error:{}", e.getMessage());
-            throw new RuntimeException("login error!");
-        } catch (Exception e) {
-            LOG.warn("Exception cause by:{}", e.getMessage());
-            return false;
-        } finally {
-            closeContext(ctx);
-        }
-        return true;
+        return ldapTemplate.authenticate("", "(uid=" + username + ")", password);
     }
-    
+
     @Override
     public boolean supports(Class<?> aClass) {
         return aClass.equals(UsernamePasswordAuthenticationToken.class);
     }
-    
-    private void closeContext(DirContext ctx) {
-        if (ctx != null) {
-            try {
-                ctx.close();
-            } catch (Exception e) {
-                LOG.error("Exception closing context", e);
-            }
-        }
-    }
+
 }
