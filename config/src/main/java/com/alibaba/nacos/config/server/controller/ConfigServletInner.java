@@ -263,7 +263,7 @@ public class ConfigServletInner {
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, fileContent);
                     String decryptContent = pair.getSecond();
                     out = response.getWriter();
-                    out.println(decryptContent);
+                    out.print(decryptContent);
                     out.flush();
                     out.close();
                 }
