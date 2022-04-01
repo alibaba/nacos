@@ -2146,7 +2146,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             jt.update(
                     "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES(?,?,?,?,?,?)",
-                    configId, tagName, null, dataId, group, tenant);
+                    configId, tagName, StringUtils.EMPTY, dataId, group, tenant);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;

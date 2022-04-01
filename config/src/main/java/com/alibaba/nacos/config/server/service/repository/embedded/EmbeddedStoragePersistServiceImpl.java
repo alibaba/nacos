@@ -1977,7 +1977,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
         final String sql = "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) "
                 + "VALUES(?,?,?,?,?,?)";
-        final Object[] args = new Object[] {configId, tagName, null, dataId, group, tenant};
+        final Object[] args = new Object[] {configId, tagName, StringUtils.EMPTY, dataId, group, tenant};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
