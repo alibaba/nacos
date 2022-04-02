@@ -502,7 +502,7 @@ const request = (function(_global) {
     }
     const { accessToken = '', username = '' } = token;
     const [url, paramsStr = ''] = config.url.split('?');
-    const params = paramsStr.split('&');
+    const params = paramsStr === '' ? [] : paramsStr.split('&');
     params.push(`accessToken=${accessToken}`);
 
     return $.ajax(

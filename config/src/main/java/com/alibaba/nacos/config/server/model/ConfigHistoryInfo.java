@@ -52,10 +52,7 @@ public class ConfigHistoryInfo implements Serializable {
     
     private String srcUser;
     
-    /**
-     * content type
-     */
-    private String type;
+    private String configType;
     
     /**
      * Operation type, include inserting, updating and deleting.
@@ -140,12 +137,12 @@ public class ConfigHistoryInfo implements Serializable {
         this.opType = opType;
     }
     
-    public String getType() {
-        return type;
+    public String getConfigType() {
+        return configType;
     }
     
-    public void setType(String type) {
-        this.type = type;
+    public void setConfigType(String configType) {
+        this.configType = configType;
     }
     
     public Timestamp getCreatedTime() {

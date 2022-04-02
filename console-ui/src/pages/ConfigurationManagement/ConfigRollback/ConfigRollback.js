@@ -88,6 +88,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('appName', data.appName);
           self.field.setValue('opType', data.opType.trim());
           self.opType = data.opType; // 当前回滚类型I:插入,D:删除,U:'更新'
+          self.configType = data.configType; // 配置类型
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
           self.field.setValue('envName', envName);
@@ -101,9 +102,9 @@ class ConfigRollback extends React.Component {
 
   goList() {
     const namespace = getParams('namespace');
-    const { serverId, dataId, group } = this;
+    const { serverId, dataId: historyDataId, group: historyGroup } = this;
     this.props.history.push(
-      generateUrl('/historyRollback', { serverId, dataId, group, namespace })
+      generateUrl('/historyRollback', { serverId, historyDataId, historyGroup, namespace })
     );
   }
 
@@ -144,6 +145,7 @@ class ConfigRollback extends React.Component {
           group: self.group,
           content: self.field.getValue('content'),
           tenant: self.tenant,
+          type: self.configType,
         };
 
         let url = 'v1/cs/configs';
@@ -151,7 +153,6 @@ class ConfigRollback extends React.Component {
           url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
           postData = {};
         }
-
         // ajax
         request({
           type,

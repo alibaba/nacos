@@ -54,7 +54,7 @@ CREATE TABLE his_config_info (
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00.000',
   src_user varchar(128),
   src_ip varchar(50) DEFAULT NULL,
-  type varchar(64) DEFAULT NULL,
+  config_type varchar(64) DEFAULT NULL,
   op_type char(10) DEFAULT NULL,
   encrypted_data_key LONG VARCHAR DEFAULT NULL,
   constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
