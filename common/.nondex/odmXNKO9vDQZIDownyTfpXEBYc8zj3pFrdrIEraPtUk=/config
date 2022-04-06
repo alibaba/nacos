@@ -1,0 +1,11 @@
+nondexFilter=.*
+nondexMode=ONE
+nondexSeed=1264730
+nondexStart=0
+nondexEnd=9223372036854775807
+nondexPrintstack=false
+nondexDir=/home/rootadmin/nacos/common/.nondex
+nondexJarDir=/home/rootadmin/nacos/common/.nondex
+nondexExecid=odmXNKO9vDQZIDownyTfpXEBYc8zj3pFrdrIEraPtUk=
+nondexLogging=CONFIG
+test=
