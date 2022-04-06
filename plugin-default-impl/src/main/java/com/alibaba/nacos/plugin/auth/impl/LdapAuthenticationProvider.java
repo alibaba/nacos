@@ -46,28 +46,28 @@ import java.util.List;
  */
 @Component
 public class LdapAuthenticationProvider implements AuthenticationProvider {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(LdapAuthenticationProvider.class);
-
+    
     private static final String DEFAULT_PASSWORD = "nacos";
-
+    
     private static final String LDAP_PREFIX = "LDAP_";
-
+    
     @Autowired
     private NacosUserDetailsServiceImpl userDetailsService;
-
+    
     @Autowired
     private NacosRoleServiceImpl nacosRoleService;
-
+    
     @Lazy
     @Autowired
     private LdapTemplate ldapTemplate;
-
+    
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String username = (String) authentication.getPrincipal();
         String password = (String) authentication.getCredentials();
-
+        
         if (isAdmin(username)) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (PasswordEncoderUtil.matches(password, userDetails.getPassword())) {
@@ -76,11 +76,11 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
                 return null;
             }
         }
-
+        
         if (!ldapLogin(username, password)) {
             return null;
         }
-
+        
         UserDetails userDetails;
         try {
             userDetails = userDetailsService.loadUserByUsername(LDAP_PREFIX + username);
@@ -94,7 +94,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         }
         return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     }
-
+    
     private boolean isAdmin(String username) {
         List<RoleInfo> roleInfos = nacosRoleService.getRoles(username);
         if (CollectionUtils.isEmpty(roleInfos)) {
@@ -107,14 +107,14 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         }
         return false;
     }
-
+    
     private boolean ldapLogin(String username, String password) throws AuthenticationException {
         return ldapTemplate.authenticate("", "(uid=" + username + ")", password);
     }
-
+    
     @Override
     public boolean supports(Class<?> aClass) {
         return aClass.equals(UsernamePasswordAuthenticationToken.class);
     }
-
+    
 }

@@ -69,22 +69,22 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     private static final String DEFAULT_ALL_PATH_PATTERN = "/**";
     
     private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
-
+    
     @Value(("${nacos.core.auth.ldap.url:ldap://localhost:389}"))
     private String ldapUrl;
-
+    
     @Value(("${nacos.core.auth.ldap.basedc:dc=example,dc=org}"))
     private String ldapBaseDc;
-
+    
     @Value(("${nacos.core.auth.ldap.timeout:3000}"))
     private String ldapTimeOut;
-
+    
     @Value(("${nacos.core.auth.ldap.userDn:cn=admin,dc=example,dc=org}"))
     private String userDn;
-
+    
     @Value(("${nacos.core.auth.ldap.password:password}"))
     private String password;
-
+    
     @Autowired
     private Environment env;
     
@@ -191,7 +191,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
+    
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate() {
@@ -207,7 +207,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
         contextSource.setBaseEnvironmentProperties(config);
         contextSource.afterPropertiesSet();
         return new LdapTemplate(contextSource);
-
+        
     }
     
     public byte[] getSecretKeyBytes() {
