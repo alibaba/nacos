@@ -39,6 +39,7 @@ public class PushConfig extends AbstractDynamicConfig {
     
     private PushConfig() {
         super(PUSH);
+        resetConfig();
     }
     
     @Override

@@ -44,6 +44,7 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     private DistroConfig() {
         super(DISTRO);
+        resetConfig();
     }
     
     @Override
