@@ -66,7 +66,6 @@ public class JacksonUtilsTest {
                         + "\"subField\":\"subField\"}", 
                 JacksonUtils.toJson(new TestOfAnnotationSub())
         );
-
     }
     
     @Test(expected = NacosSerializationException.class)
