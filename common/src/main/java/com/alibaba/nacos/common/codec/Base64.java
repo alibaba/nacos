@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.codec;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
