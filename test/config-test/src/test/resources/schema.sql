@@ -70,6 +70,8 @@ CREATE TABLE his_config_info (
   src_user varchar(128),
   src_ip varchar(20) DEFAULT NULL,
   op_type char(10) DEFAULT NULL,
+  config_type varchar(64) DEFAULT NULL,
+  encrypted_data_key LONG VARCHAR DEFAULT NULL,
   constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 
 CREATE INDEX hisconfiginfo_dataid_key_idx ON his_config_info(data_id);

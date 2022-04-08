@@ -154,6 +154,7 @@ CREATE TABLE `his_config_info` (
   `src_user` text,
   `src_ip` varchar(20) DEFAULT NULL,
   `op_type` char(10) DEFAULT NULL,
+  `config_type` varchar(64) DEFAULT NULL,
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
   `encrypted_data_key` text NOT NULL COMMENT '秘钥',
   PRIMARY KEY (`nid`),
