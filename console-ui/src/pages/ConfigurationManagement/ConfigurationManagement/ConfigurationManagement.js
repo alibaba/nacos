@@ -1296,6 +1296,7 @@ class ConfigurationManagement extends React.Component {
                   ))}
                   <MenuButton
                     type="primary"
+                    autoWidth={false}
                     label={locale.exportBtn}
                     popupStyle={{ minWidth: 150 }}
                   >
