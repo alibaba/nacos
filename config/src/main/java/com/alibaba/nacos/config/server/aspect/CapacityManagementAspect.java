@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Capacity management aspect: batch write and update but don't process it.
@@ -264,7 +265,7 @@ public class CapacityManagementAspect {
      */
     private int getCurrentSize(String content) {
         try {
-            return content.getBytes(Charset.forName(Constants.ENCODE)).length;
+            return content.getBytes(StandardCharsets.UTF_8).length;
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] getCurrentSize ", e);
         }
