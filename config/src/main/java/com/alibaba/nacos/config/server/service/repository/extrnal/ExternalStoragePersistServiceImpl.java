@@ -2832,7 +2832,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 
     @Override
     public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenant) {
-        Assert.hasText(tenant, "tenant can not be null");
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
             return this.jt.query(
