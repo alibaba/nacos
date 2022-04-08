@@ -77,6 +77,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_ADVANCE_INFO_ROW_MAPPER;
@@ -2821,7 +2822,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int tenantInfoCountByTenantId(String tenantId) {
-        Assert.hasText(tenantId, "tenantId can not be null");
+        if (Objects.isNull(tenantId)) {
+            throw new IllegalArgumentException("tenantId can not be null");
+        }
         Integer result = this.jt
                 .queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[] {tenantId}, Integer.class);
         if (result == null) {
@@ -2832,6 +2835,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
 
     @Override
     public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenant) {
+        if (Objects.isNull(tenant)) {
+            throw new IllegalArgumentException("tenantId can not be null");
+        }
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
             return this.jt.query(
