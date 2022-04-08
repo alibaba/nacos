@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
 /**
@@ -98,7 +99,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
                 Http healthChecker = (Http) cluster.getHealthChecker();
                 
                 int ckPort = cluster.isUseIPPort4Check() ? ip.getPort() : cluster.getDefCkport();
-                URL host = new URL("http://" + ip.getIp() + ":" + ckPort);
+                URL host = new URL(HTTP_PREFIX + ip.getIp() + ":" + ckPort);
                 URL target = new URL(host, healthChecker.getPath());
                 Map<String, String> customHeaders = healthChecker.getCustomHeaders();
                 Header header = Header.newInstance();

@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.pojo;
-
-import java.io.Serializable;
-import java.util.List;
+package com.alibaba.nacos.common.constant;
 
 /**
- * Subscribers.
+ * Nacos request url constants.
  *
- * @author nicholas
- * @version $Id: Subscribers.java, v 0.1 2019-05-28 下午10:47 nicholas Exp $$
+ * @author chenhao26
  */
-public class Subscribers implements Serializable {
-
-    private static final long serialVersionUID = -3075690233070417052L;
-
-    private List<Subscriber> subscribers;
+public interface RequestUrlConstants {
     
-    public List<Subscriber> getSubscribers() {
-        return subscribers;
-    }
+    String HTTP_PREFIX = "http://";
+    String HTTPS_PREFIX = "https://";
     
-    public void setSubscribers(List<Subscriber> subscribers) {
-        this.subscribers = subscribers;
-    }
 }

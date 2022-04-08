@@ -30,7 +30,6 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,8 +48,11 @@ import java.util.Objects;
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 public class HistoryController {
     
-    @Autowired
-    protected PersistService persistService;
+    private final PersistService persistService;
+    
+    public HistoryController(PersistService persistService) {
+        this.persistService = persistService;
+    }
     
     /**
      * Query the list history config. notes:
@@ -112,7 +114,7 @@ public class HistoryController {
     }
     
     /**
-     * Check if the input dataId and group match the history config.
+     * Check if the input dataId,group and tenant match the history config.
      *
      * @param configHistoryInfo history config.
      * @param dataId            dataId
@@ -123,11 +125,11 @@ public class HistoryController {
      */
     private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
             String tenant) throws AccessException {
-        if (Objects.equals(configHistoryInfo.getDataId(), dataId) && Objects
-                .equals(configHistoryInfo.getGroup(), group)) {
-            return;
+        if (!Objects.equals(configHistoryInfo.getDataId(), dataId)
+                || !Objects.equals(configHistoryInfo.getGroup(), group)
+                || !Objects.equals(configHistoryInfo.getTenant(), tenant)) {
+            throw new AccessException("Please check dataId, group or tenant.");
         }
-        throw new AccessException("Please check dataId and group.");
     }
     
     /**

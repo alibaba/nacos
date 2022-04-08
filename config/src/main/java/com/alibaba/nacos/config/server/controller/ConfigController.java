@@ -57,7 +57,6 @@ import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -104,14 +103,18 @@ public class ConfigController {
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
     
-    @Autowired
-    private ConfigServletInner inner;
+    private final ConfigServletInner inner;
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
     
-    @Autowired
-    private ConfigSubService configSubService;
+    private final ConfigSubService configSubService;
+    
+    public ConfigController(ConfigServletInner inner, PersistService persistService,
+            ConfigSubService configSubService) {
+        this.inner = inner;
+        this.persistService = persistService;
+        this.configSubService = configSubService;
+    }
     
     /**
      * Adds or updates non-aggregated data.
@@ -865,11 +868,7 @@ public class ConfigController {
             ci4save.setEncryptedDataKey(ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
-        
-        if (configInfoList4Clone.isEmpty()) {
-            failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
-        }
+    
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();

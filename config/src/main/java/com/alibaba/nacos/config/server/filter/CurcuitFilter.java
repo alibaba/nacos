@@ -46,6 +46,8 @@ import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+
 /**
  * If the embedded distributed storage is enabled, all requests are routed to the Leader node for processing, and the
  * maximum number of forwards for a single request cannot exceed three.
@@ -99,7 +101,8 @@ public class CurcuitFilter implements Filter {
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
         } catch (Throwable e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.toString());
+            DEFAULT_LOG.warn("[CURCUIT-FILTER] Server failed: ", e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed, " + e.toString());
         }
     }
     

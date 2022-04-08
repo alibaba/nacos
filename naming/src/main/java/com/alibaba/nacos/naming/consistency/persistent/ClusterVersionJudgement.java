@@ -65,20 +65,23 @@ public class ClusterVersionJudgement {
     }
     
     protected void runVersionListener() {
-        // Single machine mode, do upgrade operation directly.
-        if (EnvUtil.getStandaloneMode()) {
+        // Single machine mode or close upgrade feature, do upgrade operation directly.
+        if (EnvUtil.getStandaloneMode() || !EnvUtil.isSupportUpgradeFrom1X()) {
             notifyAllListener();
             return;
         }
+        boolean finish = false;
         try {
-            judge();
+            finish = judge();
         } finally {
-            GlobalExecutor.submitClusterVersionJudge(this::runVersionListener, TimeUnit.SECONDS.toMillis(5));
+            if (!finish) {
+                GlobalExecutor.submitClusterVersionJudge(this::runVersionListener, TimeUnit.SECONDS.toMillis(5));
+            }
         }
     }
     
-    protected void judge() {
-        
+    protected boolean judge() {
+        boolean finish = false;
         Collection<Member> members = memberManager.allMembers();
         final String oldVersion = "1.4.0";
         boolean allMemberIsNewVersion = true;
@@ -91,7 +94,9 @@ public class ClusterVersionJudgement {
         // can only trigger once
         if (allMemberIsNewVersion && !this.allMemberIsNewVersion) {
             notifyAllListener();
+            finish = true;
         }
+        return finish;
     }
     
     private void notifyAllListener() {

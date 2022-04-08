@@ -40,6 +40,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -142,8 +143,8 @@ public class AddressServerMemberLookupTest extends TestCase {
         } else {
             addressUrl = envAddressUrl;
         }
-        addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
-        envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
+        addressServerUrl = HTTP_PREFIX + domainName + ":" + addressPort + addressUrl;
+        envIdUrl = HTTP_PREFIX + domainName + ":" + addressPort + "/env";
         
         Loggers.CORE.info("ServerListService address-server port:" + addressPort);
         Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);

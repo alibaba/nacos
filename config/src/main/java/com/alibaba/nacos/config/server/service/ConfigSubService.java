@@ -46,6 +46,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Config sub service.
  *
@@ -74,7 +76,7 @@ public class ConfigSubService {
      * @return all path.
      */
     private String getUrl(String ip, String relativePath) {
-        return "http://" + ip + EnvUtil.getContextPath() + relativePath;
+        return HTTP_PREFIX + ip + EnvUtil.getContextPath() + relativePath;
     }
     
     private List<SampleResult> runCollectionJob(String url, Map<String, String> params,

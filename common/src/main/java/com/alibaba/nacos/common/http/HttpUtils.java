@@ -48,6 +48,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Http utils.
  *
@@ -133,9 +136,9 @@ public final class HttpUtils {
     public static String buildUrl(boolean isHttps, String serverAddr, String... subPaths) {
         StringBuilder sb = new StringBuilder();
         if (isHttps) {
-            sb.append("https://");
+            sb.append(HTTPS_PREFIX);
         } else {
-            sb.append("http://");
+            sb.append(HTTP_PREFIX);
         }
         sb.append(serverAddr);
         String pre = null;

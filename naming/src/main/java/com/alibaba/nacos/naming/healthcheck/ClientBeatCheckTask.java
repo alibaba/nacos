@@ -40,6 +40,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Client beat check task of service for version 1.x.
  *
@@ -148,7 +150,7 @@ public class ClientBeatCheckTask implements BeatCheckTask {
                     .appendParam(FieldsConstants.SERVICE_NAME, service.getName())
                     .appendParam(FieldsConstants.NAME_SPACE_ID, service.getNamespaceId());
             
-            String url = "http://" + InternetAddressUtil.localHostIP() + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil
+            String url = HTTP_PREFIX + InternetAddressUtil.localHostIP() + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil
                     .getPort() + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "?" + request.toUrl();
             

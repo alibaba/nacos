@@ -35,6 +35,7 @@ public class ClientConfig extends AbstractDynamicConfig {
     
     private ClientConfig() {
         super(NAMING_CLIENT);
+        resetConfig();
     }
     
     public static ClientConfig getInstance() {

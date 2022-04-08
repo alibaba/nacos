@@ -49,7 +49,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private static final long serialVersionUID = 8940123791150907510L;
     
     /**
-     * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
+     * an addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
      */
     private String sitegroup = StringUtils.EMPTY;
     
@@ -80,7 +80,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     /**
      * Create a cluster.
      *
-     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and underline are allowed.
      *
      * @param clusterName the cluster name
      * @param service     the service to which the current cluster belongs
@@ -446,7 +446,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     /**
      * validate the current cluster.
      *
-     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and underline are allowed.
      *
      * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is
      *                                  illegal

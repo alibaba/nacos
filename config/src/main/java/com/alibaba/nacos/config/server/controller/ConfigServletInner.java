@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -35,10 +36,8 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.apache.commons.codec.Charsets;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
@@ -63,15 +62,18 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 @Service
 public class ConfigServletInner {
     
-    @Autowired
-    private LongPollingService longPollingService;
-    
-    @Autowired
-    private PersistService persistService;
-    
     private static final int TRY_GET_LOCK_TIMES = 9;
     
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
+    
+    private final LongPollingService longPollingService;
+    
+    private final PersistService persistService;
+    
+    public ConfigServletInner(LongPollingService longPollingService, PersistService persistService) {
+        this.longPollingService = longPollingService;
+        this.persistService = persistService;
+    }
     
     /**
      * long polling the config.
@@ -122,7 +124,7 @@ public class ConfigServletInner {
         
         boolean notify = false;
         if (StringUtils.isNotBlank(isNotify)) {
-            notify = Boolean.valueOf(isNotify);
+            notify = Boolean.parseBoolean(isNotify);
         }
         
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
@@ -154,7 +156,7 @@ public class ConfigServletInner {
                 
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
-                PrintWriter out = null;
+                PrintWriter out;
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
@@ -261,7 +263,7 @@ public class ConfigServletInner {
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, fileContent);
                     String decryptContent = pair.getSecond();
                     out = response.getWriter();
-                    out.println(decryptContent);
+                    out.print(decryptContent);
                     out.flush();
                     out.close();
                 }
