@@ -574,6 +574,8 @@ public abstract class RpcClient implements Closeable {
                     }
                 } catch (InterruptedException e) {
                     // Do nothing.
+                    // set the interrupted flag
+                    Thread.currentThread().interrupt();
                 }
             }
             
