@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.exception.RemoteException;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -46,13 +47,6 @@ import java.nio.charset.Charset;
  */
 public class GrpcUtils {
     
-    static ObjectMapper mapper = new ObjectMapper();
-    
-    static {
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
-    
     /**
      * Object to json string.
      *
@@ -61,11 +55,7 @@ public class GrpcUtils {
      * @throws NacosSerializationException if transfer failed
      */
     private static String toJson(Object obj) {
-        try {
-            return mapper.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            throw new NacosSerializationException(obj.getClass(), e);
-        }
+        return JacksonUtils.toJson(obj);
     }
     
     /**
@@ -78,11 +68,7 @@ public class GrpcUtils {
      * @throws NacosDeserializationException if deserialize failed
      */
     public static <T> T toObj(String json, Class<T> cls) {
-        try {
-            return mapper.readValue(json, cls);
-        } catch (IOException e) {
-            throw new NacosDeserializationException(cls, e);
-        }
+        return JacksonUtils.toObj(json, cls);
     }
     
     /**
@@ -125,7 +111,7 @@ public class GrpcUtils {
         String jsonString = toJson(request);
         
         Payload.Builder builder = Payload.newBuilder();
-    
+        
         return builder
                 .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
                 .setMetadata(newMeta).build();
