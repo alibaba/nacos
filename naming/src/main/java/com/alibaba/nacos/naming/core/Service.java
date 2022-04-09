@@ -546,10 +546,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         List<Instance> ips = allIPs();
         
         StringBuilder ipsString = new StringBuilder();
-        ipsString.append(getServiceString());
+        String serviceString = getServiceString();
+        ipsString.append(serviceString);
         
         if (Loggers.SRV_LOG.isDebugEnabled()) {
-            Loggers.SRV_LOG.debug("service to json: " + getServiceString());
+            Loggers.SRV_LOG.debug("service to json: " + serviceString);
         }
         
         if (CollectionUtils.isNotEmpty(ips)) {
