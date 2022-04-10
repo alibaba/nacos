@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import org.springframework.stereotype.Component;
 
 /**
- * none health check processor, it will do not anything.
+ * none health check processor,it will do not anything.
  * @author onewe
  */
 @Component("noneHealthCheckProcessorV2")
