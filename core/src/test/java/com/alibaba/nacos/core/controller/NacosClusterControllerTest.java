@@ -115,7 +115,7 @@ public class NacosClusterControllerTest {
     
     @Test
     public void testLeave() throws Exception {
-        RestResult<String> result = nacosClusterController.leave(Collections.singletonList("1.1.1.1"));
+        RestResult<String> result = nacosClusterController.leave(Collections.singletonList("1.1.1.1"), true);
         Assert.assertEquals("ok", result.getData());
     }
 }
