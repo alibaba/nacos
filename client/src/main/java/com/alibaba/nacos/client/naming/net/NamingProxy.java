@@ -97,7 +97,7 @@ public class NamingProxy implements Closeable {
     
     private List<String> serverList;
     
-    private List<String> serversFromEndpoint = new ArrayList<String>();
+    private volatile List<String> serversFromEndpoint = new ArrayList<String>();
     
     private final SecurityProxy securityProxy;
     
