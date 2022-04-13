@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -56,13 +57,14 @@ public class PushExecuteTask extends AbstractExecuteTask {
     public void run() {
         try {
             PushDataWrapper wrapper = generatePushData();
+            ClientManager clientManager = delayTaskEngine.getClientManager();
             for (String each : getTargetClientIds()) {
-                Client client = delayTaskEngine.getClientManager().getClient(each);
+                Client client = clientManager.getClient(each);
                 if (null == client) {
                     // means this client has disconnect
                     continue;
                 }
-                Subscriber subscriber = delayTaskEngine.getClientManager().getClient(each).getSubscriber(service);
+                Subscriber subscriber = clientManager.getClient(each).getSubscriber(service);
                 delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
                         new NamingPushCallback(each, subscriber, wrapper.getOriginalData(), delayTask.isPushToAll()));
             }
@@ -128,9 +130,8 @@ public class PushExecuteTask extends AbstractExecuteTask {
                         pushCostTimeForNetWork, pushCostTimeForAll, subscriber.getIp(), service,
                         serviceInfo.getHosts().size());
             }
-            PushResult result = PushResult
-                    .pushSuccess(service, clientId, serviceInfo, subscriber, pushCostTimeForNetWork, pushCostTimeForAll,
-                            serviceLevelAgreementTime, isPushToAll);
+            PushResult result = PushResult.pushSuccess(service, clientId, serviceInfo, subscriber,
+                    pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, isPushToAll);
             PushResultHookHolder.getInstance().pushSuccess(result);
         }
         
@@ -145,14 +146,16 @@ public class PushExecuteTask extends AbstractExecuteTask {
                 delayTaskEngine.addTask(service,
                         new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
             }
-            PushResult result = PushResult
-                    .pushFailed(service, clientId, serviceInfo, subscriber, pushCostTime, e, isPushToAll);
+            PushResult result = PushResult.pushFailed(service, clientId, serviceInfo, subscriber, pushCostTime, e,
+                    isPushToAll);
             PushResultHookHolder.getInstance().pushFailed(result);
         }
-    
+        
         private ServiceInfo getServiceInfo(Service service, ServiceInfo serviceInfo) {
-            ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
-            return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true, subscriber);
+            ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service)
+                    .orElse(null);
+            return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true,
+                    subscriber);
         }
     }
 }
