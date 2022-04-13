@@ -64,7 +64,7 @@ public class EnvUtil {
      */
     public static final String NACOS_HOME_KEY = "nacos.home";
     
-    private static String localAddress = "";
+    private static volatile String localAddress = "";
     
     private static int port = -1;
     
