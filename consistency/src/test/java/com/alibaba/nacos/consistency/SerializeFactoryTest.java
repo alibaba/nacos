@@ -41,7 +41,7 @@ public class SerializeFactoryTest {
         byte[] data = serializer.serialize(logsList);
         Assert.assertNotEquals(0, data.length);
         
-        ArrayList list = serializer.deserialize(data, ArrayList.class);
+        ArrayList<Integer> list = serializer.deserialize(data, ArrayList.class);
         System.out.println(list);
     }
     
@@ -54,7 +54,7 @@ public class SerializeFactoryTest {
         }
         byte[] data = serializer.serialize(logsMap);
         Assert.assertNotEquals(0, data.length);
-        HashMap result = serializer.deserialize(data, HashMap.class);
+        Map<Integer, Integer> result = serializer.deserialize(data, HashMap.class);
         System.out.println(result);
     }
     
@@ -68,7 +68,7 @@ public class SerializeFactoryTest {
         
         byte[] data = serializer.serialize(logsMap);
         Assert.assertNotEquals(0, data.length);
-        HashSet result = serializer.deserialize(data, HashSet.class);
+        Set<Integer> result = serializer.deserialize(data, HashSet.class);
         System.out.println(result);
     }
     
