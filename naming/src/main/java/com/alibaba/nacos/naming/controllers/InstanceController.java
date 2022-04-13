@@ -24,7 +24,9 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.BeatRequest;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -42,6 +44,7 @@ import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.NamingResourceParser;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
@@ -60,6 +63,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -537,7 +541,97 @@ public class InstanceController {
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }
-    
+
+    /**
+     * Create beats for instances.
+     *
+     * @param request http request
+     * @return result
+     * @throws Exception exception
+     */
+    @PutMapping("/beats")
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    public String beats(HttpServletRequest request) throws Exception {
+        
+        byte[] dataBytes = IoUtils.tryDecompress(request.getInputStream());
+        String data = new String(dataBytes, StandardCharsets.UTF_8);
+        JsonNode serviceJson = JacksonUtils.toObj(data);
+        ArrayNode beatReqArrayNode = (ArrayNode) serviceJson.get("beats");
+        
+        for (int i = 0; i < beatReqArrayNode.size(); i++) {
+            BeatRequest beatRequest = JacksonUtils.toObj(beatReqArrayNode.get(i).asText(), BeatRequest.class);
+            try {
+                RsInfo clientBeat = null;
+                if (StringUtils.isNotBlank(beatRequest.getBeat())) {
+                    clientBeat = JacksonUtils.toObj(beatRequest.getBeat(), RsInfo.class);
+                }
+                
+                String clusterName = beatRequest.getClusterName();
+                String ip = beatRequest.getIp();
+                int port = beatRequest.getPort();
+                
+                if (clientBeat != null) {
+                    if (StringUtils.isBlank(clientBeat.getCluster())) {
+                        clientBeat.setCluster(clusterName);
+                    } else {
+                        clusterName = clientBeat.getCluster();
+                    }
+                    ip = clientBeat.getIp();
+                    port = clientBeat.getPort();
+                }
+                
+                NamingUtils.checkServiceNameFormat(beatRequest.getServiceName());
+                Loggers.SRV_LOG.debug("[CLIENT-BEATS] full arguments: beat: {}, serviceName: {}",
+                        clientBeat, beatRequest.getServiceName());
+                Instance instance = serviceManager.getInstance(
+                        beatRequest.getNamespaceId(), beatRequest.getServiceName(), clusterName, ip, port);
+                
+                if (instance == null) {
+                    if (clientBeat == null) {
+                        Loggers.SRV_LOG.error("[CLIENT-BEATS] resource not found: {}", beatRequest.getId());
+                        continue;
+                    }
+                    
+                    Loggers.SRV_LOG.warn("[CLIENT-BEATS] The instance has been removed for health mechanism, "
+                            + "perform data compensation operations, beat: {}, serviceName: {}",
+                            clientBeat, beatRequest.getServiceName());
+                    
+                    instance = new Instance();
+                    instance.setPort(clientBeat.getPort());
+                    instance.setIp(clientBeat.getIp());
+                    instance.setWeight(clientBeat.getWeight());
+                    instance.setMetadata(clientBeat.getMetadata());
+                    instance.setClusterName(clusterName);
+                    instance.setServiceName(beatRequest.getServiceName());
+                    instance.setInstanceId(instance.getInstanceId());
+                    instance.setEphemeral(clientBeat.isEphemeral());
+                    
+                    serviceManager.registerInstance(beatRequest.getNamespaceId(), beatRequest.getServiceName(), instance);
+                }
+                
+                Service service = serviceManager.getService(beatRequest.getNamespaceId(), beatRequest.getServiceName());
+                
+                if (service == null) {
+                    Loggers.SRV_LOG.error("[CLIENT-BEATS] service not found: {} @ {}",
+                            beatRequest.getServiceName(), beatRequest.getNamespaceId());
+                    continue;
+                }
+                
+                if (clientBeat == null) {
+                    clientBeat = new RsInfo();
+                    clientBeat.setCluster(clusterName);
+                    clientBeat.setPort(port);
+                    clientBeat.setIp(ip);
+                }
+                service.processClientBeat(clientBeat);
+            } catch (Exception e) {
+                Loggers.SRV_LOG.error("[CLIENT-BEATS] beat: {} Exception", beatRequest.getId(), e);
+            }
+        }
+        
+        return "ok";
+    }
+
     /**
      * List all instance with health status.
      *

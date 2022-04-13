@@ -121,7 +121,7 @@ public class HttpClientManager {
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
                     .setReadTimeOutMillis(TIME_OUT_MILLIS).setUserAgent(UtilsAndCommons.SERVER_VERSION)
-                    .setMaxConnTotal(-1).setMaxConnPerRoute(128).setMaxRedirects(0).build();
+                    .setMaxConnTotal(128).setMaxConnPerRoute(128).setMaxRedirects(0).build();
         }
         
         @Override

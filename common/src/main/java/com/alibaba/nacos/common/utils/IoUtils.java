@@ -37,6 +37,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * IO related tool methods.
@@ -45,6 +46,21 @@ import java.util.zip.GZIPInputStream;
  */
 public class IoUtils {
     
+    /**
+     * compress bytes by GZIP.
+     *
+     * @param dataBytes byte array to be compressed
+     * @return byte array after compress
+     * @throws IOException io exception
+     */
+    public static byte[] compress(byte[] dataBytes) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = new GZIPOutputStream(out);
+        gzip.write(dataBytes);
+        gzip.close();
+        return out.toByteArray();
+    }
+
     /**
      * Try decompress by GZIP from stream.
      *

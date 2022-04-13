@@ -19,10 +19,17 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.utils.BeatRequest;
+import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.core.utils.ReuseHttpRequest;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
@@ -31,10 +38,15 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -49,8 +61,13 @@ import java.net.URI;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Distro filter.
@@ -62,6 +79,10 @@ public class DistroFilter implements Filter {
     private static final int PROXY_CONNECT_TIMEOUT = 2000;
     
     private static final int PROXY_READ_TIMEOUT = 2000;
+    
+    private static final String BEAT_SUFFIX = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/beat";
+    
+    private static final ConcurrentHashMap<String, ConcurrentLinkedQueue<BeatRequest>> BEAT_REQ_MAP = new ConcurrentHashMap<>(16);
     
     @Autowired
     private DistroMapper distroMapper;
@@ -130,6 +151,14 @@ public class DistroFilter implements Filter {
                 
                 final String targetServer = distroMapper.mapSrv(groupedServiceName);
                 
+                if (req.getRequestURI().endsWith(BEAT_SUFFIX)) {
+                    forwardBeat(targetServer, req, groupedServiceName);
+                    OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
+                    requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
+                    filterChain.doFilter(requestWrapper, resp);
+                    return;
+                }
+                
                 List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
                 while (headers.hasMoreElements()) {
@@ -171,5 +200,71 @@ public class DistroFilter implements Filter {
     @Override
     public void destroy() {
     
+    }
+
+    private void forwardBeat(String targetServer, ReuseHttpRequest req, String groupedServiceName) {
+        ConcurrentLinkedQueue<BeatRequest> queue = BEAT_REQ_MAP.get(targetServer);
+        if (queue == null) {
+            BEAT_REQ_MAP.putIfAbsent(targetServer, new ConcurrentLinkedQueue<>());
+            queue = BEAT_REQ_MAP.get(targetServer);
+        }
+        BeatRequest beatRequest = BeatRequest.get(req, groupedServiceName);
+        queue.offer(beatRequest);
+    }
+    
+    @PostConstruct
+    private void start() {
+        ScheduledExecutorService executorService = ExecutorFactory.Managed
+                .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(DistroFilter.class),
+                        new NameThreadFactory("com.alibaba.nacos.distro.beat"));
+        executorService.scheduleAtFixedRate(() -> {
+            for (String targetServer : BEAT_REQ_MAP.keySet()) {
+                ConcurrentLinkedQueue<BeatRequest> queue = BEAT_REQ_MAP.get(targetServer);
+                int size = queue.size();
+                if (size == 0) {
+                    continue;
+                }
+                ObjectNode requestNode = JacksonUtils.createEmptyJsonNode();
+                ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
+                for (int i = 0; i < size; i++) {
+                    BeatRequest beatRequest = queue.poll();
+                    arrayNode.add(JacksonUtils.toJson(beatRequest));
+                }
+                requestNode.replace("beats", arrayNode);
+                try {
+                    Map<String, String> headers = new HashMap<>(128);
+                    headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
+                    headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
+                    headers.put(HttpHeaderConsts.CONNECTION, "Keep-Alive");
+    
+                    byte[] content = IoUtils.compress(JacksonUtils.toJsonBytes(requestNode));
+                    HttpClient.asyncHttpPutLarge(
+                            "http://" + targetServer + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                            + "/instance/beats", headers, content,
+                            new Callback<String>() {
+                            @Override
+                            public void onReceive(RestResult<String> result) {
+                                if (!result.ok()) {
+                                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] forward beat failure: {}", result.getMessage());
+                                    return;
+                                }
+                            }
+            
+                            @Override
+                            public void onError(Throwable throwable) {
+                                Loggers.SRV_LOG.error("[DISTRO-FILTER] forward beat error", throwable);
+                            }
+            
+                            @Override
+                            public void onCancel() {
+                                Loggers.SRV_LOG.warn("[DISTRO-FILTER] forward beat cancelled");
+                            }
+                        });
+                    
+                } catch (Exception e) {
+                    Loggers.SRV_LOG.error("[DISTRO-FILTER] forward beat exception", e);
+                }
+            }
+        }, 0, 100, TimeUnit.MILLISECONDS);
     }
 }
