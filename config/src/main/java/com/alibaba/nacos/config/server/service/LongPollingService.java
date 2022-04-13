@@ -144,9 +144,9 @@ public class LongPollingService {
     }
     
     /**
-     * Collect application subscribe configinfos.
+     * Collect application subscribe config infos.
      *
-     * @return configinfos results.
+     * @return config infos results.
      */
     public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
         if (allSubs == null || allSubs.isEmpty()) {
@@ -318,7 +318,7 @@ public class LongPollingService {
     public static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
     
     /**
-     * ClientLongPolling subscibers.
+     * ClientLongPolling subscribers.
      */
     final Queue<ClientLongPolling> allSubs;
     
@@ -423,7 +423,7 @@ public class LongPollingService {
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
+                            LogUtil.DEFAULT_LOG.warn("client subscriber's relations delete fail.");
                         }
                     } catch (Throwable t) {
                         LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
