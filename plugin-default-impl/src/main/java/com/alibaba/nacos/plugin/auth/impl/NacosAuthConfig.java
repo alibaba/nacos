@@ -28,6 +28,8 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.DecodingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.env.Environment;
@@ -58,6 +60,7 @@ import java.util.Properties;
  * @author Nacos
  */
 @EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
