@@ -97,7 +97,7 @@ module.exports = {
       filename: 'index.html',
       template: './public/index.ejs',
       templateParameters: {
-        contextPath: isDev ? '' : 'console-ui/public/'
+        contextPath: isDev ? './' : 'console-ui/public/'
       },
       hash: true,
       minify: !isDev,
