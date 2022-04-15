@@ -16,14 +16,29 @@
 
 package com.alibaba.nacos.naming.push;
 
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.Subscriber;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPOutputStream;
+
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -34,24 +49,18 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.zip.GZIPOutputStream;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
+import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alipay.sofa.jraft.util.NamedThreadFactory;
 
 /**
  * Push service.
@@ -61,6 +70,8 @@ import java.util.zip.GZIPOutputStream;
 @Component
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class PushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
+    
+    private static final ConcurrentHashSet<Service> CHANGED_SERVICE_SET = new ConcurrentHashSet<>();
     
     @Autowired
     private SwitchDomain switchDomain;
@@ -371,13 +382,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      * @param service service
      */
     public void serviceChanged(Service service) {
-        // merge some change events to reduce the push frequency:
-        if (futureMap
-                .containsKey(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()))) {
-            return;
-        }
-        
-        this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
+        CHANGED_SERVICE_SET.add(service);
     }
     
     /**
@@ -730,5 +735,25 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             public String data;
         }
     }
-    
+
+    @PostConstruct
+    private void start() {
+        ScheduledExecutorService executorService = ExecutorFactory.Managed
+                .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(PushService.class),
+                        new NamedThreadFactory("com.alibaba.nacos.push.service"));
+        executorService.scheduleAtFixedRate(() -> {
+            Iterator<Service> it = CHANGED_SERVICE_SET.iterator();
+            while (it.hasNext()) {
+                Service service = it.next();
+                it.remove();
+                
+                // merge some change events to reduce the push frequency:
+                if (futureMap.containsKey(
+                        UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()))) {
+                    continue;
+                }
+                this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
+            }
+        }, 0, 100, TimeUnit.MILLISECONDS);
+    }
 }

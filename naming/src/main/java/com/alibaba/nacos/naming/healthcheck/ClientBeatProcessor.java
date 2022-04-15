@@ -16,17 +16,17 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Thread to update ephemeral instance triggered by client beat.
@@ -73,22 +73,20 @@ public class ClientBeatProcessor implements Runnable {
         String clusterName = rsInfo.getCluster();
         int port = rsInfo.getPort();
         Cluster cluster = service.getClusterMap().get(clusterName);
-        List<Instance> instances = cluster.allIPs(true);
+        List<Instance> instances = cluster.allIPsMatchIpAndPort(true, ip, port);
         
         for (Instance instance : instances) {
-            if (instance.getIp().equals(ip) && instance.getPort() == port) {
-                if (Loggers.EVT_LOG.isDebugEnabled()) {
-                    Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
-                }
-                instance.setLastBeat(System.currentTimeMillis());
-                if (!instance.isMarked() && !instance.isHealthy()) {
-                    instance.setHealthy(true);
-                    Loggers.EVT_LOG
-                            .info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
-                                    cluster.getService().getName(), ip, port, cluster.getName(),
-                                    UtilsAndCommons.LOCALHOST_SITE);
-                    getPushService().serviceChanged(service);
-                }
+            if (Loggers.EVT_LOG.isDebugEnabled()) {
+                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
+            }
+            instance.setLastBeat(System.currentTimeMillis());
+            if (!instance.isMarked() && !instance.isHealthy()) {
+                instance.setHealthy(true);
+                Loggers.EVT_LOG
+                        .info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
+                                cluster.getService().getName(), ip, port, cluster.getName(),
+                                UtilsAndCommons.LOCALHOST_SITE);
+                getPushService().serviceChanged(service);
             }
         }
     }

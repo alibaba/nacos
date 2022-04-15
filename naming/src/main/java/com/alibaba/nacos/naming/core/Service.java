@@ -16,6 +16,18 @@
 
 package com.alibaba.nacos.naming.core;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -35,17 +47,6 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.ListUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Service of Nacos server side
@@ -127,7 +128,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
         clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
-        HealthCheckReactor.scheduleNow(clientBeatProcessor);
+        clientBeatProcessor.run();
     }
     
     public Boolean getEnabled() {

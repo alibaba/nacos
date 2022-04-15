@@ -16,16 +16,6 @@
 
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.Assert;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,6 +25,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.Assert;
+
+import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.collect.ArrayListMultimap;
 
 /**
  * Cluster.
@@ -65,6 +66,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     
     @JsonIgnore
     private Set<Instance> ephemeralInstances = new HashSet<>();
+    
+    @JsonIgnore
+    private ArrayListMultimap<String, Instance> persistentInstanceMap = ArrayListMultimap.create();
+    
+    @JsonIgnore
+    private ArrayListMultimap<String, Instance> ephemeralInstanceMap = ArrayListMultimap.create();
     
     @JsonIgnore
     private Service service;
@@ -135,6 +142,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      */
     public List<Instance> allIPs(boolean ephemeral) {
         return ephemeral ? new ArrayList<>(ephemeralInstances) : new ArrayList<>(persistentInstances);
+    }
+    
+    /**
+     * Get all ephemeral or consistence instances match special ip and port.
+     *
+     * @param ephemeral whether returned instances are ephemeral
+     * @param ip special ip
+     * @param port special port
+     * @return list of special instances
+     */
+    public List<Instance> allIPsMatchIpAndPort(boolean ephemeral, String ip, int port) {
+        return ephemeral ? new ArrayList<>(ephemeralInstanceMap.get(getIpKey(ip, port)))
+                : new ArrayList<>(persistentInstanceMap.get(getIpKey(ip, port)));
     }
     
     /**
@@ -295,12 +315,22 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         }
         
         toUpdateInstances = new HashSet<>(ips);
+        ArrayListMultimap<String, Instance> toUpdateMap = ArrayListMultimap.create();
+        for (Instance ip : ips) {
+            toUpdateMap.put(getIpKey(ip.getIp(), ip.getPort()), ip);
+        }
         
         if (ephemeral) {
+            ephemeralInstanceMap = toUpdateMap;
             ephemeralInstances = toUpdateInstances;
         } else {
+            persistentInstanceMap = toUpdateMap;
             persistentInstances = toUpdateInstances;
         }
+    }
+    
+    private String getIpKey(String ip, int port) {
+        return ip + ":" + port;
     }
     
     private List<Instance> updatedIps(Collection<Instance> newInstance, Collection<Instance> oldInstance) {
