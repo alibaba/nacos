@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroHttpData;
@@ -40,6 +41,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -52,6 +55,8 @@ import java.util.Map;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
 public class DistroController {
     
+    private byte[] emptyMapAsBytes;
+    
     @Autowired
     private DistroProtocol distroProtocol;
     
@@ -60,6 +65,14 @@ public class DistroController {
     
     @Autowired
     private SwitchDomain switchDomain;
+    
+    @Autowired
+    private Serializer serializer;
+    
+    @PostConstruct
+    public void init() {
+        emptyMapAsBytes = serializer.serialize(new HashMap());
+    }
     
     /**
      * Synchronize datum.
@@ -123,7 +136,12 @@ public class DistroController {
             distroKey.getActualResourceTypes().add(key);
         }
         DistroData distroData = distroProtocol.onQuery(distroKey);
-        return ResponseEntity.ok(distroData.getContent());
+        if (distroData != null) {
+            return ResponseEntity.ok(distroData.getContent());
+        } else {
+            // keep backward compatible
+            return ResponseEntity.ok(emptyMapAsBytes);
+        }
     }
     
     /**

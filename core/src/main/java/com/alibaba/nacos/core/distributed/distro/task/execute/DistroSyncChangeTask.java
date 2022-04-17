@@ -41,10 +41,20 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
     public void run() {
         Loggers.DISTRO.info("[DISTRO-START] {}", toString());
         try {
-            String type = getDistroKey().getResourceType();
-            DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(getDistroKey());
+            DistroKey distroKey = getDistroKey();
+            String type = distroKey.getResourceType();
+            DistroData distroData = distroComponentHolder.findDataStorage(type).getDistroData(distroKey);
+            // Maybe data deleted after `addTask`,
+            // so check here to avoid `receive empty entity!` error when PUT /v1/ns/distro/datum.
+            if (distroData == null) {
+                if (Loggers.DISTRO.isInfoEnabled()) {
+                    Loggers.DISTRO.info("[DISTRO-WARN] Data not found, key: {}", distroKey);
+                }
+                return;
+            }
+            
             distroData.setType(DataOperation.CHANGE);
-            boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, getDistroKey().getTargetServer());
+            boolean result = distroComponentHolder.findTransportAgent(type).syncData(distroData, distroKey.getTargetServer());
             if (!result) {
                 handleFailedTask();
             }

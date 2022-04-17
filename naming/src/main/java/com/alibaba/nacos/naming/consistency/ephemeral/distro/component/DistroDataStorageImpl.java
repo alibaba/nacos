@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.component;
 
+import com.alibaba.nacos.common.utils.MapUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -48,11 +49,20 @@ public class DistroDataStorageImpl implements DistroDataStorage {
     
     @Override
     public DistroData getDistroData(DistroKey distroKey) {
-        Map<String, Datum> result = new HashMap<>(1);
+        Map<String, Datum> result;
         if (distroKey instanceof DistroHttpCombinedKey) {
             result = dataStore.batchGet(((DistroHttpCombinedKey) distroKey).getActualResourceTypes());
+            // `result` here maybe a empty map, not null.
+            if (MapUtils.isEmpty(result)) {
+                return null;
+            }
         } else {
             Datum datum = dataStore.get(distroKey.getResourceKey());
+            // `datum` maybe not found
+            if (datum == null) {
+                return null;
+            }
+            result = new HashMap<>(1);
             result.put(distroKey.getResourceKey(), datum);
         }
         byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
