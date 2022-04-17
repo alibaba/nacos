@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,9 +41,20 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
+    private final String eventScope;
+    
     private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<String, ConcurrentHashSet<EventListener>>();
     
     private final Object lock = new Object();
+    
+    @JustForTest
+    public InstancesChangeNotifier() {
+        this.eventScope = UUID.randomUUID().toString();
+    }
+    
+    public InstancesChangeNotifier(String eventScope) {
+        this.eventScope = eventScope;
+    }
     
     /**
      * register listener.
@@ -137,4 +150,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         return InstancesChangeEvent.class;
     }
     
+    @Override
+    public boolean scopeMatches(InstancesChangeEvent event) {
+        return this.eventScope.equals(event.scope());
+    }
 }
