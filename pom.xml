@@ -150,7 +150,6 @@
         <mina-core.version>2.0.0-RC1</mina-core.version>
         <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
-        <commonOkHttp.version>0.4.1</commonOkHttp.version>
         <grpc-java.version>1.26.0</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.16.1</protobuf-java.version>
@@ -948,13 +947,6 @@
                 <groupId>org.javatuples</groupId>
                 <artifactId>javatuples</artifactId>
                 <version>${javatuples.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>com.github.keran213539</groupId>
-                <artifactId>commonOkHttp</artifactId>
-                <version>${commonOkHttp.version}</version>
-                <scope>test</scope>
             </dependency>
             
             <!-- gRPC dependency start -->
