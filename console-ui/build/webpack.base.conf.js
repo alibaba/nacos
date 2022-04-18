@@ -51,7 +51,14 @@ module.exports = {
     rules: [
       {
         test: /\.(css|scss)$/,
-        use: [isDev ? 'style-loader' : MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
+        use: [isDev ? 'style-loader' : MiniCssExtractPlugin.loader, {
+          loader: 'css-loader',
+          options:{
+            url: (url) => {
+              return isDev || !url.includes("console-ui");
+            }
+          }
+        }, 'sass-loader'],
       },
       {
         test: /\.(js|jsx)$/,
