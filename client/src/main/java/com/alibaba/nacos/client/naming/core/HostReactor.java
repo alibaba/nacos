@@ -62,7 +62,7 @@ public class HostReactor implements Closeable {
     
     private static final long UPDATE_HOLD_INTERVAL = 5000L;
     
-    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
+    private final Map<String, ScheduledFuture<?>> futureMap = new ConcurrentHashMap<String, ScheduledFuture<?>>();
     
     private final Map<String, ServiceInfo> serviceInfoMap;
     
@@ -148,6 +148,12 @@ public class HostReactor implements Closeable {
      */
     public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
         notifier.deregisterListener(serviceName, clusters, eventListener);
+
+        // when all listeners are removed, stop the update task
+        if (!notifier.isSubscribed(serviceName, clusters)) {
+            // remove the flag for judging whether to stop the update task
+            futureMap.remove(ServiceInfo.getKey(serviceName, clusters));
+        }
     }
     
     public List<ServiceInfo> getSubscribeServices() {
@@ -450,6 +456,7 @@ public class HostReactor implements Closeable {
         
         @Override
         public void run() {
+            boolean stop = false;
             long delayTime = DEFAULT_DELAY;
             
             try {
@@ -474,6 +481,9 @@ public class HostReactor implements Closeable {
                 if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
                         .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
                     // abort the update task
+                    stop = true;
+                    // clear the service info cache
+                    serviceInfoMap.remove(ServiceInfo.getKey(serviceName, clusters));
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
@@ -487,7 +497,9 @@ public class HostReactor implements Closeable {
                 incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                if (!stop) {
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                }
             }
         }
     }
