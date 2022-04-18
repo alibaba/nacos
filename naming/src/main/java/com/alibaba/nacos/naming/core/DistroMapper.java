@@ -92,8 +92,9 @@ public class DistroMapper extends MemberChangeListener {
             return false;
         }
         
-        int index = servers.indexOf(EnvUtil.getLocalAddress());
-        int lastIndex = servers.lastIndexOf(EnvUtil.getLocalAddress());
+        String localAddress = EnvUtil.getLocalAddress();
+        int index = servers.indexOf(localAddress);
+        int lastIndex = servers.lastIndexOf(localAddress);
         if (lastIndex < 0 || index < 0) {
             return true;
         }
