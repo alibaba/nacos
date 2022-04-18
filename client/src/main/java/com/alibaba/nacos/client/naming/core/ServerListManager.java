@@ -68,7 +68,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private final List<String> serverList = new ArrayList<>();
     
-    private List<String> serversFromEndpoint = new ArrayList<>();
+    private volatile List<String> serversFromEndpoint = new ArrayList<>();
     
     private ScheduledExecutorService refreshServerListExecutor;
     
