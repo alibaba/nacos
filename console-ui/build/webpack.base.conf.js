@@ -95,7 +95,11 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      template: './public/index.html',
+      template: './public/index.ejs',
+      templateParameters: {
+        contextPath: isDev ? './' : 'console-ui/public/'
+      },
+      hash: true,
       minify: !isDev,
     }),
     new CopyWebpackPlugin([
