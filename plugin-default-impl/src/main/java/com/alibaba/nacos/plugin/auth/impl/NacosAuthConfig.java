@@ -19,7 +19,6 @@ package com.alibaba.nacos.plugin.auth.impl;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.plugin.auth.impl.configuration.ConditionOnLdapAuth;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.filter.JwtAuthenticationTokenFilter;
@@ -27,14 +26,8 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.io.DecodingException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ldap.LdapAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.core.env.Environment;
-import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.ldap.core.support.LdapContextSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -50,8 +43,6 @@ import org.springframework.web.cors.CorsUtils;
 
 import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -60,7 +51,6 @@ import java.util.Properties;
  * @author Nacos
  */
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-@EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
@@ -72,21 +62,6 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     private static final String DEFAULT_ALL_PATH_PATTERN = "/**";
     
     private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
-    
-    @Value(("${nacos.core.auth.ldap.url:ldap://localhost:389}"))
-    private String ldapUrl;
-    
-    @Value(("${nacos.core.auth.ldap.basedc:dc=example,dc=org}"))
-    private String ldapBaseDc;
-    
-    @Value(("${nacos.core.auth.ldap.timeout:3000}"))
-    private String ldapTimeOut;
-    
-    @Value(("${nacos.core.auth.ldap.userDn:cn=admin,dc=example,dc=org}"))
-    private String userDn;
-    
-    @Value(("${nacos.core.auth.ldap.password:password}"))
-    private String password;
     
     @Autowired
     private Environment env;
@@ -193,24 +168,6 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-    
-    @Bean
-    @Conditional(ConditionOnLdapAuth.class)
-    public LdapTemplate ldapTemplate() {
-        LdapContextSource contextSource = new LdapContextSource();
-        final Map<String, Object> config = new HashMap(16);
-        contextSource.setUrl(ldapUrl);
-        contextSource.setBase(ldapBaseDc);
-        contextSource.setUserDn(userDn);
-        contextSource.setPassword(password);
-        config.put("java.naming.ldap.attributes.binary", "objectGUID");
-        config.put("com.sun.jndi.ldap.connect.timeout", ldapTimeOut);
-        contextSource.setPooled(true);
-        contextSource.setBaseEnvironmentProperties(config);
-        contextSource.afterPropertiesSet();
-        return new LdapTemplate(contextSource);
-        
     }
     
     public byte[] getSecretKeyBytes() {

@@ -25,6 +25,8 @@ public class AuthConstants {
     
     public static final String AUTH_PLUGIN_TYPE = "nacos";
     
+    public static final String LDAP_AUTH_PLUGIN_TYPE = "ldap";
+    
     public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
     
     public static final String AUTHORIZATION_HEADER = "Authorization";
