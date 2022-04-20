@@ -159,6 +159,8 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
                 handleEvent(event);
             } catch (InterruptedException e) {
                 Loggers.EVT_LOG.warn("Naming Event Publisher {} take event from queue failed:", this.publisherName, e);
+                // set the interrupted flag
+                Thread.currentThread().interrupt();
             }
         }
     }
