@@ -211,6 +211,8 @@ public class ConcurrentDiskUtil {
             Thread.sleep(time);
         } catch (InterruptedException e) {
             NAMING_LOGGER.warn("sleep wrong", e);
+            // set the interrupted flag
+            Thread.currentThread().interrupt();
         }
     }
     
