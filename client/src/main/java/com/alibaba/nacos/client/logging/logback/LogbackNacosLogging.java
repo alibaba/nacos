@@ -23,7 +23,7 @@ import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.utils.ResourceUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.impl.StaticLoggerBinder;
 
 /**
  * Support for Logback version 1.0.8 or higher
