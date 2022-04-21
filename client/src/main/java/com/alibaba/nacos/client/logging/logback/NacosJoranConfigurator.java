@@ -18,21 +18,53 @@ package com.alibaba.nacos.client.logging.logback;
 
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.event.SaxEvent;
+import ch.qos.logback.core.joran.spi.JoranException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.List;
 
 /**
  * nacos NacosJoranConfigurator for lobgack.
- * @author hujun
+ *
+ * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
  */
 public class NacosJoranConfigurator extends JoranConfigurator {
+    
     @Override
     public void registerSafeConfiguration(List<SaxEvent> eventList) {
-        //获取用户保存点
-        List<SaxEvent> saxEvents = this.recallSafeConfiguration();
-        if (saxEvents != null) {
-            super.registerSafeConfiguration(saxEvents);
+    }
+    
+    /**
+     * doNacosConfigure.
+     *
+     * @param url config url
+     * @throws JoranException e
+     */
+    public void doNacosConfigure(URL url) throws JoranException {
+        InputStream in = null;
+        try {
+            URLConnection urlConnection = url.openConnection();
+            urlConnection.setUseCaches(false);
+            in = urlConnection.getInputStream();
+            doConfigure(in, url.toExternalForm());
+        } catch (IOException ioe) {
+            String errMsg = "Could not open URL [" + url + "].";
+            addError(errMsg, ioe);
+            throw new JoranException(errMsg, ioe);
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException ioe) {
+                    String errMsg = "Could not close input stream";
+                    addError(errMsg, ioe);
+                    throw new JoranException(errMsg, ioe);
+                }
+            }
         }
     }
-
+    
 }

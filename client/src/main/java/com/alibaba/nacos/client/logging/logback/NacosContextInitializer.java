@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.logging.logback;
 
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.util.ContextInitializer;
 import ch.qos.logback.core.LogbackException;
 import ch.qos.logback.core.joran.spi.JoranException;
@@ -27,7 +26,7 @@ import java.net.URL;
 
 /**
  * nacos NacosContextInitializer for lobgack.
- * @author hujun
+ * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
  */
 public class NacosContextInitializer extends ContextInitializer {
 
@@ -45,9 +44,9 @@ public class NacosContextInitializer extends ContextInitializer {
         }
         final String urlString = url.toString();
         if (urlString.endsWith(ConfigType.XML.getType())) {
-            JoranConfigurator configurator = new NacosJoranConfigurator();
+            NacosJoranConfigurator configurator = new NacosJoranConfigurator();
             configurator.setContext(loggerContext);
-            configurator.doConfigure(url);
+            configurator.doNacosConfigure(url);
         } else {
             throw new LogbackException("Unexpected filename extension of file [" + url.toString() + "]. Should be either .groovy or .xml");
         }

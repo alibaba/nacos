@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<configuration debug="false" scan="true" scanPeriod="30 seconds" packagingData="true">
+<configuration debug="false" scan="false"  packagingData="true">
     <contextName>nacos</contextName>
     
     <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
