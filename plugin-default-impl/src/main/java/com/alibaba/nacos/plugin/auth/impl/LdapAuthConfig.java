@@ -37,7 +37,6 @@ import java.util.Map;
  * @author onewe
  */
 @Configuration
-@Conditional(ConditionOnLdapAuth.class)
 @EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
 public class LdapAuthConfig {
     
