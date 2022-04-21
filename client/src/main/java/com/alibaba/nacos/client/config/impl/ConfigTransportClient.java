@@ -26,8 +26,6 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,49 +41,47 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConfigTransportClient {
-
-    Logger logger= LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
-
+    
     private static final String CONFIG_INFO_HEADER = "exConfigInfo";
-
+    
     private static final String DEFAULT_CONFIG_INFO = "true";
-
+    
     String encode;
-
+    
     String tenant;
-
+    
     ScheduledExecutorService executor;
-
+    
     final ServerListManager serverListManager;
-
+    
     final Properties properties;
-
+    
     private int maxRetry = 3;
-
+    
     private final long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
-
+    
     protected SecurityProxy securityProxy;
-
+    
     public void shutdown() throws NacosException {
         securityProxy.shutdown();
     }
-
+    
     public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {
-
+        
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
             this.encode = Constants.ENCODE;
         } else {
             this.encode = encodeTmp.trim();
         }
-
+        
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.properties = properties;
         this.securityProxy = new SecurityProxy(serverListManager.getServerUrls(),
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
     }
-
+    
     /**
      * Build the resource for current request.
      *
@@ -97,11 +93,11 @@ public abstract class ConfigTransportClient {
     protected RequestResource buildResource(String tenant, String group, String dataId) {
         return RequestResource.configBuilder().setNamespace(tenant).setGroup(group).setResource(dataId).build();
     }
-
+    
     protected Map<String, String> getSecurityHeaders(RequestResource resource) throws Exception {
         return securityProxy.getIdentityContext(resource);
     }
-
+    
     /**
      * get common header.
      *
@@ -109,10 +105,10 @@ public abstract class ConfigTransportClient {
      */
     protected Map<String, String> getCommonHeader() {
         Map<String, String> headers = new HashMap<String, String>(16);
-
+        
         String ts = String.valueOf(System.currentTimeMillis());
         String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);
-
+        
         headers.put(Constants.CLIENT_APPNAME_HEADER, ParamUtil.getAppName());
         headers.put(Constants.CLIENT_REQUEST_TS_HEADER, ts);
         headers.put(Constants.CLIENT_REQUEST_TOKEN_HEADER, token);
@@ -120,27 +116,22 @@ public abstract class ConfigTransportClient {
         headers.put(Constants.CHARSET_KEY, encode);
         return headers;
     }
-
+    
     private void initMaxRetry(Properties properties) {
         maxRetry = ConvertUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.MAX_RETRY)), Constants.MAX_RETRY);
     }
-
+    
     public void setExecutor(ScheduledExecutorService executor) {
         this.executor = executor;
     }
-
+    
     /**
      * base start client.
      */
     public void start() throws NacosException {
         securityProxy.login(this.properties);
-        this.executor.scheduleWithFixedDelay(() -> {
-                    securityProxy.login(properties);
-                    logger.info("nacos info");
-                    logger.debug("nacos debug");
-                }, 0,
+        this.executor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
-
         startInternal();
     }
     
