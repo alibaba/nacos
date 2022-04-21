@@ -24,12 +24,14 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.utils.InstanceUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -106,14 +108,34 @@ public class ServiceStorage {
         for (String each : serviceIndexesManager.getAllClientsRegisteredService(service)) {
             Optional<InstancePublishInfo> instancePublishInfo = getInstanceInfo(each, service);
             if (instancePublishInfo.isPresent()) {
-                Instance instance = parseInstance(service, instancePublishInfo.get());
-                result.add(instance);
-                clusters.add(instance.getClusterName());
+                InstancePublishInfo publishInfo = instancePublishInfo.get();
+                if (publishInfo instanceof BatchInstancePublishInfo) {
+                    BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) publishInfo;
+                    List<Instance> batchInstance = getBatchInstance(service, batchInstancePublishInfo);
+                    result.addAll(batchInstance);
+                    for (Instance instance : batchInstance) {
+                        clusters.add(instance.getClusterName());
+                    }
+                } else {
+                    Instance instance = parseInstance(service, publishInfo);
+                    result.add(instance);
+                    clusters.add(instance.getClusterName());
+                }
             }
         }
         // cache clusters of this service
         serviceClusterIndex.put(service, clusters);
         return new LinkedList<>(result);
+    }
+    
+    private List<Instance> getBatchInstance(Service service, BatchInstancePublishInfo batchInstancePublishInfo) {
+        List<Instance> resultInstanceList = new ArrayList<>();
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
+            Instance instance = parseInstance(service, instancePublishInfo);
+            resultInstanceList.add(instance);
+        }
+        return resultInstanceList;
     }
     
     private Optional<InstancePublishInfo> getInstanceInfo(String clientId, Service service) {

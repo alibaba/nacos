@@ -24,10 +24,12 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
+import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
+import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
@@ -50,6 +52,7 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -114,6 +117,29 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         doRegisterService(serviceName, groupName, instance);
     }
     
+    @Override
+    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        redoService.cacheInstanceForRedo(serviceName, groupName, instances);
+        doBatchRegisterInstance(serviceName, groupName, instances);
+    }
+    
+    /**
+     * Execute batch register operation.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instances   instances
+     * @throws NacosException NacosException
+     */
+    public void doBatchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        BatchInstanceRequest request = new BatchInstanceRequest(namespaceId, serviceName, groupName,
+                NamingRemoteConstants.BATCH_REGISTER_INSTANCE, instances);
+        requestToServer(request, BatchInstanceResponse.class);
+        redoService.instanceRegistered(serviceName, groupName);
+    }
+    
     /**
      * Execute register operation.
      *
@@ -131,9 +157,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         redoService.instanceDeregister(serviceName, groupName);
         doDeregisterService(serviceName, groupName, instance);
     }
@@ -234,7 +259,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
+                    clusters);
         }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);

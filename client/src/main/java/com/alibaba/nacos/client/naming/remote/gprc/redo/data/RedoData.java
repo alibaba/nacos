@@ -26,9 +26,9 @@ import java.util.Objects;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RedoData<T> {
     
-    private final String serviceName;
+    private  String serviceName;
     
-    private final String groupName;
+    private  String groupName;
     
     /**
      * If {@code true} means cached data has been registered to server successfully.
@@ -45,6 +45,9 @@ public abstract class RedoData<T> {
     protected RedoData(String serviceName, String groupName) {
         this.serviceName = serviceName;
         this.groupName = groupName;
+    }
+    
+    protected RedoData() {
     }
     
     public String getServiceName() {

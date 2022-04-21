@@ -21,6 +21,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * NamingUtils.
  *
@@ -128,6 +131,21 @@ public class NamingUtils {
                 || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
+        }
+    }
+    
+    /**
+     * Batch verify the validity of instances.
+     * @param instances List of instances to be registered
+     * @throws NacosException NacosException
+     */
+    public static void batchCheckInstanceIsLegal(List<Instance> instances) throws NacosException {
+        CopyOnWriteArrayList<Instance> newInstanceList = new CopyOnWriteArrayList<>(instances);
+        for (Instance instance : newInstanceList) {
+            if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
+                    || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
+                newInstanceList.remove(instance);
+            }
         }
     }
 }

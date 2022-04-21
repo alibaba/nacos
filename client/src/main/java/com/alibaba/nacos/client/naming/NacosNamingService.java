@@ -52,7 +52,7 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     
-    private static final String DEFAULT_NAMING_LOG_FILE_PATH =  "naming.log";
+    private static final String DEFAULT_NAMING_LOG_FILE_PATH = "naming.log";
     
     private static final String UP = "UP";
     
@@ -99,8 +99,8 @@ public class NacosNamingService implements NamingService {
         logName = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
         if (StringUtils.isEmpty(logName)) {
             
-            if (properties != null && StringUtils
-                    .isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
+            if (properties != null && StringUtils.isNotEmpty(
+                    properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
                 logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
             } else {
                 logName = DEFAULT_NAMING_LOG_FILE_PATH;
@@ -143,6 +143,13 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
         clientProxy.registerService(serviceName, groupName, instance);
+    }
+    
+    @Override
+    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        NamingUtils.batchCheckInstanceIsLegal(instances);
+        clientProxy.batchRegisterInstance(serviceName, groupName, instances);
     }
     
     @Override
@@ -361,8 +368,8 @@ public class NacosNamingService implements NamingService {
             }
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         } else {
-            ServiceInfo serviceInfo = clientProxy
-                    .queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+            ServiceInfo serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0,
+                    false);
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         }
     }

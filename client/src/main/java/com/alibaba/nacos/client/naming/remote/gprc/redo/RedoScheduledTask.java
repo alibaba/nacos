@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.RedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
@@ -75,6 +76,12 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 if (isClientDisabled()) {
                     return;
                 }
+                if (redoData instanceof BatchInstanceRedoData) {
+                    BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) redoData;
+                    // batch register
+                    clientProxy.doBatchRegisterInstance(serviceName, groupName, batchInstanceRedoData.getInstances());
+                    break;
+                }
                 clientProxy.doRegisterService(serviceName, groupName, redoData.get());
                 break;
             case UNREGISTER:
@@ -107,7 +114,8 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         String serviceName = redoData.getServiceName();
         String groupName = redoData.getGroupName();
         String cluster = redoData.get();
-        LogUtils.NAMING_LOGGER.info("Redo subscriber operation {} for {}@@{}#{}", redoType, groupName, serviceName, cluster);
+        LogUtils.NAMING_LOGGER.info("Redo subscriber operation {} for {}@@{}#{}", redoType, groupName, serviceName,
+                cluster);
         switch (redoData.getRedoType()) {
             case REGISTER:
                 if (isClientDisabled()) {

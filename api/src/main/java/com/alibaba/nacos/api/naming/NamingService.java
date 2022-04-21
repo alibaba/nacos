@@ -97,6 +97,16 @@ public interface NamingService {
     void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException;
     
     /**
+     * batch register instance to service with specified instance properties.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instances   instances to register
+     * @throws NacosException nacos exception
+     */
+    void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    
+    /**
      * deregister instance from a service.
      *
      * @param serviceName name of service

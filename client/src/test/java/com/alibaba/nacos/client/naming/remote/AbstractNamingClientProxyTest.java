@@ -38,6 +38,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -94,7 +95,12 @@ public class AbstractNamingClientProxyTest {
         public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         
         }
+    
+        @Override
+        public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances) {
         
+        }
+    
         @Override
         public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         

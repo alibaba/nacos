@@ -168,6 +168,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
+    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        //TODO http Batch Register Instance
+    }
+    
+    @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,

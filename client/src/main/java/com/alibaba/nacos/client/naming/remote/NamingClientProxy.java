@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,6 +43,16 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     void registerService(String serviceName, String groupName, Instance instance) throws NacosException;
+    
+    /**
+     * Batch register instance to service with specified instance properties.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instances   instance
+     * @throws NacosException nacos exception
+     */
+    void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
     
     /**
      * Deregister instance from a service.
@@ -74,8 +85,8 @@ public interface NamingClientProxy extends Closeable {
      * @return service info
      * @throws NacosException nacos exception
      */
-    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort, boolean healthyOnly)
-            throws NacosException;
+    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
+            boolean healthyOnly) throws NacosException;
     
     /**
      * Query Service.

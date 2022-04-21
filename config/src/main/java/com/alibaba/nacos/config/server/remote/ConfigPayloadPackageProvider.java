@@ -24,7 +24,7 @@ import java.util.Set;
 /**
  * config package provider.
  *
- * @author hujun
+ * @author hujun3
  */
 public class ConfigPayloadPackageProvider implements PayloadPackageProvider {
     

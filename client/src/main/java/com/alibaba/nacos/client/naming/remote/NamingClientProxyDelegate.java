@@ -33,6 +33,7 @@ import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,7 +70,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
-        this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(), NamingHttpClientManager.getInstance().getNacosRestTemplate());
+        this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),
+                NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
         this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties,
                 serviceInfoHolder);
@@ -92,6 +94,12 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         getExecuteClientProxy(instance).registerService(serviceName, groupName, instance);
+    }
+    
+    @Override
+    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        getExecuteClientProxy(instances.get(0)).batchRegisterInstance(serviceName, groupName, instances);
     }
     
     @Override
@@ -152,7 +160,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        NAMING_LOGGER.debug("[UNSUBSCRIBE-SERVICE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+        NAMING_LOGGER.debug("[UNSUBSCRIBE-SERVICE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
+                clusters);
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, groupName, clusters);
         grpcClientProxy.unsubscribe(serviceName, groupName, clusters);
     }

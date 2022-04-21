@@ -34,12 +34,14 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -172,10 +174,23 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             InstancePublishInfo instancePublishInfo = instances.get(i);
-            if (!instancePublishInfo.equals(client.getInstancePublishInfo(singleton))) {
-                client.addServiceInstance(singleton, instancePublishInfo);
-                NotifyCenter.publishEvent(
-                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+            InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
+            if (instancePublishInfo instanceof BatchInstancePublishInfo
+                    && clientInstancePublishInfo instanceof BatchInstancePublishInfo) {
+                BatchInstancePublishInfo sourceInstanceInfo = (BatchInstancePublishInfo) instancePublishInfo;
+                BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
+                boolean result = processBatchPublicInfoInstanceSync(sourceInstanceInfo, targetInstanceInfo);
+                if (!result) {
+                    client.addServiceInstance(singleton, sourceInstanceInfo);
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                }
+            } else {
+                if (!instancePublishInfo.equals(clientInstancePublishInfo)) {
+                    client.addServiceInstance(singleton, instancePublishInfo);
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                }
             }
         }
         for (Service each : client.getAllPublishedService()) {
@@ -185,6 +200,18 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                         new ClientOperationEvent.ClientDeregisterServiceEvent(each, client.getClientId()));
             }
         }
+    }
+    
+    /**
+     * Logic for handling batch instance synchronization.
+     *
+     * @param sourceInstanceInfo sourceInstanceInfo
+     * @param targetInstanceInfo targetInstanceInfo
+     * @return return Compare batch instance publish info for equality result.
+     */
+    private boolean processBatchPublicInfoInstanceSync(BatchInstancePublishInfo sourceInstanceInfo,
+            BatchInstancePublishInfo targetInstanceInfo) {
+        return CollectionUtils.isEqualCollection(sourceInstanceInfo.getInstancePublishInfos(), targetInstanceInfo.getInstancePublishInfos());
     }
     
     @Override
