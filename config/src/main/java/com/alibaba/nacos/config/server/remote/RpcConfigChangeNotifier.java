@@ -183,7 +183,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                     @Override
                     public void onFail(Throwable e) {
                         tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_FAIL, connectionId, clientIp);
-                        Loggers.REMOTE_PUSH.warn("Push fail : {}", e);
+                        Loggers.REMOTE_PUSH.warn("Push fail", e);
                         push(RpcPushTask.this);
                     }
                     
