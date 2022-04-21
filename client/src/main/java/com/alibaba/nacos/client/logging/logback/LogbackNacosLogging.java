@@ -23,7 +23,7 @@ import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.utils.ResourceUtils;
-import org.slf4j.impl.StaticLoggerBinder;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Support for Logback version 1.0.8 or higher
@@ -53,7 +53,6 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
         } catch (Exception e) {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
         }
-        
     }
     
     private void addListener(LoggerContext loggerContext) {
