@@ -866,7 +866,6 @@ public class ServiceManager implements RecordListener<Service> {
     
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
-        service = getService(service.getNamespaceId(), service.getName());
         service.init();
         consistencyService
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
