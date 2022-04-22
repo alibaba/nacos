@@ -30,8 +30,6 @@ import com.alibaba.nacos.common.utils.NumberUtils;
 
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * IP under service.
@@ -53,8 +51,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private String tenant;
     
     private String app;
-    
-    private static final Pattern ONLY_DIGIT_AND_DOT = Pattern.compile("(\\d|\\.)+");
     
     private static final String SPLITER = "_";
     
@@ -352,11 +348,9 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
      * @throws NacosException if instance is not validate
      */
     public void validate() throws NacosException {
-        if (onlyContainsDigitAndDot()) {
-            if (!InternetAddressUtil.containsPort(getIp() + InternetAddressUtil.IP_PORT_SPLITER + getPort())) {
-                throw new NacosException(NacosException.INVALID_PARAM,
-                        "instance format invalid: Your IP address is spelled incorrectly");
-            }
+        if (!InternetAddressUtil.isIP(getIp())) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    "instance format invalid: Your IP address is spelled incorrectly");
         }
         
         if (getWeight() > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
@@ -366,11 +360,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
                     + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
         
-    }
-    
-    private boolean onlyContainsDigitAndDot() {
-        Matcher matcher = ONLY_DIGIT_AND_DOT.matcher(getIp());
-        return matcher.matches();
     }
     
     @Override
