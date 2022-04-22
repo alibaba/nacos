@@ -50,4 +50,14 @@ public class AuthConstants {
     public static final String TOKEN_EXPIRE_SECONDS = "token.expire.seconds";
     
     public static final String DEFAULT_TOKEN_EXPIRE_SECONDS = "18000";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_URL = "nacos.core.auth.ldap.url";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_BASEDC = "nacos.core.auth.ldap.basedc";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_TIMEOUT = "nacos.core.auth.ldap.timeout";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_USERDN = "nacos.core.auth.ldap.userDn";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_PASSWORD = "nacos.core.auth.ldap.password";
 }

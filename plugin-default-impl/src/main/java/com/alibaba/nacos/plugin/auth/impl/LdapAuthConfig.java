@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
-import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.impl.configuration.ConditionOnLdapAuth;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,19 +40,19 @@ import java.util.Map;
 @EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
 public class LdapAuthConfig {
     
-    @Value(("${" + Constants.Auth.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}"))
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}"))
     private String ldapUrl;
     
-    @Value(("${" + Constants.Auth.NACOS_CORE_AUTH_LDAP_BASEDC + ":dc=example,dc=org}"))
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_BASEDC + ":dc=example,dc=org}"))
     private String ldapBaseDc;
     
-    @Value(("${" + Constants.Auth.NACOS_CORE_AUTH_LDAP_TIMEOUT + ":3000}"))
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_TIMEOUT + ":3000}"))
     private String ldapTimeOut;
     
-    @Value(("${" + Constants.Auth.NACOS_CORE_AUTH_LDAP_USERDN + ":cn=admin,dc=example,dc=org}"))
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_USERDN + ":cn=admin,dc=example,dc=org}"))
     private String userDn;
     
-    @Value(("${ " + Constants.Auth.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
+    @Value(("${ " + AuthConstants.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
     private String password;
     
     @Bean
