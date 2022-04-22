@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
@@ -98,10 +99,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             if (connection == null) {
                 continue;
             }
-
+            
+            ConnectionMeta metaInfo = connection.getMetaInfo();
             //beta ips check.
-            String clientIp = connection.getMetaInfo().getClientIp();
-            String clientTag = connection.getMetaInfo().getTag();
+            String clientIp = metaInfo.getClientIp();
+            String clientTag = metaInfo.getTag();
             if (isBeta && betaIps != null && !betaIps.contains(clientIp)) {
                 continue;
             }
@@ -109,11 +111,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             if (StringUtils.isNotBlank(tag) && !tag.equals(clientTag)) {
                 continue;
             }
-
+            
             ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
-
-            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp,
-                    connection.getMetaInfo().getAppName());
+            
+            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp, metaInfo.getAppName());
             push(rpcPushRetryTask);
             notifyClientCount++;
         }
@@ -196,10 +197,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     private void push(RpcPushTask retryTask) {
         ConfigChangeNotifyRequest notifyRequest = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
-            Loggers.REMOTE_PUSH
-                    .warn("push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",
-                            notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
-                            retryTask.connectionId);
+            Loggers.REMOTE_PUSH.warn(
+                    "push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",
+                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
+                    retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);
         } else if (connectionManager.getConnection(retryTask.connectionId) != null) {
             // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
