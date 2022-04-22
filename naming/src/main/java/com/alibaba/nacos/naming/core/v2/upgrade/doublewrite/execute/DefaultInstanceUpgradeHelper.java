@@ -53,7 +53,7 @@ public class DefaultInstanceUpgradeHelper implements InstanceUpgradeHelper {
     
     @Override
     public Instance toV1(com.alibaba.nacos.api.naming.pojo.Instance v2) {
-        Instance v1 = new Instance();
+        Instance v1 = new Instance(v2.getIp(), v2.getPort(), v2.getClusterName());
         BeanUtils.copyProperties(v2, v1);
         return v1;
     }
