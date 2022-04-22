@@ -75,12 +75,7 @@ public class RequestUtil {
      */
     public static User getUser(HttpServletRequest request) {
         Object userObj = request.getSession().getAttribute(NACOS_USER_KEY);
-        if (userObj == null) {
-            return null;
-        }
-        
-        User user = (User) userObj;
-        return user;
+        return userObj == null ? null : (User) userObj;
     }
     
     /**
@@ -94,5 +89,4 @@ public class RequestUtil {
         // If auth is disabled, get username from parameters by agreed key
         return user == null ? request.getParameter(Constants.USERNAME) : user.getUserName();
     }
-    
 }

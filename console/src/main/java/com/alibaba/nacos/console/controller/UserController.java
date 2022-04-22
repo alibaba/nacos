@@ -161,11 +161,11 @@ public class UserController {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (Objects.isNull(request.getAttribute(RequestUtil.NACOS_USER_KEY))) {
+        if (Objects.isNull(request.getSession().getAttribute(RequestUtil.NACOS_USER_KEY))) {
             return false;
         }
 
-        NacosUser user = (NacosUser) request.getAttribute(RequestUtil.NACOS_USER_KEY);
+        NacosUser user = (NacosUser) request.getSession().getAttribute(RequestUtil.NACOS_USER_KEY);
         // admin
         if (user.isGlobalAdmin()) {
             return true;
