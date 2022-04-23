@@ -163,7 +163,8 @@ public class ServiceManager implements RecordListener<Service> {
      * @param serverIP    target server ip
      * @param checksum    checksum of service
      */
-    public synchronized void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP, String checksum) {
+    public synchronized void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP,
+            String checksum) {
         try {
             toBeUpdatedServicesQueue
                     .offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
@@ -858,9 +859,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @param service service
      */
     public void putService(Service service) {
-        if (!serviceMap.containsKey(service.getNamespaceId())) {
-            serviceMap.putIfAbsent(service.getNamespaceId(), new ConcurrentSkipListMap<>());
-        }
+        serviceMap.putIfAbsent(service.getNamespaceId(), new ConcurrentSkipListMap<>());
         serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
     
@@ -947,8 +946,9 @@ public class ServiceManager implements RecordListener<Service> {
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
                     if (InternetAddressUtil.containsPort(containedInstance)) {
-                        if (StringUtils.equals(instance.getIp() + InternetAddressUtil.IP_PORT_SPLITER + instance.getPort(),
-                                containedInstance)) {
+                        if (StringUtils
+                                .equals(instance.getIp() + InternetAddressUtil.IP_PORT_SPLITER + instance.getPort(),
+                                        containedInstance)) {
                             contained = true;
                             break;
                         }
