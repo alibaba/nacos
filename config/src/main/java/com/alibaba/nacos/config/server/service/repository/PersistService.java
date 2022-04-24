@@ -84,8 +84,9 @@ public interface PersistService {
      * @param time              time
      * @param configAdvanceInfo advance info
      * @param notify            whether to push
+     * @return true/false
      */
-    void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
+    boolean addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
             final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
@@ -97,8 +98,9 @@ public interface PersistService {
      * @param srcUser    user
      * @param time       time
      * @param notify     whether to push
+     * @return true/false
      */
-    void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+    boolean addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
     /**
@@ -110,8 +112,9 @@ public interface PersistService {
      * @param srcUser    user
      * @param time       time
      * @param notify     whether to push
+     * @return true/false
      */
-    void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    boolean addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
     /**
@@ -123,8 +126,9 @@ public interface PersistService {
      * @param time              time
      * @param configAdvanceInfo advance info
      * @param notify            whether to push
+     * @return update count
      */
-    void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
+    int updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
             final Map<String, Object> configAdvanceInfo, final boolean notify);
     
     /**
@@ -150,8 +154,9 @@ public interface PersistService {
      * @param srcUser    user
      * @param time       time
      * @param notify     whether to push
+     * @return update count
      */
-    void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+    int updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
     /**
@@ -177,8 +182,9 @@ public interface PersistService {
      * @param srcUser    user
      * @param time       time
      * @param notify     whether to push
+     * @return update count
      */
-    void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    int updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
     /**
@@ -1166,9 +1172,10 @@ public interface PersistService {
      * @param group   group
      * @param appName app name
      * @param time    time
+     * @return update count
      */
-    void updateConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp time);
-    
+    int updateConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp time);
+
     /**
      * Get history config detail.
      *

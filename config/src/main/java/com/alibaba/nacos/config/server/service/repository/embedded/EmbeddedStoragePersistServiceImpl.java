@@ -185,12 +185,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+    public boolean addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify, null);
+        return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify, null);
     }
     
-    private void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+    private boolean addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify,
             BiConsumer<Boolean, Throwable> consumer) {
         
@@ -209,14 +209,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     configInfo.getTenant());
             insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, time, "I");
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
-            databaseOperate.blockUpdate(consumer);
+            return databaseOperate.blockUpdate(consumer);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
     
     @Override
-    public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+    public boolean addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
@@ -236,14 +236,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
             
-            databaseOperate.blockUpdate();
+            return databaseOperate.blockUpdate();
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
     
     @Override
-    public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    public boolean addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
@@ -263,14 +263,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
             
-            databaseOperate.blockUpdate();
+            return databaseOperate.blockUpdate();
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
     }
     
     @Override
-    public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+    public int updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
         try {
             ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
@@ -301,7 +301,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
             
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
-            databaseOperate.blockUpdate();
+            return databaseOperate.blockUpdate() ? 1 : 0;
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
@@ -346,7 +346,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
+    public int updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
@@ -365,7 +365,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
             
-            databaseOperate.blockUpdate();
+           return databaseOperate.blockUpdate() ? 1 : 0;
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
@@ -396,7 +396,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    public int updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
@@ -414,7 +414,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
             
-            databaseOperate.blockUpdate();
+            return databaseOperate.blockUpdate() ? 1 : 0;
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
@@ -2218,7 +2218,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigSubAtomic(final String dataId, final String group, final String appName,
+    public int updateConfigSubAtomic(final String dataId, final String group, final String appName,
             final Timestamp time) {
         final String appNameTmp = appName == null ? "" : appName;
         
@@ -2227,7 +2227,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         
         try {
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            return databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext()) ? 1 : 0;
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }

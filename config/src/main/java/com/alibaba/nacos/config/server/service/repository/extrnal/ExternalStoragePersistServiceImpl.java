@@ -174,9 +174,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     // ----------------------- config_info table insert update delete
     
     @Override
-    public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+    public boolean addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        boolean result = tjt.execute(status -> {
+        return tjt.execute(status -> {
             try {
                 long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, time, configAdvanceInfo);
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
@@ -193,7 +193,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
+    public boolean addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
@@ -201,10 +201,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         try {
-            jt.update("INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip,"
+            return jt.update("INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip,"
                             + "src_user,gmt_create,gmt_modified,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
-                    betaIps, srcIp, srcUser, time, time, encryptedDataKey);
+                    betaIps, srcIp, srcUser, time, time, encryptedDataKey) > 0;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -212,18 +212,18 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    public boolean addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         try {
-            jt.update(
+            return jt.update(
                     "INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,"
                             + "gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)", configInfo.getDataId(),
                     configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser,
-                    time, time);
+                    time, time) > 0;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -231,12 +231,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+    public int updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
         boolean result = tjt.execute(status -> {
             try {
                 ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
+                // Maybe not exist.
+                if (oldConfigInfo == null) {
+                    return Boolean.FALSE;
+                }
                 String appNameTmp = oldConfigInfo.getAppName();
                 /*
                  If the appName passed by the user is not empty, use the persistent user's appName,
@@ -260,6 +264,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             }
             return Boolean.TRUE;
         });
+        return result ? 1 : 0;
     }
     
     @Override
@@ -269,6 +274,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             try {
                 ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
+                // Maybe not exist.
+                if (oldConfigInfo == null) {
+                    return Boolean.FALSE;
+                }
                 String appNameTmp = oldConfigInfo.getAppName();
                 /*
                  If the appName passed by the user is not empty, use the persistent user's appName,
@@ -298,7 +307,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
+    public int updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
@@ -306,7 +315,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         try {
-            jt.update(
+            return jt.update(
                     "UPDATE config_info_beta SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=?,encrypted_data_key = ?WHERE "
                             + "data_id=? AND group_id=? AND tenant_id=?", configInfo.getContent(), md5, srcIp, srcUser,
                     time, appNameTmp, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
@@ -335,14 +344,14 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
+    public int updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            jt.update(
+            return jt.update(
                     "UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE "
                             + "data_id=? AND group_id=? AND tenant_id=? AND tag_id=?", configInfo.getContent(), md5,
                     srcIp, srcUser, time, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
@@ -375,9 +384,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
+            int updateCount = updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+            if(updateCount <= 0){
+                addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+            }
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
             addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
         }
     }
     
@@ -385,10 +397,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
-            addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+            boolean updateResult = updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, null, time, notify);
+            if (!updateResult) {
+                return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+            }
             return true;
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, null, time, notify);
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
+            return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
         }
     }
     
@@ -396,9 +411,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
+            int updateCount = updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            if(updateCount <= 0) {
+                addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            }
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
             addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
         }
     }
     
@@ -406,10 +424,13 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
-            addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            boolean updateResult = updateConfigInfo4TagCas(configInfo, tag, srcIp, null, time, notify);
+            if (!updateResult) {
+                return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            }
             return true;
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            return updateConfigInfo4TagCas(configInfo, tag, srcIp, null, time, notify);
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
+            return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
         }
     }
     
@@ -436,9 +457,12 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify) {
         try {
+            int updateCount = updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
+            if (updateCount <=0) {
+                addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+            }
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
             addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
         }
     }
     
@@ -452,19 +476,25 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify) {
         try {
-            addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+            boolean updateResult = updateConfigInfoCas(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
+            if (!updateResult) {
+                return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+            }
             return true;
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            return updateConfigInfoCas(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
+            return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
         }
     }
     
     @Override
     public void insertOrUpdateSub(SubInfo subInfo) {
         try {
+            int updateCount = updateConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
+            if (updateCount <= 0){
+                addConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
+            }
+        } catch (EmptyResultDataAccessException ex) { // No data, insert
             addConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
-            updateConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
         }
     }
     
@@ -2438,11 +2468,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public void updateConfigSubAtomic(final String dataId, final String group, final String appName,
+    public int updateConfigSubAtomic(final String dataId, final String group, final String appName,
             final Timestamp time) {
         final String appNameTmp = appName == null ? "" : appName;
         try {
-            jt.update(
+            return jt.update(
                     "UPDATE app_configdata_relation_subs SET gmt_modified=? WHERE data_id=? AND group_id=? AND app_name=?",
                     time, dataId, group, appNameTmp);
         } catch (CannotGetJdbcConnectionException e) {
