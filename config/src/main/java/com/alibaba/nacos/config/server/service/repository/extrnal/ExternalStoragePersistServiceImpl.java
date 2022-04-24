@@ -385,7 +385,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
             int updateCount = updateConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
-            if(updateCount <= 0){
+            if (updateCount <= 0) {
                 addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
             }
         } catch (EmptyResultDataAccessException ex) { // No data, insert
@@ -412,7 +412,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
             int updateCount = updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
-            if(updateCount <= 0) {
+            if (updateCount <= 0) {
                 addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
             }
         } catch (EmptyResultDataAccessException ex) { // No data, insert
@@ -458,7 +458,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             Map<String, Object> configAdvanceInfo, boolean notify) {
         try {
             int updateCount = updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
-            if (updateCount <=0) {
+            if (updateCount <= 0) {
                 addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
             }
         } catch (EmptyResultDataAccessException ex) { // No data, insert
@@ -490,7 +490,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public void insertOrUpdateSub(SubInfo subInfo) {
         try {
             int updateCount = updateConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
-            if (updateCount <= 0){
+            if (updateCount <= 0) {
                 addConfigSubAtomic(subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName(), subInfo.getDate());
             }
         } catch (EmptyResultDataAccessException ex) { // No data, insert

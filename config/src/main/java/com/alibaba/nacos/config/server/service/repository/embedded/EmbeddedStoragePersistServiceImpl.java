@@ -365,7 +365,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
             
-           return databaseOperate.blockUpdate() ? 1 : 0;
+            return databaseOperate.blockUpdate() ? 1 : 0;
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
