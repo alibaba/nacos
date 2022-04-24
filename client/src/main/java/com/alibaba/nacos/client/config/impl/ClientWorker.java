@@ -703,7 +703,7 @@ public class ClientWorker implements Closeable {
         
         @Override
         public String getName() {
-            return "config_rpc_client";
+            return serverListManager.getName();
         }
         
         @Override

@@ -79,26 +79,31 @@ public class RpcClientFactory {
     /**
      * create a rpc client.
      *
-     * @param clientName     client name.
-     * @param connectionType client type.
+     * @param clientName         client name.
+     * @param connectionType     client type.
      * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize grpc thread pool max size
+     * @param threadPoolMaxSize  grpc thread pool max size
      * @return rpc client.
      */
-    public static RpcClient createClient(String clientName, ConnectionType connectionType,
-             Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-             Map<String, String> labels) {
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize, Map<String, String> labels) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
-    
+        
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
-            GrpcClient client = new GrpcSdkClient(clientNameInner);
-            client.setThreadPoolCoreSize(threadPoolCoreSize);
-            client.setThreadPoolMaxSize(threadPoolMaxSize);
-            client.labels(labels);
-            return client;
+            try {
+                GrpcClient client = new GrpcSdkClient(clientNameInner);
+                client.setThreadPoolCoreSize(threadPoolCoreSize);
+                client.setThreadPoolMaxSize(threadPoolMaxSize);
+                client.labels(labels);
+                return client;
+            } catch (Throwable throwable) {
+                LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
+                throw throwable;
+            }
+            
         });
     }
     
@@ -117,19 +122,18 @@ public class RpcClientFactory {
     /**
      * create a rpc client.
      *
-     * @param clientName     client name.
-     * @param connectionType client type.
+     * @param clientName         client name.
+     * @param connectionType     client type.
      * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize grpc thread pool max size
+     * @param threadPoolMaxSize  grpc thread pool max size
      * @return rpc client.
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-            Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-            Map<String, String> labels) {
+            Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
-    
+        
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             GrpcClient client = new GrpcClusterClient(clientNameInner);
             client.setThreadPoolCoreSize(threadPoolCoreSize);
