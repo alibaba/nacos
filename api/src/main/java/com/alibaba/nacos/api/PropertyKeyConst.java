@@ -29,7 +29,11 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT = "endpoint";
     
+    public static final String ENDPOINT_QUERY_PARAMS = "endpointQueryParams";
+    
     public static final String ENDPOINT_PORT = "endpointPort";
+    
+    public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";
     

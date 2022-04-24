@@ -36,7 +36,7 @@ public class ServerListManagerTest {
             Assert.fail();
         } catch (NacosException e) {
             Assert.assertEquals(
-                    "fail to get NACOS-server serverlist! env:custom-localhost-0, not connnect url:http://localhost:0/nacos/serverlist",
+                    "fail to get NACOS-server serverlist! env:custom-localhost_0_nacos_serverlist, not connnect url:http://localhost:0/nacos/serverlist",
                     e.getErrMsg());
         }
         mgr.shutdown();

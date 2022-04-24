@@ -81,6 +81,10 @@
         <appender-ref ref="REMOTE_LOG_FILE"/>
     </Logger>
     
+    <Logger name="com.alibaba.nacos.shaded.io.grpc" level="${com.alibaba.nacos.log.level:-info}"
+        additivity="false">
+        <appender-ref ref="REMOTE_LOG_FILE"/>
+    </Logger>
     
     <logger name="com.alibaba.nacos.client.config" level="${com.alibaba.nacos.config.log.level:-info}"
         additivity="false">
