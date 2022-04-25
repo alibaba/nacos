@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
@@ -24,10 +25,6 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,7 +32,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -44,24 +40,24 @@ import java.util.List;
  *
  * @author zjw
  */
-@Component
 public class LdapAuthenticationProvider implements AuthenticationProvider {
-    
-    private static final Logger LOG = LoggerFactory.getLogger(LdapAuthenticationProvider.class);
     
     private static final String DEFAULT_PASSWORD = "nacos";
     
     private static final String LDAP_PREFIX = "LDAP_";
     
-    @Autowired
-    private NacosUserDetailsServiceImpl userDetailsService;
+    private final NacosUserDetailsServiceImpl userDetailsService;
+
+    private final NacosRoleServiceImpl nacosRoleService;
+
+    private final LdapTemplate ldapTemplate;
     
-    @Autowired
-    private NacosRoleServiceImpl nacosRoleService;
-    
-    @Lazy
-    @Autowired
-    private LdapTemplate ldapTemplate;
+    public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
+            NacosRoleServiceImpl nacosRoleService) {
+        this.ldapTemplate = ldapTemplate;
+        this.nacosRoleService = nacosRoleService;
+        this.userDetailsService = userDetailsService;
+    }
     
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -77,7 +73,12 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             }
         }
         
-        if (!ldapLogin(username, password)) {
+        try {
+            if (!ldapLogin(username, password)) {
+                return null;
+            }
+        } catch (Exception e) {
+            Loggers.AUTH.error("[LDAP-LOGIN] failed", e);
             return null;
         }
         
