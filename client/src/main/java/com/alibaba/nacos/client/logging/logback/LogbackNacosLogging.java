@@ -28,7 +28,8 @@ import org.slf4j.impl.StaticLoggerBinder;
 /**
  * Support for Logback version 1.0.8 or higher
  *
- * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a><a href="mailto:hujun3@xiaomi.com">hujun</a>
+ * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
+ * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
  *
  * @since 0.9.0
  */
@@ -48,7 +49,9 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
         String location = getLocation(NACOS_LOGBACK_LOCATION);
         try {
             LoggerContext loggerContext = (LoggerContext) StaticLoggerBinder.getSingleton().getLoggerFactory();
-            new NacosContextInitializer(loggerContext).configureByResource(ResourceUtils.getResourceUrl(location));
+            NacosJoranConfigurator configurator = new NacosJoranConfigurator();
+            configurator.setContext(loggerContext);
+            configurator.doNacosConfigure(ResourceUtils.getResourceUrl(location));
             return loggerContext;
         } catch (Exception e) {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
