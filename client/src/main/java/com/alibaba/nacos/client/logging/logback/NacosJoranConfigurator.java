@@ -27,18 +27,24 @@ import java.net.URLConnection;
 import java.util.List;
 
 /**
- * nacos NacosJoranConfigurator for lobgack.
+ * ensure that Nacos configuration does not affect user configuration savepoints and  scanning url.
  *
  * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
+ * @see <a href="https://github.com/alibaba/nacos/issues/6999">#6999</a>
  */
 public class NacosJoranConfigurator extends JoranConfigurator {
     
+    /**
+     * ensure that Nacos configuration does not affect user configuration savepoints.
+     *
+     * @param eventList safe data
+     */
     @Override
     public void registerSafeConfiguration(List<SaxEvent> eventList) {
     }
     
     /**
-     * doNacosConfigure.
+     * ensure that Nacos configuration does not affect user configuration scanning url.
      *
      * @param url config url
      * @throws JoranException e
