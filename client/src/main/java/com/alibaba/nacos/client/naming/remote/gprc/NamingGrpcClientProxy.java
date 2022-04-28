@@ -157,8 +157,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
-                serviceName, instance);
+        NAMING_LOGGER
+                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
+                        instance);
         redoService.instanceDeregister(serviceName, groupName);
         doDeregisterService(serviceName, groupName, instance);
     }
@@ -259,8 +260,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
-                    clusters);
+            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
         }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);
