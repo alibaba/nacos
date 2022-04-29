@@ -97,7 +97,7 @@ public class CatalogControllerTest {
         assertTrue(actual.contains("\"groupName\":\"test-group-name\""));
         assertTrue(actual.contains("\"metadata\":{}"));
         assertTrue(actual.contains("\"name\":\"test-service\""));
-        assertTrue(actual.contains("\"selector\":{\"type\":\"none\"}"));
+        assertTrue(actual.contains("\"selector\":{\"type\":\"none\",\"contextType\":\"NONE\"}"));
         assertTrue(actual.contains("\"protectThreshold\":12.34"));
         assertTrue(actual.contains("\"clusters\":[{"));
         assertTrue(actual.contains("\"defaultCheckPort\":80"));
