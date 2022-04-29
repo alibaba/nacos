@@ -140,7 +140,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     /**
      * Init cluster.
      */
-    public void init() {
+    public synchronized void init() {
         if (inited) {
             return;
         }
