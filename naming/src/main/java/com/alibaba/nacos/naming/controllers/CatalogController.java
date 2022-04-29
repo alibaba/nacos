@@ -22,8 +22,8 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.CatalogService;
 import com.alibaba.nacos.naming.core.CatalogServiceV1Impl;
@@ -33,10 +33,9 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -76,7 +75,7 @@ public class CatalogController {
      * @return service detail information
      * @throws NacosException nacos exception
      */
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     @GetMapping("/service")
     public Object serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             String serviceName) throws NacosException {
@@ -96,7 +95,7 @@ public class CatalogController {
      * @return instances information
      * @throws NacosException nacos exception
      */
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     @RequestMapping(value = "/instances")
     public ObjectNode instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam String clusterName, @RequestParam(name = "pageNo") int page,
@@ -140,7 +139,7 @@ public class CatalogController {
      * @param hasIpCount        whether filter services with empty instance
      * @return list service detail
      */
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     @GetMapping("/services")
     public Object listDetail(@RequestParam(required = false) boolean withInstances,
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,

@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.remote.client;
 import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
@@ -32,6 +31,7 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -68,7 +68,7 @@ public abstract class RpcClient implements Closeable {
     
     private ServerListFactory serverListFactory;
     
-    protected LinkedBlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<>();
+    protected BlockingQueue<ConnectionEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<>();
     
     protected volatile AtomicReference<RpcClientStatus> rpcClientStatus = new AtomicReference<>(
             RpcClientStatus.WAIT_INIT);
@@ -115,22 +115,21 @@ public abstract class RpcClient implements Closeable {
     }
     
     public RpcClient(String name) {
-        this.name = name;
+        this(name, null);
     }
     
     public RpcClient(ServerListFactory serverListFactory) {
-        this.serverListFactory = serverListFactory;
-        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
-        LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory = {}",
-                serverListFactory.getClass().getName());
+        this(null, serverListFactory);
     }
     
     public RpcClient(String name, ServerListFactory serverListFactory) {
-        this(name);
-        this.serverListFactory = serverListFactory;
-        rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
-        LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory = {}",
-                serverListFactory.getClass().getName());
+        this.name = name;
+        if (serverListFactory != null) {
+            this.serverListFactory = serverListFactory;
+            rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
+            LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory = {}",
+                    serverListFactory.getClass().getName());
+        }
     }
     
     /**
@@ -574,6 +573,8 @@ public abstract class RpcClient implements Closeable {
                     }
                 } catch (InterruptedException e) {
                     // Do nothing.
+                    // set the interrupted flag
+                    Thread.currentThread().interrupt();
                 }
             }
             
@@ -913,7 +914,7 @@ public abstract class RpcClient implements Closeable {
         if (matcher.find()) {
             serverAddress = matcher.group(1);
         }
-    
+        
         String[] ipPortTuple = serverAddress.split(Constants.COLON, 2);
         int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
         String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, Integer.toString(defaultPort));

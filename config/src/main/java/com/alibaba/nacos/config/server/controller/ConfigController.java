@@ -19,13 +19,13 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
+import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
@@ -51,11 +51,12 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -102,14 +103,18 @@ public class ConfigController {
     
     private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
     
-    @Autowired
-    private ConfigServletInner inner;
+    private final ConfigServletInner inner;
     
-    @Autowired
-    private PersistService persistService;
+    private final PersistService persistService;
     
-    @Autowired
-    private ConfigSubService configSubService;
+    private final ConfigSubService configSubService;
+    
+    public ConfigController(ConfigServletInner inner, PersistService persistService,
+            ConfigSubService configSubService) {
+        this.inner = inner;
+        this.persistService = persistService;
+        this.configSubService = configSubService;
+    }
     
     /**
      * Adds or updates non-aggregated data.
@@ -117,9 +122,9 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    public Boolean publishConfig(HttpServletRequest request, @RequestParam(value = "dataId") String dataId,
+            @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
             @RequestParam(value = "appName", required = false) String appName,
@@ -133,16 +138,23 @@ public class ConfigController {
         
         final String srcIp = RequestUtil.getRemoteIp(request);
         final String requestIpApp = RequestUtil.getAppName(request);
-        srcUser = RequestUtil.getSrcUserName(request);
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(request);
+        }
         //check type
         if (!ConfigType.isValidType(type)) {
             type = ConfigType.getDefaultType().getType();
         }
+        
+        // encrypted
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+        content = pair.getSecond();
+        
         // check tenant
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(10);
         MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
         MapUtil.putIfValNoNull(configAdvanceInfo, "desc", desc);
         MapUtil.putIfValNoNull(configAdvanceInfo, "use", use);
@@ -161,11 +173,13 @@ public class ConfigController {
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setType(type);
+        String encryptedDataKey = pair.getFirst();
+        configInfo.setEncryptedDataKey(encryptedDataKey);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
-                ConfigChangePublisher
-                        .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
+                ConfigChangePublisher.notifyConfigChange(
+                        new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
                 persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
                 ConfigChangePublisher.notifyConfigChange(
@@ -173,13 +187,13 @@ public class ConfigController {
             }
         } else {
             // beta publish
+            configInfo.setEncryptedDataKey(encryptedDataKey);
             persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
-            ConfigChangePublisher
-                    .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
+            ConfigChangePublisher.notifyConfigChange(
+                    new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
         }
-        ConfigTraceService
-                .logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                        ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
+                InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
         return true;
     }
     
@@ -191,7 +205,7 @@ public class ConfigController {
      * @throws NacosException   NacosException.
      */
     @GetMapping
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -215,16 +229,24 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @GetMapping(params = "show=all")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
-    public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    public ConfigAllInfo detailConfigInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
             throws NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
-        return persistService.findConfigAllInfo(dataId, group, tenant);
+        ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
+    
+        // decrypted
+        if (Objects.nonNull(configAllInfo)) {
+            String encryptedDataKey = configAllInfo.getEncryptedDataKey();
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                    configAllInfo.getContent());
+            configAllInfo.setContent(pair.getSecond());
+        }
+        return configAllInfo;
     }
     
     /**
@@ -233,9 +255,9 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @DeleteMapping
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-    public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    public Boolean deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
@@ -252,8 +274,8 @@ public class ConfigController {
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
                 ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
         return true;
     }
     
@@ -267,9 +289,8 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      */
     @DeleteMapping(params = "delType=ids")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
-    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam(value = "ids") List<Long> ids) {
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         final Timestamp time = TimeUtils.getCurrentTime();
         List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
@@ -280,15 +301,16 @@ public class ConfigController {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-            ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE,
+                    null);
         }
         return RestResultUtils.success(true);
     }
     
     @GetMapping("/catalog")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
@@ -300,7 +322,7 @@ public class ConfigController {
      * The client listens for configuration changes.
      */
     @PostMapping("/listener")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public void listener(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
@@ -328,7 +350,7 @@ public class ConfigController {
      * Subscribe to configured client information.
      */
     @GetMapping("/listener")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public GroupkeyListenserStatus getListeners(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "tenant", required = false) String tenant,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
@@ -346,13 +368,13 @@ public class ConfigController {
      * Query the configuration information and return it in JSON format.
      */
     @GetMapping(params = "search=accurate")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -373,13 +395,13 @@ public class ConfigController {
      * and group are NULL, but content is not NULL. In this case, all configurations are returned.
      */
     @GetMapping(params = "search=blur")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
         }
@@ -404,7 +426,7 @@ public class ConfigController {
      * @return Execute to operate result.
      */
     @DeleteMapping(params = "beta=true")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
@@ -414,8 +436,8 @@ public class ConfigController {
             LOGGER.error("remove beta data error", e);
             return RestResultUtils.failed(500, false, "remove beta data error");
         }
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
         return RestResultUtils.success("stop beta ok", true);
     }
     
@@ -428,12 +450,18 @@ public class ConfigController {
      * @return RestResult for ConfigInfo4Beta.
      */
     @GetMapping(params = "beta=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
         try {
             ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
+    
+            if (Objects.nonNull(ci)) {
+                String encryptedDataKey = ci.getEncryptedDataKey();
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
+                ci.setContent(pair.getSecond());
+            }
             return RestResultUtils.success("stop beta ok", ci);
         } catch (Throwable e) {
             LOGGER.error("remove beta data error", e);
@@ -452,7 +480,7 @@ public class ConfigController {
      * @return ResponseEntity.
      */
     @GetMapping(params = "export=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
@@ -471,15 +499,17 @@ public class ConfigController {
                 }
                 String metaDataId = ci.getDataId();
                 if (metaDataId.contains(".")) {
-                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId
-                            .substring(metaDataId.lastIndexOf(".") + 1);
+                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId.substring(
+                            metaDataId.lastIndexOf(".") + 1);
                 }
                 metaData.append(ci.getGroup()).append('.').append(metaDataId).append(".app=")
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
         }
         if (metaData != null) {
             zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA, metaData.toString()));
@@ -490,7 +520,7 @@ public class ConfigController {
                 EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
                         + EXPORT_CONFIG_FILE_NAME_EXT;
         headers.add("Content-Disposition", "attachment;filename=" + fileName);
-        return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
+        return new ResponseEntity<>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
     
     /**
@@ -504,7 +534,7 @@ public class ConfigController {
      * @return ResponseEntity.
      */
     @GetMapping(params = "exportV2=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ResponseEntity<byte[]> exportConfigV2(@RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "appName", required = false) String appName,
@@ -523,14 +553,15 @@ public class ConfigController {
             configMetadataItem.setGroup(ci.getGroup());
             configMetadataItem.setType(ci.getType());
             configMetadataItems.add(configMetadataItem);
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(ci.getDataId(), ci.getEncryptedDataKey(),
+                    ci.getContent());
             String itemName = ci.getGroup() + Constants.CONFIG_EXPORT_ITEM_FILE_SEPARATOR + ci.getDataId();
-            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+            zipItemList.add(new ZipUtils.ZipItem(itemName, pair.getSecond()));
         }
         ConfigMetadata configMetadata = new ConfigMetadata();
         configMetadata.setMetadata(configMetadataItems);
-    
-        zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW,
-                YamlParserUtil.dumpObject(configMetadata)));
+        zipItemList.add(
+                new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
         HttpHeaders headers = new HttpHeaders();
         String fileName =
                 EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT)
@@ -551,7 +582,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping(params = "import=true")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
             @RequestParam(value = "namespace", required = false) String namespace,
@@ -576,11 +607,9 @@ public class ConfigController {
             RestResult<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                errorResult = parseImportDataV2(unziped, configInfoList,
-                        unrecognizedList, namespace);
+                errorResult = parseImportDataV2(unziped, configInfoList, unrecognizedList, namespace);
             } else {
-                errorResult = parseImportData(unziped, configInfoList, unrecognizedList,
-                        namespace);
+                errorResult = parseImportData(unziped, configInfoList, unrecognizedList, namespace);
             }
             if (errorResult != null) {
                 return errorResult;
@@ -598,16 +627,15 @@ public class ConfigController {
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = persistService
-                .batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false, policy);
+        Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time,
+                false, policy);
         for (ConfigInfo configInfo : configInfoList) {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-            ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                            ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
+                    ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         // unrecognizedCount
         if (!unrecognizedList.isEmpty()) {
@@ -660,18 +688,25 @@ public class ConfigController {
                 String dataId = groupAdnDataId[1];
                 String tempDataId = dataId;
                 if (tempDataId.contains(".")) {
-                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId
-                            .substring(tempDataId.lastIndexOf(".") + 1);
+                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(
+                            tempDataId.lastIndexOf(".") + 1);
                 }
                 final String metaDataId = group + "." + tempDataId + ".app";
+    
+                //encrypted
+                String content = item.getItemData();
+                Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+                content = pair.getSecond();
+                
                 ConfigAllInfo ci = new ConfigAllInfo();
                 ci.setGroup(group);
                 ci.setDataId(dataId);
-                ci.setContent(item.getItemData());
+                ci.setContent(content);
                 if (metaDataMap.get(metaDataId) != null) {
                     ci.setAppName(metaDataMap.get(metaDataId));
                 }
                 ci.setTenant(namespace);
+                ci.setEncryptedDataKey(pair.getFirst());
                 configInfoList.add(ci);
             }
         }
@@ -750,6 +785,10 @@ public class ConfigController {
                 unrecognizedList.add(unrecognizedItem);
                 continue;
             }
+            // encrypted
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+            content = pair.getSecond();
+            
             ConfigAllInfo ci = new ConfigAllInfo();
             ci.setGroup(group);
             ci.setDataId(dataId);
@@ -758,6 +797,7 @@ public class ConfigController {
             ci.setDesc(configExportItem.getDesc());
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
+            ci.setEncryptedDataKey(pair.getFirst());
             configInfoList.add(ci);
         }
         return null;
@@ -775,11 +815,11 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping(params = "clone=true")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
             @RequestParam(value = "src_user", required = false) String srcUser,
-            @RequestParam(value = "tenant", required = true) String namespace,
-            @RequestBody(required = true) List<SameNamespaceCloneConfigBean> configBeansList,
+            @RequestParam(value = "tenant") String namespace,
+            @RequestBody List<SameNamespaceCloneConfigBean> configBeansList,
             @RequestParam(value = "policy", defaultValue = "ABORT") SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
         if (CollectionUtils.isEmpty(configBeansList)) {
@@ -825,26 +865,22 @@ public class ConfigController {
                 ci4save.setAppName(ci.getAppName());
             }
             ci4save.setDesc(ci.getDesc());
+            ci4save.setEncryptedDataKey(ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
-        
-        if (configInfoList4Clone.isEmpty()) {
-            failedData.put("succCount", 0);
-            return RestResultUtils.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
-        }
+    
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        Map<String, Object> saveResult = persistService
-                .batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp, null, time, false, policy);
+        Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp, null,
+                time, false, policy);
         for (ConfigInfo configInfo : configInfoList4Clone) {
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant(), time.getTime()));
-            ConfigTraceService
-                    .logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(),
-                            requestIpApp, time.getTime(), InetUtils.getSelfIP(),
-                            ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), requestIpApp, time.getTime(), InetUtils.getSelfIP(),
+                    ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         return RestResultUtils.success("Clone Completed Successfully", saveResult);
     }

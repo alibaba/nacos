@@ -220,6 +220,8 @@ public class ConcurrentDiskUtil {
             Thread.sleep(time);
         } catch (InterruptedException e) {
             LOGGER.warn("sleep wrong", e);
+            // set the interrupted flag
+            Thread.currentThread().interrupt();
         }
     }
 }

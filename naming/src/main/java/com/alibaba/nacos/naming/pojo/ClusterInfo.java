@@ -29,7 +29,9 @@ import java.util.Map;
  * @version $Id: ClusterInfo.java, v 0.1 2018-09-17 上午11:36 caogu.wyp Exp $$
  */
 public class ClusterInfo implements Serializable {
-    
+
+    private static final long serialVersionUID = 2146881454057032105L;
+
     private String clusterName;
     
     private AbstractHealthChecker healthChecker;

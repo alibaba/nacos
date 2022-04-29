@@ -52,6 +52,14 @@ public abstract class BaseTest {
     
     protected static final String TEST_NAMESPACE = "test-namespace";
     
+    protected static final String TEST_IP = "1.1.1.1";
+    
+    protected static final String TEST_METADATA = "{\"label\":\"123\"}";
+    
+    protected static final String TEST_INSTANCE_INFO_LIST = "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
+            + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
+            + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
+    
     @Mock
     public ServiceManager serviceManager;
     

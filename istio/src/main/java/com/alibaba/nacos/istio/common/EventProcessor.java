@@ -58,6 +58,8 @@ public class EventProcessor {
             events.put(event);
         } catch (InterruptedException e) {
             Loggers.MAIN.warn("There are too many events, this event {} will be ignored.", event.getType());
+            // set the interrupted flag
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -94,6 +96,8 @@ public class EventProcessor {
                     }
                 } catch (InterruptedException e) {
                     Loggers.MAIN.warn("Thread {} is be interrupted.", getName());
+                    // set the interrupted flag
+                    Thread.currentThread().interrupt();
                 }
             }
         }

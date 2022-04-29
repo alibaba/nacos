@@ -69,7 +69,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                     }
     
                     ConfigCacheService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                            cf.getLastModified(), cf.getType());
+                            cf.getLastModified(), cf.getType(), cf.getEncryptedDataKey());
                     
                     final String content = cf.getContent();
                     final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);

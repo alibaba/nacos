@@ -69,7 +69,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     }
     
     /**
-     * Whether instance metadata metadata for instance of {@link Service}.
+     * Whether instance metadata for instance of {@link Service}.
      *
      * @param service    service
      * @param metadataId instance metadata id
@@ -82,7 +82,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     /**
      * Get service metadata for {@link Service}, which is the original metadata object.
      *
-     * <p>This method should use only query, can't modified metadata.
+     * <p>This method should use only query, can't modify metadata.
      *
      * @param service service
      * @return service metadata
@@ -94,7 +94,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     /**
      * Get instance metadata for instance of {@link Service}, which is the original metadata object.
      *
-     * <p>This method should use only query, can't modified metadata.
+     * <p>This method should use only query, can't modify metadata.
      *
      * @param service    service
      * @param metadataId instance metadata id

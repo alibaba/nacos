@@ -53,7 +53,7 @@ public class DumpAllTagProcessor implements NacosTaskProcessor {
                 for (ConfigInfoTagWrapper cf : page.getPageItems()) {
                     boolean result = ConfigCacheService
                             .dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(), cf.getContent(),
-                                    cf.getLastModified());
+                                    cf.getLastModified(), cf.getEncryptedDataKey());
                     LogUtil.DUMP_LOG.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             cf.getContent().length(), cf.getMd5());

@@ -28,7 +28,9 @@ import java.util.Map;
  * @version $Id: ServiceDetailInfo.java, v 0.1 2018-09-17 上午10:47 caogu.wyp Exp $$
  */
 public class ServiceDetailInfo implements Serializable {
-    
+
+    private static final long serialVersionUID = 6351606608785841722L;
+
     private String namespace;
     
     private String serviceName;

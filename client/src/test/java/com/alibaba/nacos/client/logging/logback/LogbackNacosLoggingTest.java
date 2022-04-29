@@ -18,12 +18,21 @@
 
 package com.alibaba.nacos.client.logging.logback;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import static org.hamcrest.CoreMatchers.isA;
 
 public class LogbackNacosLoggingTest {
     
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
+    
     @Test
     public void testLoadConfiguration() {
+        exceptionRule.expectCause(isA(ClassCastException.class));
+        exceptionRule.expectMessage("Could not initialize Logback Nacos logging from classpath:nacos-logback.xml");
         LogbackNacosLogging logbackNacosLogging = new LogbackNacosLogging();
         logbackNacosLogging.loadConfiguration();
     }

@@ -55,15 +55,6 @@ public class DefaultInstanceUpgradeHelper implements InstanceUpgradeHelper {
     public Instance toV1(com.alibaba.nacos.api.naming.pojo.Instance v2) {
         Instance v1 = new Instance(v2.getIp(), v2.getPort(), v2.getClusterName());
         BeanUtils.copyProperties(v2, v1);
-        v1.setIp(v2.getIp());
-        v1.setPort(v2.getPort());
-        v1.setClusterName(v2.getClusterName());
-        v1.setHealthy(v2.isHealthy());
-        v1.setEphemeral(v2.isEphemeral());
-        v1.setWeight(v2.getWeight());
-        v1.setMetadata(v2.getMetadata());
-        v1.setEnabled(v2.isEnabled());
-        v1.setServiceName(v2.getServiceName());
         return v1;
     }
 

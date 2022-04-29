@@ -48,14 +48,18 @@ public final class InstanceUtil {
         result.setClusterName(instanceInfo.getCluster());
         Map<String, String> instanceMetadata = new HashMap<>(instanceInfo.getExtendDatum().size());
         for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
-            if (Constants.CUSTOM_INSTANCE_ID.equals(entry.getKey())) {
-                result.setInstanceId(entry.getValue().toString());
-            } else if (Constants.PUBLISH_INSTANCE_ENABLE.equals(entry.getKey())) {
-                result.setEnabled((boolean) entry.getValue());
-            } else if (Constants.PUBLISH_INSTANCE_WEIGHT.equals(entry.getKey())) {
-                result.setWeight((Double) entry.getValue());
-            } else {
-                instanceMetadata.put(entry.getKey(), null != entry.getValue() ? entry.getValue().toString() : null);
+            switch (entry.getKey()) {
+                case Constants.CUSTOM_INSTANCE_ID:
+                    result.setInstanceId(entry.getValue().toString());
+                    break;
+                case Constants.PUBLISH_INSTANCE_ENABLE:
+                    result.setEnabled((boolean) entry.getValue());
+                    break;
+                case Constants.PUBLISH_INSTANCE_WEIGHT:
+                    result.setWeight((Double) entry.getValue());
+                    break;
+                default:
+                    instanceMetadata.put(entry.getKey(), null != entry.getValue() ? entry.getValue().toString() : null);
             }
         }
         result.setMetadata(instanceMetadata);

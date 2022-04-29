@@ -28,7 +28,12 @@
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
             </Policies>
             
-            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}">
+                <Delete basePath="${sys:JM.LOG.PATH}/nacos" maxDepth="1" testMode="${sys:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                    <IfFileName glob="config.log.*.*" />
+                    <IfLastModified age="${sys:JM.LOG.RETAIN.DURATION:-P180D}" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
     
         <RollingFile name="REMOTE_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/remote.log"
@@ -42,7 +47,12 @@
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
             </Policies>
     
-            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}">
+                <Delete basePath="${sys:JM.LOG.PATH}/nacos" maxDepth="1" testMode="${sys:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                    <IfFileName glob="remote.log.*.*" />
+                    <IfLastModified age="${sys:JM.LOG.RETAIN.DURATION:-P180D}" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
         
         <RollingFile name="NAMING_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/naming.log"
@@ -56,7 +66,13 @@
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
             </Policies>
             
-            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}">
+                <Delete basePath="${sys:JM.LOG.PATH}/nacos" maxDepth="1" testMode="${sys:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                    <IfFileName glob="naming.log.*.*" />
+                    <IfLastModified age="${sys:JM.LOG.RETAIN.DURATION:-P180D}" />
+                </Delete>
+            </DefaultRolloverStrategy>
+
         </RollingFile>
     </Appenders>
     

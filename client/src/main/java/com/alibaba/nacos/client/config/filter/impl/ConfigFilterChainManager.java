@@ -34,7 +34,7 @@ import java.util.ServiceLoader;
  */
 public class ConfigFilterChainManager implements IConfigFilterChain {
     
-    private final List<IConfigFilter> filters = new ArrayList<IConfigFilter>();
+    private final List<IConfigFilter> filters = new ArrayList<>();
     
     public ConfigFilterChainManager(Properties properties) {
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);

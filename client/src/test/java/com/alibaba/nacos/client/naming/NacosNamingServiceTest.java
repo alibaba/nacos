@@ -61,6 +61,7 @@ public class NacosNamingServiceTest {
     @Before
     public void before() throws NoSuchFieldException, NacosException, IllegalAccessException {
         Properties prop = new Properties();
+        prop.setProperty("serverAddr", "localhost");
         prop.put(PropertyKeyConst.NAMESPACE, "test");
         client = new NacosNamingService(prop);
         // inject proxy

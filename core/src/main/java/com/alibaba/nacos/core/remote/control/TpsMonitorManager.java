@@ -24,12 +24,14 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.DiskUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -50,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: TpsControlManager.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
 @Service
-public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
+public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> implements DisposableBean {
     
     public final Map<String, TpsMonitorPoint> points = new ConcurrentHashMap<String, TpsMonitorPoint>(16);
     
@@ -181,6 +183,14 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> {
     @Override
     public Class<? extends Event> subscribeType() {
         return TpsControlRuleChangeEvent.class;
+    }
+    
+    @Override
+    public void destroy() throws Exception {
+        if (executorService == null) {
+            return;
+        }
+        ThreadUtils.shutdownThreadPool(executorService);
     }
     
     class TpsMonitorReporter implements Runnable {
