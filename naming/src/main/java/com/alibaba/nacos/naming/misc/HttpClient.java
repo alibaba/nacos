@@ -369,11 +369,10 @@ public class HttpClient {
      * @return new parameter
      */
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
-        
-        Map<String, String> map = new HashMap<>(16);
-        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
-            map.put(entry.getKey(), entry.getValue()[0]);
-        }
-        return map;
+         Map<String, String> map = new HashMap<String, String>(16);
+         for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+             map.put(entry.getKey(), entry.getValue()[0]);
+         }
+         return map;
     }
 }
