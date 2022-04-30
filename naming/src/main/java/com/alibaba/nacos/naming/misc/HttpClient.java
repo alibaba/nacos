@@ -371,8 +371,8 @@ public class HttpClient {
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
         
         Map<String, String> map = new HashMap<>(16);
-        for (String key : parameterMap.keySet()) {
-            map.put(key, parameterMap.get(key)[0]);
+        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+            map.put(entry.getKey(), entry.getValue()[0]);
         }
         return map;
     }
