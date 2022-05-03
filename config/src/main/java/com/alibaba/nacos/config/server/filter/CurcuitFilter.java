@@ -102,7 +102,7 @@ public class CurcuitFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
         } catch (Throwable e) {
             DEFAULT_LOG.warn("[CURCUIT-FILTER] Server failed: ", e);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed, " + e.toString());
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed, " + e);
         }
     }
     
