@@ -481,7 +481,7 @@ public class ConfigCacheService {
      */
     public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
-        if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
+        if (cache.md54Beta == null || !cache.md54Beta.equals(md5) || !ips4Beta.equals(cache.ips4Beta)) {
             cache.isBeta = true;
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;
