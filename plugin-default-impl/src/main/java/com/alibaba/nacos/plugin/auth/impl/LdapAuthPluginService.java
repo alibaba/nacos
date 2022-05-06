@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.model;
+package com.alibaba.nacos.plugin.auth.impl;
+
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 
 /**
- * all namespace info.
- *
- * @author Nacos
+ * ldap auth plugin service.
+ * @author onewe
  */
-public class NamespaceAllInfo extends Namespace {
+public class LdapAuthPluginService extends NacosAuthPluginService {
     
-    public NamespaceAllInfo(String namespace, String namespaceShowName, int quota, int configCount, int type,
-            String namespaceDesc) {
-        super(namespace, namespaceShowName, namespaceDesc, quota, configCount, type);
+    @Override
+    public String getAuthServiceName() {
+        return AuthConstants.LDAP_AUTH_PLUGIN_TYPE;
     }
-    
 }

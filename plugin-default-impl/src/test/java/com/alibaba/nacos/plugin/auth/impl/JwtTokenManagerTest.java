@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.lang.reflect.Field;
 import java.util.Properties;
@@ -38,6 +39,9 @@ public class JwtTokenManagerTest {
     
     @Mock
     private ControllerMethodsCache methodsCache;
+    
+    @Mock
+    private ObjectProvider<LdapAuthenticationProvider> ldapAuthenticationProvider;
     
     private NacosAuthConfig nacosAuthConfig;
     
@@ -57,9 +61,9 @@ public class JwtTokenManagerTest {
         properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, secretKey);
         properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
         when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-        nacosAuthConfig = new NacosAuthConfig();
-        injectProperty(nacosAuthConfig, "methodsCache", methodsCache);
-        injectProperty(nacosAuthConfig, "authConfigs", authConfigs);
+    
+        nacosAuthConfig = new NacosAuthConfig(null, null, authConfigs, null,
+                ldapAuthenticationProvider, methodsCache);
         nacosAuthConfig.init();
         JwtTokenManager jwtTokenManager = new JwtTokenManager();
         injectProperty(jwtTokenManager, "nacosAuthConfig", nacosAuthConfig);

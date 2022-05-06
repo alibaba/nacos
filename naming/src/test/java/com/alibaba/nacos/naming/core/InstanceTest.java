@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import org.junit.Before;
@@ -130,5 +131,11 @@ public class InstanceTest {
         String json = JacksonUtils.toJson(info);
         RsInfo info1 = JacksonUtils.toObj(json, RsInfo.class);
         System.out.println(info1);
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testIpValidate() throws NacosException {
+        Instance instance1 = new Instance("192.168.1.3d", 8080);
+        instance1.validate();
     }
 }
