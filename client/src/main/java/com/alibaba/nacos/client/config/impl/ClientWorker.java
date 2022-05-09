@@ -579,8 +579,8 @@ public class ClientWorker implements Closeable {
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
             labels.put(Constants.APPNAME, AppNameUtils.getAppName());
-            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
-            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmorayTag());
+            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipServerTag());
+            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmoryTag());
             labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
             
             return labels;

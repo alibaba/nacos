@@ -36,8 +36,8 @@ public class EnvUtilTest {
         headers.put(Constants.VIPSERVER_TAG, Arrays.asList("b", "2"));
         headers.put(Constants.LOCATION_TAG, Arrays.asList("c", "3"));
         EnvUtil.setSelfEnv(headers);
-        Assert.assertEquals("a,1", EnvUtil.getSelfAmorayTag());
-        Assert.assertEquals("b,2", EnvUtil.getSelfVipserverTag());
+        Assert.assertEquals("a,1", EnvUtil.getSelfAmoryTag());
+        Assert.assertEquals("b,2", EnvUtil.getSelfVipServerTag());
         Assert.assertEquals("c,3", EnvUtil.getSelfLocationTag());
     }
 }

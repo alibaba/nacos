@@ -31,9 +31,9 @@ public class EnvUtil {
     
     public static final Logger LOGGER = LogUtils.logger(EnvUtil.class);
     
-    private static String selfAmorayTag;
+    private static String selfAmoryTag;
     
-    private static String selfVipserverTag;
+    private static String selfVipServerTag;
     
     private static String selfLocationTag;
     
@@ -41,29 +41,29 @@ public class EnvUtil {
         if (headers != null) {
             List<String> amoryTagTmp = headers.get(Constants.AMORY_TAG);
             if (amoryTagTmp == null) {
-                if (selfAmorayTag != null) {
-                    selfAmorayTag = null;
+                if (selfAmoryTag != null) {
+                    selfAmoryTag = null;
                     LOGGER.warn("selfAmoryTag:null");
                 }
             } else {
                 String amoryTagTmpStr = listToString(amoryTagTmp);
-                if (!amoryTagTmpStr.equals(selfAmorayTag)) {
-                    selfAmorayTag = amoryTagTmpStr;
-                    LOGGER.warn("selfAmoryTag:{}", selfAmorayTag);
+                if (!amoryTagTmpStr.equals(selfAmoryTag)) {
+                    selfAmoryTag = amoryTagTmpStr;
+                    LOGGER.warn("selfAmoryTag:{}", selfAmoryTag);
                 }
             }
             
             List<String> vipServerTagTmp = headers.get(Constants.VIPSERVER_TAG);
             if (vipServerTagTmp == null) {
-                if (selfVipserverTag != null) {
-                    selfVipserverTag = null;
+                if (selfVipServerTag != null) {
+                    selfVipServerTag = null;
                     LOGGER.warn("selfVipServerTag:null");
                 }
             } else {
                 String vipServerTagTmpStr = listToString(vipServerTagTmp);
-                if (!vipServerTagTmpStr.equals(selfVipserverTag)) {
-                    selfVipserverTag = vipServerTagTmpStr;
-                    LOGGER.warn("selfVipServerTag:{}", selfVipserverTag);
+                if (!vipServerTagTmpStr.equals(selfVipServerTag)) {
+                    selfVipServerTag = vipServerTagTmpStr;
+                    LOGGER.warn("selfVipServerTag:{}", selfVipServerTag);
                 }
             }
             List<String> locationTagTmp = headers.get(Constants.LOCATION_TAG);
@@ -82,12 +82,12 @@ public class EnvUtil {
         }
     }
     
-    public static String getSelfAmorayTag() {
-        return selfAmorayTag;
+    public static String getSelfAmoryTag() {
+        return selfAmoryTag;
     }
     
-    public static String getSelfVipserverTag() {
-        return selfVipserverTag;
+    public static String getSelfVipServerTag() {
+        return selfVipServerTag;
     }
     
     public static String getSelfLocationTag() {
