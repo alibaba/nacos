@@ -37,7 +37,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -66,15 +68,24 @@ public class ServiceOperatorV2ImplTest {
     private ServiceStorage serviceStorage;
     
     @Before
-    public void setUp() {
+    public void setUp() throws IllegalAccessException {
+        cleanNamespace();
         Service service = Service.newService("A", "B", "C");
         ServiceManager.getInstance().getSingleton(service);
     }
     
     @After
-    public void tearDown() {
+    public void tearDown() throws IllegalAccessException {
         Service service = Service.newService("A", "B", "C");
         ServiceManager.getInstance().removeSingleton(service);
+        cleanNamespace();
+    }
+    
+    private void cleanNamespace() throws IllegalAccessException {
+        Field field = ReflectionUtils.findField(ServiceManager.class, "namespaceSingletonMaps");
+        field.setAccessible(true);
+        Map map = (Map) field.get(ServiceManager.getInstance());
+        map.clear();
     }
     
     @Test
@@ -97,7 +108,7 @@ public class ServiceOperatorV2ImplTest {
         serviceInfo.setHosts(Collections.emptyList());
         Mockito.when(serviceStorage.getPushData(Mockito.any())).thenReturn(serviceInfo);
         
-        serviceOperatorV2.delete("A", "C");
+        serviceOperatorV2.delete("A", "B@@C");
         
         Mockito.verify(metadataOperateService).deleteServiceMetadata(Mockito.any());
     }
@@ -113,7 +124,7 @@ public class ServiceOperatorV2ImplTest {
         
         Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("D"));
         
-        ObjectNode objectNode = serviceOperatorV2.queryService("A", "C");
+        ObjectNode objectNode = serviceOperatorV2.queryService("A", "B@@C");
     
         Assert.assertEquals("A", objectNode.get(FieldsConstants.NAME_SPACE_ID).asText());
         Assert.assertEquals("C", objectNode.get(FieldsConstants.NAME).asText());

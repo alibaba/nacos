@@ -64,6 +64,7 @@ public class PersistentConsistencyServiceDelegateImplTest {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
+        EnvUtil.setIsStandalone(true);
         oldPersistentConsistencyServiceDelegate = new PersistentConsistencyServiceDelegateImpl(clusterVersionJudgement,
                 raftConsistencyService, protocolManager);
         

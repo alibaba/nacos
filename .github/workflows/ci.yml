@@ -34,4 +34,4 @@ jobs:
       - name: Build with Maven
         run: mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
       - name: Test With Maven
-        run: mvn -Prelease-nacos clean test -DforkCount=0
+        run: mvn -Prelease-nacos clean test
