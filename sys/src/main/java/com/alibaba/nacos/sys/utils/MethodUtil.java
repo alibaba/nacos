@@ -42,5 +42,4 @@ public final class MethodUtil {
             return -1;
         }
     }
-
 }
