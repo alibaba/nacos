@@ -1070,6 +1070,7 @@
                 <version>2.9.0</version>
                 <scope>compile</scope>
             </dependency>
+            
         </dependencies>
     </dependencyManagement>
     
