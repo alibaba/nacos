@@ -1439,7 +1439,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            LogUtil.FATAL_LOG.error("[db-error]", e);
             throw e;
         }
     }
