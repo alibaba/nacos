@@ -295,7 +295,7 @@ public abstract class DumpService {
                         String tenant = dg[2];
                         ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
                         ConfigCacheService.dumpChange(dataId, group, tenant, configInfo.getContent(),
-                                configInfo.getLastModified());
+                                configInfo.getLastModified(), configInfo.getEncryptedDataKey());
                     }
                     LogUtil.DEFAULT_LOG.error("end checkMd5Task");
                 };

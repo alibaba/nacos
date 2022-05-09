@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.healthcheck.v2.processor;
 
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.healthcheck.NoneHealthCheckProcessor;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import org.springframework.beans.factory.annotation.Autowired;

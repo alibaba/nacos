@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import com.alibaba.nacos.api.remote.Payload;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -25,7 +26,7 @@ import java.util.TreeMap;
  * @author liuzunfei
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Request {
+public abstract class Request implements Payload {
     
     private final Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     

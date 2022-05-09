@@ -22,8 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.concurrent.Callable;
-
 public class TemplateUtilsTest {
     
     @Test
@@ -45,12 +43,7 @@ public class TemplateUtilsTest {
     @Test
     public void testStringEmptyAndThenExecuteSuccess() {
         String word = "   ";
-        String actual = TemplateUtils.stringEmptyAndThenExecute(word, new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return "call";
-            }
-        });
+        String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> "call");
         Assert.assertEquals("", actual);
     }
     
@@ -58,24 +51,14 @@ public class TemplateUtilsTest {
     public void testStringEmptyAndThenExecuteFail() {
         String word = "";
         final String expect = "call";
-        String actual = TemplateUtils.stringEmptyAndThenExecute(word, new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return expect;
-            }
-        });
+        String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> expect);
         Assert.assertEquals(expect, actual);
     }
     
     @Test
     public void testStringBlankAndThenExecuteSuccess() {
         String word = "success";
-        String actual = TemplateUtils.stringBlankAndThenExecute(word, new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return "call";
-            }
-        });
+        String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> "call");
         Assert.assertEquals(word, actual);
     }
     
@@ -83,12 +66,7 @@ public class TemplateUtilsTest {
     public void testStringBlankAndThenExecuteFail() {
         String word = "   ";
         final String expect = "call";
-        String actual = TemplateUtils.stringBlankAndThenExecute(word, new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return expect;
-            }
-        });
+        String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> expect);
         Assert.assertEquals(expect, actual);
     }
 }

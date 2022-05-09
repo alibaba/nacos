@@ -288,6 +288,7 @@ class NameSpace extends React.Component {
       namespace,
       namespaceAdd,
       namespaceNames,
+      description,
       namespaceNumber,
       configuration,
       namespaceOperation,
@@ -328,6 +329,7 @@ class NameSpace extends React.Component {
                     cell={this.renderName.bind(this)}
                   />
                   <Table.Column title={namespaceNumber} dataIndex="namespace" />
+                  <Table.Column title={description} dataIndex="namespaceDesc" />
                   <Table.Column title={configuration} dataIndex="configCount" />
                   <Table.Column
                     title={namespaceOperation}

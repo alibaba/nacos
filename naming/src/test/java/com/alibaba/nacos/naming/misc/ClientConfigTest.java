@@ -20,10 +20,13 @@ import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -49,5 +52,15 @@ public class ClientConfigTest {
         NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
         TimeUnit.SECONDS.sleep(1);
         assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
+    }
+    
+    @Test
+    public void testInitConfigFormEnv()
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
+        Constructor<ClientConfig> declaredConstructor = ClientConfig.class.getDeclaredConstructor();
+        declaredConstructor.setAccessible(true);
+        ClientConfig clientConfig = declaredConstructor.newInstance();
+        Assert.assertEquals(clientConfig.getClientExpiredTime(), EXPIRED_TIME);
     }
 }

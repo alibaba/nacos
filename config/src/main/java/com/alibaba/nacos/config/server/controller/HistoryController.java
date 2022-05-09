@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -28,7 +29,7 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,8 +48,11 @@ import java.util.Objects;
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 public class HistoryController {
     
-    @Autowired
-    protected PersistService persistService;
+    private final PersistService persistService;
+    
+    public HistoryController(PersistService persistService) {
+        this.persistService = persistService;
+    }
     
     /**
      * Query the list history config. notes:
@@ -100,11 +104,17 @@ public class HistoryController {
         }
         // check if history config match the input
         checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
+    
+        String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
+        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
+                configHistoryInfo.getContent());
+        configHistoryInfo.setContent(pair.getSecond());
+        
         return configHistoryInfo;
     }
     
     /**
-     * Check if the input dataId and group match the history config.
+     * Check if the input dataId,group and tenant match the history config.
      *
      * @param configHistoryInfo history config.
      * @param dataId            dataId
@@ -115,11 +125,11 @@ public class HistoryController {
      */
     private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
             String tenant) throws AccessException {
-        if (Objects.equals(configHistoryInfo.getDataId(), dataId) && Objects
-                .equals(configHistoryInfo.getGroup(), group)) {
-            return;
+        if (!Objects.equals(configHistoryInfo.getDataId(), dataId)
+                || !Objects.equals(configHistoryInfo.getGroup(), group)
+                || !Objects.equals(configHistoryInfo.getTenant(), tenant)) {
+            throw new AccessException("Please check dataId, group or tenant.");
         }
-        throw new AccessException("Please check dataId and group.");
     }
     
     /**

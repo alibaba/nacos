@@ -39,7 +39,7 @@ public class CacheBuilder<K, V> {
     private static final int DEFAULT_EXPIRE_NANOS = -1;
     
     private long expireNanos = DEFAULT_EXPIRE_NANOS;
-        
+    
     private int maximumSize = DEFAULT_MAXIMUMSIZE;
     
     private int initializeCapacity = DEFAULT_INITIALIZE_CAPACITY;
@@ -48,14 +48,14 @@ public class CacheBuilder<K, V> {
     
     private boolean lru = false;
     
-    public static CacheBuilder builder() {
-        return new CacheBuilder();
+    public static <K, V> CacheBuilder<K, V> builder() {
+        return new CacheBuilder<>();
     }
     
     /**
      * Set expiration time.
      */
-    public CacheBuilder expireNanos(long duration, TimeUnit unit) {
+    public CacheBuilder<K, V> expireNanos(long duration, TimeUnit unit) {
         checkExpireNanos(duration, unit);
         this.expireNanos = unit.toNanos(duration);
         return this;

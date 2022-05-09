@@ -24,6 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -57,5 +59,20 @@ public class PushConfigTest {
         assertEquals(pushTaskDelay, pushConfig.getPushTaskDelay());
         assertEquals(pushTaskTimeout, pushConfig.getPushTaskTimeout());
         assertEquals(pushTaskRetryDelay, pushConfig.getPushTaskRetryDelay());
+    }
+    
+    @Test
+    public void testInitConfigFormEnv()
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_DELAY, String.valueOf(pushTaskDelay));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_TIMEOUT, String.valueOf(pushTaskTimeout));
+        mockEnvironment.setProperty(PushConstants.PUSH_TASK_RETRY_DELAY, String.valueOf(pushTaskRetryDelay));
+        Constructor<PushConfig> declaredConstructor = PushConfig.class.getDeclaredConstructor();
+        declaredConstructor.setAccessible(true);
+        PushConfig pushConfig = declaredConstructor.newInstance();
+        assertEquals(pushTaskDelay, pushConfig.getPushTaskDelay());
+        assertEquals(pushTaskTimeout, pushConfig.getPushTaskTimeout());
+        assertEquals(pushTaskRetryDelay, pushConfig.getPushTaskRetryDelay());
+    
     }
 }

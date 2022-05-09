@@ -77,8 +77,14 @@ public class RaftPeerSet extends MemberChangeListener implements Closeable {
         this.memberManager = memberManager;
     }
     
+    /**
+     * Init method.
+     */
     @PostConstruct
     public void init() {
+        if (!EnvUtil.isSupportUpgradeFrom1X()) {
+            return;
+        }
         NotifyCenter.registerSubscriber(this);
         changePeers(memberManager.allMembers());
     }

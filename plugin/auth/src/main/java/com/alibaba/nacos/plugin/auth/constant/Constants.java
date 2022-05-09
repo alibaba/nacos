@@ -36,6 +36,7 @@ public class Constants {
         public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE = "nacos.core.auth.server.identity.value";
         
         public static final String NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE = "nacos.core.auth.enable.userAgentAuthWhite";
+        
     }
     
     public static class Resource {
@@ -45,6 +46,8 @@ public class Constants {
         public static final String ANY = "*";
         
         public static final String ACTION = "action";
+    
+        public static final String REQUEST_CLASS = "requestClass";
     }
     
     public static class Identity {

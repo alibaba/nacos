@@ -27,6 +27,7 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.URLEncoder;
@@ -45,6 +46,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Config sub service.
  *
@@ -55,6 +58,7 @@ public class ConfigSubService {
     
     private ServerMemberManager memberManager;
     
+    @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ConfigSubService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
@@ -72,7 +76,7 @@ public class ConfigSubService {
      * @return all path.
      */
     private String getUrl(String ip, String relativePath) {
-        return "http://" + ip + EnvUtil.getContextPath() + relativePath;
+        return HTTP_PREFIX + ip + EnvUtil.getContextPath() + relativePath;
     }
     
     private List<SampleResult> runCollectionJob(String url, Map<String, String> params,

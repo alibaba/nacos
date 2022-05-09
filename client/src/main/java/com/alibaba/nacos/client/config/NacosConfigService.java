@@ -183,7 +183,7 @@ public class NacosConfigService implements ConfigService {
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
         cr.setContent(content);
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+                .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
@@ -213,7 +213,7 @@ public class NacosConfigService implements ConfigService {
         cr.setType(type);
         configFilterChainManager.doFilter(cr, null);
         content = cr.getContent();
-        String encryptedDataKey = (String) cr.getParameter("encryptedDataKey");
+        String encryptedDataKey = cr.getEncryptedDataKey();
         
         return worker
                 .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
