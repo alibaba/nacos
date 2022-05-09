@@ -1399,7 +1399,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, EMPTY_ARRAY, pageNo, pageSize,
+        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
                 CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
     }
