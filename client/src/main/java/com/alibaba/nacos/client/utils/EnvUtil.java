@@ -39,31 +39,31 @@ public class EnvUtil {
     
     public static void setSelfEnv(Map<String, List<String>> headers) {
         if (headers != null) {
-            List<String> amorayTagTmp = headers.get(Constants.AMORY_TAG);
-            if (amorayTagTmp == null) {
+            List<String> amoryTagTmp = headers.get(Constants.AMORY_TAG);
+            if (amoryTagTmp == null) {
                 if (selfAmorayTag != null) {
                     selfAmorayTag = null;
                     LOGGER.warn("selfAmoryTag:null");
                 }
             } else {
-                String amorayTagTmpStr = listToString(amorayTagTmp);
-                if (!amorayTagTmpStr.equals(selfAmorayTag)) {
-                    selfAmorayTag = amorayTagTmpStr;
+                String amoryTagTmpStr = listToString(amoryTagTmp);
+                if (!amoryTagTmpStr.equals(selfAmorayTag)) {
+                    selfAmorayTag = amoryTagTmpStr;
                     LOGGER.warn("selfAmoryTag:{}", selfAmorayTag);
                 }
             }
             
-            List<String> vipserverTagTmp = headers.get(Constants.VIPSERVER_TAG);
-            if (vipserverTagTmp == null) {
+            List<String> vipServerTagTmp = headers.get(Constants.VIPSERVER_TAG);
+            if (vipServerTagTmp == null) {
                 if (selfVipserverTag != null) {
                     selfVipserverTag = null;
-                    LOGGER.warn("selfVipserverTag:null");
+                    LOGGER.warn("selfVipServerTag:null");
                 }
             } else {
-                String vipserverTagTmpStr = listToString(vipserverTagTmp);
-                if (!vipserverTagTmpStr.equals(selfVipserverTag)) {
-                    selfVipserverTag = vipserverTagTmpStr;
-                    LOGGER.warn("selfVipserverTag:{}", selfVipserverTag);
+                String vipServerTagTmpStr = listToString(vipServerTagTmp);
+                if (!vipServerTagTmpStr.equals(selfVipserverTag)) {
+                    selfVipserverTag = vipServerTagTmpStr;
+                    LOGGER.warn("selfVipServerTag:{}", selfVipserverTag);
                 }
             }
             List<String> locationTagTmp = headers.get(Constants.LOCATION_TAG);
