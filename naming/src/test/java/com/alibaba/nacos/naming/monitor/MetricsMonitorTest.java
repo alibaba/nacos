@@ -16,11 +16,17 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 public class MetricsMonitorTest {
+    
+    @Before
+    public void setUp() {
+        MetricsMonitor.resetPush();
+    }
     
     @Test
     public void testGetTotalPush() {
