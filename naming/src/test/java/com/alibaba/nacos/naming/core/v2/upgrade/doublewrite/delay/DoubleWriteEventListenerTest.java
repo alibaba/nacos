@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 /**
  * {@link DoubleWriteEventListener} unit tests.
@@ -47,6 +49,9 @@ public class DoubleWriteEventListenerTest {
     
     @Before
     public void setUp() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
+        EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
         doubleWriteEventListener = new DoubleWriteEventListener(upgradeJudgement, doubleWriteDelayTaskEngine);
     }
