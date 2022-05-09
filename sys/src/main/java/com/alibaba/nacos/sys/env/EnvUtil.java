@@ -108,9 +108,6 @@ public class EnvUtil {
     @JustForTest
     private static String nacosHomePath = null;
     
-    private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (com.sun.management.OperatingSystemMXBean) ManagementFactory
-            .getOperatingSystemMXBean();
-    
     private static ConfigurableEnvironment environment;
     
     public static ConfigurableEnvironment getEnvironment() {
@@ -284,18 +281,16 @@ public class EnvUtil {
     }
     
     public static float getLoad() {
-        return (float) OPERATING_SYSTEM_MX_BEAN.getSystemLoadAverage();
+        return (float) OperatingSystemBeanManager.getOperatingSystemBean().getSystemLoadAverage();
     }
-    
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+
     public static float getCPU() {
-        return (float) OPERATING_SYSTEM_MX_BEAN.getSystemCpuLoad();
+        return (float) OperatingSystemBeanManager.getSystemCpuUsage();
     }
     
     public static float getMem() {
-        return (float) (1
-                - (double) OPERATING_SYSTEM_MX_BEAN.getFreePhysicalMemorySize() / (double) OPERATING_SYSTEM_MX_BEAN
-                .getTotalPhysicalMemorySize());
+        return (float) (1 -
+                OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
