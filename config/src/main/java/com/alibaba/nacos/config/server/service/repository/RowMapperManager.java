@@ -167,6 +167,7 @@ public final class RowMapperManager {
                     mapperMap.get(classFullName).getClass().getCanonicalName(),
                     rowMapper.getClass().getCanonicalName());
         }
+        mapperMap.put(classFullName, rowMapper);
     }
     
     public static final class MapRowMapper implements RowMapper<Map<String, Object>> {
