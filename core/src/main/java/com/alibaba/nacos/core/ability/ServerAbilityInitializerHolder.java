@@ -41,6 +41,10 @@ public class ServerAbilityInitializerHolder {
         }
     }
     
+    /**
+     * get instance.
+     * @return ServerAbilityInitializerHolder
+     */
     public static ServerAbilityInitializerHolder getInstance() {
         return INSTANCE;
     }
