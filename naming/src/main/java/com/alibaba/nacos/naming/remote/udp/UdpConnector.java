@@ -50,11 +50,17 @@ public class UdpConnector {
     
     private final DatagramSocket udpSocket;
     
+    private volatile boolean running = true;
+    
     public UdpConnector() throws SocketException {
         this.ackMap = new ConcurrentHashMap<>();
         this.callbackMap = new ConcurrentHashMap<>();
         this.udpSocket = new DatagramSocket();
         GlobalExecutor.scheduleUdpReceiver(new UdpReceiver());
+    }
+    
+    public void shutdown() {
+        running = false;
     }
     
     public boolean containAck(String ackId) {
@@ -180,7 +186,7 @@ public class UdpConnector {
         
         @Override
         public void run() {
-            while (true) {
+            while (running) {
                 byte[] buffer = new byte[1024 * 64];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 try {

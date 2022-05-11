@@ -91,7 +91,7 @@ public abstract class BaseTest {
     protected UpgradeJudgement upgradeJudgement;
     
     @Spy
-    private MockEnvironment environment;
+    protected MockEnvironment environment;
     
     @Before
     public void before() {
