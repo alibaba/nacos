@@ -37,5 +37,5 @@ jobs:
         run: mvn -Prelease-nacos clean test
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0
-          with:
-            files: ./**/target/site/jacoco/jacoco.xml
+        with:
+          files: ./**/target/site/jacoco/jacoco.xml
