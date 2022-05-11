@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,12 +32,16 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PushExecutorUdpImplTest {
@@ -50,6 +57,12 @@ public class PushExecutorUdpImplTest {
     @Mock
     private PushCallBack pushCallBack;
     
+    @Mock
+    private SelectorManager selectorManager;
+    
+    @Mock
+    private ConfigurableApplicationContext context;
+    
     private PushDataWrapper pushData;
     
     private PushExecutorUdpImpl pushExecutor;
@@ -63,6 +76,10 @@ public class PushExecutorUdpImplTest {
         pushExecutor = new PushExecutorUdpImpl(pushService);
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
+        when(selectorManager.select(any(), any(), any())).then(
+                (Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
     }
     
     @Test

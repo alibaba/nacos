@@ -34,4 +34,8 @@ jobs:
       - name: Build with Maven
         run: mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
       - name: Test With Maven
-        run: mvn -Prelease-nacos clean test -DforkCount=0
+        run: mvn -Prelease-nacos clean test -DtrimStackTrace=false
+      - name: Codecov
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          files: ./address/target/site/jacoco/jacoco.xml,./api/target/site/jacoco/jacoco.xml,./auth/target/site/jacoco/jacoco.xml,./client/target/site/jacoco/jacoco.xml,./common/target/site/jacoco/jacoco.xml,./consistency/target/site/jacoco/jacoco.xml,./console/target/site/jacoco/jacoco.xml,./core/target/site/jacoco/jacoco.xml,./naming/target/site/jacoco/jacoco.xml,./plugin-default-impl/target/site/jacoco/jacoco.xml,./plugin/auth/target/site/jacoco/jacoco.xml,./plugin/encryption/target/site/jacoco/jacoco.xml,./sys/target/site/jacoco/jacoco.xml
