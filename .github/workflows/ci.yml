@@ -34,7 +34,7 @@ jobs:
       - name: Build with Maven
         run: mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
       - name: Test With Maven
-        run: mvn -Prelease-nacos clean test
+        run: mvn -Prelease-nacos clean test -DtrimStackTrace=false
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0
         with:
