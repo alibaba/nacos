@@ -23,26 +23,14 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.sun.management.OperatingSystemMXBean;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.lang.management.ManagementFactory;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Its own configuration information manipulation tool class.
@@ -284,13 +272,12 @@ public class EnvUtil {
         return (float) OperatingSystemBeanManager.getOperatingSystemBean().getSystemLoadAverage();
     }
 
-    public static float getCPU() {
+    public static float getCpu() {
         return (float) OperatingSystemBeanManager.getSystemCpuUsage();
     }
     
     public static float getMem() {
-        return (float) (1 -
-                OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
+        return (float) (1 - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
