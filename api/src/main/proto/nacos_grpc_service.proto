@@ -41,7 +41,7 @@ service Request {
 }
 
 service BiRequestStream {
-  // Sends a commonRequest
+  // Sends a biStreamRequest
   rpc requestBiStream (stream Payload) returns (stream Payload) {
   }
 }
