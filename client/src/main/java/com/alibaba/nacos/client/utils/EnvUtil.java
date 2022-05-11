@@ -57,13 +57,13 @@ public class EnvUtil {
             if (vipserverTagTmp == null) {
                 if (selfVipserverTag != null) {
                     selfVipserverTag = null;
-                    LOGGER.warn("selfVipServerTag:null");
+                    LOGGER.warn("selfVipserverTag:null");
                 }
             } else {
-                String vipServerTagTmpStr = listToString(vipserverTagTmp);
-                if (!vipServerTagTmpStr.equals(selfVipserverTag)) {
-                    selfVipserverTag = vipServerTagTmpStr;
-                    LOGGER.warn("selfVipServerTag:{}", selfVipserverTag);
+                String vipserverTagTmpStr = listToString(vipserverTagTmp);
+                if (!vipserverTagTmpStr.equals(selfVipserverTag)) {
+                    selfVipserverTag = vipserverTagTmpStr;
+                    LOGGER.warn("selfVipserverTag:{}", selfVipserverTag);
                 }
             }
             List<String> locationTagTmp = headers.get(Constants.LOCATION_TAG);
