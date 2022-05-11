@@ -19,7 +19,7 @@ package com.alibaba.nacos.sys.utils;
 import java.lang.reflect.Method;
 
 /**
- * MethodUtil related
+ * MethodUtil related.
  *
  * @author yanhom
  */
@@ -27,6 +27,13 @@ public final class MethodUtil {
 
     private MethodUtil() {}
 
+    /**
+     * Invoke method and return double value.
+     *
+     * @param method target method
+     * @param targetObj the object the underlying method is invoked from
+     * @return result
+     */
     public static double invokeAndReturnDouble(Method method, Object targetObj) {
         try {
             return method != null ? (double) method.invoke(targetObj) : Double.NaN;
@@ -35,6 +42,13 @@ public final class MethodUtil {
         }
     }
 
+    /**
+     * Invoke method and return long value.
+     *
+     * @param method target method
+     * @param targetObj the object the underlying method is invoked from
+     * @return result
+     */
     public static long invokeAndReturnLong(Method method, Object targetObj) {
         try {
             return method != null ? (long) method.invoke(targetObj) : -1;
@@ -42,5 +56,4 @@ public final class MethodUtil {
             return -1;
         }
     }
-
 }

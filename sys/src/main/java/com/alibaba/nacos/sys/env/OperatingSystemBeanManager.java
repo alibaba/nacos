@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * OperatingSystemBeanManager related
+ * OperatingSystemBeanManager related.
  *
  * @author yanhom
  */
