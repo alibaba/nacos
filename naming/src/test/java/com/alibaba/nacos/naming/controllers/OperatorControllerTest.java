@@ -27,6 +27,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchManager;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -86,6 +87,7 @@ public class OperatorControllerTest {
     
     @Test
     public void testPushState() {
+        MetricsMonitor.resetPush();
         ObjectNode objectNode = operatorController.pushState(true, true);
         Assert.assertTrue(objectNode.toString().contains("succeed\":0"));
     }
