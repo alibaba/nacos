@@ -33,7 +33,7 @@ public class EnvUtil {
     
     private static String selfAmoryTag;
     
-    private static String selfVipServerTag;
+    private static String selfVipserverTag;
     
     private static String selfLocationTag;
     
@@ -55,15 +55,15 @@ public class EnvUtil {
             
             List<String> vipServerTagTmp = headers.get(Constants.VIPSERVER_TAG);
             if (vipServerTagTmp == null) {
-                if (selfVipServerTag != null) {
-                    selfVipServerTag = null;
+                if (selfVipserverTag != null) {
+                    selfVipserverTag = null;
                     LOGGER.warn("selfVipServerTag:null");
                 }
             } else {
                 String vipServerTagTmpStr = listToString(vipServerTagTmp);
-                if (!vipServerTagTmpStr.equals(selfVipServerTag)) {
-                    selfVipServerTag = vipServerTagTmpStr;
-                    LOGGER.warn("selfVipServerTag:{}", selfVipServerTag);
+                if (!vipServerTagTmpStr.equals(selfVipserverTag)) {
+                    selfVipserverTag = vipServerTagTmpStr;
+                    LOGGER.warn("selfVipServerTag:{}", selfVipserverTag);
                 }
             }
             List<String> locationTagTmp = headers.get(Constants.LOCATION_TAG);
@@ -86,8 +86,8 @@ public class EnvUtil {
         return selfAmoryTag;
     }
     
-    public static String getSelfVipServerTag() {
-        return selfVipServerTag;
+    public static String getSelfVipserverTag() {
+        return selfVipserverTag;
     }
     
     public static String getSelfLocationTag() {
