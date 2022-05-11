@@ -53,14 +53,14 @@ public class EnvUtil {
                 }
             }
             
-            List<String> vipServerTagTmp = headers.get(Constants.VIPSERVER_TAG);
-            if (vipServerTagTmp == null) {
+            List<String> vipserverTagTmp = headers.get(Constants.VIPSERVER_TAG);
+            if (vipserverTagTmp == null) {
                 if (selfVipserverTag != null) {
                     selfVipserverTag = null;
                     LOGGER.warn("selfVipServerTag:null");
                 }
             } else {
-                String vipServerTagTmpStr = listToString(vipServerTagTmp);
+                String vipServerTagTmpStr = listToString(vipserverTagTmp);
                 if (!vipServerTagTmpStr.equals(selfVipserverTag)) {
                     selfVipserverTag = vipServerTagTmpStr;
                     LOGGER.warn("selfVipServerTag:{}", selfVipserverTag);
