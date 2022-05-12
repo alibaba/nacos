@@ -148,7 +148,11 @@ public class NacosConfigService implements ConfigService {
         cr.setTenant(tenant);
         cr.setGroup(group);
         
-        // use local config first
+        // We first try to use local failover content if exists.
+        // A config content for failover is not created by client program automatically,
+        // but is maintained by user.
+        // This is designed for certain scenario like client emergency reboot,
+        // changing config needed in the same time, while nacos server is down.
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
