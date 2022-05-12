@@ -65,12 +65,7 @@ public class WatchFileCenter {
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
     static {
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(WatchFileCenter::shutdown);
     }
     
     /**
@@ -212,18 +207,15 @@ public class WatchFileCenter {
                     if (events.isEmpty()) {
                         continue;
                     }
-                    callBackExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (WatchEvent<?> event : events) {
-                                WatchEvent.Kind<?> kind = event.kind();
-                                
-                                // Since the OS's event cache may be overflow, a backstop is needed
-                                if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
-                                    eventOverflow();
-                                } else {
-                                    eventProcess(event.context());
-                                }
+                    callBackExecutor.execute(() -> {
+                        for (WatchEvent<?> event : events) {
+                            WatchEvent.Kind<?> kind = event.kind();
+
+                            // Since the OS's event cache may be overflow, a backstop is needed
+                            if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
+                                eventOverflow();
+                            } else {
+                                eventProcess(event.context());
                             }
                         }
                     });
@@ -240,12 +232,7 @@ public class WatchFileCenter {
             final String str = String.valueOf(context);
             for (final FileWatcher watcher : watchers) {
                 if (watcher.interest(str)) {
-                    Runnable job = new Runnable() {
-                        @Override
-                        public void run() {
-                            watcher.onChange(fileChangeEvent);
-                        }
-                    };
+                    Runnable job = () -> watcher.onChange(fileChangeEvent);
                     Executor executor = watcher.executor();
                     if (executor == null) {
                         try {
