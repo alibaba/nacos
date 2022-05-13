@@ -21,6 +21,8 @@ import com.alibaba.nacos.common.cache.builder.CacheBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -48,8 +50,14 @@ public class AutoExpireCacheTest {
 
     @Test
     public void testExpire() throws Exception {
+        final ExecutorService executorService = Executors.newFixedThreadPool(10);
         Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.SECONDS).build();
         cache.put("a",  "a");
+        for (int i = 0;i < 10;i++){
+            executorService.execute(() -> {
+                cache.get("a");
+            });
+        }
         TimeUnit.SECONDS.sleep(2);
         Assert.assertNull(cache.get("a"));
     }

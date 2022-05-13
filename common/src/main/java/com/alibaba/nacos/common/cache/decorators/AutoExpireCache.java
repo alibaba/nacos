@@ -19,9 +19,9 @@ package com.alibaba.nacos.common.cache.decorators;
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheItemProperties;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A wrapper that automatically expires the cache.
@@ -34,7 +34,7 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     
     private Cache<K, V> delegate;
     
-    private Map<K, CacheItemProperties> keyProp = new ConcurrentHashMap<>();
+    private Map<K, CacheItemProperties> keyProp = new HashMap<>();
     
     public AutoExpireCache(Cache<K, V> delegate, long expireNanos) {
         this.expireNanos = expireNanos;
@@ -48,7 +48,7 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     }
     
     @Override
-    public V get(K key) {
+    public synchronized V get(K key) {
         if (keyProp.get(key) != null && isExpire(keyProp.get(key))) {
             this.keyProp.remove(key);
             this.delegate.remove(key);
