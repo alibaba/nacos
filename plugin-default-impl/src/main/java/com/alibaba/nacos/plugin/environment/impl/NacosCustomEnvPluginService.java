@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * Nacos default auth plugin service implementation.
  *
- * @author xiweng.yy
+ * @author huangtianhui
  */
 
 public class NacosCustomEnvPluginService implements CustomEnvironmentPluginService {
