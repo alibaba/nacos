@@ -52,13 +52,10 @@ public final class ThreadPoolManager {
     
     static {
         INSTANCE.init();
-        ThreadUtils.addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
-                shutdown();
-                LOGGER.warn("[ThreadPoolManager] Destruction of the end");
-            }
+        ThreadUtils.addShutdownHook(new Thread(() -> {
+            LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
+            shutdown();
+            LOGGER.warn("[ThreadPoolManager] Destruction of the end");
         }));
     }
     
