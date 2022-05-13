@@ -37,6 +37,8 @@ import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
 public class Instance implements Serializable {
     
     private static final long serialVersionUID = -742906310567291979L;
+
+    private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
     
     /**
      * unique id of this instance.
@@ -136,6 +138,7 @@ public class Instance implements Serializable {
     
     public void setClusterName(final String clusterName) {
         this.clusterName = clusterName;
+        checkClusterNameFormat();
     }
     
     public String getServiceName() {
@@ -263,6 +266,20 @@ public class Instance implements Serializable {
             return defaultValue;
         }
         return getMetadata().get(key);
+    }
+
+    /**
+     * validate the cluster name.
+     *
+     * <p>the cluster name only the arabic numerals, letters and endashes are allowed.
+     *
+     * @throws IllegalArgumentException the cluster name is null, or the cluster name is
+     *                                  illegal
+     */
+    public void checkClusterNameFormat() {
+        if (!StringUtils.isEmpty(clusterName) && !clusterName.matches(CLUSTER_NAME_SYNTAX)) {
+            throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + clusterName);
+        }
     }
     
 }
