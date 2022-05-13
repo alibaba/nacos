@@ -17,7 +17,6 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -26,6 +25,7 @@ import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -86,8 +86,8 @@ public class NamespaceController {
         namespaces.add(namespace0);
         for (TenantInfo tenantInfo : tenantInfos) {
             int configCount = persistService.configInfoCount(tenantInfo.getTenantId());
-            Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(), tenantInfo.getTenantName(), DEFAULT_QUOTA,
-                    configCount, NamespaceTypeEnum.CUSTOM.getType());
+            Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(), tenantInfo.getTenantName(),
+                    tenantInfo.getTenantDesc(), DEFAULT_QUOTA, configCount, NamespaceTypeEnum.CUSTOM.getType());
             namespaces.add(namespaceTmp);
         }
         return RestResultUtils.success(namespaces);

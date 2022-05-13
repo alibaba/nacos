@@ -357,9 +357,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
-            final String sql = "UPDATE config_info_beta SET content=?,md5=?,src_ip=?,src_user=?,gmt_modified=?,app_name=?,encrypted_data_key=? WHERE data_id=? AND group_id=? AND tenant_id=?";
+            final String sql = "UPDATE config_info_beta SET content=?,md5=?,beta_ips=?,src_ip=?,src_user=?,gmt_modified=?,app_name=?,encrypted_data_key=? WHERE data_id=? AND group_id=? AND tenant_id=?";
             
-            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+            final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
                     encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
@@ -381,9 +381,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
-            final String sql = "UPDATE config_info_beta SET content=?,md5=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
+            final String sql = "UPDATE config_info_beta SET content=?,md5=?,beta_ips=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
             
-            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+            final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, configInfo.getMd5()};
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
@@ -1399,7 +1399,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, EMPTY_ARRAY, pageNo, pageSize,
+        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
                 CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
     }
@@ -1970,7 +1970,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
         final String sql = "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) "
                 + "VALUES(?,?,?,?,?,?)";
-        final Object[] args = new Object[] {configId, tagName, null, dataId, group, tenant};
+        final Object[] args = new Object[] {configId, tagName, StringUtils.EMPTY, dataId, group, tenant};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     

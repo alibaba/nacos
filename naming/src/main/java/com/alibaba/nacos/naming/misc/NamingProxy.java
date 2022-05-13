@@ -347,8 +347,8 @@ public class NamingProxy {
          */
         public String toUrl() {
             StringBuilder sb = new StringBuilder();
-            for (String key : params.keySet()) {
-                sb.append(key).append('=').append(params.get(key)).append('&');
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                sb.append(entry.getKey()).append('=').append(entry.getValue()).append('&');
             }
             return sb.toString();
         }

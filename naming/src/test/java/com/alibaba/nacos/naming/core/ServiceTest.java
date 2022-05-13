@@ -16,11 +16,13 @@
 
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +54,11 @@ public class ServiceTest extends BaseTest {
         mockInjectHealthCheckProcessor();
         mockInjectDistroMapper();
         mockInjectSwitchDomain();
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        service.destroy();
     }
     
     @Test
@@ -89,7 +96,6 @@ public class ServiceTest extends BaseTest {
         assertTrue(actual.contains("\"owners\":[]"));
         assertTrue(actual.contains("\"protectThreshold\":0.0"));
         assertTrue(actual.contains("\"resetWeight\":false"));
-        assertTrue(actual.contains("\"selector\":{\"type\":\"none\"}"));
         assertFalse(actual.contains("clientBeatCheckTask"));
         assertFalse(actual.contains("serviceString"));
         assertFalse(actual.contains("pushService"));
@@ -98,6 +104,7 @@ public class ServiceTest extends BaseTest {
     @Test
     @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() throws Exception {
+        JacksonUtils.registerSubtype(NoneSelector.class, SelectorType.none.name());
         String example = "{\"checksum\":\"394c845e1160bb880e7f26fb2149ed6d\",\"clusterMap\":{},\"empty\":true,\"enabled\":true,\"finalizeCount\":0,\"ipDeleteTimeout\":30000,\"lastModifiedMillis\":0,\"metadata\":{},\"name\":\"test-service\",\"owners\":[],\"protectThreshold\":0.0,\"resetWeight\":false,\"selector\":{\"type\":\"none\"}}";
         Service actual = JacksonUtils.toObj(example, Service.class);
         assertEquals("394c845e1160bb880e7f26fb2149ed6d", actual.getChecksum());
