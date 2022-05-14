@@ -25,6 +25,7 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -60,10 +61,16 @@ public class ConfigQueryRequestHandlerTest {
     @Before
     public void setUp() throws IOException {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        
+    }
+    
+    @Test
+    public void testHandle() throws NacosException {
         final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         final MockedStatic<FileUtils> fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
         final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+    
+        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
         
         ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
         final String groupKey = GroupKey2.getKey("dataId", "group", "");
@@ -78,13 +85,6 @@ public class ConfigQueryRequestHandlerTest {
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(Mockito.any()))
                 .thenReturn(cacheItem);
         
-        configCacheServiceMockedStatic.close();
-        fileUtilsMockedStatic.close();
-        diskUtilMockedStatic.close();
-    }
-    
-    @Test
-    public void testHandle() throws NacosException {
         ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
         configQueryRequest.setDataId("dataId");
         configQueryRequest.setGroup("group");
@@ -92,6 +92,11 @@ public class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         Assert.assertEquals(response.getContent(), "content");
+    
+        configCacheServiceMockedStatic.close();
+        fileUtilsMockedStatic.close();
+        diskUtilMockedStatic.close();
+        propertyUtilMockedStatic.close();
     }
     
 }
