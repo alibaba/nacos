@@ -100,13 +100,12 @@ public class ConfigOpsControllerTest {
     
     @Test
     public void testDerbyOps() throws Exception {
-    
-        MockedStatic propertyUtil = Mockito.mockStatic(PropertyUtil.class);
-        when(PropertyUtil.isEmbeddedStorage()).thenReturn(true);
-        propertyUtil.close();
-        Mockito.mockStatic(DynamicDataSource.class);
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
+        
+        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
         DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
-        when(DynamicDataSource.getInstance()).thenReturn(dataSource);
+        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dataSource);
         LocalDataSourceServiceImpl dataSourceService = Mockito.mock(LocalDataSourceServiceImpl.class);
         when(dataSource.getDataSource()).thenReturn(dataSourceService);
         JdbcTemplate template = Mockito.mock(JdbcTemplate.class);
@@ -118,23 +117,27 @@ public class ConfigOpsControllerTest {
                 .param("sql", "SELECT * FROM TEST");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("200", JacksonUtils.toObj(actualValue).get("code").toString());
+        propertyUtilMockedStatic.close();
+        dynamicDataSourceMockedStatic.close();
         
     }
     
     @Test
     public void testImportDerby() throws Exception {
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     
-        MockedStatic propertyUtil = Mockito.mockStatic(PropertyUtil.class);
-        when(PropertyUtil.isEmbeddedStorage()).thenReturn(true);
-        propertyUtil.close();
-        Mockito.mockStatic(ApplicationUtils.class);
-        when(ApplicationUtils.getBean(DatabaseOperate.class)).thenReturn(Mockito.mock(DatabaseOperate.class));
+        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
         
+        applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
+                .thenReturn(Mockito.mock(DatabaseOperate.class));
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.OPS_CONTROLLER_PATH + "/data/removal").file(file);
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         Assert.assertEquals(200, actualValue);
        
+        propertyUtilMockedStatic.close();
+        applicationUtilsMockedStatic.close();
     }
     
 }
