@@ -48,7 +48,7 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     }
     
     @Override
-    public synchronized V get(K key) {
+    public V get(K key) {
         if (keyProp.get(key) != null && isExpire(keyProp.get(key))) {
             this.keyProp.remove(key);
             this.delegate.remove(key);
@@ -88,7 +88,7 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     }
     
     private boolean isExpire(CacheItemProperties itemProperties) {
-        return expireNanos != -1 && (System.nanoTime() - itemProperties.getExpireNanos() > expireNanos);
+        return expireNanos != -1 && itemProperties != null && (System.nanoTime() - itemProperties.getExpireNanos() > expireNanos);
     }
     
     private CacheItemProperties cacheItemProperties() {
