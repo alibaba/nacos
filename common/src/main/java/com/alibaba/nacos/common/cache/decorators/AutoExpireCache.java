@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheItemProperties;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -34,7 +33,7 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     
     private Cache<K, V> delegate;
     
-    private Map<K, CacheItemProperties> keyProp = new HashMap<>();
+    private HashMap<K, CacheItemProperties> keyProp = new HashMap<>();
     
     public AutoExpireCache(Cache<K, V> delegate, long expireNanos) {
         this.expireNanos = expireNanos;
