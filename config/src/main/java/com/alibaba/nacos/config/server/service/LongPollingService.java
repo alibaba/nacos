@@ -392,45 +392,41 @@ public class LongPollingService {
         
         @Override
         public void run() {
-            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-                        
-                        // Delete subscriber's relations.
-                        boolean removeFlag = allSubs.remove(ClientLongPolling.this);
-                        
-                        if (removeFlag) {
-                            if (isFixedPolling()) {
-                                LogUtil.CLIENT_LOG
-                                        .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
-                                                RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                                "polling", clientMd5Map.size(), probeRequestSize);
-                                List<String> changedGroups = MD5Util
-                                        .compareMd5((HttpServletRequest) asyncContext.getRequest(),
-                                                (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
-                                if (changedGroups.size() > 0) {
-                                    sendResponse(changedGroups);
-                                } else {
-                                    sendResponse(null);
-                                }
+            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
+                try {
+                    getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
+
+                    // Delete subscriber's relations.
+                    boolean removeFlag = allSubs.remove(ClientLongPolling.this);
+
+                    if (removeFlag) {
+                        if (isFixedPolling()) {
+                            LogUtil.CLIENT_LOG
+                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
+                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                            "polling", clientMd5Map.size(), probeRequestSize);
+                            List<String> changedGroups = MD5Util
+                                    .compareMd5((HttpServletRequest) asyncContext.getRequest(),
+                                            (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
+                            if (changedGroups.size() > 0) {
+                                sendResponse(changedGroups);
                             } else {
-                                LogUtil.CLIENT_LOG
-                                        .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
-                                                RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-                                                "polling", clientMd5Map.size(), probeRequestSize);
                                 sendResponse(null);
                             }
                         } else {
-                            LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
+                            LogUtil.CLIENT_LOG
+                                    .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "timeout",
+                                            RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+                                            "polling", clientMd5Map.size(), probeRequestSize);
+                            sendResponse(null);
                         }
-                    } catch (Throwable t) {
-                        LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
+                    } else {
+                        LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
                     }
-                    
+                } catch (Throwable t) {
+                    LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                 }
-                
+
             }, timeoutTime, TimeUnit.MILLISECONDS);
             
             allSubs.add(this);
