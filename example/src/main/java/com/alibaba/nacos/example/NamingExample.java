@@ -26,7 +26,6 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -52,13 +51,10 @@ public class NamingExample {
         System.out.println("instances after register: " + naming.getAllInstances("nacos.test.3"));
         
         Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setName("test-thread");
-                        return thread;
-                    }
+                runnable -> {
+                    Thread thread = new Thread(runnable);
+                    thread.setName("test-thread");
+                    return thread;
                 });
         
         naming.subscribe("nacos.test.3", new AbstractEventListener() {
