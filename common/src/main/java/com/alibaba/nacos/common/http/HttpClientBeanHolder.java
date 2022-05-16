@@ -44,12 +44,7 @@ public final class HttpClientBeanHolder {
     private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
     
     static {
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(HttpClientBeanHolder::shutdown);
     }
     
     public static NacosRestTemplate getNacosRestTemplate(Logger logger) {

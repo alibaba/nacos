@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
@@ -47,37 +48,43 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigQueryRequestHandlerTest {
-
+    
     @InjectMocks
     private ConfigQueryRequestHandler configQueryRequestHandler;
-
+    
     @Mock
     private PersistService persistService;
-
+    
     @Mock
     private File file;
-
+    
     @Before
     public void setUp() throws IOException {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        Mockito.mockStatic(ConfigCacheService.class);
-        Mockito.mockStatic(PropertyUtil.class);
-        Mockito.mockStatic(FileUtils.class);
-        Mockito.mockStatic(DiskUtil.class);
-        ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
-        final String groupKey = GroupKey2.getKey("dataId", "group", "");
-        when(ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
-        when(DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(file);
-        when(FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
-        when(file.exists()).thenReturn(true);
-        CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.setMd5("1");
-        cacheItem.setLastModifiedTs(1L);
-        when(ConfigCacheService.getContentCache(Mockito.any())).thenReturn(cacheItem);
     }
     
     @Test
     public void testHandle() throws NacosException {
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
+        final MockedStatic<FileUtils> fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
+        final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+    
+        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
+        
+        ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
+        final String groupKey = GroupKey2.getKey("dataId", "group", "");
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
+        diskUtilMockedStatic.when(() -> DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(file);
+        fileUtilsMockedStatic.when(() -> FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
+        when(file.exists()).thenReturn(true);
+        CacheItem cacheItem = new CacheItem(groupKey);
+        cacheItem.setMd5("1");
+        cacheItem.setLastModifiedTs(1L);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(Mockito.any()))
+                .thenReturn(cacheItem);
+        
         ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
         configQueryRequest.setDataId("dataId");
         configQueryRequest.setGroup("group");
@@ -85,6 +92,11 @@ public class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         Assert.assertEquals(response.getContent(), "content");
+    
+        configCacheServiceMockedStatic.close();
+        fileUtilsMockedStatic.close();
+        diskUtilMockedStatic.close();
+        propertyUtilMockedStatic.close();
     }
     
 }
