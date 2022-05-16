@@ -75,6 +75,7 @@ public class HealthControllerTest {
         when(memberManager.getLookup()).thenReturn(memberLookup);
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(healthController, "memberManager", memberManager);
+        ReflectionTestUtils.setField(healthController, "dataSourceService", dataSourceService);
         mockmvc = MockMvcBuilders.standaloneSetup(healthController).build();
     }
     
