@@ -170,7 +170,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     udpPush(ackEntry);
                 }
             } catch (Exception e) {
-                Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: ", serviceName, e);
+                Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
                 
             } finally {
                 futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
@@ -334,7 +334,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: ", data,
+            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
                     client.getSocketAddr(), e);
             return null;
         }
@@ -354,7 +354,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: ", data,
+            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data,
                     client.getSocketAddr(), e);
         }
         
@@ -621,7 +621,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: ", ackEntry.data,
+            Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}", ackEntry.data,
                     ackEntry.origin.getAddress().getHostAddress(), e);
             ackMap.remove(ackEntry.key);
             udpSendTimeMap.remove(ackEntry.key);
