@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringBootTest
@@ -32,6 +35,13 @@ public class DumpServiceTest {
     
     @Autowired
     DumpService service;
+    
+    @BeforeClass
+    public static void setUp() {
+        
+        ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", null);
+        ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", null);
+    }
     
     @Test
     public void init() throws Throwable {
