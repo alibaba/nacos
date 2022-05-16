@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -74,14 +73,11 @@ public class PushReceiver implements Runnable, Closeable {
             } else {
                 this.udpSocket = new DatagramSocket(new InetSocketAddress(Integer.parseInt(udpPort)));
             }
-            this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.push.receiver");
-                    return thread;
-                }
+            this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.push.receiver");
+                return thread;
             });
             
             this.executorService.execute(this);
