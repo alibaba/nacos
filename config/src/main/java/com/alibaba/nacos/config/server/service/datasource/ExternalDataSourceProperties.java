@@ -14,6 +14,7 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -87,6 +88,19 @@ public class ExternalDataSourceProperties {
             ds.setConnectionTestQuery(TEST_QUERY);
             ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(10L));
             ds.setConnectionTimeout(TimeUnit.SECONDS.toMillis(3L));
+
+            System.out.println("#################################");
+            System.out.println("jdbcDriverName=" + jdbcDriverName);
+            if (StringUtils.isNotEmpty(jdbcDriverName)) {
+                // 增加其他数据库驱动的支持
+                ds.setDriverClassName(jdbcDriverName);
+            } else {
+                //默认使用mysql驱动
+                ds.setDriverClassName(JDBC_DRIVER_NAME);
+            }
+            System.out.println("#################################");
+            System.out.println("dataSources=" + dataSources);
+
             dataSources.add(ds);
             callback.accept(ds);
         }
@@ -102,5 +116,15 @@ public class ExternalDataSourceProperties {
          * @param datasource dataSource.
          */
         void accept(D datasource);
+    }
+
+    private String jdbcDriverName;
+
+    public String getJdbcDriverName() {
+        return jdbcDriverName;
+    }
+
+    public void setJdbcDriverName(String jdbcDriverName) {
+        this.jdbcDriverName = jdbcDriverName;
     }
 }
