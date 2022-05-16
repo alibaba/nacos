@@ -57,8 +57,10 @@ public class ServerListManagerTest {
             Properties properties = new Properties();
             properties.put(PropertyKeyConst.CONTEXT_PATH, "aaa");
             properties.put(PropertyKeyConst.ENDPOINT, "endpoint");
+            properties.put(PropertyKeyConst.SERVER_ADDR, "https://1.1.1.1:8848");
             final ServerListManager mgr2 = new ServerListManager(properties);
             Assert.assertEquals("aaa", mgr2.getContentPath());
+            Assert.assertEquals("[https://1.1.1.1:8848]", mgr2.getServerUrls().toString());
         }
         
         {

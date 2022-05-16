@@ -298,9 +298,6 @@ public class ServerListManager implements Closeable {
                         String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
-            if (StringUtils.isNotBlank(endpointUrl)) {
-                this.serverAddrsStr = "";
-            }
             return endpointUrl;
         }
         
