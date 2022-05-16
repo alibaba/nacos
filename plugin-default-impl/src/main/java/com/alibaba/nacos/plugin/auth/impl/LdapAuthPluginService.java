@@ -14,30 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.utils;
+package com.alibaba.nacos.plugin.auth.impl;
 
-import com.alibaba.nacos.client.logging.NacosLogging;
-import org.slf4j.Logger;
-
-import static org.slf4j.LoggerFactory.getLogger;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 
 /**
- * Log utils.
- *
- * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
- * @since 0.9.0
+ * ldap auth plugin service.
+ * @author onewe
  */
-public class LogUtils {
+public class LdapAuthPluginService extends NacosAuthPluginService {
     
-    public static final Logger NAMING_LOGGER;
-    
-    static {
-        NacosLogging.getInstance().loadConfiguration();
-        NAMING_LOGGER = getLogger("com.alibaba.nacos.client.naming");
+    @Override
+    public String getAuthServiceName() {
+        return AuthConstants.LDAP_AUTH_PLUGIN_TYPE;
     }
-    
-    public static Logger logger(Class<?> clazz) {
-        return getLogger(clazz);
-    }
-    
 }

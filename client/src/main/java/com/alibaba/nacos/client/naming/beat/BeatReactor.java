@@ -37,7 +37,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -66,14 +65,11 @@ public class BeatReactor implements Closeable {
     public BeatReactor(NamingHttpClientProxy serverProxy, Properties properties) {
         this.serverProxy = serverProxy;
         int threadCount = initClientBeatThreadCount(properties);
-        this.executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.beat.sender");
-                return thread;
-            }
+        this.executorService = new ScheduledThreadPoolExecutor(threadCount, r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            thread.setName("com.alibaba.nacos.naming.beat.sender");
+            return thread;
         });
     }
     

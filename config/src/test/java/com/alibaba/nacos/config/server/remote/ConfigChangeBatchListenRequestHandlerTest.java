@@ -28,12 +28,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigChangeBatchListenRequestHandlerTest extends TestCase {
@@ -52,18 +52,22 @@ public class ConfigChangeBatchListenRequestHandlerTest extends TestCase {
         ReflectionTestUtils.setField(configQueryRequestHandler, "configChangeListenContext", configChangeListenContext);
         requestMeta = new RequestMeta();
         requestMeta.setClientIp("1.1.1.1");
-        Mockito.mockStatic(ConfigCacheService.class);
     }
 
     @Test
     public void testHandle() {
+        MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
+        
         String dataId = "dataId";
         String group = "group";
         String tenant = "tenant";
-        String groupKey = GroupKey2
-                .getKey(dataId, group, tenant);
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
         groupKey = StringPool.get(groupKey);
-        when(ConfigCacheService.isUptodate(eq(groupKey), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(false);
+    
+        final String groupKeyCopy = groupKey;
+        configCacheServiceMockedStatic.when(
+                () -> ConfigCacheService.isUptodate(eq(groupKeyCopy), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(false);
         ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
         configChangeListenRequest.addConfigListenContext(group, dataId, tenant, " ");
         try {
@@ -79,6 +83,8 @@ public class ConfigChangeBatchListenRequestHandlerTest extends TestCase {
             assertTrue(hasChange);
         } catch (NacosException e) {
             e.printStackTrace();
+        } finally {
+            configCacheServiceMockedStatic.close();
         }
     }
 

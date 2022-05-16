@@ -105,7 +105,12 @@ public class ConfigCacheService {
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            
+            if (lastModifiedTs < ConfigCacheService.getLastModifiedTs(groupKey)) {
+                DUMP_LOG.warn("[dump-ignore] the content is old. groupKey={}, md5={}, lastModifiedOld={}, "
+                                + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
+                        lastModifiedTs);
+                return true;
+            }
             if (md5.equals(ConfigCacheService.getContentMd5(groupKey)) && DiskUtil.targetFile(dataId, group, tenant).exists()) {
                 DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
@@ -158,6 +163,12 @@ public class ConfigCacheService {
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            if (lastModifiedTs < ConfigCacheService.getLastModifiedTs4Beta(groupKey)) {
+                DUMP_LOG.warn("[dump-beta-ignore] the content is old. groupKey={}, md5={}, lastModifiedOld={}, "
+                                + "lastModifiedNew={}", groupKey, md5,
+                        ConfigCacheService.getLastModifiedTs4Beta(groupKey), lastModifiedTs);
+                return true;
+            }
             if (md5.equals(ConfigCacheService.getContentBetaMd5(groupKey)) && DiskUtil.targetBetaFile(dataId, group, tenant).exists()) {
                 DUMP_LOG.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
@@ -203,6 +214,12 @@ public class ConfigCacheService {
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            if (lastModifiedTs < ConfigCacheService.getTagLastModifiedTs(groupKey, tag)) {
+                DUMP_LOG.warn("[dump-tag-ignore] the tag is old. groupKey={}, md5={}, lastTagModifiedOld={}, "
+                                + "lastModifiedNew={}", groupKey, md5,
+                        ConfigCacheService.getTagLastModifiedTs(groupKey, tag), lastModifiedTs);
+                return true;
+            }
             if (md5.equals(ConfigCacheService.getContentTagMd5(groupKey, tag)) && DiskUtil.targetTagFile(dataId, group, tenant, tag).exists()) {
                 DUMP_LOG.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
@@ -246,6 +263,12 @@ public class ConfigCacheService {
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+            if (lastModifiedTs < ConfigCacheService.getLastModifiedTs(groupKey)) {
+                DUMP_LOG.warn("[dump-ignore] the content is old. groupKey={}, md5={}, lastModifiedOld={}, "
+                                + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
+                        lastModifiedTs);
+                return true;
+            }
             if (!PropertyUtil.isDirectRead()) {
                 String localMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
                 if (md5.equals(localMd5)) {
@@ -498,7 +521,7 @@ public class ConfigCacheService {
     public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs,
             String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey, true);
-        if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
+        if (cache.md54Beta == null || !cache.md54Beta.equals(md5) || !ips4Beta.equals(cache.ips4Beta)) {
             cache.isBeta = true;
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;
@@ -612,6 +635,19 @@ public class ConfigCacheService {
     public static long getLastModifiedTs(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         return (null != item) ? item.lastModifiedTs : 0L;
+    }
+    
+    public static long getLastModifiedTs4Beta(String groupKey) {
+        CacheItem item = CACHE.get(groupKey);
+        return (null != item) ? item.lastModifiedTs4Beta : 0L;
+    }
+    
+    public static long getTagLastModifiedTs(String groupKey, String tag) {
+        CacheItem item = CACHE.get(groupKey);
+        if (item == null || item.getTagLastModifiedTs() == null) {
+            return 0L;
+        }
+        return item.getTagLastModifiedTs().getOrDefault(tag, 0L);
     }
     
     public static boolean isUptodate(String groupKey, String md5) {

@@ -172,7 +172,7 @@ public class ClientWorkerTest {
         agent1.setAccessible(false);
         
         Assert.assertTrue(clientWorker.isHealthServer());
-        Assert.assertEquals("config_rpc_client", clientWorker.getAgentName());
+        Assert.assertEquals(null, clientWorker.getAgentName());
     }
     
 }

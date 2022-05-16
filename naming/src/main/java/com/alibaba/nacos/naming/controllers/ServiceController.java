@@ -342,6 +342,8 @@ public class ServiceController {
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
+        int count = 0;
+        
         try {
             List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             
@@ -351,7 +353,7 @@ public class ServiceController {
             }
             
             int end = start + pageSize;
-            int count = subscribers.size();
+            count = subscribers.size();
             if (end > count) {
                 end = count;
             }
@@ -363,7 +365,7 @@ public class ServiceController {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("query subscribers failed!", e);
             result.replace("subscribers", JacksonUtils.createEmptyArrayNode());
-            result.put("count", 0);
+            result.put("count", count);
             return result;
         }
     }

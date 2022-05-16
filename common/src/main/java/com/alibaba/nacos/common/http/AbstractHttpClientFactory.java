@@ -64,18 +64,10 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         final JdkHttpClientRequest clientRequest = new JdkHttpClientRequest(httpClientConfig);
         
         // enable ssl
-        initTls(new BiConsumer<SSLContext, HostnameVerifier>() {
-            @Override
-            public void accept(SSLContext sslContext, HostnameVerifier hostnameVerifier) {
-                clientRequest.setSSLContext(loadSSLContext());
-                clientRequest.replaceSSLHostnameVerifier(hostnameVerifier);
-            }
-        }, new TlsFileWatcher.FileChangeListener() {
-            @Override
-            public void onChanged(String filePath) {
-                clientRequest.setSSLContext(loadSSLContext());
-            }
-        });
+        initTls((sslContext, hostnameVerifier) -> {
+            clientRequest.setSSLContext(loadSSLContext());
+            clientRequest.replaceSSLHostnameVerifier(hostnameVerifier);
+        }, filePath -> clientRequest.setSSLContext(loadSSLContext()));
         
         return new NacosRestTemplate(assignLogger(), clientRequest);
     }

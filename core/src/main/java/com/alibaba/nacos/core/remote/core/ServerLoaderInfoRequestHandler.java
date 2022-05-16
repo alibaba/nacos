@@ -53,7 +53,7 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
                 .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
         serverLoaderInfoResponse.putMetricsValue("limitRule", JacksonUtils.toJson(connectionManager.getConnectionLimitRule()));
         serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
-        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCPU()));
+        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCpu()));
         
         return serverLoaderInfoResponse;
     }

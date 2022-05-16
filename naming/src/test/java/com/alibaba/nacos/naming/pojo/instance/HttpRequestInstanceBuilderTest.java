@@ -80,8 +80,7 @@ public class HttpRequestInstanceBuilderTest {
         assertTrue(actual.isHealthy());
         assertThat(actual.getInstanceId(),
                 is(IP + "#" + PORT + "#" + UtilsAndCommons.DEFAULT_CLUSTER_NAME + "#" + SERVICE));
-        assertThat(actual.getMetadata().size(), is(2));
-        assertThat(actual.getMetadata().get("app"), is("DEFAULT"));
+        assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get("mock"), is("mock"));
         verify(request).getParameter("mock");
     }
@@ -112,9 +111,8 @@ public class HttpRequestInstanceBuilderTest {
         assertFalse(actual.isEnabled());
         assertFalse(actual.isHealthy());
         assertThat(actual.getInstanceId(), is(IP + "#" + PORT + "#" + "cluster" + "#" + SERVICE));
-        assertThat(actual.getMetadata().size(), is(3));
+        assertThat(actual.getMetadata().size(), is(2));
         assertThat(actual.getMetadata().get("mock"), is("mock"));
-        assertThat(actual.getMetadata().get("app"), is("DEFAULT"));
         assertThat(actual.getMetadata().get("a"), is("b"));
         verify(request).getParameter("mock");
     }
