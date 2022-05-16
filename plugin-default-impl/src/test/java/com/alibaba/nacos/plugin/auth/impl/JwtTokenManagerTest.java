@@ -66,7 +66,8 @@ public class JwtTokenManagerTest {
                 ldapAuthenticationProvider, methodsCache);
         nacosAuthConfig.init();
         JwtTokenManager jwtTokenManager = new JwtTokenManager();
-        injectProperty(jwtTokenManager, "nacosAuthConfig", nacosAuthConfig);
+        injectProperty(jwtTokenManager, "authConfigs", authConfigs);
+        jwtTokenManager.init();
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.notNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);

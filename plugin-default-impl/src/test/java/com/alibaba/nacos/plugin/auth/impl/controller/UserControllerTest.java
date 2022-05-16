@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig;
+import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
@@ -51,7 +51,7 @@ public class UserControllerTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private NacosAuthConfig nacosAuthConfig;
+    private JwtTokenManager jwtTokenManager;
     
     @Mock
     private NacosAuthManager authManager;
@@ -69,14 +69,14 @@ public class UserControllerTest {
         user.setToken("1234567890");
         injectObject("authConfigs", authConfigs);
         injectObject("authManager", authManager);
-        injectObject("nacosAuthConfig", nacosAuthConfig);
+        injectObject("jwtTokenManager", jwtTokenManager);
     }
     
     @Test
     public void testLoginWithAuthedUser() throws AccessException {
         when(authManager.login(request)).thenReturn(user);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
-        when(nacosAuthConfig.getTokenValidityInSeconds()).thenReturn(18000L);
+        when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(18000L);
         Object actual = userController.login("nacos", "nacos", response, request);
         assertThat(actual, instanceOf(JsonNode.class));
         String actualString = actual.toString();
