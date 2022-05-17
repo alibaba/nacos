@@ -57,7 +57,14 @@ public class ServerListManagerTest {
             Properties properties = new Properties();
             properties.put(PropertyKeyConst.CONTEXT_PATH, "aaa");
             properties.put(PropertyKeyConst.ENDPOINT, "endpoint");
-            properties.put(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "false");
+            final ServerListManager mgr2 = new ServerListManager(properties);
+            Assert.assertEquals("aaa", mgr2.getContentPath());
+        }
+
+        // Test https
+        {
+            Properties properties = new Properties();
+            properties.put(PropertyKeyConst.CONTEXT_PATH, "aaa");
             properties.put(PropertyKeyConst.SERVER_ADDR, "https://1.1.1.1:8848");
             final ServerListManager mgr2 = new ServerListManager(properties);
             Assert.assertEquals("aaa", mgr2.getContentPath());
