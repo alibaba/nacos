@@ -88,7 +88,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
                 int typeIndex = each.indexOf('.');
                 String type = each.substring(0, typeIndex);
                 String subKey = each.substring(typeIndex + 1);
-                newProperties.computeIfAbsent(type, key -> new Properties()).setProperty(subKey, properties.getProperty(each));
+                newProperties.computeIfAbsent(type, key -> new Properties())
+                        .setProperty(subKey, properties.getProperty(each));
             }
             authPluginProperties = newProperties;
         } catch (Exception e) {
@@ -153,8 +154,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             cachingEnabled = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED, Boolean.class, true);
             serverIdentityKey = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY, "");
             serverIdentityValue = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE, "");
-            enableUserAgentAuthWhite = EnvUtil
-                    .getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
+            enableUserAgentAuthWhite = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE,
+                    Boolean.class, false);
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
             refreshPluginProperties();
         } catch (Exception e) {
