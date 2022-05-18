@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -39,6 +40,9 @@ import java.util.stream.Stream;
  */
 @Component
 public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
+
+    @Value("${nacos.naming.empty-service.auto-clean:true}")
+    private boolean emptyServiceAutoClean = true;
     
     private static final String EMPTY_SERVICE = "emptyService";
     
@@ -75,7 +79,7 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     
     private void cleanEmptyService(Service service) {
         Collection<String> registeredService = clientServiceIndexesManager.getAllClientsRegisteredService(service);
-        if (registeredService.isEmpty() && isTimeExpired(service)) {
+        if (registeredService.isEmpty() && isTimeExpired(service) && emptyServiceAutoClean) {
             Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", service.getNamespace(),
                     service.getGroupedServiceName());
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
@@ -88,5 +92,13 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
     private boolean isTimeExpired(Service service) {
         long currentTimeMillis = System.currentTimeMillis();
         return currentTimeMillis - service.getLastUpdatedTime() >= GlobalConfig.getEmptyServiceExpiredTime();
+    }
+
+    public boolean isEmptyServiceAutoClean() {
+        return emptyServiceAutoClean;
+    }
+
+    public void setEmptyServiceAutoClean(boolean emptyServiceAutoClean) {
+        this.emptyServiceAutoClean = emptyServiceAutoClean;
     }
 }

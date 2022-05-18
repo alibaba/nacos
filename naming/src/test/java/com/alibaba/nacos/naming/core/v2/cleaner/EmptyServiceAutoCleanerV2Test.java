@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
@@ -42,6 +43,9 @@ import java.util.Collections;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class EmptyServiceAutoCleanerV2Test {
+
+    @Value("${nacos.naming.empty-service.auto-clean:true}")
+    public boolean emptyServiceAutoClean;
     
     @Mock
     private ClientServiceIndexesManager clientServiceIndexesManager;
@@ -79,11 +83,17 @@ public class EmptyServiceAutoCleanerV2Test {
             Mockito.when(clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.any())).thenReturn(Collections.emptyList());
             
             Mockito.when(service.getLastUpdatedTime()).thenReturn(0L);
-            
+            emptyServiceAutoCleanerV2.setEmptyServiceAutoClean(true);
             emptyServiceAutoCleanerV2.doClean();
+            
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testAutoCleanConfig() {
+        Assert.assertNotNull(emptyServiceAutoClean);
     }
 }
