@@ -23,7 +23,6 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 
 /**
@@ -35,11 +34,12 @@ public class IoUtilsTest {
     
     @Test()
     public void testCloseQuietly() throws IOException {
-        InputStream in = System.in;
-        Assert.assertTrue(in.available() >= 0);
-        IoUtils.closeQuietly(in);
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader(new ByteArrayInputStream("123".getBytes(Charsets.toCharset("UTF-8")))));
+        Assert.assertEquals("123", br.readLine());
+        IoUtils.closeQuietly(br);
         try {
-            in.available();
+            br.readLine();
         } catch (IOException e) {
             Assert.assertNotNull(e);
             return;
