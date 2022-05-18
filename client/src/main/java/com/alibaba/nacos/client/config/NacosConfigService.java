@@ -181,10 +181,12 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-        
-        LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
-                worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+        if (content != null) {
+            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
+                    worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+        }
         cr.setContent(content);
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
                 .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
