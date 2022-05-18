@@ -196,7 +196,7 @@ public class ServerListManager implements Closeable {
             StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
             while (serverAddrsTokens.hasMoreTokens()) {
                 String serverAddr = serverAddrsTokens.nextToken().trim();
-                if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTP_PREFIX)) {
+                if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
                     serverAddrs.add(serverAddr);
                 } else {
                     String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
