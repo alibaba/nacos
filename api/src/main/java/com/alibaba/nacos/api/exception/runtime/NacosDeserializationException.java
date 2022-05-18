@@ -33,6 +33,8 @@ public class NacosDeserializationException extends NacosRuntimeException {
     
     private static final String MSG_FOR_SPECIFIED_CLASS = "Nacos deserialize for class [%s] failed. ";
     
+    private static final String ERROR_MSG_FOR_SPECIFIED_CLASS = "Nacos deserialize for class [%s] failed, cause error[%s]. ";
+    
     private Class<?> targetClass;
     
     public NacosDeserializationException() {
@@ -53,12 +55,12 @@ public class NacosDeserializationException extends NacosRuntimeException {
     }
     
     public NacosDeserializationException(Class<?> targetClass, Throwable throwable) {
-        super(DESERIALIZE_ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetClass.getName()), throwable);
+        super(DESERIALIZE_ERROR_CODE, String.format(ERROR_MSG_FOR_SPECIFIED_CLASS, targetClass.getName(), throwable.getMessage()), throwable);
         this.targetClass = targetClass;
     }
     
     public NacosDeserializationException(Type targetType, Throwable throwable) {
-        super(DESERIALIZE_ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetType.toString()), throwable);
+        super(DESERIALIZE_ERROR_CODE, String.format(ERROR_MSG_FOR_SPECIFIED_CLASS, targetType.toString(), throwable.getMessage()), throwable);
     }
     
     public Class<?> getTargetClass() {
