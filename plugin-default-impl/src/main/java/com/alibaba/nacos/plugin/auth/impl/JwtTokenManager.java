@@ -20,7 +20,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,12 +41,11 @@ import java.util.List;
  * @author nkorange
  */
 @Component
-public class JwtTokenManager {
+public class JwtTokenManager implements ApplicationContextAware {
     
     private static final String AUTHORITIES_KEY = "auth";
     
-    @Autowired
-    private NacosAuthConfig nacosAuthConfig;
+    private ApplicationContext applicationContext;
     
     /**
      * Create token.
@@ -62,16 +64,16 @@ public class JwtTokenManager {
      * @return token
      */
     public String createToken(String userName) {
-        
+        ApplicationContext ac = this.getApplicationContext();
         long now = System.currentTimeMillis();
         
         Date validity;
         
-        validity = new Date(now + nacosAuthConfig.getTokenValidityInSeconds() * 1000L);
+        validity = new Date(now + ac.getBean(NacosAuthConfig.class).getTokenValidityInSeconds() * 1000L);
         
         Claims claims = Jwts.claims().setSubject(userName);
         return Jwts.builder().setClaims(claims).setExpiration(validity)
-                .signWith(Keys.hmacShaKeyFor(nacosAuthConfig.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
+                .signWith(Keys.hmacShaKeyFor(ac.getBean(NacosAuthConfig.class).getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
     }
     
     /**
@@ -81,7 +83,8 @@ public class JwtTokenManager {
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build()
+        ApplicationContext ac = this.getApplicationContext();
+        Claims claims = Jwts.parserBuilder().setSigningKey(ac.getBean(NacosAuthConfig.class).getSecretKeyBytes()).build()
                 .parseClaimsJws(token).getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
@@ -97,7 +100,16 @@ public class JwtTokenManager {
      * @param token token
      */
     public void validateToken(String token) {
-        Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build().parseClaimsJws(token);
+        ApplicationContext ac = this.getApplicationContext();
+        Jwts.parserBuilder().setSigningKey(ac.getBean(NacosAuthConfig.class).getSecretKeyBytes()).build().parseClaimsJws(token);
     }
     
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+    
+    public ApplicationContext getApplicationContext(){
+        return applicationContext;
+    }
 }
