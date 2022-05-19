@@ -21,7 +21,6 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -109,7 +108,7 @@ public class JwtTokenManager implements ApplicationContextAware {
         this.applicationContext = applicationContext;
     }
     
-    public ApplicationContext getApplicationContext(){
+    public ApplicationContext getApplicationContext() {
         return applicationContext;
     }
 }
