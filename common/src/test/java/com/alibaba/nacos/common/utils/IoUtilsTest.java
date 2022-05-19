@@ -35,8 +35,8 @@ public class IoUtilsTest {
     @Test()
     public void testCloseQuietly() throws IOException {
         BufferedReader br = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("123".getBytes(Charsets.toCharset("UTF-8")))));
-        Assert.assertEquals("123", br.readLine());
+                new InputStreamReader(new ByteArrayInputStream("111".getBytes(Charsets.toCharset("UTF-8")))));
+        Assert.assertEquals("111", br.readLine());
         IoUtils.closeQuietly(br);
         try {
             br.readLine();
