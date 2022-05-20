@@ -87,6 +87,9 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     }
     
     private boolean isExpire(CacheItemProperties itemProperties) {
+        if (itemProperties == null) {
+            return true;
+        }
         return expireNanos != -1 && (System.nanoTime() - itemProperties.getExpireNanos() > expireNanos);
     }
     
