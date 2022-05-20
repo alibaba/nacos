@@ -73,6 +73,9 @@ public class JwtTokenManager {
         this.authConfigs = authConfigs;
     }
     
+    /**
+     * init tokenValidityInSeconds and secretKey properties.
+     */
     @PostConstruct
     public void initProperties() {
         Properties properties = authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE);
