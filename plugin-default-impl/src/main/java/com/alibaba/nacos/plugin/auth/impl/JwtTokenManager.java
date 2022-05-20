@@ -74,12 +74,7 @@ public class JwtTokenManager {
     }
     
     @PostConstruct
-    public void init() {
-        methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
-        initProperties();
-    }
-    
-    private void initProperties() {
+    public void initProperties() {
         Properties properties = authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE);
         String validitySeconds = properties
                 .getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
