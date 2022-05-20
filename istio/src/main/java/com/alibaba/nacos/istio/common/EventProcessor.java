@@ -20,6 +20,7 @@ import com.alibaba.nacos.istio.mcp.NacosMcpService;
 import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * EventProcessor.
+ *
  * @author special.fy
  */
 @Component
@@ -44,7 +47,6 @@ public class EventProcessor {
     @Autowired
     private NacosXdsService nacosXdsService;
 
-    @Autowired
     private NacosResourceManager resourceManager;
 
     private final BlockingQueue<Event> events;
@@ -52,7 +54,12 @@ public class EventProcessor {
     public EventProcessor() {
         events = new ArrayBlockingQueue<>(20);
     }
-
+    
+    /**
+     * notify.
+     *
+     * @param event event
+     */
     public void notify(Event event) {
         try {
             events.put(event);
@@ -121,6 +128,9 @@ public class EventProcessor {
 
         @Override
         public Void call() throws Exception {
+            if (null == resourceManager) {
+                resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
+            }
             ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
             nacosXdsService.handleEvent(snapshot, event);
             nacosMcpService.handleEvent(snapshot, event);
