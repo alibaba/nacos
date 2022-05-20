@@ -89,7 +89,7 @@ const request = () => {
 
         if (
           [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid!', 'token expired!', 'authorization failed!'].includes(
+          ['unknown user!', 'token invalid!', 'token expired!', 'session expired!'].includes(
             message
           )
         ) {
