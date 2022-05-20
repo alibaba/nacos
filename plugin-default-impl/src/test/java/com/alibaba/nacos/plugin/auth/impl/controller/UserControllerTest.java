@@ -84,7 +84,7 @@ public class UserControllerTest {
         properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
         when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
         JwtTokenManager jwtTokenManager = new JwtTokenManager(methodsCache, authConfigs);
-        jwtTokenManager.init();
+        jwtTokenManager.initProperties();
         injectObject("jwtTokenManager", jwtTokenManager);
     }
     
