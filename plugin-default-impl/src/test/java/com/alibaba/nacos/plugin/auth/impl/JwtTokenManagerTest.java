@@ -24,9 +24,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.beans.factory.ObjectProvider;
-
-import java.lang.reflect.Field;
 import java.util.Properties;
 
 import static org.mockito.Mockito.when;
@@ -40,15 +37,9 @@ public class JwtTokenManagerTest {
     @Mock
     private ControllerMethodsCache methodsCache;
     
-    @Mock
-    private ObjectProvider<LdapAuthenticationProvider> ldapAuthenticationProvider;
-    
-    private NacosAuthConfig nacosAuthConfig;
-    
     @Test
     public void testCreateTokenAndSecretKeyWithoutSpecialSymbol() throws NoSuchFieldException, IllegalAccessException {
         createToken("SecretKey0123$567890$234567890123456789012345678901234567890123456789");
-        
     }
     
     @Test
@@ -61,23 +52,10 @@ public class JwtTokenManagerTest {
         properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, secretKey);
         properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
         when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-    
-        nacosAuthConfig = new NacosAuthConfig(null, null, authConfigs, null,
-                ldapAuthenticationProvider, methodsCache);
-        nacosAuthConfig.init();
-        JwtTokenManager jwtTokenManager = new JwtTokenManager();
-        injectProperty(jwtTokenManager, "nacosAuthConfig", nacosAuthConfig);
+        JwtTokenManager jwtTokenManager = new JwtTokenManager(methodsCache, authConfigs);
+        jwtTokenManager.init();
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.notNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);
     }
-    
-    private void injectProperty(Object o, String propertyName, Object value)
-            throws NoSuchFieldException, IllegalAccessException {
-        Class<?> aClass = o.getClass();
-        Field declaredField = aClass.getDeclaredField(propertyName);
-        declaredField.setAccessible(true);
-        declaredField.set(o, value);
-    }
-    
 }
