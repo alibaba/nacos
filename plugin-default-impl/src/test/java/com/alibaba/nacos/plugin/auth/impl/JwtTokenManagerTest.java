@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.jsonwebtoken.lang.Assert;
 import org.junit.Test;
@@ -34,9 +33,6 @@ public class JwtTokenManagerTest {
     @Mock
     private AuthConfigs authConfigs;
     
-    @Mock
-    private ControllerMethodsCache methodsCache;
-    
     @Test
     public void testCreateTokenAndSecretKeyWithoutSpecialSymbol() throws NoSuchFieldException, IllegalAccessException {
         createToken("SecretKey0123$567890$234567890123456789012345678901234567890123456789");
@@ -52,7 +48,7 @@ public class JwtTokenManagerTest {
         properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, secretKey);
         properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
         when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-        JwtTokenManager jwtTokenManager = new JwtTokenManager(methodsCache, authConfigs);
+        JwtTokenManager jwtTokenManager = new JwtTokenManager(authConfigs);
         jwtTokenManager.initProperties();
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.notNull(nacosToken);

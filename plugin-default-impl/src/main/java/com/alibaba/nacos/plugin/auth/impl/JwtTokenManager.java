@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -49,8 +48,6 @@ public class JwtTokenManager {
     
     private static final String AUTHORITIES_KEY = "auth";
     
-    private final ControllerMethodsCache methodsCache;
-    
     private final AuthConfigs authConfigs;
     
     /**
@@ -68,8 +65,7 @@ public class JwtTokenManager {
      */
     private long tokenValidityInSeconds;
     
-    public JwtTokenManager(ControllerMethodsCache methodsCache, AuthConfigs authConfigs) {
-        this.methodsCache = methodsCache;
+    public JwtTokenManager(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
     }
     

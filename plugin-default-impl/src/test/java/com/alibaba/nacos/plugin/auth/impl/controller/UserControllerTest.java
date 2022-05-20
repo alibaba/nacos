@@ -17,10 +17,8 @@
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
@@ -58,12 +56,6 @@ public class UserControllerTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private NacosAuthConfig nacosAuthConfig;
-    
-    @Mock
-    private ControllerMethodsCache methodsCache;
-    
-    @Mock
     private NacosAuthManager authManager;
     
     private UserController userController;
@@ -83,7 +75,7 @@ public class UserControllerTest {
         properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, "SecretKey012345678901234567890123456789012345678901234567890123456789");
         properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
         when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-        JwtTokenManager jwtTokenManager = new JwtTokenManager(methodsCache, authConfigs);
+        JwtTokenManager jwtTokenManager = new JwtTokenManager(authConfigs);
         jwtTokenManager.initProperties();
         injectObject("jwtTokenManager", jwtTokenManager);
     }
