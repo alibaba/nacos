@@ -322,26 +322,36 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        if (!listeners.containsKey(key)) {
-            listeners.put(key, new ConcurrentLinkedQueue<>());
+        ConcurrentLinkedQueue<RecordListener> recordListeners = listeners.get(key);
+        if (recordListeners == null) {
+            recordListeners = new ConcurrentLinkedQueue<>();
+            ConcurrentLinkedQueue<RecordListener> recordListenersExist;
+            if ((recordListenersExist = listeners.putIfAbsent(key, recordListeners)) != null) {
+                recordListeners = recordListenersExist;
+            }
         }
-        
-        if (listeners.get(key).contains(listener)) {
-            return;
+    
+        if (!recordListeners.contains(listener)) {
+            synchronized (recordListeners) {
+                if (!recordListeners.contains(listener)) {
+                    recordListeners.add(listener);
+                }
+            }
         }
-        
-        listeners.get(key).add(listener);
     }
     
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
-        if (!listeners.containsKey(key)) {
+        ConcurrentLinkedQueue<RecordListener> recordListeners = listeners.get(key);
+        if (recordListeners == null) {
             return;
         }
-        for (RecordListener recordListener : listeners.get(key)) {
-            if (recordListener.equals(listener)) {
-                listeners.get(key).remove(listener);
-                break;
+        synchronized (recordListeners) {
+            for (RecordListener recordListener : recordListeners) {
+                if (recordListener.equals(listener)) {
+                    recordListeners.remove(listener);
+                    break;
+                }
             }
         }
     }
