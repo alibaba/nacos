@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
@@ -42,6 +43,8 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class TrafficReviseFilter implements Filter {
+    
+    private static final String DISTRO_LOAD_DATA_API = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro/datums";
     
     @Autowired
     private ServerStatusManager serverStatusManager;
@@ -80,7 +83,9 @@ public class TrafficReviseFilter implements Filter {
         String agent = WebUtils.getUserAgent(req);
         
         if (StringUtils.startsWith(agent, Constants.NACOS_SERVER_HEADER)) {
-            filterChain.doFilter(req, resp);
+            if (!DISTRO_LOAD_DATA_API.equals(req.getServletPath())) {
+                filterChain.doFilter(req, resp);
+            }
             return;
         }
         
