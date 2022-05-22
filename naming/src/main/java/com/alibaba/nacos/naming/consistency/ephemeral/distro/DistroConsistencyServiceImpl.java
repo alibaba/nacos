@@ -204,9 +204,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     toRemoveKeys.add(key);
                 }
             }
-            
-            Loggers.DISTRO
-                    .info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
+    
+            Loggers.DISTRO.info("to remove keys: {}, source: {}", toRemoveKeys, server);
+            Loggers.DISTRO.info("to update keys: {}, source: {}", toUpdateKeys, server);
             
             for (String key : toRemoveKeys) {
                 onRemove(key);
