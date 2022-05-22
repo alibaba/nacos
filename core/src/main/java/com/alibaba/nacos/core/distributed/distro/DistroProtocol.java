@@ -67,7 +67,6 @@ public class DistroProtocol {
             isInitialized = true;
             return;
         }
-        startVerifyTask();
         startLoadTask();
     }
     
@@ -76,6 +75,9 @@ public class DistroProtocol {
             @Override
             public void onSuccess() {
                 isInitialized = true;
+                
+                // start verify task after load data
+                startVerifyTask();
             }
             
             @Override
