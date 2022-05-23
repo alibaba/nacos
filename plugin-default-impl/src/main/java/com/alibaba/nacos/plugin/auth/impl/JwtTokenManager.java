@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,8 +31,11 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * JWT token manager.
@@ -42,8 +48,38 @@ public class JwtTokenManager {
     
     private static final String AUTHORITIES_KEY = "auth";
     
-    @Autowired
-    private NacosAuthConfig nacosAuthConfig;
+    private final AuthConfigs authConfigs;
+    
+    /**
+     * secret key.
+     */
+    private String secretKey;
+    
+    /**
+     * secret key byte array.
+     */
+    private byte[] secretKeyBytes;
+    
+    /**
+     * Token validity time(seconds).
+     */
+    private long tokenValidityInSeconds;
+    
+    public JwtTokenManager(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
+    }
+    
+    /**
+     * init tokenValidityInSeconds and secretKey properties.
+     */
+    @PostConstruct
+    public void initProperties() {
+        Properties properties = authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE);
+        String validitySeconds = properties
+                .getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
+        tokenValidityInSeconds = Long.parseLong(validitySeconds);
+        secretKey = properties.getProperty(AuthConstants.TOKEN_SECRET_KEY, AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
+    }
     
     /**
      * Create token.
@@ -67,11 +103,11 @@ public class JwtTokenManager {
         
         Date validity;
         
-        validity = new Date(now + nacosAuthConfig.getTokenValidityInSeconds() * 1000L);
+        validity = new Date(now + this.getTokenValidityInSeconds() * 1000L);
         
         Claims claims = Jwts.claims().setSubject(userName);
         return Jwts.builder().setClaims(claims).setExpiration(validity)
-                .signWith(Keys.hmacShaKeyFor(nacosAuthConfig.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
+                .signWith(Keys.hmacShaKeyFor(this.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
     }
     
     /**
@@ -81,7 +117,7 @@ public class JwtTokenManager {
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build()
+        Claims claims = Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build()
                 .parseClaimsJws(token).getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
@@ -97,7 +133,22 @@ public class JwtTokenManager {
      * @param token token
      */
     public void validateToken(String token) {
-        Jwts.parserBuilder().setSigningKey(nacosAuthConfig.getSecretKeyBytes()).build().parseClaimsJws(token);
+        Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build().parseClaimsJws(token);
     }
     
+    public byte[] getSecretKeyBytes() {
+        if (secretKeyBytes == null) {
+            try {
+                secretKeyBytes = Decoders.BASE64.decode(secretKey);
+            } catch (DecodingException e) {
+                secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
+            }
+            
+        }
+        return secretKeyBytes;
+    }
+    
+    public long getTokenValidityInSeconds() {
+        return tokenValidityInSeconds;
+    }
 }
