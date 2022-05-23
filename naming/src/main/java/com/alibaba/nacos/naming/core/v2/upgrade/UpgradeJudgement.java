@@ -241,6 +241,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         if (null != upgradeChecker) {
             upgradeChecker.shutdownNow();
         }
+        NotifyCenter.deregisterSubscriber(this);
     }
     
     /**
