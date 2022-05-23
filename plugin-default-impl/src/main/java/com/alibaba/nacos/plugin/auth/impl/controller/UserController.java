@@ -43,6 +43,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.HttpSessionRequiredException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,7 +56,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * User related methods entry.
@@ -144,11 +144,16 @@ public class UserController {
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         // admin or same user
-        if (!hasPermission(username, request)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+        try {
+            if (!hasPermission(username, request)) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+                return null;
+            }
+        } catch (HttpSessionRequiredException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "session expired!");
             return null;
         }
-        
+    
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
@@ -159,15 +164,14 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) {
+    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (Objects.isNull(request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY))) {
-            return false;
-        }
-        
         NacosUser user = (NacosUser) request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY);
+        if (user == null) {
+            throw new HttpSessionRequiredException("session expired!");
+        }
         // admin
         if (user.isGlobalAdmin()) {
             return true;
