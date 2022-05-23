@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -98,6 +99,8 @@ public class UpgradeJudgementTest {
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 upgradeStates, doubleWriteDelayTaskEngine);
         NotifyCenter.deregisterSubscriber(upgradeJudgement);
+        MetricsMonitor.getIpCountMonitor().set(0);
+        MetricsMonitor.getDomCountMonitor().set(0);
     }
     
     @After
@@ -147,6 +150,7 @@ public class UpgradeJudgementTest {
         Collection<Member> members = mockMember("2.0.0-snapshot", "2.0.0", "2.0.0");
         Iterator<Member> iterator = members.iterator();
         when(doubleWriteDelayTaskEngine.isEmpty()).thenReturn(true);
+        iterator.next();
         while (iterator.hasNext()) {
             iterator.next().setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         }
