@@ -102,7 +102,7 @@ public class UserControllerTest {
     public void testSessionExpiredThrowHttpSessionRequiredException() throws IOException {
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         when(request.getSession()).thenReturn(new MockHttpSession());
-        Object o = userController.updateUser("nacos", "qwe123", response, request);
+        Object o = userController.updateUser("nacos", "qwe1234", response, request);
         Assert.assertNull(o);
         verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), eq("session expired!"));
     }
