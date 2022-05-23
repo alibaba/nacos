@@ -67,6 +67,6 @@ public class Permission implements Serializable {
     
     @Override
     public String toString() {
-        return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\'' + '}';
+        return "Permission{" + "resource=" + resource + '\' + ", action=" + action + '\' + "}";
     }
 }
