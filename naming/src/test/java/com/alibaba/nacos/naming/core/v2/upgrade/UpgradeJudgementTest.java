@@ -147,7 +147,6 @@ public class UpgradeJudgementTest {
         Collection<Member> members = mockMember("2.0.0-snapshot", "2.0.0", "2.0.0");
         Iterator<Member> iterator = members.iterator();
         when(doubleWriteDelayTaskEngine.isEmpty()).thenReturn(true);
-        iterator.next();
         while (iterator.hasNext()) {
             iterator.next().setExtendVal(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         }

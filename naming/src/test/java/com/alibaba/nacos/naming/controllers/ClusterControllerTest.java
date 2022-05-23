@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,6 +56,8 @@ public class ClusterControllerTest extends BaseTest {
     @InjectMocks
     private ClusterOperatorV1Impl clusterOperatorV1;
     
+    private Service service;
+    
     private MockMvc mockmvc;
     
     @Before
@@ -70,11 +73,16 @@ public class ClusterControllerTest extends BaseTest {
         } catch (NacosException e) {
             e.printStackTrace();
         }
+        service = new Service(TEST_SERVICE_NAME);
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        service.destroy();
     }
     
     @Test
     public void testUpdate() throws Exception {
-        Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId("test-namespace");
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
@@ -106,7 +114,6 @@ public class ClusterControllerTest extends BaseTest {
     @Test
     public void testUpdateHealthCheckerType() throws Exception {
         
-        Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
