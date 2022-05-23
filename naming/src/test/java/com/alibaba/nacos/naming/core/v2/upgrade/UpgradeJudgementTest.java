@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
@@ -96,6 +97,7 @@ public class UpgradeJudgementTest {
         ApplicationUtils.injectContext(context);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 upgradeStates, doubleWriteDelayTaskEngine);
+        NotifyCenter.deregisterSubscriber(upgradeJudgement);
     }
     
     @After
