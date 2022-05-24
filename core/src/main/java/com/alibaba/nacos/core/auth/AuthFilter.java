@@ -160,5 +160,9 @@ public class AuthFilter implements Filter {
                 .getParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, StringUtils.EMPTY);
         request.getSession()
                 .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, identityId);
+        boolean globalAdmin = identityContext
+                .getParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.ADMIN_IDENTITY, false);
+        request.getSession()
+                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.ADMIN_IDENTITY, globalAdmin);
     }
 }

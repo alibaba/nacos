@@ -67,10 +67,12 @@ public class NacosAuthPluginService implements AuthPluginService {
     @Override
     public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         checkNacosAuthManager();
-        User user = nacosAuthManager.login(identityContext);
+        NacosUser user = (NacosUser) nacosAuthManager.login(identityContext);
         identityContext.setParameter(USER_IDENTITY_PARAM_KEY, user);
         identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
                 user.getUserName());
+        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.ADMIN_IDENTITY,
+                user.isGlobalAdmin());
         return true;
     }
     

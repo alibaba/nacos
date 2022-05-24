@@ -22,6 +22,8 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
@@ -166,6 +168,15 @@ public class UserController {
     
     private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException {
         if (!authConfigs.isAuthEnabled()) {
+            return true;
+        }
+        Object globalAdmin = request.getSession()
+                .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.ADMIN_IDENTITY);
+        if (null != globalAdmin && (boolean) globalAdmin) {
+            return true;
+        }
+        String identityId = RequestUtil.getSrcUserName(request);
+        if (StringUtils.isNotBlank(identityId) && identityId.equals(username)) {
             return true;
         }
         NacosUser user = (NacosUser) request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY);

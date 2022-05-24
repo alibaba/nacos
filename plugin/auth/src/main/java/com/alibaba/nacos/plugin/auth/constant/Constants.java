@@ -57,5 +57,7 @@ public class Constants {
         public static final String X_REAL_IP = "X-Real-IP";
         
         public static final String REMOTE_IP = "remote_ip";
+
+        public static final String ADMIN_IDENTITY = "global_admin";
     }
 }
