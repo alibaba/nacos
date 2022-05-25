@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigChangeEvent;
+import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.listener.AbstractSharedListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -134,7 +135,7 @@ public class CacheData {
     
     public void setContent(String content) {
         this.content = content;
-        this.md5 = getMd5String(this.content);
+        this.md5 = getMd5String();
     }
     
     /**
@@ -173,8 +174,8 @@ public class CacheData {
             throw new IllegalArgumentException("listener is null");
         }
         ManagerListenerWrap wrap =
-                (listener instanceof AbstractConfigChangeListener) ? new ManagerListenerWrap(listener, md5, content)
-                        : new ManagerListenerWrap(listener, md5);
+                (listener instanceof AbstractConfigChangeListener) ? new ManagerListenerWrap(listener, md5, content,
+                        encryptedDataKey) : new ManagerListenerWrap(listener, md5);
         
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
@@ -317,11 +318,22 @@ public class CacheData {
                 listener.receiveConfigInfo(contentTmp);
                 // compare lastContent and content
                 if (listener instanceof AbstractConfigChangeListener) {
-                    Map data = ConfigChangeHandler.getInstance()
-                            .parseChangeData(listenerWrap.lastContent, content, type);
+                    // FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
+                    ConfigResponse crLast = new ConfigResponse();
+                    crLast.setDataId(dataId);
+                    crLast.setGroup(group);
+                    crLast.setTenant(tenant);
+                    crLast.setContent(listenerWrap.lastContent);
+                    crLast.setEncryptedDataKey(listenerWrap.lastEncryptedDataKey);
+                    configFilterChainManager.doFilter(null, crLast);
+                    String lastContentTmp = crLast.getContent();
+                    Map<String, ConfigChangeItem> data = ConfigChangeHandler.getInstance()
+                            .parseChangeData(lastContentTmp, contentTmp, type);
                     ConfigChangeEvent event = new ConfigChangeEvent(data);
                     ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
+                    // temporary fix https://github.com/alibaba/nacos/issues/7039, cache original content(which get from nacos server)
                     listenerWrap.lastContent = content;
+                    listenerWrap.lastEncryptedDataKey = encryptedDataKey;
                 }
                 
                 listenerWrap.lastCallMd5 = md5;
@@ -367,8 +379,31 @@ public class CacheData {
                 name, (finishNotify - startNotify), dataId, group, md5, listener);
     }
     
-    public static String getMd5String(String config) {
-        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
+    /**
+     * FIXME temporary fix https://github.com/alibaba/nacos/issues/7039
+     */
+    public String getMd5String() {
+        if (null == this.content) {
+            return Constants.NULL;
+        }
+        if (this.encryptedDataKey == null || this.encryptedDataKey.isEmpty()) {
+            return MD5Utils.md5Hex(this.content, Constants.ENCODE);
+        }
+        
+        try {
+            ConfigResponse cr = new ConfigResponse();
+            cr.setDataId(this.dataId);
+            cr.setGroup(this.group);
+            cr.setTenant(this.tenant);
+            cr.setEncryptedDataKey(this.encryptedDataKey);
+            cr.setContent(this.content);
+            configFilterChainManager.doFilter(null, cr);
+            return MD5Utils.md5Hex(cr.getContent(), Constants.ENCODE);
+        } catch (NacosException e) {
+            LOGGER.error("[CacheData-getMd5String] error by encryptedDataKey={},config={}", this.encryptedDataKey,
+                    this.content, e);
+            return Constants.NULL;
+        }
     }
     
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
@@ -392,21 +427,7 @@ public class CacheData {
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
-        }
-        this.name = name;
-        this.configFilterChainManager = configFilterChainManager;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = TenantUtil.getUserTenantForAcm();
-        listeners = new CopyOnWriteArrayList<>();
-        this.isInitializing = true;
-        if (initSnapshot) {
-            this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-            this.md5 = getMd5String(content);
-        }
-        this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
+        this(configFilterChainManager, name, dataId, group, TenantUtil.getUserTenantForAcm());
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
@@ -414,16 +435,17 @@ public class CacheData {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
         }
-        this.name = name;
         this.configFilterChainManager = configFilterChainManager;
+        this.name = name;
         this.dataId = dataId;
         this.group = group;
         this.tenant = tenant;
-        listeners = new CopyOnWriteArrayList<>();
+        this.listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
         if (initSnapshot) {
             this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-            this.md5 = getMd5String(content);
+            this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
+            this.md5 = getMd5String();
         }
     }
     
@@ -453,9 +475,11 @@ public class CacheData {
         
         final Listener listener;
         
-        String lastCallMd5 = CacheData.getMd5String(null);
+        String lastCallMd5 = Constants.NULL;
         
         String lastContent = null;
+        
+        String lastEncryptedDataKey = null;
         
         ManagerListenerWrap(Listener listener) {
             this.listener = listener;
@@ -466,10 +490,11 @@ public class CacheData {
             this.lastCallMd5 = md5;
         }
         
-        ManagerListenerWrap(Listener listener, String md5, String lastContent) {
+        ManagerListenerWrap(Listener listener, String md5, String lastContent, String encryptedDataKey) {
             this.listener = listener;
             this.lastCallMd5 = md5;
             this.lastContent = lastContent;
+            this.lastEncryptedDataKey = encryptedDataKey;
         }
         
         @Override

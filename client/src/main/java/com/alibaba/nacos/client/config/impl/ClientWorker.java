@@ -362,6 +362,7 @@ public class ClientWorker implements Closeable {
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
+                    cache.setEncryptedDataKey(response.getEncryptedDataKey());
                     cache.setContent(response.getContent());
                 }
             }
@@ -432,8 +433,8 @@ public class ClientWorker implements Closeable {
         try {
             ConfigResponse response = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L,
                     notify);
-            cacheData.setContent(response.getContent());
             cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
+            cacheData.setContent(response.getContent());
             if (null != response.getConfigType()) {
                 cacheData.setType(response.getConfigType());
             }
