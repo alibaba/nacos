@@ -21,10 +21,10 @@ import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -41,10 +41,8 @@ public class EventProcessor {
 
     private static final int MAX_WAIT_EVENT_TIME = 100;
 
-    @Autowired
     private NacosMcpService nacosMcpService;
 
-    @Autowired
     private NacosXdsService nacosXdsService;
 
     private NacosResourceManager resourceManager;
@@ -89,6 +87,10 @@ public class EventProcessor {
             Event lastEvent = null;
             while (true) {
                 try {
+                    if (!checkDependenceReady()) {
+                        // Make sure dependency service has ready before consumer service event.
+                        TimeUnit.SECONDS.sleep(1);
+                    }
                     // Today we only care about service event,
                     // so we simply ignore event until the last task has been completed.
                     Event event = events.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);
@@ -128,14 +130,23 @@ public class EventProcessor {
 
         @Override
         public Void call() throws Exception {
-            if (null == resourceManager) {
-                resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
-            }
             ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
             nacosXdsService.handleEvent(snapshot, event);
             nacosMcpService.handleEvent(snapshot, event);
-
             return null;
         }
+    }
+    
+    private boolean checkDependenceReady() {
+        if (null == resourceManager) {
+            resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
+        }
+        if (null == nacosXdsService) {
+            nacosXdsService = ApplicationUtils.getBean(NacosXdsService.class);
+        }
+        if (null == nacosMcpService) {
+            nacosMcpService = ApplicationUtils.getBean(NacosMcpService.class);
+        }
+        return Objects.nonNull(resourceManager) && Objects.nonNull(nacosMcpService) && Objects.nonNull(nacosXdsService);
     }
 }
