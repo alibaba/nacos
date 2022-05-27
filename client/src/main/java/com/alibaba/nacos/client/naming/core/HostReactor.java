@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -84,6 +85,8 @@ public class HostReactor implements Closeable {
     
     private final InstancesChangeNotifier notifier;
     
+    private String notifierEventScope;
+    
     public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
         this(serverProxy, beatReactor, cacheDir, false, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
@@ -113,7 +116,8 @@ public class HostReactor implements Closeable {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
-        this.notifier = new InstancesChangeNotifier();
+        this.notifierEventScope = UUID.randomUUID().toString();
+        this.notifier = new InstancesChangeNotifier(this.notifierEventScope);
         
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(notifier);
@@ -255,7 +259,7 @@ public class HostReactor implements Closeable {
             serviceInfo.setJsonFromServer(json);
             
             if (changed) {
-                NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+                NotifyCenter.publishEvent(new InstancesChangeEvent(this.notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                         serviceInfo.getClusters(), serviceInfo.getHosts()));
                 DiskCache.write(serviceInfo, cacheDir);
             }
@@ -265,7 +269,7 @@ public class HostReactor implements Closeable {
             NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
                     + JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+            NotifyCenter.publishEvent(new InstancesChangeEvent(this.notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                     serviceInfo.getClusters(), serviceInfo.getHosts()));
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);

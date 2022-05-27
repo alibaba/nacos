@@ -38,9 +38,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
+    private final String eventScope;
+    
     private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<String, ConcurrentHashSet<EventListener>>();
     
     private final Object lock = new Object();
+    
+    public InstancesChangeNotifier(String eventScope) {
+        this.eventScope = eventScope;
+    }
     
     /**
      * register listener.
@@ -137,4 +143,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         return InstancesChangeEvent.class;
     }
     
+    @Override
+    public boolean scopeMatches(InstancesChangeEvent event) {
+        return this.eventScope.equals(event.scope());
+    }
 }
