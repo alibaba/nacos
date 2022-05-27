@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 /**
  * Nacos Naming Service.
@@ -71,6 +72,8 @@ public class NacosNamingService implements NamingService {
     
     private NamingClientProxy clientProxy;
     
+    private String notifierEventScope;
+    
     public NacosNamingService(String serverList) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
@@ -87,11 +90,12 @@ public class NacosNamingService implements NamingService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(properties);
         initLogName(properties);
-        
-        this.changeNotifier = new InstancesChangeNotifier();
+    
+        this.notifierEventScope = UUID.randomUUID().toString();
+        this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
-        this.serviceInfoHolder = new ServiceInfoHolder(namespace, properties);
+        this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, properties);
         this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, properties, changeNotifier);
     }
     

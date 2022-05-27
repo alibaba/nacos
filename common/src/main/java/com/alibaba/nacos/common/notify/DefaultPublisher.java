@@ -180,6 +180,10 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         
         // Notification single event listener
         for (Subscriber subscriber : subscribers) {
+            if (!subscriber.scopeMatches(event)) {
+                continue;
+            }
+            
             // Whether to ignore expiration events
             if (subscriber.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
                 LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",

@@ -43,5 +43,13 @@ public abstract class Event implements Serializable {
         return sequence;
     }
     
+    /**
+     * Event scope.
+     *
+     * @return event scope, return null if for all scope
+     */
+    public String scope() {
+        return null;
+    }
 }
 
