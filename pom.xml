@@ -101,7 +101,6 @@
         <sonar.exclusions>file:**/generated-sources/**,**/test/**</sonar.exclusions>
         
         <!-- plugin version -->
-        <versions-maven-plugin.version>2.2</versions-maven-plugin.version>
         <dependency-mediator-maven-plugin.version>1.0.2</dependency-mediator-maven-plugin.version>
         <clirr-maven-plugin.version>2.7</clirr-maven-plugin.version>
         <maven-enforcer-plugin.version>1.4.1</maven-enforcer-plugin.version>
@@ -171,11 +170,6 @@
     <!-- == -->
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>versions-maven-plugin</artifactId>
-                <version>${versions-maven-plugin.version}</version>
-            </plugin>
             <plugin>
                 <groupId>com.github.vongosling</groupId>
                 <artifactId>dependency-mediator-maven-plugin</artifactId>
