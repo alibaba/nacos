@@ -267,6 +267,16 @@ public final class JacksonUtils {
     }
     
     /**
+     * Parse object to Jackson {@link ObjectNode}.
+     *
+     * @param obj object
+     * @return {@link JsonNode}
+     */
+    public static ObjectNode transferToObjectNode(Object obj) {
+        return mapper.valueToTree(obj);
+    }
+    
+    /**
      * construct java type -> Jackson Java Type.
      *
      * @param type java type

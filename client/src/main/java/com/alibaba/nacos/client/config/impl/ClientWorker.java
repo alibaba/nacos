@@ -64,8 +64,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 
 import java.util.Collection;
@@ -994,7 +993,7 @@ public class ClientWorker implements Closeable {
             } catch (Exception e) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
             }
-            JsonObject asJsonObjectTemp = new Gson().toJsonTree(request).getAsJsonObject();
+            ObjectNode asJsonObjectTemp = JacksonUtils.transferToObjectNode(request);
             asJsonObjectTemp.remove("headers");
             asJsonObjectTemp.remove("requestId");
             boolean limit = Limiter.isLimit(request.getClass() + asJsonObjectTemp.toString());
