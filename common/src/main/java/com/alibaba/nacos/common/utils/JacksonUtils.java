@@ -270,7 +270,7 @@ public final class JacksonUtils {
      * Parse object to Jackson {@link ObjectNode}.
      *
      * @param obj object
-     * @return {@link JsonNode}
+     * @return {@link ObjectNode}
      */
     public static ObjectNode transferToObjectNode(Object obj) {
         return mapper.valueToTree(obj);
