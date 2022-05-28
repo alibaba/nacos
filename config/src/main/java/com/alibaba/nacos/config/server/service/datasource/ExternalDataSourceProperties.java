@@ -23,6 +23,7 @@ import org.springframework.core.env.Environment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
@@ -39,7 +40,9 @@ public class ExternalDataSourceProperties {
     private static final String TEST_QUERY = "SELECT 1";
     
     private Integer num;
-    
+    private String jdbcDriverName;
+
+
     private List<String> url = new ArrayList<>();
     
     private List<String> user = new ArrayList<>();
@@ -61,7 +64,15 @@ public class ExternalDataSourceProperties {
     public void setPassword(List<String> password) {
         this.password = password;
     }
-    
+
+    public String getJdbcDriverName() {
+        return Optional.ofNullable(jdbcDriverName).orElse(JDBC_DRIVER_NAME);
+    }
+
+    public void setJdbcDriverName(String jdbcDriverName) {
+        this.jdbcDriverName = jdbcDriverName;
+    }
+
     /**
      * Build serveral HikariDataSource.
      *
@@ -79,7 +90,7 @@ public class ExternalDataSourceProperties {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
-            poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+            poolProperties.setDriverClassName(getJdbcDriverName());
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
