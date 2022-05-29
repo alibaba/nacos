@@ -138,6 +138,7 @@
         
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
         <mysql-connector-java.version>8.0.21</mysql-connector-java.version>
+        <dm-connector-java.version>8.1.1.49</dm-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <cglib-nodep.version>2.1</cglib-nodep.version>
         <jcip-annotations.version>1.0</jcip-annotations.version>
@@ -830,7 +831,11 @@
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql-connector-java.version}</version>
             </dependency>
-            
+            <dependency>
+                <groupId>com.dameng</groupId>
+                <artifactId>Dm8JdbcDriver18</artifactId>
+                <version>${dm-connector-java.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
