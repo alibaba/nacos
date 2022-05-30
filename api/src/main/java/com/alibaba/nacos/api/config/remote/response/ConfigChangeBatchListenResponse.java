@@ -30,7 +30,7 @@ import java.util.List;
  */
 public class ConfigChangeBatchListenResponse extends Response {
     
-    List<ConfigContext> changedConfigs = new ArrayList<ConfigContext>();
+    List<ConfigContext> changedConfigs = new ArrayList<>();
     
     public ConfigChangeBatchListenResponse() {
     }
