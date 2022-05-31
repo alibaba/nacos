@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.constants.Constants;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,6 +42,15 @@ public interface ClientOperationService {
      * @param clientId id of client
      */
     void registerInstance(Service service, Instance instance, String clientId);
+    
+    /**
+     * Batch register instance to service.
+     *
+     * @param service  service
+     * @param instances instances
+     * @param clientId id of client
+     */
+    void batchRegisterInstance(Service service, List<Instance> instances, String clientId);
     
     /**
      * Deregister instance from service.
