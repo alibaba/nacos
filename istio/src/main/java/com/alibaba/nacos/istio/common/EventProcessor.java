@@ -53,7 +53,7 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
     public EventProcessor() {
         events = new ArrayBlockingQueue<>(20);
     }
-
+    
     /**
      * notify.
      *
@@ -140,7 +140,7 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
             return null;
         }
     }
-
+    
     private boolean checkDependenceReady() {
         if (null == resourceManager) {
             resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
