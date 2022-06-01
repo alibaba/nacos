@@ -21,6 +21,8 @@ import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -37,18 +39,18 @@ import java.util.concurrent.TimeUnit;
  * @author special.fy
  */
 @Component
-public class EventProcessor {
-
+public class EventProcessor implements ApplicationListener<ContextRefreshedEvent> {
+    
     private static final int MAX_WAIT_EVENT_TIME = 100;
-
+    
     private NacosMcpService nacosMcpService;
-
+    
     private NacosXdsService nacosXdsService;
-
+    
     private NacosResourceManager resourceManager;
-
+    
     private final BlockingQueue<Event> events;
-
+    
     public EventProcessor() {
         events = new ArrayBlockingQueue<>(20);
     }
@@ -67,18 +69,25 @@ public class EventProcessor {
             Thread.currentThread().interrupt();
         }
     }
-
-    @PostConstruct
+    
     public void handleEvents() {
         new Consumer("handle events").start();
     }
-
+    
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
+        if (contextRefreshedEvent.getApplicationContext().getParent() == null) {
+            checkDependenceReady();
+            handleEvents();
+        }
+    }
+    
     private class Consumer extends Thread {
-
+        
         Consumer(String name) {
             setName(name);
         }
-
+        
         @Override
         @SuppressWarnings("InfiniteLoopStatement")
         public void run() {
@@ -87,10 +96,6 @@ public class EventProcessor {
             Event lastEvent = null;
             while (true) {
                 try {
-                    if (!checkDependenceReady()) {
-                        // Make sure dependency service has ready before consumer service event.
-                        TimeUnit.SECONDS.sleep(1);
-                    }
                     // Today we only care about service event,
                     // so we simply ignore event until the last task has been completed.
                     Event event = events.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);
@@ -111,23 +116,23 @@ public class EventProcessor {
             }
         }
     }
-
+    
     private boolean hasClientConnection() {
         return nacosMcpService.hasClientConnection() || nacosXdsService.hasClientConnection();
     }
-
+    
     private boolean needNewTask(boolean hasNewEvent, Future<Void> task) {
         return hasNewEvent && (task == null || task.isDone());
     }
-
+    
     private class EventHandleTask implements Callable<Void> {
-
+        
         private final Event event;
-
+        
         EventHandleTask(Event event) {
             this.event = event;
         }
-
+        
         @Override
         public Void call() throws Exception {
             ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
