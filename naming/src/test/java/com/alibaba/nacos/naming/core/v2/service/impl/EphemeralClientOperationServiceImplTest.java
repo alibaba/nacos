@@ -96,7 +96,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     @Test
     public void testBatchRegisterAndDeregisterInstance() throws Exception {
         // test Batch register instance
-        List<Instance> instances = new ArrayList<>();
+       
         Instance instance1 = new Instance();
         instance1.setEphemeral(true);
         instance1.setIp("127.0.0.1");
@@ -108,6 +108,8 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         instance2.setIp("127.0.0.2");
         instance2.setPort(9045);
         instance2.setHealthy(true);
+    
+        List<Instance> instances = new ArrayList<>();
         instances.add(instance1);
         instances.add(instance2);
         ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, clientId);
