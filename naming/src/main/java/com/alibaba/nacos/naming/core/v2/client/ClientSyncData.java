@@ -49,7 +49,7 @@ public class ClientSyncData implements Serializable {
     }
     
     public ClientSyncData(String clientId, List<String> namespaces, List<String> groupNames, List<String> serviceNames,
-            List<InstancePublishInfo> instancePublishInfos,List<BatchInstancePublishInfo> batchInstancePublishInfos) {
+            List<InstancePublishInfo> instancePublishInfos, List<BatchInstancePublishInfo> batchInstancePublishInfos) {
         this.clientId = clientId;
         this.namespaces = namespaces;
         this.groupNames = groupNames;

@@ -131,7 +131,7 @@ public abstract class AbstractClient implements Client {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
                 BatchInstancePublishInfo batchInstance = (BatchInstancePublishInfo) instancePublishInfo;
                 batchInstancePublishInfos.add(batchInstance);
-            }else {
+            } else {
                 instances.add(entry.getValue());
             }
         }
