@@ -26,6 +26,8 @@ public class NamingRemoteConstants {
     
     public static final String REGISTER_INSTANCE = "registerInstance";
     
+    public static final String BATCH_REGISTER_INSTANCE = "batchRegisterInstance";
+    
     public static final String DE_REGISTER_INSTANCE = "deregisterInstance";
     
     public static final String QUERY_SERVICE = "queryService";
