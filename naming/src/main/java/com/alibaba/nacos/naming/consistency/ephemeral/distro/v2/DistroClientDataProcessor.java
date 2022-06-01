@@ -34,12 +34,14 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -166,16 +168,35 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         List<String> groupNames = clientSyncData.getGroupNames();
         List<String> serviceNames = clientSyncData.getServiceNames();
         List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
+        List<BatchInstancePublishInfo> batchInstancePublishInfos = clientSyncData.getBatchInstancePublishInfos();
         Set<Service> syncedService = new HashSet<>();
         for (int i = 0; i < namespaces.size(); i++) {
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
-            InstancePublishInfo instancePublishInfo = instances.get(i);
-            if (!instancePublishInfo.equals(client.getInstancePublishInfo(singleton))) {
-                client.addServiceInstance(singleton, instancePublishInfo);
-                NotifyCenter.publishEvent(
-                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+            InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
+            if (CollectionUtils.isNotEmpty(batchInstancePublishInfos)) {
+                BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
+                List<InstancePublishInfo> sourceInstanceInfo = batchInstancePublishInfo.getInstancePublishInfos();
+                BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
+                boolean result = false;
+                //If it is not empty, compare whether the instances are the same. If it is empty, notify directly
+                if (targetInstanceInfo != null) {
+                    result  = CollectionUtils.isEqualCollection(sourceInstanceInfo,
+                            targetInstanceInfo.getInstancePublishInfos());
+                }
+                if (!result) {
+                    client.addServiceInstance(singleton, batchInstancePublishInfo);
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                }
+            } else {
+                InstancePublishInfo instancePublishInfo = instances.get(i);
+                if (!instancePublishInfo.equals(clientInstancePublishInfo)) {
+                    client.addServiceInstance(singleton, instancePublishInfo);
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                }
             }
         }
         for (Service each : client.getAllPublishedService()) {

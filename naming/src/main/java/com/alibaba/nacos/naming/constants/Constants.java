@@ -136,4 +136,9 @@ public final class Constants {
      * Min value of instance weight.
      */
     public static final double MIN_WEIGHT_VALUE = 0.00D;
+    
+    /**
+     * batch register instance tag
+     */
+    public static final String OTHER_INSTANCES_KEY = "otherInstances";
 }

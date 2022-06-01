@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -120,13 +121,21 @@ public abstract class AbstractClient implements Client {
         List<String> groupNames = new LinkedList<>();
         List<String> serviceNames = new LinkedList<>();
         List<InstancePublishInfo> instances = new LinkedList<>();
+        List<BatchInstancePublishInfo> batchInstancePublishInfos = new LinkedList<>();
         for (Map.Entry<Service, InstancePublishInfo> entry : publishers.entrySet()) {
             namespaces.add(entry.getKey().getNamespace());
             groupNames.add(entry.getKey().getGroup());
             serviceNames.add(entry.getKey().getName());
-            instances.add(entry.getValue());
+            
+            InstancePublishInfo instancePublishInfo = entry.getValue();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                BatchInstancePublishInfo batchInstance = (BatchInstancePublishInfo) instancePublishInfo;
+                batchInstancePublishInfos.add(batchInstance);
+            }else {
+                instances.add(entry.getValue());
+            }
         }
-        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
+        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstancePublishInfos);
     }
     
     @Override
