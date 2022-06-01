@@ -80,7 +80,7 @@ public class Chooser<K, T> {
     }
     
     public Chooser(K uniqueKey, List<Pair<T>> pairs) {
-        Ref<T> ref = new Ref<T>(pairs);
+        Ref<T> ref = new Ref<>(pairs);
         ref.refresh();
         this.uniqueKey = uniqueKey;
         this.ref = ref;
@@ -100,7 +100,7 @@ public class Chooser<K, T> {
      * @param itemsWithWeight items with weight
      */
     public void refresh(List<Pair<T>> itemsWithWeight) {
-        Ref<T> newRef = new Ref<T>(itemsWithWeight);
+        Ref<T> newRef = new Ref<>(itemsWithWeight);
         newRef.refresh();
         newRef.poller = this.ref.poller.refresh(newRef.items);
         this.ref = newRef;
@@ -108,11 +108,11 @@ public class Chooser<K, T> {
     
     public class Ref<T> {
         
-        private List<Pair<T>> itemsWithWeight = new ArrayList<Pair<T>>();
+        private List<Pair<T>> itemsWithWeight = new ArrayList<>();
         
-        private final List<T> items = new ArrayList<T>();
+        private final List<T> items = new ArrayList<>();
         
-        private Poller<T> poller = new GenericPoller<T>(items);
+        private Poller<T> poller = new GenericPoller<>(items);
         
         private double[] weights;
         
