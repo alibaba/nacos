@@ -25,6 +25,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 /**
  * Implementation of external exposure.
  *
@@ -48,6 +50,12 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     public void registerInstance(Service service, Instance instance, String clientId) {
         final ClientOperationService operationService = chooseClientOperationService(instance);
         operationService.registerInstance(service, instance, clientId);
+    }
+    
+    @Override
+    public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
+        final ClientOperationService operationService = chooseClientOperationService(instances.get(0));
+        operationService.batchRegisterInstance(service, instances, clientId);
     }
     
     @Override

@@ -67,8 +67,8 @@ public class HttpLoginProcessor implements LoginProcessor {
             url = server + contextPath + LOGIN_URL;
         }
         
-        Map<String, String> params = new HashMap<String, String>(2);
-        Map<String, String> bodyMap = new HashMap<String, String>(2);
+        Map<String, String> params = new HashMap<>(2);
+        Map<String, String> bodyMap = new HashMap<>(2);
         params.put(PropertyKeyConst.USERNAME, properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY));
         bodyMap.put(PropertyKeyConst.PASSWORD, properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY));
         try {

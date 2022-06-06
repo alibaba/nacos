@@ -56,7 +56,7 @@ public class BeatReactor implements Closeable {
     
     private boolean lightBeatEnabled = false;
     
-    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<>();
     
     public BeatReactor(NamingHttpClientProxy serverProxy) {
         this(serverProxy, null);

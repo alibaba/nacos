@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.filter.impl;
+package com.alibaba.nacos.api.naming.remote.response;
 
-import com.alibaba.nacos.api.config.filter.IConfigContext;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Config Context.
+ * batch instance response.
  *
- * @author Nacos
+ * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
-public class ConfigContext implements IConfigContext {
+public class BatchInstanceResponse extends Response {
     
-    private final Map<String, Object> param = new HashMap<>();
+    private String type;
     
-    @Override
-    public Object getParameter(String key) {
-        return param.get(key);
+    public BatchInstanceResponse() {
     }
     
-    @Override
-    public void setParameter(String key, Object value) {
-        param.put(key, value);
+    public BatchInstanceResponse(String type) {
+        this.type = type;
     }
     
+    public void setType(String type) {
+        this.type = type;
+    }
 }

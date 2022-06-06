@@ -90,7 +90,7 @@ public class Instance implements Serializable {
     /**
      * user extended attributes.
      */
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
     
     public String getInstanceId() {
         return this.instanceId;
@@ -165,7 +165,7 @@ public class Instance implements Serializable {
      */
     public void addMetadata(final String key, final String value) {
         if (metadata == null) {
-            metadata = new HashMap<String, String>(4);
+            metadata = new HashMap<>(4);
         }
         metadata.put(key, value);
     }
