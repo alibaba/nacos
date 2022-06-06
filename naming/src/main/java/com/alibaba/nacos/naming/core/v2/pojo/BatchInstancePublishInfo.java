@@ -17,11 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.pojo;
 
 import org.apache.commons.collections.CollectionUtils;
-
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * the client support service registers multiple instance entity classes.
@@ -60,16 +56,11 @@ public class BatchInstancePublishInfo extends InstancePublishInfo {
     
     @Override
     public int hashCode() {
-        StringBuilder ipStr = new StringBuilder();
-        StringBuilder portStr = new StringBuilder();
-        Map<String, Object> extendDatum = new HashMap<>();
-        StringBuilder healthyStr = new StringBuilder();
+        int result = 0;
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
-            ipStr.append("-").append(instancePublishInfo.getIp());
-            portStr.append("-").append(instancePublishInfo.getPort());
-            extendDatum.putAll(instancePublishInfo.getExtendDatum());
-            healthyStr.append("-").append(instancePublishInfo.getIp());
+            result += instancePublishInfo.hashCode();
         }
-        return Objects.hash(ipStr, portStr, extendDatum, healthyStr);
+        return result;
     }
 }
+
