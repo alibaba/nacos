@@ -26,8 +26,8 @@ import java.util.Objects;
 /**
  * the client support service registers multiple instance entity classes.
  *
- * @ClassName: BatchInstancePublishInfo
  * @author : ChenHao26
+ * @ClassName: BatchInstancePublishInfo
  * @Date: 2022/4/21 16:19
  * @Description: TODO
  */
@@ -54,8 +54,8 @@ public class BatchInstancePublishInfo extends InstancePublishInfo {
         if (!(o instanceof BatchInstancePublishInfo)) {
             return false;
         }
-        BatchInstancePublishInfo that = (BatchInstancePublishInfo)o;
-        return CollectionUtils.isEqualCollection(this.getInstancePublishInfos() ,that.getInstancePublishInfos());
+        BatchInstancePublishInfo that = (BatchInstancePublishInfo) o;
+        return CollectionUtils.isEqualCollection(this.getInstancePublishInfos(), that.getInstancePublishInfos());
     }
     
     @Override
