@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.pojo;
 
 import org.apache.commons.collections.CollectionUtils;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * the client support service registers multiple instance entity classes.
@@ -56,11 +57,7 @@ public class BatchInstancePublishInfo extends InstancePublishInfo {
     
     @Override
     public int hashCode() {
-        int result = 0;
-        for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
-            result += instancePublishInfo.hashCode();
-        }
-        return result;
+        return Objects.hash(instancePublishInfos.toArray());
     }
 }
 
