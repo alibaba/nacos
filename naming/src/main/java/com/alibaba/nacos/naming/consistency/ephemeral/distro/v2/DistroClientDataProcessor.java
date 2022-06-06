@@ -177,13 +177,11 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
             if (CollectionUtils.isNotEmpty(batchInstancePublishInfos)) {
                 BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-                List<InstancePublishInfo> sourceInstanceInfo = batchInstancePublishInfo.getInstancePublishInfos();
                 BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
                 boolean result = false;
                 //If it is not empty, compare whether the instances are the same. If it is empty, notify directly
                 if (targetInstanceInfo != null) {
-                    result  = CollectionUtils.isEqualCollection(sourceInstanceInfo,
-                            targetInstanceInfo.getInstancePublishInfos());
+                    result = batchInstancePublishInfo.equals(targetInstanceInfo);
                 }
                 if (!result) {
                     client.addServiceInstance(singleton, batchInstancePublishInfo);

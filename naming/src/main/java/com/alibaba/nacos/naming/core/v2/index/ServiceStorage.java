@@ -112,11 +112,8 @@ public class ServiceStorage {
                 //If it is a BatchInstancePublishInfo type, it will be processed manually and added to the instance list
                 if (publishInfo instanceof BatchInstancePublishInfo) {
                     BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) publishInfo;
-                    List<Instance> batchInstance = parseBatchInstance(service, batchInstancePublishInfo);
+                    List<Instance> batchInstance = parseBatchInstance(service, batchInstancePublishInfo, clusters);
                     result.addAll(batchInstance);
-                    for (Instance instance : batchInstance) {
-                        clusters.add(instance.getClusterName());
-                    }
                 } else {
                     Instance instance = parseInstance(service, instancePublishInfo.get());
                     result.add(instance);
@@ -135,12 +132,13 @@ public class ServiceStorage {
      * @param batchInstancePublishInfo batchInstancePublishInfo
      * @return batch instance list
      */
-    private List<Instance> parseBatchInstance(Service service, BatchInstancePublishInfo batchInstancePublishInfo) {
+    private List<Instance> parseBatchInstance(Service service, BatchInstancePublishInfo batchInstancePublishInfo, Set<String> clusters) {
         List<Instance> resultInstanceList = new ArrayList<>();
         List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
             Instance instance = parseInstance(service, instancePublishInfo);
             resultInstanceList.add(instance);
+            clusters.add(instance.getClusterName());
         }
         return resultInstanceList;
     }
