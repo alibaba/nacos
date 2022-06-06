@@ -17,8 +17,8 @@
 package com.alibaba.nacos.naming.core.v2.pojo;
 
 import org.apache.commons.collections.CollectionUtils;
+
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 /**
