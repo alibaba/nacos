@@ -179,7 +179,7 @@ public class NacosConfigService implements ConfigService {
                 throw ioe;
             }
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
-                    worker.getAgentName(), dataId, group, tenant, ioe.getErrMsg());
+                    worker.getAgentName(), dataId, group, tenant, ioe.getMessage());
         }
 
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
