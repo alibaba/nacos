@@ -149,7 +149,7 @@
         <mina-core.version>2.0.0-RC1</mina-core.version>
         <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
-        <grpc-java.version>1.26.0</grpc-java.version>
+        <grpc-java.version>1.30.2</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.16.1</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
@@ -1023,6 +1023,12 @@
                 <groupId>com.google.truth</groupId>
                 <artifactId>truth</artifactId>
                 <version>${truth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>2.9.0</version>
+                <scope>compile</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
