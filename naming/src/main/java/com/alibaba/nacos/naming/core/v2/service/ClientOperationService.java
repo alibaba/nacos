@@ -24,6 +24,9 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.constants.Constants;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Client operation service.
  *
@@ -39,6 +42,15 @@ public interface ClientOperationService {
      * @param clientId id of client
      */
     void registerInstance(Service service, Instance instance, String clientId);
+    
+    /**
+     * Batch register instance to service.
+     *
+     * @param service  service
+     * @param instances instances
+     * @param clientId id of client
+     */
+    void batchRegisterInstance(Service service, List<Instance> instances, String clientId);
     
     /**
      * Deregister instance from service.
@@ -79,17 +91,18 @@ public interface ClientOperationService {
      */
     default InstancePublishInfo getPublishInfo(Instance instance) {
         InstancePublishInfo result = new InstancePublishInfo(instance.getIp(), instance.getPort());
+        Map<String, Object> extendDatum = result.getExtendDatum();
         if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {
-            result.getExtendDatum().putAll(instance.getMetadata());
+            extendDatum.putAll(instance.getMetadata());
         }
         if (StringUtils.isNotEmpty(instance.getInstanceId())) {
-            result.getExtendDatum().put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
+            extendDatum.put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
         }
         if (Constants.DEFAULT_INSTANCE_WEIGHT != instance.getWeight()) {
-            result.getExtendDatum().put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
+            extendDatum.put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
         }
         if (!instance.isEnabled()) {
-            result.getExtendDatum().put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
+            extendDatum.put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
         }
         String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
                 : instance.getClusterName();

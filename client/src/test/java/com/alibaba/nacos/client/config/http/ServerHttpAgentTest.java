@@ -59,7 +59,7 @@ public class ServerHttpAgentTest {
         Assert.assertNull(encode);
         Assert.assertEquals("namespace1", namespace);
         Assert.assertEquals("namespace1", tenant);
-        Assert.assertEquals("aaa-namespace1", name);
+        Assert.assertEquals("custom-aaa_8080_nacos_serverlist_namespace1", name);
         
     }
     

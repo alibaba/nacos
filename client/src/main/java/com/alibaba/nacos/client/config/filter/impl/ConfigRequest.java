@@ -36,7 +36,7 @@ import static com.alibaba.nacos.client.config.common.ConfigConstants.TYPE;
  */
 public class ConfigRequest implements IConfigRequest {
     
-    private final Map<String, Object> param = new HashMap<String, Object>();
+    private final Map<String, Object> param = new HashMap<>();
     
     private final IConfigContext configContext = new ConfigContext();
     

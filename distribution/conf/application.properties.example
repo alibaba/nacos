@@ -131,7 +131,7 @@ server.tomcat.accesslog.enabled=true
 server.tomcat.accesslog.pattern=%h %l %u %t "%r" %s %b %D %{User-Agent}i %{Request-Source}i
 
 ### The directory of access log:
-server.tomcat.basedir=
+server.tomcat.basedir=file:.
 
 #*************** Access Control Related Configurations ***************#
 ### If enable spring security, this option is deprecated in 1.2.0:
@@ -147,8 +147,13 @@ nacos.core.auth.system.type=nacos
 nacos.core.auth.enabled=false
 
 ### worked when nacos.core.auth.system.type=ldap，{0} is Placeholder,replace login username
-# nacos.core.auth.ldap.url=ldap://localhost:389
-# nacos.core.auth.ldap.userdn=cn={0},ou=user,dc=company,dc=com
+#nacos.core.auth.system.type=ldap
+#nacos.core.auth.ldap.url=ldap://localhost:389
+#nacos.core.auth.ldap.basedc=dc=example,dc=org
+#nacos.core.auth.ldap.userDn=cn=admin,${nacos.core.auth.ldap.basedc}
+#nacos.core.auth.ldap.password=admin
+#nacos.core.auth.ldap.userdn=cn={0},dc=example,dc=org
+
 
 ### The token expiration in seconds:
 nacos.core.auth.default.token.expire.seconds=18000

@@ -106,6 +106,8 @@ public class CapacityService {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 // ignore
+                // set the interrupted flag
+                Thread.currentThread().interrupt();
             }
         }
     }

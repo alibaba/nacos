@@ -66,7 +66,9 @@ public class ServiceInfoHolder implements Closeable {
     
     private String cacheDir;
     
-    public ServiceInfoHolder(String namespace, Properties properties) {
+    private String notifierEventScope;
+    
+    public ServiceInfoHolder(String namespace, String notifierEventScope, Properties properties) {
         initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
             this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
@@ -75,6 +77,7 @@ public class ServiceInfoHolder implements Closeable {
         }
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
+        this.notifierEventScope = notifierEventScope;
     }
     
     private void initCacheDir(String namespace, Properties properties) {
@@ -165,7 +168,7 @@ public class ServiceInfoHolder implements Closeable {
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
-            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                     serviceInfo.getClusters(), serviceInfo.getHosts()));
             DiskCache.write(serviceInfo, cacheDir);
         }
@@ -188,20 +191,20 @@ public class ServiceInfoHolder implements Closeable {
             return false;
         }
         boolean changed = false;
-        Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
+        Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
         for (Instance host : oldService.getHosts()) {
             oldHostMap.put(host.toInetAddr(), host);
         }
-        Map<String, Instance> newHostMap = new HashMap<String, Instance>(newService.getHosts().size());
+        Map<String, Instance> newHostMap = new HashMap<>(newService.getHosts().size());
         for (Instance host : newService.getHosts()) {
             newHostMap.put(host.toInetAddr(), host);
         }
         
-        Set<Instance> modHosts = new HashSet<Instance>();
-        Set<Instance> newHosts = new HashSet<Instance>();
-        Set<Instance> remvHosts = new HashSet<Instance>();
+        Set<Instance> modHosts = new HashSet<>();
+        Set<Instance> newHosts = new HashSet<>();
+        Set<Instance> remvHosts = new HashSet<>();
         
-        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
+        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(
                 newHostMap.entrySet());
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
             Instance host = entry.getValue();

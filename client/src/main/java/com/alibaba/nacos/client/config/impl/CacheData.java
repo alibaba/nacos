@@ -47,6 +47,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CacheData {
     
+    private static final Logger LOGGER = LogUtils.logger(CacheData.class);
+    
     static final int CONCURRENCY = 5;
     
     static ThreadFactory internalNotifierFactory = r -> {
@@ -56,10 +58,15 @@ public class CacheData {
         return t;
     };
     
+    static boolean initSnapshot;
+    
+    static {
+        initSnapshot = Boolean.valueOf(System.getProperty("nacos.cache.data.init.snapshot", "true"));
+        LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
+    }
+    
     static final ThreadPoolExecutor INTERNAL_NOTIFIER = new ThreadPoolExecutor(0, CONCURRENCY, 60L, TimeUnit.SECONDS,
             new SynchronousQueue<>(), internalNotifierFactory);
-    
-    private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
     private final String name;
     
@@ -195,7 +202,7 @@ public class CacheData {
      * Returns the iterator on the listener list, read-only. It is guaranteed not to return NULL.
      */
     public List<Listener> getListeners() {
-        List<Listener> result = new ArrayList<Listener>();
+        List<Listener> result = new ArrayList<>();
         for (ManagerListenerWrap wrap : listeners) {
             result.add(wrap.listener);
         }
@@ -318,14 +325,14 @@ public class CacheData {
                 }
                 
                 listenerWrap.lastCallMd5 = md5;
-                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name,
-                        dataId, group, md5, listener, (System.currentTimeMillis() - start));
+                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name, dataId,
+                        group, md5, listener, (System.currentTimeMillis() - start));
             } catch (NacosException ex) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}",
-                        name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
+                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", name,
+                        dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
             } catch (Throwable t) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
-                        group, md5, listener, t.getCause());
+                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId, group,
+                        md5, listener, t.getCause());
             } finally {
                 listenerWrap.inNotifying = false;
                 Thread.currentThread().setContextClassLoader(myClassLoader);
@@ -395,8 +402,10 @@ public class CacheData {
         this.tenant = TenantUtil.getUserTenantForAcm();
         listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
+        if (initSnapshot) {
+            this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+            this.md5 = getMd5String(content);
+        }
         this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
     }
     
@@ -412,8 +421,10 @@ public class CacheData {
         this.tenant = tenant;
         listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
+        if (initSnapshot) {
+            this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+            this.md5 = getMd5String(content);
+        }
     }
     
     // ==================

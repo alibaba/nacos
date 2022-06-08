@@ -338,7 +338,7 @@ public class ServiceManager implements RecordListener<Service> {
                 }
                 Loggers.EVT_LOG
                         .debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}", service.getNamespaceId(),
-                                service.getName(), stringBuilder.toString());
+                                service.getName(), stringBuilder);
             }
         }
         
@@ -841,10 +841,11 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     public Service getService(String namespaceId, String serviceName) {
-        if (serviceMap.get(namespaceId) == null) {
+        Map<String, Service> service = this.serviceMap.get(namespaceId);
+        if (service == null) {
             return null;
         }
-        return chooseServiceMap(namespaceId).get(serviceName);
+        return service.get(serviceName);
     }
     
     public boolean containService(String namespaceId, String serviceName) {

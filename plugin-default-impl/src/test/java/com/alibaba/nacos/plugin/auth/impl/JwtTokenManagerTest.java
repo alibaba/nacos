@@ -17,15 +17,12 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.jsonwebtoken.lang.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.lang.reflect.Field;
 import java.util.Properties;
 
 import static org.mockito.Mockito.when;
@@ -36,15 +33,9 @@ public class JwtTokenManagerTest {
     @Mock
     private AuthConfigs authConfigs;
     
-    @Mock
-    private ControllerMethodsCache methodsCache;
-    
-    private NacosAuthConfig nacosAuthConfig;
-    
     @Test
     public void testCreateTokenAndSecretKeyWithoutSpecialSymbol() throws NoSuchFieldException, IllegalAccessException {
         createToken("SecretKey0123$567890$234567890123456789012345678901234567890123456789");
-        
     }
     
     @Test
@@ -57,23 +48,10 @@ public class JwtTokenManagerTest {
         properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, secretKey);
         properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
         when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-        nacosAuthConfig = new NacosAuthConfig();
-        injectProperty(nacosAuthConfig, "methodsCache", methodsCache);
-        injectProperty(nacosAuthConfig, "authConfigs", authConfigs);
-        nacosAuthConfig.init();
-        JwtTokenManager jwtTokenManager = new JwtTokenManager();
-        injectProperty(jwtTokenManager, "nacosAuthConfig", nacosAuthConfig);
+        JwtTokenManager jwtTokenManager = new JwtTokenManager(authConfigs);
+        jwtTokenManager.initProperties();
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.notNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);
     }
-    
-    private void injectProperty(Object o, String propertyName, Object value)
-            throws NoSuchFieldException, IllegalAccessException {
-        Class<?> aClass = o.getClass();
-        Field declaredField = aClass.getDeclaredField(propertyName);
-        declaredField.setAccessible(true);
-        declaredField.set(o, value);
-    }
-    
 }

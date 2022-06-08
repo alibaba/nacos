@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.alibaba.nacos.api.common.Constants;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,7 +62,7 @@ public class StringUtils {
      * @return created string
      */
     public static String newStringForUtf8(byte[] bytes) {
-        return new String(bytes, Charset.forName(Constants.ENCODE));
+        return new String(bytes, StandardCharsets.UTF_8);
     }
     
     /**

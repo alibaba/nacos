@@ -15,8 +15,7 @@
   ~ limitations under the License.
   -->
 
-<configuration debug="false" scan="true" scanPeriod="30 seconds" packagingData="true">
-    <contextName>nacos</contextName>
+<configuration debug="false" scan="false"  packagingData="true">
     
     <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${JM.LOG.PATH}/nacos/config.log</file>
@@ -81,6 +80,10 @@
         <appender-ref ref="REMOTE_LOG_FILE"/>
     </Logger>
     
+    <Logger name="com.alibaba.nacos.shaded.io.grpc" level="${com.alibaba.nacos.log.level:-info}"
+        additivity="false">
+        <appender-ref ref="REMOTE_LOG_FILE"/>
+    </Logger>
     
     <logger name="com.alibaba.nacos.client.config" level="${com.alibaba.nacos.config.log.level:-info}"
         additivity="false">

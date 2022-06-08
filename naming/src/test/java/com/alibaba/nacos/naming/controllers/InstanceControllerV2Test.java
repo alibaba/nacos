@@ -51,7 +51,6 @@ public class InstanceControllerV2Test extends BaseTest {
     public void before() {
         super.before();
         ReflectionTestUtils.setField(instanceControllerV2, "instanceServiceV2", instanceServiceV2);
-        mockInjectPushServer();
         mockmvc = MockMvcBuilders.standaloneSetup(instanceControllerV2).build();
     }
     

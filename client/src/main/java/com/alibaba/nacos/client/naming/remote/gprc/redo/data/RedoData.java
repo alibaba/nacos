@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 
+import java.util.Objects;
+
 /**
  * Nacos naming redo data.
  *
@@ -126,5 +128,23 @@ public abstract class RedoData<T> {
          * Remove redo data.
          */
         REMOVE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RedoData<?> redoData = (RedoData<?>) o;
+        return registered == redoData.registered && unregistering == redoData.unregistering
+                && serviceName.equals(redoData.serviceName) && groupName.equals(redoData.groupName) && data.equals(redoData.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(serviceName, groupName, registered, unregistering, data);
     }
 }

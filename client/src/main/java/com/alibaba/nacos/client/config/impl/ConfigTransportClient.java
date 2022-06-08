@@ -104,7 +104,7 @@ public abstract class ConfigTransportClient {
      * @return headers.
      */
     protected Map<String, String> getCommonHeader() {
-        Map<String, String> headers = new HashMap<String, String>(16);
+        Map<String, String> headers = new HashMap<>(16);
         
         String ts = String.valueOf(System.currentTimeMillis());
         String token = MD5Utils.md5Hex(ts + ParamUtil.getAppKey(), Constants.ENCODE);

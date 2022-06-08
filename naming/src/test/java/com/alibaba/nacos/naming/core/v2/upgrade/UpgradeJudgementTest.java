@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -96,6 +98,9 @@ public class UpgradeJudgementTest {
         ApplicationUtils.injectContext(context);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 upgradeStates, doubleWriteDelayTaskEngine);
+        NotifyCenter.deregisterSubscriber(upgradeJudgement);
+        MetricsMonitor.getIpCountMonitor().set(0);
+        MetricsMonitor.getDomCountMonitor().set(0);
     }
     
     @After

@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockMultipartFile;
@@ -389,15 +390,15 @@ public class ConfigControllerTest {
     
     @Test
     public void testImportAndPublishConfig() throws Exception {
-        
-        Mockito.mockStatic(ZipUtils.class);
+    
+        MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class);
         List<ZipUtils.ZipItem> zipItems = new ArrayList<>();
         ZipUtils.ZipItem zipItem = new ZipUtils.ZipItem("test/test", "test");
         zipItems.add(zipItem);
         ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(zipItems, null);
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         
-        when(ZipUtils.unzip(file.getBytes())).thenReturn(unziped);
+        zipUtilsMockedStatic.when(() -> ZipUtils.unzip(file.getBytes())).thenReturn(unziped);
         when(persistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
@@ -416,6 +417,8 @@ public class ConfigControllerTest {
         Assert.assertEquals("200", code);
         Map<String, Object> resultMap = JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(), Map.class);
         Assert.assertEquals(map.get("test"), resultMap.get("test").toString());
+    
+        zipUtilsMockedStatic.close();
         
     }
     
