@@ -19,14 +19,8 @@ package com.alibaba.nacos.naming.healthcheck.extend;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessor;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -40,41 +34,31 @@ import java.util.Set;
  * @author XCXCXCXCX
  */
 @Component
-public class HealthCheckExtendProvider implements BeanFactoryAware {
+public class HealthCheckExtendProvider {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthCheckExtendProvider.class);
-    
-    private final Collection<HealthCheckProcessor> processors = NacosServiceLoader.load(HealthCheckProcessor.class);
-    
+
     private final Collection<AbstractHealthChecker> checkers = NacosServiceLoader.load(AbstractHealthChecker.class);
-    
-    private SingletonBeanRegistry registry;
-    
+
+    private AbstractHealthCheckProcessorExtend healthCheckProcessorExtend;
+
+    public void setHealthCheckProcessorExtend(AbstractHealthCheckProcessorExtend healthCheckProcessorExtend) {
+        this.healthCheckProcessorExtend = healthCheckProcessorExtend;
+    }
+
     public void init() {
         loadExtend();
     }
     
     private void loadExtend() {
-        Iterator<HealthCheckProcessor> processorIt = processors.iterator();
         Iterator<AbstractHealthChecker> healthCheckerIt = checkers.iterator();
         
         Set<String> origin = new HashSet<>();
         for (HealthCheckType type : HealthCheckType.values()) {
             origin.add(type.name());
         }
-        Set<String> processorType = new HashSet<>(origin);
+        Set<String> processorType = healthCheckProcessorExtend.addProcessor(origin);
         Set<String> healthCheckerType = new HashSet<>(origin);
-        
-        while (processorIt.hasNext()) {
-            HealthCheckProcessor processor = processorIt.next();
-            String type = processor.getType();
-            if (processorType.contains(type)) {
-                throw new RuntimeException(
-                        "More than one processor of the same type was found : [type=\"" + type + "\"]");
-            }
-            processorType.add(type);
-            registry.registerSingleton(lowerFirstChar(processor.getClass().getSimpleName()), processor);
-        }
         
         while (healthCheckerIt.hasNext()) {
             AbstractHealthChecker checker = healthCheckerIt.next();
@@ -93,20 +77,6 @@ public class HealthCheckExtendProvider implements BeanFactoryAware {
         if (processorType.size() > origin.size()) {
             processorType.removeAll(origin);
             LOGGER.debug("init health plugin : types=" + processorType);
-        }
-    }
-    
-    private String lowerFirstChar(String simpleName) {
-        if (StringUtils.isBlank(simpleName)) {
-            throw new IllegalArgumentException("can't find extend processor class name");
-        }
-        return String.valueOf(simpleName.charAt(0)).toLowerCase() + simpleName.substring(1);
-    }
-    
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        if (beanFactory instanceof SingletonBeanRegistry) {
-            this.registry = (SingletonBeanRegistry) beanFactory;
         }
     }
 }
