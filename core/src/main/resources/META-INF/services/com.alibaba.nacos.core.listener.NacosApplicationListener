@@ -15,4 +15,4 @@
 #
 
 com.alibaba.nacos.core.listener.LoggingApplicationListener
-com.alibaba.nacos.core.listener.StartingApplicationListener1
+com.alibaba.nacos.core.listener.StartingApplicationListener
