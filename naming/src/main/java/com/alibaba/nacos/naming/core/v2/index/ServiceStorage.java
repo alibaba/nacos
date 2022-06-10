@@ -81,8 +81,9 @@ public class ServiceStorage {
         if (!ServiceManager.getInstance().containSingleton(service)) {
             return result;
         }
-        result.setHosts(getAllInstancesFromIndex(service));
-        serviceDataIndexes.put(service, result);
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        result.setHosts(getAllInstancesFromIndex(singleton));
+        serviceDataIndexes.put(singleton, result);
         return result;
     }
     
