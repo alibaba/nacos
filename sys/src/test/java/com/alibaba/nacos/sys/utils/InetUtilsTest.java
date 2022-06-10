@@ -16,14 +16,36 @@
 
 package com.alibaba.nacos.sys.utils;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 import org.springframework.core.env.StandardEnvironment;
+
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
 
 public class InetUtilsTest {
     
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
+    }
+    
+    @Test
+    public void testRefreshIp() throws InterruptedException {
+        System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
+        System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
+        String selfIP = InetUtils.getSelfIP();
+        Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.1"));
+    
+        System.setProperty(NACOS_SERVER_IP, "1.1.1.2");
+        TimeUnit.MILLISECONDS.sleep(500L);
+    
+        selfIP = InetUtils.getSelfIP();
+        Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.2"));
     }
 }
