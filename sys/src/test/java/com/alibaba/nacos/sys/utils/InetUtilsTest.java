@@ -47,5 +47,8 @@ public class InetUtilsTest {
     
         selfIP = InetUtils.getSelfIP();
         Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.2"));
+        
+        System.clearProperty(NACOS_SERVER_IP);
+        System.clearProperty(Constants.AUTO_REFRESH_TIME);
     }
 }
