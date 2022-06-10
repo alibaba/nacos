@@ -70,9 +70,7 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
         }
         Map<String, String> signHeaders = SpasAdapter
                 .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()), secretKey);
-        if (signHeaders != null && !signHeaders.isEmpty()) {
-            result.setParameters(signHeaders);
-        }
+        result.setParameters(signHeaders);
     }
     
     private StsCredential getStsCredential() {
