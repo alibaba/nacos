@@ -45,8 +45,8 @@ public class Header {
     private static final String DEFAULT_ENCODING = "gzip";
     
     private Header() {
-        header = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-        originalResponseHeader = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
+        header = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        originalResponseHeader = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, DEFAULT_CHARSET);
         //addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
@@ -99,7 +99,7 @@ public class Header {
      * @return KV string list
      */
     public List<String> toList() {
-        List<String> list = new ArrayList<String>(header.size() * 2);
+        List<String> list = new ArrayList<>(header.size() * 2);
         Iterator<Map.Entry<String, String>> iterator = iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, String> entry = iterator.next();

@@ -41,7 +41,7 @@ public class Query {
     private static final String DEFAULT_ENC = "UTF-8";
     
     public Query() {
-        params = new LinkedHashMap<String, Object>();
+        params = new LinkedHashMap<>();
     }
     
     public static Query newInstance() {
