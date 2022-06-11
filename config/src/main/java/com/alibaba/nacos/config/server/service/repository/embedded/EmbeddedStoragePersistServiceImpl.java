@@ -114,6 +114,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     private static final String RESOURCE_ROLE_ID = "role-id";
     
     private static final String RESOURCE_PERMISSIONS_ID = "permissions_id";
+
+    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     private DataSourceService dataSourceService;
     
@@ -1144,11 +1146,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name=?",
-                "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND "
-                        + "app_name=?", new Object[] {generateLikeArgument(tenantTmp), appName}, pageNo, pageSize,
+        return helper.fetchPage("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? "
+                         + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE + "AND app_name=?",
+                "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info "
+                         + "WHERE tenant_id LIKE ?" +  SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE
+                         + " AND app_name=?", new Object[] {generateLikeArgument(tenantTmp), appName}, pageNo, pageSize,
                 CONFIG_INFO_ROW_MAPPER);
-        
+
     }
     
     @Override
@@ -1157,9 +1161,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-        StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? ");
+        StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? "
+                + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
         StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info where tenant_id LIKE ? ");
+                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info where tenant_id LIKE ? "
+                        + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
         List<String> paramList = new ArrayList<String>();
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(configTags)) {
@@ -1223,7 +1229,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoCount(String tenant) {
-        String sql = " SELECT count(*) FROM config_info WHERE tenant_id LIKE ?";
+        String sql = " SELECT count(*) FROM config_info WHERE tenant_id LIKE ?" + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         Integer result = databaseOperate.queryOne(sql, new Object[] {tenant}, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
@@ -1334,8 +1340,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sqlCountRows = "SELECT count(*) FROM config_info";
         String sqlFetchRows = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
-                + " g, config_info t  WHERE g.id = t.id ";
+                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE
+                + "ORDER BY id LIMIT ?,? ) g, config_info t  WHERE g.id = t.id ";
         
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
@@ -1348,8 +1354,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String select = " SELECT data_id,group_id,app_name FROM "
-                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ? ) "
-                + "g, config_info t  WHERE g.id = t.id ";
+                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE
+                + "ORDER BY id LIMIT ?, ? ) g, config_info t  WHERE g.id = t.id ";
         
         final int totalCount = configInfoCount(tenant);
         int pageCount = totalCount / pageSize;
@@ -1506,15 +1512,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         List<String> params = new ArrayList<String>();
         
         if (!StringUtils.isBlank(dataId)) {
-            where += " AND data_id LIKE ? ";
+            where += " AND data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(dataId));
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ? ";
+            where += " AND group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(group));
         }
         
-        where += " AND tenant_id LIKE ? ";
+        where += " AND tenant_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         params.add(generateLikeArgument(tenantTmp));
         
         if (!StringUtils.isBlank(appName)) {
@@ -1522,7 +1528,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             params.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
-            where += " AND content LIKE ? ";
+            where += " AND content LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(content));
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
@@ -1565,7 +1571,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 where.append('(');
                 boolean isFirstSub = true;
                 if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id NOT LIKE ? ");
+                    where.append(" data_id NOT LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(dataId));
                     isFirstSub = false;
                 }
@@ -1573,7 +1579,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     if (!isFirstSub) {
                         where.append(" OR ");
                     }
-                    where.append(" group_id NOT LIKE ? ");
+                    where.append(" group_id NOT LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(group));
                     isFirstSub = false;
                 }
@@ -1596,7 +1602,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 where.append('(');
                 boolean isFirstSub = true;
                 if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id LIKE ? ");
+                    where.append(" data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(dataId));
                     isFirstSub = false;
                 }
@@ -1604,7 +1610,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     if (!isFirstSub) {
                         where.append(" AND ");
                     }
-                    where.append(" group_id LIKE ? ");
+                    where.append(" group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(group));
                     isFirstSub = false;
                 }
@@ -1643,13 +1649,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
                             + "config_tags_relation b ON a.id=b.id ";
             
-            where.append(" a.tenant_id LIKE ? ");
+            where.append(" a.tenant_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             if (!StringUtils.isBlank(dataId)) {
-                where.append(" AND a.data_id LIKE ? ");
+                where.append(" AND a.data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 params.add(generateLikeArgument(dataId));
             }
             if (!StringUtils.isBlank(group)) {
-                where.append(" AND a.group_id LIKE ? ");
+                where.append(" AND a.group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 params.add(generateLikeArgument(group));
             }
             if (!StringUtils.isBlank(appName)) {
@@ -1657,7 +1663,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 params.add(appName);
             }
             if (!StringUtils.isBlank(content)) {
-                where.append(" AND a.content LIKE ? ");
+                where.append(" AND a.content LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 params.add(generateLikeArgument(content));
             }
             
@@ -1672,13 +1678,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
             where.append(") ");
         } else {
-            where.append(" tenant_id LIKE ? ");
+            where.append(" tenant_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             if (!StringUtils.isBlank(dataId)) {
-                where.append(" AND data_id LIKE ? ");
+                where.append(" AND data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 params.add(generateLikeArgument(dataId));
             }
             if (!StringUtils.isBlank(group)) {
-                where.append(" AND group_id LIKE ? ");
+                where.append(" AND group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 params.add(generateLikeArgument(group));
             }
             if (!StringUtils.isBlank(appName)) {
@@ -1686,7 +1692,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 params.add(appName);
             }
             if (!StringUtils.isBlank(content)) {
-                where.append(" AND content LIKE ? ");
+                where.append(" AND content LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 params.add(generateLikeArgument(content));
             }
         }
@@ -1715,15 +1721,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         List<String> params = new ArrayList<String>();
         
         if (!StringUtils.isBlank(dataId)) {
-            where += " AND data_id LIKE ? ";
+            where += " AND data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(dataId));
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ? ";
+            where += " AND group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(group));
         }
         if (!StringUtils.isBlank(content)) {
-            where += " AND content LIKE ? ";
+            where += " AND content LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(content));
         }
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
@@ -1804,7 +1810,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 where.append('(');
                 boolean isFirstSub = true;
                 if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id NOT LIKE ? ");
+                    where.append(" data_id NOT LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(dataId));
                     isFirstSub = false;
                 }
@@ -1812,7 +1818,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     if (!isFirstSub) {
                         where.append(" OR ");
                     }
-                    where.append(" group_id NOT LIKE ? ");
+                    where.append(" group_id NOT LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(group));
                     isFirstSub = false;
                 }
@@ -1835,7 +1841,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 where.append('(');
                 boolean isFirstSub = true;
                 if (!StringUtils.isBlank(dataId)) {
-                    where.append(" data_id LIKE ? ");
+                    where.append(" data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(dataId));
                     isFirstSub = false;
                 }
@@ -1843,7 +1849,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     if (!isFirstSub) {
                         where.append(" AND ");
                     }
-                    where.append(" group_id LIKE ? ");
+                    where.append(" group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                     params.add(generateLikeArgument(group));
                     isFirstSub = false;
                 }
@@ -1900,11 +1906,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         List<Object> params = new ArrayList<Object>();
         
         if (!StringUtils.isBlank(dataId)) {
-            where += " AND data_id LIKE ? ";
+            where += " AND data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(dataId));
         }
         if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ? ";
+            where += " AND group_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
             params.add(generateLikeArgument(group));
         }
         
@@ -2368,6 +2374,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
@@ -2458,7 +2468,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             where.append(" tenant_id=? ");
             paramList.add(tenantTmp);
             if (!StringUtils.isBlank(dataId)) {
-                where.append(" AND data_id LIKE ? ");
+                where.append(" AND data_id LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
                 paramList.add(generateLikeArgument(dataId));
             }
             if (StringUtils.isNotBlank(group)) {
