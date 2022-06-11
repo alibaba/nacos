@@ -70,7 +70,7 @@ public class MergeDatumService {
     }
     
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
-        List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
+        List<List<ConfigInfoChanged>> result = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             result.add(new ArrayList<ConfigInfoChanged>());
         }
@@ -144,7 +144,7 @@ public class MergeDatumService {
                 String group = configInfo.getGroup();
                 String tenant = configInfo.getTenant();
                 try {
-                    List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
+                    List<ConfigInfoAggr> datumList = new ArrayList<>();
                     int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
