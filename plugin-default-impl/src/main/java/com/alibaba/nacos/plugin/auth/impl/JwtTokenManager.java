@@ -138,7 +138,10 @@ public class JwtTokenManager {
      * @param token token
      */
     public void validateToken(String token) {
-        Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build().parseClaimsJws(token);
+        if (jwtParser == null) {
+            jwtParser = Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build();
+        }
+        jwtParser.parseClaimsJws(token);
     }
     
     public byte[] getSecretKeyBytes() {
