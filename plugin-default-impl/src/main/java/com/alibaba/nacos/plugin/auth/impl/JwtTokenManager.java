@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -64,6 +65,8 @@ public class JwtTokenManager {
      * Token validity time(seconds).
      */
     private long tokenValidityInSeconds;
+
+    private JwtParser jwtParser;
     
     public JwtTokenManager(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
@@ -117,8 +120,10 @@ public class JwtTokenManager {
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build()
-                .parseClaimsJws(token).getBody();
+        if (jwtParser == null) {
+            jwtParser = Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build();
+        }
+        Claims claims = jwtParser.parseClaimsJws(token).getBody();
         
         List<GrantedAuthority> authorities = AuthorityUtils
                 .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
