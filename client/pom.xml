@@ -150,7 +150,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.2.4</version>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
@@ -255,7 +255,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.2.4</version>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
@@ -269,29 +269,57 @@
                                     <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
                                     <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <minimizeJar>false</minimizeJar>
+                                    <minimizeJar>true</minimizeJar>
+                                    <filters>
+                                        <filter>
+                                            <artifact>*:*</artifact>
+                                            <excludes>
+                                                <exclude>META-INF/*.SF</exclude>
+                                                <exclude>META-INF/*.DSA</exclude>
+                                                <exclude>META-INF/*.RSA</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>io.grpc:grpc-netty-shaded</artifact>
+                                            <excludes>
+                                                <exclude>
+                                                    META-INF/native/*.*
+                                                </exclude>
+                                            </excludes>
+                                        </filter>
+                                    </filters>
                                     <createSourcesJar>true</createSourcesJar>
                                     <shadeSourcesContent>true</shadeSourcesContent>
-                                
+                                    <createSourcesJar>true</createSourcesJar>
+                                    <shadeSourcesContent>true</shadeSourcesContent>
+    
                                     <artifactSet>
                                         <includes>
-                                            <include>io.grpc:*</include>
-                                            <include>io.opencensus:*</include>
-                                            <include>io.perfmark:*</include>
-                                            <include>com.google.guava:guava</include>
-                                            <include>com.google.guava:failureaccess</include>
-                                            <include>com.google.errorprone:error_prone_annotations</include>
-                                            <include>com.google.j2objc:j2objc-annotations</include>
-                                            <include>com.google.code.gson:gson</include>
-                                            <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.alibaba.nacos:nacos-api</include>
                                             <include>com.alibaba.nacos:nacos-common</include>
-                                            <include>org.checkerframework:checker-qual</include>
+                                            <include>org.conscrypt:conscrypt-openjdk</include>
+                                            <include>org.mortbay.jetty.alpn:alpn-boot</include>
+                                            <include>org.eclipse.jetty.npn:npn-api</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>org.reflections:reflections</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>io.prometheus:simpleclient</include>
+                                            <include>com.fasterxml.jackson.core:*</include>
+                                            <include>io.grpc:*</include>
+                                            <include>io.opencensus:*</include>
+                                            <include>org.javassist:*</include>
+                                            <include>io.perfmark:perfmark-api</include>
+                                            <include>org.yaml:snakeyaml</include>
+                                            <include>com.google.*:*</include>
+                                            <include>javax.annotation:javax.annotation-api</include>
+                                            <include>org.checkerframework:*</include>
+                                            <include>org.apache.httpcomponents:*</include>
+                                            <include>org.codehaus.mojo:*</include>
                                         </includes>
                                     </artifactSet>
-                                
+    
                                     <relocations>
-                                    
+        
                                         <relocation>
                                             <pattern>io.grpc</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
@@ -307,11 +335,6 @@
                                                 <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
                                             </includes>
                                         </relocation>
-                                    
-                                        <relocation>
-                                            <pattern>com.google</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
-                                        </relocation>
                                         <relocation>
                                             <pattern>io.perfmark</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
@@ -320,10 +343,7 @@
                                             <pattern>io.opencensus</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
                                         </relocation>
-                                        <relocation>
-                                            <pattern>org.codehaus</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
-                                        </relocation>
+        
                                         <relocation>
                                             <pattern>org.checkerframework</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
@@ -336,15 +356,14 @@
                                             <pattern>org.example</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
                                         </relocation>
-                                
-                                
+    
                                     </relocations>
                                     <transformers>
                                         <transformer
                                             implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                                         <transformer
                                             implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                
+    
                                     </transformers>
                                 </configuration>
                             </execution>
