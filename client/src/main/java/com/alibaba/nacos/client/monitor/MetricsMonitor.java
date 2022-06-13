@@ -42,7 +42,7 @@ public class MetricsMonitor {
     }
     
     public static Gauge.Child getListenConfigCountMonitor() {
-        return NACOS_MONITOR.labels("naming", "listenConfigCount");
+        return NACOS_MONITOR.labels("config", "listenConfigCount");
     }
     
     public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
