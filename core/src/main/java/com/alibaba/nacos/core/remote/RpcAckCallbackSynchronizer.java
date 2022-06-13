@@ -105,7 +105,7 @@ public class RpcAckCallbackSynchronizer {
      */
     public static Map<String, DefaultRequestFuture> initContextIfNecessary(String connectionId) {
         if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
-            Map<String, DefaultRequestFuture> context = new HashMap<String, DefaultRequestFuture>(128);
+            Map<String, DefaultRequestFuture> context = new HashMap<>(128);
             Map<String, DefaultRequestFuture> stringDefaultRequestFutureMap = CALLBACK_CONTEXT
                     .putIfAbsent(connectionId, context);
             return stringDefaultRequestFutureMap == null ? context : stringDefaultRequestFutureMap;
