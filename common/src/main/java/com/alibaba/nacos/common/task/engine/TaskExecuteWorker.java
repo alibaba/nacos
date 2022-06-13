@@ -54,7 +54,7 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
     
     public TaskExecuteWorker(final String name, final int mod, final int total, final Logger logger) {
         this.name = name + "_" + mod + "%" + total;
-        this.queue = new ArrayBlockingQueue<Runnable>(QUEUE_CAPACITY);
+        this.queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
         this.closed = new AtomicBoolean(false);
         this.log = null == logger ? LoggerFactory.getLogger(TaskExecuteWorker.class) : logger;
         new InnerWorker(name).start();
@@ -116,10 +116,10 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
                     task.run();
                     long duration = System.currentTimeMillis() - begin;
                     if (duration > 1000L) {
-                        log.warn("distro task {} takes {}ms", task, duration);
+                        log.warn("task {} takes {}ms", task, duration);
                     }
                 } catch (Throwable e) {
-                    log.error("[DISTRO-FAILED] " + e.toString(), e);
+                    log.error("[TASK-FAILED] " + e.toString(), e);
                 }
             }
         }

@@ -17,11 +17,10 @@
 package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.common.utils.Objects;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Predicate;
@@ -43,7 +43,17 @@ import java.util.stream.Collectors;
 public class MemberUtil {
     
     protected static final String TARGET_MEMBER_CONNECT_REFUSE_ERRMSG = "Connection refused";
-
+    
+    private static final String SERVER_PORT_PROPERTY = "server.port";
+    
+    private static final int DEFAULT_SERVER_PORT = 8848;
+    
+    private static final int DEFAULT_RAFT_OFFSET_PORT = 1000;
+    
+    private static final String MEMBER_FAIL_ACCESS_CNT_PROPERTY = "nacos.core.member.fail-access-cnt";
+    
+    private static final int DEFAULT_MEMBER_FAIL_ACCESS_CNT = 3;
+    
     /**
      * Information copy.
      *
@@ -56,6 +66,7 @@ public class MemberUtil {
         oldMember.setState(newMember.getState());
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
+        oldMember.setAbilities(newMember.getAbilities());
     }
     
     /**
@@ -67,28 +78,41 @@ public class MemberUtil {
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Member singleParse(String member) {
         // Nacos default port is 8848
-        int defaultPort = 8848;
+        int defaultPort = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
         // Set the default Raft port information for securit
         
         String address = member;
         int port = defaultPort;
-        String[] info = IPUtil.splitIPPortStr(address);
+        String[] info = InternetAddressUtil.splitIPPortStr(address);
         if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);
         }
         
         Member target = Member.builder().ip(address).port(port).state(NodeState.UP).build();
-        
         Map<String, Object> extendInfo = new HashMap<>(4);
         // The Raft Port information needs to be set by default
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
+        extendInfo.put(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         target.setExtendInfo(extendInfo);
         return target;
     }
     
+    /**
+     * check whether the member support long connection or not.
+     *
+     * @param member member instance of server.
+     * @return support long connection or not.
+     */
+    public static boolean isSupportedLongCon(Member member) {
+        if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
+            return false;
+        }
+        return member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+    }
+    
     public static int calculateRaftPort(Member member) {
-        return member.getPort() - 1000;
+        return member.getPort() - DEFAULT_RAFT_OFFSET_PORT;
     }
     
     /**
@@ -117,7 +141,7 @@ public class MemberUtil {
         member.setState(NodeState.UP);
         member.setFailAccessCnt(0);
         if (!Objects.equals(old, member.getState())) {
-            manager.notifyMemberChange();
+            manager.notifyMemberChange(member);
         }
     }
     
@@ -137,7 +161,7 @@ public class MemberUtil {
         final NodeState old = member.getState();
         member.setState(NodeState.SUSPICIOUS);
         member.setFailAccessCnt(member.getFailAccessCnt() + 1);
-        int maxFailAccessCnt = EnvUtil.getProperty("nacos.core.member.fail-access-cnt", Integer.class, 3);
+        int maxFailAccessCnt = EnvUtil.getProperty(MEMBER_FAIL_ACCESS_CNT_PROPERTY, Integer.class, DEFAULT_MEMBER_FAIL_ACCESS_CNT);
         
         // If the number of consecutive failures to access the target node reaches
         // a maximum, or the link request is rejected, the state is directly down
@@ -146,7 +170,7 @@ public class MemberUtil {
             member.setState(NodeState.DOWN);
         }
         if (!Objects.equals(old, member.getState())) {
-            manager.notifyMemberChange();
+            manager.notifyMemberChange(member);
         }
     }
     
@@ -158,7 +182,7 @@ public class MemberUtil {
     public static void syncToFile(Collection<Member> members) {
         try {
             StringBuilder builder = new StringBuilder();
-            builder.append("#").append(LocalDateTime.now()).append(StringUtils.LF);
+            builder.append('#').append(LocalDateTime.now()).append(StringUtils.LF);
             for (String member : simpleMembers(members)) {
                 builder.append(member).append(StringUtils.LF);
             }
@@ -255,6 +279,11 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
+        
+        if (!expected.getAbilities().equals(actual.getAbilities())) {
+            return true;
+        }
+        
         return isBasicInfoChangedInExtendInfo(expected, actual);
     }
     

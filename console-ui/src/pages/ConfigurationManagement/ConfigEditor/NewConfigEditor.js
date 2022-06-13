@@ -27,22 +27,18 @@ import {
   Balloon,
   Button,
   Dialog,
-  Field,
   Form,
   Checkbox,
   Icon,
   Input,
   Loading,
   Radio,
-  Switch,
   Select,
   Tab,
   Message,
   Grid,
   ConfigProvider,
 } from '@alifd/next';
-import { resolve } from 'url';
-import qs from 'qs';
 
 const { Row, Col } = Grid;
 
@@ -85,7 +81,9 @@ class ConfigEditor extends React.Component {
         type: 'text', // 配置格式
       },
       tagDataSource: [],
+      subscriberDataSource: [],
       openAdvancedSettings: false,
+      editorClass: 'editor-normal',
     };
     this.successDialog = React.createRef();
     this.diffEditorDialog = React.createRef();
@@ -113,6 +111,7 @@ class ConfigEditor extends React.Component {
                 betaPublishSuccess: true,
               });
             });
+            this.getSubscribesByNamespace();
           }
         );
       } else {
@@ -121,6 +120,7 @@ class ConfigEditor extends React.Component {
         }
         this.initMoacoEditor('text', '');
       }
+      this.initFullScreenEvent();
     });
   }
 
@@ -137,10 +137,8 @@ class ConfigEditor extends React.Component {
       readOnly: false,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      wordWrapColumn: 120,
       folding: false,
       showFoldingControls: 'always',
-      wordWrap: 'wordWrapColumn',
       cursorStyle: 'line',
       automaticLayout: true,
     };
@@ -151,6 +149,21 @@ class ConfigEditor extends React.Component {
     } else {
       this.monacoEditor = window.monaco.editor.create(container, options);
     }
+  }
+
+  initFullScreenEvent() {
+    document.body.addEventListener('keydown', e => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.setState({
+          editorClass: 'editor-full-screen',
+        });
+      } else if (e.key === 'Escape') {
+        this.setState({
+          editorClass: 'editor-normal',
+        });
+      }
+    });
   }
 
   createDiffCodeMirror(leftCode, rightCode) {
@@ -171,11 +184,11 @@ class ConfigEditor extends React.Component {
 
   openDiff(cbName) {
     this.diffcb = cbName;
-    let leftvalue = this.monacoEditor.getValue();
-    let rightvalue = this.codeVal || '';
-    leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
-    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+    let leftValue = this.monacoEditor.getValue();
+    let rightValue = this.codeVal || '';
+    leftValue = leftValue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    rightValue = rightValue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    this.diffEditorDialog.current.getInstance().openDialog(leftValue, rightValue);
   }
 
   clickTab(tabActiveKey) {
@@ -217,7 +230,7 @@ class ConfigEditor extends React.Component {
     if (validateContent.validate({ content, type })) {
       return this._publishConfig();
     } else {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         Dialog.confirm({
           content: locale.codeValErrorPrompt,
           onOk: () => resolve(this._publishConfig()),
@@ -233,12 +246,17 @@ class ConfigEditor extends React.Component {
     if (beta) {
       headers.betaIps = betaIps;
     }
-    const form = { ...this.state.form, content: this.getCodeVal() };
+    const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
     const payload = {};
     Object.keys(form).forEach(key => {
       payload[key] = form[key];
     });
+    let configTags = this.state.form.config_tags;
+    if (configTags.length > 0) {
+      payload.config_tags = configTags.join(',');
+    }
     const stringify = require('qs/lib/stringify');
+    this.setState({ loading: true });
     return request({
       url: 'v1/cs/configs',
       method: 'post',
@@ -251,6 +269,7 @@ class ConfigEditor extends React.Component {
         }
         this.getConfig(beta);
       }
+      this.setState({ loading: false });
       return res;
     });
   }
@@ -268,7 +287,6 @@ class ConfigEditor extends React.Component {
   }
 
   stopBeta() {
-    const { locale } = this.props;
     const { dataId, group } = this.state.form;
     const tenant = getParams('namespace');
     return request
@@ -306,18 +324,20 @@ class ConfigEditor extends React.Component {
 
   setConfigTags(tags) {
     const { tagDataSource } = this.state;
-    const lastTag = tags[tags.length - 1];
-    if (tagDataSource.indexOf(lastTag) < 0) {
-      this.setState({ tagDataSource: [...tagDataSource, lastTag] });
-    }
-    if (tags.length > 5) {
-      tags.pop();
-    }
-    tags.forEach((v, i) => {
-      if (v.indexOf(',') !== -1 || v.indexOf('=') !== -1) {
-        tags.splice(i, 1);
+    if (tags.length > 0) {
+      const lastTag = tags[tags.length - 1];
+      if (tagDataSource.indexOf(lastTag) < 0) {
+        this.setState({ tagDataSource: [...tagDataSource, lastTag] });
       }
-    });
+      if (tags.length > 5) {
+        tags.pop();
+      }
+      tags.forEach((v, i) => {
+        if (v.indexOf(',') !== -1 || v.indexOf('=') !== -1) {
+          tags.splice(i, 1);
+        }
+      });
+    }
     this.changeForm({ config_tags: tags });
   }
 
@@ -351,8 +371,7 @@ class ConfigEditor extends React.Component {
     };
     if (beta) {
       params.beta = true;
-    }
-    if (!beta) {
+    } else {
       params.show = 'all';
     }
     return request.get('v1/cs/configs', { params }).then(res => {
@@ -363,6 +382,31 @@ class ConfigEditor extends React.Component {
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;
+      this.setState({
+        tagDataSource: this.state.form.config_tags,
+      });
+      return res;
+    });
+  }
+
+  getSubscribesByNamespace() {
+    const namespace = getParams('namespace');
+    const { dataId, group } = this.state.form;
+    const params = {
+      dataId,
+      group,
+      namespaceId: namespace,
+      tenant: namespace,
+    };
+    // get subscribes of the namespace
+    return request.get('v1/cs/configs/listener', { params }).then(res => {
+      const { subscriberDataSource } = this.state;
+      const lisentersGroupkeyIpMap = res.lisentersGroupkeyStatus;
+      if (lisentersGroupkeyIpMap) {
+        this.setState({
+          subscriberDataSource: subscriberDataSource.concat(Object.keys(lisentersGroupkeyIpMap)),
+        });
+      }
       return res;
     });
   }
@@ -405,8 +449,19 @@ class ConfigEditor extends React.Component {
       tabActiveKey,
       dataIdError = {},
       groupError = {},
+      subscriberDataSource,
+      editorClass,
     } = this.state;
     const { locale = {} } = this.props;
+
+    const formItemLayout = {
+      labelCol: {
+        span: 2,
+      },
+      wrapperCol: {
+        span: 22,
+      },
+    };
 
     return (
       <div className="config-editor">
@@ -417,9 +472,7 @@ class ConfigEditor extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <h1 className="func-title">
-            <div>{locale.toedit}</div>
-          </h1>
+          <h1>{locale.toedit}</h1>
           {betaPublishSuccess && (
             <Tab shape="wrapped" activeKey={tabActiveKey} onChange={key => this.clickTab(key)}>
               {TAB_LIST.map(key => (
@@ -429,7 +482,7 @@ class ConfigEditor extends React.Component {
               ))}
             </Tab>
           )}
-          <Form className="form">
+          <Form className="new-config-form" {...formItemLayout}>
             <Form.Item label="Data ID:" required {...dataIdError}>
               <Input
                 value={form.dataId}
@@ -449,12 +502,9 @@ class ConfigEditor extends React.Component {
               />
             </Form.Item>
             <Form.Item label=" ">
-              <div
-                className="switch"
-                onClick={() => this.setState({ openAdvancedSettings: !openAdvancedSettings })}
-              >
+              <a onClick={() => this.setState({ openAdvancedSettings: !openAdvancedSettings })}>
                 {openAdvancedSettings ? locale.collapse : locale.groupNotEmpty}
-              </div>
+              </a>
             </Form.Item>
             {openAdvancedSettings && (
               <>
@@ -491,11 +541,16 @@ class ConfigEditor extends React.Component {
                   </Checkbox>
                 )}
                 {isBeta && (
-                  <Input.TextArea
-                    aria-label="TextArea"
-                    placeholder="127.0.0.1,127.0.0.2"
-                    value={betaIps}
-                    onChange={betaIps => this.setState({ betaIps })}
+                  <Select
+                    size="medium"
+                    hasArrow
+                    autoWidth
+                    mode="tag"
+                    filterLocal
+                    dataSource={subscriberDataSource}
+                    onChange={betaIps => this.setState({ betaIps: betaIps.join(',') })}
+                    hasClear
+                    value={betaIps ? betaIps.split(',') : []}
                   />
                 )}
               </Form.Item>
@@ -533,7 +588,7 @@ class ConfigEditor extends React.Component {
                 </div>
               }
             >
-              <div style={{ clear: 'both', height: 300 }} id="container" />
+              <div id="container" className={editorClass} style={{ minHeight: 450 }} />
             </Form.Item>
           </Form>
           <Row>
@@ -566,14 +621,13 @@ class ConfigEditor extends React.Component {
                 </Button>
               )}
               <Button
-                size="large"
                 type="primary"
                 disabled={tabActiveKey === 'production'}
                 onClick={() => this.openDiff('publish')}
               >
                 {locale.publish}
               </Button>
-              <Button size="large" type="normal" onClick={() => this.goBack()}>
+              <Button type="normal" onClick={() => this.goBack()}>
                 {locale.back}
               </Button>
             </Col>

@@ -28,6 +28,8 @@ import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 /**
  * Persistent consistency service delegate.
  *
@@ -54,7 +56,11 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     }
     
     private void init() {
-        this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
+        if (EnvUtil.isSupportUpgradeFrom1X()) {
+            this.versionJudgement.registerObserver(isAllNewVersion -> switchNewPersistentService = isAllNewVersion, -1);
+            return;
+        }
+        this.switchNewPersistentService = true;
     }
     
     @Override
@@ -87,6 +93,11 @@ public class PersistentConsistencyServiceDelegateImpl implements PersistentConsi
     @Override
     public boolean isAvailable() {
         return switchOne().isAvailable();
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        return switchOne().getErrorMsg();
     }
     
     private PersistentConsistencyService switchOne() {

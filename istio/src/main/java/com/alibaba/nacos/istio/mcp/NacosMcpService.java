@@ -16,31 +16,27 @@
 
 package com.alibaba.nacos.istio.mcp;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.istio.misc.IstioConfig;
+import com.alibaba.nacos.istio.api.ApiGenerator;
+import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
+import com.alibaba.nacos.istio.common.AbstractConnection;
+import com.alibaba.nacos.istio.common.Event;
+import com.alibaba.nacos.istio.common.NacosResourceManager;
+import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.common.WatchedStatus;
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.Port;
-import com.alibaba.nacos.istio.model.mcp.Metadata;
-import com.alibaba.nacos.istio.model.mcp.RequestResources;
-import com.alibaba.nacos.istio.model.mcp.Resource;
-import com.alibaba.nacos.istio.model.mcp.ResourceSourceGrpc;
-import com.alibaba.nacos.istio.model.mcp.Resources;
-import com.alibaba.nacos.istio.model.naming.ServiceEntry;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.google.protobuf.Any;
+import com.alibaba.nacos.istio.util.NonceGenerator;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.StringUtils;
+import istio.mcp.v1alpha1.Mcp;
+import istio.mcp.v1alpha1.ResourceOuterClass.Resource;
+import istio.mcp.v1alpha1.ResourceSourceGrpc;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_COLLECTION;
 
 /**
  * nacos mcp service.
@@ -48,201 +44,151 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author nkorange
  * @since 1.1.4
  */
-@org.springframework.stereotype.Service
+@Service
 public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     
-    private final AtomicInteger connectIdGenerator = new AtomicInteger(0);
-    
-    private final Map<Integer, StreamObserver<Resources>> connnections = new ConcurrentHashMap<>(16);
-    
-    private final Map<String, Resource> resourceMap = new ConcurrentHashMap<>(16);
-    
-    private final Map<String, String> checksumMap = new ConcurrentHashMap<>(16);
-    
-    private static final String SERVICE_NAME_SPLITTER = "nacos";
-    
-    private static final String MESSAGE_TYPE_URL = "type.googleapis.com/istio.networking.v1alpha3.ServiceEntry";
-    
-    private static final long MCP_PUSH_PERIOD_MILLISECONDS = 10000L;
-    
+    private final Map<String, AbstractConnection<Mcp.Resources>> connections = new ConcurrentHashMap<>(16);
+
     @Autowired
-    private ServiceManager serviceManager;
-    
+    ApiGeneratorFactory apiGeneratorFactory;
+
     @Autowired
-    private IstioConfig istioConfig;
-    
-    /**
-     * start mcpPushTask{@link McpPushTask}.
-     */
-    @PostConstruct
-    public void init() {
-        if (!istioConfig.isMcpServerEnabled()) {
-            return;
-        }
-        GlobalExecutor
-                .scheduleMcpPushTask(new McpPushTask(), MCP_PUSH_PERIOD_MILLISECONDS * 2, MCP_PUSH_PERIOD_MILLISECONDS);
+    NacosResourceManager resourceManager;
+
+    public boolean hasClientConnection() {
+        return connections.size() != 0;
     }
-    
-    private class McpPushTask implements Runnable {
-        
-        @Override
-        public void run() {
-            
-            boolean changed = false;
-            
-            // Query all services to see if any of them have changes:
-            Set<String> namespaces = serviceManager.getAllNamespaces();
-            
-            for (String namespace : namespaces) {
-                
-                Map<String, Service> services = serviceManager.chooseServiceMap(namespace);
-                
-                if (services.isEmpty()) {
-                    continue;
-                }
-                
-                for (Service service : services.values()) {
-                    
-                    String convertedName = convertName(service);
-                    
-                    // Service not changed:
-                    if (checksumMap.containsKey(convertedName) && checksumMap.get(convertedName)
-                            .equals(service.getChecksum())) {
-                        continue;
-                    }
-                    
-                    if (service.allIPs().isEmpty()) {
-                        resourceMap.remove(convertedName);
-                        continue;
-                    }
-                    
-                    // Update the resource:
-                    changed = true;
-                    resourceMap.put(convertedName, convertService(service));
-                    checksumMap.put(convertedName, service.getChecksum());
-                }
-            }
-            
-            if (!changed) {
-                // If no service changed, just return:
-                return;
-            }
-            
-            Resources resources = Resources.newBuilder().addAllResources(resourceMap.values())
-                    .setCollection(CollectionTypes.SERVICE_ENTRY).setNonce(String.valueOf(System.currentTimeMillis()))
-                    .build();
-            
-            if (connnections.isEmpty()) {
-                return;
-            }
-            
-            Loggers.MAIN.info("MCP push, resource count is: {}", resourceMap.size());
-            
-            if (Loggers.MAIN.isDebugEnabled()) {
-                Loggers.MAIN.debug("MCP push, sending resources: {}", resources);
-            }
-            
-            for (StreamObserver<Resources> observer : connnections.values()) {
-                observer.onNext(resources);
-            }
-        }
-    }
-    
-    private String convertName(Service service) {
-        
-        String serviceName = NamingUtils.getServiceName(service.getName()) + ".sn";
-        
-        if (!Constants.DEFAULT_GROUP.equals(NamingUtils.getGroupName(service.getName()))) {
-            serviceName = serviceName + NamingUtils.getGroupName(service.getName()) + ".gn";
-        }
-        
-        if (!Constants.DEFAULT_NAMESPACE_ID.equals(service.getNamespaceId())) {
-            serviceName = serviceName + service.getNamespaceId() + ".ns";
-        }
-        return serviceName;
-    }
-    
-    private Resource convertService(Service service) {
-        
-        String serviceName = convertName(service);
-        
-        ServiceEntry.Builder serviceEntryBuilder = ServiceEntry.newBuilder()
-                .setResolution(ServiceEntry.Resolution.STATIC).setLocation(ServiceEntry.Location.MESH_INTERNAL)
-                .addHosts(serviceName + "." + SERVICE_NAME_SPLITTER)
-                .addPorts(Port.newBuilder().setNumber(8848).setName("http").setProtocol("HTTP").build());
-        
-        for (Instance instance : service.allIPs()) {
-            
-            if (!instance.isHealthy() || !instance.isEnabled()) {
-                continue;
-            }
-            
-            ServiceEntry.Endpoint endpoint = ServiceEntry.Endpoint.newBuilder().setAddress(instance.getIp())
-                    .setWeight((int) instance.getWeight()).putAllLabels(instance.getMetadata())
-                    .putPorts("http", instance.getPort()).build();
-            
-            serviceEntryBuilder.addEndpoints(endpoint);
-        }
-        
-        ServiceEntry serviceEntry = serviceEntryBuilder.build();
-        
-        Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl(MESSAGE_TYPE_URL).build();
-        
-        Metadata metadata = Metadata.newBuilder().setName(SERVICE_NAME_SPLITTER + "/" + serviceName)
-                .putAllAnnotations(service.getMetadata()).putAnnotations("virtual", "1").build();
-        
-        Resource resource = Resource.newBuilder().setBody(any).setMetadata(metadata).build();
-        
-        return resource;
-    }
-    
+
     @Override
-    public StreamObserver<RequestResources> establishResourceStream(StreamObserver<Resources> responseObserver) {
-        
-        int id = connectIdGenerator.incrementAndGet();
-        connnections.put(id, responseObserver);
-        
-        return new StreamObserver<RequestResources>() {
-            
-            private final int connectionId = id;
-            
+    public StreamObserver<Mcp.RequestResources> establishResourceStream(StreamObserver<Mcp.Resources> responseObserver) {
+
+        // TODO add authN
+
+        // Init snapshot of nacos service info.
+        resourceManager.initResourceSnapshot();
+        AbstractConnection<Mcp.Resources> newConnection = new McpConnection(responseObserver);
+
+        return new StreamObserver<Mcp.RequestResources>() {
+            private boolean initRequest = true;
+
             @Override
-            public void onNext(RequestResources value) {
-                
-                Loggers.MAIN.info("receiving request, sink: {}, type: {}", value.getSinkNode(), value.getCollection());
-                
-                if (value.getErrorDetail() != null && value.getErrorDetail().getCode() != 0) {
-                    
-                    Loggers.MAIN.error("NACK error code: {}, message: {}", value.getErrorDetail().getCode(),
-                            value.getErrorDetail().getMessage());
-                    return;
+            public void onNext(Mcp.RequestResources requestResources) {
+                // init connection
+                if (initRequest) {
+                    newConnection.setConnectionId(requestResources.getSinkNode().getId());
+                    connections.put(newConnection.getConnectionId(), newConnection);
+                    initRequest = false;
                 }
-                
-                if (StringUtils.isNotBlank(value.getResponseNonce())) {
-                    // This is a response:
-                    Loggers.MAIN.info("ACK nonce: {}, type: {}", value.getResponseNonce(), value.getCollection());
-                    return;
-                }
-                
-                if (!CollectionTypes.SERVICE_ENTRY.equals(value.getCollection())) {
-                    // Return empty resources for other types:
-                    Resources resources = Resources.newBuilder().setCollection(value.getCollection())
-                            .setNonce(String.valueOf(System.currentTimeMillis())).build();
-                    
-                    responseObserver.onNext(resources);
-                }
+
+                process(requestResources, newConnection);
             }
             
             @Override
-            public void onError(Throwable t) {
-                Loggers.MAIN.error("stream error.", t);
-                connnections.remove(connectionId);
+            public void onError(Throwable throwable) {
+                Loggers.MAIN.error("mcp: {} stream error.", newConnection.getConnectionId(), throwable);
+                clear();
             }
             
             @Override
             public void onCompleted() {
                 responseObserver.onCompleted();
+                clear();
+            }
+
+            private void clear() {
+                connections.remove(newConnection.getConnectionId());
             }
         };
+    }
+
+    private void process(Mcp.RequestResources requestResources, AbstractConnection<Mcp.Resources> connection) {
+        if (!shouldPush(requestResources, connection)) {
+            return;
+        }
+
+        Mcp.Resources response = buildMcpResourcesResponse(requestResources.getCollection(), resourceManager.getResourceSnapshot());
+        connection.push(response, connection.getWatchedStatusByType(requestResources.getCollection()));
+    }
+
+    private boolean shouldPush(Mcp.RequestResources requestResources, AbstractConnection<Mcp.Resources> connection) {
+        String type = requestResources.getCollection();
+        String connectionId = connection.getConnectionId();
+
+        if (requestResources.getErrorDetail().getCode() != 0) {
+            Loggers.MAIN.error("mcp: ACK error, connection-id: {}, code: {}, message: {}",
+                    connectionId,
+                    requestResources.getErrorDetail().getCode(),
+                    requestResources.getErrorDetail().getMessage());
+            return false;
+        }
+
+        WatchedStatus watchedStatus;
+        if (requestResources.getResponseNonce().isEmpty()) {
+            Loggers.MAIN.info("mcp: init request, type {}, connection-id {}, is incremental {}",
+                    type, connectionId, requestResources.getIncremental());
+
+            watchedStatus = new WatchedStatus();
+            watchedStatus.setType(type);
+            connection.addWatchedResource(type, watchedStatus);
+
+            return true;
+        }
+
+        watchedStatus = connection.getWatchedStatusByType(type);
+        if (watchedStatus == null) {
+            Loggers.MAIN.info("mcp: reconnect, type {}, connection-id {}, is incremental {}",
+                    type, connectionId, requestResources.getIncremental());
+            watchedStatus = new WatchedStatus();
+            watchedStatus.setType(type);
+            connection.addWatchedResource(type, watchedStatus);
+            return true;
+        }
+
+        if (!watchedStatus.getLatestNonce().equals(requestResources.getResponseNonce())) {
+            Loggers.MAIN.warn("mcp: request dis match, type {}, connection-id {}", type, connectionId);
+            return false;
+        }
+
+        // This request is ack, we should record nonce.
+        watchedStatus.setAckedNonce(requestResources.getResponseNonce());
+        Loggers.MAIN.info("mcp: ack, type {}, connection-id {}, nonce {}", type, connectionId,
+                requestResources.getResponseNonce());
+        return false;
+    }
+
+    public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
+        switch (event.getType()) {
+            case Service:
+                if (connections.size() == 0) {
+                    return;
+                }
+
+                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
+
+                Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, resourceSnapshot);
+
+                for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
+                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
+                    if (watchedStatus != null) {
+                        connection.push(serviceEntryMcpResponse, watchedStatus);
+                    }
+                }
+                break;
+            default:
+                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+        }
+    }
+
+    private Mcp.Resources buildMcpResourcesResponse(String type, ResourceSnapshot resourceSnapshot) {
+        @SuppressWarnings("unchecked")
+        ApiGenerator<Resource> serviceEntryGenerator = (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
+        List<Resource> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
+
+        String nonce = NonceGenerator.generateNonce();
+        return Mcp.Resources.newBuilder()
+                .setCollection(type)
+                .addAllResources(rawResources)
+                .setSystemVersionInfo(resourceSnapshot.getVersion())
+                .setNonce(nonce).build();
     }
 }

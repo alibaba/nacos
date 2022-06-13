@@ -55,9 +55,9 @@ class ListeningToQuery extends React.Component {
       dataSource: [],
     };
     this.field = new Field(this);
-    this.group = getParams('group') || '';
-    this.dataId = getParams('dataId') || '';
-    this.serverId = getParams('serverId') || '';
+    this.group = getParams('listeningGroup') || '';
+    this.dataId = getParams('listeningDataId') || '';
+    this.serverId = getParams('listeningServerId') || '';
     this.tenant = getParams('namespace') || '';
   }
 
@@ -203,6 +203,10 @@ class ListeningToQuery extends React.Component {
                     dataSource={selectDataSource}
                     style={{ width: 200 }}
                     {...this.init('type')}
+                    onChange={value => {
+                      this.field.setValue('type', value);
+                      this.queryTrackQuery();
+                    }}
                   />
                 </FormItem>
                 <FormItem

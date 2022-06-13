@@ -100,6 +100,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
     }
     
     @PreDestroy
+    @Override
     public void destroy() {
         if (Objects.nonNull(apProtocol)) {
             apProtocol.shutdown();
@@ -114,7 +115,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
             Class configType = ClassUtils.resolveGenericType(protocol.getClass());
             Config config = (Config) ApplicationUtils.getBean(configType);
             injectMembers4AP(config);
-            protocol.init((config));
+            protocol.init(config);
             ProtocolManager.this.apProtocol = protocol;
         });
     }
@@ -124,7 +125,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
             Class configType = ClassUtils.resolveGenericType(protocol.getClass());
             Config config = (Config) ApplicationUtils.getBean(configType);
             injectMembers4CP(config);
-            protocol.init((config));
+            protocol.init(config);
             ProtocolManager.this.cpProtocol = protocol;
         });
     }

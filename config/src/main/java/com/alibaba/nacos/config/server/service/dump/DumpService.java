@@ -67,6 +67,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
@@ -76,6 +77,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DumpService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
     
     protected DumpProcessor processor;
     
@@ -88,6 +91,36 @@ public abstract class DumpService {
     protected final PersistService persistService;
     
     protected final ServerMemberManager memberManager;
+    
+    /**
+     * full dump interval.
+     */
+    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
+    
+    /**
+     * full dump delay.
+     */
+    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
+    
+    private TaskManager dumpTaskMgr;
+    
+    private TaskManager dumpAllTaskMgr;
+    
+    static final AtomicInteger FINISHED = new AtomicInteger();
+    
+    static final int INIT_THREAD_COUNT = 10;
+    
+    int total = 0;
+    
+    private static final String TRUE_STR = "true";
+    
+    private static final String BETA_TABLE_NAME = "config_info_beta";
+    
+    private static final String TAG_TABLE_NAME = "config_info_tag";
+    
+    Boolean isQuickStart = false;
+    
+    private int retentionDays = 30;
     
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
@@ -149,19 +182,9 @@ public abstract class DumpService {
                 if (canExecute()) {
                     try {
                         Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                        int totalCount = persistService.findConfigHistoryCountByTime(startTime);
-                        if (totalCount > 0) {
-                            int pageSize = 1000;
-                            int removeTime = (totalCount + pageSize - 1) / pageSize;
-                            LOGGER.warn(
-                                    "clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-                                    startTime, totalCount, pageSize, removeTime);
-                            while (removeTime > 0) {
-                                // delete paging to avoid reporting errors in batches
-                                persistService.removeConfigHistory(startTime, pageSize);
-                                removeTime--;
-                            }
-                        }
+                        int pageSize = 1000;
+                        LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
+                        persistService.removeConfigHistory(startTime, pageSize);
                     } catch (Throwable e) {
                         LOGGER.error("clearConfigHistory error : {}", e.toString());
                     }
@@ -197,8 +220,7 @@ public abstract class DumpService {
                 }
             } catch (Exception e) {
                 LogUtil.FATAL_LOG
-                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e
-                                .toString());
+                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e);
                 throw new NacosException(NacosException.SERVER_ERROR,
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
@@ -237,7 +259,7 @@ public abstract class DumpService {
     
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
         int timeStep = 6;
-        Boolean isAllDump = true;
+        boolean isAllDump = true;
         // initial dump all
         FileInputStream fis = null;
         Timestamp heartheatLastStamp = null;
@@ -273,7 +295,7 @@ public abstract class DumpService {
                         String tenant = dg[2];
                         ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
                         ConfigCacheService.dumpChange(dataId, group, tenant, configInfo.getContent(),
-                                configInfo.getLastModified());
+                                configInfo.getLastModified(), configInfo.getEncryptedDataKey());
                     }
                     LogUtil.DEFAULT_LOG.error("end checkMd5Task");
                 };
@@ -304,9 +326,9 @@ public abstract class DumpService {
     
     private Boolean isQuickStart() {
         try {
-            String val = null;
+            String val;
             val = EnvUtil.getProperty("isQuickStart");
-            if (val != null && TRUE_STR.equals(val)) {
+            if (TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
             FATAL_LOG.warn("isQuickStart:{}", isQuickStart);
@@ -343,15 +365,25 @@ public abstract class DumpService {
         dump(dataId, group, tenant, lastModified, handleIp, false);
     }
     
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
     public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
+        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta));
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
+        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }
     
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
             boolean isBeta) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
+        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta), tag);
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
+        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
     }
     
     public void dumpAll() {
@@ -359,9 +391,9 @@ public abstract class DumpService {
     }
     
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
-        List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
+        List<List<ConfigInfoChanged>> result = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            result.add(new ArrayList<ConfigInfoChanged>());
+            result.add(new ArrayList<>());
         }
         for (int i = 0; i < list.size(); i++) {
             ConfigInfoChanged config = list.get(i);
@@ -391,7 +423,7 @@ public abstract class DumpService {
                 String group = configInfo.getGroup();
                 String tenant = configInfo.getTenant();
                 try {
-                    List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
+                    List<ConfigInfoAggr> datumList = new ArrayList<>();
                     int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
@@ -444,36 +476,4 @@ public abstract class DumpService {
      * @return {@link Boolean}
      */
     protected abstract boolean canExecute();
-    
-    /**
-     * full dump interval.
-     */
-    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
-    
-    /**
-     * full dump delay.
-     */
-    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
-    
-    private TaskManager dumpTaskMgr;
-    
-    private TaskManager dumpAllTaskMgr;
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
-    
-    static final AtomicInteger FINISHED = new AtomicInteger();
-    
-    static final int INIT_THREAD_COUNT = 10;
-    
-    int total = 0;
-    
-    private static final String TRUE_STR = "true";
-    
-    private static final String BETA_TABLE_NAME = "config_info_beta";
-    
-    private static final String TAG_TABLE_NAME = "config_info_tag";
-    
-    Boolean isQuickStart = false;
-    
-    private int retentionDays = 30;
 }

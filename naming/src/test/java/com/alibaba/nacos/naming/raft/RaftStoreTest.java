@@ -16,26 +16,44 @@
 
 package com.alibaba.nacos.naming.raft;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.sys.env.Constants;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
+import org.mockito.Mock;
 
 public class RaftStoreTest extends BaseTest {
     
-    @InjectMocks
-    @Spy
     public RaftCore raftCore;
     
-    @Spy
     public RaftStore raftStore;
+    
+    @Mock
+    private ClusterVersionJudgement versionJudgement;
+    
+    @Before
+    public void setUp() {
+        super.before();
+        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
+        raftStore = new RaftStore();
+        raftCore = new RaftCore(peerSet, switchDomain, null, null, raftStore, versionJudgement, null);
+    }
+    
+    @After
+    public void tearDown() throws NacosException {
+        raftCore.shutdown();
+        raftStore.shutdown();
+    }
     
     @Test
     public void wrietDatum() throws Exception {

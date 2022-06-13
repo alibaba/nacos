@@ -15,6 +15,12 @@ matrix:
     # On Linux, run with specific JDKs only.
     - os: linux
       env: CUSTOM_JDK="oraclejdk8"
+    - name: Linux aarch64
+      dist: focal
+      arch: arm64-graviton2
+      group: edge
+      virt: vm
+
 
 jdk:
   - openjdk11
@@ -31,9 +37,9 @@ script:
   - mvn clean -Premove-test-data
   - mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
   - mvn clean -Premove-test-data
-  - mvn clean install -Pcit-test
+  - mvn clean package -Pcit-test
   - mvn clean -Premove-test-data
-  - mvn clean package -Pit-test
+  - mvn clean package -Pnit-test
   - mvn clean -Premove-test-data
 after_success:
   - mvn clean package -Pit-test

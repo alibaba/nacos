@@ -13,7 +13,7 @@
 
 package com.alibaba.nacos.config.server.service.datasource;
 
-import com.google.common.base.Preconditions;
+import com.alibaba.nacos.common.utils.Preconditions;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -23,6 +23,7 @@ import org.springframework.core.env.Environment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
 
@@ -84,6 +85,8 @@ public class ExternalDataSourceProperties {
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
             HikariDataSource ds = poolProperties.getDataSource();
             ds.setConnectionTestQuery(TEST_QUERY);
+            ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(10L));
+            ds.setConnectionTimeout(TimeUnit.SECONDS.toMillis(3L));
             dataSources.add(ds);
             callback.accept(ds);
         }

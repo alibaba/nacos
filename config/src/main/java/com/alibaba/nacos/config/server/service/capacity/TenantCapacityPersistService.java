@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.config.server.service.capacity;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
-import com.google.common.collect.Lists;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -30,7 +30,6 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -100,21 +99,18 @@ public class TenantCapacityPersistService {
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;";
         try {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
-            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
-                @Override
-                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                    String tenant = tenantCapacity.getTenant();
-                    ps.setString(1, tenant);
-                    ps.setInt(2, tenantCapacity.getQuota());
-                    ps.setInt(3, tenantCapacity.getMaxSize());
-                    ps.setInt(4, tenantCapacity.getMaxAggrCount());
-                    ps.setInt(5, tenantCapacity.getMaxAggrSize());
-                    ps.setTimestamp(6, tenantCapacity.getGmtCreate());
-                    ps.setTimestamp(7, tenantCapacity.getGmtModified());
-                    ps.setString(8, tenantCapacity.getTenant());
-                    return ps;
-                }
+            PreparedStatementCreator preparedStatementCreator = connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                String tenant = tenantCapacity.getTenant();
+                ps.setString(1, tenant);
+                ps.setInt(2, tenantCapacity.getQuota());
+                ps.setInt(3, tenantCapacity.getMaxSize());
+                ps.setInt(4, tenantCapacity.getMaxAggrCount());
+                ps.setInt(5, tenantCapacity.getMaxAggrSize());
+                ps.setTimestamp(6, tenantCapacity.getGmtCreate());
+                ps.setTimestamp(7, tenantCapacity.getGmtModified());
+                ps.setString(8, tenantCapacity.getTenant());
+                return ps;
             };
             jdbcTemplate.update(preparedStatementCreator, generatedKeyHolder);
             return generatedKeyHolder.getKey() != null;
@@ -209,8 +205,8 @@ public class TenantCapacityPersistService {
      */
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
-        List<Object> argList = Lists.newArrayList();
-        StringBuilder sql = new StringBuilder("update tenant_capacity set");
+        List<Object> argList = CollectionUtils.list();
+        StringBuilder sql = new StringBuilder("UPDATE tenant_capacity SET");
         if (quota != null) {
             sql.append(" quota = ?,");
             argList.add(quota);
@@ -230,7 +226,7 @@ public class TenantCapacityPersistService {
         sql.append(" gmt_modified = ?");
         argList.add(TimeUtils.getCurrentTime());
         
-        sql.append(" where tenant_id = ?");
+        sql.append(" WHERE tenant_id = ?");
         argList.add(tenant);
         try {
             return jdbcTemplate.update(sql.toString(), argList.toArray()) == 1;
@@ -300,14 +296,11 @@ public class TenantCapacityPersistService {
      */
     public boolean deleteTenantCapacity(final String tenant) {
         try {
-            PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
-                @Override
-                public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection
-                            .prepareStatement("DELETE FROM tenant_capacity WHERE tenant_id = ?;");
-                    ps.setString(1, tenant);
-                    return ps;
-                }
+            PreparedStatementCreator preparedStatementCreator = connection -> {
+                PreparedStatement ps = connection
+                        .prepareStatement("DELETE FROM tenant_capacity WHERE tenant_id = ?;");
+                ps.setString(1, tenant);
+                return ps;
             };
             return jdbcTemplate.update(preparedStatementCreator) == 1;
         } catch (CannotGetJdbcConnectionException e) {

@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
-import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.Counter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,44 +37,61 @@ public class MetricsMonitor {
     
     private static AtomicInteger publish = new AtomicInteger();
     
+    /**
+     * task for notify config change to sub client of http long polling..
+     */
     private static AtomicInteger longPolling = new AtomicInteger();
     
     private static AtomicInteger configCount = new AtomicInteger();
     
+    /**
+     * task for ntify config change to cluster server.
+     */
     private static AtomicInteger notifyTask = new AtomicInteger();
+    
+    /**
+     * task for notify config change to sub client of long connection.
+     */
+    private static AtomicInteger notifyClientTask = new AtomicInteger();
     
     private static AtomicInteger dumpTask = new AtomicInteger();
     
     static {
-        List<Tag> tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        ImmutableTag immutableTag = new ImmutableTag("module", "config");
+        
+        List<Tag> tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "getConfig"));
         Metrics.gauge("nacos_monitor", tags, getConfig);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "publish"));
         Metrics.gauge("nacos_monitor", tags, publish);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "longPolling"));
         Metrics.gauge("nacos_monitor", tags, longPolling);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "configCount"));
         Metrics.gauge("nacos_monitor", tags, configCount);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyTask"));
         Metrics.gauge("nacos_monitor", tags, notifyTask);
+    
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "notifyClientTask"));
+        Metrics.gauge("nacos_monitor", tags, notifyClientTask);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "dumpTask"));
-        
         Metrics.gauge("nacos_monitor", tags, dumpTask);
     }
     
@@ -96,6 +113,10 @@ public class MetricsMonitor {
     
     public static AtomicInteger getNotifyTaskMonitor() {
         return notifyTask;
+    }
+    
+    public static AtomicInteger getNotifyClientTaskMonitor() {
+        return notifyClientTask;
     }
     
     public static AtomicInteger getDumpTaskMonitor() {

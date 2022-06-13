@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -28,6 +30,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -38,25 +41,37 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
-    private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<String, ConcurrentHashSet<EventListener>>();
+    private final String eventScope;
+    
+    private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<>();
     
     private final Object lock = new Object();
+    
+    @JustForTest
+    public InstancesChangeNotifier() {
+        this.eventScope = UUID.randomUUID().toString();
+    }
+    
+    public InstancesChangeNotifier(String eventScope) {
+        this.eventScope = eventScope;
+    }
     
     /**
      * register listener.
      *
-     * @param serviceName combineServiceName, such as 'xxx@@xxx'
+     * @param groupName   group name
+     * @param serviceName serviceName
      * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
      * @param listener    custom listener
      */
-    public void registerListener(String serviceName, String clusters, EventListener listener) {
-        String key = ServiceInfo.getKey(serviceName, clusters);
+    public void registerListener(String groupName, String serviceName, String clusters, EventListener listener) {
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (eventListeners == null) {
             synchronized (lock) {
                 eventListeners = listenerMap.get(key);
                 if (eventListeners == null) {
-                    eventListeners = new ConcurrentHashSet<EventListener>();
+                    eventListeners = new ConcurrentHashSet<>();
                     listenerMap.put(key, eventListeners);
                 }
             }
@@ -67,12 +82,13 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     /**
      * deregister listener.
      *
-     * @param serviceName combineServiceName, such as 'xxx@@xxx'
+     * @param groupName   group name
+     * @param serviceName serviceName
      * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
      * @param listener    custom listener
      */
-    public void deregisterListener(String serviceName, String clusters, EventListener listener) {
-        String key = ServiceInfo.getKey(serviceName, clusters);
+    public void deregisterListener(String groupName, String serviceName, String clusters, EventListener listener) {
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (eventListeners == null) {
             return;
@@ -86,18 +102,19 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     /**
      * check serviceName,clusters is subscribed.
      *
-     * @param serviceName combineServiceName, such as 'xxx@@xxx'
+     * @param groupName   group name
+     * @param serviceName serviceName
      * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
      * @return is serviceName,clusters subscribed
      */
-    public boolean isSubscribed(String serviceName, String clusters) {
-        String key = ServiceInfo.getKey(serviceName, clusters);
+    public boolean isSubscribed(String groupName, String serviceName, String clusters) {
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         return CollectionUtils.isNotEmpty(eventListeners);
     }
     
     public List<ServiceInfo> getSubscribeServices() {
-        List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
+        List<ServiceInfo> serviceInfos = new ArrayList<>();
         for (String key : listenerMap.keySet()) {
             serviceInfos.add(ServiceInfo.fromKey(key));
         }
@@ -106,7 +123,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        String key = ServiceInfo.getKey(event.getServiceName(), event.getClusters());
+        String key = ServiceInfo
+                .getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()), event.getClusters());
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (CollectionUtils.isEmpty(eventListeners)) {
             return;
@@ -114,15 +132,10 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         for (final EventListener listener : eventListeners) {
             final com.alibaba.nacos.api.naming.listener.Event namingEvent = transferToNamingEvent(event);
             if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
-                ((AbstractEventListener) listener).getExecutor().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        listener.onEvent(namingEvent);
-                    }
-                });
-                continue;
+                ((AbstractEventListener) listener).getExecutor().execute(() -> listener.onEvent(namingEvent));
+            } else {
+                listener.onEvent(namingEvent);
             }
-            listener.onEvent(namingEvent);
         }
     }
     
@@ -137,4 +150,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         return InstancesChangeEvent.class;
     }
     
+    @Override
+    public boolean scopeMatches(InstancesChangeEvent event) {
+        return this.eventScope.equals(event.scope());
+    }
 }

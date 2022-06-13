@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.client.constant.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
@@ -26,8 +27,6 @@ import java.io.File;
  * @author Nacos
  */
 public class AppNameUtils {
-    
-    private static final String PARAM_MARKING_PROJECT = "project.name";
     
     private static final String PARAM_MARKING_JBOSS = "jboss.server.home.dir";
     
@@ -45,8 +44,10 @@ public class AppNameUtils {
     
     private static final String SERVER_UNKNOWN = "unknown server";
     
+    private static final String DEFAULT_APP_NAME = "unknown";
+    
     public static String getAppName() {
-        String appName = null;
+        String appName;
         
         appName = getAppNameByProjectName();
         if (appName != null) {
@@ -58,11 +59,11 @@ public class AppNameUtils {
             return appName;
         }
         
-        return "unknown";
+        return DEFAULT_APP_NAME;
     }
     
     private static String getAppNameByProjectName() {
-        return System.getProperty(PARAM_MARKING_PROJECT);
+        return System.getProperty(Constants.SysEnv.PROJECT_NAME);
     }
     
     private static String getAppNameByServerHome() {
@@ -83,7 +84,7 @@ public class AppNameUtils {
     }
     
     private static String getServerType() {
-        String serverType = null;
+        String serverType;
         if (System.getProperty(PARAM_MARKING_JBOSS) != null) {
             serverType = SERVER_JBOSS;
         } else if (System.getProperty(PARAM_MARKING_JETTY) != null) {

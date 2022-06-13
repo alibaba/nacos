@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -27,10 +28,11 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,11 +49,13 @@ public class HttpClient {
     
     private static final int CON_TIME_OUT_MILLIS = 5000;
     
-    private static final NacosRestTemplate SYNC_NACOS_REST_TEMPLATE = HttpClientManager.getNacosRestTemplate();
-    
     private static final NacosRestTemplate APACHE_SYNC_NACOS_REST_TEMPLATE = HttpClientManager.getApacheRestTemplate();
     
     private static final NacosAsyncRestTemplate ASYNC_REST_TEMPLATE = HttpClientManager.getAsyncRestTemplate();
+    
+    private static final String ENCODING = "UTF-8";
+    
+    private static final String NOFIX = "1";
     
     /**
      * Request http delete method.
@@ -103,12 +107,13 @@ public class HttpClient {
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
         header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
+        AuthHeaderUtil.addIdentityToHeader(header);
         
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
                 .setReadTimeOutMillis(readTimeout).build();
         Query query = Query.newInstance().initParams(paramValues);
-        query.addParam("encoding", "UTF-8");
-        query.addParam("nofix", "1");
+        query.addParam(FieldsConstants.ENCODING, ENCODING);
+        query.addParam(FieldsConstants.NOFIX, NOFIX);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE
                     .exchange(url, httpClientConfig, header, query, body, method, String.class);
@@ -168,17 +173,17 @@ public class HttpClient {
      */
     public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues,
             Callback<String> callback, String method) throws Exception {
-        
+    
         Query query = Query.newInstance().initParams(paramValues);
-        query.addParam("encoding", "UTF-8");
-        query.addParam("nofix", "1");
+        query.addParam(FieldsConstants.ENCODING, ENCODING);
+        query.addParam(FieldsConstants.NOFIX, NOFIX);
         
         Header header = Header.newInstance();
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
-        
+        AuthHeaderUtil.addIdentityToHeader(header);
         switch (method) {
             case HttpMethod.GET:
                 ASYNC_REST_TEMPLATE.get(url, header, query, String.class, callback);
@@ -224,6 +229,7 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
+        AuthHeaderUtil.addIdentityToHeader(header);
         ASYNC_REST_TEMPLATE.post(url, header, Query.EMPTY, content, String.class, callback);
     }
     
@@ -241,6 +247,7 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
+        AuthHeaderUtil.addIdentityToHeader(header);
         ASYNC_REST_TEMPLATE.delete(url, header, content, String.class, callback);
     }
     
@@ -265,9 +272,9 @@ public class HttpClient {
                 header.addAll(headers);
             }
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
-            
-            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000).setReadTimeOutMillis(5000)
-                    .setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
+            AuthHeaderUtil.addIdentityToHeader(header);
+            HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
+                    .setReadTimeOutMillis(5000).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
         } catch (Throwable e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
@@ -288,6 +295,7 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
+        AuthHeaderUtil.addIdentityToHeader(header);
         ASYNC_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class, callback);
     }
     
@@ -304,6 +312,7 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
+        AuthHeaderUtil.addIdentityToHeader(header);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.put(url, header, Query.EMPTY, content, String.class);
         } catch (Exception e) {
@@ -324,6 +333,7 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
+        AuthHeaderUtil.addIdentityToHeader(header);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.getLarge(url, header, Query.EMPTY, content, String.class);
         } catch (Exception e) {
@@ -344,6 +354,7 @@ public class HttpClient {
         if (MapUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
+        AuthHeaderUtil.addIdentityToHeader(header);
         try {
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postJson(url, header, content, String.class);
         } catch (Exception e) {

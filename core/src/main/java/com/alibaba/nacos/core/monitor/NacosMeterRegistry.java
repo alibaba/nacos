@@ -51,4 +51,7 @@ public final class NacosMeterRegistry {
         return METER_REGISTRY.timer("nacos_monitor", tags);
     }
     
+    public static CompositeMeterRegistry getMeterRegistry() {
+        return METER_REGISTRY;
+    }
 }

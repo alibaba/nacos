@@ -55,7 +55,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
-                    lastMaxId = id > lastMaxId ? id : lastMaxId;
+                    lastMaxId = Math.max(id, lastMaxId);
                     if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
                         AggrWhitelist.load(cf.getContent());
                     }
@@ -67,10 +67,9 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                     if (cf.getDataId().equals(SwitchService.SWITCH_META_DATAID)) {
                         SwitchService.load(cf.getContent());
                     }
-                    
-                    boolean result = ConfigCacheService
-                            .dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(), cf.getLastModified(),
-                                    cf.getType());
+    
+                    ConfigCacheService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
+                            cf.getLastModified(), cf.getType(), cf.getEncryptedDataKey());
                     
                     final String content = cf.getContent();
                     final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);

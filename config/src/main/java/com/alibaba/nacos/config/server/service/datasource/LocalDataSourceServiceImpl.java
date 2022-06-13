@@ -25,7 +25,7 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -74,15 +74,16 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     @PostConstruct
     @Override
     public synchronized void init() throws Exception {
-        if (!PropertyUtil.isUseExternalDB()) {
-            if (!initialize) {
-                LogUtil.DEFAULT_LOG.info("use local db service for init");
-                final String jdbcUrl =
-                        "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
-                                + ";create=true";
-                initialize(jdbcUrl);
-                initialize = true;
-            }
+        if (PropertyUtil.isUseExternalDB()) {
+            return;
+        }
+        if (!initialize) {
+            LogUtil.DEFAULT_LOG.info("use local db service for init");
+            final String jdbcUrl =
+                    "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
+                            + ";create=true";
+            initialize(jdbcUrl);
+            initialize = true;
         }
     }
     
@@ -205,7 +206,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
      * @throws Exception Exception.
      */
     private List<String> loadSql(String sqlFile) throws Exception {
-        List<String> sqlList = new ArrayList<String>();
+        List<String> sqlList = new ArrayList<>();
         InputStream sqlFileIn = null;
         try {
             File file = new File(

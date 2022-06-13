@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.auth.model.User;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -36,8 +36,6 @@ public class RequestUtil {
     
     public static final String CLIENT_APPNAME_HEADER = "Client-AppName";
     
-    public static final String NACOS_USER_KEY = "nacosuser";
-    
     /**
      * get real client ip
      *
@@ -45,7 +43,7 @@ public class RequestUtil {
      * {@link HttpServletRequest#getRemoteAddr()}
      *
      * @param request {@link HttpServletRequest}
-     * @return
+     * @return remote ip address.
      */
     public static String getRemoteIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
@@ -67,30 +65,16 @@ public class RequestUtil {
     }
     
     /**
-     * Gets the user of the client application in the Attribute.
-     *
-     * @param request {@link HttpServletRequest}
-     * @return may be return null
-     */
-    public static User getUser(HttpServletRequest request) {
-        Object userObj = request.getAttribute(NACOS_USER_KEY);
-        if (userObj == null) {
-            return null;
-        }
-        
-        User user = (User) userObj;
-        return user;
-    }
-    
-    /**
      * Gets the username of the client application in the Attribute.
      *
      * @param request {@link HttpServletRequest}
      * @return may be return null
      */
     public static String getSrcUserName(HttpServletRequest request) {
-        User user = getUser(request);
-        return user == null ? null : user.getUserName();
+        String result = (String) request.getSession()
+                .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID);
+        // If auth is disabled, get username from parameters by agreed key
+        return StringUtils.isBlank(result) ? request.getParameter(Constants.USERNAME) : result;
     }
     
 }

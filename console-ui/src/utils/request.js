@@ -47,8 +47,12 @@ const request = () => {
           console.log(e);
           goLogin();
         }
-        const { accessToken = '' } = token;
+        const { accessToken = '', username = '' } = token;
         config.params.accessToken = accessToken;
+        // support #3548 and fix #5835
+        if (!url.includes('auth')) {
+          config.params.username = username;
+        }
         config.headers = Object.assign({}, headers, { accessToken });
       }
       if (data && isPlainObject(data) && ['post', 'put'].includes(method)) {
@@ -85,7 +89,9 @@ const request = () => {
 
         if (
           [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid!', 'token expired!'].includes(message)
+          ['unknown user!', 'token invalid!', 'token expired!', 'session expired!'].includes(
+            message
+          )
         ) {
           goLogin();
         }

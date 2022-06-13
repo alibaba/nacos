@@ -16,14 +16,17 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Report local server status to other server.
@@ -34,20 +37,20 @@ import java.util.Map;
 public class ServerStatusSynchronizer implements Synchronizer {
     
     @Override
-    public void send(final String serverIP, Message msg) {
-        if (StringUtils.isEmpty(serverIP)) {
+    public void send(final String serverIp, Message msg) {
+        if (StringUtils.isEmpty(serverIp)) {
             return;
         }
         
         final Map<String, String> params = new HashMap<String, String>(2);
+    
+        params.put(FieldsConstants.SERVICE_STATUS, msg.getData());
         
-        params.put("serverStatus", msg.getData());
-        
-        String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
+        String url = HTTP_PREFIX + serverIp + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
         
-        if (IPUtil.containsPort(serverIP)) {
-            url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+        if (InternetAddressUtil.containsPort(serverIp)) {
+            url = HTTP_PREFIX + serverIp + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
         
@@ -57,13 +60,13 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 public void onReceive(RestResult<String> result) {
                     if (!result.ok()) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
-                                serverIP);
+                                serverIp);
                     }
                 }
     
                 @Override
                 public void onError(Throwable throwable) {
-                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
+                    Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIp, throwable);
                 }
     
                 @Override
@@ -72,7 +75,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 }
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIp, e);
         }
     }
     

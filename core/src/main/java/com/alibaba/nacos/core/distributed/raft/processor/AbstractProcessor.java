@@ -55,7 +55,7 @@ public abstract class AbstractProcessor {
                         Response.newBuilder().setSuccess(false).setErrMsg("Could not find leader : " + group).build());
             }
         } catch (Throwable e) {
-            Loggers.RAFT.error("handleRequest has error : {}", e);
+            Loggers.RAFT.error("handleRequest has error : ", e);
             rpcCtx.sendResponse(Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build());
         }
     }
@@ -81,7 +81,7 @@ public abstract class AbstractProcessor {
             @Override
             public void run(Status status) {
                 if (Objects.nonNull(ex)) {
-                    Loggers.RAFT.error("execute has error : {}", ex);
+                    Loggers.RAFT.error("execute has error : ", ex);
                     asyncCtx.sendResponse(Response.newBuilder().setErrMsg(ex.toString()).setSuccess(false).build());
                 } else {
                     asyncCtx.sendResponse(data);

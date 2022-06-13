@@ -133,6 +133,12 @@ class ServiceList extends React.Component {
     this.showcode.current.getInstance().openDialog(record);
   }
 
+  querySubscriber(record) {
+    const { name, groupName } = record;
+    const namespace = this.state.nowNamespaceId;
+    this.props.history.push(generateUrl('/subscriberList', { namespace, name, groupName }));
+  }
+
   handlePageSizeChange(pageSize) {
     this.setState({ pageSize }, () => this.queryServiceList());
   }
@@ -187,6 +193,7 @@ class ServiceList extends React.Component {
       detail,
       sampleCode,
       deleteAction,
+      subscriber,
     } = locale;
     const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
@@ -302,6 +309,10 @@ class ServiceList extends React.Component {
                     <span style={{ marginRight: 5 }}>|</span>
                     <a style={{ marginRight: 5 }} onClick={() => this.showSampleCode(record)}>
                       {sampleCode}
+                    </a>
+                    <span style={{ marginRight: 5 }}>|</span>
+                    <a style={{ marginRight: 5 }} onClick={() => this.querySubscriber(record)}>
+                      {subscriber}
                     </a>
                     <span style={{ marginRight: 5 }}>|</span>
                     <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>

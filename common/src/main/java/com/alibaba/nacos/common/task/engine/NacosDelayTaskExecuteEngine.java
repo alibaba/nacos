@@ -61,7 +61,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     public NacosDelayTaskExecuteEngine(String name, int initCapacity, Logger logger, long processInterval) {
         super(logger);
-        tasks = new ConcurrentHashMap<Object, AbstractDelayTask>(initCapacity);
+        tasks = new ConcurrentHashMap<>(initCapacity);
         processingExecutor = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory(name));
         processingExecutor
                 .scheduleWithFixedDelay(new ProcessRunnable(), processInterval, processInterval, TimeUnit.MILLISECONDS);
@@ -104,7 +104,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     @Override
     public Collection<Object> getAllTaskKeys() {
-        Collection<Object> keys = new HashSet<Object>();
+        Collection<Object> keys = new HashSet<>();
         lock.lock();
         try {
             keys.addAll(tasks.keySet());
@@ -116,6 +116,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     @Override
     public void shutdown() throws NacosException {
+        tasks.clear();
         processingExecutor.shutdown();
     }
     
@@ -154,7 +155,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
                     retryFailedTask(taskKey, task);
                 }
             } catch (Throwable e) {
-                getEngineLog().error("Nacos task execute error : " + e.toString(), e);
+                getEngineLog().error("Nacos task execute error ", e);
                 retryFailedTask(taskKey, task);
             }
         }

@@ -29,8 +29,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
@@ -70,7 +69,7 @@ public class LongPollingService {
     
     private static final String TRUE_STR = "true";
     
-    private Map<String, Long> retainIps = new ConcurrentHashMap<String, Long>();
+    private Map<String, Long> retainIps = new ConcurrentHashMap<>();
     
     private static boolean isFixedPolling() {
         return SwitchService.getSwitchBoolean(SwitchService.FIXED_POLLING, false);
@@ -97,7 +96,7 @@ public class LongPollingService {
     public SampleResult getSubscribleInfo(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
         
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.clientMd5Map.containsKey(groupKey)) {
@@ -110,7 +109,7 @@ public class LongPollingService {
     
     public SampleResult getSubscribleInfoByIp(String clientIp) {
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
         
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.ip.equals(clientIp)) {
@@ -133,7 +132,7 @@ public class LongPollingService {
      */
     public SampleResult mergeSampleResult(List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
         for (SampleResult sampleResult : sampleResults) {
             Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
             for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
@@ -153,7 +152,7 @@ public class LongPollingService {
         if (allSubs == null || allSubs.isEmpty()) {
             return null;
         }
-        HashMap<String, Set<String>> app2Groupkeys = new HashMap<String, Set<String>>(50);
+        HashMap<String, Set<String>> app2Groupkeys = new HashMap<>(50);
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (StringUtils.isEmpty(clientLongPolling.appName) || "unknown"
                     .equalsIgnoreCase(clientLongPolling.appName)) {
@@ -162,7 +161,7 @@ public class LongPollingService {
             Set<String> appSubscribeConfigs = app2Groupkeys.get(clientLongPolling.appName);
             Set<String> clientSubscribeConfigs = clientLongPolling.clientMd5Map.keySet();
             if (appSubscribeConfigs == null) {
-                appSubscribeConfigs = new HashSet<String>(clientSubscribeConfigs.size());
+                appSubscribeConfigs = new HashSet<>(clientSubscribeConfigs.size());
             }
             appSubscribeConfigs.addAll(clientSubscribeConfigs);
             app2Groupkeys.put(clientLongPolling.appName, appSubscribeConfigs);
@@ -172,7 +171,7 @@ public class LongPollingService {
     }
     
     public SampleResult getCollectSubscribleInfo(String dataId, String group, String tenant) {
-        List<SampleResult> sampleResultLst = new ArrayList<SampleResult>(50);
+        List<SampleResult> sampleResultLst = new ArrayList<>(50);
         for (int i = 0; i < SAMPLE_TIMES; i++) {
             SampleResult sampleTmp = getSubscribleInfo(dataId, group, tenant);
             if (sampleTmp != null) {
@@ -186,9 +185,8 @@ public class LongPollingService {
                 }
             }
         }
-        
-        SampleResult sampleResult = mergeSampleResult(sampleResultLst);
-        return sampleResult;
+
+        return mergeSampleResult(sampleResultLst);
     }
     
     public SampleResult getCollectSubscribleInfoByIp(String ip) {
@@ -285,7 +283,7 @@ public class LongPollingService {
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public LongPollingService() {
-        allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
+        allSubs = new ConcurrentLinkedQueue<>();
         
         ConfigExecutor.scheduleLongPolling(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
         
@@ -353,6 +351,7 @@ public class LongPollingService {
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
+                
             } catch (Throwable t) {
                 LogUtil.DEFAULT_LOG.error("data change error: {}", ExceptionUtil.getStackTrace(t));
             }
@@ -393,15 +392,14 @@ public class LongPollingService {
         
         @Override
         public void run() {
-            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-                        
-                        // Delete subsciber's relations.
-                        allSubs.remove(ClientLongPolling.this);
-                        
+            asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
+                try {
+                    getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
+
+                    // Delete subscriber's relations.
+                    boolean removeFlag = allSubs.remove(ClientLongPolling.this);
+
+                    if (removeFlag) {
                         if (isFixedPolling()) {
                             LogUtil.CLIENT_LOG
                                     .info("{}|{}|{}|{}|{}|{}", (System.currentTimeMillis() - createTime), "fix",
@@ -422,12 +420,13 @@ public class LongPollingService {
                                             "polling", clientMd5Map.size(), probeRequestSize);
                             sendResponse(null);
                         }
-                    } catch (Throwable t) {
-                        LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
+                    } else {
+                        LogUtil.DEFAULT_LOG.warn("client subsciber's relations delete fail.");
                     }
-                    
+                } catch (Throwable t) {
+                    LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                 }
-                
+
             }, timeoutTime, TimeUnit.MILLISECONDS);
             
             allSubs.add(this);

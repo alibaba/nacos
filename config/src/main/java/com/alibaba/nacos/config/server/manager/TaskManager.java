@@ -127,10 +127,10 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
         for (Object taskType : getAllProcessorKey()) {
-            sb.append(taskType).append(":");
+            sb.append(taskType).append(':');
             AbstractDelayTask task = this.tasks.get(taskType);
             if (task != null) {
-                sb.append(new Date(task.getLastProcessTime()).toString());
+                sb.append(new Date(task.getLastProcessTime()));
             } else {
                 sb.append("finished");
             }
@@ -148,7 +148,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
         } catch (Exception e) {
-            LOGGER.error("registerMBean_fail", "注册mbean出错", e);
+            LOGGER.error("registerMBean_fail", e);
         }
     }
 }

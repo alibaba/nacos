@@ -26,8 +26,8 @@ cssLoader.use.push({
   loader: '@alifd/next-theme-loader',
   options: {
     modifyVars: {
-      '$icon-font-path': '"/nacos/console-ui/public/icons/icon-font"',
-      '$font-custom-path': '"/nacos/console-ui/public/fonts/"'
+      '$icon-font-path': '"../console-ui/public/icons/icon-font"',
+      '$font-custom-path': '"../console-ui/public/fonts/"'
     }
   }
 })
@@ -41,7 +41,6 @@ module.exports = Object.assign({}, base, {
       new OptimizeCSSAssetsPlugin({}),
     ],
   },
-  devtool: 'eval-source-map',
   plugins: [
     new CleanWebpackPlugin({
       cleanOnceBeforeBuildPatterns:[

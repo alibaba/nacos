@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +33,6 @@ import org.springframework.mock.web.MockServletContext;
 
 import java.net.ConnectException;
 import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,23 +56,19 @@ public class MemberUtilTest {
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        final CountDownLatch latch = new CountDownLatch(1);
-        Subscriber<MembersChangeEvent> subscriber = new MemberChangeListener() {
-            @Override
-            public void onEvent(MembersChangeEvent event) {
-                latch.countDown();
-            }
-        };
-        NotifyCenter.registerSubscriber(subscriber);
-    
+        EnvUtil.setIsStandalone(true);
         memberManager = new ServerMemberManager(new MockServletContext());
-        latch.await();
-        NotifyCenter.deregisterSubscriber(subscriber);
         originalMember = buildMember();
     }
     
     private Member buildMember() {
         return Member.builder().ip(IP).port(PORT).state(NodeState.UP).build();
+    }
+    
+    @After
+    public void tearDown() throws NacosException {
+        NotifyCenter.deregisterPublisher(MembersChangeEvent.class);
+        memberManager.shutdown();
     }
     
     @Test
@@ -194,8 +190,9 @@ public class MemberUtilTest {
         ThreadUtils.sleep(4000);
         Assert.assertTrue(received.get());
         final MembersChangeEvent event1 = reference.get();
-        final Member member1 = event1.getMembers().stream().filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress()))
-                .findFirst().orElseThrow(() -> new AssertionError("member is null"));
+        final Member member1 = event1.getMembers().stream()
+                .filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress())).findFirst()
+                .orElseThrow(() -> new AssertionError("member is null"));
         Assert.assertEquals(2, member1.getFailAccessCnt());
         Assert.assertEquals(NodeState.DOWN, member1.getState());
         received.set(false);
@@ -204,8 +201,9 @@ public class MemberUtilTest {
         ThreadUtils.sleep(4000);
         Assert.assertTrue(received.get());
         final MembersChangeEvent event2 = reference.get();
-        final Member member2 = event2.getMembers().stream().filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress()))
-                .findFirst().orElseThrow(() -> new AssertionError("member is null"));
+        final Member member2 = event2.getMembers().stream()
+                .filter(member -> StringUtils.equals(remote.getAddress(), member.getAddress())).findFirst()
+                .orElseThrow(() -> new AssertionError("member is null"));
         Assert.assertEquals(0, member2.getFailAccessCnt());
         Assert.assertEquals(NodeState.UP, member2.getState());
     }
@@ -249,5 +247,5 @@ public class MemberUtilTest {
         ThreadUtils.sleep(4000);
         Assert.assertFalse(received.get());
     }
-
+    
 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -73,8 +74,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     /**
      * this value has been carefully tuned, do not modify unless you're confident.
      */
-    private static final int NIO_THREAD_COUNT =
-            Runtime.getRuntime().availableProcessors() <= 1 ? 1 : Runtime.getRuntime().availableProcessors() / 2;
+    private static final int NIO_THREAD_COUNT = EnvUtil.getAvailableProcessors(0.5);
     
     /**
      * because some hosts doesn't support keep-alive connections, disabled temporarily.

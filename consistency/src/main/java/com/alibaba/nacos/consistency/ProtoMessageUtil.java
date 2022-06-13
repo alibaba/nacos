@@ -31,6 +31,15 @@ import com.google.protobuf.Message;
 public class ProtoMessageUtil {
     
     /**
+     * should be different from field tags of ReadRequest or WriteQuest.
+     */
+    public static final int REQUEST_TYPE_FIELD_TAG = 7 << 3;
+    
+    public static final int REQUEST_TYPE_READ = 1;
+    
+    public static final int REQUEST_TYPE_WRITE = 2;
+    
+    /**
      * Converts the byte array to a specific Protobuf object.
      * Internally, the protobuf new and old objects are compatible.
      *
@@ -40,26 +49,27 @@ public class ProtoMessageUtil {
     public static Message parse(byte[] bytes) {
         Message result;
         try {
-            result = WriteRequest.parseFrom(bytes);
-            return result;
-        } catch (Throwable ignore) {
-        }
-        try {
-            result = ReadRequest.parseFrom(bytes);
-            return result;
+            if (bytes[0] == REQUEST_TYPE_FIELD_TAG) {
+                if (bytes[1] == REQUEST_TYPE_READ) {
+                    result = ReadRequest.parseFrom(bytes);
+                } else {
+                    result = WriteRequest.parseFrom(bytes);
+                }
+                return result;
+            }
         } catch (Throwable ignore) {
         }
         
         // old consistency entity, will be @Deprecated in future
         try {
-            Log log = Log.parseFrom(bytes);
-            return convertToWriteRequest(log);
+            GetRequest request = GetRequest.parseFrom(bytes);
+            return convertToReadRequest(request);
         } catch (Throwable ignore) {
         }
         
         try {
-            GetRequest request = GetRequest.parseFrom(bytes);
-            return convertToReadRequest(request);
+            Log log = Log.parseFrom(bytes);
+            return convertToWriteRequest(log);
         } catch (Throwable ignore) {
         }
         

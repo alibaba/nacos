@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,7 +42,6 @@ public class ListenerController {
     
     private final ConfigSubService configSubService;
     
-    @Autowired
     public ListenerController(ConfigSubService configSubService) {
         this.configSubService = configSubService;
     }
@@ -55,34 +53,31 @@ public class ListenerController {
     public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "tenant", required = false) String tenant,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
-            throws Exception {
+            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) {
         SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
-        Map<String, String> configMd5Status = new HashMap<String, String>(100);
-        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
-            for (Map.Entry<String, String> config : status.entrySet()) {
-                if (!StringUtils.isBlank(tenant)) {
-                    if (config.getKey().contains(tenant)) {
-                        configMd5Status.put(config.getKey(), config.getValue());
-                    }
-                } else {
-                    // Get common config default value, if want to get all config, you need to add "all".
-                    if (all) {
-                        configMd5Status.put(config.getKey(), config.getValue());
-                    } else {
-                        String[] configKeys = GroupKey2.parseKey(config.getKey());
-                        if (StringUtils.isBlank(configKeys[2])) {
-                            configMd5Status.put(config.getKey(), config.getValue());
-                        }
-                    }
+        Map<String, String> configMd5Status = new HashMap<>(100);
+        if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
+            return gls;
+        }
+        Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+        for (Map.Entry<String, String> config : status.entrySet()) {
+            if (!StringUtils.isBlank(tenant) && config.getKey().contains(tenant)) {
+                configMd5Status.put(config.getKey(), config.getValue());
+                continue;
+            }
+            // Get common config default value, if want to get all config, you need to add "all".
+            if (all) {
+                configMd5Status.put(config.getKey(), config.getValue());
+            } else {
+                String[] configKeys = GroupKey2.parseKey(config.getKey());
+                if (StringUtils.isBlank(configKeys[2])) {
+                    configMd5Status.put(config.getKey(), config.getValue());
                 }
             }
-            gls.setLisentersGroupkeyStatus(configMd5Status);
         }
-        
+        gls.setLisentersGroupkeyStatus(configMd5Status);
         return gls;
     }
     

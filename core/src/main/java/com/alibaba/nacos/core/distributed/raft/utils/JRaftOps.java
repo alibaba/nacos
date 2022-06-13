@@ -37,7 +37,7 @@ import java.util.Objects;
 @SuppressWarnings("all")
 public enum JRaftOps {
     
-    TRANSFER_LEADER("transferLeader") {
+    TRANSFER_LEADER(JRaftConstants.TRANSFER_LEADER) {
         @Override
         public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
             final Configuration conf = node.getOptions().getInitialConf();
@@ -50,7 +50,7 @@ public enum JRaftOps {
         }
     },
     
-    RESET_RAFT_CLUSTER("restRaftCluster") {
+    RESET_RAFT_CLUSTER(JRaftConstants.RESET_RAFT_CLUSTER) {
         @Override
         public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
             final Configuration conf = node.getOptions().getInitialConf();
@@ -64,7 +64,7 @@ public enum JRaftOps {
         }
     },
     
-    DO_SNAPSHOT("doSnapshot") {
+    DO_SNAPSHOT(JRaftConstants.DO_SNAPSHOT) {
         @Override
         public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
             final Configuration conf = node.getOptions().getInitialConf();
@@ -77,7 +77,7 @@ public enum JRaftOps {
         }
     },
     
-    REMOVE_PEER("removePeer") {
+    REMOVE_PEER(JRaftConstants.REMOVE_PEER) {
         @Override
         public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
             final Configuration conf = node.getOptions().getInitialConf();
@@ -98,7 +98,7 @@ public enum JRaftOps {
         }
     },
     
-    REMOVE_PEERS("removePeers") {
+    REMOVE_PEERS(JRaftConstants.REMOVE_PEERS) {
         @Override
         public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
             final Configuration conf = node.getOptions().getInitialConf();
@@ -121,7 +121,7 @@ public enum JRaftOps {
         }
     },
     
-    CHANGE_PEERS("changePeers") {
+    CHANGE_PEERS(JRaftConstants.CHANGE_PEERS) {
         @Override
         public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
             final Configuration conf = node.getOptions().getInitialConf();
@@ -136,6 +136,31 @@ public enum JRaftOps {
             }
             
             Status status = cliService.changePeers(groupId, conf, newConf);
+            if (status.isOk()) {
+                return RestResultUtils.success();
+            }
+            return RestResultUtils.failed(status.getErrorMsg());
+        }
+    },
+
+    /**
+     * resetPeers.
+     * <p>
+     * Use only in very urgent situations where availability is more important!
+     * https://www.sofastack.tech/projects/sofa-jraft/jraft-user-guide/#7.3
+     * </p>
+     */
+    RESET_PEERS(JRaftConstants.RESET_PEERS) {
+        @Override
+        public RestResult<String> execute(CliService cliService, String groupId, Node node, Map<String, String> args) {
+            final Configuration newConf = new Configuration();
+            String peers = args.get(JRaftConstants.COMMAND_VALUE);
+            for (String peer : peers.split(",")) {
+                newConf.addPeer(PeerId.parsePeer(peer.trim()));
+            }
+
+            final PeerId nodePeerId = node.getNodeId().getPeerId();
+            Status status = cliService.resetPeer(groupId, nodePeerId, newConf);
             if (status.isOk()) {
                 return RestResultUtils.success();
             }

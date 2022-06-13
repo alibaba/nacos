@@ -76,7 +76,7 @@ public class MD5Utils {
     }
     
     /**
-     * 将一个字节数组转化为可见的字符串.
+     * Convert a byte array into a visible string.
      */
     public static String encodeHexString(byte[] bytes) {
         int l = bytes.length;

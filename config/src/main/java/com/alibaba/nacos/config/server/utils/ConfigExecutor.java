@@ -60,6 +60,11 @@ public final class ConfigExecutor {
             .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
                     new NameThreadFactory("com.alibaba.nacos.config.LongPolling"));
     
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    ThreadUtils.getSuitableThreadCount(),
+                    new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
+    
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
@@ -84,16 +89,24 @@ public final class ConfigExecutor {
         return ((ScheduledThreadPoolExecutor) ASYNC_NOTIFY_EXECUTOR).getQueue().size();
     }
     
+    public static int asyncCofigChangeClientNotifyQueueSize() {
+        return ((ScheduledThreadPoolExecutor) ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR).getQueue().size();
+    }
+    
     public static ScheduledExecutorService getConfigSubServiceExecutor() {
         return CONFIG_SUB_SERVICE_EXECUTOR;
     }
     
-    public static void scheduleLongPolling(Runnable runnable, long initialDelay, long period, TimeUnit unit) {
-        LONG_POLLING_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, period, unit);
+    public static ScheduledExecutorService getClientConfigNotifierServiceExecutor() {
+        return ASYNC_CONFIG_CHANGE_NOTIFY_EXECUTOR;
     }
     
-    public static ScheduledFuture<?> scheduleLongPolling(Runnable runnable, long period, TimeUnit unit) {
-        return LONG_POLLING_EXECUTOR.schedule(runnable, period, unit);
+    public static void scheduleLongPolling(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+        LONG_POLLING_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static ScheduledFuture<?> scheduleLongPolling(Runnable runnable, long delay, TimeUnit unit) {
+        return LONG_POLLING_EXECUTOR.schedule(runnable, delay, unit);
     }
     
     public static void executeLongPolling(Runnable runnable) {

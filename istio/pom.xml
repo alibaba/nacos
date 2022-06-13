@@ -19,7 +19,7 @@
     <parent>
         <artifactId>nacos-all</artifactId>
         <groupId>com.alibaba.nacos</groupId>
-        <version>1.4.1-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
     
     <modelVersion>4.0.0</modelVersion>
@@ -30,11 +30,6 @@
     <url>http://nacos.io</url>
     
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
@@ -81,17 +76,23 @@
             <artifactId>protoc-gen-grpc-java</artifactId>
             <type>pom</type>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.envoyproxy.controlplane/api -->
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
+            <groupId>io.envoyproxy.controlplane</groupId>
+            <artifactId>api</artifactId>
+            <version>0.1.27</version>
         </dependency>
     </dependencies>
     
+
     <build>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.5.0.Final</version>
+            </extension>
+        </extensions>
         <plugins>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
@@ -118,14 +119,30 @@
                     </descriptorRefs>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.6.1</version>
+                <configuration>
+                    <pluginId>grpc-java</pluginId>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${protoc-gen-grpc-java.version}:exe:${os.detected.classifier}</pluginArtifact>
+
+                    <useArgumentFile>true</useArgumentFile>
+                    <checkStaleness>true</checkStaleness>
+                    <staleMillis>10000</staleMillis>
+
+                    <protoSourceRoot>src/main/resources/proto</protoSourceRoot>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>compile-custom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <!--<excludes>-->
-                <!--<exclude>application.properties</exclude>-->
-                <!--</excludes>-->
-            </resource>
-        </resources>
     </build>
 </project>

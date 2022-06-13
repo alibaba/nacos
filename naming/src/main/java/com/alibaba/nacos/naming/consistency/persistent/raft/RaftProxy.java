@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.utils.IPUtil;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Raft http proxy.
@@ -45,10 +47,10 @@ public class RaftProxy {
      */
     public void proxyGet(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
-        if (!IPUtil.containsPort(server)) {
-            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!InternetAddressUtil.containsPort(server)) {
+            server = server + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = HTTP_PREFIX + server + EnvUtil.getContextPath() + api;
         
         RestResult<String> result = HttpClient.httpGet(url, null, params);
         if (!result.ok()) {
@@ -67,10 +69,10 @@ public class RaftProxy {
      */
     public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
         // do proxy
-        if (!IPUtil.containsPort(server)) {
-            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!InternetAddressUtil.containsPort(server)) {
+            server = server + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = HTTP_PREFIX + server + EnvUtil.getContextPath() + api;
         RestResult<String> result;
         switch (method) {
             case GET:
@@ -103,10 +105,10 @@ public class RaftProxy {
     public void proxyPostLarge(String server, String api, String content, Map<String, String> headers)
             throws Exception {
         // do proxy
-        if (!IPUtil.containsPort(server)) {
-            server = server + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!InternetAddressUtil.containsPort(server)) {
+            server = server + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        String url = "http://" + server + EnvUtil.getContextPath() + api;
+        String url = HTTP_PREFIX + server + EnvUtil.getContextPath() + api;
         
         RestResult<String> result = HttpClient.httpPostLarge(url, headers, content);
         if (!result.ok()) {

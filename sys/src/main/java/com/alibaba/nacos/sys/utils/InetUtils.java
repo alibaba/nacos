@@ -18,10 +18,10 @@ package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.SlowEvent;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -75,59 +74,55 @@ public class InetUtils {
         
         final long delayMs = Long.getLong("nacos.core.inet.auto-refresh", 30_000L);
         
-        Runnable ipAutoRefresh = new Runnable() {
-            @Override
-            public void run() {
-                String nacosIP = System.getProperty(NACOS_SERVER_IP);
-                if (StringUtils.isBlank(nacosIP)) {
-                    nacosIP = EnvUtil.getProperty(IP_ADDRESS);
-                }
-                if (!StringUtils.isBlank(nacosIP)) {
-                    if (!(IPUtil.isIP(nacosIP) || isDomain(nacosIP))) {
-                        throw new RuntimeException("nacos address " + nacosIP + " is not ip");
-                    }
-                }
-                String tmpSelfIP = nacosIP;
-                if (StringUtils.isBlank(tmpSelfIP)) {
-                    preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
-                    
-                    if (!preferHostnameOverIP) {
-                        preferHostnameOverIP = Boolean
-                                .parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
-                    }
-                    
-                    if (preferHostnameOverIP) {
-                        InetAddress inetAddress;
-                        try {
-                            inetAddress = InetAddress.getLocalHost();
-                            if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
-                                tmpSelfIP = inetAddress.getHostName();
-                            } else {
-                                tmpSelfIP = inetAddress.getCanonicalHostName();
-                            }
-                        } catch (UnknownHostException ignore) {
-                            LOG.warn("Unable to retrieve localhost");
-                        }
-                    } else {
-                        tmpSelfIP = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
-                    }
-                }
-                if (IPUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIP.startsWith(IPUtil.IPV6_START_MARK) && !tmpSelfIP
-                        .endsWith(IPUtil.IPV6_END_MARK)) {
-                    tmpSelfIP = IPUtil.IPV6_START_MARK + tmpSelfIP + IPUtil.IPV6_END_MARK;
-                    if (StringUtils.contains(tmpSelfIP, IPUtil.PERCENT_SIGN_IN_IPV6)) {
-                        tmpSelfIP = tmpSelfIP.substring(0, tmpSelfIP.indexOf(IPUtil.PERCENT_SIGN_IN_IPV6))
-                                + IPUtil.IPV6_END_MARK;
-                    }
-                }
-                if (!Objects.equals(selfIP, tmpSelfIP) && Objects.nonNull(selfIP)) {
-                    IPChangeEvent event = new IPChangeEvent();
-                    event.setOldIP(selfIP);
-                    event.setNewIP(tmpSelfIP);
-                    NotifyCenter.publishEvent(event);
-                }
-                selfIP = tmpSelfIP;
+        Runnable ipAutoRefresh = () -> {
+            String nacosIP = System.getProperty(NACOS_SERVER_IP);
+            if (StringUtils.isBlank(nacosIP)) {
+                nacosIP = EnvUtil.getProperty(IP_ADDRESS);
             }
+            if (!StringUtils.isBlank(nacosIP)) {
+                if (!(InternetAddressUtil.isIP(nacosIP) || InternetAddressUtil.isDomain(nacosIP))) {
+                    throw new RuntimeException("nacos address " + nacosIP + " is not ip");
+                }
+            }
+            String tmpSelfIP = nacosIP;
+            if (StringUtils.isBlank(tmpSelfIP)) {
+                preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
+
+                if (!preferHostnameOverIP) {
+                    preferHostnameOverIP = Boolean.parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
+                }
+
+                if (preferHostnameOverIP) {
+                    InetAddress inetAddress;
+                    try {
+                        inetAddress = InetAddress.getLocalHost();
+                        if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
+                            tmpSelfIP = inetAddress.getHostName();
+                        } else {
+                            tmpSelfIP = inetAddress.getCanonicalHostName();
+                        }
+                    } catch (UnknownHostException ignore) {
+                        LOG.warn("Unable to retrieve localhost");
+                    }
+                } else {
+                    tmpSelfIP = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
+                }
+            }
+            if (InternetAddressUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIP.startsWith(InternetAddressUtil.IPV6_START_MARK) && !tmpSelfIP
+                    .endsWith(InternetAddressUtil.IPV6_END_MARK)) {
+                tmpSelfIP = InternetAddressUtil.IPV6_START_MARK + tmpSelfIP + InternetAddressUtil.IPV6_END_MARK;
+                if (StringUtils.contains(tmpSelfIP, InternetAddressUtil.PERCENT_SIGN_IN_IPV6)) {
+                    tmpSelfIP = tmpSelfIP.substring(0, tmpSelfIP.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
+                            + InternetAddressUtil.IPV6_END_MARK;
+                }
+            }
+            if (!Objects.equals(selfIP, tmpSelfIP) && Objects.nonNull(selfIP)) {
+                IPChangeEvent event = new IPChangeEvent();
+                event.setOldIP(selfIP);
+                event.setNewIP(tmpSelfIP);
+                NotifyCenter.publishEvent(event);
+            }
+            selfIP = tmpSelfIP;
         };
         
         ipAutoRefresh.run();
@@ -157,11 +152,11 @@ public class InetUtils {
                     } else {
                         continue;
                     }
-    
+                    
                     if (!ignoreInterface(ifc.getDisplayName())) {
                         for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
-                            boolean isLegalIpVersion = IPUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                            boolean isLegalIpVersion = InternetAddressUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
                                     : address instanceof Inet4Address;
                             if (isLegalIpVersion && !address.isLoopbackAddress() && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
@@ -217,21 +212,6 @@ public class InetUtils {
             }
         }
         return false;
-    }
-    
-    /**
-     * juege str is right domain.
-     *
-     * @param str nacosIP
-     * @return nacosIP is domain
-     */
-    public static boolean isDomain(String str) {
-        InetSocketAddress address = new InetSocketAddress(str, 0);
-        boolean unResolved = address.isUnresolved();
-        if (unResolved) {
-            LOG.warn("the domain: '" + str + "' can not be resolved");
-        }
-        return !unResolved;
     }
     
     /**

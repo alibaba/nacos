@@ -17,12 +17,16 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
+import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,12 +37,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -51,6 +55,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
@@ -58,6 +65,15 @@ public class InstanceControllerTest extends BaseTest {
     
     @InjectMocks
     private InstanceController instanceController;
+    
+    @InjectMocks
+    private InstanceOperatorServiceImpl instanceOperatorService;
+    
+    @Mock
+    private DoubleWriteEventListener doubleWriteEventListener;
+    
+    @Mock
+    private InstanceUpgradeHelper instanceUpgradeHelper;
     
     @Mock
     private RaftPeerSet peerSet;
@@ -68,6 +84,10 @@ public class InstanceControllerTest extends BaseTest {
     public void before() {
         super.before();
         mockInjectPushServer();
+        ReflectionTestUtils.setField(instanceController, "upgradeJudgement", upgradeJudgement);
+        ReflectionTestUtils.setField(instanceController, "instanceServiceV1", instanceOperatorService);
+        when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
+        when(instanceUpgradeHelper.toV1(any())).thenReturn(new Instance("1.1.1.1", 9999));
         mockmvc = MockMvcBuilders.standaloneSetup(instanceController).build();
     }
     
@@ -87,7 +107,7 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         service.updateIPs(ipList, false);
         
-        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .post(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
@@ -127,10 +147,11 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         service.updateIPs(ipList, false);
         
-        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list").param("serviceName", TEST_SERVICE_NAME);
+                .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list").param("serviceName", TEST_SERVICE_NAME)
+                .header(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:v1");
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -150,10 +171,11 @@ public class InstanceControllerTest extends BaseTest {
     
     @Test
     public void getNullServiceInstances() throws Exception {
-        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(null);
+        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(null);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list").param("serviceName", TEST_SERVICE_NAME);
+                .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list").param("serviceName", TEST_SERVICE_NAME)
+                .header(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:v1");
         
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
@@ -178,7 +200,7 @@ public class InstanceControllerTest extends BaseTest {
         instanceList.add(instance);
         instanceList.add(instance2);
         
-        Mockito.when(serviceManager
+        when(serviceManager
                 .batchOperate(ArgumentMatchers.anyString(), ArgumentMatchers.any(InstanceOperationInfo.class),
                         ArgumentMatchers.any(Function.class))).thenReturn(instanceList);
         
@@ -223,7 +245,7 @@ public class InstanceControllerTest extends BaseTest {
         instanceList.add(instance);
         instanceList.add(instance2);
         
-        Mockito.when(serviceManager
+        when(serviceManager
                 .batchOperate(ArgumentMatchers.anyString(), ArgumentMatchers.any(InstanceOperationInfo.class),
                         ArgumentMatchers.any(Function.class))).thenReturn(instanceList);
         

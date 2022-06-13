@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.common.utils.IPUtil;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.http.Callback;
@@ -25,7 +24,10 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -49,8 +51,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -75,6 +75,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Raft core code.
@@ -159,6 +161,13 @@ public class RaftCore implements Closeable {
     public void init() throws Exception {
         Loggers.RAFT.info("initializing Raft sub-system");
         final long start = System.currentTimeMillis();
+        if (!EnvUtil.isSupportUpgradeFrom1X()) {
+            Loggers.RAFT.info("Upgrade from 1X feature has closed, "
+                    + "If you want open this feature, please set `nacos.core.support.upgrade.from.1x=true` in application.properties");
+            initialized = true;
+            stopWork = true;
+            return;
+        }
         
         raftStore.loadDatums(notifier, datums);
         
@@ -1008,10 +1017,10 @@ public class RaftCore implements Closeable {
      * @return api url
      */
     public static String buildUrl(String ip, String api) {
-        if (!IPUtil.containsPort(ip)) {
-            ip = ip + IPUtil.IP_PORT_SPLITER + EnvUtil.getPort();
+        if (!InternetAddressUtil.containsPort(ip)) {
+            ip = ip + InternetAddressUtil.IP_PORT_SPLITER + EnvUtil.getPort();
         }
-        return "http://" + ip + EnvUtil.getContextPath() + api;
+        return HTTP_PREFIX + ip + EnvUtil.getContextPath() + api;
     }
     
     public Datum<?> getDatum(String key) {

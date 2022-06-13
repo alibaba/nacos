@@ -18,13 +18,14 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -281,11 +282,19 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             }
             
             if (entry.equals(SwitchEntry.LIGHT_BEAT_ENABLED)) {
-                switchDomain.setLightBeatEnabled(BooleanUtils.toBoolean(value));
+                switchDomain.setLightBeatEnabled(ConvertUtils.toBoolean(value));
             }
             
             if (entry.equals(SwitchEntry.AUTO_CHANGE_HEALTH_CHECK_ENABLED)) {
-                switchDomain.setAutoChangeHealthCheckEnabled(BooleanUtils.toBoolean(value));
+                switchDomain.setAutoChangeHealthCheckEnabled(ConvertUtils.toBoolean(value));
+            }
+            
+            if (entry.equals(SwitchEntry.DOUBLE_WRITE_ENABLED)) {
+                if (!EnvUtil.isSupportUpgradeFrom1X()) {
+                    throw new IllegalAccessException("Upgrade from 1X feature has closed, "
+                            + "please set `nacos.core.support.upgrade.from.1x=true` in application.properties");
+                }
+                switchDomain.setDoubleWriteEnabled(ConvertUtils.toBoolean(value));
             }
             
             if (debug) {
@@ -338,6 +347,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
         switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
+        switchDomain.setDoubleWriteEnabled(newSwitchDomain.isDoubleWriteEnabled());
     }
     
     public SwitchDomain getSwitchDomain() {

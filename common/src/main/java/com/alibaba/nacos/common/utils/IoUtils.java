@@ -35,8 +35,10 @@ import java.io.Writer;
 import java.net.HttpURLConnection;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * IO related tool methods.
@@ -63,10 +65,8 @@ public class IoUtils {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            closeQuietly(out);
-            closeQuietly(gis);
+            closeQuietly(out, gis);
         }
-        
         return null;
     }
     
@@ -90,9 +90,31 @@ public class IoUtils {
             IoUtils.copy(gis, out);
             return out.toByteArray();
         } finally {
-            closeQuietly(out);
-            closeQuietly(gis);
+            closeQuietly(out, gis);
         }
+    }
+    
+    /**
+     * Try compress by GZIP for string.
+     *
+     * @param str      strings to be compressed.
+     * @param encoding encoding.
+     * @return byte[]
+     */
+    public static byte[] tryCompress(String str, String encoding) {
+        if (str == null || str.length() == 0) {
+            return null;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GZIPOutputStream gzip;
+        try {
+            gzip = new GZIPOutputStream(out);
+            gzip.write(str.getBytes(encoding));
+            gzip.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return out.toByteArray();
     }
     
     private static BufferedReader toBufferedReader(Reader reader) {
@@ -127,7 +149,7 @@ public class IoUtils {
      */
     public static List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         String line = null;
         for (; ; ) {
             line = reader.readLine();
@@ -301,8 +323,7 @@ public class IoUtils {
             sc = new FileInputStream(sf).getChannel();
             sc.transferTo(0, sc.size(), tc);
         } finally {
-            closeQuietly(sc);
-            closeQuietly(tc);
+            closeQuietly(sc, tc);
         }
     }
     
@@ -336,14 +357,6 @@ public class IoUtils {
         }
     }
     
-    public static void closeQuietly(InputStream input) {
-        closeQuietly((Closeable) input);
-    }
-    
-    public static void closeQuietly(OutputStream output) {
-        closeQuietly((Closeable) output);
-    }
-    
     /**
      * Close closable object quietly.
      *
@@ -356,6 +369,10 @@ public class IoUtils {
             }
         } catch (IOException ignored) {
         }
+    }
+    
+    public static void closeQuietly(Closeable... closeable) {
+        Arrays.stream(closeable).forEach(IoUtils::closeQuietly);
     }
 }
 

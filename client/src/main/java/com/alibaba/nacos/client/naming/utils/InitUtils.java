@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 /**
  * Init utils.
@@ -40,6 +39,8 @@ import java.util.concurrent.Callable;
  * @author deshao
  */
 public class InitUtils {
+    
+    private static final String DEFAULT_END_POINT_PORT = "8080";
     
     /**
      * Add a difference to the name naming. This method simply initializes the namespace for Naming. Config
@@ -58,44 +59,26 @@ public class InitUtils {
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             
             tmpNamespace = TenantUtil.getUserTenantForAns();
-            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
-                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                    return namespace;
-                }
-            });
+            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property : {}", tmpNamespace);
             
-            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-                @Override
-                public String call() {
-                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
-                    return namespace;
-                }
+            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
+                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
+                return namespace;
             });
         }
         
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                return namespace;
-            }
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
+            String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
+            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
+            return namespace;
         });
         
-        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
+        if (StringUtils.isEmpty(tmpNamespace)) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
         
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                return UtilAndComs.DEFAULT_NAMESPACE_ID;
-            }
-        });
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> UtilAndComs.DEFAULT_NAMESPACE_ID);
         return tmpNamespace;
     }
     
@@ -107,13 +90,10 @@ public class InitUtils {
      */
     public static void initWebRootContext(Properties properties) {
         final String webContext = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
-            @Override
-            public void run() {
-                UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-                UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-                UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
-            }
+        TemplateUtils.stringNotEmptyAndThenExecute(webContext, () -> {
+            UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
+            UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
+            UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
         });
         initWebRootContext();
     }
@@ -125,13 +105,10 @@ public class InitUtils {
     public static void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
         final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
-            @Override
-            public void run() {
-                UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-                UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-                UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
-            }
+        TemplateUtils.stringNotEmptyAndThenExecute(webContext, () -> {
+            UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
+            UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
+            UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
         });
     }
     
@@ -169,20 +146,9 @@ public class InitUtils {
         
         String endpointPort = TemplateUtils
                 .stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
-                        new Callable<String>() {
-                            @Override
-                            public String call() {
-                                
-                                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
-                            }
-                        });
+                        () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
         
-        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
-            @Override
-            public String call() {
-                return "8080";
-            }
-        });
+        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, () -> DEFAULT_END_POINT_PORT);
         
         return endpointUrl + ":" + endpointPort;
     }

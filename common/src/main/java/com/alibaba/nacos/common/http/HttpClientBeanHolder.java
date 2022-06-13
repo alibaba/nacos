@@ -36,20 +36,15 @@ public final class HttpClientBeanHolder {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientBeanHolder.class);
     
-    private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<String, NacosRestTemplate>(10);
+    private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<>(10);
     
-    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<String, NacosAsyncRestTemplate>(
+    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<>(
             10);
     
     private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
     
     static {
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(HttpClientBeanHolder::shutdown);
     }
     
     public static NacosRestTemplate getNacosRestTemplate(Logger logger) {
