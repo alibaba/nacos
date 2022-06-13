@@ -49,7 +49,7 @@ public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadReq
         Loggers.REMOTE.info("server reload request receive,reload count={},redirectServer={},requestIp={}",
                 request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
         int reloadCount = request.getReloadCount();
-        Map<String, String> filter = new HashMap<String, String>(2);
+        Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         int sdkCount = connectionManager.currentClientsCount(filter);
         if (sdkCount <= reloadCount) {

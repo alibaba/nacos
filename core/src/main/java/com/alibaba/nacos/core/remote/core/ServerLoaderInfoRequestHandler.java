@@ -47,7 +47,7 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
     public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta) throws NacosException {
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
         serverLoaderInfoResponse.putMetricsValue("conCount", String.valueOf(connectionManager.currentClientsCount()));
-        Map<String, String> filter = new HashMap<String, String>(2);
+        Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         serverLoaderInfoResponse
                 .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
