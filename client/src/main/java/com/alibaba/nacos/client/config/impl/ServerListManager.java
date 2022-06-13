@@ -19,6 +19,8 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.label.DefaultLabelCollectorImpl;
+import com.alibaba.nacos.client.label.LabelCollector;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -38,9 +40,11 @@ import org.slf4j.Logger;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -191,8 +195,7 @@ public class ServerListManager implements Closeable {
                         : "") + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()]));
             } else {
                 //if use endpoint ,  use endpoint ,content path ,serverlist name
-                serverName = CUSTOM_NAME + "-" + String
-                        .join("_", endpoint, String.valueOf(endpointPort), contentPath, serverListName) + (
+                serverName = CUSTOM_NAME + "-" + StringUtils.join(Arrays.asList( endpoint, String.valueOf(endpointPort), contentPath, serverListName),"_") + (
                         StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
             }
         }
@@ -200,6 +203,19 @@ public class ServerListManager implements Closeable {
         serverName.replaceAll("\\:", "_");
         
         return serverName;
+    }
+    
+    private static String getLabelString() {
+        LabelCollector labelCollector = new DefaultLabelCollectorImpl();
+        Map<String, String> labelMap = labelCollector.getLabels();
+        StringBuilder stringBuilder = new StringBuilder();
+        if (labelMap.size() > 0) {
+            for (Map.Entry<String, String> entry : labelMap.entrySet()) {
+                stringBuilder.append(entry.getKey()).append(":").append(entry.getValue()).append(",");
+            }
+        }
+        
+        return stringBuilder.toString();
     }
     
     private void initAddressServerUrl(Properties properties) {
@@ -212,12 +228,16 @@ public class ServerListManager implements Closeable {
         boolean hasQueryString = false;
         if (StringUtils.isNotBlank(namespace)) {
             addressServerUrlTem.append("?namespace=" + namespace);
-            hasQueryString = false;
+            hasQueryString = true;
         }
         if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
             addressServerUrlTem
                     .append(hasQueryString ? "&" : "?" + properties.get(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
-            
+            hasQueryString = true;
+        }
+        String labelString = getLabelString();
+        if (StringUtils.isNotBlank(labelString)) {
+            addressServerUrlTem.append(hasQueryString ? "&labels=" : "?labels=" + labelString);
         }
         
         this.addressServerUrl = addressServerUrlTem.toString();
