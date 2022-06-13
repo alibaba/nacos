@@ -28,7 +28,7 @@ public class Observable {
     
     private transient boolean changed = false;
     
-    private transient Set<Observer> obs = new ConcurrentHashSet<Observer>();
+    private transient Set<Observer> obs = new ConcurrentHashSet<>();
     
     private volatile int observerCnt = 0;
     
