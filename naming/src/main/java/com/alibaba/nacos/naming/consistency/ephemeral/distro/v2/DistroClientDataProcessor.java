@@ -191,7 +191,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             } else {
                 //当普通实例列表为空的时候，证明此时batch注册的也是空列表
                 if (CollectionUtils.isEmpty(instances)) {
-                    Loggers.DISTRO.error("distro client sync data, instance is not allowed to be null : {}" ,batchInstancePublishInfos);
+                    Loggers.DISTRO.error("distro client sync data, instance is not allowed to be null : {}", batchInstancePublishInfos);
                     continue;
                 }
                 InstancePublishInfo instancePublishInfo = instances.get(i);

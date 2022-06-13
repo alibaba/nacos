@@ -24,12 +24,10 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 
 /**
  * The client registers multiple service instance request.
