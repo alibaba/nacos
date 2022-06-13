@@ -24,7 +24,12 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import io.netty.handler.codec.http2.Http2CodecUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Component;
+
+import java.util.Collections;
 
 /**
  * The client registers multiple service instance request.
@@ -55,6 +60,12 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
     
     private BatchInstanceResponse batchRegisterInstance(Service service, BatchInstanceRequest request,
             RequestMeta meta) {
+        if (CollectionUtils.isEmpty(request.getInstances())) {
+            BatchInstanceResponse batchInstanceResponse = new BatchInstanceResponse(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
+            batchInstanceResponse.setErrorCode(HttpStatus.SC_BAD_REQUEST);
+            batchInstanceResponse.setMessage("batch instance cannot be null");
+            return batchInstanceResponse;
+        }
         clientOperationService.batchRegisterInstance(service, request.getInstances(), meta.getConnectionId());
         return new BatchInstanceResponse(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
     }
