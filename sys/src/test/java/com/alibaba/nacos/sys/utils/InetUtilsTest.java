@@ -19,6 +19,7 @@ package com.alibaba.nacos.sys.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,8 +48,13 @@ public class InetUtilsTest {
     
         selfIP = InetUtils.getSelfIP();
         Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.2"));
-        
+      
+    }
+    
+    @After
+    public void tearDown() {
         System.clearProperty(NACOS_SERVER_IP);
         System.clearProperty(Constants.AUTO_REFRESH_TIME);
     }
+    
 }

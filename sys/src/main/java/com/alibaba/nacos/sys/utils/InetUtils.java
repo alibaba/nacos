@@ -125,9 +125,10 @@ public class InetUtils {
     }
     
     /**
-     * Get ip address from environment.
-     * System property nacos.server.ip.
+     * Get ip address from environment
+     * System property nacos.server.ip
      * Spring property nacos.inetutils.ip-address.
+     *
      * @return ip address
      */
     private static String getNacosIp() {
@@ -146,6 +147,7 @@ public class InetUtils {
     
     /**
      * Get ip address.
+     *
      * @return ip address
      */
     private static String getPreferHostnameOverIP() {
