@@ -320,6 +320,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             String serverStatus = json.get("status").asText();
             return "UP".equals(serverStatus);
         } catch (Exception e) {
+            NAMING_LOGGER.warn("[serverHealthy] Failed to get server health status");
             return false;
         }
     }
@@ -335,15 +336,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
         
         if (selector != null) {
-            switch (SelectorType.valueOf(selector.getType())) {
-                case none:
-                    break;
-                case label:
-                    ExpressionSelector expressionSelector = (ExpressionSelector) selector;
-                    params.put(SELECTOR_PARAM, JacksonUtils.toJson(expressionSelector));
-                    break;
-                default:
-                    break;
+            if (SelectorType.valueOf(selector.getType()) == SelectorType.label) {
+                ExpressionSelector expressionSelector = (ExpressionSelector) selector;
+                params.put(SELECTOR_PARAM, JacksonUtils.toJson(expressionSelector));
             }
         }
         
@@ -466,7 +461,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer,
             String method) throws NacosException {
         long start = System.currentTimeMillis();
-        long end = 0;
+        long end;
         String namespace = params.get(CommonParams.NAMESPACE_ID);
         String group = params.get(CommonParams.GROUP_NAME);
         String serviceName = params.get(CommonParams.SERVICE_NAME);
