@@ -56,9 +56,9 @@ public class HealthCheckTaskV2Test {
     @Before
     public void setUp() {
         ApplicationUtils.injectContext(context);
-        when(ApplicationUtils.getBean(SwitchDomain.class)).thenReturn(switchDomain);
+        when(context.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(switchDomain.getTcpHealthParams()).thenReturn(new SwitchDomain.TcpHealthParams());
-        when(ApplicationUtils.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
+        when(context.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
         healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
     }
     
