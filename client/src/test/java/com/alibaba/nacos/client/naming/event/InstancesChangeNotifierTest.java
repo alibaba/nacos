@@ -110,6 +110,29 @@ public class InstancesChangeNotifierTest {
     }
     
     @Test
+    public void testOnEventOnDifferentNamespace() {
+        String namespace = "public";
+        String eventScope = "scope-001";
+        String group = "a";
+        String name = "b";
+        String clusters = "c";
+        String namespace1 = "public1";
+        
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope, namespace);
+        EventListener listener = Mockito.mock(EventListener.class);
+        
+        instancesChangeNotifier.registerListener(group, name, clusters, listener);
+        InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
+        Mockito.when(event1.getNamespace()).thenReturn(namespace1);
+        Mockito.when(event1.getClusters()).thenReturn(clusters);
+        Mockito.when(event1.getGroupName()).thenReturn(group);
+        Mockito.when(event1.getServiceName()).thenReturn(name);
+        
+        instancesChangeNotifier.onEvent(event1);
+        Mockito.verify(listener, times(0)).onEvent(any());
+    }
+    
+    @Test
     public void testSubscribeType() {
         String namespace = "public";
         String eventScope = "scope-001";
