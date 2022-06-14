@@ -43,17 +43,20 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     private final String eventScope;
     
+    private final String namespace;
+    
     private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<>();
     
     private final Object lock = new Object();
     
     @JustForTest
-    public InstancesChangeNotifier() {
-        this.eventScope = UUID.randomUUID().toString();
+    public InstancesChangeNotifier(String namespace) {
+        this(UUID.randomUUID().toString(), namespace);
     }
     
-    public InstancesChangeNotifier(String eventScope) {
+    public InstancesChangeNotifier(String eventScope, String namespace) {
         this.eventScope = eventScope;
+        this.namespace = namespace;
     }
     
     /**
@@ -123,8 +126,12 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
+        if (event.getNamespace().equals(this.namespace)) {
+            return;
+        }
         String key = ServiceInfo
                 .getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()), event.getClusters());
+
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (CollectionUtils.isEmpty(eventListeners)) {
             return;

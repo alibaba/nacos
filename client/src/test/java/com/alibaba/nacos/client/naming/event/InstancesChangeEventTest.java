@@ -27,6 +27,7 @@ public class InstancesChangeEventTest {
     
     @Test
     public void testGetServiceName() {
+        String namespace = "public";
         String eventScope = "scope-001";
         String serviceName = "a";
         String groupName = "b";
@@ -34,7 +35,7 @@ public class InstancesChangeEventTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts);
+        InstancesChangeEvent event = new InstancesChangeEvent(namespace, eventScope, serviceName, groupName, clusters, hosts);
         Assert.assertEquals(eventScope, event.scope());
         Assert.assertEquals(serviceName, event.getServiceName());
         Assert.assertEquals(clusters, event.getClusters());

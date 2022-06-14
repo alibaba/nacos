@@ -31,6 +31,8 @@ public class InstancesChangeEvent extends Event {
     
     private static final long serialVersionUID = -8823087028212249603L;
     
+    private final String namespace;
+    
     private final String eventScope;
     
     private final String serviceName;
@@ -41,7 +43,9 @@ public class InstancesChangeEvent extends Event {
     
     private final List<Instance> hosts;
     
-    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters, List<Instance> hosts) {
+    public InstancesChangeEvent(String namespace, String eventScope, String serviceName, String groupName,
+            String clusters, List<Instance> hosts) {
+        this.namespace = namespace;
         this.eventScope = eventScope;
         this.serviceName = serviceName;
         this.groupName = groupName;
@@ -63,6 +67,10 @@ public class InstancesChangeEvent extends Event {
     
     public List<Instance> getHosts() {
         return hosts;
+    }
+    
+    public String getNamespace() {
+        return namespace;
     }
     
     @Override

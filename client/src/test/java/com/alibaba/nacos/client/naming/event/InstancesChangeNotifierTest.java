@@ -33,11 +33,12 @@ public class InstancesChangeNotifierTest {
     
     @Test
     public void testRegisterListener() {
+        String namespace = "public";
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
         String clusters = "c";
-        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope, namespace);
         EventListener listener = Mockito.mock(EventListener.class);
         instancesChangeNotifier.registerListener(group, name, clusters, listener);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
@@ -49,17 +50,18 @@ public class InstancesChangeNotifierTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusters, hosts);
+        InstancesChangeEvent event = new InstancesChangeEvent(namespace, eventScope, name, group, clusters, hosts);
         Assert.assertEquals(true, instancesChangeNotifier.scopeMatches(event));
     }
     
     @Test
     public void testDeregisterListener() {
+        String namespace = "public";
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
         String clusters = "c";
-        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope, namespace);
         EventListener listener = Mockito.mock(EventListener.class);
         instancesChangeNotifier.registerListener(group, name, clusters, listener);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
@@ -73,11 +75,12 @@ public class InstancesChangeNotifierTest {
     
     @Test
     public void testIsSubscribed() {
+        String namespace = "public";
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
         String clusters = "c";
-        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope, namespace);
         EventListener listener = Mockito.mock(EventListener.class);
         Assert.assertFalse(instancesChangeNotifier.isSubscribed(group, name, clusters));
         
@@ -87,11 +90,12 @@ public class InstancesChangeNotifierTest {
     
     @Test
     public void testOnEvent() {
+        String namespace = "public";
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
         String clusters = "c";
-        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope, namespace);
         EventListener listener = Mockito.mock(EventListener.class);
         
         instancesChangeNotifier.registerListener(group, name, clusters, listener);
@@ -106,8 +110,9 @@ public class InstancesChangeNotifierTest {
     
     @Test
     public void testSubscribeType() {
+        String namespace = "public";
         String eventScope = "scope-001";
-        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope, namespace);
         Assert.assertEquals(InstancesChangeEvent.class, instancesChangeNotifier.subscribeType());
     }
 }
