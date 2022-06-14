@@ -18,7 +18,9 @@ package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
@@ -132,6 +134,7 @@ public class PushExecuteTask extends AbstractExecuteTask {
             }
             PushResult result = PushResult.pushSuccess(service, clientId, serviceInfo, subscriber,
                     pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, isPushToAll);
+            NotifyCenter.publishEvent(getPushServiceTraceEvent(pushFinishTime, result));
             PushResultHookHolder.getInstance().pushSuccess(result);
         }
         
@@ -157,5 +160,12 @@ public class PushExecuteTask extends AbstractExecuteTask {
             return ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, false, true,
                     subscriber);
         }
+        
+        private NamingTraceEvent.PushServiceTraceEvent getPushServiceTraceEvent(long eventTime, PushResult result) {
+            return new NamingTraceEvent.PushServiceTraceEvent(eventTime, result.getNetworkCost(), result.getAllCost(),
+                    result.getSla(), result.getSubscriber().getIp(), result.getService().getNamespace(),
+                    result.getService().getGroup(), result.getService().getName(), result.getData().getHosts().size());
+        }
+        
     }
 }
