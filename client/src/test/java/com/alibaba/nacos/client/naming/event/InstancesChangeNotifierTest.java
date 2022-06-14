@@ -100,6 +100,7 @@ public class InstancesChangeNotifierTest {
         
         instancesChangeNotifier.registerListener(group, name, clusters, listener);
         InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
+        Mockito.when(event1.getNamespace()).thenReturn(namespace);
         Mockito.when(event1.getClusters()).thenReturn(clusters);
         Mockito.when(event1.getGroupName()).thenReturn(group);
         Mockito.when(event1.getServiceName()).thenReturn(name);
