@@ -126,7 +126,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        if (event.getNamespace().equals(this.namespace)) {
+        if (!event.getNamespace().equals(this.namespace)) {
             return;
         }
         String key = ServiceInfo
