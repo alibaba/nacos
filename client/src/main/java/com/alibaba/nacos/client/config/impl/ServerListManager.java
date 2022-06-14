@@ -195,8 +195,9 @@ public class ServerListManager implements Closeable {
                         : "") + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()]));
             } else {
                 //if use endpoint ,  use endpoint ,content path ,serverlist name
-                serverName = CUSTOM_NAME + "-" + StringUtils.join(Arrays.asList( endpoint, String.valueOf(endpointPort), contentPath, serverListName),"_") + (
-                        StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
+                serverName = CUSTOM_NAME + "-" + StringUtils
+                        .join(Arrays.asList(endpoint, String.valueOf(endpointPort), contentPath, serverListName), "_")
+                        + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
             }
         }
         serverName.replaceAll("\\/", "_");
@@ -232,12 +233,12 @@ public class ServerListManager implements Closeable {
         }
         if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
             addressServerUrlTem
-                    .append(hasQueryString ? "&" : "?" + properties.get(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
+                    .append((hasQueryString ? "&" : "?") + properties.get(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
             hasQueryString = true;
         }
         String labelString = getLabelString();
         if (StringUtils.isNotBlank(labelString)) {
-            addressServerUrlTem.append(hasQueryString ? "&labels=" : "?labels=" + labelString);
+            addressServerUrlTem.append((hasQueryString ? "&" : "?") + "labels=" + labelString);
         }
         
         this.addressServerUrl = addressServerUrlTem.toString();

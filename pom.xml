@@ -88,7 +88,7 @@
     </issueManagement>
 
     <properties>
-        <revision>1.4.3-SNAPSHOT</revision>
+        <revision>1.4.4-test-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -1034,9 +1034,9 @@
         </dependencies>
     </dependencyManagement>
 
-    <distributionManagement>
+<!--    <distributionManagement>
         <snapshotRepository>
-            <!-- 这里的ID一定要在maven setting文件中存在于server下的ID -->
+            &lt;!&ndash; 这里的ID一定要在maven setting文件中存在于server下的ID &ndash;&gt;
             <id>sona</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
@@ -1044,6 +1044,60 @@
             <id>sona</id>
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
+    </distributionManagement>-->
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>snapshots</id>
+            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <id>snapshots</id>
+            <url>http://mvnrepo.alibaba-inc.com/mvn/repository</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+    </pluginRepositories>
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <url>http://mvnrepo.alibaba-inc.com/mvn/releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>http://mvnrepo.alibaba-inc.com/mvn/snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 </project>
 
