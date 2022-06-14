@@ -105,7 +105,7 @@ public class EnvUtil {
     
     private static String selfLocationTag;
     
-    private static final String AMORY_TAG = "Amory-Tag";
+    private static final String AMORY_TAG = "Armory-Tag";
     
     private static final String VIPSERVER_TAG = "Vipserver-Tag";
     
