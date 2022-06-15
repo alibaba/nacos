@@ -397,13 +397,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
-            boolean updateResult = updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, null, time, notify);
-            if (!updateResult) {
-                return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
-            }
-            return true;
-        } catch (EmptyResultDataAccessException ex) { // No data, insert
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+            return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, null, time, notify);
         }
     }
     
@@ -424,13 +420,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify) {
         try {
-            boolean updateResult = updateConfigInfo4TagCas(configInfo, tag, srcIp, null, time, notify);
-            if (!updateResult) {
-                return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
-            }
-            return true;
-        } catch (EmptyResultDataAccessException ex) { // No data, insert
             return addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+            return updateConfigInfo4TagCas(configInfo, tag, srcIp, null, time, notify);
         }
     }
     
@@ -476,13 +468,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify) {
         try {
-            boolean updateResult = updateConfigInfoCas(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
-            if (!updateResult) {
-                return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
-            }
-            return true;
-        } catch (EmptyResultDataAccessException ex) { // No data, insert
             return addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
+        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+            return updateConfigInfoCas(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
         }
     }
     
