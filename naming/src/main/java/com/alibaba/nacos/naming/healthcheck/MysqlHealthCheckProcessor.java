@@ -23,11 +23,11 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -173,7 +173,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                 Throwable cause = t;
                 int maxStackDepth = 50;
                 for (int deepth = 0; deepth < maxStackDepth && cause != null; deepth++) {
-                    if (cause instanceof SocketTimeoutException || cause instanceof ConnectTimeoutException
+                    if (cause instanceof SocketTimeoutException || cause instanceof ConnectException
                             || cause instanceof TimeoutException || cause.getCause() instanceof TimeoutException) {
                         
                         healthCheckCommon.checkFail(ip, task, "mysql:timeout:" + cause.getMessage());

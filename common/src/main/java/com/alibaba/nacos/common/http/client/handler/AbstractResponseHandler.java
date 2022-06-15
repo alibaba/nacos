@@ -49,7 +49,7 @@ public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
     private HttpRestResult<T> handleError(HttpClientResponse response) throws Exception {
         Header headers = response.getHeaders();
         String message = IoUtils.toString(response.getBody(), headers.getCharset());
-        return new HttpRestResult<T>(headers, response.getStatusCode(), null, message);
+        return new HttpRestResult<>(headers, response.getStatusCode(), null, message);
     }
     
     /**

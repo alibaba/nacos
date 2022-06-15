@@ -90,7 +90,7 @@ public class DiskCache {
      * @return service infos
      */
     public static Map<String, ServiceInfo> read(String cacheDir) {
-        Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
+        Map<String, ServiceInfo> domMap = new HashMap<>(16);
         
         BufferedReader reader = null;
         try {
@@ -109,7 +109,7 @@ public class DiskCache {
                 if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName
                         .endsWith(Constants.SERVICE_INFO_SPLITER + "special-url"))) {
                     ServiceInfo dom = new ServiceInfo(fileName);
-                    List<Instance> ips = new ArrayList<Instance>();
+                    List<Instance> ips = new ArrayList<>();
                     dom.setHosts(ips);
                     
                     ServiceInfo newFormat = null;

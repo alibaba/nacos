@@ -55,7 +55,7 @@ public class ServiceInfo {
     
     private long cacheMillis = 1000L;
     
-    private List<Instance> hosts = new ArrayList<Instance>();
+    private List<Instance> hosts = new ArrayList<>();
     
     private long lastRefTime = 0L;
     
@@ -126,7 +126,7 @@ public class ServiceInfo {
     }
     
     public List<Instance> getHosts() {
-        return new ArrayList<Instance>(hosts);
+        return new ArrayList<>(hosts);
     }
     
     public boolean isValid() {
@@ -187,7 +187,7 @@ public class ServiceInfo {
             return false;
         }
         
-        List<Instance> validHosts = new ArrayList<Instance>();
+        List<Instance> validHosts = new ArrayList<>();
         for (Instance host : hosts) {
             if (!host.isHealthy()) {
                 continue;

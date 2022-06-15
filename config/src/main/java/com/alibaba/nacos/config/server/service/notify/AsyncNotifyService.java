@@ -106,8 +106,8 @@ public class AsyncNotifyService {
                     Collection<Member> ipList = memberManager.allMembers();
                     
                     // In fact, any type of queue here can be
-                    Queue<NotifySingleTask> httpQueue = new LinkedList<NotifySingleTask>();
-                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
+                    Queue<NotifySingleTask> httpQueue = new LinkedList<>();
+                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<>();
                     
                     for (Member member : ipList) {
                         if (!MemberUtil.isSupportedLongCon(member)) {
@@ -267,7 +267,7 @@ public class AsyncNotifyService {
     
     private void asyncTaskExecute(NotifySingleTask task) {
         int delay = getDelayTime(task);
-        Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
+        Queue<NotifySingleTask> queue = new LinkedList<>();
         queue.add(task);
         AsyncTask asyncTask = new AsyncTask(nacosAsyncRestTemplate, queue);
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
@@ -275,7 +275,7 @@ public class AsyncNotifyService {
     
     private void asyncTaskExecute(NotifySingleRpcTask task) {
         int delay = getDelayTime(task);
-        Queue<NotifySingleRpcTask> queue = new LinkedList<NotifySingleRpcTask>();
+        Queue<NotifySingleRpcTask> queue = new LinkedList<>();
         queue.add(task);
         AsyncRpcTask asyncTask = new AsyncRpcTask(queue);
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);

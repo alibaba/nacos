@@ -43,7 +43,7 @@ public class AuthPluginManager {
      */
     private final Map<String, AuthPluginService> authServiceMap = new HashMap<>();
     
-    public AuthPluginManager() {
+    private AuthPluginManager() {
         initAuthServices();
     }
     

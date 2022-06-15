@@ -23,13 +23,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -53,14 +52,15 @@ public class DynamicDataSourceTest {
     
     @Test
     public void testGetDataSource() {
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         
-        Mockito.mockStatic(PropertyUtil.class);
-        
-        when(PropertyUtil.isEmbeddedStorage()).thenReturn(true);
+        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
         
-        when(PropertyUtil.isEmbeddedStorage()).thenReturn(false);
+        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(false);
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
+    
+        propertyUtilMockedStatic.close();
     }
     
 }

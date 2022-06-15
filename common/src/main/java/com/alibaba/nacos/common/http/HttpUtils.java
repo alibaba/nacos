@@ -114,7 +114,7 @@ public final class HttpUtils {
         if (body == null || body.isEmpty()) {
             return;
         }
-        List<NameValuePair> params = new ArrayList<NameValuePair>(body.size());
+        List<NameValuePair> params = new ArrayList<>(body.size());
         for (Map.Entry<String, String> entry : body.entrySet()) {
             params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
@@ -176,7 +176,7 @@ public final class HttpUtils {
      * @throws Exception exception
      */
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) throws Exception {
-        Map<String, String> map = new HashMap<String, String>(16);
+        Map<String, String> map = new HashMap<>(16);
         for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
             map.put(entry.getKey(), entry.getValue()[0]);
         }

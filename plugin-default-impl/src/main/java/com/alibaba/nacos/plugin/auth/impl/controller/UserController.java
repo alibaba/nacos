@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthConfig;
 import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
@@ -44,6 +43,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.HttpSessionRequiredException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -56,7 +56,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * User related methods entry.
@@ -82,9 +81,6 @@ public class UserController {
     
     @Autowired
     private AuthConfigs authConfigs;
-    
-    @Autowired
-    private NacosAuthConfig nacosAuthConfig;
     
     @Autowired
     private NacosAuthManager authManager;
@@ -148,11 +144,16 @@ public class UserController {
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         // admin or same user
-        if (!hasPermission(username, request)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+        try {
+            if (!hasPermission(username, request)) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+                return null;
+            }
+        } catch (HttpSessionRequiredException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "session expired!");
             return null;
         }
-        
+    
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
@@ -163,15 +164,14 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) {
+    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        if (Objects.isNull(request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY))) {
-            return false;
-        }
-        
         NacosUser user = (NacosUser) request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY);
+        if (user == null) {
+            throw new HttpSessionRequiredException("session expired!");
+        }
         // admin
         if (user.isGlobalAdmin()) {
             return true;
@@ -218,7 +218,7 @@ public class UserController {
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
-            result.put(Constants.TOKEN_TTL, nacosAuthConfig.getTokenValidityInSeconds());
+            result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenValidityInSeconds());
             result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
             result.put(Constants.USERNAME, user.getUserName());
             return result;

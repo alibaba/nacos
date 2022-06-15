@@ -52,7 +52,7 @@ public class LdapAuthConfig {
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_USERDN + ":cn=admin,dc=example,dc=org}"))
     private String userDn;
     
-    @Value(("${ " + AuthConstants.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
     private String password;
     
     @Bean

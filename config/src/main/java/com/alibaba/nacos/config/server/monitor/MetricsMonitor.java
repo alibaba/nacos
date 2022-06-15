@@ -57,40 +57,41 @@ public class MetricsMonitor {
     private static AtomicInteger dumpTask = new AtomicInteger();
     
     static {
-        List<Tag> tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        ImmutableTag immutableTag = new ImmutableTag("module", "config");
+        
+        List<Tag> tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "getConfig"));
         Metrics.gauge("nacos_monitor", tags, getConfig);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "publish"));
         Metrics.gauge("nacos_monitor", tags, publish);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "longPolling"));
         Metrics.gauge("nacos_monitor", tags, longPolling);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "configCount"));
         Metrics.gauge("nacos_monitor", tags, configCount);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyTask"));
         Metrics.gauge("nacos_monitor", tags, notifyTask);
     
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyClientTask"));
         Metrics.gauge("nacos_monitor", tags, notifyClientTask);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "dumpTask"));
-        
         Metrics.gauge("nacos_monitor", tags, dumpTask);
     }
     

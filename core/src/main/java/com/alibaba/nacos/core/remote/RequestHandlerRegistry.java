@@ -43,7 +43,7 @@ import java.util.Map;
 @Service
 public class RequestHandlerRegistry implements ApplicationListener<ContextRefreshedEvent> {
     
-    Map<String, RequestHandler> registryHandlers = new HashMap<String, RequestHandler>();
+    Map<String, RequestHandler> registryHandlers = new HashMap<>();
     
     @Autowired
     private TpsMonitorManager tpsMonitorManager;

@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.HealthStateChangeReason;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
@@ -77,5 +79,8 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
                         instance.getLastHeartBeatTime());
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
+        NotifyCenter.publishEvent(new NamingTraceEvent.HealthStateChangeTraceEvent(System.currentTimeMillis(),
+                service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
+                false, HealthStateChangeReason.HEARTBEAT_TIMEOUT));
     }
 }

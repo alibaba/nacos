@@ -31,7 +31,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private static final Logger LOGGER = LogUtils.logger(CredentialService.class);
     
-    private static final ConcurrentHashMap<String, CredentialService> INSTANCES = new ConcurrentHashMap<String, CredentialService>();
+    private static final ConcurrentHashMap<String, CredentialService> INSTANCES = new ConcurrentHashMap<>();
     
     private final String appName;
     

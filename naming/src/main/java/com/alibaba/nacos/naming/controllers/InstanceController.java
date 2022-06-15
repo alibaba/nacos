@@ -22,7 +22,10 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -115,6 +118,9 @@ public class InstanceController {
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         
         getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
+        NotifyCenter.publishEvent(new NamingTraceEvent.RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
+                false, namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
+                instance.toInetAddr()));
         return "ok";
     }
     
@@ -136,6 +142,9 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         
         getInstanceOperator().removeInstance(namespaceId, serviceName, instance);
+        NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
+                false, DeregisterInstanceReason.REQUEST, namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
+                instance.toInetAddr()));
         return "ok";
     }
     

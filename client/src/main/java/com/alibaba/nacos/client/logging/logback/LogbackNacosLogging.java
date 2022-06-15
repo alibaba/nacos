@@ -40,11 +40,20 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
     @Override
     public void loadConfiguration() {
         LoggerContext loggerContext = loadConfigurationOnStart();
-        if (loggerContext.getObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK) != null) {
+        if (loggerContext.getObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK) != null && !hasListener(loggerContext)) {
             addListener(loggerContext);
         }
     }
-    
+
+    private boolean hasListener(LoggerContext loggerContext) {
+        for (LoggerContextListener loggerContextListener : loggerContext.getCopyOfListenerList()) {
+            if (loggerContextListener instanceof NacosLoggerContextListener) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private LoggerContext loadConfigurationOnStart() {
         String location = getLocation(NACOS_LOGBACK_LOCATION);
         try {
@@ -57,34 +66,36 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
         }
     }
-    
+
+    class NacosLoggerContextListener implements LoggerContextListener {
+        @Override
+        public boolean isResetResistant() {
+            return true;
+        }
+
+        @Override
+        public void onReset(LoggerContext context) {
+            loadConfigurationOnStart();
+        }
+
+        @Override
+        public void onStart(LoggerContext context) {
+
+        }
+
+        @Override
+        public void onStop(LoggerContext context) {
+
+        }
+
+        @Override
+        public void onLevelChange(Logger logger, Level level) {
+
+        }
+    }
+
     private void addListener(LoggerContext loggerContext) {
-        loggerContext.addListener(new LoggerContextListener() {
-            @Override
-            public boolean isResetResistant() {
-                return true;
-            }
-            
-            @Override
-            public void onReset(LoggerContext context) {
-                loadConfigurationOnStart();
-            }
-            
-            @Override
-            public void onStart(LoggerContext context) {
-            
-            }
-            
-            @Override
-            public void onStop(LoggerContext context) {
-            
-            }
-            
-            @Override
-            public void onLevelChange(Logger logger, Level level) {
-            
-            }
-        });
+        loggerContext.addListener(new NacosLoggerContextListener());
     }
     
 }

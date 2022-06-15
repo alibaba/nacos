@@ -40,7 +40,7 @@ public class ConfigChangeHandler {
     }
     
     private ConfigChangeHandler() {
-        this.parserList = new LinkedList<ConfigChangeParser>();
+        this.parserList = new LinkedList<>();
         
         Collection<ConfigChangeParser> loader = NacosServiceLoader.load(ConfigChangeParser.class);
         Iterator<ConfigChangeParser> itr = loader.iterator();
