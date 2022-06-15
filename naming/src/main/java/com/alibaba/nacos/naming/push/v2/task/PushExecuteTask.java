@@ -131,12 +131,12 @@ public class PushExecuteTask extends AbstractExecuteTask {
                 Loggers.PUSH
                         .info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, originalSize={}, DataSize={}, target={}",
                                 pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
-                                actualServiceInfo.getHosts().size(), serviceInfo.getHosts().size(), subscriber.getIp());
+                                serviceInfo.getHosts().size(), actualServiceInfo.getHosts().size(), subscriber.getIp());
             } else {
                 Loggers.PUSH
                         .info("[PUSH-SUCC] {}ms, all delay time {}ms for subscriber {}, {}, originalSize={}, DataSize={}",
                                 pushCostTimeForNetWork, pushCostTimeForAll, subscriber.getIp(), service,
-                                actualServiceInfo.getHosts().size(), serviceInfo.getHosts().size());
+                                serviceInfo.getHosts().size(), actualServiceInfo.getHosts().size());
             }
             PushResult result = PushResult
                     .pushSuccess(service, clientId, actualServiceInfo, subscriber, pushCostTimeForNetWork,
