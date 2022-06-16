@@ -119,12 +119,20 @@ const getPermissions = params => dispatch =>
     .get('v1/auth/permissions', { params })
     .then(data => dispatch({ type: PERMISSIONS_LIST, data }));
 
+const resourceSeparator = '*';
 /**
  * 给角色添加权限
  * @param {*} param0
  */
-const createPermission = ([role, resource, action]) =>
-  request.post('v1/auth/permissions', { role, resource, action }).then(res => successMsg(res));
+const createPermission = ([role, resource, action, group, permission]) =>
+  request
+    .post('v1/auth/permissions', {
+      role,
+      resource: `${resource || resourceSeparator}:${group || resourceSeparator}:${permission ||
+        resourceSeparator}`,
+      action,
+    })
+    .then(res => successMsg(res));
 
 /**
  * 删除权限

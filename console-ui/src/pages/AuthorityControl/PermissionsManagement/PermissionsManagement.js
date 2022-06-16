@@ -109,6 +109,7 @@ class PermissionsManagement extends React.Component {
             title={locale.resource}
             dataIndex="resource"
             cell={value => {
+              if (value.startsWith('*:')) return 'all';
               const [item = {}] = namespaces.filter(({ namespace }) => {
                 const [itemNamespace] = value.split(':');
                 return itemNamespace === namespace;
@@ -121,6 +122,22 @@ class PermissionsManagement extends React.Component {
             title={locale.action}
             dataIndex="action"
             cell={action => this.getActionText(action)}
+          />
+          <Table.Column
+            title={locale.group}
+            dataIndex="resource"
+            cell={value => {
+              const [namespace, group] = value?.split(':');
+              return group || '';
+            }}
+          />
+          <Table.Column
+            title={locale.permission}
+            dataIndex="resource"
+            cell={value => {
+              const [namespace, group, permission] = value?.split(':');
+              return permission || '';
+            }}
           />
           <Table.Column
             title={locale.operation}

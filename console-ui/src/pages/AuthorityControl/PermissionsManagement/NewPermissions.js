@@ -49,6 +49,7 @@ class NewPermissions extends React.Component {
   state = {
     dataSource: [],
   };
+
   componentDidMount() {
     this.props.getNamespaces();
   }
@@ -59,6 +60,8 @@ class NewPermissions extends React.Component {
       role: locale.roleError,
       resource: locale.resourceError,
       action: locale.actionError,
+      group: locale.groupError,
+      permission: locale.permissionError,
     };
     const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
@@ -67,7 +70,7 @@ class NewPermissions extends React.Component {
       }
       return val;
     });
-    if (vals.filter(v => v).length === 3) {
+    if (vals.filter(v => v).length === 5) {
       return vals;
     }
     return null;
@@ -116,8 +119,9 @@ class NewPermissions extends React.Component {
                 placeholder={locale.resourcePlaceholder}
                 style={{ width: '100%' }}
               >
+                <Option value={'*'}>all</Option>
                 {namespaces.map(({ namespace, namespaceShowName }) => (
-                  <Option value={`${namespace}:*:*`}>
+                  <Option value={`${namespace}`}>
                     {namespaceShowName} {namespace ? `(${namespace})` : ''}
                   </Option>
                 ))}
@@ -133,6 +137,22 @@ class NewPermissions extends React.Component {
                 <Option value="w">{locale.writeOnly}(w)</Option>
                 <Option value="rw">{locale.readWrite}(rw)</Option>
               </Select>
+            </FormItem>
+            <FormItem label={locale.group} required help={getError('group')}>
+              <Input
+                defaultValue={'*'}
+                name="group"
+                placeholder={locale.groupPlaceholder}
+                style={{ width: '100%' }}
+              />
+            </FormItem>
+            <FormItem label={locale.permission} required help={getError('permission')}>
+              <Input
+                name="permission"
+                defaultValue={'*'}
+                placeholder={locale.permissionPlaceholder}
+                style={{ width: '100%' }}
+              />
             </FormItem>
           </Form>
         </Dialog>
