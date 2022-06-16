@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.push.v2.task;
 
-import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
@@ -32,7 +31,8 @@ public class FixturePushExecutor implements PushExecutor {
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+            NamingPushCallback callBack) {
         if (shouldSuccess) {
             callBack.onSuccess();
         } else {
