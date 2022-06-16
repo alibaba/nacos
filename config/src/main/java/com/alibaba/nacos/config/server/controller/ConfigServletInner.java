@@ -258,7 +258,7 @@ public class ConfigServletInner {
                     out.flush();
                     out.close();
                 } else {
-                    String fileContent = IoUtils.toString(fis, Charsets.UTF_8.name());
+                    String fileContent = IoUtils.toString(fis, StandardCharsets.UTF_8.name());
                     String encryptedDataKey = cacheItem.getEncryptedDataKey();
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, fileContent);
                     String decryptContent = pair.getSecond();
