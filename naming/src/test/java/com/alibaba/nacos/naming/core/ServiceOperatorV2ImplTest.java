@@ -122,8 +122,6 @@ public class ServiceOperatorV2ImplTest {
         metadata.setClusters(clusterMetadataMap);
         Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
         
-        Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("D"));
-        
         ObjectNode objectNode = serviceOperatorV2.queryService("A", "B@@C");
     
         Assert.assertEquals("A", objectNode.get(FieldsConstants.NAME_SPACE_ID).asText());

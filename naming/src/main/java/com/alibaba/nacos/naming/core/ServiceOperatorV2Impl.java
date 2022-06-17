@@ -128,7 +128,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(new ServiceMetadata());
         setServiceMetadata(result, serviceMetadata, service);
         ArrayNode clusters = JacksonUtils.createEmptyArrayNode();
-        for (String each : serviceStorage.getClusters(service)) {
+        for (String each : serviceMetadata.getClusters().keySet()) {
             ClusterMetadata clusterMetadata =
                     serviceMetadata.getClusters().containsKey(each) ? serviceMetadata.getClusters().get(each)
                             : new ClusterMetadata();
