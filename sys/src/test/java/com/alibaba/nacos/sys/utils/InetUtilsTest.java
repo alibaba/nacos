@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.core.env.StandardEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +33,7 @@ public class InetUtilsTest {
     
     @Before
     public void setUp() {
-        EnvUtil.setEnvironment(new StandardEnvironment());
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test
