@@ -34,7 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 
-import static com.alibaba.nacos.config.server.constant.Constants.LIMIT_CAPACITY;
+import static com.alibaba.nacos.config.server.constant.Constants.LIMIT_ERROR_CODE;
 
 /**
  * Capacity management aspect: batch write and update but don't process it.
@@ -429,10 +429,10 @@ public class CapacityManagementAspect {
         /**
          * over limit.
          */
-        OVER_CLUSTER_QUOTA("超过集群配置个数上限", LIMIT_CAPACITY),
-        OVER_GROUP_QUOTA("超过该Group配置个数上限", LIMIT_CAPACITY),
-        OVER_TENANT_QUOTA("超过该租户配置个数上限", LIMIT_CAPACITY),
-        OVER_MAX_SIZE("超过配置的内容大小上限", LIMIT_CAPACITY);
+        OVER_CLUSTER_QUOTA("超过集群配置个数上限", LIMIT_ERROR_CODE),
+        OVER_GROUP_QUOTA("超过该Group配置个数上限", LIMIT_ERROR_CODE),
+        OVER_TENANT_QUOTA("超过该租户配置个数上限", LIMIT_ERROR_CODE),
+        OVER_MAX_SIZE("超过配置的内容大小上限", LIMIT_ERROR_CODE);
         
         public final String description;
         
