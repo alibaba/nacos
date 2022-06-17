@@ -42,13 +42,13 @@ public class InetUtilsTest {
         System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
         String selfIP = InetUtils.getSelfIP();
         Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.1"));
-    
+        
         System.setProperty(NACOS_SERVER_IP, "1.1.1.2");
         TimeUnit.MILLISECONDS.sleep(500L);
-    
+        
         selfIP = InetUtils.getSelfIP();
         Assert.assertTrue(StringUtils.equalsIgnoreCase(selfIP, "1.1.1.2"));
-      
+        
     }
     
     @After
