@@ -174,7 +174,8 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest();
         request.setDataOperation(DataOperation.SNAPSHOT);
         try {
-            Response response = clusterRpcClientProxy.sendRequest(member, request);
+            Response response = clusterRpcClientProxy.sendRequest(member, request,
+                    DistroConfig.getInstance().getLoadDataTimeoutMillis());
             if (checkResponse(response)) {
                 return ((DistroDataResponse) response).getDistroData();
             } else {
