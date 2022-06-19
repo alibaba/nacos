@@ -175,7 +175,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         @Override
         public void run() {
             
-            Loggers.MAIN.debug("LABEL-TASK {}", "start dump.");
+            Loggers.MAIN.debug("LABEL-TASK start dump.");
             
             if (cmdbService == null) {
                 return;
@@ -187,7 +187,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 
                 Set<String> labelNames = cmdbService.getLabelNames();
                 if (labelNames == null || labelNames.isEmpty()) {
-                    Loggers.MAIN.warn("CMDB-LABEL-TASK {}", "load label names failed!");
+                    Loggers.MAIN.warn("CMDB-LABEL-TASK load label names failed!");
                 } else {
                     for (String labelName : labelNames) {
                         // If get null label, it's still ok. We will try it later when we meet this label:
@@ -195,14 +195,14 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                     }
                     
                     if (Loggers.MAIN.isDebugEnabled()) {
-                        Loggers.MAIN.debug("LABEL-TASK {}", "got label map:" + JacksonUtils.toJson(tmpLabelMap));
+                        Loggers.MAIN.debug("LABEL-TASK got label map:{}", JacksonUtils.toJson(tmpLabelMap));
                     }
                     
                     labelMap = tmpLabelMap;
                 }
                 
             } catch (Exception e) {
-                Loggers.MAIN.error("CMDB-LABEL-TASK {}", "dump failed!", e);
+                Loggers.MAIN.error("CMDB-LABEL-TASK dump failed!", e);
             } finally {
                 CmdbExecutor.scheduleCmdbTask(this, switches.getLabelTaskInterval(), TimeUnit.SECONDS);
             }
@@ -216,7 +216,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             
             try {
                 
-                Loggers.MAIN.debug("DUMP-TASK {}", "start dump.");
+                Loggers.MAIN.debug("DUMP-TASK start dump.");
                 
                 if (cmdbService == null) {
                     return;
@@ -224,7 +224,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 // refresh entity map:
                 entityMap = cmdbService.getAllEntities();
             } catch (Exception e) {
-                Loggers.MAIN.error("DUMP-TASK {}", "dump failed!", e);
+                Loggers.MAIN.error("DUMP-TASK dump failed!", e);
             } finally {
                 CmdbExecutor.scheduleCmdbTask(this, switches.getDumpTaskInterval(), TimeUnit.SECONDS);
             }
@@ -237,7 +237,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         public void run() {
             try {
                 
-                Loggers.MAIN.debug("EVENT-TASK {}", "start dump.");
+                Loggers.MAIN.debug("EVENT-TASK start dump.");
                 
                 if (cmdbService == null) {
                     return;
@@ -248,7 +248,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 eventTimestamp = current;
                 
                 if (Loggers.MAIN.isDebugEnabled()) {
-                    Loggers.MAIN.debug("EVENT-TASK {}", "got events size:" + ", events:" + JacksonUtils.toJson(events));
+                    Loggers.MAIN.debug("EVENT-TASK got events size:{}, events:{}", events.size(),
+                            JacksonUtils.toJson(events));
                 }
                 
                 if (events != null && !events.isEmpty()) {
@@ -268,7 +269,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 }
                 
             } catch (Exception e) {
-                Loggers.MAIN.error("CMDB-EVENT {}", "event task failed!", e);
+                Loggers.MAIN.error("CMDB-EVENT event task failed!", e);
             } finally {
                 CmdbExecutor.scheduleCmdbTask(this, switches.getEventTaskInterval(), TimeUnit.SECONDS);
             }

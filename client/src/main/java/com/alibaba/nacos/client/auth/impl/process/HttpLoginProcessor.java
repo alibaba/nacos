@@ -75,7 +75,9 @@ public class HttpLoginProcessor implements LoginProcessor {
             HttpRestResult<String> restResult = nacosRestTemplate
                     .postForm(url, Header.EMPTY, Query.newInstance().initParams(params), bodyMap, String.class);
             if (!restResult.ok()) {
-                SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
+                if (SECURITY_LOGGER.isErrorEnabled()) {
+                    SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
+                }
                 return null;
             }
             JsonNode obj = JacksonUtils.toObj(restResult.getData());
