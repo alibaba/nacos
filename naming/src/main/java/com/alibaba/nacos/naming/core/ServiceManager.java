@@ -299,7 +299,7 @@ public class ServiceManager implements RecordListener<Service> {
                 updatedHealthStatus(namespaceId, serviceName, serverIP);
             } catch (Exception e) {
                 Loggers.SRV_LOG
-                        .warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}", serviceName,
+                        .warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: ", serviceName,
                                 serverIP, e);
             }
         }

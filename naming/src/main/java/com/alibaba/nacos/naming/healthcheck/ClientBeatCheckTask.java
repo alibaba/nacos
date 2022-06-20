@@ -154,7 +154,7 @@ public class ClientBeatCheckTask implements Runnable {
                 @Override
                 public void onError(Throwable throwable) {
                     Loggers.SRV_LOG
-                            .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJson(),
+                            .error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: ", instance.toJson(),
                                     throwable);
                 }
     
