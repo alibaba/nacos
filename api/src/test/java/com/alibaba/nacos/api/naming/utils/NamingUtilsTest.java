@@ -83,4 +83,13 @@ public class NamingUtilsTest {
         NamingUtils.checkInstanceIsLegal(instance);
         assertTrue(true);
     }
+    
+    @Test
+    public void testIsNumber() {
+        String str1 = "abc";
+        assertTrue(!NamingUtils.isNumber(str1));
+    
+        String str2 = "123456";
+        assertTrue(NamingUtils.isNumber(str2));
+    }
 }

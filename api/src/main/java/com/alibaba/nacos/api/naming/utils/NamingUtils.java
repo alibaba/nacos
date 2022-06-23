@@ -23,6 +23,9 @@ import com.alibaba.nacos.api.utils.StringUtils;
 
 import java.util.regex.Pattern;
 
+import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
+import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
+
 /**
  * NamingUtils.
  *
@@ -31,7 +34,9 @@ import java.util.regex.Pattern;
  */
 public class NamingUtils {
     
-    private static final Pattern CLUSTER_NAME_PATTERN = Pattern.compile("^[0-9a-zA-Z-]+$");
+    private static final Pattern CLUSTER_NAME_PATTERN = Pattern.compile(CLUSTER_NAME_PATTERN_STRING);
+    
+    private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_PATTERN_STRING);
     
     /**
      * Returns a combined string with serviceName and groupName. serviceName can not be nil.
@@ -138,5 +143,15 @@ public class NamingUtils {
                     String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
                             instance.getClusterName()));
         }
+    }
+    
+    /**
+     * Check string is a number or not.
+     *
+     * @param str a string of digits
+     * @return if it is a string of digits, return true
+     */
+    public static boolean isNumber(String str) {
+        return !StringUtils.isEmpty(str) && NUMBER_PATTERN.matcher(str).matches();
     }
 }
