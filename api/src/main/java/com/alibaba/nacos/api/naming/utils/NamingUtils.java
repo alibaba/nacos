@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.regex.Pattern;
+
 /**
  * NamingUtils.
  *
@@ -28,6 +30,8 @@ import com.alibaba.nacos.api.utils.StringUtils;
  * @since 1.0.0
  */
 public class NamingUtils {
+    
+    private static final Pattern CLUSTER_NAME_PATTERN = Pattern.compile("^[0-9a-zA-Z-]+$");
     
     /**
      * Returns a combined string with serviceName and groupName. serviceName can not be nil.
@@ -128,6 +132,11 @@ public class NamingUtils {
                 || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
+        }
+        if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
+                            instance.getClusterName()));
         }
     }
 }
