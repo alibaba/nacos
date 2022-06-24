@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -169,13 +170,18 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         List<String> serviceNames = clientSyncData.getServiceNames();
         List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
         List<BatchInstancePublishInfo> batchInstancePublishInfos = clientSyncData.getBatchInstancePublishInfos();
+        BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
+        
         Set<Service> syncedService = new HashSet<>();
+        
         for (int i = 0; i < namespaces.size(); i++) {
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
+            //process batch instance
             if (CollectionUtils.isNotEmpty(batchInstancePublishInfos)) {
+                System.out.println(batchInstancePublishInfos);
                 BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
                 BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
                 boolean result = false;
@@ -188,18 +194,20 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                     NotifyCenter.publishEvent(
                             new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                 }
-            } else {
-                //当普通实例列表为空的时候，证明此时batch注册的也是空列表
-                if (CollectionUtils.isEmpty(instances)) {
-                    Loggers.DISTRO.error("distro client sync data, instance is not allowed to be null : {}", batchInstancePublishInfos);
-                    continue;
-                }
+            }
+            //process instance
+            if (CollectionUtils.isNotEmpty(instances)) {
                 InstancePublishInfo instancePublishInfo = instances.get(i);
                 if (!instancePublishInfo.equals(clientInstancePublishInfo)) {
                     client.addServiceInstance(singleton, instancePublishInfo);
                     NotifyCenter.publishEvent(
                             new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                 }
+            }
+            //当同时为空的时，表明此时没有实例注册，不允许注册空实例，如果只有一个为空，则证明另一种实例已经同步完成了
+            if (CollectionUtils.isEmpty(batchInstancePublishInfos) && CollectionUtils.isEmpty(instances)) {
+                Loggers.DISTRO.error("distro client sync data, instance is not allowed to be null : {}", batchInstancePublishInfos);
+                continue;
             }
         }
         for (Service each : client.getAllPublishedService()) {

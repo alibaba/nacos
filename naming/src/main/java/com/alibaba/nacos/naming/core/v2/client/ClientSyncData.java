@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client;
 
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 
@@ -45,17 +46,20 @@ public class ClientSyncData implements Serializable {
     
     private List<BatchInstancePublishInfo> batchInstancePublishInfos;
     
+    private BatchInstanceData batchInstanceData;
+    
     public ClientSyncData() {
     }
     
     public ClientSyncData(String clientId, List<String> namespaces, List<String> groupNames, List<String> serviceNames,
-            List<InstancePublishInfo> instancePublishInfos, List<BatchInstancePublishInfo> batchInstancePublishInfos) {
+            List<InstancePublishInfo> instancePublishInfos, List<BatchInstancePublishInfo> batchInstancePublishInfos,BatchInstanceData batchInstanceData) {
         this.clientId = clientId;
         this.namespaces = namespaces;
         this.groupNames = groupNames;
         this.serviceNames = serviceNames;
         this.instancePublishInfos = instancePublishInfos;
         this.batchInstancePublishInfos = batchInstancePublishInfos;
+        this.batchInstanceData = batchInstanceData;
         this.attributes = new ClientAttributes();
     }
     
@@ -113,5 +117,13 @@ public class ClientSyncData implements Serializable {
     
     public void setBatchInstancePublishInfos(List<BatchInstancePublishInfo> batchInstancePublishInfos) {
         this.batchInstancePublishInfos = batchInstancePublishInfos;
+    }
+    
+    public BatchInstanceData getBatchInstanceData() {
+        return batchInstanceData;
+    }
+    
+    public void setBatchInstanceData(BatchInstanceData batchInstanceData) {
+        this.batchInstanceData = batchInstanceData;
     }
 }
