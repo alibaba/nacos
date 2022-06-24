@@ -331,7 +331,7 @@ public class NamingGrpcClientProxyTest {
         while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
             TimeUnit.SECONDS.sleep(1);
             if (--retry < 0) {
-                Assert.fail("failed to auth switch server");
+                Assert.fail("failed to auth switch server！");
             }
         }
         
