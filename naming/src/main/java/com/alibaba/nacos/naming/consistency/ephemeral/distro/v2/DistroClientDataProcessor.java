@@ -199,7 +199,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         }
         BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
         if (batchInstanceData == null || CollectionUtils.isEmpty(batchInstanceData.getNamespaces())) {
-            Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}",client.getClientId());
+            Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}", client.getClientId());
             return;
         }
         List<String> namespaces = batchInstanceData.getNamespaces();

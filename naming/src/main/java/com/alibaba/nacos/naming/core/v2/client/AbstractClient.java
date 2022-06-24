@@ -146,9 +146,8 @@ public abstract class AbstractClient implements Client {
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstancePublishInfos, batchInstanceData);
     }
     
-    
-    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData ,List<String> batchNamespaces,List<String> batchGroupNames
-            ,List<String> batchServiceNames,Map.Entry<Service, InstancePublishInfo> entry){
+    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
+            List<String> batchGroupNames, List<String> batchServiceNames, Map.Entry<Service, InstancePublishInfo> entry) {
         batchNamespaces.add(entry.getKey().getNamespace());
         batchGroupNames.add(entry.getKey().getGroup());
         batchServiceNames.add(entry.getKey().getName());
