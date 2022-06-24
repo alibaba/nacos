@@ -143,7 +143,7 @@ public abstract class AbstractClient implements Client {
                 instances.add(entry.getValue());
             }
         }
-        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstancePublishInfos, batchInstanceData);
+        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
     }
     
     private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,

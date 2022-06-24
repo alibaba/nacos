@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * batch instance data.
  * @ClassName: BatchInstanceData.
- * @Author: ChenHao26
+ * @author : ChenHao26
  * @Date: 2022/6/24 16:25
  */
 public class BatchInstanceData {
