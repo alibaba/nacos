@@ -137,6 +137,4 @@ public final class Constants {
      */
     public static final double MIN_WEIGHT_VALUE = 0.00D;
     
-    public static final String BATCH_INSTANCE_SUFFIX = "-batchInstance";
-    
 }
