@@ -134,13 +134,7 @@ public abstract class AbstractClient implements Client {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
                 BatchInstancePublishInfo batchInstance = (BatchInstancePublishInfo) instancePublishInfo;
                 batchInstancePublishInfos.add(batchInstance);
-                batchNamespaces.add(entry.getKey().getNamespace());
-                batchGroupNames.add(entry.getKey().getGroup());
-                batchServiceNames.add(entry.getKey().getName());
-                
-                batchInstanceData.setNamespaces(batchNamespaces);
-                batchInstanceData.setGroupNames(batchGroupNames);
-                batchInstanceData.setServiceNames(batchServiceNames);
+                buildBatchInstanceData(batchInstanceData, batchNamespaces, batchGroupNames, batchServiceNames, entry);
                 batchInstanceData.setBatchInstancePublishInfos(batchInstancePublishInfos);
             } else {
                 namespaces.add(entry.getKey().getNamespace());
@@ -152,6 +146,18 @@ public abstract class AbstractClient implements Client {
         return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstancePublishInfos, batchInstanceData);
     }
     
+    
+    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData ,List<String> batchNamespaces,List<String> batchGroupNames
+            ,List<String> batchServiceNames,Map.Entry<Service, InstancePublishInfo> entry){
+        batchNamespaces.add(entry.getKey().getNamespace());
+        batchGroupNames.add(entry.getKey().getGroup());
+        batchServiceNames.add(entry.getKey().getName());
+        
+        batchInstanceData.setNamespaces(batchNamespaces);
+        batchInstanceData.setGroupNames(batchGroupNames);
+        batchInstanceData.setServiceNames(batchServiceNames);
+        return batchInstanceData;
+    }
     
     @Override
     public void release() {

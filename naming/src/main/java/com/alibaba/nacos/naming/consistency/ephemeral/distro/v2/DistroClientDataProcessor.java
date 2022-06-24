@@ -165,49 +165,23 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void upgradeClient(Client client, ClientSyncData clientSyncData) {
+        Set<Service> syncedService = new HashSet<>();
+        // process batch instance sync logic
+        processBatchInstanceDistroData(syncedService, client, clientSyncData);
         List<String> namespaces = clientSyncData.getNamespaces();
         List<String> groupNames = clientSyncData.getGroupNames();
         List<String> serviceNames = clientSyncData.getServiceNames();
         List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
-        List<BatchInstancePublishInfo> batchInstancePublishInfos = clientSyncData.getBatchInstancePublishInfos();
-        BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
-        
-        Set<Service> syncedService = new HashSet<>();
         
         for (int i = 0; i < namespaces.size(); i++) {
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
-            InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
-            //process batch instance
-            if (CollectionUtils.isNotEmpty(batchInstancePublishInfos)) {
-                System.out.println(batchInstancePublishInfos);
-                BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-                BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
-                boolean result = false;
-                //If it is not empty, compare whether the instances are the same. If it is empty, notify directly
-                if (targetInstanceInfo != null) {
-                    result = batchInstancePublishInfo.equals(targetInstanceInfo);
-                }
-                if (!result) {
-                    client.addServiceInstance(singleton, batchInstancePublishInfo);
-                    NotifyCenter.publishEvent(
-                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
-                }
-            }
-            //process instance
-            if (CollectionUtils.isNotEmpty(instances)) {
-                InstancePublishInfo instancePublishInfo = instances.get(i);
-                if (!instancePublishInfo.equals(clientInstancePublishInfo)) {
-                    client.addServiceInstance(singleton, instancePublishInfo);
-                    NotifyCenter.publishEvent(
-                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
-                }
-            }
-            //当同时为空的时，表明此时没有实例注册，不允许注册空实例，如果只有一个为空，则证明另一种实例已经同步完成了
-            if (CollectionUtils.isEmpty(batchInstancePublishInfos) && CollectionUtils.isEmpty(instances)) {
-                Loggers.DISTRO.error("distro client sync data, instance is not allowed to be null : {}", batchInstancePublishInfos);
-                continue;
+            InstancePublishInfo instancePublishInfo = instances.get(i);
+            if (!instancePublishInfo.equals(client.getInstancePublishInfo(singleton))) {
+                client.addServiceInstance(singleton, instancePublishInfo);
+                NotifyCenter.publishEvent(
+                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
         for (Service each : client.getAllPublishedService()) {
@@ -215,6 +189,39 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 client.removeServiceInstance(each);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientDeregisterServiceEvent(each, client.getClientId()));
+            }
+        }
+    }
+    
+    private static void processBatchInstanceDistroData(Set<Service> syncedService, Client client, ClientSyncData clientSyncData)  {
+        if (clientSyncData == null) {
+            return;
+        }
+        BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
+        if (batchInstanceData == null || CollectionUtils.isEmpty(batchInstanceData.getNamespaces())) {
+            Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}",client.getClientId());
+            return;
+        }
+        List<String> namespaces = batchInstanceData.getNamespaces();
+        List<String> groupNames = batchInstanceData.getGroupNames();
+        List<String> serviceNames = batchInstanceData.getServiceNames();
+        List<BatchInstancePublishInfo> batchInstancePublishInfos = batchInstanceData.getBatchInstancePublishInfos();
+    
+        for (int i = 0; i < namespaces.size(); i++) {
+            Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            syncedService.add(singleton);
+            BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
+            InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
+            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
+            boolean result = false;
+            if (targetInstanceInfo != null) {
+                result = batchInstancePublishInfo.equals(targetInstanceInfo);
+            }
+            if (!result) {
+                client.addServiceInstance(service, batchInstancePublishInfo);
+                NotifyCenter.publishEvent(
+                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
     }
