@@ -24,7 +24,6 @@ import org.springframework.stereotype.Component;
  *
  * @author Nacos
  */
-@Component
 public class DynamicDataSource {
     
     private DataSourceService localDataSourceService = null;
