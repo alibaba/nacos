@@ -191,20 +191,20 @@ public class ServiceInfoHolder implements Closeable {
             return false;
         }
         boolean changed = false;
-        Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
+        Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
         for (Instance host : oldService.getHosts()) {
             oldHostMap.put(host.toInetAddr(), host);
         }
-        Map<String, Instance> newHostMap = new HashMap<String, Instance>(newService.getHosts().size());
+        Map<String, Instance> newHostMap = new HashMap<>(newService.getHosts().size());
         for (Instance host : newService.getHosts()) {
             newHostMap.put(host.toInetAddr(), host);
         }
         
-        Set<Instance> modHosts = new HashSet<Instance>();
-        Set<Instance> newHosts = new HashSet<Instance>();
-        Set<Instance> remvHosts = new HashSet<Instance>();
+        Set<Instance> modHosts = new HashSet<>();
+        Set<Instance> newHosts = new HashSet<>();
+        Set<Instance> remvHosts = new HashSet<>();
         
-        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
+        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(
                 newHostMap.entrySet());
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
             Instance host = entry.getValue();

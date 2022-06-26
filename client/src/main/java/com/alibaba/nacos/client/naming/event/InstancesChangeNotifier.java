@@ -43,7 +43,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     private final String eventScope;
     
-    private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<String, ConcurrentHashSet<EventListener>>();
+    private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<>();
     
     private final Object lock = new Object();
     
@@ -71,7 +71,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
             synchronized (lock) {
                 eventListeners = listenerMap.get(key);
                 if (eventListeners == null) {
-                    eventListeners = new ConcurrentHashSet<EventListener>();
+                    eventListeners = new ConcurrentHashSet<>();
                     listenerMap.put(key, eventListeners);
                 }
             }
@@ -114,7 +114,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     }
     
     public List<ServiceInfo> getSubscribeServices() {
-        List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
+        List<ServiceInfo> serviceInfos = new ArrayList<>();
         for (String key : listenerMap.keySet()) {
             serviceInfos.add(ServiceInfo.fromKey(key));
         }

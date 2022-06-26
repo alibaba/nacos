@@ -21,9 +21,10 @@ import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -37,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @author special.fy
  */
 @Component
-public class EventProcessor {
+public class EventProcessor implements ApplicationListener<ContextRefreshedEvent> {
 
     private static final int MAX_WAIT_EVENT_TIME = 100;
 
@@ -68,9 +69,16 @@ public class EventProcessor {
         }
     }
 
-    @PostConstruct
     public void handleEvents() {
         new Consumer("handle events").start();
+    }
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
+        if (contextRefreshedEvent.getApplicationContext().getParent() == null) {
+            checkDependenceReady();
+            handleEvents();
+        }
     }
 
     private class Consumer extends Thread {
@@ -87,10 +95,6 @@ public class EventProcessor {
             Event lastEvent = null;
             while (true) {
                 try {
-                    if (!checkDependenceReady()) {
-                        // Make sure dependency service has ready before consumer service event.
-                        TimeUnit.SECONDS.sleep(1);
-                    }
                     // Today we only care about service event,
                     // so we simply ignore event until the last task has been completed.
                     Event event = events.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);

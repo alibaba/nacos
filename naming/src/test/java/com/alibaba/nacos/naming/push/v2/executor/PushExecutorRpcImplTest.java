@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -60,7 +61,7 @@ public class PushExecutorRpcImplTest {
     private Subscriber subscriber;
     
     @Mock
-    private PushCallBack pushCallBack;
+    private NamingPushCallback pushCallBack;
     
     @Mock
     private SelectorManager selectorManager;
@@ -76,6 +77,7 @@ public class PushExecutorRpcImplTest {
     
     @Before
     public void setUp() throws Exception {
+        EnvUtil.setEnvironment(new MockEnvironment());
         serviceMetadata = new ServiceMetadata();
         pushData = new PushDataWrapper(serviceMetadata, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorRpcImpl(pushService);
@@ -85,8 +87,8 @@ public class PushExecutorRpcImplTest {
                         eq(GlobalExecutor.getCallbackExecutor()));
         ApplicationUtils.injectContext(context);
         when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
-        when(selectorManager.select(any(), any(), any())).then(
-                (Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
+        when(selectorManager.select(any(), any(), any()))
+                .then((Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
     }
     
     @Test

@@ -51,7 +51,7 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private static final int DEFAULT_UPDATE_CACHE_TIME_MULTIPLE = 6;
     
-    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
+    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<>();
     
     private final ServiceInfoHolder serviceInfoHolder;
     

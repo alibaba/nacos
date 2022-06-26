@@ -77,7 +77,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
         page.setTotalCount(rowCountInt);
@@ -122,7 +122,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
         page.setTotalCount(rowCountInt);
@@ -162,7 +162,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
         page.setTotalCount(rowCountInt);
@@ -190,7 +190,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         
         String selectSql = sqlFetchRows;
         if (isDerby()) {

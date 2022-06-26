@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> implements DisposableBean {
     
-    public final Map<String, TpsMonitorPoint> points = new ConcurrentHashMap<String, TpsMonitorPoint>(16);
+    public final Map<String, TpsMonitorPoint> points = new ConcurrentHashMap<>(16);
     
     private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
         Thread thread = new Thread(r, "nacos.core.remote.tps.control.reporter");

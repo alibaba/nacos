@@ -22,8 +22,8 @@ import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -174,7 +174,7 @@ import java.util.zip.ZipException;
  */
 public class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
 
-    private static final Log LOGGER = LogFactory.getLog(PathMatchingResourcePatternResolver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PathMatchingResourcePatternResolver.class);
 
     private static Method equinoxResolveMethod;
 
