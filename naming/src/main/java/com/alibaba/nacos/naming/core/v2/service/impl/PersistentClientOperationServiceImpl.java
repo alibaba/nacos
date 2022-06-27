@@ -246,7 +246,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         return Constants.NAMING_PERSISTENT_SERVICE_GROUP_V2;
     }
     
-    public static class InstanceStoreRequest implements Serializable {
+    static class InstanceStoreRequest implements Serializable {
         
         private static final long serialVersionUID = -9077205657156890549L;
         
