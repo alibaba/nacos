@@ -464,9 +464,6 @@ public class RaftCore implements Closeable {
     @Override
     public void shutdown() throws NacosException {
         this.stopWork = true;
-        if (!initialized) {
-            return;
-        }
         this.raftStore.shutdown();
         this.peers.shutdown();
         Loggers.RAFT.warn("start to close old raft protocol!!!");
