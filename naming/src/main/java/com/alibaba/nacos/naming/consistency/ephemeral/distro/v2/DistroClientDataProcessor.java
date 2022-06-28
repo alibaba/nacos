@@ -194,9 +194,6 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private static void processBatchInstanceDistroData(Set<Service> syncedService, Client client, ClientSyncData clientSyncData)  {
-        if (clientSyncData == null) {
-            return;
-        }
         BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
         if (batchInstanceData == null || CollectionUtils.isEmpty(batchInstanceData.getNamespaces())) {
             Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}", client.getClientId());
@@ -212,8 +209,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-            InstancePublishInfo clientInstancePublishInfo = client.getInstancePublishInfo(singleton);
-            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) clientInstancePublishInfo;
+            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client.getInstancePublishInfo(singleton);
             boolean result = false;
             if (targetInstanceInfo != null) {
                 result = batchInstancePublishInfo.equals(targetInstanceInfo);

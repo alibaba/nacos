@@ -38,7 +38,7 @@ public class GroupKey2Test {
             GroupKey2.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
         
         key = "11111+";
@@ -46,7 +46,7 @@ public class GroupKey2Test {
             GroupKey2.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
         
         key = "11111%29+222";
@@ -54,7 +54,7 @@ public class GroupKey2Test {
             GroupKey2.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
         
         key = "11111%2b+222";

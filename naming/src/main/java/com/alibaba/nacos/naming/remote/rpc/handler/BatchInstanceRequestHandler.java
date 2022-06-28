@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import org.springframework.stereotype.Component;
 
-
 /**
  * The client registers multiple service instance request.
  *
