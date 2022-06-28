@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.address;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -195,6 +196,12 @@ public class AddressServerControllerTests {
         
         Assert.assertNotNull(deleteClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
+    }
+    
+    @AfterClass
+    public static void teardown() {
+        System.clearProperty("nacos.standalone");
+        System.clearProperty("embeddedStorage");
     }
     
 }
