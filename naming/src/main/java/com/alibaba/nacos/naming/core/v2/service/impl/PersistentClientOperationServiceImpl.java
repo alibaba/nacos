@@ -119,7 +119,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     }
     
     /**
-     * update instance.
+     * update persistent instance.
      */
     public void updateInstance(Service service, Instance instance, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
