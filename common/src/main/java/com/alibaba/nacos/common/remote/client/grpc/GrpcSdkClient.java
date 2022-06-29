@@ -26,7 +26,6 @@ import com.alibaba.nacos.api.common.Constants;
  */
 public class GrpcSdkClient extends GrpcClient {
     
-
     /**
      * Empty constructor.
      *
@@ -38,8 +37,8 @@ public class GrpcSdkClient extends GrpcClient {
     
     @Override
     public int rpcPortOffset() {
-        return Integer.parseInt(System.getProperty(
-                NACOS_SERVER_GRPC_PORT_OFFSET_KEY, String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET)));
+        return Integer.parseInt(System.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
+                String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET)));
     }
     
 }

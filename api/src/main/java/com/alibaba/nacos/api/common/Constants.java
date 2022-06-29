@@ -86,9 +86,9 @@ public class Constants {
     public static final String USERNAME = "username";
     
     public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
-
+    
     public static final Integer SDK_GRPC_PORT_DEFAULT_OFFSET = 1000;
-
+    
     public static final Integer CLUSTER_GRPC_PORT_DEFAULT_OFFSET = 1001;
     
     /**
@@ -220,7 +220,7 @@ public class Constants {
     public static class Config {
         
         public static final String CONFIG_MODULE = "config";
-    
+        
         public static final String NOTIFY_HEADER = "notify";
     }
     
@@ -228,9 +228,9 @@ public class Constants {
      * The constants in naming directory.
      */
     public static class Naming {
-    
+        
         public static final String NAMING_MODULE = "naming";
-    
+        
         public static final String CMDB_CONTEXT_TYPE = "CMDB";
     }
     
@@ -238,7 +238,7 @@ public class Constants {
      * The constants in remote directory.
      */
     public static class Remote {
-    
+        
         public static final String INTERNAL_MODULE = "internal";
     }
     

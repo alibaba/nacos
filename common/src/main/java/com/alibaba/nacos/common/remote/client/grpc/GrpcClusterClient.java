@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.common.Constants;
  * @version $Id: GrpcClusterClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
  */
 public class GrpcClusterClient extends GrpcClient {
-
     
     /**
      * Empty constructor.
@@ -38,8 +37,8 @@ public class GrpcClusterClient extends GrpcClient {
     
     @Override
     public int rpcPortOffset() {
-        return Integer.parseInt(System.getProperty(
-                NACOS_SERVER_GRPC_PORT_OFFSET_KEY, String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
+        return Integer.parseInt(System.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
+                String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
     }
     
 }
