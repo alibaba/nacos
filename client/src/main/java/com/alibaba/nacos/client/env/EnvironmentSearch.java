@@ -110,6 +110,11 @@ class EnvironmentSearch {
             BuilderOpt opt = BuilderOpt.BUILD;
             
             final String[] splitByFinishOpt = pattern.split(FINISH_OPT_DELIMITER);
+            
+            if (splitByFinishOpt.length == 0) {
+                throw new IllegalArgumentException("Nacos environment parse argument error," + pattern);
+            }
+            
             String orderStr = splitByFinishOpt[0];
             if (splitByFinishOpt.length == PATTERN_TOTAL) {
                 try {
