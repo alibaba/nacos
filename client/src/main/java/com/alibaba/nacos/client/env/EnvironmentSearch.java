@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 
 class EnvironmentSearch {
     
+    private static final int PATTERN_TOTAL = 2;
+    
     private final List<NacosEnvironment> environmentList;
     
     private EnvironmentSearch(List<NacosEnvironment> environmentList) {
@@ -109,7 +111,7 @@ class EnvironmentSearch {
             
             final String[] splitByFinishOpt = pattern.split(FINISH_OPT_DELIMITER);
             String orderStr = splitByFinishOpt[0];
-            if (splitByFinishOpt.length == 2) {
+            if (splitByFinishOpt.length == PATTERN_TOTAL) {
                 try {
                     opt = BuilderOpt.valueOf(splitByFinishOpt[1].toUpperCase());
                 } catch (Exception ignore) {
