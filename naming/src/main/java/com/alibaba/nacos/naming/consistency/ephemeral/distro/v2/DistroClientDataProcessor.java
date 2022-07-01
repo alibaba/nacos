@@ -34,12 +34,15 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -162,11 +165,14 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void upgradeClient(Client client, ClientSyncData clientSyncData) {
+        Set<Service> syncedService = new HashSet<>();
+        // process batch instance sync logic
+        processBatchInstanceDistroData(syncedService, client, clientSyncData);
         List<String> namespaces = clientSyncData.getNamespaces();
         List<String> groupNames = clientSyncData.getGroupNames();
         List<String> serviceNames = clientSyncData.getServiceNames();
         List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
-        Set<Service> syncedService = new HashSet<>();
+        
         for (int i = 0; i < namespaces.size(); i++) {
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
             Service singleton = ServiceManager.getInstance().getSingleton(service);
@@ -183,6 +189,35 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 client.removeServiceInstance(each);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientDeregisterServiceEvent(each, client.getClientId()));
+            }
+        }
+    }
+    
+    private static void processBatchInstanceDistroData(Set<Service> syncedService, Client client, ClientSyncData clientSyncData)  {
+        BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
+        if (batchInstanceData == null || CollectionUtils.isEmpty(batchInstanceData.getNamespaces())) {
+            Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}", client.getClientId());
+            return;
+        }
+        List<String> namespaces = batchInstanceData.getNamespaces();
+        List<String> groupNames = batchInstanceData.getGroupNames();
+        List<String> serviceNames = batchInstanceData.getServiceNames();
+        List<BatchInstancePublishInfo> batchInstancePublishInfos = batchInstanceData.getBatchInstancePublishInfos();
+    
+        for (int i = 0; i < namespaces.size(); i++) {
+            Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
+            Service singleton = ServiceManager.getInstance().getSingleton(service);
+            syncedService.add(singleton);
+            BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
+            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client.getInstancePublishInfo(singleton);
+            boolean result = false;
+            if (targetInstanceInfo != null) {
+                result = batchInstancePublishInfo.equals(targetInstanceInfo);
+            }
+            if (!result) {
+                client.addServiceInstance(service, batchInstancePublishInfo);
+                NotifyCenter.publishEvent(
+                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
     }
