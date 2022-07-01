@@ -188,7 +188,7 @@ public class Constants {
     
     public static final String NULL_STRING = "null";
     
-    public static final String NUMBER_PATTERN = "^\\d+$";
+    public static final String NUMBER_PATTERN_STRING = "^\\d+$";
     
     public static final String ANY_PATTERN = ".*";
     
@@ -213,6 +213,8 @@ public class Constants {
     public static final String LOCATION_TAG = "Location-Tag";
     
     public static final String CHARSET_KEY = "charset";
+    
+    public static final String CLUSTER_NAME_PATTERN_STRING = "^[0-9a-zA-Z-]+$";
     
     /**
      * The constants in config directory.
