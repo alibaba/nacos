@@ -71,74 +71,104 @@ public class CatalogServiceV2ImplTest {
         ServiceManager serviceManager = ServiceManager.getInstance();
         Service service = Service.newService("A", "B", "C");
         serviceManager.removeSingleton(service);
-    }
-    
-    @Test
-    public void testGetServiceDetail() {
-        try {
-            ServiceMetadata serviceMetadata = new ServiceMetadata();
-            serviceMetadata.setProtectThreshold(0.75F);
-            Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
-            
-            Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("C"));
-            
-            Object obj = catalogServiceV2Impl.getServiceDetail("A", "B", "C");
-    
-            ObjectNode objectNode = (ObjectNode) obj;
-            
-            Assert.assertEquals("C", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.NAME).asText());
-            Assert.assertEquals("B", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.GROUP_NAME).asText());
-            Assert.assertEquals("none", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.SELECTOR).get("type").asText());
-            Assert.assertEquals(0, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.METADATA).size());
-            Assert.assertEquals(0.75, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.PROTECT_THRESHOLD).asDouble(), 0.1);
-            
-        } catch (NacosException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
+        for (Service each : serviceManager.getSingletons("CatalogService")) {
+            serviceManager.removeSingleton(each);
         }
     }
     
     @Test
-    public void testListInstances() {
-        try {
-            Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("D"));
-            
-            ServiceInfo serviceInfo = new ServiceInfo();
-            serviceInfo.setGroupName("B");
-            serviceInfo.setName("C");
-            Instance instance = new Instance();
-            instance.setClusterName("D");
-            instance.setIp("1.1.1.1");
-            serviceInfo.setHosts(Collections.singletonList(instance));
-            Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
-            
-            List<? extends Instance> instances = catalogServiceV2Impl.listInstances("A", "B", "C", "D");
-            
-            Assert.assertEquals(1, instances.size());
-        } catch (NacosException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
+    public void testGetServiceDetail() throws NacosException {
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(0.75F);
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
+        Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("C"));
+        Object obj = catalogServiceV2Impl.getServiceDetail("A", "B", "C");
+        ObjectNode objectNode = (ObjectNode) obj;
+        Assert.assertEquals("C", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.NAME).asText());
+        Assert.assertEquals("B", objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.GROUP_NAME).asText());
+        Assert.assertEquals("none",
+                objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.SELECTOR).get("type").asText());
+        Assert.assertEquals(0, objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.METADATA).size());
+        Assert.assertEquals(0.75,
+                objectNode.get(FieldsConstants.SERVICE).get(FieldsConstants.PROTECT_THRESHOLD).asDouble(), 0.1);
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testGetServiceDetailNonExist() throws NacosException {
+        catalogServiceV2Impl.getServiceDetail("A", "BB", "CC");
     }
     
     @Test
-    public void testPageListService() {
-        try {
-            ServiceInfo serviceInfo = new ServiceInfo();
-            serviceInfo.setHosts(Collections.singletonList(new Instance()));
-            Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
-            
-            ServiceMetadata metadata = new ServiceMetadata();
-            metadata.setProtectThreshold(0.75F);
-            Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
-            
-            ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("A", "B", "C", 1, 10, null, false);
-            
-            Assert.assertEquals(1, obj.get(FieldsConstants.COUNT).asInt());
-        } catch (NacosException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
+    public void testListInstances() throws NacosException {
+        Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("D"));
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setGroupName("B");
+        serviceInfo.setName("C");
+        Instance instance = new Instance();
+        instance.setClusterName("D");
+        instance.setIp("1.1.1.1");
+        serviceInfo.setHosts(Collections.singletonList(instance));
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        List<? extends Instance> instances = catalogServiceV2Impl.listInstances("A", "B", "C", "D");
+        Assert.assertEquals(1, instances.size());
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testListInstancesNonExistService() throws NacosException {
+        catalogServiceV2Impl.listInstances("A", "BB", "CC", "DD");
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testListInstancesNonExistCluster() throws NacosException {
+        catalogServiceV2Impl.listInstances("A", "B", "C", "DD");
+    }
+    
+    @Test
+    public void testPageListService() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(Collections.singletonList(new Instance()));
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        ServiceMetadata metadata = new ServiceMetadata();
+        metadata.setProtectThreshold(0.75F);
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
+        
+        ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("A", "B", "C", 1, 10, null, false);
+        Assert.assertEquals(1, obj.get(FieldsConstants.COUNT).asInt());
+    }
+    
+    @Test
+    public void testPageListServiceNotSpecifiedName() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(Collections.singletonList(new Instance()));
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        ServiceMetadata metadata = new ServiceMetadata();
+        metadata.setProtectThreshold(0.75F);
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
+        
+        ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("A", "", "", 1, 10, null, false);
+        Assert.assertEquals(1, obj.get(FieldsConstants.COUNT).asInt());
+    }
+    
+    @Test
+    public void testPageListServiceForIgnoreEmptyService() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        
+        ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("A", "B", "C", 1, 10, null, true);
+        Assert.assertEquals(0, obj.get(FieldsConstants.COUNT).asInt());
+    }
+    
+    @Test
+    public void testPageListServiceForPage() throws NacosException {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
+        ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "1"));
+        ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "2"));
+        ServiceManager.getInstance().getSingleton(Service.newService("CatalogService", "CatalogService", "3"));
+        
+        ObjectNode obj = (ObjectNode) catalogServiceV2Impl.pageListService("CatalogService", "", "", 2, 1, null, false);
+        Assert.assertEquals(3, obj.get(FieldsConstants.COUNT).asInt());
+        Assert.assertEquals("2", obj.get(FieldsConstants.SERVICE_LIST).get(0).get("name").asText());
     }
     
     @Test
@@ -154,8 +184,9 @@ public class CatalogServiceV2ImplTest {
             ServiceInfo serviceInfo = new ServiceInfo();
             serviceInfo.setHosts(instances);
             Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
-    
-            List<ServiceDetailInfo> result = (List<ServiceDetailInfo>) catalogServiceV2Impl.pageListServiceDetail("A", "B", "C", 1, 10);
+            
+            List<ServiceDetailInfo> result = (List<ServiceDetailInfo>) catalogServiceV2Impl
+                    .pageListServiceDetail("A", "B", "C", 1, 10);
             
             Assert.assertEquals(1, result.size());
         } catch (NacosException e) {
