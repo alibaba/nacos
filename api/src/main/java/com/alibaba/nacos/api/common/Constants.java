@@ -86,6 +86,10 @@ public class Constants {
     public static final String USERNAME = "username";
     
     public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
+
+    public static final Integer SDK_GRPC_PORT_DEFAULT_OFFSET = 1000;
+
+    public static final Integer CLUSTER_GRPC_PORT_DEFAULT_OFFSET = 1001;
     
     /**
      * second.
