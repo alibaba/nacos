@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -71,7 +73,28 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     
     @Override
     public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
-        //TODO EphemeralClientOperationServiceImpl batchRegisterInstance
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        if (!singleton.isEphemeral()) {
+            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
+                    String.format("Current service %s is persistent service, can't register ephemeral instance.",
+                            singleton.getGroupedServiceName()));
+        }
+        Client client = clientManager.getClient(clientId);
+        if (!clientIsLegal(client, clientId)) {
+            return;
+        }
+        BatchInstancePublishInfo batchInstancePublishInfo = new BatchInstancePublishInfo();
+        List<InstancePublishInfo> resultList = new ArrayList<>();
+        for (Instance instance : instances) {
+            InstancePublishInfo instanceInfo = getPublishInfo(instance);
+            resultList.add(instanceInfo);
+        }
+        batchInstancePublishInfo.setInstancePublishInfos(resultList);
+        client.addServiceInstance(singleton, batchInstancePublishInfo);
+        client.setLastUpdatedTime();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new MetadataEvent.InstanceMetadataEvent(singleton, batchInstancePublishInfo.getMetadataId(), false));
     }
     
     @Override
