@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
@@ -142,6 +144,26 @@ public class NamingUtils {
             throw new NacosException(NacosException.INVALID_PARAM,
                     String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
                             instance.getClusterName()));
+        }
+    }
+    
+    /**
+     * Batch verify the validity of instances.
+     * @param instances List of instances to be registered
+     * @throws NacosException Nacos
+     */
+    public static void batchCheckInstanceIsLegal(List<Instance> instances) throws NacosException {
+        CopyOnWriteArrayList<Instance> newInstanceList = new CopyOnWriteArrayList<>(instances);
+        for (int i = 0; i < newInstanceList.size(); i++) {
+            Instance instance = newInstanceList.get(i);
+            checkInstanceIsLegal(instance);
+            for (int j = i + 1; j < newInstanceList.size(); j++) {
+                Instance innerInstance = newInstanceList.get(j);
+                if (instance.equals(innerInstance)) {
+                    throw new NacosException(NacosException.INVALID_PARAM,
+                            String.format("Batch Instance does not allow the same Instance object in the collection , Instance：%s", innerInstance));
+                }
+            }
         }
     }
     

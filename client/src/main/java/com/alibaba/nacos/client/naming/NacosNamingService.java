@@ -150,6 +150,13 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
+    public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        NamingUtils.batchCheckInstanceIsLegal(instances);
+        clientProxy.batchRegisterService(serviceName, groupName, instances);
+    }
+    
+    @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {
         deregisterInstance(serviceName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }

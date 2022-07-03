@@ -24,8 +24,10 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
+import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
@@ -56,6 +58,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -144,6 +147,24 @@ public class NamingGrpcClientProxyTest {
             if (request instanceof InstanceRequest) {
                 InstanceRequest request1 = (InstanceRequest) request;
                 return request1.getType().equals(NamingRemoteConstants.DE_REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+    
+    @Test
+    public void testBatchRegisterService() throws NacosException {
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        response = new BatchInstanceResponse();
+        when(this.rpcClient.request(any())).thenReturn(response);
+        client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof BatchInstanceRequest) {
+                BatchInstanceRequest request1 = (BatchInstanceRequest) request;
+                request1.setRequestId("1");
+                return request1.getType().equals(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
             }
             return false;
         }));
