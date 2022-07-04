@@ -77,7 +77,7 @@ public class ServerListControllerTest {
                 Mockito.eq(Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default")))
                 .thenReturn(service);
         
-        mockMvc.perform(get("/default/serverList"))
+        mockMvc.perform(get("/nacos/serverList"))
                 .andExpect(status().isOk());
     
     }
@@ -103,7 +103,7 @@ public class ServerListControllerTest {
                         Mockito.eq(Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default")))
                 .thenReturn(service);
     
-        mockMvc.perform(get("/default/serverList"))
+        mockMvc.perform(get("/nacos/serverList"))
                 .andExpect(status().isNotFound());
         
     }
