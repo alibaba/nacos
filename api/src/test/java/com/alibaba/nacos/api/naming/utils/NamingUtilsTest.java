@@ -16,10 +16,17 @@
 
 package com.alibaba.nacos.api.naming.utils;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class NamingUtilsTest {
     
@@ -33,5 +40,56 @@ public class NamingUtilsTest {
         
         String groupNameAndServiceName = NamingUtils.getGroupedNameOptional("serviceA", "groupA");
         assertEquals("groupA@@serviceA", groupNameAndServiceName);
+    }
+    
+    @Test
+    public void testCheckInstanceIsLegal() throws NacosException {
+        // check invalid clusterName
+        Instance instance = new Instance();
+        instance.setClusterName("cluster1,cluster2");
+        try {
+            NamingUtils.checkInstanceIsLegal(instance);
+            assertTrue(false);
+        } catch (Exception e) {
+            assertTrue(NacosException.class.equals(e.getClass()));
+            assertEquals(
+                    "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)",
+                    e.getMessage());
+        }
+        
+        // valid clusterName
+        instance.setClusterName("cluster1");
+        NamingUtils.checkInstanceIsLegal(instance);
+        assertTrue(true);
+    
+        // check heartBeatTimeout, heartBeatInterval, ipDeleteTimeout
+        Map<String, String> meta = new HashMap<>();
+        meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1");
+        meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
+        meta.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "1");
+        instance.setMetadata(meta);
+        try {
+            NamingUtils.checkInstanceIsLegal(instance);
+            assertTrue(false);
+        } catch (Exception e) {
+            assertTrue(NacosException.class.equals(e.getClass()));
+            assertEquals(
+                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+                    e.getMessage());
+        }
+        meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "3");
+        meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
+        meta.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "3");
+        NamingUtils.checkInstanceIsLegal(instance);
+        assertTrue(true);
+    }
+    
+    @Test
+    public void testIsNumber() {
+        String str1 = "abc";
+        assertTrue(!NamingUtils.isNumber(str1));
+    
+        String str2 = "123456";
+        assertTrue(NamingUtils.isNumber(str2));
     }
 }

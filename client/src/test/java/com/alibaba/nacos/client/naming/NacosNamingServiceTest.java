@@ -31,7 +31,9 @@ import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentMatcher;
 
 import java.lang.reflect.Field;
@@ -51,6 +53,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class NacosNamingServiceTest {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     private NacosNamingService client;
     
@@ -181,6 +186,21 @@ public class NacosNamingServiceTest {
         client.registerInstance(serviceName, groupName, instance);
         //then
         verify(proxy, times(1)).registerService(serviceName, groupName, instance);
+    }
+    
+    @Test
+    public void testRegisterInstance7() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage(
+                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+        
+        //given
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+        instance.setClusterName("cluster1,cluster2");
+        //when
+        client.registerInstance(serviceName, groupName, instance);
     }
     
     @Test
