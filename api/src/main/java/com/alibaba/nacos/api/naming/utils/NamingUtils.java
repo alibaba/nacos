@@ -21,8 +21,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
@@ -148,22 +149,27 @@ public class NamingUtils {
     }
     
     /**
+     * check batch register is Ephemeral.
+     * @param instance instance
+     * @throws NacosException NacosException
+     */
+    public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
+        if (!instance.isEphemeral()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("Batch registration does not allow non-temporary instance registration , Instance：%s", instance));
+        }
+    }
+    
+    /**
      * Batch verify the validity of instances.
      * @param instances List of instances to be registered
      * @throws NacosException Nacos
      */
     public static void batchCheckInstanceIsLegal(List<Instance> instances) throws NacosException {
-        CopyOnWriteArrayList<Instance> newInstanceList = new CopyOnWriteArrayList<>(instances);
-        for (int i = 0; i < newInstanceList.size(); i++) {
-            Instance instance = newInstanceList.get(i);
+        Set<Instance> newInstanceSet = new HashSet<>(instances);
+        for (Instance instance : newInstanceSet) {
+            checkInstanceIsEphemeral(instance);
             checkInstanceIsLegal(instance);
-            for (int j = i + 1; j < newInstanceList.size(); j++) {
-                Instance innerInstance = newInstanceList.get(j);
-                if (instance.equals(innerInstance)) {
-                    throw new NacosException(NacosException.INVALID_PARAM,
-                            String.format("Batch Instance does not allow the same Instance object in the collection , Instance：%s", innerInstance));
-                }
-            }
         }
     }
     

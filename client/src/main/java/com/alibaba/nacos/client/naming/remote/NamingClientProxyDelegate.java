@@ -102,9 +102,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} begin.", instances, serviceName);
         if (CollectionUtils.isEmpty(instances)) {
             NAMING_LOGGER.warn("batchRegisterInstance instances is Empty:{}", instances);
-            grpcClientProxy.batchRegisterService(serviceName, groupName, instances);
         }
-        getExecuteClientProxy(instances.get(0)).batchRegisterService(serviceName, groupName, instances);
+        grpcClientProxy.batchRegisterService(serviceName, groupName, instances);
         NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} finish.", instances, serviceName);
     }
     

@@ -76,13 +76,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 if (isClientDisabled()) {
                     return;
                 }
-                if (redoData instanceof BatchInstanceRedoData) {
-                    // Execute Batch Register
-                    BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) redoData;
-                    clientProxy.doBatchRegisterService(serviceName, groupName, batchInstanceRedoData.getInstances());
-                    break;
-                }
-                clientProxy.doRegisterService(serviceName, groupName, redoData.get());
+                processRegisterRedoType(redoData, serviceName, groupName);
                 break;
             case UNREGISTER:
                 if (isClientDisabled()) {
@@ -96,6 +90,16 @@ public class RedoScheduledTask extends AbstractExecuteTask {
             default:
         }
         
+    }
+    
+    private void processRegisterRedoType(InstanceRedoData redoData, String serviceName, String groupName) throws NacosException {
+        if (redoData instanceof BatchInstanceRedoData) {
+            // Execute Batch Register
+            BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) redoData;
+            clientProxy.doBatchRegisterService(serviceName, groupName, batchInstanceRedoData.getInstances());
+            return;
+        }
+        clientProxy.doRegisterService(serviceName, groupName, redoData.get());
     }
     
     private void redoForSubscribes() {
