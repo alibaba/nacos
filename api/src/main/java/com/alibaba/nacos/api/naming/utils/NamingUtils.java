@@ -156,7 +156,7 @@ public class NamingUtils {
     public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
         if (!instance.isEphemeral()) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("Batch registration does not allow non-temporary instance registration , Instance：%s", instance));
+                    String.format("Batch registration does not allow persistent instance registration , Instance：%s", instance));
         }
     }
     

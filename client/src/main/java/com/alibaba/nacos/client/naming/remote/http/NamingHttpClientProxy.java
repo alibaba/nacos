@@ -487,7 +487,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
-        
         try {
             HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
