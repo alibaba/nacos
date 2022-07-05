@@ -128,7 +128,7 @@ public class NamespaceController {
             @RequestParam("namespaceName") String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
-        if (null == namespaceId && null != customNamespaceId) {
+        if (StringUtils.isBlank(namespaceId) && null != customNamespaceId) {
             namespaceId = customNamespaceId;
         }
         if (StringUtils.isBlank(namespaceId)) {
@@ -159,7 +159,7 @@ public class NamespaceController {
     @GetMapping(params = "checkNamespaceIdExist=true")
     public Boolean checkNamespaceIdExist(@RequestParam(value = "customNamespaceId", required = false) String customNamespaceId,
             @RequestParam(value = "namespaceId", required = false) String namespaceId) {
-        if (null == namespaceId && null != customNamespaceId) {
+        if (StringUtils.isBlank(namespaceId) && null != customNamespaceId) {
             namespaceId = customNamespaceId;
         }
         if (StringUtils.isBlank(namespaceId)) {
@@ -184,10 +184,10 @@ public class NamespaceController {
             @RequestParam(value = "namespaceName", required = false) String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
-        if (null == namespaceId && null != namespace) {
+        if (StringUtils.isBlank(namespaceId) && null != namespace) {
             namespaceId = namespace;
         }
-        if (null == namespaceName && null != namespaceShowName) {
+        if (StringUtils.isBlank(namespaceName) && null != namespaceShowName) {
             namespaceName = namespaceShowName;
         }
         if (StringUtils.isBlank(namespaceId)) {
