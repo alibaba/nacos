@@ -123,10 +123,14 @@ public class NamespaceController {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Boolean createNamespace(@RequestParam("customNamespaceId") String namespaceId,
+    public Boolean createNamespace(@RequestParam(value = "customNamespaceId", required = false) String customNamespaceId,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
             @RequestParam("namespaceName") String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
+        if (null == namespaceId && null != customNamespaceId) {
+            namespaceId = customNamespaceId;
+        }
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = UUID.randomUUID().toString();
         } else {
@@ -153,7 +157,11 @@ public class NamespaceController {
      * @return true if exist, otherwise false
      */
     @GetMapping(params = "checkNamespaceIdExist=true")
-    public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId) {
+    public Boolean checkNamespaceIdExist(@RequestParam(value = "customNamespaceId", required = false) String customNamespaceId,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId) {
+        if (null == namespaceId && null != customNamespaceId) {
+            namespaceId = customNamespaceId;
+        }
         if (StringUtils.isBlank(namespaceId)) {
             return false;
         }
@@ -163,18 +171,29 @@ public class NamespaceController {
     /**
      * edit namespace.
      *
-     * @param namespace         namespace
-     * @param namespaceShowName namespace ShowName
-     * @param namespaceDesc     namespace Desc
+     * @param namespaceId   namespaceId
+     * @param namespaceName namespace ShowName
+     * @param namespaceDesc namespace Desc
      * @return whether edit ok
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Boolean editNamespace(@RequestParam("namespace") String namespace,
-            @RequestParam("namespaceShowName") String namespaceShowName,
+    public Boolean editNamespace(@RequestParam(value = "namespace", required = false) String namespace,
+            @RequestParam(value = "namespaceShowName", required = false) String namespaceShowName,
+            @RequestParam(value = "namespaceId", required = false) String namespaceId,
+            @RequestParam(value = "namespaceName", required = false) String namespaceName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
-        persistService.updateTenantNameAtomic(DEFAULT_KP, namespace, namespaceShowName, namespaceDesc);
+        if (null == namespaceId && null != namespace) {
+            namespaceId = namespace;
+        }
+        if (null == namespaceName && null != namespaceShowName) {
+            namespaceName = namespaceShowName;
+        }
+        if (StringUtils.isBlank(namespaceId)) {
+            return false;
+        }
+        persistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
         return true;
     }
     
