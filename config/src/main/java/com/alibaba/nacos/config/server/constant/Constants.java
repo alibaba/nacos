@@ -275,4 +275,6 @@ public class Constants {
     public static final String CONFIG_EXPORT_METADATA = ".meta.yml";
     
     public static final String CONFIG_EXPORT_METADATA_NEW = ".metadata.yml";
+    
+    public static final int LIMIT_ERROR_CODE = 429;
 }

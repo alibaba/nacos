@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.HealthStateChangeReason;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
@@ -68,6 +70,9 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
                         rsInfo.getServiceName(), ip, port, rsInfo.getCluster(), UtilsAndCommons.LOCALHOST_SITE);
                 NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
                 NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
+                NotifyCenter.publishEvent(new NamingTraceEvent.HealthStateChangeTraceEvent(System.currentTimeMillis(),
+                        service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
+                        true, HealthStateChangeReason.HEARTBEAT_REFRESH));
             }
         }
     }

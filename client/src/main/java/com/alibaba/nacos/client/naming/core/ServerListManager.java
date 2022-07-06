@@ -125,7 +125,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
                         "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
             }
             String content = restResult.getData();
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             for (String line : IoUtils.readLines(new StringReader(content))) {
                 if (!line.trim().isEmpty()) {
                     list.add(line.trim());

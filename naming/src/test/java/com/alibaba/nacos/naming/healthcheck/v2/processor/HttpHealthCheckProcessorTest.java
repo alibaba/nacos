@@ -80,11 +80,11 @@ public class HttpHealthCheckProcessorTest {
     
     @Before
     public void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         when(switchDomain.getHttpHealthParams()).thenReturn(new SwitchDomain.HttpHealthParams());
         when(healthCheckTaskV2.getClient()).thenReturn(ipPortBasedClient);
         when(ipPortBasedClient.getInstancePublishInfo(service)).thenReturn(healthCheckInstancePublishInfo);
         httpHealthCheckProcessor = new HttpHealthCheckProcessor(healthCheckCommon, switchDomain);
-        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test

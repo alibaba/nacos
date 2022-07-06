@@ -119,6 +119,11 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     }
     
     @Override
+    public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
+        //TODO PersistentClientOperationServiceImpl Nacos batchRegister
+    }
+    
+    @Override
     public void deregisterInstance(Service service, Instance instance, String clientId) {
         final InstanceStoreRequest request = new InstanceStoreRequest();
         request.setService(service);

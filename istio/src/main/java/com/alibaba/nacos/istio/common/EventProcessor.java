@@ -21,10 +21,11 @@ import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -37,14 +38,12 @@ import java.util.concurrent.TimeUnit;
  * @author special.fy
  */
 @Component
-public class EventProcessor {
+public class EventProcessor implements ApplicationListener<ContextRefreshedEvent> {
 
     private static final int MAX_WAIT_EVENT_TIME = 100;
 
-    @Autowired
     private NacosMcpService nacosMcpService;
 
-    @Autowired
     private NacosXdsService nacosXdsService;
 
     private NacosResourceManager resourceManager;
@@ -70,9 +69,16 @@ public class EventProcessor {
         }
     }
 
-    @PostConstruct
     public void handleEvents() {
         new Consumer("handle events").start();
+    }
+
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
+        if (contextRefreshedEvent.getApplicationContext().getParent() == null) {
+            checkDependenceReady();
+            handleEvents();
+        }
     }
 
     private class Consumer extends Thread {
@@ -128,14 +134,23 @@ public class EventProcessor {
 
         @Override
         public Void call() throws Exception {
-            if (null == resourceManager) {
-                resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
-            }
             ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
             nacosXdsService.handleEvent(snapshot, event);
             nacosMcpService.handleEvent(snapshot, event);
-
             return null;
         }
+    }
+    
+    private boolean checkDependenceReady() {
+        if (null == resourceManager) {
+            resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
+        }
+        if (null == nacosXdsService) {
+            nacosXdsService = ApplicationUtils.getBean(NacosXdsService.class);
+        }
+        if (null == nacosMcpService) {
+            nacosMcpService = ApplicationUtils.getBean(NacosMcpService.class);
+        }
+        return Objects.nonNull(resourceManager) && Objects.nonNull(nacosMcpService) && Objects.nonNull(nacosXdsService);
     }
 }

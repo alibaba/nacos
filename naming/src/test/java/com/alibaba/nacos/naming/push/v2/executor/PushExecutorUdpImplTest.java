@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
@@ -55,7 +56,7 @@ public class PushExecutorUdpImplTest {
     private Subscriber subscriber;
     
     @Mock
-    private PushCallBack pushCallBack;
+    private NamingPushCallback pushCallBack;
     
     @Mock
     private SelectorManager selectorManager;
@@ -66,7 +67,7 @@ public class PushExecutorUdpImplTest {
     private PushDataWrapper pushData;
     
     private PushExecutorUdpImpl pushExecutor;
-
+    
     private ServiceMetadata serviceMetadata;
     
     @Before
@@ -78,8 +79,8 @@ public class PushExecutorUdpImplTest {
                 .pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
         ApplicationUtils.injectContext(context);
         when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
-        when(selectorManager.select(any(), any(), any())).then(
-                (Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
+        when(selectorManager.select(any(), any(), any()))
+                .then((Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
     }
     
     @Test

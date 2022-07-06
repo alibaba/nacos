@@ -67,12 +67,12 @@ class PasswordReset extends React.Component {
   render() {
     const { locale } = this.props;
     const { getError } = this.field;
-    const { username, onOk, onCancel } = this.props;
+    const { username, onOk, onCancel, visible } = this.props;
     return (
       <>
         <Dialog
           title={locale.resetPassword}
-          visible={username}
+          visible={visible}
           onOk={() => {
             const vals = this.check();
             if (vals) {

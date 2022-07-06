@@ -338,7 +338,7 @@ public class ServiceManager implements RecordListener<Service> {
                 }
                 Loggers.EVT_LOG
                         .debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}", service.getNamespaceId(),
-                                service.getName(), stringBuilder.toString());
+                                service.getName(), stringBuilder);
             }
         }
         

@@ -80,7 +80,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(CommonParams.NAMING_REQUEST_TIMEOUT, "-1"));
-        Map<String, String> labels = new HashMap<String, String>();
+        Map<String, String> labels = new HashMap<>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels);
@@ -199,7 +199,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             }
         }
         ServiceListResponse response = requestToServer(request, ServiceListResponse.class);
-        ListView<String> result = new ListView<String>();
+        ListView<String> result = new ListView<>();
         result.setCount(response.getCount());
         result.setData(response.getServiceNames());
         return result;

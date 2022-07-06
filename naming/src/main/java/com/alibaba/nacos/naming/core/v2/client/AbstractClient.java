@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -119,14 +121,41 @@ public abstract class AbstractClient implements Client {
         List<String> namespaces = new LinkedList<>();
         List<String> groupNames = new LinkedList<>();
         List<String> serviceNames = new LinkedList<>();
+    
+        List<String> batchNamespaces = new LinkedList<>();
+        List<String> batchGroupNames = new LinkedList<>();
+        List<String> batchServiceNames = new LinkedList<>();
+        
         List<InstancePublishInfo> instances = new LinkedList<>();
+        List<BatchInstancePublishInfo> batchInstancePublishInfos = new LinkedList<>();
+        BatchInstanceData  batchInstanceData = new BatchInstanceData();
         for (Map.Entry<Service, InstancePublishInfo> entry : publishers.entrySet()) {
-            namespaces.add(entry.getKey().getNamespace());
-            groupNames.add(entry.getKey().getGroup());
-            serviceNames.add(entry.getKey().getName());
-            instances.add(entry.getValue());
+            InstancePublishInfo instancePublishInfo = entry.getValue();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                BatchInstancePublishInfo batchInstance = (BatchInstancePublishInfo) instancePublishInfo;
+                batchInstancePublishInfos.add(batchInstance);
+                buildBatchInstanceData(batchInstanceData, batchNamespaces, batchGroupNames, batchServiceNames, entry);
+                batchInstanceData.setBatchInstancePublishInfos(batchInstancePublishInfos);
+            } else {
+                namespaces.add(entry.getKey().getNamespace());
+                groupNames.add(entry.getKey().getGroup());
+                serviceNames.add(entry.getKey().getName());
+                instances.add(entry.getValue());
+            }
         }
-        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
+        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
+    }
+    
+    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
+            List<String> batchGroupNames, List<String> batchServiceNames, Map.Entry<Service, InstancePublishInfo> entry) {
+        batchNamespaces.add(entry.getKey().getNamespace());
+        batchGroupNames.add(entry.getKey().getGroup());
+        batchServiceNames.add(entry.getKey().getName());
+        
+        batchInstanceData.setNamespaces(batchNamespaces);
+        batchInstanceData.setGroupNames(batchGroupNames);
+        batchInstanceData.setServiceNames(batchServiceNames);
+        return batchInstanceData;
     }
     
     @Override
