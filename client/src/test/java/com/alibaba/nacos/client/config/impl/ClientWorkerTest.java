@@ -94,7 +94,7 @@ public class ClientWorkerTest {
         Assert.assertEquals(0, listeners.size());
         
         String content = "d";
-        clientWorker.addTenantListenersWithContent(dataId, group, content, Arrays.asList(listener));
+        clientWorker.addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
         listeners = clientWorker.getCache(dataId, group).getListeners();
         Assert.assertEquals(1, listeners.size());
         Assert.assertEquals(listener, listeners.get(0));
