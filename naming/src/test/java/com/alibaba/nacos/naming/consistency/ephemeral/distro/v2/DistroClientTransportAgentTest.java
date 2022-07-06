@@ -94,6 +94,8 @@ public class DistroClientTransportAgentTest {
             callback.onResponse(response);
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
+        // When run all project, the TpsNamingMonitor will be init by other unit test, will throw UnnecessaryStubbingException.
+        ApplicationUtils.getBean(TpsMonitorManager.class);
     }
     
     @After
