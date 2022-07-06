@@ -28,7 +28,7 @@ class DefaultSettingPropertySource extends AbstractPropertySource {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultSettingPropertySource.class);
     
-    private static final String DEFAULT_SETTING_PATH = "classpath:default_setting.properties";
+    private static final String DEFAULT_SETTING_PATH = "classpath:nacos_default_setting.properties";
     
     private final Properties defaultSetting = new Properties();
     

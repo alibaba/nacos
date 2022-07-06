@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.env;
 
+import com.alibaba.nacos.client.constant.Constants;
+import com.alibaba.nacos.client.env.convert.CompositeConverter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 class PropertySourceSearch {
@@ -37,11 +39,32 @@ class PropertySourceSearch {
     
     private final List<AbstractPropertySource> propertySources;
     
+    private final CompositeConverter converter;
+    
     private PropertySourceSearch(List<AbstractPropertySource> propertySources) {
         this.propertySources = propertySources;
+        this.propertySources.add(new DefaultSettingPropertySource());
+        this.converter = new CompositeConverter();
     }
     
-    static PropertySourceSearch resolve(String pattern, AbstractPropertySource... propertySources) {
+    static PropertySourceSearch build(Properties properties) {
+        if (properties == null) {
+            properties = new Properties();
+        }
+        PropertiesPropertySource customizePropertySource = new PropertiesPropertySource(properties);
+        JvmArgsPropertySource jvmArgsPropertySource = new JvmArgsPropertySource();
+        SystemEnvPropertySource systemEnvPropertySource = new SystemEnvPropertySource();
+    
+        String searchPattern = jvmArgsPropertySource.getProperty(Constants.SysEnv.NACOS_ENVS_SEARCH);
+        if (StringUtils.isBlank(searchPattern)) {
+            searchPattern = systemEnvPropertySource.getProperty(
+                    Constants.SysEnv.NACOS_ENVS_SEARCH.toUpperCase().replace('.', '_'));
+        }
+        
+        return resolve(searchPattern, customizePropertySource, jvmArgsPropertySource, systemEnvPropertySource);
+    }
+    
+    private static PropertySourceSearch resolve(String pattern, AbstractPropertySource... propertySources) {
         
         if (StringUtils.isBlank(pattern)) {
             return createPropertySourceSearchWithDefaultOrder(propertySources);
@@ -51,7 +74,7 @@ class PropertySourceSearch {
             final SourceType sourceType = SourceType.valueOf(pattern.toUpperCase());
             return createPropertySourceSearchByFirstType(sourceType, propertySources);
         } catch (Exception e) {
-            LOGGER.warn("first source type parse error, it will be use default order!");
+            LOGGER.error("first source type parse error, it will be use default order!");
             return createPropertySourceSearchWithDefaultOrder(propertySources);
         }
     }
@@ -66,7 +89,7 @@ class PropertySourceSearch {
     private static PropertySourceSearch createPropertySourceSearchByFirstType(SourceType firstType,
             AbstractPropertySource... propertySources) {
         
-        List<SourceType> tempList = new ArrayList<>(3);
+        List<SourceType> tempList = new ArrayList<>(4);
         tempList.add(firstType);
         
         final Map<SourceType, AbstractPropertySource> sourceMap = Arrays.stream(propertySources)
@@ -78,18 +101,20 @@ class PropertySourceSearch {
         return new PropertySourceSearch(collect);
     }
     
-    <T> T search(Function<AbstractPropertySource, String> function, Supplier<String> elseGet, Function<String, T> convert) {
-        String ret;
+    <T> Optional<T> search(String key, Class<T> targetType) {
+        if (targetType == null) {
+            throw new IllegalArgumentException("target type must be not null!");
+        }
+    
         for (AbstractPropertySource propertySource : propertySources) {
-            ret = function.apply(propertySource);
-            if (ret != null) {
-                return convert.apply(ret);
+            final String value = propertySource.getProperty(key);
+            if (value != null) {
+                if (String.class.isAssignableFrom(targetType)) {
+                    return (Optional<T>) Optional.of(value);
+                }
+                return Optional.ofNullable(converter.convert(value, targetType));
             }
         }
-        
-        ret = elseGet.get();
-        return convert.apply(ret);
-    
+        return Optional.empty();
     }
-    
 }

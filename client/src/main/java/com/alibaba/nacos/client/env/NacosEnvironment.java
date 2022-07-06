@@ -43,7 +43,7 @@ public interface NacosEnvironment {
      * get boolean, if the value can not be got by the special key, the null will be returned.
      *
      * @param key special key
-     * @return boolean value or false.
+     * @return boolean value or null.
      */
     Boolean getBoolean(String key);
     

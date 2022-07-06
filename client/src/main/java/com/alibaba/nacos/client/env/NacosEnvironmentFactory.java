@@ -49,7 +49,7 @@ class NacosEnvironmentFactory {
                     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         if (environment == null) {
                             throw new IllegalStateException(
-                                    "Nacos environment doesn't init, please call NEnvs#init method then try it again.");
+                                    "Nacos environment doesn't init, please call NacosEnvs#init method then try it again.");
                         }
                         return method.invoke(environment, args);
                     }
