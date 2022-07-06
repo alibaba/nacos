@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
-import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -28,7 +27,6 @@ import java.util.concurrent.ThreadPoolExecutor;
  * @author liuzunfei
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
-@Service
 public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
