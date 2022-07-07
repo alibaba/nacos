@@ -196,7 +196,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                     onInstanceDeregister(instanceRequest.service, instanceRequest.getClientId());
                     break;
                 case CHANGE:
-                    onInstanceChange(instanceRequest.service, instanceRequest.instance, instanceRequest.getClientId());
+                    if (instanceAndServiceExist(instanceRequest)) {
+                        onInstanceRegister(instanceRequest.service, instanceRequest.instance,
+                                instanceRequest.getClientId());
+                    }
                     break;
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + operation)
@@ -208,10 +211,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         }
     }
     
-    private void onInstanceChange(Service service, Instance instance, String clientId) {
-        if (clientManager.contains(clientId)) {
-            onInstanceRegister(service, instance, clientId);
-        }
+    private boolean instanceAndServiceExist(InstanceStoreRequest instanceRequest) {
+        return clientManager.contains(instanceRequest.getClientId()) && clientManager.getClient(
+                instanceRequest.getClientId()).getAllPublishedService().contains(instanceRequest.service);
     }
     
     private void onInstanceRegister(Service service, Instance instance, String clientId) {
