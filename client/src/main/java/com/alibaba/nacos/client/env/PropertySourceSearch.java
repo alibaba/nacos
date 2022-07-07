@@ -57,8 +57,7 @@ class PropertySourceSearch {
     
         String searchPattern = jvmArgsPropertySource.getProperty(Constants.SysEnv.NACOS_ENVS_SEARCH);
         if (StringUtils.isBlank(searchPattern)) {
-            searchPattern = systemEnvPropertySource.getProperty(
-                    Constants.SysEnv.NACOS_ENVS_SEARCH.toUpperCase().replace('.', '_'));
+            searchPattern = systemEnvPropertySource.getProperty(Constants.SysEnv.NACOS_ENVS_SEARCH);
         }
         
         return resolve(searchPattern, customizePropertySource, jvmArgsPropertySource, systemEnvPropertySource);

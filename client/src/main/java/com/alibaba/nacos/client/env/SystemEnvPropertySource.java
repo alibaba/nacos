@@ -33,6 +33,8 @@ class SystemEnvPropertySource extends AbstractPropertySource {
     
     @Override
     String getProperty(String key) {
+        // nacos.home == NACOS_HOME
+        key = key.replace('.', '_').toUpperCase();
         return env.get(key);
     }
 }
