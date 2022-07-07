@@ -80,7 +80,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
             Response response = clusterRpcClientProxy.sendRequest(member, request);
             return checkResponse(response);
         } catch (NacosException e) {
-            Loggers.DISTRO.error("[DISTRO-FAILED] Sync distro data failed! ", e);
+            Loggers.DISTRO.error("[DISTRO-FAILED] Sync distro data failed! key: {}", data.getDistroKey(), e);
         }
         return false;
     }
@@ -126,7 +126,7 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
             Response response = clusterRpcClientProxy.sendRequest(member, request);
             return checkResponse(response);
         } catch (NacosException e) {
-            Loggers.DISTRO.error("[DISTRO-FAILED] Verify distro data failed! ", e);
+            Loggers.DISTRO.error("[DISTRO-FAILED] Verify distro data failed! key: {} ", verifyData.getDistroKey(), e);
         }
         return false;
     }
