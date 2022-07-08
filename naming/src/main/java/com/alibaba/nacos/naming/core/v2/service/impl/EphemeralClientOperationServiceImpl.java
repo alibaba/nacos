@@ -76,7 +76,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    String.format("Current service %s is persistent service, can't register ephemeral instance.",
+                    String.format("Current service %s is persistent service, can't batch register ephemeral instance.",
                             singleton.getGroupedServiceName()));
         }
         Client client = clientManager.getClient(clientId);

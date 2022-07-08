@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.RedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
@@ -75,7 +76,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 if (isClientDisabled()) {
                     return;
                 }
-                clientProxy.doRegisterService(serviceName, groupName, redoData.get());
+                processRegisterRedoType(redoData, serviceName, groupName);
                 break;
             case UNREGISTER:
                 if (isClientDisabled()) {
@@ -89,6 +90,16 @@ public class RedoScheduledTask extends AbstractExecuteTask {
             default:
         }
         
+    }
+    
+    private void processRegisterRedoType(InstanceRedoData redoData, String serviceName, String groupName) throws NacosException {
+        if (redoData instanceof BatchInstanceRedoData) {
+            // Execute Batch Register
+            BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) redoData;
+            clientProxy.doBatchRegisterService(serviceName, groupName, batchInstanceRedoData.getInstances());
+            return;
+        }
+        clientProxy.doRegisterService(serviceName, groupName, redoData.get());
     }
     
     private void redoForSubscribes() {

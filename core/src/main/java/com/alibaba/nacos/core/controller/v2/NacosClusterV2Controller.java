@@ -17,24 +17,16 @@
 package com.alibaba.nacos.core.controller.v2;
 
 import com.alibaba.nacos.common.Beta;
-import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientBeanHolder;
-import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,8 +39,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Cluster communication interface v2.
@@ -75,13 +65,11 @@ public class NacosClusterV2Controller {
      * The console displays the list of cluster members.
      *
      * @param address match address
-     * @param state match state
-     *
+     * @param state   match state
      * @return members that matches condition
      */
     @GetMapping(value = "/nodes")
-    public RestResult<Collection<Member>> listNodes(
-            @RequestParam(value = "address", required = false) String address,
+    public RestResult<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
             @RequestParam(value = "state", required = false) String state) {
         
         NodeState nodeState = null;
@@ -131,7 +119,7 @@ public class NacosClusterV2Controller {
             LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state updating, node: {}", node);
             node.setState(NodeState.UP);
             node.setFailAccessCnt(0);
-    
+            
             boolean update = memberManager.update(node);
             if (!update) {
                 LoggerUtils.printIfErrorEnabled(Loggers.CLUSTER, "node state update failed, node: {}", node);
@@ -166,61 +154,8 @@ public class NacosClusterV2Controller {
      */
     @DeleteMapping("/nodes")
     public RestResult<Void> deleteNodes(@RequestParam("addresses") List<String> addresses) throws Exception {
-        Collection<Member> memberList = MemberUtil.multiParse(addresses);
-        memberManager.memberLeave(memberList);
-        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
-                Loggers.CLUSTER);
-        final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
-        };
-        final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
-        notifyList.removeAll(memberList);
-        CountDownLatch latch = new CountDownLatch(notifyList.size());
-        for (Member member : notifyList) {
-            final String url = HttpUtils.buildUrl(false, member.getAddress(), EnvUtil.getContextPath(),
-                    Commons.NACOS_CORE_CONTEXT_V2, "/cluster/nodes");
-            nacosAsyncRestTemplate.delete(url, Header.EMPTY, StringUtils.join(addresses, ","), genericType.getType(),
-                    new Callback<Void>() {
-                        @Override
-                        public void onReceive(RestResult<Void> result) {
-                            try {
-                                if (result.ok()) {
-                                    LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
-                                            "The node : [{}] success to process the request", member);
-                                    MemberUtil.onSuccess(memberManager, member);
-                                } else {
-                                    Loggers.CLUSTER.warn(
-                                            "The node : [{}] failed to process the request, response is : {}", member,
-                                            result);
-                                    MemberUtil.onFail(memberManager, member);
-                                }
-                            } finally {
-                                latch.countDown();
-                            }
-                        }
-                        
-                        @Override
-                        public void onError(Throwable throwable) {
-                            try {
-                                Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
-                                MemberUtil.onFail(memberManager, member);
-                            } finally {
-                                latch.countDown();
-                            }
-                        }
-                        
-                        @Override
-                        public void onCancel() {
-                        
-                        }
-                    });
-        }
+        return RestResultUtils.failed(405, null, "DELETE /v2/core/cluster/nodes API not allow to use temporarily.");
         
-        try {
-            latch.await(10_000, TimeUnit.MILLISECONDS);
-            return RestResultUtils.success();
-        } catch (Throwable ex) {
-            return RestResultUtils.failed(ex.getMessage());
-        }
     }
     
 }

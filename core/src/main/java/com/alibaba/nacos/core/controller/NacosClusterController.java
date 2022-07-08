@@ -16,24 +16,15 @@
 
 package com.alibaba.nacos.core.controller;
 
-import com.alibaba.nacos.common.http.Callback;
-import com.alibaba.nacos.common.http.HttpClientBeanHolder;
-import com.alibaba.nacos.common.http.HttpUtils;
-import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -43,8 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Cluster communication interface.
@@ -151,65 +140,7 @@ public class NacosClusterController {
     @PostMapping("/server/leave")
     public RestResult<String> leave(@RequestBody Collection<String> params,
             @RequestParam(defaultValue = "true") Boolean notifyOtherMembers) throws Exception {
-        Collection<Member> memberList = MemberUtil.multiParse(params);
-        memberManager.memberLeave(memberList);
-        // End conditions for cluster notifications, FIX https://github.com/alibaba/nacos/issues/6273
-        if (Boolean.FALSE.equals(notifyOtherMembers)) {
-            return RestResultUtils.success("ok");
-        }
-
-        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
-        final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
-        };
-        final Collection<Member> notifyList = memberManager.allMembersWithoutSelf();
-        notifyList.removeAll(memberList);
-        CountDownLatch latch = new CountDownLatch(notifyList.size());
-        for (Member member : notifyList) {
-            final String url = HttpUtils
-                    .buildUrl(false, member.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
-                            "/cluster/server/leave?notifyOtherMembers=false");
-            nacosAsyncRestTemplate.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
-                @Override
-                public void onReceive(RestResult<String> result) {
-                    try {
-                        if (result.ok()) {
-                            LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER,
-                                    "The node : [{}] success to process the request", member);
-                            MemberUtil.onSuccess(memberManager, member);
-                        } else {
-                            Loggers.CLUSTER
-                                    .warn("The node : [{}] failed to process the request, response is : {}", member,
-                                            result);
-                            MemberUtil.onFail(memberManager, member);
-                        }
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-                
-                @Override
-                public void onError(Throwable throwable) {
-                    try {
-                        Loggers.CLUSTER.error("Failed to communicate with the node : {}", member);
-                        MemberUtil.onFail(memberManager, member);
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-    
-                @Override
-                public void onCancel() {
-        
-                }
-            });
-        }
-        
-        try {
-            latch.await(10_000, TimeUnit.MILLISECONDS);
-            return RestResultUtils.success("ok");
-        } catch (Throwable ex) {
-            return RestResultUtils.failed(ex.getMessage());
-        }
+        return RestResultUtils.failed(405, "/v1/core/cluster/server/leave API not allow to use temporarily.");
     }
     
 }
