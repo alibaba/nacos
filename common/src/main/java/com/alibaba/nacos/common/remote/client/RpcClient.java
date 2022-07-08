@@ -551,7 +551,7 @@ public abstract class RpcClient implements Closeable {
                     recommendServer.set(null);
                 }
                 
-                if (RpcClient.this.serverListFactory.getServerList().size() == 0) {
+                if (CollectionUtils.isEmpty(RpcClient.this.serverListFactory.getServerList())) {
                     throw new Exception("server list is empty");
                 }
                 
