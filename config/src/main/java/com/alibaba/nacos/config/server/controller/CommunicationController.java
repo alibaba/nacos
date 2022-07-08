@@ -95,7 +95,7 @@ public class CommunicationController {
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-        // long polling listners.
+        // long polling listeners.
         SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
         // rpc listeners.
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
@@ -103,17 +103,17 @@ public class CommunicationController {
         if (CollectionUtils.isEmpty(listenersClients)) {
             return result;
         }
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(listenersClients.size(), 1);
+        Map<String, String> listenersGroupkeyStatus = new HashMap<>(listenersClients.size(), 1);
         for (String connectionId : listenersClients) {
             Connection client = connectionManager.getConnection(connectionId);
             if (client != null) {
                 String md5 = configChangeListenContext.getListenKeyMd5(connectionId, groupKey);
                 if (md5 != null) {
-                    lisentersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
+                    listenersGroupkeyStatus.put(client.getMetaInfo().getClientIp(), md5);
                 }
             }
         }
-        result.getLisentersGroupkeyStatus().putAll(lisentersGroupkeyStatus);
+        result.getLisentersGroupkeyStatus().putAll(listenersGroupkeyStatus);
         return result;
     }
     
