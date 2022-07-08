@@ -46,6 +46,14 @@ class SystemEnvPropertySource extends AbstractPropertySource {
         return env.get(checkedKey);
     }
     
+    /**
+     * copy from https://github.com/spring-projects/spring-framework.git
+     * Copyright 2002-2021 the original author or authors.
+     * Since:
+     * 3.1
+     * Author:
+     * Chris Beams, Juergen Hoeller
+     */
     private String checkPropertyName(String name) {
         // Check name as-is
         if (containsKey(name)) {
