@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -97,6 +98,12 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
      */
     @Override
     public void registerInstance(String namespaceId, String serviceName, Instance instance) {
+        try {
+            NamingUtils.checkInstanceIsLegal(instance);
+        } catch (NacosException e) {
+            throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
+        }
+        
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
         createIpPortClientIfAbsent(clientId);
@@ -118,6 +125,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     @Override
     public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
+        
         Service service = getService(namespaceId, serviceName, instance.isEphemeral());
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,
