@@ -28,7 +28,6 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,14 +47,19 @@ import java.util.List;
 @RequestMapping({AddressServerConstants.ADDRESS_SERVER_REQUEST_URL + "/nodes"})
 public class AddressServerClusterController {
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
     
-    @Autowired
-    private AddressServerManager addressServerManager;
+    private final AddressServerManager addressServerManager;
     
-    @Autowired
-    private AddressServerGeneratorManager addressServerGeneratorManager;
+    private final AddressServerGeneratorManager addressServerGeneratorManager;
+    
+    public AddressServerClusterController(ServiceManager serviceManager, AddressServerManager addressServerManager,
+            AddressServerGeneratorManager addressServerGeneratorManager) {
+        this.serviceManager = serviceManager;
+        this.addressServerManager = addressServerManager;
+        this.addressServerGeneratorManager = addressServerGeneratorManager;
+    }
+    
     
     /**
      * Create new cluster.
@@ -146,7 +150,7 @@ public class AddressServerClusterController {
                 List<Instance> instanceList = addressServerGeneratorManager
                         .generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
                 serviceManager.removeInstance(Constants.DEFAULT_NAMESPACE_ID, serviceName, false,
-                        instanceList.toArray(new Instance[instanceList.size()]));
+                        instanceList.toArray(new Instance[0]));
             } else {
                 responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(checkResult);
             }

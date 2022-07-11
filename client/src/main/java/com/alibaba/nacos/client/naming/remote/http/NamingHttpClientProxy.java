@@ -168,6 +168,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
+    public void batchRegisterService(String serviceName, String groupName, List<Instance> instances) {
+        throw new UnsupportedOperationException("Do not support persistent instances to perform batch registration methods.");
+    }
+    
+    @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
@@ -482,12 +487,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             }
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
-        
         try {
             HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
-            
+    
             MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
                     .observe(end - start);
             

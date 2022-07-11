@@ -91,7 +91,7 @@ public class HttpLoginProcessor implements LoginProcessor {
             }
             return loginIdentityContext;
         } catch (Exception e) {
-            SECURITY_LOGGER.error("[ NacosClientAuthServiceImpl] login http request failed"
+            SECURITY_LOGGER.error("[NacosClientAuthServiceImpl] login http request failed"
                     + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, bodyMap, e.getMessage());
             return null;
         }

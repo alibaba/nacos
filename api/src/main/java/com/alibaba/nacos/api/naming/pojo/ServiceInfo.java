@@ -77,7 +77,7 @@ public class ServiceInfo {
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constuctor used by DiskCache.read(String) and
+     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(String key) {
@@ -96,7 +96,7 @@ public class ServiceInfo {
             this.name = keys[serviceNameIndex];
         } else {
             //defensive programming
-            throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
+            throw new IllegalArgumentException("Can't parse out 'groupName',but it must not be null!");
         }
     }
     

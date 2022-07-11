@@ -226,4 +226,18 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             Loggers.CLUSTER.warn("[serverlist] fail to refresh cluster rpc client, event:{}, msg: {} ", event, e.getMessage());
         }
     }
+    
+    /**
+     * Check whether client for member is running.
+     *
+     * @param member member
+     * @return {@code true} if target client is connected, otherwise {@code false}
+     */
+    public boolean isRunning(Member member) {
+        RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
+        if (null == client) {
+            return false;
+        }
+        return client.isRunning();
+    }
 }
