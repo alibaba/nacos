@@ -446,26 +446,27 @@ public class ServiceManager implements RecordListener<Service> {
     public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster)
             throws NacosException {
         Service service = getService(namespaceId, serviceName);
-        if (service == null) {
-            
-            Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
-            service = new Service();
-            service.setName(serviceName);
-            service.setNamespaceId(namespaceId);
-            service.setGroupName(NamingUtils.getGroupName(serviceName));
-            // now validate the service. if failed, exception will be thrown
-            service.setLastModifiedMillis(System.currentTimeMillis());
-            service.recalculateChecksum();
-            if (cluster != null) {
-                cluster.setService(service);
-                service.getClusterMap().put(cluster.getName(), cluster);
-            }
-            service.validate();
-            
-            putServiceAndInit(service);
-            if (!local) {
-                addOrReplaceService(service);
-            }
+        if (service != null) {  //return if service already exists
+            return;
+        }
+
+        Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
+        service = new Service();
+        service.setName(serviceName);
+        service.setNamespaceId(namespaceId);
+        service.setGroupName(NamingUtils.getGroupName(serviceName));
+        // now validate the service. if failed, exception will be thrown
+        service.setLastModifiedMillis(System.currentTimeMillis());
+        service.recalculateChecksum();
+        if (cluster != null) {
+            cluster.setService(service);
+            service.getClusterMap().put(cluster.getName(), cluster);
+        }
+        service.validate();
+
+        putServiceAndInit(service);
+        if (!local) {
+            addOrReplaceService(service);
         }
     }
     
