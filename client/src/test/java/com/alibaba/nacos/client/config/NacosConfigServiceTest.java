@@ -201,6 +201,25 @@ public class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
     }
+
+    @Test
+    public void testPublishConfigAppName() throws NacosException {
+        String dataId = "1";
+        String group = "2";
+        String content = "123";
+        String namespace = "";
+        String appName = "first config app name";
+        String type = ConfigType.getDefaultType().getType();
+
+        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, appName, null, null, content, "", null, type))
+                .thenReturn(true);
+
+        final boolean b = nacosConfigService.publishConfigAppName(dataId, group, content, type, appName);
+        Assert.assertTrue(b);
+
+        Mockito.verify(mockWoker, Mockito.times(1))
+                .publishConfig(dataId, group, namespace, appName, null, null, content, "", null, type);
+    }
     
     @Test
     public void testRemoveConfig() throws NacosException {

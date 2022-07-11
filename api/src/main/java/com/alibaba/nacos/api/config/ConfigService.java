@@ -117,7 +117,20 @@ public interface ConfigService {
      */
     boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
             throws NacosException;
-    
+
+    /**
+     * Publish config with AppName.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param type    config type {@link ConfigType}
+     * @param appName appName
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfigAppName(String dataId, String group, String content, String type, String appName) throws NacosException;
+
     /**
      * Remove config.
      *
