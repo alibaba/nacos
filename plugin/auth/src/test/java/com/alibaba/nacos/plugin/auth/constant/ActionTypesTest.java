@@ -14,30 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.exception;
+package com.alibaba.nacos.plugin.auth.constant;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import org.junit.Test;
 
-/**
- * Exception to be thrown if authorization is failed.
- *
- * @author nkorange
- * @author mai.jh
- * @since 1.2.0
- */
-public class AccessException extends NacosException {
+import static org.junit.Assert.assertEquals;
+
+public class ActionTypesTest {
     
-    private static final long serialVersionUID = -2926344920552803270L;
-    
-    public AccessException() {
+    @Test
+    public void testToStringForRead() {
+        ActionTypes actual = ActionTypes.valueOf("READ");
+        assertEquals("r", actual.toString());
     }
     
-    public AccessException(int code) {
-        this.setErrCode(code);
+    @Test
+    public void testToStringForWrite() {
+        ActionTypes actual = ActionTypes.valueOf("WRITE");
+        assertEquals("w", actual.toString());
     }
-    
-    public AccessException(String msg) {
-        this.setErrMsg(msg);
-    }
-    
 }
