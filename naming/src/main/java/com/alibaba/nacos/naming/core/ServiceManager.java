@@ -446,7 +446,8 @@ public class ServiceManager implements RecordListener<Service> {
     public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster)
             throws NacosException {
         Service service = getService(namespaceId, serviceName);
-        if (service != null) {  //return if service already exists
+        //return if service already exists
+        if (service != null) {
             return;
         }
 
