@@ -769,6 +769,11 @@
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
     </logger>
+    
+    <logger name="com.alibaba.nacos.console">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
 
     <root>
         <level value="INFO"/>
