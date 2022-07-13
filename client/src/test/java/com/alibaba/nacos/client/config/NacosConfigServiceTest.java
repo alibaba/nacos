@@ -132,6 +132,9 @@ public class NacosConfigServiceTest {
                     boolean notify) throws NacosException {
                 ConfigResponse configResponse = new ConfigResponse();
                 configResponse.setContent(content);
+                configResponse.setDataId(dataId);
+                configResponse.setGroup(group);
+                configResponse.setTenant(tenant);
                 return configResponse;
             }
     
@@ -151,7 +154,6 @@ public class NacosConfigServiceTest {
         final String config = nacosConfigService.getConfigAndSignListener(dataId, group, timeout, listener);
         Assert.assertEquals(content, config);
         
-        Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(dataId, group, tenant, timeout, false);
         Mockito.verify(mockWoker, Mockito.times(1))
                 .addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
     }
