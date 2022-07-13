@@ -668,7 +668,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public List<String> getServerList() {
-                    return ConfigRpcTransportClient.super.serverListManager.serverUrls;
+                    return ConfigRpcTransportClient.super.serverListManager.getServerUrls();
                     
                 }
             });

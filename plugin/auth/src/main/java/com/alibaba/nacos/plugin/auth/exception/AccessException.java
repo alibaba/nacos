@@ -30,7 +30,6 @@ public class AccessException extends NacosException {
     private static final long serialVersionUID = -2926344920552803270L;
     
     public AccessException() {
-    
     }
     
     public AccessException(int code) {

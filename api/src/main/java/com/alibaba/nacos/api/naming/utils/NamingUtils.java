@@ -21,6 +21,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
@@ -142,6 +145,31 @@ public class NamingUtils {
             throw new NacosException(NacosException.INVALID_PARAM,
                     String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
                             instance.getClusterName()));
+        }
+    }
+    
+    /**
+     * check batch register is Ephemeral.
+     * @param instance instance
+     * @throws NacosException NacosException
+     */
+    public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
+        if (!instance.isEphemeral()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("Batch registration does not allow persistent instance registration , Instance：%s", instance));
+        }
+    }
+    
+    /**
+     * Batch verify the validity of instances.
+     * @param instances List of instances to be registered
+     * @throws NacosException Nacos
+     */
+    public static void batchCheckInstanceIsLegal(List<Instance> instances) throws NacosException {
+        Set<Instance> newInstanceSet = new HashSet<>(instances);
+        for (Instance instance : newInstanceSet) {
+            checkInstanceIsEphemeral(instance);
+            checkInstanceIsLegal(instance);
         }
     }
     

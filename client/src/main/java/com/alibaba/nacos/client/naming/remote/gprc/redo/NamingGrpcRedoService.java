@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -99,6 +101,21 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     public void cacheInstanceForRedo(String serviceName, String groupName, Instance instance) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         InstanceRedoData redoData = InstanceRedoData.build(serviceName, groupName, instance);
+        synchronized (registeredInstances) {
+            registeredInstances.put(key, redoData);
+        }
+    }
+    
+    /**
+     * Cache registered instance for redo.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instances    batch registered instance
+     */
+    public void cacheInstanceForRedo(String serviceName, String groupName, List<Instance> instances) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
+        BatchInstanceRedoData redoData = BatchInstanceRedoData.build(serviceName, groupName, instances);
         synchronized (registeredInstances) {
             registeredInstances.put(key, redoData);
         }
