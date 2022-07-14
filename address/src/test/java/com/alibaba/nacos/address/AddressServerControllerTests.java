@@ -16,36 +16,35 @@
 
 package com.alibaba.nacos.address;
 
+import com.alibaba.nacos.common.codec.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@ImportAutoConfiguration(exclude = {SecurityAutoConfiguration.class, SecurityFilterAutoConfiguration.class,
-        ManagementWebSecurityAutoConfiguration.class, UserDetailsServiceAutoConfiguration.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {
+        "spring.security.user.password=123456", "spring.security.user.name=user"})
 public class AddressServerControllerTests {
     
     private static final String PRODUCT_CONFIG = "config";
     
     private static final String PRODUCT_NAMING = "naming";
+    
+    private static final String HTTP_BASIC_INFO = getHttpBasicInfo();
     
     @Autowired
     private TestRestTemplate restTemplate;
@@ -56,8 +55,25 @@ public class AddressServerControllerTests {
         System.setProperty("embeddedStorage", "true");
     }
     
+    @AfterClass
+    public static void teardown() {
+        System.clearProperty("nacos.standalone");
+        System.clearProperty("embeddedStorage");
+    }
+    
+    private static String getHttpBasicInfo() {
+        String userName = "user";
+        String password = "123456";
+        
+        String info = userName + ":" + password;
+        
+        final byte[] bytes = Base64.encodeBase64(info.getBytes(StandardCharsets.UTF_8));
+        
+        return "Basic " + new String(bytes, StandardCharsets.UTF_8);
+    }
+    
     @Test
-    public void postCluster() throws InterruptedException {
+    public void postClusterWithoutLogin() {
         
         String ips = "127.0.0.100,127.0.0.102,127.0.0.104";
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
@@ -66,9 +82,23 @@ public class AddressServerControllerTests {
         final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
                 RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
         
+        Assert.assertEquals(postClusterResponseEntity.getStatusCode(), HttpStatus.UNAUTHORIZED);
+    }
+    
+    @Test
+    public void postCluster() throws InterruptedException {
+        
+        String ips = "127.0.0.100,127.0.0.102,127.0.0.104";
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", ips);
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        
         Assert.assertNotNull(postClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
-    
+        
         TimeUnit.MILLISECONDS.sleep(500L);
         
         final ResponseEntity<String> getClusterResponseEntity = restTemplate.exchange(
@@ -80,21 +110,33 @@ public class AddressServerControllerTests {
     }
     
     @Test
+    public void deleteClusterWithoutLogin() {
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", "127.0.0.104");
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+        Assert.assertEquals(postClusterResponseEntity.getStatusCode(), HttpStatus.UNAUTHORIZED);
+    }
+    
+    @Test
     public void deleteCluster() throws InterruptedException {
         
         LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
         params.add("ips", "127.0.0.104");
         
         final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
-                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
         
         Assert.assertNotNull(postClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
-    
+        
         TimeUnit.MILLISECONDS.sleep(500L);
         
         final ResponseEntity<String> deleteClusterResponseEntity = restTemplate.exchange(
-                RequestEntity.delete("/nacos/v1/as/nodes?ips={ips}", "127.0.0.104").build(), String.class);
+                RequestEntity.delete("/nacos/v1/as/nodes?ips={ips}", "127.0.0.104")
+                        .header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO).build(), String.class);
         
         Assert.assertNotNull(deleteClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
@@ -110,10 +152,11 @@ public class AddressServerControllerTests {
         params.add("product", PRODUCT_CONFIG);
         
         final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
-                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
         Assert.assertNotNull(postClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
-    
+        
         TimeUnit.MILLISECONDS.sleep(500L);
         
         final ResponseEntity<String> getClusterResponseEntity = restTemplate.exchange(
@@ -134,15 +177,16 @@ public class AddressServerControllerTests {
         params.add("product", PRODUCT_CONFIG);
         
         final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
-                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
         Assert.assertNotNull(postClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
-    
+        
         TimeUnit.MILLISECONDS.sleep(500L);
         
         final ResponseEntity<String> deleteClusterResponseEntity = restTemplate.exchange(
                 RequestEntity.delete("/nacos/v1/as/nodes?product={product}&ips={ips}", PRODUCT_CONFIG, "127.0.0.104")
-                        .build(), String.class);
+                        .header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO).build(), String.class);
         
         Assert.assertNotNull(deleteClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
@@ -159,10 +203,11 @@ public class AddressServerControllerTests {
         params.add("cluster", "cluster01");
         
         final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
-                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
         Assert.assertNotNull(postClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
-    
+        
         TimeUnit.MILLISECONDS.sleep(500L);
         
         final ResponseEntity<String> getClusterResponseEntity = restTemplate.exchange(
@@ -184,24 +229,20 @@ public class AddressServerControllerTests {
         params.add("cluster", "cluster01");
         
         final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
-                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
         Assert.assertNotNull(postClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
-    
+        
         TimeUnit.MILLISECONDS.sleep(500L);
         
         final ResponseEntity<String> deleteClusterResponseEntity = restTemplate.exchange(
                 RequestEntity.delete("/nacos/v1/as/nodes?product={product}&cluster={cluster}&ips={ips}", PRODUCT_NAMING,
-                        "cluster01", "127.0.0.104").build(), String.class);
+                        "cluster01", "127.0.0.104").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO).build(),
+                String.class);
         
         Assert.assertNotNull(deleteClusterResponseEntity);
         Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
-    }
-    
-    @AfterClass
-    public static void teardown() {
-        System.clearProperty("nacos.standalone");
-        System.clearProperty("embeddedStorage");
     }
     
 }
