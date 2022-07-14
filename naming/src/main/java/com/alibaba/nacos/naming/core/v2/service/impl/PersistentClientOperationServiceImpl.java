@@ -133,7 +133,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         request.setInstance(instance);
         request.setClientId(clientId);
         final WriteRequest writeRequest = WriteRequest.newBuilder()
-                .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP_V2)
+                .setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request))).setOperation(DataOperation.CHANGE.name())
                 .build();
         try {
