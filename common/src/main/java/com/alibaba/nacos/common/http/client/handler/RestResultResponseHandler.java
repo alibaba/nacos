@@ -44,7 +44,7 @@ public class RestResultResponseHandler<T> extends AbstractResponseHandler<T> {
     }
     
     private static <T> HttpRestResult<T> convert(RestResult<T> restResult) {
-        HttpRestResult<T> httpRestResult = new HttpRestResult<T>();
+        HttpRestResult<T> httpRestResult = new HttpRestResult<>();
         httpRestResult.setCode(restResult.getCode());
         httpRestResult.setData(restResult.getData());
         httpRestResult.setMessage(restResult.getMessage());

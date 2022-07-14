@@ -36,8 +36,8 @@ public class ClientRecord {
     
     public ClientRecord(final String clientIp) {
         this.ip = clientIp;
-        this.groupKey2md5Map = new ConcurrentHashMap<String, String>(20, 0.75f, 1);
-        this.groupKey2pollingTsMap = new ConcurrentHashMap<String, Long>(20, 0.75f, 1);
+        this.groupKey2md5Map = new ConcurrentHashMap<>(20, 0.75f, 1);
+        this.groupKey2pollingTsMap = new ConcurrentHashMap<>(20, 0.75f, 1);
     }
     
     public String getIp() {

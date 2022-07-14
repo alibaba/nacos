@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
  */
 public class InstanceRedoData extends RedoData<Instance> {
     
-    private InstanceRedoData(String serviceName, String groupName) {
+    protected InstanceRedoData(String serviceName, String groupName) {
         super(serviceName, groupName);
     }
     

@@ -243,6 +243,10 @@ const I18N_CONF = {
     lastUpdateTime: 'Last Modified At',
     operator: 'Operator',
     operation: 'Operation',
+    compare: 'Compare',
+    historyCompareTitle: 'History Compare',
+    historyCompareLastVersion: 'Lasted Release Version',
+    historyCompareSelectedVersion: 'Selected Version',
   },
   HistoryDetail: {
     historyDetails: 'History Details',

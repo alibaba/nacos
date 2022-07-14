@@ -16,167 +16,233 @@
 
 package com.alibaba.nacos.address;
 
+import com.alibaba.nacos.common.codec.Base64;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
 
-import java.util.HashMap;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT, properties = {
+        "spring.security.user.password=123456", "spring.security.user.name=user"})
 public class AddressServerControllerTests {
-    
-    private static final String PRODUCT_NACOS = "nacos";
     
     private static final String PRODUCT_CONFIG = "config";
     
     private static final String PRODUCT_NAMING = "naming";
     
-    private static final String DEFAULT_URL_CLUSTER = "serverlist";
+    private static final String HTTP_BASIC_INFO = getHttpBasicInfo();
     
-    private static final String GET_SERVERLIST_URL_FORMART = "http://127.0.0.1:8080/%s/%s";
+    @Autowired
+    private TestRestTemplate restTemplate;
     
-    //-----------------product=nacos,cluster=DEFAULT -------------------//
+    @BeforeClass
+    public static void before() {
+        System.setProperty("nacos.standalone", "true");
+        System.setProperty("embeddedStorage", "true");
+    }
+    
+    @AfterClass
+    public static void teardown() {
+        System.clearProperty("nacos.standalone");
+        System.clearProperty("embeddedStorage");
+    }
+    
+    private static String getHttpBasicInfo() {
+        String userName = "user";
+        String password = "123456";
+        
+        String info = userName + ":" + password;
+        
+        final byte[] bytes = Base64.encodeBase64(info.getBytes(StandardCharsets.UTF_8));
+        
+        return "Basic " + new String(bytes, StandardCharsets.UTF_8);
+    }
     
     @Test
-    public void postCluster() {
+    public void postClusterWithoutLogin() {
         
         String ips = "127.0.0.100,127.0.0.102,127.0.0.104";
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", ips);
-        String response = SimpleHttpTestUtils.doPost("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void getCluster() {
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", ips);
         
-        String getUrl = String.format(GET_SERVERLIST_URL_FORMART, PRODUCT_NACOS, DEFAULT_URL_CLUSTER);
-        String response = SimpleHttpTestUtils.doGet(getUrl, new HashMap<>(), "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void deleteCluster() {
-        HashMap<String, String> deleteIp = new HashMap<>();
-        deleteIp.put("ips", "127.0.0.104");
-        String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", deleteIp, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void deleteClusterWithSpecIp() {
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", "127.0.0.103");
-        String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void putCluster() {
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
         
-        String ips = "127.0.0.114";
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", ips);
-        String response = SimpleHttpTestUtils.doPut("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
+        Assert.assertEquals(postClusterResponseEntity.getStatusCode(), HttpStatus.UNAUTHORIZED);
     }
     
-    //-----------------product=config,cluster=cluster01 -------------------//
+    @Test
+    public void postCluster() throws InterruptedException {
+        
+        String ips = "127.0.0.100,127.0.0.102,127.0.0.104";
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", ips);
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        
+        Assert.assertNotNull(postClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
+        
+        TimeUnit.MILLISECONDS.sleep(500L);
+        
+        final ResponseEntity<String> getClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.get("/nacos/serverlist").build(), String.class);
+        
+        Assert.assertNotNull(getClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), getClusterResponseEntity.getStatusCodeValue());
+        
+    }
     
     @Test
-    public void postClusterWithProduct() {
+    public void deleteClusterWithoutLogin() {
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", "127.0.0.104");
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").body(params), String.class);
+        Assert.assertEquals(postClusterResponseEntity.getStatusCode(), HttpStatus.UNAUTHORIZED);
+    }
+    
+    @Test
+    public void deleteCluster() throws InterruptedException {
+        
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", "127.0.0.104");
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        
+        Assert.assertNotNull(postClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
+        
+        TimeUnit.MILLISECONDS.sleep(500L);
+        
+        final ResponseEntity<String> deleteClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.delete("/nacos/v1/as/nodes?ips={ips}", "127.0.0.104")
+                        .header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO).build(), String.class);
+        
+        Assert.assertNotNull(deleteClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
+    }
+    
+    @Test
+    public void postClusterWithProduct() throws InterruptedException {
+        
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(2);
         
         String ips = "127.0.0.101,127.0.0.102,127.0.0.103";
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", ips);
-        params.put("product", PRODUCT_CONFIG);
-        String response = SimpleHttpTestUtils.doPost("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void getClusterWithProduct() {
-        HashMap<String, String> params = new HashMap<>();
-        String getUrl = String.format(GET_SERVERLIST_URL_FORMART, PRODUCT_CONFIG, DEFAULT_URL_CLUSTER);
-        String response = SimpleHttpTestUtils.doGet(getUrl, params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void deleteClusterWithProduct() {
-        HashMap<String, String> params = new HashMap<>();
-        params.put("product", PRODUCT_CONFIG);
-        String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void deleteClusterWithProductAndIp() {
-        HashMap<String, String> params = new HashMap<>();
-        params.put("product", PRODUCT_CONFIG);
-        params.put("ips", "127.0.0.196");
-        String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void putClusterWithProduct() {
+        params.add("ips", ips);
+        params.add("product", PRODUCT_CONFIG);
         
-        String ips = "127.0.0.196";
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", ips);
-        params.put("product", PRODUCT_CONFIG);
-        String response = SimpleHttpTestUtils.doPut("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        Assert.assertNotNull(postClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
+        
+        TimeUnit.MILLISECONDS.sleep(500L);
+        
+        final ResponseEntity<String> getClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.get("/{product}/serverlist", PRODUCT_CONFIG).build(), String.class);
+        
+        Assert.assertNotNull(getClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), getClusterResponseEntity.getStatusCodeValue());
+        
+        final String body = getClusterResponseEntity.getBody();
+        Assert.assertNotNull(body);
     }
     
-    //-----------------product=naming,cluster=cluster01 -------------------//
+    @Test
+    public void deleteClusterWithProduct() throws InterruptedException {
+        
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", "127.0.0.104");
+        params.add("product", PRODUCT_CONFIG);
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        Assert.assertNotNull(postClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
+        
+        TimeUnit.MILLISECONDS.sleep(500L);
+        
+        final ResponseEntity<String> deleteClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.delete("/nacos/v1/as/nodes?product={product}&ips={ips}", PRODUCT_CONFIG, "127.0.0.104")
+                        .header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO).build(), String.class);
+        
+        Assert.assertNotNull(deleteClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
+    }
     
     @Test
-    public void postClusterWithProductAndCluster() {
+    public void postClusterWithProductAndCluster() throws InterruptedException {
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
         
         String ips = "127.0.0.100,127.0.0.200,127.0.0.31";
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", ips);
-        params.put("product", PRODUCT_NAMING);
-        params.put("cluster", "cluster01");
-        String response = SimpleHttpTestUtils.doPost("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void getClusterWithProductAndCluster() {
-        HashMap<String, String> params = new HashMap<>();
-        String getUrl = String.format(GET_SERVERLIST_URL_FORMART, PRODUCT_NAMING, "cluster01");
-        String response = SimpleHttpTestUtils.doGet(getUrl, params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void deleteClusterWithProductAndCluster() {
-        HashMap<String, String> params = new HashMap<>();
-        params.put("product", PRODUCT_NAMING);
-        params.put("cluster", "cluster01");
-        String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void deleteClusterWithProductAndClusterAndIp() {
-        HashMap<String, String> params = new HashMap<>();
-        params.put("product", PRODUCT_NAMING);
-        params.put("cluster", "cluster01");
-        params.put("ips", "127.0.0.200");
-        String response = SimpleHttpTestUtils.doDelete("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
-    }
-    
-    @Test
-    public void putClusterWithProductAndCluster() {
         
-        String ips = "127.0.0.171";
-        HashMap<String, String> params = new HashMap<>();
-        params.put("ips", ips);
-        params.put("product", PRODUCT_NAMING);
-        params.put("cluster", "cluster01");
-        String response = SimpleHttpTestUtils.doPut("http://127.0.0.1:8080/nacos/v1/as/nodes", params, "UTF-8");
-        System.err.println(response);
+        params.add("ips", ips);
+        params.add("product", PRODUCT_NAMING);
+        params.add("cluster", "cluster01");
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        Assert.assertNotNull(postClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
+        
+        TimeUnit.MILLISECONDS.sleep(500L);
+        
+        final ResponseEntity<String> getClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.get("/{product}/{cluster}", PRODUCT_NAMING, "cluster01").build(), String.class);
+        
+        Assert.assertNotNull(getClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), getClusterResponseEntity.getStatusCodeValue());
+        
+        final String body = getClusterResponseEntity.getBody();
+        Assert.assertNotNull(body);
     }
+    
+    @Test
+    public void deleteClusterWithProductAndCluster() throws InterruptedException {
+        
+        LinkedMultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+        params.add("ips", "127.0.0.104");
+        params.add("product", PRODUCT_NAMING);
+        params.add("cluster", "cluster01");
+        
+        final ResponseEntity<String> postClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.post("/nacos/v1/as/nodes").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO)
+                        .body(params), String.class);
+        Assert.assertNotNull(postClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), postClusterResponseEntity.getStatusCodeValue());
+        
+        TimeUnit.MILLISECONDS.sleep(500L);
+        
+        final ResponseEntity<String> deleteClusterResponseEntity = restTemplate.exchange(
+                RequestEntity.delete("/nacos/v1/as/nodes?product={product}&cluster={cluster}&ips={ips}", PRODUCT_NAMING,
+                        "cluster01", "127.0.0.104").header(HttpHeaders.AUTHORIZATION, HTTP_BASIC_INFO).build(),
+                String.class);
+        
+        Assert.assertNotNull(deleteClusterResponseEntity);
+        Assert.assertEquals(HttpStatus.OK.value(), deleteClusterResponseEntity.getStatusCodeValue());
+    }
+    
 }

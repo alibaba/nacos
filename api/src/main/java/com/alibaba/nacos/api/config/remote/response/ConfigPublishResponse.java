@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  * ConfigPublishResponse.
  *
  * @author liuzunfei
- * @version $Id: ConfigPubishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
+ * @version $Id: ConfigPublishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
  */
 public class ConfigPublishResponse extends Response {
     

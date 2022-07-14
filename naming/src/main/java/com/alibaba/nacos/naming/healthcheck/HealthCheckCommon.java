@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.HealthStateChangeReason;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -101,6 +104,9 @@ public class HealthCheckCommon {
                         Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
                                 cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(),
                                 UtilsAndCommons.LOCALHOST_SITE, msg);
+                        NotifyCenter.publishEvent(new NamingTraceEvent.HealthStateChangeTraceEvent(System.currentTimeMillis(),
+                                service.getNamespaceId(), service.getGroupName(), service.getName(), ip.getIp(),
+                                true, HealthStateChangeReason.HEALTH_CHECK_SUCCESS));
                     } else {
                         if (!ip.isMockValid()) {
                             ip.setMockValid(true);
@@ -150,6 +156,9 @@ public class HealthCheckCommon {
                                 .info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                                         cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(),
                                         UtilsAndCommons.LOCALHOST_SITE, msg);
+                        NotifyCenter.publishEvent(new NamingTraceEvent.HealthStateChangeTraceEvent(System.currentTimeMillis(),
+                                service.getNamespaceId(), service.getGroupName(), service.getName(), ip.getIp(),
+                                false, HealthStateChangeReason.HEALTH_CHECK_FAIL));
                     } else {
                         Loggers.EVT_LOG
                                 .info("serviceName: {} {PROBE} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
@@ -196,6 +205,10 @@ public class HealthCheckCommon {
                             .info("serviceName: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
                                     cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(),
                                     UtilsAndCommons.LOCALHOST_SITE, msg);
+                    NotifyCenter.publishEvent(new NamingTraceEvent.HealthStateChangeTraceEvent(System.currentTimeMillis(),
+                            service.getNamespaceId(), service.getGroupName(), service.getName(), ip.getIp(),
+                            false, HealthStateChangeReason.HEALTH_CHECK_FAIL));
+                    
                 } else {
                     if (ip.isMockValid()) {
                         ip.setMockValid(false);
@@ -203,6 +216,7 @@ public class HealthCheckCommon {
                                 .info("serviceName: {} {PROBE} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
                                         cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(),
                                         UtilsAndCommons.LOCALHOST_SITE, msg);
+                        Service service = cluster.getService();
                     }
                     
                 }

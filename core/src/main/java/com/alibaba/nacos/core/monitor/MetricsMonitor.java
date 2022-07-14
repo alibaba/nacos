@@ -50,7 +50,7 @@ public final class MetricsMonitor {
         RAFT_APPLY_LOG_TIMER = NacosMeterRegistry.timer("protocol", "raft_apply_log_timer");
         RAFT_APPLY_READ_TIMER = NacosMeterRegistry.timer("protocol", "raft_apply_read_timer");
         
-        List<Tag> tags = new ArrayList<Tag>();
+        List<Tag> tags = new ArrayList<>();
         tags.add(new ImmutableTag("module", "config"));
         tags.add(new ImmutableTag("name", "longConnection"));
         Metrics.gauge("nacos_monitor", tags, longConnection);

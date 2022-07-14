@@ -36,7 +36,7 @@ public interface NacosConfigConverter<T> {
     /**
      * Convert the Nacos' config of type S to target type T.
      *
-     * @param config the Naocs's config to convert, which must be an instance of S (never {@code null})
+     * @param config the Nacos's config to convert, which must be an instance of S (never {@code null})
      * @return the converted object, which must be an instance of T (potentially {@code null})
      */
     T convert(String config);

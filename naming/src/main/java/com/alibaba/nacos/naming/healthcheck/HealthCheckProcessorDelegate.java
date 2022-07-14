@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
+import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckProcessorExtendV1;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +36,9 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
     
     private Map<String, HealthCheckProcessor> healthCheckProcessorMap = new HashMap<>();
     
-    public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider) {
+    public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider,
+                                        HealthCheckProcessorExtendV1 healthCheckProcessorExtend) {
+        provider.setHealthCheckProcessorExtend(healthCheckProcessorExtend);
         provider.init();
     }
     
