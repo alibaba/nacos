@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -26,6 +27,7 @@ import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -43,6 +45,7 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -305,6 +308,16 @@ public abstract class GrpcClient extends RpcClient {
                     return null;
                 }
                 
+                // submit ability table as soon as possible
+                // ability table will be null if server doesn't support ability table
+                ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
+                Map<String, Boolean> abilityTable = AbilityTableUtils
+                        .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
+                String oldConnId = currentConnection == null ? null : currentConnection.getConnectionId();
+                RecServerAbilityContext recServerAbilityContext = new RecServerAbilityContext(serverCheckResponse.getConnectionId(),
+                        abilityTable, null, oldConnId);
+                recServerAbilitySignal.offer(recServerAbilityContext);
+                
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
@@ -321,8 +334,8 @@ public abstract class GrpcClient extends RpcClient {
                 ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
-                conSetupRequest.setAbilities(super.clientAbilities);
                 conSetupRequest.setTenant(super.getTenant());
+                conSetupRequest.setAbilityTable(clientAbilities == null ? AbilityKey.getAbilityBitFlags() : clientAbilities);
                 grpcConn.sendRequest(conSetupRequest);
                 //wait to register connection setup
                 Thread.sleep(100L);

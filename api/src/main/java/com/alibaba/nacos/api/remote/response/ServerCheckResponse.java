@@ -26,12 +26,14 @@ public class ServerCheckResponse extends Response {
     
     private String connectionId;
     
-    public ServerCheckResponse() {
+    private byte[] abilities;
     
+    public ServerCheckResponse() {
     }
     
-    public ServerCheckResponse(String connectionId) {
+    public ServerCheckResponse(String connectionId, byte[] abilities) {
         this.connectionId = connectionId;
+        this.abilities = abilities;
     }
     
     public String getConnectionId() {
@@ -40,5 +42,13 @@ public class ServerCheckResponse extends Response {
     
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
+    }
+    
+    public byte[] getAbilities() {
+        return abilities;
+    }
+    
+    public void setAbilities(byte[] abilities) {
+        this.abilities = abilities;
     }
 }

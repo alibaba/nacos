@@ -51,7 +51,13 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
     
     private transient int failAccessCnt = 0;
     
+    /**.
+     * This can be replaced by AbilityControlManager. Just adapt to old version.
+     */
+    @Deprecated
     private ServerAbilities abilities = new ServerAbilities();
+    
+    private boolean supportRemoteConnection;
     
     public Member() {
         String prefix = "nacos.core.member.meta.";
@@ -63,12 +69,22 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
                 .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
+    @Deprecated
     public ServerAbilities getAbilities() {
         return abilities;
     }
     
+    @Deprecated
     public void setAbilities(ServerAbilities abilities) {
         this.abilities = abilities;
+    }
+    
+    public boolean isSupportRemoteConnection() {
+        return supportRemoteConnection;
+    }
+    
+    public void setSupportRemoteConnection(boolean supportRemoteConnection) {
+        this.supportRemoteConnection = supportRemoteConnection;
     }
     
     public static MemberBuilder builder() {

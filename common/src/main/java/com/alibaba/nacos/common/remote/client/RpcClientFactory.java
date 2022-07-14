@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
@@ -138,6 +139,7 @@ public class RpcClientFactory {
             GrpcClient client = new GrpcClusterClient(clientNameInner);
             client.setThreadPoolCoreSize(threadPoolCoreSize);
             client.setThreadPoolMaxSize(threadPoolMaxSize);
+            client.clientAbilities(AbilityKey.getAbilityBitFlags());
             client.labels(labels);
             return client;
         });

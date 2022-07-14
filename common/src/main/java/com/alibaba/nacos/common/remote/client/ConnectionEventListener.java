@@ -25,11 +25,15 @@ public interface ConnectionEventListener {
     
     /**
      * notify when  connected to server.
+     *
+     * @param connection who connected
      */
-    public void onConnected();
+    public void onConnected(Connection connection);
 
     /**
      * notify when  disconnected to server.
+     *
+     * @param connection who disconnected
      */
-    public void onDisConnect();
+    public void onDisConnect(Connection connection);
 }

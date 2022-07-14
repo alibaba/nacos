@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import com.alibaba.nacos.api.ability.ClientAbilities;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,15 +29,23 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private String clientVersion;
     
-    private ClientAbilities abilities;
-    
     private String tenant;
-    
-    private Map<String, String> labels = new HashMap<String, String>();
+
+    private Map<String, String> labels = new HashMap<>();
+
+    private byte[] abilityTable;
     
     public ConnectionSetupRequest() {
     }
-    
+
+    public byte[] getAbilityTable() {
+        return abilityTable;
+    }
+
+    public void setAbilityTable(byte[] abilityTable) {
+        this.abilityTable = abilityTable;
+    }
+
     public String getClientVersion() {
         return clientVersion;
     }
@@ -62,13 +68,5 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     public void setTenant(String tenant) {
         this.tenant = tenant;
-    }
-    
-    public ClientAbilities getAbilities() {
-        return abilities;
-    }
-    
-    public void setAbilities(ClientAbilities abilities) {
-        this.abilities = abilities;
     }
 }

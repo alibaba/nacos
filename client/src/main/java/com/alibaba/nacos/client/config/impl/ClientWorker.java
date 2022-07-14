@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.ability.ClientAbilities;
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -37,6 +37,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.client.Connection;
+import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
+import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -54,10 +59,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
-import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -626,13 +627,13 @@ public class ClientWorker implements Closeable {
             rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
                 
                 @Override
-                public void onConnected() {
+                public void onConnected(Connection connection) {
                     LOGGER.info("[{}] Connected,notify listen context...", rpcClientInner.getName());
                     notifyListenConfig();
                 }
                 
                 @Override
-                public void onDisConnect() {
+                public void onDisConnect(Connection connection) {
                     String taskId = rpcClientInner.getLabels().get("taskId");
                     LOGGER.info("[{}] DisConnected,clear listen context...", rpcClientInner.getName());
                     Collection<CacheData> values = cacheMap.get().values();
@@ -890,11 +891,8 @@ public class ClientWorker implements Closeable {
             
         }
         
-        private ClientAbilities initAbilities() {
-            ClientAbilities clientAbilities = new ClientAbilities();
-            clientAbilities.getRemoteAbility().setSupportRemoteConnection(true);
-            clientAbilities.getConfigAbility().setSupportRemoteMetrics(true);
-            return clientAbilities;
+        private byte[] initAbilities() {
+            return AbilityKey.getAbilityBitFlags();
         }
         
         /**

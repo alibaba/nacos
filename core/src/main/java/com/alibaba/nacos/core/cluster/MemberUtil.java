@@ -67,6 +67,7 @@ public class MemberUtil {
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
         oldMember.setAbilities(newMember.getAbilities());
+        oldMember.setSupportRemoteConnection(newMember.isSupportRemoteConnection());
     }
     
     /**
@@ -105,6 +106,9 @@ public class MemberUtil {
      * @return support long connection or not.
      */
     public static boolean isSupportedLongCon(Member member) {
+        if (member.isSupportRemoteConnection()) {
+            return true;
+        }
         if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
             return false;
         }
@@ -279,8 +283,7 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
-        
-        if (!expected.getAbilities().equals(actual.getAbilities())) {
+        if (!(expected.isSupportRemoteConnection() && actual.isSupportRemoteConnection())) {
             return true;
         }
         

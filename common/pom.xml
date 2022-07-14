@@ -84,6 +84,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>nacos-version.txt</include>
+                    <include>META-INF/services/com.alibaba.nacos.common.ability.DefaultAbilityControlManager</include>
                 </includes>
             </resource>
         </resources>

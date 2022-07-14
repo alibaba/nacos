@@ -28,7 +28,10 @@ import java.util.Objects;
  *
  * @author liuzunfei
  * @version $Id: ServerAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
+ *
+ * @deprecated This entity can be replaced by ability table from AbilityControlManager. Just adapt to old version.
  */
+@Deprecated
 public class ServerAbilities implements Serializable {
     
     private static final long serialVersionUID = -2120543002911304171L;

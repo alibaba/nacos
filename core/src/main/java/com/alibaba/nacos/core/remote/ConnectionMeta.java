@@ -111,7 +111,7 @@ public class ConnectionMeta {
         this.lastActiveTime = System.currentTimeMillis();
         this.labels.putAll(labels);
     }
-    
+
     /**
      * check if this connection is sdk source.
      *

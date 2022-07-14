@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -51,10 +53,10 @@ import static com.alibaba.nacos.core.remote.grpc.BaseGrpcServer.CONTEXT_KEY_CONN
  */
 @Service
 public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestStreamImplBase {
-    
+
     @Autowired
     ConnectionManager connectionManager;
-    
+
     private void traceDetailIfNecessary(Payload grpcRequest) {
         String clientIp = grpcRequest.getMetadata().getClientIp();
         String connectionId = CONTEXT_KEY_CONN_ID.get();
@@ -68,30 +70,30 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
             Loggers.REMOTE_DIGEST.error("[{}]Bi stream request error,payload={},error={}", connectionId,
                     grpcRequest.toByteString().toStringUtf8(), throwable);
         }
-        
+
     }
-    
+
     @Override
     public StreamObserver<Payload> requestBiStream(StreamObserver<Payload> responseObserver) {
-        
+
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
-            
+
             final String connectionId = CONTEXT_KEY_CONN_ID.get();
-            
+
             final Integer localPort = CONTEXT_KEY_CONN_LOCAL_PORT.get();
-            
+
             final int remotePort = CONTEXT_KEY_CONN_REMOTE_PORT.get();
-            
+
             String remoteIp = CONTEXT_KEY_CONN_REMOTE_IP.get();
-            
+
             String clientIp = "";
-            
+
             @Override
             public void onNext(Payload payload) {
-                
+
                 clientIp = payload.getMetadata().getClientIp();
                 traceDetailIfNecessary(payload);
-                
+
                 Object parseObj;
                 try {
                     parseObj = GrpcUtils.parse(payload);
@@ -100,7 +102,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             .warn("[{}]Grpc request bi stream,payload parse error={}", connectionId, throwable);
                     return;
                 }
-                
+
                 if (parseObj == null) {
                     Loggers.REMOTE_DIGEST
                             .warn("[{}]Grpc request bi stream,payload parse null ,body={},meta={}", connectionId,
@@ -114,15 +116,15 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-                    
+
                     ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(),
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
-                    connection.setAbilities(setUpRequest.getAbilities());
+                    connection.setAbilityTable(AbilityTableUtils.getAbilityTableBy(setUpRequest.getAbilityTable(), AbilityKey.offset()));
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
-                    
+
                     if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {
                         //Not register to the connection manager if current server is over limit or server is starting.
                         try {
@@ -138,7 +140,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             }
                         }
                     }
-                    
+
                 } else if (parseObj instanceof Response) {
                     Response response = (Response) parseObj;
                     if (connectionManager.traced(clientIp)) {
@@ -152,15 +154,15 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             .warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,
                                     parseObj);
                 }
-                
+
             }
-            
+
             @Override
             public void onError(Throwable t) {
                 if (connectionManager.traced(clientIp)) {
                     Loggers.REMOTE_DIGEST.warn("[{}]Bi stream on error,error={}", connectionId, t);
                 }
-                
+
                 if (responseObserver instanceof ServerCallStreamObserver) {
                     ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) responseObserver);
                     if (serverCallStreamObserver.isCancelled()) {
@@ -173,9 +175,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         }
                     }
                 }
-                
+
             }
-            
+
             @Override
             public void onCompleted() {
                 if (connectionManager.traced(clientIp)) {
@@ -191,13 +193,13 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         } catch (Throwable throwable) {
                             //ignore
                         }
-                        
+
                     }
                 }
             }
         };
-        
+
         return streamObserver;
     }
-    
+
 }

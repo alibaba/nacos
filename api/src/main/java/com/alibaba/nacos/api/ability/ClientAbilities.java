@@ -28,6 +28,7 @@ import java.io.Serializable;
  * @author liuzunfei
  * @version $Id: ClientAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
+@Deprecated
 public class ClientAbilities implements Serializable {
     
     private static final long serialVersionUID = -3590789441404549261L;

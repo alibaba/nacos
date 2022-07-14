@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
@@ -135,6 +136,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         makeWorkDir();
         
         LOGGER.error("Startup errors : ", exception);
+        NacosAbilityManagerHolder.getInstance().destroy();
         ThreadPoolManager.shutdown();
         WatchFileCenter.shutdown();
         NotifyCenter.shutdown();
