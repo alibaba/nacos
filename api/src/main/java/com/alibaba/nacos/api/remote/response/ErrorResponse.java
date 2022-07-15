@@ -47,11 +47,13 @@ public class ErrorResponse extends Response {
      * @return response
      */
     public static Response build(Throwable exception) {
-        int errorCode = ResponseCode.FAIL.getCode();
+        int errorCode;
         if (exception instanceof NacosException) {
             errorCode = ((NacosException) exception).getErrCode();
         } else if (exception instanceof NacosRuntimeException) {
             errorCode = ((NacosRuntimeException) exception).getErrCode();
+        } else {
+            errorCode = ResponseCode.FAIL.getCode();
         }
         ErrorResponse response = new ErrorResponse();
         response.setErrorInfo(errorCode, exception.getMessage());

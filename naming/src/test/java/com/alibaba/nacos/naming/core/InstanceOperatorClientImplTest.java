@@ -18,6 +18,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -43,7 +44,9 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -59,6 +62,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.alibaba.nacos.api.exception.runtime.NacosRuntimeException.ERROR_MESSAGE_FORMAT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -70,6 +74,9 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class InstanceOperatorClientImplTest {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     @InjectMocks
     private InstanceOperatorClientImpl instanceOperatorClient;
@@ -123,6 +130,19 @@ public class InstanceOperatorClientImplTest {
         instanceOperatorClient.registerInstance("A", "B", new Instance());
         
         Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+    }
+    
+    @Test
+    public void testRegisterInstanceWithInvalidClusterName() {
+        expectedException.expect(NacosRuntimeException.class);
+        expectedException.expectMessage(String.format(ERROR_MESSAGE_FORMAT, NacosException.INVALID_PARAM,
+                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)"));
+        
+        Instance instance = new Instance();
+        instance.setEphemeral(true);
+        instance.setClusterName("cluster1,cluster2");
+        new InstanceOperatorClientImpl(null, null, null, null, null, null, null).registerInstance("ns-01",
+                "serviceName01", instance);
     }
     
     @Test

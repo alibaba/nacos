@@ -36,6 +36,7 @@ import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
@@ -55,6 +56,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
@@ -75,6 +77,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NamingGrpcClientProxyTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     private static final String NAMESPACE_ID = "ns1";
     
@@ -138,6 +143,38 @@ public class NamingGrpcClientProxyTest {
             }
             return false;
         }));
+    }
+    
+    @Test
+    public void testRegisterServiceThrowsNacosException() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage("err args");
+        
+        when(this.rpcClient.request(Mockito.any())).thenReturn(ErrorResponse.build(400, "err args"));
+        
+        try {
+            client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+        } catch (NacosException ex) {
+            Assert.assertEquals(null, ex.getCause());
+            
+            throw ex;
+        }
+    }
+    
+    @Test
+    public void testRegisterServiceThrowsException() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage("Request nacos server failed: ");
+    
+        when(this.rpcClient.request(Mockito.any())).thenReturn(null);
+        
+        try {
+            client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+        } catch (NacosException ex) {
+            Assert.assertEquals(NullPointerException.class, ex.getCause().getClass());
+            
+            throw ex;
+        }
     }
     
     @Test
