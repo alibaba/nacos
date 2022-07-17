@@ -21,6 +21,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
+import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
+
 /**
  * NamingUtils.
  *
@@ -28,6 +36,10 @@ import com.alibaba.nacos.api.utils.StringUtils;
  * @since 1.0.0
  */
 public class NamingUtils {
+    
+    private static final Pattern CLUSTER_NAME_PATTERN = Pattern.compile(CLUSTER_NAME_PATTERN_STRING);
+    
+    private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_PATTERN_STRING);
     
     /**
      * Returns a combined string with serviceName and groupName. serviceName can not be nil.
@@ -129,5 +141,45 @@ public class NamingUtils {
             throw new NacosException(NacosException.INVALID_PARAM,
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
         }
+        if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
+                            instance.getClusterName()));
+        }
+    }
+    
+    /**
+     * check batch register is Ephemeral.
+     * @param instance instance
+     * @throws NacosException NacosException
+     */
+    public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
+        if (!instance.isEphemeral()) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                    String.format("Batch registration does not allow persistent instance registration , Instance：%s", instance));
+        }
+    }
+    
+    /**
+     * Batch verify the validity of instances.
+     * @param instances List of instances to be registered
+     * @throws NacosException Nacos
+     */
+    public static void batchCheckInstanceIsLegal(List<Instance> instances) throws NacosException {
+        Set<Instance> newInstanceSet = new HashSet<>(instances);
+        for (Instance instance : newInstanceSet) {
+            checkInstanceIsEphemeral(instance);
+            checkInstanceIsLegal(instance);
+        }
+    }
+    
+    /**
+     * Check string is a number or not.
+     *
+     * @param str a string of digits
+     * @return if it is a string of digits, return true
+     */
+    public static boolean isNumber(String str) {
+        return !StringUtils.isEmpty(str) && NUMBER_PATTERN.matcher(str).matches();
     }
 }

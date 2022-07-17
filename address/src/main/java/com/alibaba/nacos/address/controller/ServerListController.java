@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,11 +37,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ServerListController {
     
-    @Autowired
-    private ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
     
-    @Autowired
-    private AddressServerGeneratorManager addressServerBuilderManager;
+    private final AddressServerGeneratorManager addressServerBuilderManager;
+    
+    public ServerListController(ServiceManager serviceManager,
+            AddressServerGeneratorManager addressServerBuilderManager) {
+        this.serviceManager = serviceManager;
+        this.addressServerBuilderManager = addressServerBuilderManager;
+    }
     
     /**
      * Get cluster.

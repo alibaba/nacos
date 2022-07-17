@@ -110,6 +110,7 @@ public class NacosClusterV2ControllerTest {
     @Test
     public void testLeave() throws Exception {
         RestResult<Void> result = nacosClusterV2Controller.deleteNodes(Collections.singletonList("1.1.1.1"));
-        Assert.assertTrue(result.ok());
+        Assert.assertFalse(result.ok());
+        Assert.assertEquals(405, result.getCode());
     }
 }

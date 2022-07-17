@@ -80,7 +80,7 @@ public class PersistentIpPortClientManager implements ClientManager {
         if (null == client) {
             return true;
         }
-        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsibleClient(client)));
         client.release();
         return true;
     }

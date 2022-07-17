@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import org.springframework.stereotype.Service;
 
@@ -30,11 +31,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
     
-    private static final int PORT_OFFSET = 1000;
-    
     @Override
     public int rpcPortOffset() {
-        return PORT_OFFSET;
+        return Constants.SDK_GRPC_PORT_DEFAULT_OFFSET;
     }
     
     @Override

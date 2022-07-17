@@ -41,7 +41,7 @@ public class EncryptionPluginManager {
     
     private static final EncryptionPluginManager INSTANCE = new EncryptionPluginManager();
     
-    public EncryptionPluginManager() {
+    private EncryptionPluginManager() {
         loadInitial();
     }
     

@@ -19,6 +19,8 @@ package com.alibaba.nacos.naming.core.v2.index;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
@@ -99,8 +101,14 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         for (Service each : client.getAllSubscribeService()) {
             removeSubscriberIndexes(each, client.getClientId());
         }
+        DeregisterInstanceReason reason = event.isNative()
+                ? DeregisterInstanceReason.NATIVE_DISCONNECTED : DeregisterInstanceReason.SYNCED_DISCONNECTED;
+        long currentTimeMillis = System.currentTimeMillis();
         for (Service each : client.getAllPublishedService()) {
             removePublisherIndexes(each, client.getClientId());
+            NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterInstanceTraceEvent(currentTimeMillis,
+                    "", false, reason, each.getNamespace(), each.getGroup(),
+                    each.getName(), client.getInstancePublishInfo(each).getIp()));
         }
     }
     

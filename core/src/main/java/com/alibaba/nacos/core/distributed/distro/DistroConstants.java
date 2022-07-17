@@ -47,4 +47,8 @@ public class DistroConstants {
     
     public static final long DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS = 30000L;
     
+    public static final String DATA_LOAD_TIMEOUT_MILLISECONDS = "nacos.core.protocol.distro.data.load.timeoutMs";
+    
+    public static final long DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS = 30000L;
+    
 }

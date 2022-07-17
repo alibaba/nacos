@@ -59,9 +59,9 @@ public class FailoverReactor implements Closeable {
     
     private static final String FAILOVER_MODE_PARAM = "failover-mode";
     
-    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
+    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<>();
     
-    private final Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> switchParams = new ConcurrentHashMap<>();
     
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
     
@@ -184,7 +184,7 @@ public class FailoverReactor implements Closeable {
         
         @Override
         public void run() {
-            Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
+            Map<String, ServiceInfo> domMap = new HashMap<>(16);
             
             BufferedReader reader = null;
             try {
