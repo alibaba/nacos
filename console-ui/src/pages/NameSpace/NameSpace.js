@@ -39,6 +39,7 @@ class NameSpace extends React.Component {
     this.state = {
       loading: false,
       defaultNamespace: '',
+      defaultNamespaceName: 'public',
       dataSource: [],
     };
   }
@@ -162,8 +163,6 @@ class NameSpace extends React.Component {
       namespaceName,
       namespaceID,
       configurationManagement,
-      removeSuccess,
-      deletedSuccessfully,
       deletedFailure,
     } = locale;
     Dialog.confirm({
@@ -193,6 +192,9 @@ class NameSpace extends React.Component {
               const urlnamespace = getParams('namespace');
               if (record.namespace === urlnamespace) {
                 setParams('namespace', this.state.defaultNamespace);
+                setParams('namespaceShowName', this.state.defaultNamespaceName);
+                window.nownamespace = this.state.defaultNamespace;
+                window.namespaceShowName = this.state.defaultNamespaceName;
               }
             } else {
               Dialog.alert({ content: res.message, title: deletedFailure });

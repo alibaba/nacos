@@ -115,7 +115,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     }
     
     private void createRpcClientAndStart(Member member, ConnectionType type) throws NacosException {
-        Map<String, String> labels = new HashMap<String, String>(2);
+        Map<String, String> labels = new HashMap<>(2);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_CLUSTER);
         String memberClientKey = memberClientKey(member);
         RpcClient client = buildRpcClient(type, labels, memberClientKey);
@@ -225,5 +225,19 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         } catch (NacosException e) {
             Loggers.CLUSTER.warn("[serverlist] fail to refresh cluster rpc client, event:{}, msg: {} ", event, e.getMessage());
         }
+    }
+    
+    /**
+     * Check whether client for member is running.
+     *
+     * @param member member
+     * @return {@code true} if target client is connected, otherwise {@code false}
+     */
+    public boolean isRunning(Member member) {
+        RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
+        if (null == client) {
+            return false;
+        }
+        return client.isRunning();
     }
 }

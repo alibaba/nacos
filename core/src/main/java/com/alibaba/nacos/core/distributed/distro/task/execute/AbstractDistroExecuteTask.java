@@ -130,7 +130,7 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
             if (null == throwable) {
                 Loggers.DISTRO.info("[DISTRO-END] {} result: false", getDistroKey().toString());
             } else {
-                Loggers.DISTRO.warn("[DISTRO] Sync data change failed.", throwable);
+                Loggers.DISTRO.warn("[DISTRO] Sync data change failed. key: {}", getDistroKey().toString(), throwable);
             }
             handleFailedTask();
         }

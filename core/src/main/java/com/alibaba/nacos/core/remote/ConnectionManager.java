@@ -90,7 +90,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     String redirectAddress = null;
     
-    private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<String, AtomicInteger>(16);
+    private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<>(16);
     
     Map<String, Connection> connections = new ConcurrentHashMap<>();
     
@@ -563,7 +563,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
      * @return sdk client count.
      */
     public int currentSdkClientCount() {
-        Map<String, String> filter = new HashMap<String, String>(2);
+        Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         return currentClientsCount(filter);
     }
@@ -612,15 +612,15 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
     
     static class ConnectionLimitRule {
         
-        private Set<String> monitorIpList = new HashSet<String>();
+        private Set<String> monitorIpList = new HashSet<>();
         
         private int countLimit = -1;
         
         private int countLimitPerClientIpDefault = -1;
         
-        private Map<String, Integer> countLimitPerClientIp = new HashMap<String, Integer>();
+        private Map<String, Integer> countLimitPerClientIp = new HashMap<>();
         
-        private Map<String, Integer> countLimitPerClientApp = new HashMap<String, Integer>();
+        private Map<String, Integer> countLimitPerClientApp = new HashMap<>();
         
         public int getCountLimit() {
             return countLimit;

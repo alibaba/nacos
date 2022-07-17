@@ -356,7 +356,7 @@ public class ConfigCacheService {
      * @return return diff result list.
      */
     public static List<String> checkMd5() {
-        List<String> diffList = new ArrayList<String>();
+        List<String> diffList = new ArrayList<>();
         long startTime = System.currentTimeMillis();
         for (Entry<String/* groupKey */, CacheItem> entry : CACHE.entrySet()) {
             String groupKey = entry.getKey();

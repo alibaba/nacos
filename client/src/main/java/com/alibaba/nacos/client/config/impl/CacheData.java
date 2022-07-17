@@ -202,7 +202,7 @@ public class CacheData {
      * Returns the iterator on the listener list, read-only. It is guaranteed not to return NULL.
      */
     public List<Listener> getListeners() {
-        List<Listener> result = new ArrayList<Listener>();
+        List<Listener> result = new ArrayList<>();
         for (ManagerListenerWrap wrap : listeners) {
             result.add(wrap.listener);
         }

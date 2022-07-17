@@ -24,6 +24,8 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -98,6 +100,8 @@ public class ServiceControllerV2 {
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
         serviceMetadata.setEphemeral(ephemeral);
         serviceOperatorV2.create(Service.newService(namespaceId, groupName, serviceName, ephemeral), serviceMetadata);
+        NotifyCenter.publishEvent(new NamingTraceEvent.RegisterServiceTraceEvent(System.currentTimeMillis(),
+                namespaceId, groupName, serviceName));
         return RestResultUtils.success("ok");
     }
     
@@ -115,6 +119,8 @@ public class ServiceControllerV2 {
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
+        NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterServiceTraceEvent(System.currentTimeMillis(),
+                namespaceId, groupName, serviceName));
         return RestResultUtils.success("ok");
     }
     

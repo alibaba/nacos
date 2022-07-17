@@ -242,6 +242,10 @@ const I18N_CONF = {
     lastUpdateTime: '最后更新时间',
     operator: '操作人',
     operation: '操作',
+    compare: '比较',
+    historyCompareTitle: '历史版本比较',
+    historyCompareLastVersion: '最新版本',
+    historyCompareSelectedVersion: '当前选中版本',
   },
   HistoryDetail: {
     historyDetails: '历史详情',

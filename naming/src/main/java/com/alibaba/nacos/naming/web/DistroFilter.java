@@ -27,7 +27,6 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.codec.Charsets;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -42,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -126,12 +126,12 @@ public class DistroFilter implements Filter {
                 headerList.add(req.getHeader(headerName));
             }
             
-            final String body = IoUtils.toString(req.getInputStream(), Charsets.UTF_8.name());
+            final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
             
             RestResult<String> result = HttpClient
                     .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
-                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, Charsets.UTF_8.name(), req.getMethod());
+                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), req.getMethod());
             String data = result.ok() ? result.getData() : result.getMessage();
             try {
                 WebUtils.response(resp, data, result.getCode());

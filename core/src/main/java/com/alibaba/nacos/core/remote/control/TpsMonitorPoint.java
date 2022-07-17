@@ -46,7 +46,7 @@ public class TpsMonitorPoint {
     
     private TpsRecorder tpsRecorder;
     
-    public Map<String, TpsRecorder> monitorKeysRecorder = new HashMap<String, TpsRecorder>();
+    public Map<String, TpsRecorder> monitorKeysRecorder = new HashMap<>();
     
     public TpsMonitorPoint(String pointName) {
         this(pointName, -1, "monitor");

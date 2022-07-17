@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
+import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckProcessorExtendV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -44,6 +45,9 @@ public class HealthCheckProcessorV2DelegateTest {
     
     @Mock
     private HealthCheckExtendProvider healthCheckExtendProvider;
+
+    @Mock
+    private HealthCheckProcessorExtendV2 healthCheckProcessorExtendV2;
     
     @Mock
     private HealthCheckTaskV2 healthCheckTaskV2;
@@ -58,7 +62,7 @@ public class HealthCheckProcessorV2DelegateTest {
     
     @Before
     public void setUp() {
-        healthCheckProcessorV2Delegate = new HealthCheckProcessorV2Delegate(healthCheckExtendProvider);
+        healthCheckProcessorV2Delegate = new HealthCheckProcessorV2Delegate(healthCheckExtendProvider, healthCheckProcessorExtendV2);
         verify(healthCheckExtendProvider).init();
         EnvUtil.setEnvironment(new MockEnvironment());
     }

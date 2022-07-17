@@ -49,7 +49,7 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 /**
- * Catalog service for v1.x .
+ * Catalog service for v2.x .
  *
  * @author xiweng.yy
  */

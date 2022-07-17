@@ -113,11 +113,6 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpasyncclient</artifactId>
         </dependency>
-        <dependency>
-            <groupId>net.jcip</groupId>
-            <artifactId>jcip-annotations</artifactId>
-            <optional>true</optional>
-        </dependency>
         
         <dependency>
             <groupId>io.prometheus</groupId>

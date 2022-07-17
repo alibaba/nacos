@@ -45,7 +45,7 @@ public class SpasAdapter {
     private static final String SHA_ENCRYPT = "HmacSHA1";
     
     public static Map<String, String> getSignHeaders(String resource, String secretKey) {
-        Map<String, String> header = new HashMap<String, String>(2);
+        Map<String, String> header = new HashMap<>(2);
         String timeStamp = String.valueOf(System.currentTimeMillis());
         header.put(TIMESTAMP_HEADER, timeStamp);
         if (secretKey != null) {

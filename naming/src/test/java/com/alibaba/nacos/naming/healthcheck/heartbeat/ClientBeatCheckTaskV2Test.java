@@ -134,7 +134,7 @@ public class ClientBeatCheckTaskV2Test {
     @Test
     public void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
         injectInstance(true, System.currentTimeMillis()).getExtendDatum()
-                .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
+                .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 800);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();

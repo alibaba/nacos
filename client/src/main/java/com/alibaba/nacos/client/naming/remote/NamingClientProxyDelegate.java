@@ -31,8 +31,10 @@ import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -92,6 +94,17 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         getExecuteClientProxy(instance).registerService(serviceName, groupName, instance);
+    }
+    
+    @Override
+    public void batchRegisterService(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} begin.", instances, serviceName);
+        if (CollectionUtils.isEmpty(instances)) {
+            NAMING_LOGGER.warn("batchRegisterInstance instances is Empty:{}", instances);
+        }
+        grpcClientProxy.batchRegisterService(serviceName, groupName, instances);
+        NAMING_LOGGER.info("batchRegisterInstance instances: {} ,serviceName: {} finish.", instances, serviceName);
     }
     
     @Override
