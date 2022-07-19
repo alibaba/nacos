@@ -97,9 +97,21 @@ public class NacosConfigService implements ConfigService {
     @Override
     public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
             throws NacosException {
-        String content = getConfig(dataId, group, timeoutMs);
-        worker.addTenantListenersWithContent(dataId, group, content, Arrays.asList(listener));
-        return content;
+        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
+        ConfigResponse configResponse = worker.getAgent()
+                .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
+        String content = configResponse.getContent();
+        String encryptedDataKey = configResponse.getEncryptedDataKey();
+        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
+        
+        // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
+        ConfigResponse cr = new ConfigResponse();
+        cr.setDataId(dataId);
+        cr.setGroup(group);
+        cr.setContent(content);
+        cr.setEncryptedDataKey(encryptedDataKey);
+        configFilterChainManager.doFilter(null, cr);
+        return cr.getContent();
     }
     
     @Override

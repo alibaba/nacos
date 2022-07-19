@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import org.junit.Assert;
@@ -80,7 +81,7 @@ public class CacheDataTest {
     }
     
     @Test
-    public void testListener() {
+    public void testListener() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         final CacheData cacheData1 = new CacheData(filter, "name1", "key", "group", "tenant");
         
@@ -104,7 +105,7 @@ public class CacheDataTest {
     }
     
     @Test
-    public void testCheckListenerMd5() {
+    public void testCheckListenerMd5() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         final CacheData data = new CacheData(filter, "name1", "key", "group", "tenant");
         final List<String> list = new ArrayList<>();
