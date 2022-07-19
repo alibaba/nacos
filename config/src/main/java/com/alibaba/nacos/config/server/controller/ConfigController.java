@@ -257,7 +257,7 @@ public class ConfigController {
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,@RequestParam("dataId") String dataId,
+    public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {

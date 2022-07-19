@@ -27,6 +27,7 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.constants.Constants;
@@ -102,12 +103,14 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
     
     private void updateInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
+        service = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateInstanceMetadata(service, op.getTag(), op.getMetadata());
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
     private void deleteInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
+        service = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.removeInstanceMetadata(service, op.getTag());
     }
     
