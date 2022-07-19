@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.listener.ConfigChangeParser;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 
@@ -65,7 +66,7 @@ public class ConfigChangeHandler {
      * @return change data map
      * @throws IOException io exception
      */
-    public Map parseChangeData(String oldContent, String newContent, String type) throws IOException {
+    public Map<String, ConfigChangeItem> parseChangeData(String oldContent, String newContent, String type) throws IOException {
         for (ConfigChangeParser changeParser : this.parserList) {
             if (changeParser.isResponsibleFor(type)) {
                 return changeParser.doParse(oldContent, newContent, type);
