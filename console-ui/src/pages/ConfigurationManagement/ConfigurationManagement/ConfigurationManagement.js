@@ -35,6 +35,7 @@ import {
   Message,
   MenuButton,
   Box,
+  Switch,
 } from '@alifd/next';
 import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
@@ -115,6 +116,7 @@ class ConfigurationManagement extends React.Component {
         selectedRowKeys: [],
       },
       isPageEnter: false,
+      defaultFuzzySearch: true,
     };
     const obj = {
       dataId: this.dataId || '',
@@ -236,6 +238,22 @@ class ConfigurationManagement extends React.Component {
     this.setState({ rowSelection });
   }
 
+  changeParamsBySearchType(params) {
+    if (this.state.defaultFuzzySearch) {
+      if (params.dataId && params.dataId !== '') {
+        params.dataId = '*' + params.dataId + '*';
+      }
+      if (params.group && params.group !== '') {
+        params.group = '*' + params.group + '*';
+      }
+    }
+    if (params.dataId.indexOf('*') !== -1 || params.group.indexOf('*') !== -1) {
+      params.search = 'blur';
+    } else {
+      params.search = 'accurate';
+    }
+  }
+
   getData(pageNo = 1, clearSelect = true) {
     if (this.state.loading) {
       return;
@@ -258,11 +276,7 @@ class ConfigurationManagement extends React.Component {
     };
     setParams('pageSize', null);
     setParams('pageNo', null);
-    if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
-      params.search = 'blur';
-    } else {
-      params.search = 'accurate';
-    }
+    this.changeParamsBySearchType(params);
     this.setState({ loading: true });
     this.props
       .getConfigs(params)
@@ -447,6 +461,12 @@ class ConfigurationManagement extends React.Component {
       group: value || '',
     });
   }
+
+  handleDefaultFuzzySwitchChange = () => {
+    this.setState({
+      defaultFuzzySearch: !this.state.defaultFuzzySearch,
+    });
+  };
 
   selectAll() {
     setParams('dataId', this.dataId);
@@ -1135,7 +1155,9 @@ class ConfigurationManagement extends React.Component {
                   <Input
                     value={this.dataId}
                     htmlType="text"
-                    placeholder={locale.fuzzyd}
+                    placeholder={
+                      this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd
+                    }
                     style={{ width: 200 }}
                     onChange={dataId => {
                       this.dataId = dataId;
@@ -1149,7 +1171,9 @@ class ConfigurationManagement extends React.Component {
                   <Select.AutoComplete
                     style={{ width: 200 }}
                     size={'medium'}
-                    placeholder={locale.fuzzyg}
+                    placeholder={
+                      this.state.defaultFuzzySearch ? locale.defaultFuzzyg : locale.fuzzyg
+                    }
                     dataSource={this.state.groups}
                     value={this.state.group}
                     onChange={this.setGroup.bind(this)}
@@ -1157,6 +1181,17 @@ class ConfigurationManagement extends React.Component {
                     hasClear
                   />
                 </Form.Item>
+
+                <Form.Item label="默认模糊匹配:">
+                  <Switch
+                    checkedChildren=""
+                    unCheckedChildren=""
+                    defaultChecked={this.state.defaultFuzzySearch}
+                    onChange={this.handleDefaultFuzzySwitchChange}
+                    title={'自动在搜索参数前后加上*'}
+                  />
+                </Form.Item>
+
                 <Form.Item label={''}>
                   <Button
                     type={'primary'}
