@@ -149,7 +149,7 @@ public class IoUtils {
      */
     public static List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
-        List<String> list = new ArrayList<String>();
+        List<String> list = new ArrayList<>();
         String line = null;
         for (; ; ) {
             line = reader.readLine();

@@ -26,10 +26,5 @@ public class InstanceTest extends TestCase {
         Instance instance = new Instance();
         instance.setClusterName("demo");
         assertEquals("demo", instance.getClusterName());
-        try {
-            instance.setClusterName("demo,demo1,demo2");
-        } catch (Exception e) {
-            assertEquals("cluster name can only have these characters: 0-9a-zA-Z-, current: demo,demo1,demo2", e.getMessage());
-        }
     }
 }

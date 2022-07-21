@@ -18,11 +18,11 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import org.springframework.stereotype.Component;
 
@@ -42,12 +42,16 @@ public class PushExecutorUdpImpl implements PushExecutor {
     
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushDataWithoutCallback(subscriber, handleClusterData(replaceServiceInfoName(data, subscriber), subscriber));
+        pushService.pushDataWithoutCallback(subscriber,
+                handleClusterData(replaceServiceInfoName(data, subscriber), subscriber));
     }
     
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack) {
-        pushService.pushDataWithCallback(subscriber, handleClusterData(replaceServiceInfoName(data, subscriber), subscriber), callBack);
+    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+            NamingPushCallback callBack) {
+        ServiceInfo actualServiceInfo = replaceServiceInfoName(data, subscriber);
+        callBack.setActualServiceInfo(actualServiceInfo);
+        pushService.pushDataWithCallback(subscriber, handleClusterData(actualServiceInfo, subscriber), callBack);
     }
     
     /**
@@ -64,8 +68,9 @@ public class PushExecutorUdpImpl implements PushExecutor {
      * @return new service info for 1.x
      */
     private ServiceInfo replaceServiceInfoName(PushDataWrapper originalData, Subscriber subscriber) {
-        ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(originalData.getOriginalData(), originalData.getServiceMetadata(),
-                false, true, subscriber);
+        ServiceInfo serviceInfo = ServiceUtil
+                .selectInstancesWithHealthyProtection(originalData.getOriginalData(), originalData.getServiceMetadata(),
+                        false, true, subscriber);
         ServiceInfo result = new ServiceInfo();
         result.setName(NamingUtils.getGroupedName(serviceInfo.getName(), serviceInfo.getGroupName()));
         result.setClusters(serviceInfo.getClusters());

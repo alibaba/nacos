@@ -210,7 +210,7 @@ class ClusterNodeList extends React.Component {
               <Table
                 dataSource={this.state.dataSource}
                 locale={{ empty: pubNoData }}
-                getRowProps={row => this.rowColor(row)}
+                rowProps={row => this.rowColor(row)}
               >
                 <Column title={locale.nodeIp} dataIndex="address" width="20%" />
                 <Column

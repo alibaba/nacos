@@ -49,7 +49,7 @@ public class NacosRestTemplate extends AbstractNacosRestTemplate {
     
     private final HttpClientRequest requestClient;
     
-    private final List<HttpClientRequestInterceptor> interceptors = new ArrayList<HttpClientRequestInterceptor>();
+    private final List<HttpClientRequestInterceptor> interceptors = new ArrayList<>();
     
     public NacosRestTemplate(Logger logger, HttpClientRequest requestClient) {
         super(logger);

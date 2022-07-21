@@ -18,8 +18,8 @@ package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.NestedIoException;
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -58,7 +58,7 @@ public abstract class AbstractResource implements Resource {
             try {
                 return getFile().exists();
             } catch (IOException ex) {
-                Log logger = LogFactory.getLog(getClass());
+                Logger logger = LoggerFactory.getLogger(getClass());
                 if (logger.isDebugEnabled()) {
                     logger.debug("Could not retrieve File for existence check of " + getDescription(), ex);
                 }
@@ -69,7 +69,7 @@ public abstract class AbstractResource implements Resource {
             getInputStream().close();
             return true;
         } catch (Throwable ex) {
-            Log logger = LogFactory.getLog(getClass());
+            Logger logger = LoggerFactory.getLogger(getClass());
             if (logger.isDebugEnabled()) {
                 logger.debug("Could not retrieve InputStream for existence check of " + getDescription(), ex);
             }
@@ -169,7 +169,7 @@ public abstract class AbstractResource implements Resource {
             try {
                 is.close();
             } catch (IOException ex) {
-                Log logger = LogFactory.getLog(getClass());
+                Logger logger = LoggerFactory.getLogger(getClass());
                 if (logger.isDebugEnabled()) {
                     logger.debug("Could not close content-length InputStream for " + getDescription(), ex);
                 }

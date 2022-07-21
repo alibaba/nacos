@@ -66,7 +66,7 @@ public class MergeTaskProcessor implements NacosTaskProcessor {
         final String tag = mergeTask.tag;
         final String clientIp = mergeTask.getClientIp();
         try {
-            List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
+            List<ConfigInfoAggr> datumList = new ArrayList<>();
             int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
             int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
             for (int pageNo = 1; pageNo <= pageCount; pageNo++) {

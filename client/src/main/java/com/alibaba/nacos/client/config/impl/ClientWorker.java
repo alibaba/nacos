@@ -138,7 +138,7 @@ public class ClientWorker implements Closeable {
      * @param group     group of data
      * @param listeners listeners
      */
-    public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
+    public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
@@ -178,18 +178,20 @@ public class ClientWorker implements Closeable {
     /**
      * Add listeners for tenant with content.
      *
-     * @param dataId    dataId of data
-     * @param group     group of data
-     * @param content   content
-     * @param listeners listeners
+     * @param dataId           dataId of data
+     * @param group            group of data
+     * @param content          content
+     * @param encryptedDataKey encryptedDataKey
+     * @param listeners        listeners
      * @throws NacosException nacos exception
      */
-    public void addTenantListenersWithContent(String dataId, String group, String content,
+    public void addTenantListenersWithContent(String dataId, String group, String content, String encryptedDataKey,
             List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
+            cache.setEncryptedDataKey(encryptedDataKey);
             cache.setContent(content);
             for (Listener listener : listeners) {
                 cache.addListener(listener);
@@ -362,6 +364,7 @@ public class ClientWorker implements Closeable {
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
+                    cache.setEncryptedDataKey(response.getEncryptedDataKey());
                     cache.setContent(response.getContent());
                 }
             }
@@ -432,8 +435,8 @@ public class ClientWorker implements Closeable {
         try {
             ConfigResponse response = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L,
                     notify);
-            cacheData.setContent(response.getContent());
             cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
+            cacheData.setContent(response.getContent());
             if (null != response.getConfigType()) {
                 cacheData.setType(response.getConfigType());
             }
@@ -665,7 +668,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public List<String> getServerList() {
-                    return ConfigRpcTransportClient.super.serverListManager.serverUrls;
+                    return ConfigRpcTransportClient.super.serverListManager.getServerUrls();
                     
                 }
             });
@@ -1072,4 +1075,9 @@ public class ClientWorker implements Closeable {
     public String getAgentName() {
         return this.agent.getName();
     }
+    
+    public ConfigTransportClient getAgent() {
+        return this.agent;
+    }
+    
 }

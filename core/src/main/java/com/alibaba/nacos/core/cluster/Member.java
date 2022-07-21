@@ -39,6 +39,8 @@ import java.util.TreeMap;
  */
 public class Member implements Comparable<Member>, Cloneable, Serializable {
     
+    private static final long serialVersionUID = -6061130045021268736L;
+    
     private String ip;
     
     private int port = -1;

@@ -31,7 +31,7 @@ public class ConcurrentHashSet<E> extends AbstractSet<E> {
     
     public ConcurrentHashSet() {
         super();
-        map = new ConcurrentHashMap<E, Boolean>();
+        map = new ConcurrentHashMap<>();
     }
     
     @Override

@@ -225,11 +225,9 @@ public class ServiceInfoHolder implements Closeable {
             if (newHostMap.containsKey(key)) {
                 continue;
             }
-            
-            if (!newHostMap.containsKey(key)) {
-                remvHosts.add(host);
-            }
-            
+
+            //add to remove hosts
+            remvHosts.add(host);
         }
         
         if (newHosts.size() > 0) {

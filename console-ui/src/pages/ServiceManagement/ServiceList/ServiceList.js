@@ -278,7 +278,7 @@ class ServiceList extends React.Component {
             <Table
               dataSource={this.state.dataSource}
               locale={{ empty: pubNoData }}
-              getRowProps={row => this.rowColor(row)}
+              rowProps={row => this.rowColor(row)}
               loading={this.state.loading}
             >
               <Column title={locale.columnServiceName} dataIndex="name" />

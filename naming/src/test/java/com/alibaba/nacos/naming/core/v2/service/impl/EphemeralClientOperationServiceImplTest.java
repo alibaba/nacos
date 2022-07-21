@@ -30,7 +30,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
 
@@ -89,6 +91,29 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         ephemeralClientOperationServiceImpl.deregisterInstance(service, instance, clientId);
         Collection<Service> allPublishService = client.getAllPublishedService();
         assertFalse(allPublishService.contains(service));
+    }
+    
+    @Test
+    public void testBatchRegisterAndDeregisterInstance() throws Exception {
+        // test Batch register instance
+       
+        Instance instance1 = new Instance();
+        instance1.setEphemeral(true);
+        instance1.setIp("127.0.0.1");
+        instance1.setPort(9087);
+        instance1.setHealthy(true);
+    
+        Instance instance2 = new Instance();
+        instance2.setEphemeral(true);
+        instance2.setIp("127.0.0.2");
+        instance2.setPort(9045);
+        instance2.setHealthy(true);
+    
+        List<Instance> instances = new ArrayList<>();
+        instances.add(instance1);
+        instances.add(instance2);
+        ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, clientId);
+        assertTrue(client.getAllPublishedService().contains(service));
     }
     
     @Test
