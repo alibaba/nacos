@@ -18,7 +18,7 @@ import $ from 'jquery';
 import React from 'react';
 import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
+import { getParams, setParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
 import {
   Balloon,
@@ -313,6 +313,13 @@ class NewConfig extends React.Component {
       },
       error: err => {
         // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        const { status } = err || {};
+        if (status === 403) {
+          Dialog.alert({
+            content: locale.publishFailed403,
+          });
+          return;
+        }
         this._publishConfig(content);
       },
     });
@@ -534,8 +541,7 @@ class NewConfig extends React.Component {
                 hasArrow
                 style={{ width: '100%', height: '100%!important' }}
                 autoWidth
-                multiple
-                mode="tag"
+                mode="multiple"
                 filterLocal
                 placeholder={locale.pleaseEnterTag}
                 dataSource={this.state.tagLst}
@@ -605,7 +611,7 @@ class NewConfig extends React.Component {
                   {locale.escExit}
                 </Button>
 
-                <Button type={'light'} onClick={this.goList.bind(this)}>
+                <Button type={'normal'} onClick={this.goList.bind(this)}>
                   {locale.release}
                 </Button>
               </div>

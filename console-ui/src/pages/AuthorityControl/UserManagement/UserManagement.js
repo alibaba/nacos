@@ -69,7 +69,14 @@ class UserManagement extends React.Component {
 
   render() {
     const { users, locale } = this.props;
-    const { loading, pageSize, pageNo, createUserVisible, passwordResetUser } = this.state;
+    const {
+      loading,
+      pageSize,
+      pageNo,
+      createUserVisible,
+      passwordResetUserVisible,
+      passwordResetUser,
+    } = this.state;
     return (
       <>
         <RegionGroup left={locale.userManagement} />
@@ -99,7 +106,9 @@ class UserManagement extends React.Component {
               <>
                 <Button
                   type="primary"
-                  onClick={() => this.setState({ passwordResetUser: username })}
+                  onClick={() =>
+                    this.setState({ passwordResetUser: username, passwordResetUserVisible: true })
+                  }
                 >
                   {locale.resetPassword}
                 </Button>
@@ -144,6 +153,7 @@ class UserManagement extends React.Component {
           onCancel={() => this.colseCreateUser()}
         />
         <PasswordReset
+          visible={passwordResetUserVisible}
           username={passwordResetUser}
           onOk={user =>
             passwordReset(user).then(res => {
@@ -151,7 +161,9 @@ class UserManagement extends React.Component {
               return res;
             })
           }
-          onCancel={() => this.setState({ passwordResetUser: undefined })}
+          onCancel={() =>
+            this.setState({ passwordResetUser: undefined, passwordResetUserVisible: false })
+          }
         />
       </>
     );
