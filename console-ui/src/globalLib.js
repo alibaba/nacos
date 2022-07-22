@@ -500,10 +500,11 @@ const request = (function(_global) {
       console.log('Token Error', localStorage.token, e);
       goLogin();
     }
-    const { accessToken = '', username = '' } = token;
-    const [url, paramsStr = ''] = config.url.split('?');
-    const params = paramsStr.split('&');
+    const { accessToken = '' } = token;
+    const [url, paramsStr] = config.url.split('?');
+    const params = paramsStr ? paramsStr.split('&') : [];
     params.push(`accessToken=${accessToken}`);
+    params.push('message=true');
 
     return $.ajax(
       Object.assign({}, config, {
