@@ -29,7 +29,6 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
-import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -44,6 +43,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -194,6 +194,7 @@ public class PersistentClientOperationServiceImplTest {
 
         IpPortBasedClient ipPortBasedClient = Mockito.mock(IpPortBasedClient.class);
         Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(ipPortBasedClient);
+        Mockito.when(ipPortBasedClient.getAllPublishedService()).thenReturn(Collections.singletonList(service1));
         WriteRequest writeRequest = WriteRequest.newBuilder()
                 .setOperation(DataOperation.ADD.name())
                 .build();
@@ -205,11 +206,12 @@ public class PersistentClientOperationServiceImplTest {
         writeRequest = WriteRequest.newBuilder()
                 .setOperation(DataOperation.CHANGE.name())
                 .build();
-        response = persistentClientOperationServiceImpl.onApply(writeRequest);
-        Assert.assertTrue(response.getSuccess());
         MockedStatic<NotifyCenter> notifyCenterMockedStatic = Mockito.mockStatic(NotifyCenter.class);
+        response = persistentClientOperationServiceImpl.onApply(writeRequest);
         notifyCenterMockedStatic.verify(() -> {
-            NotifyCenter.publishEvent(any(ClientOperationEvent.ClientRegisterServiceEvent.class));
+            NotifyCenter.publishEvent(any());
         });
+        Assert.assertTrue(response.getSuccess());
+        Assert.assertTrue(ServiceManager.getInstance().containSingleton(service1));
     }
 }
