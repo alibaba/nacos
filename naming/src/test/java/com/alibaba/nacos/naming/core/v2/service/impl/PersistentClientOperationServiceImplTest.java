@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -36,6 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -77,6 +80,8 @@ public class PersistentClientOperationServiceImplTest {
     
     @Mock
     private Serializer serializer;
+
+    private MockedStatic<NotifyCenter> notifyCenterMockedStatic;
     
     @Before
     public void setUp() throws Exception {
@@ -90,6 +95,7 @@ public class PersistentClientOperationServiceImplTest {
         serializerField.setAccessible(true);
         persistentClientOperationServiceImpl = new PersistentClientOperationServiceImpl(clientManager);
         serializerField.set(persistentClientOperationServiceImpl, serializer);
+        notifyCenterMockedStatic = Mockito.mockStatic(NotifyCenter.class);
     }
     
     @Test(expected = NacosRuntimeException.class)
@@ -174,5 +180,37 @@ public class PersistentClientOperationServiceImplTest {
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
         Assert.assertTrue(response.getSuccess());
         Assert.assertFalse(ServiceManager.getInstance().containSingleton(service1));
+    }
+
+    @Test
+    public void testOnApplyChange() {
+        PersistentClientOperationServiceImpl.InstanceStoreRequest request = new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        Service service1 = Service.newService("A", "B", "C");
+        request.setService(service1);
+        request.setClientId("xxxx");
+        request.setInstance(new Instance());
+
+        Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
+
+        Mockito.when(clientManager.contains(Mockito.anyString())).thenReturn(true);
+
+        IpPortBasedClient ipPortBasedClient = Mockito.mock(IpPortBasedClient.class);
+        Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(ipPortBasedClient);
+        WriteRequest writeRequest = WriteRequest.newBuilder()
+                .setOperation(DataOperation.ADD.name())
+                .build();
+        writeRequest = WriteRequest.newBuilder()
+                .setOperation(DataOperation.ADD.name())
+                .build();
+        Response response = persistentClientOperationServiceImpl.onApply(writeRequest);
+        Assert.assertTrue(response.getSuccess());
+        writeRequest = WriteRequest.newBuilder()
+                .setOperation(DataOperation.CHANGE.name())
+                .build();
+        response = persistentClientOperationServiceImpl.onApply(writeRequest);
+        Assert.assertTrue(response.getSuccess());
+        notifyCenterMockedStatic.verify(() -> {
+            NotifyCenter.publishEvent(any(ClientOperationEvent.ClientRegisterServiceEvent.class));
+        });
     }
 }
