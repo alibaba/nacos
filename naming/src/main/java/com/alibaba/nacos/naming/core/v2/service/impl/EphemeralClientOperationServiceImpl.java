@@ -53,12 +53,8 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     }
     
     @Override
-    public void registerInstance(Service service, Instance instance, String clientId) {
-        try {
-            NamingUtils.checkInstanceIsLegal(instance);
-        } catch (NacosException e) {
-            throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
-        }
+    public void registerInstance(Service service, Instance instance, String clientId) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
     
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {

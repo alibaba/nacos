@@ -18,7 +18,6 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -62,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.alibaba.nacos.api.exception.runtime.NacosRuntimeException.ERROR_MESSAGE_FORMAT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -126,17 +124,16 @@ public class InstanceOperatorClientImplTest {
     }
     
     @Test
-    public void testRegisterInstance() {
+    public void testRegisterInstance() throws NacosException {
         instanceOperatorClient.registerInstance("A", "B", new Instance());
         
         Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
     }
     
     @Test
-    public void testRegisterInstanceWithInvalidClusterName() {
-        expectedException.expect(NacosRuntimeException.class);
-        expectedException.expectMessage(String.format(ERROR_MESSAGE_FORMAT, NacosException.INVALID_PARAM,
-                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)"));
+    public void testRegisterInstanceWithInvalidClusterName() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
         
         Instance instance = new Instance();
         instance.setEphemeral(true);

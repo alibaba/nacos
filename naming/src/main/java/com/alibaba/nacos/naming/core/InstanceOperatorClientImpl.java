@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -97,12 +96,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
      * This method creates {@code IpPortBasedClient} if it don't exist.
      */
     @Override
-    public void registerInstance(String namespaceId, String serviceName, Instance instance) {
-        try {
-            NamingUtils.checkInstanceIsLegal(instance);
-        } catch (NacosException e) {
-            throw new NacosRuntimeException(e.getErrCode(), e.getErrMsg());
-        }
+    public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
         
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
