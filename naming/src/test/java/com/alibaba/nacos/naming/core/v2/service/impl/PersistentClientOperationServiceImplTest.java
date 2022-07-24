@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -37,7 +36,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -80,6 +78,9 @@ public class PersistentClientOperationServiceImplTest {
     
     @Mock
     private Serializer serializer;
+
+    @Mock
+    private IpPortBasedClient ipPortBasedClient;
 
     @Before
     public void setUp() throws Exception {
@@ -187,14 +188,10 @@ public class PersistentClientOperationServiceImplTest {
         request.setService(service1);
         request.setClientId("xxxx");
         request.setInstance(new Instance());
-
         Mockito.when(serializer.deserialize(Mockito.any())).thenReturn(request);
-
         Mockito.when(clientManager.contains(Mockito.anyString())).thenReturn(true);
-
-        IpPortBasedClient ipPortBasedClient = Mockito.mock(IpPortBasedClient.class);
-        Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(ipPortBasedClient);
-        Mockito.when(ipPortBasedClient.getAllPublishedService()).thenReturn(Collections.singletonList(service1));
+        when(clientManager.getClient(Mockito.anyString())).thenReturn(ipPortBasedClient);
+        when(ipPortBasedClient.getAllPublishedService()).thenReturn(Collections.singletonList(service1));
         WriteRequest writeRequest = WriteRequest.newBuilder()
                 .setOperation(DataOperation.ADD.name())
                 .build();
@@ -206,11 +203,7 @@ public class PersistentClientOperationServiceImplTest {
         writeRequest = WriteRequest.newBuilder()
                 .setOperation(DataOperation.CHANGE.name())
                 .build();
-        MockedStatic<NotifyCenter> notifyCenterMockedStatic = Mockito.mockStatic(NotifyCenter.class);
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
-        notifyCenterMockedStatic.verify(() -> {
-            NotifyCenter.publishEvent(any());
-        });
         Assert.assertTrue(response.getSuccess());
         Assert.assertTrue(ServiceManager.getInstance().containSingleton(service1));
     }
