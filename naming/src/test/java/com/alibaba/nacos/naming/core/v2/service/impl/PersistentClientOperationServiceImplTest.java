@@ -81,8 +81,6 @@ public class PersistentClientOperationServiceImplTest {
     @Mock
     private Serializer serializer;
 
-    private MockedStatic<NotifyCenter> notifyCenterMockedStatic;
-    
     @Before
     public void setUp() throws Exception {
         when(service.getNamespace()).thenReturn("n");
@@ -95,7 +93,7 @@ public class PersistentClientOperationServiceImplTest {
         serializerField.setAccessible(true);
         persistentClientOperationServiceImpl = new PersistentClientOperationServiceImpl(clientManager);
         serializerField.set(persistentClientOperationServiceImpl, serializer);
-        notifyCenterMockedStatic = Mockito.mockStatic(NotifyCenter.class);
+
     }
     
     @Test(expected = NacosRuntimeException.class)
@@ -209,6 +207,7 @@ public class PersistentClientOperationServiceImplTest {
                 .build();
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
         Assert.assertTrue(response.getSuccess());
+        MockedStatic<NotifyCenter> notifyCenterMockedStatic = Mockito.mockStatic(NotifyCenter.class);
         notifyCenterMockedStatic.verify(() -> {
             NotifyCenter.publishEvent(any(ClientOperationEvent.ClientRegisterServiceEvent.class));
         });
