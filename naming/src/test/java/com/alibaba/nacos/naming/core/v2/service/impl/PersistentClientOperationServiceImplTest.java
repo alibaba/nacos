@@ -109,7 +109,16 @@ public class PersistentClientOperationServiceImplTest {
         persistentClientOperationServiceImpl.deregisterInstance(service, instance, clientId);
         verify(cpProtocol, times(2)).write(any(WriteRequest.class));
     }
-    
+
+    @Test
+    public void updateInstance() throws Exception {
+        Field clientManagerField = PersistentClientOperationServiceImpl.class.getDeclaredField("clientManager");
+        clientManagerField.setAccessible(true);
+        // Test register instance
+        persistentClientOperationServiceImpl.updateInstance(service, instance, clientId);
+        verify(cpProtocol).write(any(WriteRequest.class));
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void testSubscribeService() {
         persistentClientOperationServiceImpl.subscribeService(service, subscriber, clientId);
@@ -158,5 +167,11 @@ public class PersistentClientOperationServiceImplTest {
                 .build();
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
         Assert.assertFalse(response.getSuccess());
+
+        writeRequest = WriteRequest.newBuilder()
+                .setOperation(DataOperation.CHANGE.name())
+                .build();
+        response = persistentClientOperationServiceImpl.onApply(writeRequest);
+        Assert.assertTrue(response.getSuccess());
     }
 }
