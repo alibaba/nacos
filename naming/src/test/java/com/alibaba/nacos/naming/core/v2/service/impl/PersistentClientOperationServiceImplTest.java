@@ -154,7 +154,7 @@ public class PersistentClientOperationServiceImplTest {
                 .build();
         Response response = persistentClientOperationServiceImpl.onApply(writeRequest);
         Assert.assertTrue(response.getSuccess());
-    
+        Assert.assertTrue(ServiceManager.getInstance().containSingleton(service1));
         writeRequest = WriteRequest.newBuilder()
                 .setOperation(DataOperation.DELETE.name())
                 .build();
@@ -173,5 +173,6 @@ public class PersistentClientOperationServiceImplTest {
                 .build();
         response = persistentClientOperationServiceImpl.onApply(writeRequest);
         Assert.assertTrue(response.getSuccess());
+        Assert.assertFalse(ServiceManager.getInstance().containSingleton(service1));
     }
 }
