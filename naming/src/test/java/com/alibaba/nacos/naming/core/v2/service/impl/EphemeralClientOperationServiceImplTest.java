@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.service.impl;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.client.Client;
@@ -25,7 +26,9 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import junit.framework.TestCase;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -38,6 +41,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EphemeralClientOperationServiceImplTest extends TestCase {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     private EphemeralClientOperationServiceImpl ephemeralClientOperationServiceImpl;
     
@@ -74,9 +80,19 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     }
     
     @Test(expected = NacosRuntimeException.class)
-    public void testRegisterPersistentInstance() {
+    public void testRegisterPersistentInstance() throws NacosException {
         when(service.isEphemeral()).thenReturn(false);
         // Excepted exception
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, clientId);
+    }
+    
+    @Test
+    public void testRegisterInstanceWithInvalidClusterName() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage(
+                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+    
+        when(instance.getClusterName()).thenReturn("cluster1,cluster2");
         ephemeralClientOperationServiceImpl.registerInstance(service, instance, clientId);
     }
     

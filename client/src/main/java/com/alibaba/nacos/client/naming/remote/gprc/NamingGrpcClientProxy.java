@@ -310,6 +310,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             }
             NAMING_LOGGER.error("Server return unexpected response '{}', expected response should be '{}'",
                     response.getClass().getName(), responseClass.getName());
+        } catch (NacosException e) {
+            throw e;
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }

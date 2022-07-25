@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -175,9 +174,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             Loggers.REMOTE_DIGEST
                     .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
                             e);
-            Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(
-                    (e instanceof NacosException) ? ((NacosException) e).getErrCode() : ResponseCode.FAIL.getCode(),
-                    e.getMessage()));
+            Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(e));
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();

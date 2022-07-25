@@ -17,14 +17,19 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
 
@@ -39,6 +44,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 
 public abstract class AbstractInstanceOperate_ITCase {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     private NamingService naming;
     
@@ -332,5 +340,55 @@ public abstract class AbstractInstanceOperate_ITCase {
         instances = naming.getAllInstances(serviceName);
         
         Assert.assertEquals(0, instances.size());
+    }
+    
+    /**
+     * 注册一个ClusterName非法的临时Instance
+     *
+     * @throws Exception
+     */
+    @Test
+    public void registerEphemeralInstanceWithInvalidClusterName() throws Exception {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage(
+                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+        
+        String serviceName = NamingBase.randomDomainName();
+        Instance instance = new Instance();
+        instance.setIp(NamingBase.TEST_IP_4_DOM_1);
+        instance.setPort(NamingBase.TEST_PORT);
+        instance.setWeight(1.0);
+        instance.setEphemeral(true);
+        instance.setClusterName("cluster1,cluster2");
+        
+        // Directly invoke `NamingClientProxy.registerService` to skip client-side parameters checking
+        // in ``NamingService.registerInstance(Instance)``, so we can verify server-side checking is effective or not.
+        NamingClientProxy clientProxy = (NamingClientProxy) ReflectUtils.getFieldValue(naming, "clientProxy");
+        clientProxy.registerService(serviceName, Constants.DEFAULT_GROUP, instance);
+    }
+    
+    /**
+     * 注册一个ClusterName非法的永久Instance
+     *
+     * @throws Exception
+     */
+    @Test
+    public void registerPersistentInstanceWithInvalidClusterName() throws Exception {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage(
+                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+        
+        String serviceName = NamingBase.randomDomainName();
+        Instance instance = new Instance();
+        instance.setIp(NamingBase.TEST_IP_4_DOM_1);
+        instance.setPort(NamingBase.TEST_PORT);
+        instance.setWeight(1.0);
+        instance.setEphemeral(false);
+        instance.setClusterName("cluster1,cluster2");
+        
+        // Directly invoke `NamingClientProxy.registerService` to skip client-side parameters checking
+        // in ``NamingService.registerInstance(Instance)``, so we can verify server-side checking is effective or not.
+        NamingClientProxy clientProxy = (NamingClientProxy) ReflectUtils.getFieldValue(naming, "clientProxy");
+        clientProxy.registerService(serviceName, Constants.DEFAULT_GROUP, instance);
     }
 }

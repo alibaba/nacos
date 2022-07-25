@@ -502,6 +502,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 return StringUtils.EMPTY;
             }
             throw new NacosException(restResult.getCode(), restResult.getMessage());
+        } catch (NacosException e) {
+            NAMING_LOGGER.error("[NA] failed to request", e);
+            throw e;
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to request", e);
             throw new NacosException(NacosException.SERVER_ERROR, e);
