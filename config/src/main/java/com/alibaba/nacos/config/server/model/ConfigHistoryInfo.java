@@ -63,6 +63,8 @@ public class ConfigHistoryInfo implements Serializable {
     
     private String encryptedDataKey;
     
+    private String type;
+    
     public long getId() {
         return id;
     }
@@ -173,5 +175,13 @@ public class ConfigHistoryInfo implements Serializable {
     
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public String getType() {
+        return type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -2181,11 +2181,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 : configInfo.getEncryptedDataKey();
         
         final String sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
-                + "src_ip,src_user,gmt_modified,op_type,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
+                + "src_ip,src_user,gmt_modified,op_type,encrypted_data_key,type) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
         final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey};
+                appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey, configInfo.getType()};
         
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
+    
+        Page<ConfigHistoryInfo> configHistory = findConfigHistory(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), 0, 100);
+        System.out.println(configHistory.getPageItems());
     }
     
     @Override

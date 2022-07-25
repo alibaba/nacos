@@ -56,6 +56,7 @@ CREATE TABLE his_config_info (
   src_ip varchar(50) DEFAULT NULL,
   op_type char(10) DEFAULT NULL,
   encrypted_data_key LONG VARCHAR DEFAULT NULL,
+  type varchar(128) default null,
   constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 
 CREATE INDEX hisconfiginfo_dataid_key_idx ON his_config_info(data_id);

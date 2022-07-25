@@ -35,6 +35,7 @@ class ConfigRollback extends React.Component {
     this.group = getParams('group') || 'DEFAULT_GROUP';
     this.serverId = getParams('serverId') || 'center';
     this.nid = getParams('nid') || '';
+    this.type = getParams('type') || '';
     this.state = {
       envName: '',
       visible: false,
@@ -90,6 +91,7 @@ class ConfigRollback extends React.Component {
           self.opType = data.opType; // 当前回滚类型I:插入,D:删除,U:'更新'
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
+          self.field.setValue('type', data.type);
           self.field.setValue('envName', envName);
           self.setState({
             envName,
@@ -138,12 +140,14 @@ class ConfigRollback extends React.Component {
         self.serverId = getParams('serverId') || 'center';
         self.dataId = self.field.getValue('dataId');
         self.group = self.field.getValue('group');
+        self.type = self.field.getValue('type');
         let postData = {
           appName: self.field.getValue('appName'),
           dataId: self.dataId,
           group: self.group,
           content: self.field.getValue('content'),
           tenant: self.tenant,
+          type: self.type,
         };
 
         let url = 'v1/cs/configs';

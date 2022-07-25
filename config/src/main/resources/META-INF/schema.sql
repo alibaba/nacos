@@ -34,6 +34,7 @@ CREATE TABLE config_info (
   type varchar(64) DEFAULT NULL,
   c_schema LONG VARCHAR DEFAULT NULL,
   encrypted_data_key LONG VARCHAR DEFAULT NULL,
+  type int DEFAULT NULL,
   constraint configinfo_id_key PRIMARY KEY (id),
   constraint uk_configinfo_datagrouptenant UNIQUE (data_id,group_id,tenant_id));
 
