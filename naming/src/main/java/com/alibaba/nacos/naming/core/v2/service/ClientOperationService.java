@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -40,8 +41,9 @@ public interface ClientOperationService {
      * @param service  service
      * @param instance instance
      * @param clientId id of client
+     * @throws NacosException throws NacosException
      */
-    void registerInstance(Service service, Instance instance, String clientId);
+    void registerInstance(Service service, Instance instance, String clientId) throws NacosException;
     
     /**
      * Batch register instance to service.

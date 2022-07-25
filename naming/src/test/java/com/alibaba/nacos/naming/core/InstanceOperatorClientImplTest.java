@@ -43,7 +43,9 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -70,6 +72,9 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class InstanceOperatorClientImplTest {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     @InjectMocks
     private InstanceOperatorClientImpl instanceOperatorClient;
@@ -119,10 +124,22 @@ public class InstanceOperatorClientImplTest {
     }
     
     @Test
-    public void testRegisterInstance() {
+    public void testRegisterInstance() throws NacosException {
         instanceOperatorClient.registerInstance("A", "B", new Instance());
         
         Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+    }
+    
+    @Test
+    public void testRegisterInstanceWithInvalidClusterName() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+        
+        Instance instance = new Instance();
+        instance.setEphemeral(true);
+        instance.setClusterName("cluster1,cluster2");
+        new InstanceOperatorClientImpl(null, null, null, null, null, null, null).registerInstance("ns-01",
+                "serviceName01", instance);
     }
     
     @Test

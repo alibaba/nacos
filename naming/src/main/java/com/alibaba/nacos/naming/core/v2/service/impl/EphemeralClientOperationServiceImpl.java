@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
@@ -52,7 +53,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     }
     
     @Override
-    public void registerInstance(Service service, Instance instance, String clientId) {
+    public void registerInstance(Service service, Instance instance, String clientId) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
+    
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,

@@ -61,7 +61,8 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
         }
     }
     
-    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta) {
+    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
+            throws NacosException {
         clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
         NotifyCenter.publishEvent(new NamingTraceEvent.RegisterInstanceTraceEvent(System.currentTimeMillis(), meta.getClientIp(),
                 true, service.getNamespace(), service.getGroup(), service.getName(), request.getInstance().toInetAddr()));
