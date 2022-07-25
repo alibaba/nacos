@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { getParams, request, aliwareIntl } from './globalLib';
-
-let hasAlert = false;
+import { getParams, request } from './globalLib';
 
 window.edasprefix = 'acm'; // 固定的edas网关需要的项目名
 
@@ -47,55 +45,6 @@ request.middleWare((_config = {}) => {
       config.url = url;
     }
   }
-
-  const preSucess = config.success;
-  const preErorr = config.error;
-
-  config.success = function(res) {
-    if (res.code === 'ConsoleNeedLogin' && window.location.host.indexOf('acm') !== -1) {
-      window.location.reload();
-    }
-    if (res.code === 403 && !hasAlert) {
-      hasAlert = true;
-      window.Dialog.alert({
-        style: { width: 400 },
-        content: res.message,
-        onOk: () => {
-          hasAlert = false;
-        },
-        onCancel: () => {
-          hasAlert = false;
-        },
-        onClose: () => {
-          hasAlert = false;
-        },
-      });
-    } else {
-      typeof preSucess === 'function' && preSucess(res);
-    }
-  };
-
-  config.error = function(res) {
-    if (res.status === 403 && !hasAlert) {
-      hasAlert = true;
-
-      window.Dialog.alert({
-        style: { width: 400 },
-        content: aliwareIntl.get('com.alibaba.nacos.pubshow'), // '子账号没有权限，请联系主账号负责人RAM上授权',
-        onOk: () => {
-          hasAlert = false;
-        },
-        onCancel: () => {
-          hasAlert = false;
-        },
-        onClose: () => {
-          hasAlert = false;
-        },
-      });
-    } else {
-      typeof preErorr === 'function' && preErorr(res);
-    }
-  };
 
   return config;
 });
