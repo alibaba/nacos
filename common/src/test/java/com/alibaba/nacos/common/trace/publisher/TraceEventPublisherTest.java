@@ -85,17 +85,6 @@ public class TraceEventPublisherTest {
     }
     
     @Test
-    public void testPublishOverFlow() {
-        TraceTestEvent testEvent = new TraceTestEvent();
-        for (int i = 0; i < Byte.SIZE; i++) {
-            traceEventPublisher.publish(testEvent);
-        }
-        traceEventPublisher.addSubscriber(subscriber, TraceTestEvent.class);
-        traceEventPublisher.publish(testEvent);
-        verify(subscriber).onEvent(testEvent);
-    }
-    
-    @Test
     public void getStatus() throws NacosException {
         traceEventPublisher.publish(new TraceTestEvent());
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent1());

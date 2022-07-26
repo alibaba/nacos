@@ -102,8 +102,7 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
-            LOGGER.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
-            handleEvent(event);
+            LOGGER.warn("Trace Event Publish failed, event : {}, publish queue size : {}", event, currentEventSize());
             return true;
         }
         return true;

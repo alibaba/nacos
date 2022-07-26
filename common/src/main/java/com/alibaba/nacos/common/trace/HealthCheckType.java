@@ -17,26 +17,35 @@
 package com.alibaba.nacos.common.trace;
 
 /**
- * The reasons of health state change.
+ * The types of health check.
  *
  * @author yanda
  */
-
-public enum HealthStateChangeReason {
+public enum HealthCheckType {
     /**
      * Instance heart beat timeout.
      */
-    HEARTBEAT_TIMEOUT,
+    CLIENT_BEAT("client_beat"),
     /**
-     * Instance heart beat refresh.
+     * Http health check.
      */
-    HEARTBEAT_REFRESH,
+    HTTP_HEALTH_CHECK("http"),
     /**
-     * Instance health check fail.
+     * Mysql health check.
      */
-    HEALTH_CHECK_FAIL,
+    MYSQL_HEALTH_CHECK("mysql"),
     /**
-     * Instance health check success.
+     * Tcp super sense health check .
      */
-    HEALTH_CHECK_SUCCESS;
+    TCP_SUPER_SENSE("tcp");
+    
+    private String prefix;
+    
+    private HealthCheckType(String prefix) {
+        this.prefix = prefix;
+    }
+    
+    public String getPrefix() {
+        return prefix;
+    }
 }
