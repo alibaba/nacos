@@ -37,8 +37,8 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
-import com.alibaba.nacos.config.server.model.vo.ConfigVo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -150,36 +150,36 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
     
-        ConfigVo configVo = new ConfigVo();
-        configVo.setDataId(dataId);
-        configVo.setGroup(group);
-        configVo.setTenant(tenant);
-        configVo.setContent(content);
-        configVo.setTag(tag);
-        configVo.setAppName(appName);
-        configVo.setSrcUser(srcUser);
-        configVo.setConfigTags(configTags);
-        configVo.setDesc(desc);
-        configVo.setUse(use);
-        configVo.setEffect(effect);
-        configVo.setType(type);
-        configVo.setSchema(schema);
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(dataId);
+        configForm.setGroup(group);
+        configForm.setTenant(tenant);
+        configForm.setContent(content);
+        configForm.setTag(tag);
+        configForm.setAppName(appName);
+        configForm.setSrcUser(srcUser);
+        configForm.setConfigTags(configTags);
+        configForm.setDesc(desc);
+        configForm.setUse(use);
+        configForm.setEffect(effect);
+        configForm.setType(type);
+        configForm.setSchema(schema);
     
         if (StringUtils.isBlank(srcUser)) {
-            configVo.setSrcUser(RequestUtil.getSrcUserName(request));
+            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
         }
         if (!ConfigType.isValidType(type)) {
-            configVo.setType(ConfigType.getDefaultType().getType());
+            configForm.setType(ConfigType.getDefaultType().getType());
         }
     
-        ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
-        configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
-        configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
-        configRequestInfoVo.setBetaIps(request.getHeader("betaIps"));
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfo.setBetaIps(request.getHeader("betaIps"));
     
         String encryptedDataKey = pair.getFirst();
        
-        return configOperationService.publishConfig(configVo, configRequestInfoVo, encryptedDataKey);
+        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey);
     }
     
     /**

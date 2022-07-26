@@ -25,7 +25,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
-import com.alibaba.nacos.console.model.vo.NamespaceVo;
+import com.alibaba.nacos.console.model.form.NamespaceForm;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
@@ -87,18 +87,18 @@ public class NamespaceControllerV2 {
     /**
      * create namespace.
      *
-     * @param namespaceVo namespaceVo.
+     * @param namespaceForm namespaceForm.
      * @return whether create ok
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Result<Boolean> createNamespace(NamespaceVo namespaceVo) throws NacosException {
+    public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws NacosException {
         
-        namespaceVo.validate();
+        namespaceForm.validate();
         
-        String namespaceId = namespaceVo.getNamespaceId();
-        String namespaceName = namespaceVo.getNamespaceName();
-        String namespaceDesc = namespaceVo.getNamespaceDesc();
+        String namespaceId = namespaceForm.getNamespaceId();
+        String namespaceName = namespaceForm.getNamespaceName();
+        String namespaceDesc = namespaceForm.getNamespaceDesc();
         
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = UUID.randomUUID().toString();
@@ -119,15 +119,15 @@ public class NamespaceControllerV2 {
     /**
      * edit namespace.
      *
-     * @param namespaceVo       namespace params
+     * @param namespaceForm       namespace params
      * @return whether edit ok
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Result<Boolean> editNamespace(NamespaceVo namespaceVo) throws NacosException {
-        namespaceVo.validate();
-        return Result.success(namespaceOperationService.editNamespace(namespaceVo.getNamespaceId(),
-                namespaceVo.getNamespaceName(), namespaceVo.getNamespaceDesc()));
+    public Result<Boolean> editNamespace(NamespaceForm namespaceForm) throws NacosException {
+        namespaceForm.validate();
+        return Result.success(namespaceOperationService.editNamespace(namespaceForm.getNamespaceId(),
+                namespaceForm.getNamespaceName(), namespaceForm.getNamespaceDesc()));
     }
     
     /**
