@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
@@ -108,6 +110,29 @@ public class NamingUtils {
     }
     
     /**
+     * check combineServiceName format. the serviceName can't be blank.
+     * <pre>
+     * serviceName = "@@";                 the length = 0; illegal
+     * serviceName = "group@@";            the length = 1; illegal
+     * serviceName = "@@serviceName";      the length = 2; illegal
+     * serviceName = "group@@serviceName"; the length = 2; legal
+     * </pre>
+     *
+     * @param combineServiceName such as: groupName@@serviceName
+     */
+    public static void checkServiceNameFormatV2(String combineServiceName) throws NacosApiException {
+        String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
+        if (split.length <= 1) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NAME_ERROR,
+                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
+        }
+        if (split[0].isEmpty()) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NAME_ERROR,
+                    "Param 'serviceName' is illegal, groupName can't be empty");
+        }
+    }
+    
+    /**
      * Returns a combined string with serviceName and groupName. Such as 'groupName@@serviceName'
      * <p>This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not
      * verify any parameters.
@@ -138,11 +163,11 @@ public class NamingUtils {
     public static void checkInstanceIsLegal(Instance instance) throws NacosException {
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
                 || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
         }
         if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
                             instance.getClusterName()));
         }
@@ -155,7 +180,7 @@ public class NamingUtils {
      */
     public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
         if (!instance.isEphemeral()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     String.format("Batch registration does not allow persistent instance registration , Instance：%s", instance));
         }
     }

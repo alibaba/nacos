@@ -16,19 +16,24 @@
 
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -36,6 +41,10 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.model.form.InstanceForm;
+import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
+import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
+import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
@@ -46,17 +55,19 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +79,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
  *
  * @author hujun
  */
+@NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
 public class InstanceControllerV2 {
@@ -80,192 +92,100 @@ public class InstanceControllerV2 {
     
     /**
      * Register new instance.
-     *
-     * @param namespaceId namespace id
-     * @param serviceName service name
-     * @param metadata    service metadata
-     * @param cluster     service cluster
-     * @param ip          instance ip
-     * @param port        instance port
-     * @param healthy     instance healthy
-     * @param weight      instance weight
-     * @param enabled     instance enabled
-     * @param ephemeral   instance ephemeral
-     * @return 'ok' if success
-     * @throws Exception any error during register
      */
     @CanDistro
     @PostMapping
     @Secured(action = ActionTypes.WRITE)
-    public String register(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String ip,
-            @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
-            @RequestParam Integer port, @RequestParam(defaultValue = "true") Boolean healthy,
-            @RequestParam(defaultValue = "1") Double weight, @RequestParam(defaultValue = "true") Boolean enabled,
-            @RequestParam String metadata, @RequestParam Boolean ephemeral) throws Exception {
-        
-        NamingUtils.checkServiceNameFormat(serviceName);
-        checkWeight(weight);
-        final Instance instance = InstanceBuilder.newBuilder().setServiceName(serviceName).setIp(ip)
-                .setClusterName(cluster).setPort(port).setHealthy(healthy).setWeight(weight).setEnabled(enabled)
-                .setMetadata(UtilsAndCommons.parseMetadata(metadata)).setEphemeral(ephemeral).build();
-        if (ephemeral == null) {
-            instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
-        }
-        instanceServiceV2.registerInstance(namespaceId, serviceName, instance);
+    public Result<String> register(InstanceForm instanceForm) throws NacosException {
+        // check param
+        instanceForm.validate();
+        NamingUtils.checkServiceNameFormatV2(instanceForm.getServiceName());
+        checkWeight(instanceForm.getWeight());
+        // build instance
+        Instance instance = buildInstance(instanceForm);
+        instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(new NamingTraceEvent.RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
+                false, instanceForm.getNamespaceId(), NamingUtils.getGroupName(instanceForm.getServiceName()),
+                NamingUtils.getServiceName(instanceForm.getServiceName()),
                 instance.toInetAddr()));
-        return "ok";
+        return Result.success("ok");
     }
     
     /**
      * Deregister instances.
-     *
-     * @param namespaceId namespace id
-     * @param serviceName service name
-     * @param metadata    service metadata
-     * @param cluster     service cluster
-     * @param ip          instance ip
-     * @param port        instance port
-     * @param healthy     instance healthy
-     * @param weight      instance weight
-     * @param enabled     instance enabled
-     * @param ephemeral   instance ephemeral
-     * @return 'ok' if success
-     * @throws Exception any error during deregister
      */
     @CanDistro
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE)
-    public String deregister(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String ip,
-            @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
-            @RequestParam Integer port, @RequestParam(defaultValue = "true") Boolean healthy,
-            @RequestParam(defaultValue = "1") Double weight, @RequestParam(defaultValue = "true") Boolean enabled,
-            @RequestParam String metadata, @RequestParam Boolean ephemeral) throws Exception {
-        NamingUtils.checkServiceNameFormat(serviceName);
-        checkWeight(weight);
-        final Instance instance = InstanceBuilder.newBuilder().setServiceName(serviceName).setIp(ip)
-                .setClusterName(cluster).setPort(port).setHealthy(healthy).setWeight(weight).setEnabled(enabled)
-                .setMetadata(UtilsAndCommons.parseMetadata(metadata)).setEphemeral(ephemeral).build();
-        if (ephemeral == null) {
-            instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
-        }
-        
-        instanceServiceV2.removeInstance(namespaceId, serviceName, instance);
+    public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
+        // check param
+        instanceForm.validate();
+        NamingUtils.checkServiceNameFormatV2(instanceForm.getServiceName());
+        checkWeight(instanceForm.getWeight());
+        // build instance
+        Instance instance = buildInstance(instanceForm);
+        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), instanceForm.getServiceName(), instance);
         NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, DeregisterInstanceReason.REQUEST, namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
+                false, DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(),
+                NamingUtils.getGroupName(instanceForm.getServiceName()), NamingUtils.getServiceName(instanceForm.getServiceName()),
                 instance.toInetAddr()));
-        return "ok";
+        return Result.success("ok");
     }
     
     /**
      * Update instance.
-     *
-     * @param namespaceId namespace id
-     * @param serviceName service name
-     * @param metadata    service metadata
-     * @param cluster     service cluster
-     * @param ip          instance ip
-     * @param port        instance port
-     * @param healthy     instance healthy
-     * @param weight      instance weight
-     * @param enabled     instance enabled
-     * @param ephemeral   instance ephemeral
-     * @return 'ok' if success
-     * @throws Exception any error during update
      */
     @CanDistro
     @PutMapping
     @Secured(action = ActionTypes.WRITE)
-    public String update(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String ip,
-            @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String cluster,
-            @RequestParam Integer port, @RequestParam(defaultValue = "true") Boolean healthy,
-            @RequestParam(defaultValue = "1") Double weight, @RequestParam(defaultValue = "true") Boolean enabled,
-            @RequestParam String metadata, @RequestParam Boolean ephemeral) throws Exception {
-        
-        NamingUtils.checkServiceNameFormat(serviceName);
-        checkWeight(weight);
-        final Instance instance = InstanceBuilder.newBuilder().setServiceName(serviceName).setIp(ip)
-                .setClusterName(cluster).setPort(port).setHealthy(healthy).setWeight(weight).setEnabled(enabled)
-                .setMetadata(UtilsAndCommons.parseMetadata(metadata)).setEphemeral(ephemeral).build();
-        if (ephemeral == null) {
-            instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
-        }
-        instanceServiceV2.updateInstance(namespaceId, serviceName, instance);
-        return "ok";
+    public Result<String> update(InstanceForm instanceForm) throws NacosException {
+        // check param
+        instanceForm.validate();
+        NamingUtils.checkServiceNameFormatV2(instanceForm.getServiceName());
+        checkWeight(instanceForm.getWeight());
+        // build instance
+        Instance instance = buildInstance(instanceForm);
+        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), instanceForm.getServiceName(), instance);
+        return Result.success("ok");
     }
     
     /**
      * Batch update instance's metadata. old key exist = update, old key not exist = add.
-     *
-     * @param namespaceId     namespace id
-     * @param serviceName     service name
-     * @param metadata        service metadata
-     * @param consistencyType consistencyType
-     * @param instances       instances info
-     * @return success updated instances. such as '{"updated":["2.2.2.2:8080:unknown:xxxx-cluster:ephemeral"}'.
-     * @throws Exception any error during update
-     * @since 1.4.0
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
     @Secured(action = ActionTypes.WRITE)
-    public ObjectNode batchUpdateInstanceMetadata(
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(defaultValue = "") String consistencyType,
-            @RequestParam(defaultValue = "") String instances, @RequestParam String metadata) throws Exception {
+    public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
+            throws NacosException {
+        form.validate();
         
-        List<Instance> targetInstances = parseBatchInstances(instances);
-        Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
-        
+        List<Instance> targetInstances = parseBatchInstances(form.getInstances());
+        Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(form.getServiceName(), form.getConsistencyType(), targetInstances);
+    
         List<String> operatedInstances = instanceServiceV2
-                .batchUpdateMetadata(namespaceId, instanceOperationInfo, targetMetadata);
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
-        for (String ip : operatedInstances) {
-            ipArray.add(ip);
-        }
-        result.replace("updated", ipArray);
-        return result;
+                .batchUpdateMetadata(form.getNamespaceId(), instanceOperationInfo, targetMetadata);
+    
+        ArrayList<String> ipList = new ArrayList<>(operatedInstances);
+        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
     }
     
     /**
      * Batch delete instance's metadata. old key exist = delete, old key not exist = not operate
-     *
-     * @param namespaceId     namespace id
-     * @param serviceName     service name
-     * @param metadata        service metadata
-     * @param consistencyType consistencyType
-     * @param instances       instances info
-     * @return success updated instances. such as '{"updated":["2.2.2.2:8080:unknown:xxxx-cluster:ephemeral"}'.
-     * @throws Exception any error during update
-     * @since 1.4.0
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
     @Secured(action = ActionTypes.WRITE)
-    public ObjectNode batchDeleteInstanceMetadata(
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(defaultValue = "") String consistencyType,
-            @RequestParam(defaultValue = "") String instances, @RequestParam String metadata) throws Exception {
-        
-        List<Instance> targetInstances = parseBatchInstances(instances);
-        Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(metadata);
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(serviceName, consistencyType, targetInstances);
+    public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
+            throws NacosException {
+        form.validate();
+        List<Instance> targetInstances = parseBatchInstances(form.getInstances());
+        Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(form.getServiceName(), form.getConsistencyType(), targetInstances);
         List<String> operatedInstances = instanceServiceV2
-                .batchDeleteMetadata(namespaceId, instanceOperationInfo, targetMetadata);
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        ArrayNode ipArray = JacksonUtils.createEmptyArrayNode();
-        for (String ip : operatedInstances) {
-            ipArray.add(ip);
-        }
-        result.replace("updated", ipArray);
-        return result;
+                .batchDeleteMetadata(form.getNamespaceId(), instanceOperationInfo, targetMetadata);
+        ArrayList<String> ipList = new ArrayList<>(operatedInstances);
+        return Result.success(new InstanceMetadataBatchOperationVo(ipList));
     }
     
     private InstanceOperationInfo buildOperationInfo(String serviceName, String consistencyType,
@@ -332,66 +252,68 @@ public class InstanceControllerV2 {
     
     /**
      * Get all instance of input service.
-     *
-     * @param namespaceId namespace id
-     * @param serviceName service name
-     * @param clusters    service clusters
-     * @param clientIP    service clientIP
-     * @param udpPort     udpPort
-     * @param healthyOnly healthyOnly
-     * @param app         app
-     * @param request     http request
-     * @return list of instance
-     * @throws Exception any error during list
+     * @param namespaceId   namespace id
+     * @param serviceName   service name
+     * @param clusterName   service clusterName
+     * @param ip            ip
+     * @param port          port
+     * @param healthyOnly   healthyOnly
+     * @param app           app
+     * @param userAgent     [header] userAgent
+     * @param clientVersion [header] clientVersion
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ)
-    public Object list(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String clusters,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String clientIP,
-            @RequestParam(defaultValue = "0") Integer udpPort,
-            @RequestParam(defaultValue = "false") Boolean healthyOnly,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String app, HttpServletRequest request) throws Exception {
-        
-        NamingUtils.checkServiceNameFormat(serviceName);
-        String agent = WebUtils.getUserAgent(request);
-        Subscriber subscriber = new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
-                udpPort, clusters);
-        return instanceServiceV2.listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
+    public Result<ServiceInfo> list(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam("serviceName") String serviceName,
+            @RequestParam(value = "clusterName", defaultValue = StringUtils.EMPTY) String clusterName,
+            @RequestParam(value = "ip", defaultValue = StringUtils.EMPTY) String ip,
+            @RequestParam(value = "port", defaultValue = "0") Integer port,
+            @RequestParam(value = "healthyOnly", defaultValue = "false") Boolean healthyOnly,
+            @RequestParam(value = "app", defaultValue = StringUtils.EMPTY) String app,
+            @RequestHeader(value = HttpHeaderConsts.USER_AGENT_HEADER, required = false) String userAgent,
+            @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion)
+            throws NacosApiException {
+        NamingUtils.checkServiceNameFormatV2(serviceName);
+        if (StringUtils.isEmpty(userAgent)) {
+            userAgent = StringUtils.defaultIfEmpty(clientVersion, StringUtils.EMPTY);
+        }
+        Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, serviceName,
+                port, clusterName);
+        return Result.success(instanceServiceV2.listInstance(namespaceId, serviceName, subscriber, clusterName, healthyOnly));
     }
-    
     
     /**
      * Get detail information of specified instance.
      *
      * @param namespaceId service namespaceId
      * @param serviceName service serviceName
-     * @param ip          instance ip
      * @param clusterName service clusterName
+     * @param ip          instance ip
      * @param port        instance port
      * @return detail information of instance
-     * @throws Exception any error during get
+     * @throws NacosException any error during get
      */
     @GetMapping
     @Secured(action = ActionTypes.READ)
-    public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName, @RequestParam String ip,
-            @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
-            @RequestParam Integer port) throws Exception {
-        
-        NamingUtils.checkServiceNameFormat(serviceName);
+    public Result<InstanceDetailInfoVo> detail(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam("serviceName") String serviceName,
+            @RequestParam(value = "clusterName", defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
+            @RequestParam("ip") String ip, @RequestParam("port") Integer port) throws NacosException {
+        NamingUtils.checkServiceNameFormatV2(serviceName);
         
         Instance instance = instanceServiceV2.getInstance(namespaceId, serviceName, clusterName, ip, port);
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("service", serviceName);
-        result.put("ip", ip);
-        result.put("port", port);
-        result.put("clusterName", clusterName);
-        result.put("weight", instance.getWeight());
-        result.put("healthy", instance.isHealthy());
-        result.put("instanceId", instance.getInstanceId());
-        result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
-        return result;
+        
+        InstanceDetailInfoVo instanceDetailInfoVo = new InstanceDetailInfoVo();
+        instanceDetailInfoVo.setServiceName(serviceName);
+        instanceDetailInfoVo.setIp(ip);
+        instanceDetailInfoVo.setPort(port);
+        instanceDetailInfoVo.setClusterName(clusterName);
+        instanceDetailInfoVo.setWeight(instance.getWeight());
+        instanceDetailInfoVo.setHealthy(instance.isHealthy());
+        instanceDetailInfoVo.setInstanceId(instance.getInstanceId());
+        instanceDetailInfoVo.setMetadata(instance.getMetadata());
+        return Result.success(instanceDetailInfoVo);
     }
     
     /**
@@ -481,9 +403,27 @@ public class InstanceControllerV2 {
     private void checkWeight(Double weight) throws NacosException {
         if (weight > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
                 || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: The weights range from "
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.WEIGHT_ERROR, "instance format invalid: The weights range from "
                     + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
                     + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
+    }
+    
+    private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
+        Instance instance = InstanceBuilder.newBuilder()
+                .setServiceName(instanceForm.getServiceName())
+                .setIp(instanceForm.getIp())
+                .setClusterName(instanceForm.getClusterName())
+                .setPort(instanceForm.getPort())
+                .setHealthy(instanceForm.getHealthy())
+                .setWeight(instanceForm.getWeight())
+                .setEnabled(instanceForm.getEnabled())
+                .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
+                .setEphemeral(instanceForm.getEphemeral())
+                .build();
+        if (instanceForm.getEphemeral() == null) {
+            instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
+        }
+        return instance;
     }
 }
