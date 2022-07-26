@@ -118,6 +118,31 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         }
     }
     
+    /**
+     * update persistent instance.
+     */
+    public void updateInstance(Service service, Instance instance, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        if (singleton.isEphemeral()) {
+            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
+                    String.format("Current service %s is ephemeral service, can't update persistent instance.",
+                            singleton.getGroupedServiceName()));
+        }
+        final PersistentClientOperationServiceImpl.InstanceStoreRequest request = new PersistentClientOperationServiceImpl.InstanceStoreRequest();
+        request.setService(service);
+        request.setInstance(instance);
+        request.setClientId(clientId);
+        final WriteRequest writeRequest = WriteRequest.newBuilder()
+                .setGroup(group())
+                .setData(ByteString.copyFrom(serializer.serialize(request))).setOperation(DataOperation.CHANGE.name())
+                .build();
+        try {
+            protocol.write(writeRequest);
+        } catch (Exception e) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+        }
+    }
+    
     @Override
     public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
         //TODO PersistentClientOperationServiceImpl Nacos batchRegister
@@ -170,6 +195,12 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                 case DELETE:
                     onInstanceDeregister(instanceRequest.service, instanceRequest.getClientId());
                     break;
+                case CHANGE:
+                    if (instanceAndServiceExist(instanceRequest)) {
+                        onInstanceRegister(instanceRequest.service, instanceRequest.instance,
+                                instanceRequest.getClientId());
+                    }
+                    break;
                 default:
                     return Response.newBuilder().setSuccess(false).setErrMsg("unsupport operation : " + operation)
                             .build();
@@ -178,6 +209,11 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         } finally {
             lock.unlock();
         }
+    }
+    
+    private boolean instanceAndServiceExist(InstanceStoreRequest instanceRequest) {
+        return clientManager.contains(instanceRequest.getClientId()) && clientManager.getClient(
+                instanceRequest.getClientId()).getAllPublishedService().contains(instanceRequest.service);
     }
     
     private void onInstanceRegister(Service service, Instance instance, String clientId) {
