@@ -34,7 +34,6 @@ CREATE TABLE config_info (
   type varchar(64) DEFAULT NULL,
   c_schema LONG VARCHAR DEFAULT NULL,
   encrypted_data_key LONG VARCHAR DEFAULT NULL,
-  type int DEFAULT NULL,
   constraint configinfo_id_key PRIMARY KEY (id),
   constraint uk_configinfo_datagrouptenant UNIQUE (data_id,group_id,tenant_id));
 
@@ -57,6 +56,7 @@ CREATE TABLE his_config_info (
   src_ip varchar(20) DEFAULT NULL,
   op_type char(10) DEFAULT NULL,
   encrypted_data_key LONG VARCHAR DEFAULT NULL,
+  type varchar(64) DEFAULT NULL,
   constraint hisconfiginfo_nid_key PRIMARY KEY (nid));
 
 CREATE INDEX hisconfiginfo_dataid_key_idx ON his_config_info(data_id);

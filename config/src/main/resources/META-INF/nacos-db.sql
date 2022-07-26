@@ -156,7 +156,7 @@ CREATE TABLE `his_config_info` (
   `op_type` char(10) DEFAULT NULL,
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
   `encrypted_data_key` text NOT NULL COMMENT '秘钥',
-  `type` int DEFAULT NULL,
+  `type` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`nid`),
   KEY `idx_gmt_create` (`gmt_create`),
   KEY `idx_gmt_modified` (`gmt_modified`),
