@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers;
+package com.alibaba.nacos.naming.controllers.v2;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -50,7 +51,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
 import java.util.Collection;
 import java.util.Objects;
@@ -61,7 +61,7 @@ import java.util.Optional;
  *
  * @author nkorange
  */
-@Beta
+@NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
 public class ServiceControllerV2 {
@@ -77,93 +77,69 @@ public class ServiceControllerV2 {
     
     /**
      * Create a new service. This API will create a persistence service.
-     *
-     * @param namespaceId      namespace id
-     * @param serviceName      service name
-     * @param protectThreshold protect threshold
-     * @param metadata         service metadata
-     * @param selector         selector
-     * @return 'ok' if success
-     * @throws Exception exception
      */
-    @PostMapping(value = "/{serviceName}")
+    @PostMapping()
     @Secured(action = ActionTypes.WRITE)
-    public RestResult<String> create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam(required = false, defaultValue = "false") boolean ephemeral,
-            @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
+    public Result<String> create(ServiceForm serviceForm) throws Exception {
+        serviceForm.validate();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
-        serviceMetadata.setProtectThreshold(protectThreshold);
-        serviceMetadata.setSelector(parseSelector(selector));
-        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
-        serviceMetadata.setEphemeral(ephemeral);
-        serviceOperatorV2.create(Service.newService(namespaceId, groupName, serviceName, ephemeral), serviceMetadata);
+        serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
+        serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
+        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
+        serviceMetadata.setEphemeral(serviceForm.getEphemeral());
+        serviceOperatorV2.create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
         NotifyCenter.publishEvent(new NamingTraceEvent.RegisterServiceTraceEvent(System.currentTimeMillis(),
-                namespaceId, groupName, serviceName));
-        return RestResultUtils.success("ok");
+                serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName()));
+        return Result.success("ok");
     }
     
     /**
      * Remove service.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @return 'ok' if success
-     * @throws Exception exception
      */
-    @DeleteMapping(value = "/{serviceName}")
+    @DeleteMapping()
     @Secured(action = ActionTypes.WRITE)
-    public RestResult<String> remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
+    public Result<String> remove(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam("serviceName") String serviceName,
+            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
         NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterServiceTraceEvent(System.currentTimeMillis(),
                 namespaceId, groupName, serviceName));
-        return RestResultUtils.success("ok");
+        return Result.success("ok");
     }
     
     /**
      * Get detail of service.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @return detail information of service
-     * @throws NacosException nacos exception
      */
-    @GetMapping(value = "/{serviceName}")
+    @GetMapping()
     @Secured(action = ActionTypes.READ)
-    public RestResult<ServiceDetailInfo> detail(
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
+    public Result<ServiceDetailInfo> detail(
+            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam("serviceName") String serviceName,
+            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
         ServiceDetailInfo result = serviceOperatorV2
                 .queryService(Service.newService(namespaceId, groupName, serviceName));
-        return RestResultUtils.success(result);
+        return Result.success(result);
     }
     
     /**
      * List all service names.
-     *
-     * @param request http request
-     * @return all service names
-     * @throws Exception exception
      */
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ)
-    public RestResult<ServiceNameView> list(HttpServletRequest request) throws Exception {
-        final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
-        final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
-        String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
+    public Result<ServiceNameView> list(
+            @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
+            @RequestParam(value = "selector", required = false, defaultValue = StringUtils.EMPTY) String selector,
+            @RequestParam(value = "pageNo") Integer pageNo, @RequestParam(value = "pageSize") Integer pageSize) throws Exception {
+        
         ServiceNameView result = new ServiceNameView();
-        Collection<String> serviceNameList = serviceOperatorV2.listService(namespaceId, groupName, selectorString);
+        Collection<String> serviceNameList = serviceOperatorV2.listService(namespaceId, groupName, selector);
         result.setCount(serviceNameList.size());
         result.setServices(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList));
-        return RestResultUtils.success(result);
-        
+        return Result.success(result);
     }
     
     /**
@@ -193,6 +169,23 @@ public class ServiceControllerV2 {
         return RestResultUtils.success("ok");
     }
     
+    /**
+     * Update service.
+     */
+    @PutMapping()
+    @Secured(action = ActionTypes.WRITE)
+    public Result<String> update(ServiceForm serviceForm) throws Exception {
+        serviceForm.validate();
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
+        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
+        serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
+        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName());
+        serviceOperatorV2.update(service, serviceMetadata);
+        return Result.success("ok");
+    }
+    
     private Selector parseSelector(String selectorJsonString) throws Exception {
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
@@ -200,12 +193,13 @@ public class ServiceControllerV2 {
         
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
         String type = Optional.ofNullable(selectorJson.get("type"))
-                .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
+                .orElseThrow(() -> new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
+                        "not match any type of selector!"))
                 .asText();
         String expression = Optional.ofNullable(selectorJson.get("expression")).map(JsonNode::asText).orElse(null);
         Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR, "not match any type of selector!");
         }
         return selector;
     }
