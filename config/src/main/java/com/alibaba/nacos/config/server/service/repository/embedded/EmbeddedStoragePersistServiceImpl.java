@@ -2180,11 +2180,6 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         
-        // final String sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
-        //         + "src_ip,src_user,gmt_modified,op_type,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-        // final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
-        //         appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey};
-    
         final String sql = "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
                 + "src_ip,src_user,gmt_modified,op_type,encrypted_data_key,type) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)";
         final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
