@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -185,7 +188,7 @@ public class LongPollingService {
                 }
             }
         }
-
+        
         return mergeSampleResult(sampleResultLst);
     }
     
@@ -237,13 +240,25 @@ public class LongPollingService {
      */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
             int probeRequestSize) {
+        addLongPollingClient(req, rsp, clientMd5Map, probeRequestSize, false);
+    }
+    
+    /**
+     * Add LongPollingClient.
+     *
+     * @param req              HttpServletRequest.
+     * @param rsp              HttpServletResponse.
+     * @param clientMd5Map     clientMd5Map.
+     * @param probeRequestSize probeRequestSize.
+     */
+    public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
+            int probeRequestSize, boolean isV2) {
         
         String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
-        String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
-        String tag = req.getHeader("Vipserver-Tag");
+        final String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
+        final String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
-        
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
         long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
         if (isFixedPolling()) {
@@ -253,12 +268,13 @@ public class LongPollingService {
             long start = System.currentTimeMillis();
             List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
             if (changedGroups.size() > 0) {
-                generateResponse(req, rsp, changedGroups);
+                generateResponse(req, rsp, changedGroups, isV2);
                 LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "instant",
                         RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                         changedGroups.size());
                 return;
             } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
+                generateBlankResponse(rsp);
                 LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
                         RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                         changedGroups.size());
@@ -266,6 +282,9 @@ public class LongPollingService {
             }
         }
         String ip = RequestUtil.getRemoteIp(req);
+        
+        // add support for open api v2
+        req.setAttribute("isV2", isV2);
         
         // Must be called by http thread, or send response.
         final AsyncContext asyncContext = req.startAsync();
@@ -395,10 +414,10 @@ public class LongPollingService {
             asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
                 try {
                     getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-
+                    
                     // Delete subscriber's relations.
                     boolean removeFlag = allSubs.remove(ClientLongPolling.this);
-
+                    
                     if (removeFlag) {
                         if (isFixedPolling()) {
                             LogUtil.CLIENT_LOG
@@ -426,7 +445,7 @@ public class LongPollingService {
                 } catch (Throwable t) {
                     LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                 }
-
+                
             }, timeoutTime, TimeUnit.MILLISECONDS);
             
             allSubs.add(this);
@@ -442,14 +461,21 @@ public class LongPollingService {
         }
         
         void generateResponse(List<String> changedGroups) {
+            HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
+            
             if (null == changedGroups) {
-                
+                try {
+                    if (this.isV2) {
+                        response.setContentType(MediaType.APPLICATION_JSON);
+                        response.getWriter().println(JacksonUtils.toJson(Result.success("")));
+                    }
+                } catch (Exception ex) {
+                    PULL_LOG.error(ex.toString(), ex);
+                }
                 // Tell web container to send http response.
                 asyncContext.complete();
                 return;
             }
-            
-            HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
             
             try {
                 final String respString = MD5Util.compareMd5ResultString(changedGroups);
@@ -459,7 +485,12 @@ public class LongPollingService {
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
                 response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().println(respString);
+                if (this.isV2) {
+                    response.setContentType(MediaType.APPLICATION_JSON);
+                    response.getWriter().println(JacksonUtils.toJson(Result.success(respString)));
+                } else {
+                    response.getWriter().println(respString);
+                }
                 asyncContext.complete();
             } catch (Exception ex) {
                 PULL_LOG.error(ex.toString(), ex);
@@ -477,6 +508,12 @@ public class LongPollingService {
             this.timeoutTime = timeoutTime;
             this.appName = appName;
             this.tag = tag;
+            // add support for open api v2.
+            this.isV2 = false;
+            Object flag = ac.getRequest().getAttribute("isV2");
+            if (null != flag) {
+                this.isV2 = (boolean) flag;
+            }
         }
         
         final AsyncContext asyncContext;
@@ -495,6 +532,8 @@ public class LongPollingService {
         
         final long timeoutTime;
         
+        boolean isV2;
+        
         Future<?> asyncTimeoutFuture;
         
         @Override
@@ -505,7 +544,21 @@ public class LongPollingService {
         }
     }
     
+    void generateBlankResponse(HttpServletResponse response) {
+        try {
+            response.setContentType(MediaType.APPLICATION_JSON);
+            response.getWriter().println(JacksonUtils.toJson(Result.success()));
+        } catch (Exception ex) {
+            PULL_LOG.error(ex.toString(), ex);
+        }
+    }
+    
     void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {
+        generateResponse(request, response, changedGroups, false);
+    }
+    
+    void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups,
+            boolean isV2) {
         if (null == changedGroups) {
             return;
         }
@@ -517,7 +570,12 @@ public class LongPollingService {
             response.setDateHeader("Expires", 0);
             response.setHeader("Cache-Control", "no-cache,no-store");
             response.setStatus(HttpServletResponse.SC_OK);
-            response.getWriter().println(respString);
+            if (isV2) {
+                response.setContentType(MediaType.APPLICATION_JSON);
+                response.getWriter().println(JacksonUtils.toJson(Result.success(respString)));
+            } else {
+                response.getWriter().println(respString);
+            }
         } catch (Exception ex) {
             PULL_LOG.error(ex.toString(), ex);
         }
