@@ -46,7 +46,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * Special controller v2 for soft load client to publish data.
@@ -82,12 +81,12 @@ public class ConfigControllerV2 {
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag)
-            throws NacosApiException, IOException, ServletException {
+            throws NacosException, IOException, ServletException {
         // check tenant
         ParamUtils.checkTenantV2(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         // check params
-        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
+        ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParamV2(tag);
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
@@ -109,7 +108,7 @@ public class ConfigControllerV2 {
         configVo.setContent(pair.getSecond());
         // check param
         ParamUtils.checkTenantV2(configVo.getTenant());
-        ParamUtils.checkParamV2(configVo.getDataId(), configVo.getGroup(), "datumId", configVo.getContent());
+        ParamUtils.checkParam(configVo.getDataId(), configVo.getGroup(), "datumId", configVo.getContent());
         ParamUtils.checkParamV2(configVo.getTag());
     
         if (StringUtils.isBlank(configVo.getSrcUser())) {
@@ -119,9 +118,6 @@ public class ConfigControllerV2 {
             configVo.setType(ConfigType.getDefaultType().getType());
         }
     
-        Map<String, Object> configAdvanceInfo = configOperationService.getConfigAdvanceInfo(configVo);
-        ParamUtils.checkParamV2(configAdvanceInfo);
-    
         ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
         configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
@@ -129,8 +125,7 @@ public class ConfigControllerV2 {
     
         String encryptedDataKey = pair.getFirst();
     
-        return Result.success(configOperationService
-                .publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, true));
+        return Result.success(configOperationService.publishConfig(configVo, configRequestInfoVo, encryptedDataKey));
     }
     
     /**
@@ -143,10 +138,10 @@ public class ConfigControllerV2 {
     public Result<Boolean> deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "tag", required = false) String tag) throws NacosApiException {
+            @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
         ParamUtils.checkTenantV2(tenant);
-        ParamUtils.checkParamV2(dataId, group, "datumId", "rm");
+        ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParamV2(tag);
         
         String clientIp = RequestUtil.getRemoteIp(request);

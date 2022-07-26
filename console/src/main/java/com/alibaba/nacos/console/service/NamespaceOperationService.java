@@ -85,7 +85,7 @@ public class NamespaceOperationService {
      * @param namespaceId namespace Id.
      * @return NamespaceAllInfo.
      */
-    public NamespaceAllInfo getNamespace(String namespaceId, Boolean isV2) throws NacosException {
+    public NamespaceAllInfo getNamespace(String namespaceId) throws NacosException {
         // TODO 获取用kp
         if (StringUtils.isBlank(namespaceId)) {
             return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
@@ -93,7 +93,7 @@ public class NamespaceOperationService {
                     DEFAULT_NAMESPACE_DESCRIPTION);
         } else {
             TenantInfo tenantInfo = persistService.findTenantByKp(DEFAULT_KP, namespaceId);
-            if (isV2 && null == tenantInfo) {
+            if (null == tenantInfo) {
                 throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.NAMESPACE_NOT_EXIST,
                         "namespaceId [ " + namespaceId + " ] not exist");
             }
@@ -109,19 +109,14 @@ public class NamespaceOperationService {
      * @param namespaceId   namespace ID
      * @param namespaceName namespace Name
      * @param namespaceDesc namespace Desc
-     * @param isV2          whether api v2
      * @return whether create ok
      */
-    public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc, Boolean isV2)
+    public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
         // TODO 获取用kp
         if (persistService.tenantInfoCountByTenantId(namespaceId) > 0) {
-            if (isV2) {
-                throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
-                        "namespaceId [" + namespaceId + "] already exist");
-            } else {
-                return false;
-            }
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "namespaceId [" + namespaceId + "] already exist");
         }
         
         persistService

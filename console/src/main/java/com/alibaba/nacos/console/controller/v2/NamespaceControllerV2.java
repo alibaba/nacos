@@ -81,7 +81,7 @@ public class NamespaceControllerV2 {
     @GetMapping()
     public Result<NamespaceAllInfo> getNamespace(@RequestParam("namespaceId") String namespaceId)
             throws NacosException {
-        return Result.success(namespaceOperationService.getNamespace(namespaceId, true));
+        return Result.success(namespaceOperationService.getNamespace(namespaceId));
     }
     
     /**
@@ -113,7 +113,7 @@ public class NamespaceControllerV2 {
                         "too long namespaceId, over " + NAMESPACE_ID_MAX_LENGTH);
             }
         }
-        return Result.success(namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc, true));
+        return Result.success(namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc));
     }
     
     /**

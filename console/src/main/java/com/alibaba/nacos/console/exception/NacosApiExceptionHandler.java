@@ -67,7 +67,7 @@ public class NacosApiExceptionHandler {
     @ExceptionHandler(NacosApiException.class)
     public ResponseEntity<Result<String>> handleNacosApiException(NacosApiException e) {
         LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return ResponseEntity.status(e.getStatusCode()).body(new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg())));
+        return ResponseEntity.status(e.getErrCode()).body(new Result<>(e.getDetailErrCode(), e.getErrAbstract(), e.getErrMsg()));
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)

@@ -77,7 +77,7 @@ public class NamespaceController {
      */
     @GetMapping(params = "show=all")
     public NamespaceAllInfo getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
-        return namespaceOperationService.getNamespace(namespaceId, false);
+        return namespaceOperationService.getNamespace(namespaceId);
     }
     
     /**
@@ -91,7 +91,7 @@ public class NamespaceController {
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
     public Boolean createNamespace(@RequestParam("customNamespaceId") String namespaceId,
             @RequestParam("namespaceName") String namespaceName,
-            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) throws NacosException {
+            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = UUID.randomUUID().toString();
         } else {
@@ -103,7 +103,11 @@ public class NamespaceController {
                 return false;
             }
         }
-        return namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc, false);
+        try {
+            return namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc);
+        } catch (NacosException e) {
+            return false;
+        }
     }
     
     /**
