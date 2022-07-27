@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.istio.server;
 
-import com.alibaba.nacos.istio.common.NacosResourceManager;
 import com.alibaba.nacos.istio.mcp.NacosMcpService;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
@@ -30,7 +29,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 
-/**
+/**.
  * @author special.fy
  */
 @Service
@@ -50,9 +49,6 @@ public class IstioServer {
     @Autowired
     private NacosXdsService nacosXdsService;
 
-    @Autowired
-    private NacosResourceManager nacosResourceManager;
-
     /**
      * Start.
      *
@@ -65,7 +61,6 @@ public class IstioServer {
             Loggers.MAIN.info("The Nacos Istio server is disabled.");
             return;
         }
-        nacosResourceManager.start();
 
         Loggers.MAIN.info("Nacos Istio server, starting Nacos Istio server...");
 
