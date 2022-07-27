@@ -52,7 +52,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -306,7 +306,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                                 totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount),
                                 currentMaxClient + (isLoaderClient ? "(loaderCount)" : ""), expelCount);
 
-                List<String> expelClient = new LinkedList<>();
+                Set<String> expelClient = new HashSet<>(expelCount);
 
                 Map<String, AtomicInteger> expelForIp = new HashMap<>(16);
 
@@ -359,16 +359,31 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
                     }
 
                 }
-
-                //3. if total count is still over limit.
+    
+                //3. if total count is still over limit, expel outdated connections(only client connections).
+                Iterator<String> iterator = outDatedConnections.iterator();
+                while (expelCount > 0 && iterator.hasNext()) {
+                    String connectionId = iterator.next();
+                    if (getConnection(connectionId).getMetaInfo().isSdkSource()) {
+                        expelClient.add(connectionId);
+                        iterator.remove();
+                        expelCount--;
+                    }
+                }
+    
+                //4. if total count is still over limit and outDatedConnections doesn't have any client connection.
                 if (expelCount > 0) {
                     for (Map.Entry<String, Connection> entry : entries) {
                         Connection client = entry.getValue();
+                        String connectionId = client.getMetaInfo().getConnectionId();
                         if (!expelForIp.containsKey(client.getMetaInfo().clientIp) && client.getMetaInfo()
-                                .isSdkSource() && expelCount > 0) {
-                            expelClient.add(client.getMetaInfo().getConnectionId());
+                                .isSdkSource() && !expelClient.contains(connectionId)) {
+                            expelClient.add(connectionId);
                             expelCount--;
-                            outDatedConnections.remove(client.getMetaInfo().getConnectionId());
+                        }
+            
+                        if (expelCount == 0) {
+                            break;
                         }
                     }
                 }
