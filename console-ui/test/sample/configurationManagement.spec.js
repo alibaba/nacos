@@ -119,7 +119,7 @@ module.exports = function() {
       .click(0);
   });
 
-  it('click: Data ID: ( #dataId, 154, 20, 0 )', async function() {
+  it('click: Data ID ( #dataId, 154, 20, 0 )', async function() {
     await driver
       .sleep(300)
       .wait('#dataId', 30000)
