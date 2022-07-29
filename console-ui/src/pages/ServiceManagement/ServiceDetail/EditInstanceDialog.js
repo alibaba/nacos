@@ -120,23 +120,23 @@ class EditInstanceDialog extends React.Component {
           <Form.Item label="IP:">
             <p>{editInstance.ip}</p>
           </Form.Item>
-          <Form.Item label={`${locale.port}:`}>
+          <Form.Item label={`${locale.port}`}>
             <p>{editInstance.port}</p>
           </Form.Item>
-          <Form.Item label={`${locale.weight}:`}>
+          <Form.Item label={`${locale.weight}`}>
             <Input
               className="in-text"
               value={editInstance.weight}
               onChange={weight => this.onChangeCluster({ weight })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.whetherOnline}:`}>
+          <Form.Item label={`${locale.whetherOnline}`}>
             <Switch
               checked={editInstance.enabled}
               onChange={enabled => this.onChangeCluster({ enabled })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.metadata}:`}>
+          <Form.Item label={`${locale.metadata}`}>
             <MonacoEditor
               language="json"
               width={'100%'}
