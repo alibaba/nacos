@@ -118,7 +118,11 @@ public class ConfigController {
     
     /**
      * Adds or updates non-aggregated data.
-     *
+     * <p>
+     * request and response will be used in aspect, see
+     * {@link com.alibaba.nacos.config.server.aspect.CapacityManagementAspect} and
+     * {@link com.alibaba.nacos.config.server.aspect.RequestLogAspect}.
+     * </p>
      * @throws NacosException NacosException.
      */
     @PostMapping
@@ -252,6 +256,12 @@ public class ConfigController {
     
     /**
      * Synchronously delete all pre-aggregation data under a dataId.
+     *
+     * <p>
+     * request and response will be used in aspect, see
+     * {@link com.alibaba.nacos.config.server.aspect.CapacityManagementAspect} and
+     * {@link com.alibaba.nacos.config.server.aspect.RequestLogAspect}.
+     * </p>
      *
      * @throws NacosException NacosException.
      */
