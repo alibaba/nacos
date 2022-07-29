@@ -742,7 +742,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int findConfigHistoryCountByTime(final Timestamp startTime) {
-        String sql = "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?";
+        String sql = "SELECT count(1) FROM his_config_info WHERE gmt_modified < ?";
         Integer result = databaseOperate.queryOne(sql, new Object[] {startTime}, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
