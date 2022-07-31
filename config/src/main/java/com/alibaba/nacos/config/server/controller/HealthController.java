@@ -86,7 +86,7 @@ public class HealthController {
     }
     
     private boolean isAddressServerHealthy() {
-        Map<String, Object> info = memberManager.getLookup().info();
+        Map<String, Object> info = memberManager.getAddressPlugin().info();
         return info != null && info.get("addressServerHealth") != null && Boolean
                 .parseBoolean(info.get("addressServerHealth").toString());
     }

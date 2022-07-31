@@ -20,6 +20,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.plugin.address.spi.AddressPlugin;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,15 +65,15 @@ public class HealthControllerTest {
     private ServletContext servletContext;
     
     @Mock
-    private MemberLookup memberLookup;
+    private AddressPlugin addressPlugin;
     
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         Map<String, Object> infos = new HashMap<>();
         infos.put("addressServerHealth", true);
-        when(memberLookup.info()).thenReturn(infos);
-        when(memberManager.getLookup()).thenReturn(memberLookup);
+        when(addressPlugin.info()).thenReturn(infos);
+        when(memberManager.getAddressPlugin()).thenReturn(addressPlugin);
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(healthController, "memberManager", memberManager);
         ReflectionTestUtils.setField(healthController, "dataSourceService", dataSourceService);

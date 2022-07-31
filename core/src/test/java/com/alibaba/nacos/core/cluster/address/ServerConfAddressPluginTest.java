@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,62 +14,44 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.lookup;
+package com.alibaba.nacos.core.cluster.address;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Collections;
+import static org.junit.Assert.assertEquals;
 
 /**
- * {@link FileConfigMemberLookup} unit test.
+ * Date 2022/7/31.
  *
- * @author chenglu
- * @date 2021-07-08 22:23
+ * @author GuoJiangFu
  */
 @RunWith(MockitoJUnitRunner.class)
-public class FileConfigMemberLookupTest {
+public class ServerConfAddressPluginTest {
     
-    private FileConfigMemberLookup fileConfigMemberLookup;
+    private ServerConfAddressPlugin serverConfAddressPlugin;
     
-    @Mock
-    private ServerMemberManager memberManager;
     
     @Before
     public void setUp() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
-        fileConfigMemberLookup = new FileConfigMemberLookup();
-        fileConfigMemberLookup.injectMemberManager(memberManager);
-        fileConfigMemberLookup.start();
+        serverConfAddressPlugin = new ServerConfAddressPlugin();
+        serverConfAddressPlugin.start();
     }
     
     @After
     public void tearDown() throws NacosException {
-        fileConfigMemberLookup.destroy();
+        serverConfAddressPlugin.shutdown();
     }
     
     @Test
-    public void testAfterLookup() {
-        try {
-            fileConfigMemberLookup.afterLookup(Collections.singletonList(new Member()));
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
-    }
-    
-    @Test
-    public void testUseAddressServer() {
-        Assert.assertFalse(fileConfigMemberLookup.useAddressServer());
+    public void testGetPluginName() {
+        assertEquals("file", serverConfAddressPlugin.getPluginName());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.lookup;
+package com.alibaba.nacos.core.cluster.address;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
-import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.plugin.address.spi.AbstractAddressPlugin;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
-import java.util.Collections;
+import java.util.ArrayList;
 
 /**
- * Member node addressing mode in stand-alone mode.
+ * Get nacos server list when the mode is standalone, server use only
+ * Date 2022/7/30.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author GuoJiangFu
  */
-public class StandaloneMemberLookup extends AbstractMemberLookup {
+public class StandAloneAddressPlugin extends AbstractAddressPlugin {
+    
+    private final String PLUGIN_NAME = "standalone";
     
     @Override
-    public void doStart() {
+    public void start() {
         String url = EnvUtil.getLocalAddress();
-        afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
+        serverList = new ArrayList<>();
+        serverList.add(url);
     }
     
     @Override
-    protected void doDestroy() throws NacosException {
-    
+    public String getPluginName() {
+        return PLUGIN_NAME;
     }
     
-    @Override
-    public boolean useAddressServer() {
-        return false;
-    }
 }

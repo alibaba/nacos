@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,36 +14,39 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.cluster.lookup;
+package com.alibaba.nacos.core.cluster.address;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.address.spi.AbstractAddressPlugin;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.common.utils.StringUtils;
+import org.apache.commons.collections.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
- * Cluster.conf file managed cluster member node addressing pattern.
+ * Get nacos server list by cluster.conf file, server use only
+ * Date 2022/7/30.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author GuoJiangFu
  */
-public class FileConfigMemberLookup extends AbstractMemberLookup {
+public class ServerConfAddressPlugin extends AbstractAddressPlugin {
     
     private static final String DEFAULT_SEARCH_SEQ = "cluster.conf";
+    
+    private final String PLUGIN_NAME = "file";
     
     private FileWatcher watcher = new FileWatcher() {
         @Override
         public void onChange(FileChangeEvent event) {
-            readClusterConfFromDisk();
+            List<String> serverListTemp = readClusterConfFromDisk();
+            if (!CollectionUtils.isEqualCollection(serverListTemp, serverList)) {
+                serverList = serverListTemp;
+                addressListener.accept(serverList);
+            }
         }
         
         @Override
@@ -53,9 +56,9 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
     };
     
     @Override
-    public void doStart() throws NacosException {
-        readClusterConfFromDisk();
-        
+    public void start() {
+        this.serverList = readClusterConfFromDisk();
+    
         // Use the inotify mechanism to monitor file changes and automatically
         // trigger the reading of cluster.conf
         try {
@@ -65,26 +68,24 @@ public class FileConfigMemberLookup extends AbstractMemberLookup {
         }
     }
     
-    @Override
-    public boolean useAddressServer() {
-        return false;
-    }
-    
-    @Override
-    protected void doDestroy() throws NacosException {
-        WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
-    }
-    
-    private void readClusterConfFromDisk() {
-        Collection<Member> tmpMembers = new ArrayList<>();
+    private List<String> readClusterConfFromDisk() {
         try {
-            List<String> tmp = EnvUtil.readClusterConf();
-            tmpMembers = MemberUtil.readServerConf(tmp);
+            return EnvUtil.readClusterConf();
         } catch (Throwable e) {
             Loggers.CLUSTER
                     .error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e.getMessage());
         }
-        
-        afterLookup(tmpMembers);
+        return null;
     }
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+    
+    @Override
+    public void shutdown() {
+        WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
+    }
+    
 }
