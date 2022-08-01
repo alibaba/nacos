@@ -989,7 +989,7 @@ class ConfigurationManagement extends React.Component {
       accept: 'application/zip',
       action: `v1/cs/configs?import=true&namespace=${getParams(
         'namespace'
-      )}&accessToken=${accessToken}&username=${username}`,
+      )}&accessToken=${accessToken}&username=${username}&tenant=${getParams('namespace')}`,
       headers: Object.assign({}, {}, { accessToken }),
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
