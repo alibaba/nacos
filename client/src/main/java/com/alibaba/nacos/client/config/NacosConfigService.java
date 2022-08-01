@@ -32,6 +32,7 @@ import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
+import com.alibaba.nacos.client.constant.ServerAddressConstant;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
@@ -72,7 +73,9 @@ public class NacosConfigService implements ConfigService {
     
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
-        
+
+        ServerAddressConstant.setServerAddress(properties.getProperty(PropertyKeyConst.SERVER_ADDR));
+
         initNamespace(properties);
         this.configFilterChainManager = new ConfigFilterChainManager(properties);
         ServerListManager serverListManager = new ServerListManager(properties);
