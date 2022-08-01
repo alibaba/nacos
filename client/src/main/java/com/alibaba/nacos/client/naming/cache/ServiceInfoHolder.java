@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.utils.MultipleServerDirMap;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -31,13 +32,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -67,7 +62,7 @@ public class ServiceInfoHolder implements Closeable {
     private String cacheDir;
     
     private String notifierEventScope;
-    
+
     public ServiceInfoHolder(String namespace, String notifierEventScope, Properties properties) {
         initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
@@ -87,14 +82,16 @@ public class ServiceInfoHolder implements Closeable {
         if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
             namingCacheRegistryDir = File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
         }
-        
+        String prefix = "";
         if (!StringUtils.isBlank(jmSnapshotPath)) {
-            cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
-                    + File.separator + FILE_PATH_NAMING + File.separator + namespace;
+            prefix = jmSnapshotPath + File.separator + FILE_PATH_NACOS;
         } else {
-            cacheDir = System.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
-                    + File.separator + FILE_PATH_NAMING + File.separator + namespace;
+            prefix = System.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS;
         }
+        String suffix = namingCacheRegistryDir + File.separator + FILE_PATH_NAMING + File.separator + namespace;
+        oldCacheDir = prefix + suffix;
+        cacheDir = MultipleServerDirMap.convertBaseDir(prefix, properties.getProperty(PropertyKeyConst.SERVER_ADDR))
+                + suffix;
     }
     
     private boolean isLoadCacheAtStart(Properties properties) {
@@ -203,7 +200,7 @@ public class ServiceInfoHolder implements Closeable {
         Set<Instance> modHosts = new HashSet<>();
         Set<Instance> newHosts = new HashSet<>();
         Set<Instance> remvHosts = new HashSet<>();
-        
+
         List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(
                 newHostMap.entrySet());
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
