@@ -51,6 +51,9 @@ public class AbstractNamingClientProxyTest {
     @Mock
     private SecurityProxy sc;
     
+    /**
+     * test get security headers for accessToken.
+     */
     @Test
     public void testGetSecurityHeadersForAccessToken() {
         AbstractNamingClientProxy proxy = new MockNamingClientProxy(sc);
