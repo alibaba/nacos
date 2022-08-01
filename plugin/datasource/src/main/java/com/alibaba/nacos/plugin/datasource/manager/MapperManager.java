@@ -1,6 +1,23 @@
+/*
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.plugin.datasource.manager;
 
-import com.alibaba.nacos.plugin.datasource.mapper.BaseMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.base.BaseMapper;
+import jdk.nashorn.internal.runtime.options.Option;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +28,7 @@ import java.util.Map;
  * @author hyx
  **/
 
-public class MapperManager {
+public class MapperManager implements Manager {
     
     /**
      * The MapperManager instance.
@@ -42,14 +59,13 @@ public class MapperManager {
      * Load initial.
      */
     private void init() {
-        return;
     }
     
     /**
      * Get the implementation class of BaseMapper.
      * @return The implementation class of BaseMapper.
      */
-    private BaseMapper getMapper(Class<? extends BaseMapper> mapper) {
+    private Option<? extends BaseMapper> findMapper(Class<? extends BaseMapper> mapper) {
         return null;
     }
     
@@ -60,5 +76,15 @@ public class MapperManager {
      */
     private BaseMapper addMapper(BaseMapper mapper) {
         return null;
+    }
+    
+    @Override
+    public boolean open() {
+        return false;
+    }
+    
+    @Override
+    public boolean close() {
+        return false;
     }
 }
