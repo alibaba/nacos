@@ -62,18 +62,50 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
-            MetricsMonitor.incrementInstanceCount();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                incrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.incrementInstanceCount();
+            }
         }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
         return true;
     }
     
+    /**
+     * increment IpCount when use batchRegister.
+     * @param instancePublishInfo must be BatchInstancePublishInfo
+     */
+    public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        for (int i = 0; i < instancePublishInfos.size(); i++) {
+            MetricsMonitor.incrementInstanceCount();
+        }
+    }
+    
+    /**
+     * decrement IpCount when use batchRegister.
+     * @param instancePublishInfo must be BatchInstancePublishInfo
+     */
+    public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        for (int i = 0; i < instancePublishInfos.size(); i++) {
+            MetricsMonitor.decrementInstanceCount();
+        }
+    }
+    
     @Override
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
-            MetricsMonitor.decrementInstanceCount();
+            if (result instanceof BatchInstancePublishInfo) {
+                decrementIpCountWithBatchRegister(result);
+            } else {
+                MetricsMonitor.decrementInstanceCount();
+            }
             NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
         Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
@@ -160,7 +192,22 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public void release() {
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
-        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
+        releaseWithBatchRegister();
+    }
+    
+    private void releaseWithBatchRegister() {
+        Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
+        Collection<Subscriber> subscriberCollection = subscribers.values();
+        
+        for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                decrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
+            }
+        }
+        for (int i = 0; i < subscriberCollection.size(); i++) {
+            MetricsMonitor.decrementSubscribeCount();
+        }
     }
 }
