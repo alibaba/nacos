@@ -192,13 +192,9 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public void release() {
-        releaseWithBatchRegister();
-    }
-    
-    private void releaseWithBatchRegister() {
         Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
         Collection<Subscriber> subscriberCollection = subscribers.values();
-        
+    
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
                 decrementIpCountWithBatchRegister(instancePublishInfo);
@@ -210,4 +206,5 @@ public abstract class AbstractClient implements Client {
             MetricsMonitor.decrementSubscribeCount();
         }
     }
+    
 }
