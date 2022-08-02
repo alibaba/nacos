@@ -253,7 +253,8 @@ public class FailoverReactor implements Closeable {
         
         @Override
         public void run() {
-            Map<String, ServiceInfo> map = serviceInfoHolder.getServiceInfoMap();
+            // Filter old dirty data
+            Map<String, ServiceInfo> map = serviceInfoHolder.readCache();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
                 if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
