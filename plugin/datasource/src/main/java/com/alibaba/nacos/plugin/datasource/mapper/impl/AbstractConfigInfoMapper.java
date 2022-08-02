@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.manager.DataSourceManager;
 import com.alibaba.nacos.plugin.datasource.mapper.base.ConfigInfoMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -76,7 +77,7 @@ public class AbstractConfigInfoMapper implements ConfigInfoMapper {
     
     @Override
     public String tableName() {
-        return null;
+        return TableConstant.CONFIG_INFO;
     }
     
     @Override

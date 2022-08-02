@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.HisConfigInfoMapper;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * The abstract HisConfigInfoMapper.
@@ -42,6 +46,46 @@ public class AbstractHisConfigInfoMapper implements HisConfigInfoMapper {
     @Override
     public Integer insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
             Timestamp time, String ops) {
+        return null;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.HIS_CONFIG_INFO;
+    }
+    
+    @Override
+    public Integer insert(ConfigHistoryInfo var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(ConfigHistoryInfo var1) {
+        return null;
+    }
+    
+    @Override
+    public ConfigHistoryInfo select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List<ConfigHistoryInfo> selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page<ConfigHistoryInfo> selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
         return null;
     }
 }

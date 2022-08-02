@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.ConfigTagsRelationMapper;
+
+import java.util.List;
 
 /**
  * The abstract ConfigTagsRelationMapper.
@@ -39,6 +43,46 @@ public class AbstractConfigTagsRelationMapper implements ConfigTagsRelationMappe
     
     @Override
     public Integer removeTagByIdAtomic(long id) {
+        return null;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.CONFIG_TAGS_RELATION;
+    }
+    
+    @Override
+    public Integer insert(Object var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(Object var1) {
+        return null;
+    }
+    
+    @Override
+    public Object select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
         return null;
     }
 }

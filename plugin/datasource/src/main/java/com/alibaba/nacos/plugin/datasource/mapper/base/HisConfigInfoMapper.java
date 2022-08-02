@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.base;
 
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 
 import java.sql.Timestamp;
@@ -26,7 +27,7 @@ import java.sql.Timestamp;
  * @author hyx
  **/
 
-public interface HisConfigInfoMapper {
+public interface HisConfigInfoMapper extends BaseMapper<ConfigHistoryInfo> {
     /**
      * Delete data before startTime.
      *

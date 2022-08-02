@@ -17,10 +17,14 @@
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.ConfigInfoBetaMapper;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * The abstract ConfigInfoBetaMapper.
@@ -56,6 +60,46 @@ public class AbstractConfigInfoBetaMapper implements ConfigInfoBetaMapper {
     
     @Override
     public ConfigInfoBetaWrapper findConfigInfo4Beta(String dataId, String group, String tenant) {
+        return null;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.CONFIG_INFO_BETA;
+    }
+    
+    @Override
+    public Integer insert(ConfigInfo4Beta var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(ConfigInfo4Beta var1) {
+        return null;
+    }
+    
+    @Override
+    public ConfigInfo4Beta select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List<ConfigInfo4Beta> selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page<ConfigInfo4Beta> selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
         return null;
     }
 }

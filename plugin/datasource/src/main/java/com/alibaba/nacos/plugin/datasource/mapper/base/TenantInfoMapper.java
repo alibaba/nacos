@@ -26,7 +26,7 @@ import java.util.List;
  * @author hyx
  **/
 
-public interface TenantInfoMapper {
+public interface TenantInfoMapper extends BaseMapper<TenantInfo> {
     /**
      * insert tenant info.
      *

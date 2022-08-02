@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
+import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.ConfigInfoAggrMapper;
 
 import java.util.List;
@@ -61,5 +64,45 @@ public class AbstractConfigInfoAggrMapper implements ConfigInfoAggrMapper {
     public boolean replaceAggr(String dataId, String group, String tenant, Map<String, String> datumMap,
             String appName) {
         return false;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.CONFIG_INFO_AGGR;
+    }
+    
+    @Override
+    public Integer insert(ConfigInfoAggr var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(ConfigInfoAggr var1) {
+        return null;
+    }
+    
+    @Override
+    public ConfigInfoAggr select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List<ConfigInfoAggr> selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page<ConfigInfoAggr> selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
+        return null;
     }
 }

@@ -28,7 +28,7 @@ import java.sql.Timestamp;
  * @author hyx
  **/
 
-public interface ConfigInfoBetaMapper {
+public interface ConfigInfoBetaMapper extends BaseMapper<ConfigInfo4Beta> {
     
     /**
      * Add beta configuration information and publish data change events.

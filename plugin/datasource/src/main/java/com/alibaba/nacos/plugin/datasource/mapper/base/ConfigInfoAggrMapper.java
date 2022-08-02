@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.base;
 
+import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
+
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +27,7 @@ import java.util.Map;
  * @author hyx
  **/
 
-public interface ConfigInfoAggrMapper {
+public interface ConfigInfoAggrMapper extends BaseMapper<ConfigInfoAggr> {
     /**
      * Add data before aggregation to the database, select -> update or insert .
      *

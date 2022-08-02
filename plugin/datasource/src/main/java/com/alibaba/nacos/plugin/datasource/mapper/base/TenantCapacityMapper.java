@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
  * @author hyx
  **/
 
-public interface TenantCapacityMapper {
+public interface TenantCapacityMapper extends BaseMapper<TenantCapacity> {
     
     /**
      * Get TenantCapacity by tenantId.

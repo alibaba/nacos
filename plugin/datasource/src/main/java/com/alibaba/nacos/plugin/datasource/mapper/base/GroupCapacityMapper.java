@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
  * @author hyx
  **/
 
-public interface GroupCapacityMapper {
+public interface GroupCapacityMapper extends BaseMapper<GroupCapacity> {
     
     /**
      * Get GroupCapacity by groupId.

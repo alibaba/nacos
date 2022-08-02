@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper.base;
  * @author hyx
  **/
 
-public interface ConfigTagsRelationMapper {
+public interface ConfigTagsRelationMapper extends BaseMapper {
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
      *

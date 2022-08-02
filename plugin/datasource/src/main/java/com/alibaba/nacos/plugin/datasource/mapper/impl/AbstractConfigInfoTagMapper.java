@@ -17,7 +17,10 @@
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.ConfigInfoTagMapper;
 
 import java.sql.Timestamp;
@@ -61,5 +64,45 @@ public class AbstractConfigInfoTagMapper implements ConfigInfoTagMapper {
     public boolean removeConfigInfoTag(String dataId, String group, String tenant, String tag, String srcIp,
             String srcUser) {
         return false;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.CONFIG_INFO_TAG;
+    }
+    
+    @Override
+    public Integer insert(ConfigInfo4Tag var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(ConfigInfo4Tag var1) {
+        return null;
+    }
+    
+    @Override
+    public ConfigInfo4Tag select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List<ConfigInfo4Tag> selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page<ConfigInfo4Tag> selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
+        return null;
     }
 }

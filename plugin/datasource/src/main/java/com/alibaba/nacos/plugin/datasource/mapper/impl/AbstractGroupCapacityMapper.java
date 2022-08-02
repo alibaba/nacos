@@ -16,8 +16,12 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.GroupCapacityMapper;
+
+import java.util.List;
 
 /**
  * The abstract GroupCapacityMapper.
@@ -67,5 +71,45 @@ public class AbstractGroupCapacityMapper implements GroupCapacityMapper {
     @Override
     public boolean deleteGroupCapacity(String group) {
         return false;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.GROUP_CAPACITY;
+    }
+    
+    @Override
+    public Integer insert(GroupCapacity var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(GroupCapacity var1) {
+        return null;
+    }
+    
+    @Override
+    public GroupCapacity select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List<GroupCapacity> selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page<GroupCapacity> selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
+        return null;
     }
 }

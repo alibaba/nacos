@@ -29,7 +29,7 @@ import java.util.List;
  * @author hyx
  **/
 
-public interface ConfigInfoTagMapper {
+public interface ConfigInfoTagMapper extends BaseMapper<ConfigInfo4Tag> {
     
     /**
      * Update tag configuration information.

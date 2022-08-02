@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.TenantInfoMapper;
 
 import java.util.List;
@@ -53,5 +55,45 @@ public class AbstractTenantInfoMapper implements TenantInfoMapper {
     @Override
     public boolean removeTenantInfoAtomic(String kp, String tenantId) {
         return false;
+    }
+    
+    @Override
+    public String tableName() {
+        return TableConstant.TENANT_INFO;
+    }
+    
+    @Override
+    public Integer insert(TenantInfo var1) {
+        return null;
+    }
+    
+    @Override
+    public Integer update(TenantInfo var1) {
+        return null;
+    }
+    
+    @Override
+    public TenantInfo select(Long id) {
+        return null;
+    }
+    
+    @Override
+    public List<TenantInfo> selectAll() {
+        return null;
+    }
+    
+    @Override
+    public Page<TenantInfo> selectPage(int pageNo, int pageSize) {
+        return null;
+    }
+    
+    @Override
+    public Integer delete(Long id) {
+        return null;
+    }
+    
+    @Override
+    public Integer selectCount() {
+        return null;
     }
 }
