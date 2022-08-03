@@ -63,7 +63,7 @@ public abstract class AbstractClient implements Client {
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                incrementIpCountWithBatchRegister(instancePublishInfo);
+                MetricsMonitor.incrementIpCountWithBatchRegister(instancePublishInfo);
             } else {
                 MetricsMonitor.incrementInstanceCount();
             }
@@ -73,32 +73,12 @@ public abstract class AbstractClient implements Client {
         return true;
     }
     
-    /**
-     * increment IpCount when use batchRegister.
-     * @param instancePublishInfo must be BatchInstancePublishInfo
-     */
-    public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
-        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
-        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
-        MetricsMonitor.getIpCountMonitor().addAndGet(instancePublishInfos.size());
-    }
-    
-    /**
-     * decrement IpCount when use batchRegister.
-     * @param instancePublishInfo must be BatchInstancePublishInfo
-     */
-    public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
-        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
-        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * instancePublishInfos.size());
-    }
-    
     @Override
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
             if (result instanceof BatchInstancePublishInfo) {
-                decrementIpCountWithBatchRegister(result);
+                MetricsMonitor.decrementIpCountWithBatchRegister(result);
             } else {
                 MetricsMonitor.decrementInstanceCount();
             }
@@ -191,7 +171,7 @@ public abstract class AbstractClient implements Client {
         Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                decrementIpCountWithBatchRegister(instancePublishInfo);
+                MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
             } else {
                 MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
             }
