@@ -179,7 +179,7 @@ public class MetricsMonitor {
     }
     
     /**
-     * increment IpCount when use batchRegister.
+     * increment IpCount when use batchRegister instance.
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
     public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
@@ -189,7 +189,7 @@ public class MetricsMonitor {
     }
     
     /**
-     * decrement IpCount when use batchRegister.
+     * decrement IpCount when use batchRegister instance.
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
     public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
