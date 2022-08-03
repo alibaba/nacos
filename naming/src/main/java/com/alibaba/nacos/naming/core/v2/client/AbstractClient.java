@@ -80,9 +80,7 @@ public abstract class AbstractClient implements Client {
     public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
         BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
         List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
-        for (int i = 0; i < instancePublishInfos.size(); i++) {
-            MetricsMonitor.incrementInstanceCount();
-        }
+        MetricsMonitor.getIpCountMonitor().addAndGet(instancePublishInfos.size());
     }
     
     /**
@@ -92,9 +90,7 @@ public abstract class AbstractClient implements Client {
     public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
         BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
         List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
-        for (int i = 0; i < instancePublishInfos.size(); i++) {
-            MetricsMonitor.decrementInstanceCount();
-        }
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * instancePublishInfos.size());
     }
     
     @Override
@@ -193,8 +189,6 @@ public abstract class AbstractClient implements Client {
     @Override
     public void release() {
         Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
-        Collection<Subscriber> subscriberCollection = subscribers.values();
-    
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
                 decrementIpCountWithBatchRegister(instancePublishInfo);
@@ -202,9 +196,7 @@ public abstract class AbstractClient implements Client {
                 MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
             }
         }
-        for (int i = 0; i < subscriberCollection.size(); i++) {
-            MetricsMonitor.decrementSubscribeCount();
-        }
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
     }
     
 }
