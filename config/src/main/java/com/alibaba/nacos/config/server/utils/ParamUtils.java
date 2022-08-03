@@ -74,14 +74,14 @@ public class ParamUtils {
         }
         return false;
     }
-    
+
     /**
      * Check the parameter.
      */
     public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
         if (StringUtils.isBlank(dataId) || !isValid(dataId.trim())) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid dataId : " + dataId);
-        } else if (StringUtils.isBlank(group) || !isValid(group)) {
+        } else if (StringUtils.isBlank(group) || !isValid(group) || group.contains(".")) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid group : " + group);
         } else if (StringUtils.isBlank(datumId) || !isValid(datumId)) {
             throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId : " + datumId);
