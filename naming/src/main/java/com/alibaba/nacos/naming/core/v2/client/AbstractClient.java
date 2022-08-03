@@ -62,7 +62,11 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
-            MetricsMonitor.incrementInstanceCount();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.incrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.incrementInstanceCount();
+            }
         }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
@@ -73,7 +77,11 @@ public abstract class AbstractClient implements Client {
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
-            MetricsMonitor.decrementInstanceCount();
+            if (result instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.decrementIpCountWithBatchRegister(result);
+            } else {
+                MetricsMonitor.decrementInstanceCount();
+            }
             NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
         Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
@@ -160,7 +168,15 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public void release() {
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
-        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
+        Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
+        for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
+            }
+        }
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
     }
+    
 }
