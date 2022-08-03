@@ -17,11 +17,7 @@
 package com.alibaba.nacos.console.exception;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.exception.api.NacosApiBadRequestException;
-import com.alibaba.nacos.api.exception.api.NacosApiConflictException;
-import com.alibaba.nacos.api.exception.api.NacosApiForbiddenException;
-import com.alibaba.nacos.api.exception.api.NacosApiInternalServerErrorException;
-import com.alibaba.nacos.api.exception.api.NacosApiNotFoundException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -31,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeException;
@@ -67,11 +64,10 @@ public class NacosApiExceptionHandler {
         return msg.substring(0, idx);
     }
     
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(NacosApiBadRequestException.class)
-    public Result<String> handleNacosApiBadRequestException(NacosApiBadRequestException e) {
+    @ExceptionHandler(NacosApiException.class)
+    public ResponseEntity<Result<String>> handleNacosApiException(NacosApiException e) {
         LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg()));
+        return ResponseEntity.status(e.getStatusCode()).body(new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg())));
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -117,38 +113,10 @@ public class NacosApiExceptionHandler {
     }
     
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    @ExceptionHandler(NacosApiForbiddenException.class)
-    public Result<String> handleNacosApiForbiddenException(NacosApiForbiddenException e) {
-        LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg()));
-    }
-    
-    @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(AccessException.class)
     public Result<String> handleAccessException(AccessException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
         return Result.failure(ErrorCode.ACCESS_DENIED, normErrMsg(e.getErrMsg()));
-    }
-    
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(NacosApiNotFoundException.class)
-    public Result<String> handleNacosApiNotFoundException(NacosApiNotFoundException e) {
-        LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg()));
-    }
-    
-    @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler(NacosApiConflictException.class)
-    public Result<String> handleNacosApiConflictException(NacosApiConflictException e) {
-        LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg()));
-    }
-    
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    @ExceptionHandler(NacosApiInternalServerErrorException.class)
-    public Result<String> handleNacosApiInternalServerErrorException(NacosApiInternalServerErrorException e) {
-        LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
-        return new Result<>(e.getErrCode(), e.getErrAbstract(), normErrMsg(e.getErrMsg()));
     }
     
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

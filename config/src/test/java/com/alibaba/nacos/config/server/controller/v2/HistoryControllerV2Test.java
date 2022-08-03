@@ -30,8 +30,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -56,11 +54,11 @@ import static org.mockito.Mockito.when;
  */
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
-public class HistoryV2ControllerTest {
+public class HistoryControllerV2Test {
+    
     @InjectMocks
-    HistoryV2Controller historyV2Controller;
+    HistoryControllerV2 historyControllerV2;
     
     private MockMvc mockmvc;
     
@@ -74,8 +72,8 @@ public class HistoryV2ControllerTest {
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(historyV2Controller, "persistService", persistService);
-        mockmvc = MockMvcBuilders.standaloneSetup(historyV2Controller).build();
+        ReflectionTestUtils.setField(historyControllerV2, "persistService", persistService);
+        mockmvc = MockMvcBuilders.standaloneSetup(historyControllerV2).build();
     }
     
     @Test

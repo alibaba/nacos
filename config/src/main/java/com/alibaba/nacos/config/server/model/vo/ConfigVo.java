@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.config.server.model.vo;
 
-import com.alibaba.nacos.api.exception.api.NacosApiBadRequestException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.springframework.http.HttpStatus;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Config.
+ *
  * @author dongyafei
  * @date 2022/7/24
  */
@@ -216,15 +218,19 @@ public class ConfigVo implements Serializable {
     
     /**
      * Validate.
-     * @throws NacosApiBadRequestException NacosApiBadRequestException.
+     *
+     * @throws NacosApiException NacosApiException.
      */
-    public void validate() throws NacosApiBadRequestException {
+    public void validate() throws NacosApiException {
         if (StringUtils.isBlank(dataId)) {
-            throw new NacosApiBadRequestException(ErrorCode.PARAMETER_MISSING, "Required parameter 'dataId' type String is not present");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'dataId' type String is not present");
         } else if (StringUtils.isBlank(group)) {
-            throw new NacosApiBadRequestException(ErrorCode.PARAMETER_MISSING, "Required parameter 'group' type String is not present");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'group' type String is not present");
         } else if (StringUtils.isBlank(content)) {
-            throw new NacosApiBadRequestException(ErrorCode.PARAMETER_MISSING, "Required parameter 'content' type String is not present");
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "Required parameter 'content' type String is not present");
         }
     }
 }

@@ -20,8 +20,7 @@ import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.annotation.NacosApiResponseWrap;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiBadRequestException;
-import com.alibaba.nacos.api.exception.api.NacosApiForbiddenException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.MapUtil;
@@ -32,13 +31,11 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.vo.ConfigListenerVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -48,6 +45,7 @@ import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,7 +60,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -75,15 +72,15 @@ import java.util.Map;
 @NacosApi
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_V2_PATH)
-public class ConfigV2Controller {
+public class ConfigControllerV2 {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigV2Controller.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigControllerV2.class);
     
     private final ConfigServletInner inner;
     
     private final PersistService persistService;
     
-    public ConfigV2Controller(ConfigServletInner inner, PersistService persistService) {
+    public ConfigControllerV2(ConfigServletInner inner, PersistService persistService) {
         this.inner = inner;
         this.persistService = persistService;
     }
@@ -93,7 +90,7 @@ public class ConfigV2Controller {
      *
      * @throws ServletException            ServletException.
      * @throws IOException                 IOException.
-     * @throws NacosApiBadRequestException NacosApiBadRequestException.
+     * @throws NacosApiException NacosApiException.
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
@@ -101,7 +98,7 @@ public class ConfigV2Controller {
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag)
-            throws NacosApiBadRequestException, IOException, ServletException {
+            throws NacosApiException, IOException, ServletException {
         // check tenant
         ParamUtils.checkTenantV2(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
@@ -116,14 +113,13 @@ public class ConfigV2Controller {
     /**
      * Adds or updates non-aggregated data.
      *
-     * @throws NacosApiBadRequestException NacosApiBadRequestException.
-     * @throws NacosApiForbiddenException  NacosApiForbiddenException.
+     * @throws NacosApiException NacosApiException.
      */
     @NacosApiResponseWrap
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public Boolean publishConfig(@RequestBody ConfigVo configVo, HttpServletRequest request)
-            throws NacosApiBadRequestException, NacosApiForbiddenException {
+            throws NacosApiException {
         
         configVo.validate();
         final String srcIp = RequestUtil.getRemoteIp(request);
@@ -165,7 +161,7 @@ public class ConfigV2Controller {
         if (AggrWhitelist.isAggrDataId(dataId)) {
             LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
                     dataId, group);
-            throw new NacosApiForbiddenException(ErrorCode.INVALID_DATA_ID, "dataId:" + dataId + " is aggr");
+            throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID, "dataId:" + dataId + " is aggr");
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();
@@ -210,7 +206,7 @@ public class ConfigV2Controller {
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "tag", required = false) String tag) throws NacosApiBadRequestException {
+            @RequestParam(value = "tag", required = false) String tag) throws NacosApiException {
         // check tenant
         ParamUtils.checkTenantV2(tenant);
         ParamUtils.checkParamV2(dataId, group, "datumId", "rm");
@@ -228,35 +224,5 @@ public class ConfigV2Controller {
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
         return true;
-    }
-    
-    /**
-     * The client listens for configuration changes.
-     */
-    @PostMapping(value = "/listener")
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public void listener(@RequestBody List<ConfigListenerVo> configListenerVoList, HttpServletRequest request,
-            HttpServletResponse response) throws NacosApiBadRequestException, ServletException, IOException {
-        
-        if (null == configListenerVoList || configListenerVoList.size() == 0) {
-            throw new NacosApiBadRequestException(ErrorCode.PARAMETER_MISSING, "required config listener is null");
-        }
-        StringBuilder probeModify = new StringBuilder();
-        for (ConfigListenerVo configListenerVo : configListenerVoList) {
-            // check parameter.
-            configListenerVo.validate();
-            probeModify.append(configListenerVo.toPacketString());
-        }
-        request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
-        
-        Map<String, String> clientMd5Map;
-        try {
-            clientMd5Map = MD5Util.getClientMd5Map(probeModify.toString());
-        } catch (Throwable e) {
-            throw new IllegalArgumentException("invalid probeModify");
-        }
-        
-        // do long-polling
-        inner.doPollingConfig(request, response, clientMd5Map, probeModify.length(), true);
     }
 }

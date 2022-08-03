@@ -83,18 +83,10 @@ public class ConfigServletInner {
      */
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
             Map<String, String> clientMd5Map, int probeRequestSize) throws IOException {
-        return doPollingConfig(request, response, clientMd5Map, probeRequestSize, false);
-    }
-    
-    /**
-     * long polling the config.
-     */
-    public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-            Map<String, String> clientMd5Map, int probeRequestSize, boolean isV2) throws IOException {
         
         // Long polling.
         if (LongPollingService.isSupportLongPolling(request)) {
-            longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize, isV2);
+            longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
         
@@ -124,10 +116,6 @@ public class ConfigServletInner {
         response.setDateHeader("Expires", 0);
         response.setHeader("Cache-Control", "no-cache,no-store");
         response.setStatus(HttpServletResponse.SC_OK);
-        if (isV2) {
-            response.setContentType(MediaType.APPLICATION_JSON);
-            response.getWriter().println(JacksonUtils.toJson(Result.success("")));
-        }
         return HttpServletResponse.SC_OK + "";
     }
     
@@ -262,9 +250,6 @@ public class ConfigServletInner {
                             // no data",
                             // new Object[]{clientIp, groupKey});
                             
-                            // response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                            // response.getWriter().println("config data not exist");
-                            // return HttpServletResponse.SC_NOT_FOUND + "";
                             return get404Result(response, isV2);
                         }
                     }
@@ -337,9 +322,6 @@ public class ConfigServletInner {
         } else {
             
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-            // response.setStatus(HttpServletResponse.SC_CONFLICT);
-            // response.getWriter().println("requested file is being modified, please try later.");
-            // return HttpServletResponse.SC_CONFLICT + "";
             return get409Result(response, isV2);
             
         }

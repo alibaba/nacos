@@ -45,11 +45,11 @@ import java.util.Objects;
 @NacosApi
 @RestController
 @RequestMapping(Constants.HISTORY_CONTROLLER_V2_PATH)
-public class HistoryV2Controller {
+public class HistoryControllerV2 {
     
     private final PersistService persistService;
     
-    public HistoryV2Controller(PersistService persistService) {
+    public HistoryControllerV2(PersistService persistService) {
         this.persistService = persistService;
     }
     

@@ -33,6 +33,11 @@ public class NacosApiException extends NacosException {
     private static final long serialVersionUID = 2245627968556056573L;
     
     /**
+     * http status code.
+     */
+    private int statusCode;
+    
+    /**
      * abstract description for error.
      */
     private String errAbstract;
@@ -40,14 +45,20 @@ public class NacosApiException extends NacosException {
     public NacosApiException() {
     }
     
-    public NacosApiException(ErrorCode errorCode, Throwable throwable, String message) {
+    public NacosApiException(int statusCode, ErrorCode errorCode, Throwable throwable, String message) {
         super(errorCode.getCode(), message, throwable);
+        this.statusCode = statusCode;
         this.errAbstract = errorCode.getMsg();
     }
     
-    public NacosApiException(ErrorCode errorCode, String message) {
+    public NacosApiException(int statusCode, ErrorCode errorCode, String message) {
         super(errorCode.getCode(), message);
+        this.statusCode = statusCode;
         this.errAbstract = errorCode.getMsg();
+    }
+    
+    public int getStatusCode() {
+        return statusCode;
     }
     
     public String getErrAbstract() {
