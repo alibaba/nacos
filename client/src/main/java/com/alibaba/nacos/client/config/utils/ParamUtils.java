@@ -85,7 +85,7 @@ public class ParamUtils {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
-        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
+        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group) || group.contains(".")) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
@@ -101,7 +101,7 @@ public class ParamUtils {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
-        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
+        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group) || group.contains(".")) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
@@ -118,7 +118,7 @@ public class ParamUtils {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
-        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
+        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group) || group.contains(".")) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
         if (StringUtils.isBlank(datumId) || !ParamUtils.isValid(datumId)) {
@@ -142,7 +142,7 @@ public class ParamUtils {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
             }
         }
-        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
+        if (StringUtils.isBlank(group) || !ParamUtils.isValid(group) || group.contains(".")) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
