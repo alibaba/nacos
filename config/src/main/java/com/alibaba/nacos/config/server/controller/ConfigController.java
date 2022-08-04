@@ -510,10 +510,14 @@ public class ConfigController {
                 }
                 String metaDataId = ci.getDataId();
                 if (metaDataId.contains(".")) {
-                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf(".")) + "~" + metaDataId.substring(
-                            metaDataId.lastIndexOf(".") + 1);
+                    metaDataId = metaDataId.replaceAll("\\.", "~");
                 }
-                metaData.append(ci.getGroup()).append('.').append(metaDataId).append(".app=")
+                String metaGroup = ci.getGroup();
+                if (metaGroup != null && metaGroup.contains(".")) {
+                    //转译点
+                    metaGroup = metaGroup.replaceAll("\\.", "~");
+                }
+                metaData.append(metaGroup).append('.').append(metaDataId).append(".app=")
                         // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
             }
@@ -697,12 +701,18 @@ public class ConfigController {
                 }
                 String group = groupAdnDataId[0];
                 String dataId = groupAdnDataId[1];
-                String tempDataId = dataId;
-                if (tempDataId.contains(".")) {
-                    tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(
-                            tempDataId.lastIndexOf(".") + 1);
+
+                String metaDataId = dataId;
+                String metaGroup = group;
+                if (metaDataId.contains(".")) {
+                    metaDataId = metaDataId.replaceAll("\\.", "~");
                 }
-                final String metaDataId = group + "." + tempDataId + ".app";
+                if (metaGroup != null && metaGroup.contains(".")) {
+                    //转译点
+                    metaGroup = metaGroup.replaceAll("\\.", "~");
+                }
+
+                final String metaDataKey = metaGroup + "." + metaDataId + ".app";
     
                 //encrypted
                 String content = item.getItemData();
@@ -713,8 +723,8 @@ public class ConfigController {
                 ci.setGroup(group);
                 ci.setDataId(dataId);
                 ci.setContent(content);
-                if (metaDataMap.get(metaDataId) != null) {
-                    ci.setAppName(metaDataMap.get(metaDataId));
+                if (metaDataMap.get(metaDataKey) != null) {
+                    ci.setAppName(metaDataMap.get(metaDataKey));
                 }
                 ci.setTenant(namespace);
                 ci.setEncryptedDataKey(pair.getFirst());
