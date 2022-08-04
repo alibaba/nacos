@@ -45,6 +45,8 @@ public abstract class AbstractClient implements Client {
     
     protected volatile long lastUpdatedTime;
     
+    protected ClientAttributes attributes;
+    
     public AbstractClient() {
         lastUpdatedTime = System.currentTimeMillis();
     }
@@ -177,5 +179,16 @@ public abstract class AbstractClient implements Client {
             }
         }
         MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
+    }
+    
+    /**
+     * get client attributes.
+     */
+    public ClientAttributes getClientAttributes() {
+        return attributes;
+    }
+    
+    public void setAttributes(ClientAttributes attributes) {
+        this.attributes = attributes;
     }
 }
