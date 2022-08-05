@@ -444,6 +444,7 @@ const I18N_CONF = {
     dialogTitle: 'Content Comparison',
     dialogCurrentArea: 'Current Value',
     dialogOriginalArea: 'Original Value',
+    publishFailed403: 'Publish failed. No operation permission',
   },
   EditorNameSpace: {
     notice: 'Notice',
