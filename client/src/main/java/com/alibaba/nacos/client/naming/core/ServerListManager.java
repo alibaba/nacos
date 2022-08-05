@@ -58,7 +58,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  */
 public class ServerListManager implements ServerListFactory, Closeable {
     
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate;
     
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
@@ -82,7 +82,27 @@ public class ServerListManager implements ServerListFactory, Closeable {
         this(properties, null);
     }
     
+    /**
+     * just for testing.
+     *
+     * @param properties properties
+     * @param namespace namespace
+     * @param nacosRestTemplate mock
+     */
+    ServerListManager(Properties properties, String namespace, NacosRestTemplate nacosRestTemplate) {
+        this.nacosRestTemplate = nacosRestTemplate;
+        this.namespace = namespace;
+        initServerAddr(properties);
+        List<String> realServerList;
+        if (null != (realServerList = getServerList()) && !realServerList.isEmpty()) {
+            currentIndex.set(new Random().nextInt(realServerList.size()));
+        } else {
+            throw new NacosLoadException("serverList is empty,please check configuration");
+        }
+    }
+    
     public ServerListManager(Properties properties, String namespace) {
+        this.nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
         this.namespace = namespace;
         initServerAddr(properties);
         if (!serverList.isEmpty()) {

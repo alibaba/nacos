@@ -20,12 +20,10 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -45,22 +43,18 @@ public class ServerListManagerTest {
         Assert.assertEquals("127.0.0.1:8849", serverList.get(1));
     }
     
-    @Ignore
     @Test
     public void testConstructWithEndpoint() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
-        final ServerListManager serverListManager = new ServerListManager(properties);
         NacosRestTemplate mock = Mockito.mock(NacosRestTemplate.class);
         
-        HttpRestResult<Object> a = new HttpRestResult<Object>();
+        HttpRestResult<Object> a = new HttpRestResult<>();
         a.setData("127.0.0.1:8848");
         a.setCode(200);
         Mockito.when(mock.get(any(), any(), any(), any())).thenReturn(a);
         
-        final Field nacosRestTemplate = ServerListManager.class.getDeclaredField("nacosRestTemplate");
-        nacosRestTemplate.setAccessible(true);
-        nacosRestTemplate.set(serverListManager, mock);
+        final ServerListManager serverListManager = new ServerListManager(properties, null, mock);
         TimeUnit.SECONDS.sleep(31);
         final List<String> serverList = serverListManager.getServerList();
         Assert.assertEquals(1, serverList.size());
