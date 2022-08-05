@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.datasource.mapper.base;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -69,24 +68,10 @@ public interface ConfigInfoAggrMapper extends BaseMapper<ConfigInfoAggr> {
      * @param dataId    dataId
      * @param group     group
      * @param tenant    tenant
-     * @param datumList datumList
+     * @param datumString datum string
      * @return {@code true} if remove success
      */
-    boolean batchRemoveAggr(final String dataId, final String group, final String tenant, final List<String> datumList);
-    
-    /**
-     * Add or update data in batches. Any exception during the transaction will force a TransactionSystemException to be
-     * thrown.
-     *
-     * @param dataId   dataId
-     * @param group    group
-     * @param tenant   tenant
-     * @param appName  app name
-     * @param datumMap datumMap
-     * @return {@code true} if publish success
-     */
-    boolean batchPublishAggr(final String dataId, final String group, final String tenant,
-            final Map<String, String> datumMap, final String appName);
+    Integer batchRemoveAggr(final String dataId, final String group, final String tenant, String datumString);
     
     /**
      * Batch replacement, first delete all the specified DataID+Group data in the aggregation table, and then insert the

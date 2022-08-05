@@ -17,11 +17,11 @@
 package com.alibaba.nacos.plugin.datasource.mapper.impl;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
-import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.plugin.datasource.constant.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.base.ConfigInfoAggrMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.List;
+import java.sql.Timestamp;
 import java.util.Map;
 
 /**
@@ -31,39 +31,58 @@ import java.util.Map;
  * @author hyx
  **/
 
-public class AbstractConfigInfoAggrMapper implements ConfigInfoAggrMapper {
+public abstract class AbstractConfigInfoAggrMapper extends AbstractMapper<ConfigInfoAggr> implements ConfigInfoAggrMapper {
+    
+    private final JdbcTemplate jdbcTemplate = getGetJdbcTemplate();
     
     @Override
     public Integer addAggrConfigInfo(String dataId, String group, String tenant, String datumId, String appName,
             String content) {
-        return null;
+        final Timestamp now = new Timestamp(System.currentTimeMillis());
+        String sql = "SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?  AND datum_id = ?";
+        return jdbcTemplate.update(sql, dataId, group, tenant, datumId, appName, content, now);
     }
     
     @Override
     public Integer removeSingleAggrConfigInfo(String dataId, String group, String tenant, String datumId) {
-        return null;
+        String sql = "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?";
+        return jdbcTemplate.update(sql, ps -> {
+            int index = 1;
+            ps.setString(index++, dataId);
+            ps.setString(index++, group);
+            ps.setString(index++, tenant);
+            ps.setString(index, datumId);
+        });
     }
     
     @Override
     public Integer removeAggrConfigInfo(String dataId, String group, String tenant) {
-        return null;
+        String sql = "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?";
+        return jdbcTemplate.update(sql, ps -> {
+            int index = 1;
+            ps.setString(index++, dataId);
+            ps.setString(index++, group);
+            ps.setString(index, tenant);
+        });
     }
     
     @Override
-    public boolean batchRemoveAggr(String dataId, String group, String tenant, List<String> datumList) {
-        return false;
-    }
-    
-    @Override
-    public boolean batchPublishAggr(String dataId, String group, String tenant, Map<String, String> datumMap,
-            String appName) {
-        return false;
+    public Integer batchRemoveAggr(String dataId, String group, String tenant, String datumString) {
+        String sql =
+                "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN ("
+                        + datumString + ")";
+        return jdbcTemplate.update(sql, dataId, group, tenant);
     }
     
     @Override
     public boolean replaceAggr(String dataId, String group, String tenant, Map<String, String> datumMap,
             String appName) {
-        return false;
+        String sql = "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?) ";
+        for (Map.Entry<String, String> datumEntry : datumMap.entrySet()) {
+            jdbcTemplate.update(sql, dataId, group, tenant, datumEntry.getKey(), appName,
+                    datumEntry.getValue(), new Timestamp(System.currentTimeMillis()));
+        }
+        return true;
     }
     
     @Override
@@ -71,38 +90,4 @@ public class AbstractConfigInfoAggrMapper implements ConfigInfoAggrMapper {
         return TableConstant.CONFIG_INFO_AGGR;
     }
     
-    @Override
-    public Integer insert(ConfigInfoAggr var1) {
-        return null;
-    }
-    
-    @Override
-    public Integer update(ConfigInfoAggr var1) {
-        return null;
-    }
-    
-    @Override
-    public ConfigInfoAggr select(Long id) {
-        return null;
-    }
-    
-    @Override
-    public List<ConfigInfoAggr> selectAll() {
-        return null;
-    }
-    
-    @Override
-    public Page<ConfigInfoAggr> selectPage(int pageNo, int pageSize) {
-        return null;
-    }
-    
-    @Override
-    public Integer delete(Long id) {
-        return null;
-    }
-    
-    @Override
-    public Integer selectCount() {
-        return null;
-    }
 }

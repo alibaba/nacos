@@ -53,19 +53,19 @@ public interface BaseMapper<T> {
      * @param id The pojo's id.
      * @return The pojo which id is the param.
      */
-    T select(Long id);
+    Object select(Long id);
     
     /**
      * Select all T data.
      * @return The all data from the T table.
      */
-    List<T> selectAll();
+    List<Object> selectAll();
     
     /**
      * Pagling search data.
      * @param pageNo   Page number (must be greater than 0)
      * @param pageSize Page size (must be greater than 0)
-     * @return {@link Page} with {@link T} generation
+     * @return {@link Page} with {@link Object} generation
      */
     Page<T> selectPage(final int pageNo, final int pageSize);
     
