@@ -441,6 +441,7 @@ const I18N_CONF = {
     dialogTitle: '内容比较',
     dialogCurrentArea: '当前值',
     dialogOriginalArea: '原始值',
+    publishFailed403: '发布失败,请检查是否有权限',
   },
   EditorNameSpace: {
     notice: '提示',
