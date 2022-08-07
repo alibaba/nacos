@@ -16,92 +16,116 @@
 
 package com.alibaba.nacos.config.server.controller.v2;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.core.env.StandardEnvironment;
-import org.springframework.http.MediaType;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigControllerV2Test {
     
-    @InjectMocks
-    ConfigControllerV2 configControllerV2;
-    
-    private MockMvc mockmvc;
-    
-    @Mock
-    private ServletContext servletContext;
+    private ConfigControllerV2 configControllerV2;
     
     @Mock
     private ConfigServletInner inner;
     
-    @Mock
-    private PersistService persistService;
+    private static final String TEST_DATA_ID = "test";
+    
+    private static final String TEST_GROUP = "test";
+    
+    private static final String TEST_TENANT = "";
+    
+    private static final String TEST_TAG = "";
+    
+    private static final String TEST_CONTENT = "test config";
     
     @Before
     public void setUp() {
-        EnvUtil.setEnvironment(new StandardEnvironment());
-        when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(configControllerV2, "persistService", persistService);
-        ReflectionTestUtils.setField(configControllerV2, "inner", inner);
-        mockmvc = MockMvcBuilders.standaloneSetup(configControllerV2).build();
+        configControllerV2 = new ConfigControllerV2(inner);
     }
     
     @Test
     public void testGetConfig() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        Result<String> stringResult = Result.success(TEST_CONTENT);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH)
-                .param("dataId", "test").param("group", "test").param("tenant", "").param("tag", "");
-    
-        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
-        int statusCode = response.getStatus();
-        Assert.assertEquals(200, statusCode);
+        doAnswer(x -> {
+            x.getArgument(1, HttpServletResponse.class).setStatus(200);
+            x.getArgument(1, HttpServletResponse.class)
+                    .setContentType(com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON);
+            x.getArgument(1, HttpServletResponse.class).getWriter().print(JacksonUtils.toJson(stringResult));
+            return null;
+        }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID),
+                eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), eq(null), anyString(), eq(true));
+        
+        configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_TENANT, TEST_TAG);
+        
+        verify(inner)
+                .doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG),
+                        eq(null), anyString(), eq(true));
+        JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
+        Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
+        String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);
+        assertEquals(200, response.getStatus());
+        assertEquals(ErrorCode.SUCCESS.getCode(), errCode);
+        assertEquals(TEST_CONTENT, actContent);
     }
     
     @Test
     public void testPublishConfig() throws Exception {
         
-        ConfigVo configVo = new ConfigVo("test", "test", "", "test", "", "", "", "", "", "", "", "", "");
+        ConfigVo configVo = new ConfigVo();
+        configVo.setDataId(TEST_DATA_ID);
+        configVo.setGroup(TEST_GROUP);
+        configVo.setTenant(TEST_TENANT);
+        configVo.setContent(TEST_CONTENT);
+        MockHttpServletRequest request = new MockHttpServletRequest();
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_V2_PATH)
-                .contentType(MediaType.APPLICATION_JSON).content(JacksonUtils.toJson(configVo));
+        when(inner.publishConfig(any(HttpServletRequest.class), any(ConfigVo.class), anyString(), eq(true)))
+                .thenReturn(true);
         
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("true", actualValue);
+        Result<Boolean> booleanResult = configControllerV2.publishConfig(configVo, request);
+        
+        verify(inner).publishConfig(any(HttpServletRequest.class), any(ConfigVo.class), anyString(), eq(true));
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
+        assertEquals(true, booleanResult.getData());
     }
     
     @Test
     public void testDeleteConfig() throws Exception {
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_CONTROLLER_V2_PATH)
-                .param("dataId", "test")
-                .param("group", "test")
-                .param("tenant", "")
-                .param("tag", "");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("true", actualValue);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        
+        when(inner.deleteConfig(any(HttpServletRequest.class), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG))).thenReturn(true);
+    
+        Result<Boolean> booleanResult = configControllerV2
+                .deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_TENANT, TEST_TAG);
+    
+        verify(inner).deleteConfig(eq(request),  eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG));
+    
+        assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
+        assertEquals(true, booleanResult.getData());
     }
 }

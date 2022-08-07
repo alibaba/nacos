@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v2;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.annotation.NacosApiResponseWrap;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -64,10 +64,9 @@ public class HistoryControllerV2 {
      * @return the page of history config.
      * @since 2.0.3 add {@link Secured} for history config permission check.
      */
-    @NacosApiResponseWrap
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Page<ConfigHistoryInfo> listConfigHistory(
+    public Result<Page<ConfigHistoryInfo>> listConfigHistory(
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -76,7 +75,9 @@ public class HistoryControllerV2 {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        Page<ConfigHistoryInfo> configHistoryList = persistService
+                .findConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        return Result.success(configHistoryList);
     }
     
     /**
@@ -89,10 +90,9 @@ public class HistoryControllerV2 {
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      */
-    @NacosApiResponseWrap
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigHistoryInfo getConfigHistoryInfo(
+    public Result<ConfigHistoryInfo> getConfigHistoryInfo(
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -110,7 +110,7 @@ public class HistoryControllerV2 {
                 configHistoryInfo.getContent());
         configHistoryInfo.setContent(pair.getSecond());
         
-        return configHistoryInfo;
+        return Result.success(configHistoryInfo);
     }
     
     /**
@@ -123,21 +123,20 @@ public class HistoryControllerV2 {
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      */
-    @NacosApiResponseWrap
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(
+    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) throws AccessException {
         ConfigHistoryInfo configHistoryInfo = persistService.detailPreviousConfigHistory(id);
         if (Objects.isNull(configHistoryInfo)) {
-            return null;
+            return Result.success(null);
         }
         // check if history config match the input
         checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
-        return configHistoryInfo;
+        return Result.success(configHistoryInfo);
     }
     
     /**

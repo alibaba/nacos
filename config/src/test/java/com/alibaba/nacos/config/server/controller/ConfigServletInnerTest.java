@@ -18,9 +18,11 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.vo.ConfigVo;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -47,14 +49,18 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -258,5 +264,48 @@ public class ConfigServletInnerTest {
         Assert.assertEquals(HttpServletResponse.SC_CONFLICT + "", actualValue);
     
         configCacheServiceMockedStatic.close();
+    }
+    
+    @Test
+    public void testPublishConfig() throws Exception {
+    
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        ConfigVo configVo = new ConfigVo();
+        configVo.setDataId("test");
+        configVo.setGroup("test");
+        configVo.setContent("test content");
+        
+        // if betaIps is blank and tag is blank
+        Boolean aResult = configServletInner.publishConfig(request, configVo, "", true);
+        verify(persistService).insertOrUpdate(any(), any(), any(ConfigInfo.class), any(Timestamp.class), any(), anyBoolean());
+        Assert.assertEquals(true, aResult);
+        
+        // if betaIps is blank and tag is not blank
+        configVo.setTag("test tag");
+        Boolean bResult = configServletInner.publishConfig(request, configVo, "", true);
+        verify(persistService).insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any(), any(Timestamp.class), anyBoolean());
+        Assert.assertEquals(true, bResult);
+        
+        // if betaIps is not blank
+        request.addHeader("betaIps", "test-betaIps");
+        Boolean cResult = configServletInner.publishConfig(request, configVo, "", true);
+        verify(persistService).insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any(), any(Timestamp.class), anyBoolean());
+        Assert.assertEquals(true, cResult);
+    }
+    
+    @Test
+    public void testDeleteConfig() throws Exception {
+    
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        
+        // if tag is blank
+        Boolean aResult = configServletInner.deleteConfig(request, "test", "test", "", "");
+        verify(persistService).removeConfigInfo(eq("test"), eq("test"), eq(""), any(), any());
+        Assert.assertEquals(true, aResult);
+    
+        // if tag is not blank
+        Boolean bResult = configServletInner.deleteConfig(request, "test", "test", "", "test");
+        verify(persistService).removeConfigInfoTag(eq("test"), eq("test"), eq(""), eq("test"), any(), any());
+        Assert.assertEquals(true, bResult);
     }
 }

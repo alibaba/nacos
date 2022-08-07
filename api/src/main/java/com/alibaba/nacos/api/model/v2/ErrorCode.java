@@ -180,11 +180,11 @@ public enum ErrorCode {
      */
     SERVER_ERROR(30000, "server error");
     
-    private final int code;
+    private final Integer code;
     
     private final String msg;
     
-    public int getCode() {
+    public Integer getCode() {
         return code;
     }
     
@@ -192,7 +192,7 @@ public enum ErrorCode {
         return msg;
     }
     
-    ErrorCode(int code, String msg) {
+    ErrorCode(Integer code, String msg) {
         this.code = code;
         this.msg = msg;
     }

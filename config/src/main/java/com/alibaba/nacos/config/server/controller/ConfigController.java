@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.DateFormatUtils;
-import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -38,8 +36,8 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.vo.ConfigVo;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -137,16 +135,6 @@ public class ConfigController {
             @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "schema", required = false) String schema) throws NacosException {
         
-        final String srcIp = RequestUtil.getRemoteIp(request);
-        final String requestIpApp = RequestUtil.getAppName(request);
-        if (StringUtils.isBlank(srcUser)) {
-            srcUser = RequestUtil.getSrcUserName(request);
-        }
-        //check type
-        if (!ConfigType.isValidType(type)) {
-            type = ConfigType.getDefaultType().getType();
-        }
-        
         // encrypted
         Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
         content = pair.getSecond();
@@ -155,47 +143,25 @@ public class ConfigController {
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
-        Map<String, Object> configAdvanceInfo = new HashMap<>(10);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configTags);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "desc", desc);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "use", use);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "effect", effect);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "schema", schema);
-        ParamUtils.checkParam(configAdvanceInfo);
+    
+        ConfigVo configVo = new ConfigVo();
+        configVo.setDataId(dataId);
+        configVo.setGroup(group);
+        configVo.setTenant(tenant);
+        configVo.setContent(content);
+        configVo.setTag(tag);
+        configVo.setAppName(appName);
+        configVo.setSrcUser(srcUser);
+        configVo.setConfigTags(configTags);
+        configVo.setDesc(desc);
+        configVo.setUse(use);
+        configVo.setEffect(effect);
+        configVo.setType(type);
+        configVo.setSchema(schema);
         
-        if (AggrWhitelist.isAggrDataId(dataId)) {
-            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", RequestUtil.getRemoteIp(request),
-                    dataId, group);
-            throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
-        }
-        
-        final Timestamp time = TimeUtils.getCurrentTime();
-        String betaIps = request.getHeader("betaIps");
-        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
-        configInfo.setType(type);
         String encryptedDataKey = pair.getFirst();
-        configInfo.setEncryptedDataKey(encryptedDataKey);
-        if (StringUtils.isBlank(betaIps)) {
-            if (StringUtils.isBlank(tag)) {
-                persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
-            } else {
-                persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
-            }
-        } else {
-            // beta publish
-            configInfo.setEncryptedDataKey(encryptedDataKey);
-            persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
-        }
-        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-                InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
-        return true;
+       
+        return inner.publishConfig(request, configVo, encryptedDataKey, false);
     }
     
     /**
@@ -265,19 +231,8 @@ public class ConfigController {
         ParamUtils.checkTenant(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
-        String clientIp = RequestUtil.getRemoteIp(request);
-        String srcUser = RequestUtil.getSrcUserName(request);
-        if (StringUtils.isBlank(tag)) {
-            persistService.removeConfigInfo(dataId, group, tenant, clientIp, srcUser);
-        } else {
-            persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, srcUser);
-        }
-        final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
-                ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-        ConfigChangePublisher.notifyConfigChange(
-                new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
-        return true;
+    
+        return inner.deleteConfig(request, dataId, group, tenant, tag);
     }
     
     /**

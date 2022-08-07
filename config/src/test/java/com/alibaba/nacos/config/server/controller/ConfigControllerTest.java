@@ -53,6 +53,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +63,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -98,6 +100,8 @@ public class ConfigControllerTest {
     
     @Test
     public void testPublishConfig() throws Exception {
+        
+        when(inner.publishConfig(any(HttpServletRequest.class), any(), anyString(), eq(false))).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test")
@@ -158,6 +162,8 @@ public class ConfigControllerTest {
     
     @Test
     public void testDeleteConfig() throws Exception {
+        
+        when(inner.deleteConfig(any(HttpServletRequest.class), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test")
