@@ -97,9 +97,21 @@ public class NacosConfigService implements ConfigService {
     @Override
     public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
             throws NacosException {
-        String content = getConfig(dataId, group, timeoutMs);
-        worker.addTenantListenersWithContent(dataId, group, content, Arrays.asList(listener));
-        return content;
+        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
+        ConfigResponse configResponse = worker.getAgent()
+                .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
+        String content = configResponse.getContent();
+        String encryptedDataKey = configResponse.getEncryptedDataKey();
+        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
+        
+        // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
+        ConfigResponse cr = new ConfigResponse();
+        cr.setDataId(dataId);
+        cr.setGroup(group);
+        cr.setContent(content);
+        cr.setEncryptedDataKey(encryptedDataKey);
+        configFilterChainManager.doFilter(null, cr);
+        return cr.getContent();
     }
     
     @Override
@@ -148,7 +160,11 @@ public class NacosConfigService implements ConfigService {
         cr.setTenant(tenant);
         cr.setGroup(group);
         
-        // use local config first
+        // We first try to use local failover content if exists.
+        // A config content for failover is not created by client program automatically,
+        // but is maintained by user.
+        // This is designed for certain scenario like client emergency reboot,
+        // changing config needed in the same time, while nacos server is down.
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
@@ -177,13 +193,15 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-        
-        LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
-                worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+        if (content != null) {
+            LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
+                    worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
+        }
         cr.setContent(content);
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+                .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();

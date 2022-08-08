@@ -21,6 +21,7 @@ import RegionGroup from 'components/RegionGroup';
 import { getParams, setParams, request } from '@/globalLib';
 
 import './index.scss';
+import DiffEditorDialog from '../../../components/DiffEditorDialog';
 
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
@@ -59,6 +60,7 @@ class HistoryRollback extends React.Component {
       selectValue: [],
       loading: false,
     };
+    this.diffEditorDialog = React.createRef();
   }
 
   componentDidMount() {
@@ -132,6 +134,10 @@ class HistoryRollback extends React.Component {
         <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>
           {locale.rollback}
         </a>
+        <span style={{ marginRight: 5 }}>|</span>
+        <a style={{ marginRight: 5 }} onClick={this.goCompare.bind(this, record)}>
+          {locale.compare}
+        </a>
       </div>
     );
   }
@@ -193,6 +199,71 @@ class HistoryRollback extends React.Component {
         record.group
       }&nid=${record.id}&namespace=${this.tenant}`
     );
+  }
+
+  goCompare(record) {
+    let tenant = getParams('namespace') || '';
+    let serverId = getParams('serverId') || 'center';
+    this.getConfig(-1, tenant, serverId, this.dataId, this.group).then(lasted => {
+      this.getHistoryConfig(record.id, this.dataId, this.group).then(selected => {
+        this.diffEditorDialog.current.getInstance().openDialog(selected.content, lasted.content);
+      });
+    });
+  }
+
+  /**
+   * 获取最新版本配置
+   * @param id
+   * @param tenant
+   * @param serverId
+   * @param dataId
+   * @param group
+   * @returns {Promise<unknown>}
+   */
+  getConfig(id, tenant, serverId, dataId, group) {
+    return new Promise((resolve, reject) => {
+      const { locale = {} } = this.props;
+      const self = this;
+      this.tenant = tenant;
+      this.serverId = tenant;
+      const url = `v1/cs/configs?show=all&dataId=${dataId}&group=${group}`;
+      request({
+        url,
+        beforeSend() {
+          self.openLoading();
+        },
+        success(result) {
+          if (result != null) {
+            resolve(result);
+          }
+        },
+        complete() {
+          self.closeLoading();
+        },
+      });
+    });
+  }
+
+  /**
+   * 获取历史版本配置数据
+   * @param nid
+   * @param dataId
+   * @param group
+   * @returns {Promise<unknown>}
+   */
+  getHistoryConfig(nid, dataId, group) {
+    return new Promise((resolve, reject) => {
+      const { locale = {} } = this.props;
+      const self = this;
+      request({
+        url: `v1/cs/history?dataId=${dataId}&group=${group}&nid=${nid}`,
+        success(result) {
+          if (result != null) {
+            resolve(result);
+          }
+        },
+      });
+    });
   }
 
   goRollBack(record) {
@@ -367,6 +438,12 @@ class HistoryRollback extends React.Component {
             />
             ,
           </div>
+          <DiffEditorDialog
+            ref={this.diffEditorDialog}
+            title={locale.historyCompareTitle}
+            currentArea={locale.historyCompareSelectedVersion}
+            originalArea={locale.historyCompareLastVersion}
+          />
         </Loading>
       </div>
     );

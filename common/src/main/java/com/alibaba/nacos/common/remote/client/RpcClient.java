@@ -390,7 +390,7 @@ public abstract class RpcClient implements Closeable {
             } catch (Throwable e) {
                 LoggerUtils.printIfWarnEnabled(LOGGER,
                         "[{}] Fail to connect to server on start up, error message = {}, start up retry times left: {}",
-                        name, e.getMessage(), startUpRetryTimes);
+                        name, e.getMessage(), startUpRetryTimes, e);
             }
             
         }
@@ -549,6 +549,10 @@ public abstract class RpcClient implements Closeable {
                     lastException = e;
                 } finally {
                     recommendServer.set(null);
+                }
+                
+                if (CollectionUtils.isEmpty(RpcClient.this.serverListFactory.getServerList())) {
+                    throw new Exception("server list is empty");
                 }
                 
                 if (reConnectTimes > 0

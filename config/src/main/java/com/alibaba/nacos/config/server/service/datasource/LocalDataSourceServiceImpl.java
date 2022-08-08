@@ -206,7 +206,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
      * @throws Exception Exception.
      */
     private List<String> loadSql(String sqlFile) throws Exception {
-        List<String> sqlList = new ArrayList<String>();
+        List<String> sqlList = new ArrayList<>();
         InputStream sqlFileIn = null;
         try {
             File file = new File(

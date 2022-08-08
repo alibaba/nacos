@@ -192,9 +192,7 @@ public class StringUtils {
             if (objects[i] != null) {
                 stringBuilder.append(objects[i]);
                 if (i != collection.size() - 1 && separator != null) {
-                    if (separator != null) {
-                        stringBuilder.append(separator);
-                    }
+                    stringBuilder.append(separator);
                 }
             }
         }

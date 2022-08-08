@@ -91,6 +91,76 @@ public class NamingHttpClientProxyTest {
     }
     
     @Test
+    public void testRegisterServiceThrowsNacosException() throws Exception {
+        thrown.expect(NacosException.class);
+        thrown.expectMessage("failed to req API");
+    
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        HttpRestResult<Object> a = new HttpRestResult<Object>();
+        a.setCode(503);
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
+    
+        SecurityProxy proxy = mock(SecurityProxy.class);
+        ServerListManager mgr = mock(ServerListManager.class);
+        when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
+        Properties props = new Properties();
+        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
+    
+        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        nacosRestTemplateField.setAccessible(true);
+        nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+    
+        try {
+            clientProxy.registerService(serviceName, groupName, instance);
+        } catch (NacosException ex) {
+            // verify the `NacosException` is directly thrown
+            Assert.assertEquals(null, ex.getCause());
+        
+            throw ex;
+        }
+    }
+    
+    @Test
+    public void testRegisterServiceThrowsException() throws Exception {
+        // assert throw NacosException
+        thrown.expect(NacosException.class);
+        
+        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
+        HttpRestResult<Object> a = new HttpRestResult<Object>();
+        a.setCode(503);
+        // makes exchangeForm failed with a NullPointerException
+        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(null);
+        
+        SecurityProxy proxy = mock(SecurityProxy.class);
+        ServerListManager mgr = mock(ServerListManager.class);
+        when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
+        Properties props = new Properties();
+        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
+        
+        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
+        nacosRestTemplateField.setAccessible(true);
+        nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+        
+        try {
+            clientProxy.registerService(serviceName, groupName, instance);
+        } catch (NacosException ex) {
+            // verify the `NacosException` is directly thrown
+            Assert.assertTrue(ex.getErrMsg().contains("java.lang.NullPointerException"));
+            Assert.assertEquals(NacosException.SERVER_ERROR, ex.getErrCode());
+            
+            throw ex;
+        }
+    }
+    
+    @Test
     public void testDeregisterService() throws Exception {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);

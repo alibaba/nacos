@@ -18,15 +18,13 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
-import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
 
 /**
  * Instance.
@@ -88,7 +86,7 @@ public class Instance implements Serializable {
     /**
      * user extended attributes.
      */
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
     
     public String getInstanceId() {
         return this.instanceId;
@@ -162,7 +160,7 @@ public class Instance implements Serializable {
      */
     public void addMetadata(final String key, final String value) {
         if (metadata == null) {
-            metadata = new HashMap<String, String>(4);
+            metadata = new HashMap<>(4);
         }
         metadata.put(key, value);
     }
@@ -252,7 +250,7 @@ public class Instance implements Serializable {
             return defaultValue;
         }
         final String value = getMetadata().get(key);
-        if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
+        if (NamingUtils.isNumber(value)) {
             return Long.parseLong(value);
         }
         return defaultValue;

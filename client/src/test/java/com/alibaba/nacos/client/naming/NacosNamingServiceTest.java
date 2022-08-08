@@ -21,7 +21,6 @@ package com.alibaba.nacos.client.naming;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -29,10 +28,12 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
+import org.junit.rules.ExpectedException;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -51,6 +52,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class NacosNamingServiceTest {
+    
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     private NacosNamingService client;
     
@@ -86,14 +90,30 @@ public class NacosNamingServiceTest {
         client.registerInstance(serviceName, ip, port);
         //then
         verify(proxy, times(1))
-                .registerService(eq(serviceName), eq(Constants.DEFAULT_GROUP), argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
+                .registerService(eq(serviceName), eq(Constants.DEFAULT_GROUP), argThat(
+                        instance -> instance.getIp().equals(ip) && instance.getPort() == port
                                 && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(Constants.DEFAULT_CLUSTER_NAME);
-                    }
-                }));
+                                .equals(Constants.DEFAULT_CLUSTER_NAME)));
+    }
+    
+    @Test
+    public void testBatchRegisterInstance() throws NacosException {
+        Instance instance = new Instance();
+        String serviceName = "service1";
+        String ip = "1.1.1.1";
+        int port = 10000;
+        instance.setServiceName(serviceName);
+        instance.setEphemeral(true);
+        instance.setPort(port);
+        instance.setIp(ip);
+        List<Instance> instanceList = new ArrayList<>();
+        instanceList.add(instance);
+        //when
+        client.batchRegisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
+        //then
+        verify(proxy, times(1))
+                .batchRegisterService(eq(serviceName), eq(Constants.DEFAULT_GROUP), argThat(
+                        instances -> CollectionUtils.isEqualCollection(instanceList, instances)));
     }
     
     @Test
@@ -107,14 +127,10 @@ public class NacosNamingServiceTest {
         client.registerInstance(serviceName, groupName, ip, port);
         //then
         verify(proxy, times(1))
-                .registerService(eq(serviceName), eq(groupName), argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
+                .registerService(eq(serviceName), eq(groupName), argThat(
+                        instance -> instance.getIp().equals(ip) && instance.getPort() == port
                                 && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(Constants.DEFAULT_CLUSTER_NAME);
-                    }
-                }));
+                                .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
     
     @Test
@@ -128,14 +144,10 @@ public class NacosNamingServiceTest {
         client.registerInstance(serviceName, ip, port, clusterName);
         //then
         verify(proxy, times(1))
-                .registerService(eq(serviceName), eq(Constants.DEFAULT_GROUP), argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
+                .registerService(eq(serviceName), eq(Constants.DEFAULT_GROUP), argThat(
+                        instance -> instance.getIp().equals(ip) && instance.getPort() == port
                                 && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(clusterName);
-                    }
-                }));
+                                .equals(clusterName)));
     }
     
     @Test
@@ -150,14 +162,10 @@ public class NacosNamingServiceTest {
         client.registerInstance(serviceName, groupName, ip, port, clusterName);
         //then
         verify(proxy, times(1))
-                .registerService(eq(serviceName), eq(groupName), argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
+                .registerService(eq(serviceName), eq(groupName), argThat(
+                        instance -> instance.getIp().equals(ip) && instance.getPort() == port
                                 && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(clusterName);
-                    }
-                }));
+                                .equals(clusterName)));
     }
     
     @Test
@@ -184,6 +192,21 @@ public class NacosNamingServiceTest {
     }
     
     @Test
+    public void testRegisterInstance7() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage(
+                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+        
+        //given
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+        instance.setClusterName("cluster1,cluster2");
+        //when
+        client.registerInstance(serviceName, groupName, instance);
+    }
+    
+    @Test
     public void testDeregisterInstance1() throws NacosException {
         //given
         String serviceName = "service1";
@@ -193,14 +216,9 @@ public class NacosNamingServiceTest {
         client.deregisterInstance(serviceName, ip, port);
         //then
         verify(proxy, times(1)).deregisterService(eq(serviceName), eq(Constants.DEFAULT_GROUP),
-                argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
-                                && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(Constants.DEFAULT_CLUSTER_NAME);
-                    }
-                }));
+                argThat(instance -> instance.getIp().equals(ip) && instance.getPort() == port
+                        && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
+                        .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
     
     @Test
@@ -214,14 +232,10 @@ public class NacosNamingServiceTest {
         client.deregisterInstance(serviceName, groupName, ip, port);
         //then
         verify(proxy, times(1))
-                .deregisterService(eq(serviceName), eq(groupName), argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
+                .deregisterService(eq(serviceName), eq(groupName), argThat(
+                        instance -> instance.getIp().equals(ip) && instance.getPort() == port
                                 && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(Constants.DEFAULT_CLUSTER_NAME);
-                    }
-                }));
+                                .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
     
     @Test
@@ -235,14 +249,9 @@ public class NacosNamingServiceTest {
         client.deregisterInstance(serviceName, ip, port, clusterName);
         //then
         verify(proxy, times(1)).deregisterService(eq(serviceName), eq(Constants.DEFAULT_GROUP),
-                argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
-                                && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(clusterName);
-                    }
-                }));
+                argThat(instance -> instance.getIp().equals(ip) && instance.getPort() == port
+                        && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
+                        .equals(clusterName)));
     }
     
     @Test
@@ -257,14 +266,10 @@ public class NacosNamingServiceTest {
         client.deregisterInstance(serviceName, groupName, ip, port, clusterName);
         //then
         verify(proxy, times(1))
-                .deregisterService(eq(serviceName), eq(groupName), argThat(new ArgumentMatcher<Instance>() {
-                    @Override
-                    public boolean matches(Instance instance) {
-                        return instance.getIp().equals(ip) && instance.getPort() == port
+                .deregisterService(eq(serviceName), eq(groupName), argThat(
+                        instance -> instance.getIp().equals(ip) && instance.getPort() == port
                                 && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
-                                .equals(clusterName);
-                    }
-                }));
+                                .equals(clusterName)));
     }
     
     @Test
@@ -679,11 +684,8 @@ public class NacosNamingServiceTest {
     public void testSubscribe1() throws NacosException {
         //given
         String serviceName = "service1";
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-            
-            }
+        EventListener listener = event -> {
+        
         };
         //when
         client.subscribe(serviceName, listener);
@@ -697,11 +699,8 @@ public class NacosNamingServiceTest {
         //given
         String serviceName = "service1";
         String groupName = "group1";
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-            
-            }
+        EventListener listener = event -> {
+        
         };
         //when
         client.subscribe(serviceName, groupName, listener);
@@ -715,11 +714,8 @@ public class NacosNamingServiceTest {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-            
-            }
+        EventListener listener = event -> {
+        
         };
         //when
         client.subscribe(serviceName, clusterList, listener);
@@ -735,11 +731,8 @@ public class NacosNamingServiceTest {
         String serviceName = "service1";
         String groupName = "group1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-            
-            }
+        EventListener listener = event -> {
+        
         };
         //when
         client.subscribe(serviceName, groupName, clusterList, listener);
@@ -752,11 +745,8 @@ public class NacosNamingServiceTest {
     public void testUnSubscribe1() throws NacosException {
         //given
         String serviceName = "service1";
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-                
-            }
+        EventListener listener = event -> {
+        
         };
         when(changeNotifier.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(false);
         //when
@@ -771,11 +761,8 @@ public class NacosNamingServiceTest {
         //given
         String serviceName = "service1";
         String groupName = "group1";
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-                
-            }
+        EventListener listener = event -> {
+        
         };
         when(changeNotifier.isSubscribed(serviceName, groupName, "")).thenReturn(false);
         
@@ -791,11 +778,8 @@ public class NacosNamingServiceTest {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-                
-            }
+        EventListener listener = event -> {
+        
         };
         when(changeNotifier.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2")).thenReturn(false);
         
@@ -813,11 +797,8 @@ public class NacosNamingServiceTest {
         String serviceName = "service1";
         String groupName = "group1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-                
-            }
+        EventListener listener = event -> {
+        
         };
         when(changeNotifier.isSubscribed(serviceName, groupName, "cluster1,cluster2")).thenReturn(false);
         

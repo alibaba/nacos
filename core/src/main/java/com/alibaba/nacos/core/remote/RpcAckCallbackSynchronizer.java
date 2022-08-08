@@ -21,12 +21,10 @@ import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.hessian.clhm.ConcurrentLinkedHashMap;
-import com.alipay.hessian.clhm.EvictionListener;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
 
 /**
  * server push ack synchronier.
@@ -39,18 +37,8 @@ public class RpcAckCallbackSynchronizer {
     @SuppressWarnings("checkstyle:linelength")
     public static final Map<String, Map<String, DefaultRequestFuture>> CALLBACK_CONTEXT = new ConcurrentLinkedHashMap.Builder<String, Map<String, DefaultRequestFuture>>()
             .maximumWeightedCapacity(1000000)
-            .listener(new EvictionListener<String, Map<String, DefaultRequestFuture>>() {
-                @Override
-                public void onEviction(String s, Map<String, DefaultRequestFuture> pushCallBack) {
-                    
-                    pushCallBack.entrySet().forEach(new Consumer<Map.Entry<String, DefaultRequestFuture>>() {
-                        @Override
-                        public void accept(Map.Entry<String, DefaultRequestFuture> stringDefaultPushFutureEntry) {
-                            stringDefaultPushFutureEntry.getValue().setFailResult(new TimeoutException());
-                        }
-                    });
-                }
-            }).build();
+            .listener((s, pushCallBack) -> pushCallBack.entrySet().forEach(
+                stringDefaultPushFutureEntry -> stringDefaultPushFutureEntry.getValue().setFailResult(new TimeoutException()))).build();
     
     /**
      * notify  ack.
@@ -117,7 +105,7 @@ public class RpcAckCallbackSynchronizer {
      */
     public static Map<String, DefaultRequestFuture> initContextIfNecessary(String connectionId) {
         if (!CALLBACK_CONTEXT.containsKey(connectionId)) {
-            Map<String, DefaultRequestFuture> context = new HashMap<String, DefaultRequestFuture>(128);
+            Map<String, DefaultRequestFuture> context = new HashMap<>(128);
             Map<String, DefaultRequestFuture> stringDefaultRequestFutureMap = CALLBACK_CONTEXT
                     .putIfAbsent(connectionId, context);
             return stringDefaultRequestFutureMap == null ? context : stringDefaultRequestFutureMap;

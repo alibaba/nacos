@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -24,6 +25,8 @@ import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationSe
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Implementation of external exposure.
@@ -45,9 +48,15 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     }
     
     @Override
-    public void registerInstance(Service service, Instance instance, String clientId) {
+    public void registerInstance(Service service, Instance instance, String clientId) throws NacosException {
         final ClientOperationService operationService = chooseClientOperationService(instance);
         operationService.registerInstance(service, instance, clientId);
+    }
+    
+    @Override
+    public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
+        final ClientOperationService operationService = chooseClientOperationService(instances.get(0));
+        operationService.batchRegisterInstance(service, instances, clientId);
     }
     
     @Override

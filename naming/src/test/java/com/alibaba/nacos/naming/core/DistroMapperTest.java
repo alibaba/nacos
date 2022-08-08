@@ -59,6 +59,7 @@ public class DistroMapperTest {
     public void setUp() {
         ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
         EnvUtil.setEnvironment(new StandardEnvironment());
+        EnvUtil.setIsStandalone(true);
         serverList.put(ip1, Member.builder().ip(ip1).port(port).build());
         serverList.put(ip2, Member.builder().ip(ip2).port(port).build());
         serverList.put(ip3, Member.builder().ip(ip3).port(port).build());

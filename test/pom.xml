@@ -56,11 +56,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.truth</groupId>
-            <artifactId>truth</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
         </dependency>
@@ -103,10 +98,15 @@
             <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
-
+    
         <dependency>
-            <groupId>com.github.keran213539</groupId>
-            <artifactId>commonOkHttp</artifactId>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
             <scope>test</scope>
         </dependency>
 

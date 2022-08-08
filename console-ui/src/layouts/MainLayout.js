@@ -51,7 +51,10 @@ class MainLayout extends React.Component {
 
   navTo(url) {
     const { search } = this.props.location;
-    this.props.history.push([url, search].join(''));
+    let urlSearchParams = new URLSearchParams(search);
+    urlSearchParams.set('namespace', window.nownamespace);
+    urlSearchParams.set('namespaceShowName', window.namespaceShowName);
+    this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
   }
 
   isCurrentPath(url) {
@@ -120,7 +123,7 @@ class MainLayout extends React.Component {
                     }
                     return (
                       <Item
-                        key={idx}
+                        key={String(idx)}
                         className={['first-menu', this.isCurrentPath(subMenu.url)]
                           .filter(c => c)
                           .join(' ')}

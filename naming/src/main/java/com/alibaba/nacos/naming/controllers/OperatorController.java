@@ -214,7 +214,7 @@ public class OperatorController {
         result.put("ephemeralIpPortClientCount", ephemeralIpPortClient);
         result.put("persistentIpPortClientCount", persistentIpPortClient);
         result.put("responsibleClientCount", responsibleClientCount);
-        result.put("cpu", EnvUtil.getCPU());
+        result.put("cpu", EnvUtil.getCpu());
         result.put("load", EnvUtil.getLoad());
         result.put("mem", EnvUtil.getMem());
         return result;

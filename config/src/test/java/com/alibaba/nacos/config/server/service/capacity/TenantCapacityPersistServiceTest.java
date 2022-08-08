@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -157,6 +158,7 @@ public class TenantCapacityPersistServiceTest {
     
     @Test
     public void testUpdateTenantCapacity() {
+        final MockedStatic<TimeUtils> timeUtilsMockedStatic = Mockito.mockStatic(TimeUtils.class);
         
         List<Object> argList = CollectionUtils.list();
         
@@ -173,8 +175,7 @@ public class TenantCapacityPersistServiceTest {
         argList.add(maxAggrSize);
         
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Mockito.mockStatic(TimeUtils.class);
-        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
+        timeUtilsMockedStatic.when(TimeUtils::getCurrentTime).thenReturn(timestamp);
         argList.add(timestamp);
         
         String tenant = "test";
@@ -193,11 +194,12 @@ public class TenantCapacityPersistServiceTest {
                     return 0;
                 });
         Assert.assertTrue(service.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize));
+        
+        timeUtilsMockedStatic.close();
     }
     
     @Test
     public void testUpdateQuota() {
-        
         List<Object> argList = CollectionUtils.list();
         
         Integer quota = 2;

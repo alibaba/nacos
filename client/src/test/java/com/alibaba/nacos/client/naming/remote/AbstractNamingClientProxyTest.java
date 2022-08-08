@@ -38,6 +38,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,6 +51,9 @@ public class AbstractNamingClientProxyTest {
     @Mock
     private SecurityProxy sc;
     
+    /**
+     * test get security headers for accessToken.
+     */
     @Test
     public void testGetSecurityHeadersForAccessToken() {
         AbstractNamingClientProxy proxy = new MockNamingClientProxy(sc);
@@ -63,6 +67,10 @@ public class AbstractNamingClientProxyTest {
         Assert.assertEquals(AppNameUtils.getAppName(), securityHeaders.get("app"));
     }
     
+    /**
+     * get security headers for ram.
+     * @throws Exception exception
+     */
     @Test
     public void testGetSecurityHeadersForRam() throws Exception {
         String ak = "aa";
@@ -94,7 +102,13 @@ public class AbstractNamingClientProxyTest {
         public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         
         }
+    
+        @Override
+        public void batchRegisterService(String serviceName, String groupName, List<Instance> instances)
+                throws NacosException {
         
+        }
+    
         @Override
         public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         

@@ -41,7 +41,6 @@ public class Permission implements Serializable {
     private String action;
     
     public Permission() {
-    
     }
     
     public Permission(Resource resource, String action) {

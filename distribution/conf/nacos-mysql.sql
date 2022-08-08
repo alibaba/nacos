@@ -142,7 +142,7 @@ CREATE TABLE `group_capacity` (
 /*   表名称 = his_config_info   */
 /******************************************/
 CREATE TABLE `his_config_info` (
-  `id` bigint(64) unsigned NOT NULL,
+  `id` bigint(20) unsigned NOT NULL,
   `nid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `data_id` varchar(255) NOT NULL,
   `group_id` varchar(128) NOT NULL,

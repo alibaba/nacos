@@ -32,7 +32,7 @@ public class ConfigBatchListenRequest extends AbstractConfigRequest {
      */
     private boolean listen = true;
     
-    private List<ConfigListenContext> configListenContexts = new ArrayList<ConfigListenContext>();
+    private List<ConfigListenContext> configListenContexts = new ArrayList<>();
     
     /**
      * add listen config.

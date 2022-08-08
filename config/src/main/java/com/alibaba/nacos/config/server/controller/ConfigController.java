@@ -118,12 +118,17 @@ public class ConfigController {
     
     /**
      * Adds or updates non-aggregated data.
-     *
+     * <p>
+     * request and response will be used in aspect, see
+     * {@link com.alibaba.nacos.config.server.aspect.CapacityManagementAspect} and
+     * {@link com.alibaba.nacos.config.server.aspect.RequestLogAspect}.
+     * </p>
      * @throws NacosException NacosException.
      */
     @PostMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean publishConfig(HttpServletRequest request, @RequestParam(value = "dataId") String dataId,
+    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
+            @RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
@@ -252,11 +257,17 @@ public class ConfigController {
     /**
      * Synchronously delete all pre-aggregation data under a dataId.
      *
+     * <p>
+     * request and response will be used in aspect, see
+     * {@link com.alibaba.nacos.config.server.aspect.CapacityManagementAspect} and
+     * {@link com.alibaba.nacos.config.server.aspect.RequestLogAspect}.
+     * </p>
+     *
      * @throws NacosException NacosException.
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
+    public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {

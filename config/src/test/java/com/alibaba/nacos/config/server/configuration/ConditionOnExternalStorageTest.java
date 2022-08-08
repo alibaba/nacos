@@ -21,6 +21,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
@@ -38,16 +39,19 @@ public class ConditionOnExternalStorageTest {
     @Before
     public void init() {
         conditionOnExternalStorage = new ConditionOnExternalStorage();
-        Mockito.mockStatic(PropertyUtil.class);
     }
     
     @Test
     public void testMatches() {
-        Mockito.when(PropertyUtil.isEmbeddedStorage()).thenReturn(true);
-        Assert.assertFalse(conditionOnExternalStorage.matches(context, metadata));
+        MockedStatic<PropertyUtil> mockedStatic = Mockito.mockStatic(PropertyUtil.class);
         
-        Mockito.when(PropertyUtil.isEmbeddedStorage()).thenReturn(false);
+        mockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        Assert.assertFalse(conditionOnExternalStorage.matches(context, metadata));
+    
+        mockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(false);
         Assert.assertTrue(conditionOnExternalStorage.matches(context, metadata));
+    
+        mockedStatic.close();
     }
     
 }

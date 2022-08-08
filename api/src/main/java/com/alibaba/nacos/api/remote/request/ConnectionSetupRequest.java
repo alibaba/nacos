@@ -35,7 +35,7 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private String tenant;
     
-    private Map<String, String> labels = new HashMap<String, String>();
+    private Map<String, String> labels = new HashMap<>();
     
     public ConnectionSetupRequest() {
     }

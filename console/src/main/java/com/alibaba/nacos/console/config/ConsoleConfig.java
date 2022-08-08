@@ -61,10 +61,10 @@ public class ConsoleConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
         config.addAllowedHeader("*");
         config.setMaxAge(18000L);
         config.addAllowedMethod("*");
+        config.addAllowedOriginPattern("*");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

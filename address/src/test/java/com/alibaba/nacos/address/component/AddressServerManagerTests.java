@@ -41,4 +41,23 @@ public class AddressServerManagerTests {
         assertEquals("otherServerList", ADDRESS_SERVER_MANAGER.getDefaultClusterNameIfEmpty("otherServerList"));
     }
     
+    @Test
+    public void testGetRawClusterName() {
+        assertEquals("serverList", ADDRESS_SERVER_MANAGER.getRawClusterName("serverList"));
+        assertEquals(AddressServerConstants.DEFAULT_GET_CLUSTER, ADDRESS_SERVER_MANAGER.getRawClusterName(""));
+    }
+    
+    @Test
+    public void testSplitIps() {
+        final String[] emptyArr = ADDRESS_SERVER_MANAGER.splitIps("");
+        assertEquals(0, emptyArr.length);
+        final String[] one = ADDRESS_SERVER_MANAGER.splitIps("192.168.1.12:8848");
+        assertEquals(1, one.length);
+        assertEquals("192.168.1.12:8848", one[0]);
+        final String[] two = ADDRESS_SERVER_MANAGER.splitIps("192.168.1.12:8848,192.268.3.33:8848");
+        assertEquals(2, two.length);
+        assertEquals("192.168.1.12:8848", two[0]);
+        assertEquals("192.268.3.33:8848", two[1]);
+    }
+    
 }
