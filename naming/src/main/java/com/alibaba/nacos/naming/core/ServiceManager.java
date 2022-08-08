@@ -62,6 +62,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -298,7 +299,7 @@ public class ServiceManager implements RecordListener<Service> {
                 updatedHealthStatus(namespaceId, serviceName, serverIP);
             } catch (Exception e) {
                 Loggers.SRV_LOG
-                        .warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}", serviceName,
+                        .warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: ", serviceName,
                                 serverIP, e);
             }
         }
@@ -828,7 +829,7 @@ public class ServiceManager implements RecordListener<Service> {
                             .toJson(instanceMap.values()));
         }
         
-        return new ArrayList<>(instanceMap.values());
+        return new CopyOnWriteArrayList<>(instanceMap.values());
     }
     
     private List<Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips)

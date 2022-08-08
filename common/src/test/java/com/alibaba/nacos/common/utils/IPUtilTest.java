@@ -101,8 +101,7 @@ public class IPUtilTest {
         checkSplitIPPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
         checkSplitIPPortStr("[fe80::3ce6:7132:808e:707a%19]:88", false, "[fe80::3ce6:7132:808e:707a%19]", "88");
     
-        checkSplitIPPortStr("::1:88", true);
-        checkSplitIPPortStr("[::1:88", true);
+        checkSplitIPPortStr("nacos-server", false, "nacos-server");
         checkSplitIPPortStr("[127.0.0.1]:88", true);
     }
     

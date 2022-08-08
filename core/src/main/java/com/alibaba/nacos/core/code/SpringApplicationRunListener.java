@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.code;
 import com.alibaba.nacos.core.listener.LoggingApplicationListener;
 import com.alibaba.nacos.core.listener.NacosApplicationListener;
 import com.alibaba.nacos.core.listener.StartingApplicationListener;
+import org.springframework.boot.ConfigurableBootstrapContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.event.EventPublishingRunListener;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -53,14 +54,15 @@ public class SpringApplicationRunListener implements org.springframework.boot.Sp
     }
     
     @Override
-    public void starting() {
+    public void starting(ConfigurableBootstrapContext bootstrapContext) {
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.starting();
         }
     }
     
     @Override
-    public void environmentPrepared(ConfigurableEnvironment environment) {
+    public void environmentPrepared(ConfigurableBootstrapContext bootstrapContext,
+            ConfigurableEnvironment environment) {
         for (NacosApplicationListener nacosApplicationListener : nacosApplicationListeners) {
             nacosApplicationListener.environmentPrepared(environment);
         }

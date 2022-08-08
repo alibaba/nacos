@@ -321,9 +321,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
-            final String sql = "UPDATE config_info_beta SET content=?,md5=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=?";
+            final String sql = "UPDATE config_info_beta SET content=?,md5=?,beta_ips=?,src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND tenant_id=?";
             
-            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+            final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
@@ -2345,6 +2345,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                     String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1);
                     FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(extName);
                     type = fileTypeEnum.getFileType();
+                } else {
+                    type = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(null).getFileType();
                 }
             }
             if (configAdvanceInfo == null) {
@@ -2353,11 +2355,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             configAdvanceInfo.put("type", type);
             configAdvanceInfo.put("desc", configInfo.getDesc());
             try {
+                ConfigInfo foundCfg = findConfigInfo(configInfo2Save.getDataId(), configInfo2Save.getGroup(), configInfo2Save.getTenant());
+                if (foundCfg != null) {
+                    throw new Throwable("DuplicateKeyException: config already exists, should be overridden");
+                }
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify, callFinally);
                 succCount++;
             } catch (Throwable e) {
                 if (!StringUtils.contains(e.toString(), "DuplicateKeyException")) {
-                    throw e;
+                    throw new NacosException(NacosException.SERVER_ERROR, e);
                 }
                 // uniqueness constraint conflict
                 if (SameConfigPolicy.ABORT.equals(policy)) {

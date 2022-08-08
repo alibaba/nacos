@@ -149,9 +149,15 @@ public class NacosClusterController {
      * @throws Exception {@link Exception}
      */
     @PostMapping("/server/leave")
-    public RestResult<String> leave(@RequestBody Collection<String> params) throws Exception {
+    public RestResult<String> leave(@RequestBody Collection<String> params,
+            @RequestParam(defaultValue = "true") Boolean notifyOtherMembers) throws Exception {
         Collection<Member> memberList = MemberUtil.multiParse(params);
         memberManager.memberLeave(memberList);
+        // End conditions for cluster notifications, FIX https://github.com/alibaba/nacos/issues/6273
+        if (Boolean.FALSE.equals(notifyOtherMembers)) {
+            return RestResultUtils.success("ok");
+        }
+
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
         final GenericType<RestResult<String>> genericType = new GenericType<RestResult<String>>() {
         };
@@ -161,7 +167,7 @@ public class NacosClusterController {
         for (Member member : notifyList) {
             final String url = HttpUtils
                     .buildUrl(false, member.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
-                            "/cluster/server/leave");
+                            "/cluster/server/leave?notifyOtherMembers=false");
             nacosAsyncRestTemplate.post(url, Header.EMPTY, Query.EMPTY, params, genericType.getType(), new Callback<String>() {
                 @Override
                 public void onReceive(RestResult<String> result) {

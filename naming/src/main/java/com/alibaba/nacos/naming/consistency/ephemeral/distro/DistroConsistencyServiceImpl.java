@@ -70,6 +70,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @org.springframework.stereotype.Service("distroConsistencyService")
 public class DistroConsistencyServiceImpl implements EphemeralConsistencyService, DistroDataProcessor {
     
+    private static final String ON_RECEIVE_CHECKSUMS_PROCESSING_TAG = "1";
+    
     private final DistroMapper distroMapper;
     
     private final DataStore dataStore;
@@ -168,13 +170,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
      */
     public void onReceiveChecksums(Map<String, String> checksumMap, String server) {
         
-        if (syncChecksumTasks.containsKey(server)) {
+        if (syncChecksumTasks.putIfAbsent(server, ON_RECEIVE_CHECKSUMS_PROCESSING_TAG) != null) {
             // Already in process of this server:
             Loggers.DISTRO.warn("sync checksum task already in process with {}", server);
             return;
         }
-        
-        syncChecksumTasks.put(server, "1");
         
         try {
             
@@ -322,26 +322,36 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        if (!listeners.containsKey(key)) {
-            listeners.put(key, new ConcurrentLinkedQueue<>());
+        ConcurrentLinkedQueue<RecordListener> recordListeners = listeners.get(key);
+        if (recordListeners == null) {
+            recordListeners = new ConcurrentLinkedQueue<>();
+            ConcurrentLinkedQueue<RecordListener> recordListenersExist;
+            if ((recordListenersExist = listeners.putIfAbsent(key, recordListeners)) != null) {
+                recordListeners = recordListenersExist;
+            }
         }
-        
-        if (listeners.get(key).contains(listener)) {
-            return;
+    
+        if (!recordListeners.contains(listener)) {
+            synchronized (recordListeners) {
+                if (!recordListeners.contains(listener)) {
+                    recordListeners.add(listener);
+                }
+            }
         }
-        
-        listeners.get(key).add(listener);
     }
     
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
-        if (!listeners.containsKey(key)) {
+        ConcurrentLinkedQueue<RecordListener> recordListeners = listeners.get(key);
+        if (recordListeners == null) {
             return;
         }
-        for (RecordListener recordListener : listeners.get(key)) {
-            if (recordListener.equals(listener)) {
-                listeners.get(key).remove(listener);
-                break;
+        synchronized (recordListeners) {
+            for (RecordListener recordListener : recordListeners) {
+                if (recordListener.equals(listener)) {
+                    recordListeners.remove(listener);
+                    break;
+                }
             }
         }
     }
@@ -415,18 +425,25 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 services.remove(datumKey);
                 
                 int count = 0;
-                
-                if (!listeners.containsKey(datumKey)) {
+
+                ConcurrentLinkedQueue<RecordListener> recordListeners = listeners.get(datumKey);
+                if (recordListeners == null) {
+                    Loggers.DISTRO.info("[DISTRO-WARN] RecordListener not found, key: {}", datumKey);
                     return;
                 }
                 
-                for (RecordListener listener : listeners.get(datumKey)) {
+                for (RecordListener listener : recordListeners) {
                     
                     count++;
                     
                     try {
                         if (action == DataOperation.CHANGE) {
-                            listener.onChange(datumKey, dataStore.get(datumKey).value);
+                            Datum datum = dataStore.get(datumKey);
+                            if (datum != null) {
+                                listener.onChange(datumKey, datum.value);
+                            } else {
+                                Loggers.DISTRO.info("[DISTRO-WARN] data not found, key: {}", datumKey);
+                            }
                             continue;
                         }
                         

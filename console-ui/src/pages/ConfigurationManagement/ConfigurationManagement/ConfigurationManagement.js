@@ -1140,7 +1140,7 @@ class ConfigurationManagement extends React.Component {
                       this.dataId = dataId;
                       this.setState({ dataId });
                     }}
-                    onPressEnter={() => this.getData()}
+                    onPressEnter={() => this.selectAll()}
                   />
                 </Form.Item>
 
@@ -1152,7 +1152,7 @@ class ConfigurationManagement extends React.Component {
                     dataSource={this.state.groups}
                     value={this.state.group}
                     onChange={this.setGroup.bind(this)}
-                    onPressEnter={() => this.getData()}
+                    onPressEnter={() => this.selectAll()}
                     hasClear
                   />
                 </Form.Item>

@@ -91,7 +91,7 @@ public class ConfigCacheService {
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
             
-            if (md5.equals(ConfigCacheService.getContentMd5(groupKey))) {
+            if (md5.equals(ConfigCacheService.getContentMd5(groupKey)) && DiskUtil.targetFile(dataId, group, tenant).exists()) {
                 DUMP_LOG.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
@@ -143,7 +143,7 @@ public class ConfigCacheService {
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            if (md5.equals(ConfigCacheService.getContentBetaMd5(groupKey))) {
+            if (md5.equals(ConfigCacheService.getContentBetaMd5(groupKey)) && DiskUtil.targetBetaFile(dataId, group, tenant).exists()) {
                 DUMP_LOG.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
@@ -188,7 +188,7 @@ public class ConfigCacheService {
         
         try {
             final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-            if (md5.equals(ConfigCacheService.getContentTagMd5(groupKey, tag))) {
+            if (md5.equals(ConfigCacheService.getContentTagMd5(groupKey, tag)) && DiskUtil.targetTagFile(dataId, group, tenant, tag).exists()) {
                 DUMP_LOG.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                                 + "lastModifiedNew={}", groupKey, md5, ConfigCacheService.getLastModifiedTs(groupKey),
                         lastModifiedTs);
@@ -326,8 +326,8 @@ public class ConfigCacheService {
             String group = dg[1];
             String tenant = dg[2];
             try {
-                String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
-                if (!entry.getValue().md5.equals(loacalMd5)) {
+                String localMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
+                if (!entry.getValue().md5.equals(localMd5)) {
                     DEFAULT_LOG.warn("[md5-different] dataId:{},group:{}", dataId, group);
                     diffList.add(groupKey);
                 }
@@ -481,7 +481,7 @@ public class ConfigCacheService {
      */
     public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey);
-        if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
+        if (cache.md54Beta == null || !cache.md54Beta.equals(md5) || !ips4Beta.equals(cache.ips4Beta)) {
             cache.isBeta = true;
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;

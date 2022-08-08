@@ -87,7 +87,7 @@ public class NacosNamingService implements NamingService {
         InitUtils.initSerialization();
         initServerAddr(properties);
         InitUtils.initWebRootContext(properties);
-        initCacheDir();
+        initCacheDir(properties);
         initLogName(properties);
         
         this.serverProxy = new NamingProxy(this.namespace, this.endpoint, this.serverList, properties);
@@ -157,14 +157,20 @@ public class NacosNamingService implements NamingService {
         }
     }
     
-    private void initCacheDir() {
+    private void initCacheDir(Properties properties) {
         String jmSnapshotPath = System.getProperty("JM.SNAPSHOT.PATH");
+        
+        String namingCacheRegistryDir = "";
+        if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
+            namingCacheRegistryDir = File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
+        }
+        
         if (!StringUtils.isBlank(jmSnapshotPath)) {
-            cacheDir =
-                    jmSnapshotPath + File.separator + "nacos" + File.separator + "naming" + File.separator + namespace;
+            cacheDir = jmSnapshotPath + File.separator + "nacos" + namingCacheRegistryDir
+                    + File.separator + "naming" + File.separator + namespace;
         } else {
-            cacheDir = System.getProperty("user.home") + File.separator + "nacos" + File.separator + "naming"
-                    + File.separator + namespace;
+            cacheDir = System.getProperty("user.home") + File.separator + "nacos" + namingCacheRegistryDir 
+                    + File.separator + "naming" + File.separator + namespace;
         }
     }
     

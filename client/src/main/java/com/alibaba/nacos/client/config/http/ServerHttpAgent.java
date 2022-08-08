@@ -117,9 +117,7 @@ public class ServerHttpAgent implements HttpAgent {
                 throw ex;
             }
             
-            if (serverListMgr.getIterator().hasNext()) {
-                currentServerAddr = serverListMgr.getIterator().next();
-            } else {
+            if ((currentServerAddr = serverListMgr.getNextServerAddr()) == null) {
                 maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException(
@@ -172,10 +170,8 @@ public class ServerHttpAgent implements HttpAgent {
                 LOGGER.error("[NACOS Exception httpPost] currentServerAddr: " + currentServerAddr, ex);
                 throw ex;
             }
-            
-            if (serverListMgr.getIterator().hasNext()) {
-                currentServerAddr = serverListMgr.getIterator().next();
-            } else {
+
+            if ((currentServerAddr = serverListMgr.getNextServerAddr()) == null) {
                 maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException(
@@ -229,10 +225,8 @@ public class ServerHttpAgent implements HttpAgent {
                         ex);
                 throw ex;
             }
-            
-            if (serverListMgr.getIterator().hasNext()) {
-                currentServerAddr = serverListMgr.getIterator().next();
-            } else {
+
+            if ((currentServerAddr = serverListMgr.getNextServerAddr()) == null) {
                 maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException(
@@ -275,6 +269,7 @@ public class ServerHttpAgent implements HttpAgent {
         this.securityProxy = new SecurityProxy(properties, NACOS_RESTTEMPLATE);
         this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
+        this.start();
         this.securityProxy.login(this.serverListMgr.getServerUrls());
         
         // init executorService

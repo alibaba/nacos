@@ -42,6 +42,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -62,7 +63,7 @@ public class HostReactor implements Closeable {
     
     private static final long UPDATE_HOLD_INTERVAL = 5000L;
     
-    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
+    private final Map<String, ScheduledFuture<?>> futureMap = new ConcurrentHashMap<String, ScheduledFuture<?>>();
     
     private final Map<String, ServiceInfo> serviceInfoMap;
     
@@ -83,6 +84,8 @@ public class HostReactor implements Closeable {
     private final ScheduledExecutorService executor;
     
     private final InstancesChangeNotifier notifier;
+    
+    private String notifierEventScope;
     
     public HostReactor(NamingProxy serverProxy, BeatReactor beatReactor, String cacheDir) {
         this(serverProxy, beatReactor, cacheDir, false, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
@@ -113,7 +116,8 @@ public class HostReactor implements Closeable {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
-        this.notifier = new InstancesChangeNotifier();
+        this.notifierEventScope = UUID.randomUUID().toString();
+        this.notifier = new InstancesChangeNotifier(this.notifierEventScope);
         
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(notifier);
@@ -148,6 +152,12 @@ public class HostReactor implements Closeable {
      */
     public void unSubscribe(String serviceName, String clusters, EventListener eventListener) {
         notifier.deregisterListener(serviceName, clusters, eventListener);
+
+        // when all listeners are removed, stop the update task
+        if (!notifier.isSubscribed(serviceName, clusters)) {
+            // remove the flag for judging whether to stop the update task
+            futureMap.remove(ServiceInfo.getKey(serviceName, clusters));
+        }
     }
     
     public List<ServiceInfo> getSubscribeServices() {
@@ -248,8 +258,8 @@ public class HostReactor implements Closeable {
             
             serviceInfo.setJsonFromServer(json);
             
-            if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
-                NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+            if (changed) {
+                NotifyCenter.publishEvent(new InstancesChangeEvent(this.notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                         serviceInfo.getClusters(), serviceInfo.getHosts()));
                 DiskCache.write(serviceInfo, cacheDir);
             }
@@ -259,7 +269,7 @@ public class HostReactor implements Closeable {
             NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> "
                     + JacksonUtils.toJson(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-            NotifyCenter.publishEvent(new InstancesChangeEvent(serviceInfo.getName(), serviceInfo.getGroupName(),
+            NotifyCenter.publishEvent(new InstancesChangeEvent(this.notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                     serviceInfo.getClusters(), serviceInfo.getHosts()));
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
@@ -450,6 +460,7 @@ public class HostReactor implements Closeable {
         
         @Override
         public void run() {
+            boolean stop = false;
             long delayTime = DEFAULT_DELAY;
             
             try {
@@ -474,6 +485,9 @@ public class HostReactor implements Closeable {
                 if (!notifier.isSubscribed(serviceName, clusters) && !futureMap
                         .containsKey(ServiceInfo.getKey(serviceName, clusters))) {
                     // abort the update task
+                    stop = true;
+                    // clear the service info cache
+                    serviceInfoMap.remove(ServiceInfo.getKey(serviceName, clusters));
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
@@ -487,7 +501,9 @@ public class HostReactor implements Closeable {
                 incFailCount();
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             } finally {
-                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                if (!stop) {
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                }
             }
         }
     }
