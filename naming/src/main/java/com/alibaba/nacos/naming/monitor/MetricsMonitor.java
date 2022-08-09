@@ -27,6 +27,7 @@ import io.micrometer.core.instrument.Tag;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -65,6 +66,20 @@ public class MetricsMonitor {
     
     private final AtomicInteger failedPush = new AtomicInteger();
     
+    private final AtomicInteger serviceSubscribedEventQueueSize = new AtomicInteger();
+    
+    private final AtomicInteger serviceChangedEventQueueSize = new AtomicInteger();
+    
+    /**
+     * version -> naming subscriber count.
+     */
+    private final ConcurrentHashMap<String, AtomicInteger> namingSubscriber = new ConcurrentHashMap<>();
+    
+    /**
+     * version -> naming publisher count.
+     */
+    private final ConcurrentHashMap<String, AtomicInteger> namingPublisher = new ConcurrentHashMap<>();
+    
     private MetricsMonitor() {
         for (Field each : MetricsMonitor.class.getDeclaredFields()) {
             if (Number.class.isAssignableFrom(each.getType())) {
@@ -76,6 +91,28 @@ public class MetricsMonitor {
                 }
             }
         }
+        
+        namingSubscriber.put("v1", new AtomicInteger(0));
+        namingSubscriber.put("v2", new AtomicInteger(0));
+        
+        List<Tag> tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v1"));
+        Metrics.gauge("nacos_naming_subscriber", tags, namingSubscriber.get("v1"));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v2"));
+        Metrics.gauge("nacos_naming_subscriber", tags, namingSubscriber.get("v2"));
+    
+        namingPublisher.put("v1", new AtomicInteger(0));
+        namingPublisher.put("v2", new AtomicInteger(0));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v1"));
+        Metrics.gauge("nacos_naming_publisher", tags, namingPublisher.get("v1"));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v2"));
+        Metrics.gauge("nacos_naming_publisher", tags, namingPublisher.get("v2"));
     }
     
     private <T extends Number> void registerToMetrics(String name, T number) {
@@ -133,8 +170,24 @@ public class MetricsMonitor {
         return INSTANCE.totalPushCountForAvg;
     }
     
+    public static AtomicInteger getServiceSubscribedEventQueueSize() {
+        return INSTANCE.serviceSubscribedEventQueueSize;
+    }
+    
+    public static AtomicInteger getServiceChangedEventQueueSize() {
+        return INSTANCE.serviceChangedEventQueueSize;
+    }
+    
     public static AtomicLong getTotalPushCostForAvg() {
         return INSTANCE.totalPushCostForAvg;
+    }
+    
+    public static AtomicInteger getNamingSubscriber(String version) {
+        return INSTANCE.namingSubscriber.get(version);
+    }
+    
+    public static AtomicInteger getNamingPublisher(String version) {
+        return INSTANCE.namingPublisher.get(version);
     }
     
     public static void compareAndSetMaxPushCost(long newCost) {
