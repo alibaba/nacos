@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -169,13 +170,21 @@ public abstract class AbstractClient implements Client {
     @Override
     public void release() {
         Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
+        List<InstancePublishInfo> needDecrementBatchInstanceIpList = new ArrayList<>();
+        List<InstancePublishInfo> needDecrementInstanceIpList = new ArrayList<>();
+        
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
+                needDecrementBatchInstanceIpList.add(instancePublishInfo);
             } else {
-                MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
+                needDecrementInstanceIpList.add(instancePublishInfo);
             }
         }
+        for (InstancePublishInfo instancePublishInfo : needDecrementBatchInstanceIpList) {
+            MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
+        }
+        
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * needDecrementInstanceIpList.size());
         MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
     }
     
