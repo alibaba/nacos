@@ -17,14 +17,11 @@
 package com.alibaba.nacos.client.env;
 
 import java.util.Map;
+import java.util.Properties;
 
 class SystemEnvPropertySource extends AbstractPropertySource {
     
-    private final Map<String, String> env;
-    
-    SystemEnvPropertySource() {
-        this.env = System.getenv();
-    }
+    private final Map<String, String> env = System.getenv();
     
     @Override
     SourceType getType() {
@@ -78,7 +75,15 @@ class SystemEnvPropertySource extends AbstractPropertySource {
         return null;
     }
     
-    private boolean containsKey(String name) {
+    @Override
+    boolean containsKey(String name) {
         return this.env.containsKey(name);
+    }
+    
+    @Override
+    Properties asProperties() {
+        Properties properties = new Properties();
+        properties.putAll(this.env);
+        return properties;
     }
 }

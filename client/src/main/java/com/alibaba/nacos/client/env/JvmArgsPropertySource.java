@@ -20,11 +20,7 @@ import java.util.Properties;
 
 class JvmArgsPropertySource extends AbstractPropertySource {
     
-    private final Properties properties;
-    
-    JvmArgsPropertySource() {
-        this.properties = System.getProperties();
-    }
+    private final Properties properties = new Properties(System.getProperties());
     
     @Override
     SourceType getType() {
@@ -34,5 +30,17 @@ class JvmArgsPropertySource extends AbstractPropertySource {
     @Override
     String getProperty(String key) {
         return properties.getProperty(key);
+    }
+    
+    @Override
+    boolean containsKey(String key) {
+        return properties.containsKey(key);
+    }
+    
+    @Override
+    Properties asProperties() {
+        Properties properties = new Properties();
+        properties.putAll(this.properties);
+        return properties;
     }
 }

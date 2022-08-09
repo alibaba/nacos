@@ -16,14 +16,21 @@
 
 package com.alibaba.nacos.client.env;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Properties;
 
 class PropertiesPropertySource extends AbstractPropertySource {
     
-    private final Properties properties;
+    private final Properties properties = new Properties();
     
-    PropertiesPropertySource(Properties properties) {
-        this.properties = properties;
+    private PropertiesPropertySource parent;
+    
+    PropertiesPropertySource(){}
+    
+    PropertiesPropertySource(PropertiesPropertySource parent) {
+        this.parent = parent;
     }
     
     @Override
@@ -33,6 +40,65 @@ class PropertiesPropertySource extends AbstractPropertySource {
     
     @Override
     String getProperty(String key) {
-        return properties.getProperty(key);
+    
+        String value = properties.getProperty(key);
+        if (value != null) {
+            return value;
+        }
+        PropertiesPropertySource parent = this.parent;
+        while (parent != null) {
+            value = parent.properties.getProperty(key);
+            if (value != null) {
+                return value;
+            }
+            parent = parent.parent;
+        }
+        
+        return null;
+    }
+    
+    @Override
+    boolean containsKey(String key) {
+        boolean exist = properties.containsKey(key);
+        if (exist) {
+            return true;
+        }
+        PropertiesPropertySource parent = this.parent;
+        while (parent != null) {
+            exist = parent.properties.containsKey(key);
+            if (exist) {
+                return true;
+            }
+            parent = parent.parent;
+        }
+        return false;
+    }
+    
+    @Override
+    Properties asProperties() {
+        List<Properties> propertiesList = new ArrayList<>(8);
+        propertiesList.add(properties);
+    
+        PropertiesPropertySource parent = this.parent;
+        while (parent != null) {
+            propertiesList.add(parent.properties);
+            parent = parent.parent;
+        }
+    
+        Properties ret = new Properties();
+        final ListIterator<Properties> iterator = propertiesList.listIterator(propertiesList.size());
+        while (iterator.hasPrevious()) {
+            final Properties properties = iterator.previous();
+            ret.putAll(properties);
+        }
+        return ret;
+    }
+    
+    synchronized void setProperty(String key, String value) {
+        properties.setProperty(key, value);
+    }
+    
+    synchronized void addProperties(Properties source) {
+        properties.putAll(source);
     }
 }

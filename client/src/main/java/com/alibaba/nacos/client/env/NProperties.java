@@ -16,12 +16,17 @@
 
 package com.alibaba.nacos.client.env;
 
+import java.util.Properties;
+
 /**
- * nacos env interface.
+ * NProperties interface.
  *
  * @author onewe
  */
-public interface NacosEnvironment {
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+public interface NProperties {
+    
+    NProperties SHARED = SearchableProperties.INSTANCE;
     
     /**
      * get property, if the value can not be got by the special key, the null will be returned.
@@ -87,4 +92,42 @@ public interface NacosEnvironment {
      */
     Long getLong(String key, Long defaultValue);
     
+    /**
+     * set property.
+     * @param key key
+     * @param value value
+     */
+    void setProperty(String key, String value);
+    
+    /**
+     * add properties.
+     * @param properties properties
+     */
+    void addProperties(Properties properties);
+    
+    /**
+     * Tests if the specified object is a key in this NProperties.
+     * @param key key – possible key
+     * @return true if and only if the specified object is a key in this NProperties, false otherwise.
+     */
+    boolean containsKey(String key);
+    
+    /**
+     * get properties from NProperties.
+     * @return properties
+     */
+    Properties asProperties();
+    
+    /**
+     * create a new NProperties which scope is itself.
+     * @return NProperties
+     */
+    NProperties derive();
+    
+    /**
+     * create a NProperties and init.
+     * @param properties properties
+     * @return NProperties
+     */
+    NProperties derive(Properties properties);
 }
