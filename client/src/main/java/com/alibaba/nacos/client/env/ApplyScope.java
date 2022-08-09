@@ -16,31 +16,25 @@
 
 package com.alibaba.nacos.client.env;
 
-import java.util.Properties;
-
-class JvmArgsPropertySource extends AbstractPropertySource {
-    
-    private final Properties properties = new Properties(System.getProperties());
-    
-    @Override
-    SourceType getType() {
-        return SourceType.JVM;
-    }
-    
-    @Override
-    String getProperty(String key) {
-        return properties.getProperty(key);
-    }
-    
-    @Override
-    boolean containsKey(String key) {
-        return properties.containsKey(key);
-    }
-    
-    @Override
-    Properties asProperties() {
-        Properties properties = new Properties();
-        properties.putAll(this.properties);
-        return properties;
-    }
+/**
+ * environment apply scope.
+ * @author onewe
+ */
+public enum ApplyScope {
+    /**
+     * global scope.
+     */
+    GLOBAL,
+    /**
+     * config module scope.
+     */
+    CONFIG,
+    /**
+     * naming module scope.
+     */
+    NAMING,
+    /**
+     * naming maintain module scope.
+     */
+    NAMING_MAINTAIN
 }

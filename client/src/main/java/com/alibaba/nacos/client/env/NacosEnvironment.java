@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.env;
 
+import java.util.Properties;
+
 /**
  * nacos env interface.
  *
@@ -87,4 +89,29 @@ public interface NacosEnvironment {
      */
     Long getLong(String key, Long defaultValue);
     
+    /**
+     * set property.
+     * @param key key
+     * @param value value
+     */
+    void setProperty(String key, String value);
+    
+    /**
+     * add properties.
+     * @param properties properties
+     */
+    void addProperties(Properties properties);
+    
+    /**
+     * Tests if the specified object is a key in this environment.
+     * @param key key – possible key
+     * @return true if and only if the specified object is a key in this environment, false otherwise.
+     */
+    boolean containsKey(String key);
+    
+    /**
+     * get properties from environment.
+     * @return properties
+     */
+    Properties asProperties();
 }

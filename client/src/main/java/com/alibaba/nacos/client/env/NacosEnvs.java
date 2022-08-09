@@ -16,29 +16,46 @@
 
 package com.alibaba.nacos.client.env;
 
-import java.lang.reflect.Proxy;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
  * environment utils.
+ *
  * @author onewe
  */
 public class NacosEnvs {
     
-    private static final NacosEnvironment ENVIRONMENT = NacosEnvironmentFactory.createEnvironment();
+    private static final Map<ApplyScope, SearchableEnvironment> ENVIRONMENT_MAP = new HashMap<>(4);
     
-    /**
-     * init environment.
-     * @param properties properties
-     */
-    public static void init(Properties properties) {
-        NacosEnvironmentFactory.NacosEnvironmentDelegate warrper = (NacosEnvironmentFactory.NacosEnvironmentDelegate) Proxy.getInvocationHandler(
-                ENVIRONMENT);
-        warrper.init(properties);
+    static {
+        ENVIRONMENT_MAP.put(ApplyScope.GLOBAL, new SearchableEnvironment());
+        ENVIRONMENT_MAP.put(ApplyScope.CONFIG, new SearchableEnvironment() {
+            @Override
+            protected ApplyScope getScope() {
+                return ApplyScope.CONFIG;
+            }
+        });
+        
+        ENVIRONMENT_MAP.put(ApplyScope.NAMING, new SearchableEnvironment() {
+            @Override
+            protected ApplyScope getScope() {
+                return ApplyScope.NAMING;
+            }
+        });
+    
+        ENVIRONMENT_MAP.put(ApplyScope.NAMING_MAINTAIN, new SearchableEnvironment() {
+            @Override
+            protected ApplyScope getScope() {
+                return ApplyScope.NAMING_MAINTAIN;
+            }
+        });
+        
     }
     
     public static String getProperty(String key, String defaultValue) {
-        return ENVIRONMENT.getProperty(key, defaultValue);
+        return apply(ApplyScope.GLOBAL).getProperty(key, defaultValue);
     }
     
     /**
@@ -48,7 +65,7 @@ public class NacosEnvs {
      * @return string value or null.
      */
     public static String getProperty(String key) {
-        return ENVIRONMENT.getProperty(key);
+        return apply(ApplyScope.GLOBAL).getProperty(key);
     }
     
     /**
@@ -58,7 +75,7 @@ public class NacosEnvs {
      * @return boolean value or null.
      */
     public static Boolean getBoolean(String key) {
-        return ENVIRONMENT.getBoolean(key);
+        return apply(ApplyScope.GLOBAL).getBoolean(key);
     }
     
     /**
@@ -69,7 +86,7 @@ public class NacosEnvs {
      * @return boolean value or defaultValue.
      */
     public static Boolean getBoolean(String key, Boolean defaultValue) {
-        return ENVIRONMENT.getBoolean(key, defaultValue);
+        return apply(ApplyScope.GLOBAL).getBoolean(key, defaultValue);
     }
     
     /**
@@ -79,7 +96,7 @@ public class NacosEnvs {
      * @return integer value or null
      */
     public static Integer getInteger(String key) {
-        return ENVIRONMENT.getInteger(key);
+        return apply(ApplyScope.GLOBAL).getInteger(key);
     }
     
     /**
@@ -90,7 +107,7 @@ public class NacosEnvs {
      * @return integer value or default value
      */
     public static Integer getInteger(String key, Integer defaultValue) {
-        return ENVIRONMENT.getInteger(key, defaultValue);
+        return apply(ApplyScope.GLOBAL).getInteger(key, defaultValue);
     }
     
     /**
@@ -100,7 +117,7 @@ public class NacosEnvs {
      * @return long value or null
      */
     public static Long getLong(String key) {
-        return ENVIRONMENT.getLong(key);
+        return apply(ApplyScope.GLOBAL).getLong(key);
     }
     
     /**
@@ -111,6 +128,35 @@ public class NacosEnvs {
      * @return long value or default value
      */
     public static Long getLong(String key, Long defaultValue) {
-        return ENVIRONMENT.getLong(key, defaultValue);
+        return apply(ApplyScope.GLOBAL).getLong(key, defaultValue);
     }
+    
+    public static void setProperty(String key, String value) {
+        apply(ApplyScope.GLOBAL).setProperty(key, value);
+    }
+    
+    public static void addProperties(Properties properties) {
+        apply(ApplyScope.GLOBAL).addProperties(properties);
+    }
+    
+    public static boolean containsKey(String key) {
+        return apply(ApplyScope.GLOBAL).containsKey(key);
+    }
+    
+    public static Properties asProperties() {
+        return apply(ApplyScope.GLOBAL).asProperties();
+    }
+    
+    /**
+     * apply scope to environment.
+     * @param applyScope scope
+     * @return NacosEnvironment
+     */
+    public static NacosEnvironment apply(ApplyScope applyScope) {
+        if (applyScope == null) {
+            return ENVIRONMENT_MAP.get(ApplyScope.GLOBAL);
+        }
+        return ENVIRONMENT_MAP.get(applyScope);
+    }
+    
 }

@@ -16,159 +16,174 @@
 
 package com.alibaba.nacos.client.env;
 
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.Properties;
 
 public class NacosEnvsTest {
     
-    static MockedStatic<NacosEnvironmentFactory> mockedStatic;
-    
-    @BeforeClass
-    public static void before() {
-        mockedStatic = Mockito.mockStatic(NacosEnvironmentFactory.class);
-        mockedStatic.when(NacosEnvironmentFactory::createEnvironment).thenReturn(createProxy());
-        
-    }
-    
-    @AfterClass
-    public static void teardown() {
-        if (mockedStatic != null) {
-            mockedStatic.close();
-        }
-    }
-    
-    private static NacosEnvironment createProxy() {
-        return (NacosEnvironment) Proxy.newProxyInstance(NacosEnvironmentFactory.class.getClassLoader(),
-                new Class[] {NacosEnvironment.class}, new NacosEnvironmentFactory.NacosEnvironmentDelegate() {
-                    volatile NacosEnvironment environment;
-                    
-                    @Override
-                    public void init(Properties properties) {
-                        environment = new SearchableEnvironment(properties);
-                    }
-                    
-                    @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        if (environment == null) {
-                            throw new IllegalStateException(
-                                    "Nacos environment doesn't init, please call NEnvs#init method then try it again.");
-                        }
-                        return method.invoke(environment, args);
-                    }
-                });
-    }
-    
     @Test
     public void testGetProperty() {
-        
-        final Properties properties = new Properties();
-        properties.setProperty("nacos.home", "/home/nacos");
-        NacosEnvs.init(properties);
+        NacosEnvs.setProperty("nacos.home", "/home/nacos");
         final String value = NacosEnvs.getProperty("nacos.home");
-        
         Assert.assertEquals("/home/nacos", value);
     }
     
     @Test
     public void testGetPropertyDefaultValue() {
-        
-        final Properties properties = new Properties();
-        NacosEnvs.init(properties);
-        final String value = NacosEnvs.getProperty("nacos.home", "/home/default_value");
-        
+        final String value = NacosEnvs.getProperty("nacos.home.default", "/home/default_value");
         Assert.assertEquals("/home/default_value", value);
     }
     
     @Test
     public void testGetBoolean() {
-        final Properties properties = new Properties();
-        properties.setProperty("use.cluster", "true");
-        NacosEnvs.init(properties);
-        
+        NacosEnvs.setProperty("use.cluster", "true");
         final Boolean value = NacosEnvs.getBoolean("use.cluster");
         Assert.assertTrue(value);
     }
     
     @Test
     public void testGetBooleanDefaultValue() {
-        final Properties properties = new Properties();
-        NacosEnvs.init(properties);
-        
-        final Boolean value = NacosEnvs.getBoolean("use.cluster", false);
+        final Boolean value = NacosEnvs.getBoolean("use.cluster.default", false);
         Assert.assertFalse(value);
     }
     
     @Test
     public void testGetInteger() {
-        final Properties properties = new Properties();
-        properties.setProperty("max.timeout", "200");
-        NacosEnvs.init(properties);
-        
+        NacosEnvs.setProperty("max.timeout", "200");
         final Integer value = NacosEnvs.getInteger("max.timeout");
-        
         Assert.assertEquals(200, value.intValue());
     }
     
     @Test
     public void testGetIntegerDefaultValue() {
-        final Properties properties = new Properties();
-        NacosEnvs.init(properties);
-        
-        final Integer value = NacosEnvs.getInteger("max.timeout", 400);
+        final Integer value = NacosEnvs.getInteger("max.timeout.default", 400);
         Assert.assertEquals(400, value.intValue());
     }
     
     @Test
     public void testGetLong() {
-        final Properties properties = new Properties();
-        properties.setProperty("connection.timeout", "200");
-        NacosEnvs.init(properties);
-        
+        NacosEnvs.setProperty("connection.timeout", "200");
         final Long value = NacosEnvs.getLong("connection.timeout");
         Assert.assertEquals(200L, value.longValue());
     }
     
     @Test
     public void testGetLongDefault() {
-        final Properties properties = new Properties();
-        NacosEnvs.init(properties);
-        final Long value = NacosEnvs.getLong("connection.timeout", 400L);
+        final Long value = NacosEnvs.getLong("connection.timeout.default", 400L);
         Assert.assertEquals(400L, value.longValue());
     }
     
     @Test
-    public void testGetPropertyJvmFirst() {
-        System.setProperty("nacos.envs.search", "jvm");
-        System.setProperty("nacos.home", "/home/jvm_first");
-        
-        Properties properties = new Properties();
-        properties.setProperty("nacos.home", "/home/properties_first");
-        
-        NacosEnvs.init(properties);
-        final String value = NacosEnvs.getProperty("nacos.home");
-        
-        Assert.assertEquals("/home/jvm_first", value);
-        System.clearProperty("nacos.envs.search");
-        System.clearProperty("nacos.home");
+    public void testGetPropertyDefaultSetting() {
+     
+        final String value = NacosEnvs.getProperty("nacos.home.default.test");
+        Assert.assertEquals("/home/default_setting", value);
     }
     
     @Test
-    public void testGetPropertyDefaultSetting() {
+    public void setProperty() {
+        NacosEnvs.setProperty("nacos.set.property", "true");
+        final String ret = NacosEnvs.getProperty("nacos.set.property");
+        Assert.assertEquals("true", ret);
+    }
+    
+    @Test
+    public void testAddProperties() {
         Properties properties = new Properties();
+        properties.setProperty("nacos.add.properties", "true");
         
-        NacosEnvs.init(properties);
-        final String value = NacosEnvs.getProperty("nacos.home.default.test");
+        NacosEnvs.addProperties(properties);
+    
+        final String ret = NacosEnvs.getProperty("nacos.add.properties");
         
-        Assert.assertEquals("/home/default_setting", value);
+        Assert.assertEquals("true", ret);
+    }
+    
+    @Test
+    public void testContainsKey() {
+        NacosEnvs.setProperty("nacos.contains.key", "true");
+    
+        boolean ret = NacosEnvs.containsKey("nacos.contains.key");
+        Assert.assertTrue(ret);
+    
+        ret = NacosEnvs.containsKey("nacos.contains.key.in.sys");
+        Assert.assertFalse(ret);
+    }
+    
+    @Test
+    public void testContainsKeyWithScope() {
+        NacosEnvs.setProperty("nacos.contains.global.scope", "global");
+        NacosEnvs.apply(ApplyScope.NAMING).setProperty("nacos.contains.naming.scope", "naming");
+    
+        boolean ret = NacosEnvs.containsKey("nacos.contains.global.scope");
+        Assert.assertTrue(ret);
         
+        ret = NacosEnvs.containsKey("nacos.contains.naming.scope");
+        Assert.assertFalse(ret);
+    
+        ret = NacosEnvs.apply(ApplyScope.NAMING).containsKey("nacos.contains.naming.scope");
+        Assert.assertTrue(ret);
+        
+        ret = NacosEnvs.apply(ApplyScope.NAMING).containsKey("nacos.contains.global.scope");
+        Assert.assertTrue(ret);
+    
+    }
+    
+    @Test
+    public void testAsProperties() {
+        NacosEnvs.setProperty("nacos.as.properties", "true");
+        final Properties properties = NacosEnvs.asProperties();
+        Assert.assertNotNull(properties);
+        Assert.assertEquals("true", properties.getProperty("nacos.as.properties"));
+    }
+    
+    @Test
+    public void testAsPropertiesWithScope() {
+        NacosEnvs.setProperty("nacos.as.properties.global.scope", "global");
+        NacosEnvs.setProperty("nacos.server.addr.scope", "global");
+        
+        NacosEnvs.apply(ApplyScope.CONFIG).setProperty("nacos.server.addr.scope", "config");
+    
+        final Properties properties = NacosEnvs.apply(ApplyScope.CONFIG).asProperties();
+        Assert.assertNotNull(properties);
+    
+        String ret = properties.getProperty("nacos.as.properties.global.scope");
+        Assert.assertEquals("global", ret);
+        
+        ret = properties.getProperty("nacos.server.addr.scope");
+        Assert.assertEquals("config", ret);
+    }
+    
+    @Test
+    public void testGerPropertyWithScope() {
+        NacosEnvs.setProperty("nacos.global.scope", "global");
+        NacosEnvs.apply(ApplyScope.CONFIG).setProperty("nacos.config.scope", "config");
+        NacosEnvs.apply(ApplyScope.NAMING).setProperty("nacos.naming.scope", "naming");
+    
+        String ret = NacosEnvs.getProperty("nacos.global.scope");
+        Assert.assertEquals("global", ret);
+        
+        ret = NacosEnvs.getProperty("nacos.config.scope");
+        Assert.assertNull(ret);
+        
+        ret = NacosEnvs.getProperty("nacos.naming.scope");
+        Assert.assertNull(ret);
+        
+        ret = NacosEnvs.apply(ApplyScope.CONFIG).getProperty("nacos.config.scope");
+        Assert.assertEquals("config", ret);
+        ret = NacosEnvs.apply(ApplyScope.CONFIG).getProperty("nacos.global.scope");
+        Assert.assertEquals("global", ret);
+        ret = NacosEnvs.apply(ApplyScope.CONFIG).getProperty("nacos.naming.scope");
+        Assert.assertNull(ret);
+        
+        ret = NacosEnvs.apply(ApplyScope.NAMING).getProperty("nacos.naming.scope");
+        Assert.assertEquals("naming", ret);
+        ret = NacosEnvs.apply(ApplyScope.NAMING).getProperty("nacos.global.scope");
+        Assert.assertEquals("global", ret);
+        ret = NacosEnvs.apply(ApplyScope.NAMING).getProperty("nacos.config.scope");
+        Assert.assertNull(ret);
     }
     
 }
