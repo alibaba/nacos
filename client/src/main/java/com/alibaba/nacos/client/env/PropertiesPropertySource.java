@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.client.env;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 class PropertiesPropertySource extends AbstractPropertySource {
     
-    private final Properties properties;
+    private final Properties globalProperties = new Properties();
     
-    PropertiesPropertySource(Properties properties) {
-        this.properties = properties;
-    }
+    private final Map<Object, Properties> childProperties = new HashMap<>(8);
     
     @Override
     SourceType getType() {
@@ -33,6 +33,88 @@ class PropertiesPropertySource extends AbstractPropertySource {
     
     @Override
     String getProperty(String key) {
-        return properties.getProperty(key);
+        return globalProperties.getProperty(key);
+    }
+    
+    String getProperty(Object scope, String key) {
+        if (scope == null) {
+            return globalProperties.getProperty(key);
+        }
+        String value;
+        final Properties properties = childProperties.get(scope);
+        if (properties == null) {
+            value = null;
+        } else {
+            value = properties.getProperty(key);
+        }
+        
+        if (value == null) {
+            value = globalProperties.getProperty(key);
+        }
+        return value;
+    }
+    
+    @Override
+    boolean containsKey(String key) {
+        return globalProperties.containsKey(key);
+    }
+    
+    boolean containsKey(Object scope, String key) {
+        if (scope == null) {
+            return globalProperties.containsKey(key);
+        }
+        boolean containing;
+        final Properties properties = childProperties.get(scope);
+        if (properties == null) {
+            containing = false;
+        } else {
+            containing = properties.containsKey(key);
+        }
+        if (!containing) {
+            containing = globalProperties.containsKey(key);
+        }
+        return containing;
+    }
+    
+    @Override
+    Properties asProperties() {
+        Properties properties = new Properties();
+        properties.putAll(globalProperties);
+        return properties;
+    }
+    
+    Properties asProperties(Object applyScope) {
+        if (applyScope == null) {
+            Properties properties = new Properties();
+            properties.putAll(globalProperties);
+            return properties;
+        }
+        Properties properties = new Properties();
+        properties.putAll(globalProperties);
+    
+        final Properties applyScopeProperties = childProperties.get(applyScope);
+        if (applyScopeProperties != null) {
+            properties.putAll(applyScopeProperties);
+        }
+        
+        return properties;
+    }
+    
+    synchronized void setProperty(Object scope, String key, String value) {
+        if (scope == null) {
+            globalProperties.setProperty(key, value);
+            return;
+        }
+        final Properties properties = this.childProperties.computeIfAbsent(scope, s -> new Properties());
+        properties.setProperty(key, value);
+    }
+    
+    synchronized void addProperties(Object scope, Properties properties) {
+        if (scope == null) {
+            globalProperties.putAll(properties);
+            return;
+        }
+        final Properties existProperties = this.childProperties.computeIfAbsent(scope, s -> new Properties());
+        existProperties.putAll(properties);
     }
 }

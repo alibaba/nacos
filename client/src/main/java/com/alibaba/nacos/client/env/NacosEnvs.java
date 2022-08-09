@@ -16,29 +16,19 @@
 
 package com.alibaba.nacos.client.env;
 
-import java.lang.reflect.Proxy;
 import java.util.Properties;
 
 /**
  * environment utils.
+ *
  * @author onewe
  */
 public class NacosEnvs {
     
-    private static final NacosEnvironment ENVIRONMENT = NacosEnvironmentFactory.createEnvironment();
-    
-    /**
-     * init environment.
-     * @param properties properties
-     */
-    public static void init(Properties properties) {
-        NacosEnvironmentFactory.NacosEnvironmentDelegate warrper = (NacosEnvironmentFactory.NacosEnvironmentDelegate) Proxy.getInvocationHandler(
-                ENVIRONMENT);
-        warrper.init(properties);
-    }
+    private static final SearchableEnvironment GLOBAL_ENV = new SearchableEnvironment();
     
     public static String getProperty(String key, String defaultValue) {
-        return ENVIRONMENT.getProperty(key, defaultValue);
+        return GLOBAL_ENV.getProperty(key, defaultValue);
     }
     
     /**
@@ -48,7 +38,7 @@ public class NacosEnvs {
      * @return string value or null.
      */
     public static String getProperty(String key) {
-        return ENVIRONMENT.getProperty(key);
+        return GLOBAL_ENV.getProperty(key);
     }
     
     /**
@@ -58,7 +48,7 @@ public class NacosEnvs {
      * @return boolean value or null.
      */
     public static Boolean getBoolean(String key) {
-        return ENVIRONMENT.getBoolean(key);
+        return GLOBAL_ENV.getBoolean(key);
     }
     
     /**
@@ -69,7 +59,7 @@ public class NacosEnvs {
      * @return boolean value or defaultValue.
      */
     public static Boolean getBoolean(String key, Boolean defaultValue) {
-        return ENVIRONMENT.getBoolean(key, defaultValue);
+        return GLOBAL_ENV.getBoolean(key, defaultValue);
     }
     
     /**
@@ -79,7 +69,7 @@ public class NacosEnvs {
      * @return integer value or null
      */
     public static Integer getInteger(String key) {
-        return ENVIRONMENT.getInteger(key);
+        return GLOBAL_ENV.getInteger(key);
     }
     
     /**
@@ -90,7 +80,7 @@ public class NacosEnvs {
      * @return integer value or default value
      */
     public static Integer getInteger(String key, Integer defaultValue) {
-        return ENVIRONMENT.getInteger(key, defaultValue);
+        return GLOBAL_ENV.getInteger(key, defaultValue);
     }
     
     /**
@@ -100,7 +90,7 @@ public class NacosEnvs {
      * @return long value or null
      */
     public static Long getLong(String key) {
-        return ENVIRONMENT.getLong(key);
+        return GLOBAL_ENV.getLong(key);
     }
     
     /**
@@ -111,6 +101,40 @@ public class NacosEnvs {
      * @return long value or default value
      */
     public static Long getLong(String key, Long defaultValue) {
-        return ENVIRONMENT.getLong(key, defaultValue);
+        return GLOBAL_ENV.getLong(key, defaultValue);
     }
+    
+    public static void setProperty(String key, String value) {
+        GLOBAL_ENV.setProperty(key, value);
+    }
+    
+    public static void addProperties(Properties properties) {
+        GLOBAL_ENV.addProperties(properties);
+    }
+    
+    public static boolean containsKey(String key) {
+        return GLOBAL_ENV.containsKey(key);
+    }
+    
+    public static Properties asProperties() {
+        return GLOBAL_ENV.asProperties();
+    }
+    
+    /**
+     * bind environment to scope.
+     * @param scope scope
+     * @return NacosEnvironment
+     */
+    public static synchronized NacosEnvironment bind(Object scope) {
+        if (scope == null) {
+            return GLOBAL_ENV;
+        }
+        return new SearchableEnvironment() {
+            @Override
+            protected Object getScope() {
+                return scope;
+            }
+        };
+    }
+    
 }
