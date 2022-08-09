@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.remote.AbstractPushCallBack;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
@@ -135,12 +134,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         configDataChanged(groupKey, dataId, group, tenant, isBeta, betaIps, tag);
         
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return LocalDataChangeEvent.class;
-    }
-    
+
     class RpcPushTask implements Runnable {
         
         ConfigChangeNotifyRequest notifyRequest;

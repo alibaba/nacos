@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
@@ -108,11 +107,6 @@ public class InternalConfigChangeNotifier extends Subscriber<LocalDataChangeEven
                     "load local config fail,error code=" + handle.getErrorCode());
         }
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return LocalDataChangeEvent.class;
-    }
-    
+
 }
 

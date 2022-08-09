@@ -18,7 +18,6 @@ package com.alibaba.nacos.auth.config;
 
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -162,9 +161,5 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServerConfigChangeEvent.class;
-    }
+
 }

@@ -222,11 +222,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 ServerMemberManager.this.memberAddressInfos.remove(oldAddress);
                 ServerMemberManager.this.memberAddressInfos.add(newAddress);
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return InetUtils.IPChangeEvent.class;
-            }
+
         });
     }
     

@@ -19,6 +19,8 @@ package com.alibaba.nacos.common.utils;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.lang.reflect.UndeclaredThrowableException;
 
 /**
@@ -163,6 +165,45 @@ public class ReflectUtils {
             handleReflectionException(ex);
         }
         throw new IllegalStateException("Should never get here");
+    }
+
+    /**
+     * Get parent generic class.
+     *
+     * @param child target subclass.
+     * @param targetClass target parent class.
+     * @param index index.
+     * @return generic class type.
+     */
+    public static Class<?> findGenericClass(Class<?> child, Class<?> targetClass, int index) {
+        Class<?> parameterizedTypeReferenceSubclass = findParameterizedTypeReferenceSubclass(child, targetClass);
+        Type type = parameterizedTypeReferenceSubclass.getGenericSuperclass();
+        if (type instanceof ParameterizedType) {
+            ParameterizedType parameterizedType = (ParameterizedType) type;
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+            try {
+                return Class.forName(actualTypeArguments[index].getTypeName());
+            } catch (ClassNotFoundException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get extended parent class.
+     *
+     * @param child target subclass.
+     * @param targetClass target parent class.
+     * @return parent Class.
+     */
+    public static Class<?> findParameterizedTypeReferenceSubclass(Class<?> child, Class<?> targetClass) {
+        Class<?> parent = child.getSuperclass();
+        if (Object.class == parent) {
+            throw new IllegalStateException("Expected ParameterizedTypeReference superclass");
+        } else {
+            return targetClass == parent ? child : findParameterizedTypeReferenceSubclass(parent, targetClass);
+        }
     }
     
 }

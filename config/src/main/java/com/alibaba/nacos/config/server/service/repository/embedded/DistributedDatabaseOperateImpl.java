@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -58,8 +57,8 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -195,11 +194,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             public void onEvent(RaftDbErrorEvent event) {
                 dataSourceService.setHealthStatus("DOWN");
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RaftDbErrorEvent.class;
-            }
+
         });
         
         NotifyCenter.registerToPublisher(ConfigDumpEvent.class, NotifyCenter.ringBufferSize);

@@ -118,12 +118,7 @@ public class UpgradeStates extends Subscriber<UpgradeStates.UpgradeStateChangedE
             Loggers.EVT_LOG.error("Failed to write " + FILE_NAME + " to disk", e);
         }
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return UpgradeStateChangedEvent.class;
-    }
-    
+
     public static class UpgradeStateChangedEvent extends Event {
         
         private final boolean isUpgraded;

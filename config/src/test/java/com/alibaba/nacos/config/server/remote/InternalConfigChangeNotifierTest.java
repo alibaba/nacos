@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
@@ -29,7 +28,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -61,29 +59,17 @@ public class InternalConfigChangeNotifierTest {
         final String groupKey = GroupKey2.getKey("nacos.internal.tps.control_rule_1", "nacos", "tenant");
         final String limitGroupKey = GroupKey2.getKey("nacos.internal.tps.nacos.internal.connection.limit.rule", "nacos", "tenant");
 
-        NotifyCenter.registerSubscriber(new Subscriber() {
+        NotifyCenter.registerSubscriber(new Subscriber<ConnectionLimitRuleChangeEvent>() {
             @Override
-            public void onEvent(Event event) {
-                ConnectionLimitRuleChangeEvent connectionLimitRuleChangeEvent = (ConnectionLimitRuleChangeEvent) event;
-                Assert.assertEquals("content", connectionLimitRuleChangeEvent.getLimitRule());
-            }
-
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConnectionLimitRuleChangeEvent.class;
+            public void onEvent(ConnectionLimitRuleChangeEvent event) {
+                Assert.assertEquals("content", event.getLimitRule());
             }
         });
 
-        NotifyCenter.registerSubscriber(new Subscriber() {
+        NotifyCenter.registerSubscriber(new Subscriber<TpsControlRuleChangeEvent>() {
             @Override
-            public void onEvent(Event event) {
-                TpsControlRuleChangeEvent tpsControlRuleChangeEvent = (TpsControlRuleChangeEvent) event;
-                Assert.assertEquals("content", tpsControlRuleChangeEvent.getRuleContent());
-            }
-
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return TpsControlRuleChangeEvent.class;
+            public void onEvent(TpsControlRuleChangeEvent event) {
+                Assert.assertEquals("content", event.getRuleContent());
             }
         });
 

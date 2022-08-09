@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.config;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -40,12 +39,7 @@ public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChang
     public void onEvent(ServerConfigChangeEvent event) {
         resetConfig();
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServerConfigChangeEvent.class;
-    }
-    
+
     protected void resetConfig() {
         try {
             getConfigFromEnv();

@@ -19,15 +19,14 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
-import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
+import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
@@ -148,12 +147,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     // The metadata information is injected into the metadata information of the node
                     injectProtocolMetaData(metaData);
                 }
-                
-                @Override
-                public Class<? extends Event> subscribeType() {
-                    return RaftEvent.class;
-                }
-                
+
             });
         }
     }

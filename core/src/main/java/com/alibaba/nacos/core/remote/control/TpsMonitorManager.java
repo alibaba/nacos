@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.remote.control;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -179,12 +178,7 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> imp
         }
         
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return TpsControlRuleChangeEvent.class;
-    }
-    
+
     @Override
     public void destroy() throws Exception {
         if (executorService == null) {

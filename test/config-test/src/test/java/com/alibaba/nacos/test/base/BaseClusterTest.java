@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
@@ -87,11 +86,7 @@ public class BaseClusterTest extends HttpClient4Test {
             public void onEvent(RaftDbErrorEvent event) {
                 System.out.print(event.getEx());
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RaftDbErrorEvent.class;
-            }
+
         });
     }
     

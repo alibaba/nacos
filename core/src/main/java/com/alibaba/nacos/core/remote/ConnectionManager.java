@@ -26,7 +26,6 @@ import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
@@ -604,12 +603,7 @@ public class ConnectionManager extends Subscriber<ConnectionLimitRuleChangeEvent
             Loggers.REMOTE.error("Fail to parse connection limit rule :{}", limitRule, e);
         }
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ConnectionLimitRuleChangeEvent.class;
-    }
-    
+
     static class ConnectionLimitRule {
         
         private Set<String> monitorIpList = new HashSet<>();

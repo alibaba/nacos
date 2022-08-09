@@ -17,23 +17,21 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.api.config.listener.AbstractListener;
-import com.alibaba.nacos.common.notify.Event;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorRecoverEvent;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.sys.utils.InetUtils;
-
 import com.alibaba.nacos.test.base.BaseClusterTest;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.Assert;
@@ -302,11 +300,6 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
             public void onEvent(RaftDbErrorEvent event) {
                 latch1.countDown();
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RaftDbErrorEvent.class;
-            }
         });
         NotifyCenter.publishEvent(new RaftDbErrorEvent());
         latch1.await(10_000L, TimeUnit.MILLISECONDS);
@@ -321,11 +314,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
             public void onEvent(RaftDbErrorRecoverEvent event) {
                 latch2.countDown();
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RaftDbErrorRecoverEvent.class;
-            }
+
         });
         NotifyCenter.publishEvent(new RaftDbErrorRecoverEvent());
         latch2.await(10_000L, TimeUnit.MILLISECONDS);

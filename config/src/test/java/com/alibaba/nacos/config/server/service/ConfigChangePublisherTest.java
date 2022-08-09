@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
@@ -43,17 +42,13 @@ public class ConfigChangePublisherTest {
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         
         NotifyCenter.registerToPublisher(ConfigDataChangeEvent.class, NotifyCenter.ringBufferSize);
-        NotifyCenter.registerSubscriber(new Subscriber() {
+        NotifyCenter.registerSubscriber(new Subscriber<ConfigDataChangeEvent>() {
             
             @Override
-            public void onEvent(Event event) {
-                reference.set((ConfigDataChangeEvent) event);
+            public void onEvent(ConfigDataChangeEvent event) {
+                reference.set(event);
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return ConfigDataChangeEvent.class;
-            }
+
         });
         
         // nacos is standalone mode and use embedded storage

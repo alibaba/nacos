@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.consistency.persistent;
 
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.consistency.DataOperation;
@@ -131,9 +130,5 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     public void onEvent(ValueChangeEvent event) {
         notify(event.getKey(), event.getAction(), find.apply(event.getKey()));
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ValueChangeEvent.class;
-    }
+
 }

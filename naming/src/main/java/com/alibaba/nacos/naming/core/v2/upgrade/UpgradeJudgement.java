@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
@@ -227,12 +226,7 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             }
         }
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return MembersChangeEvent.class;
-    }
-    
+
     /**
      * Shut down.
      */

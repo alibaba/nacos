@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay;
 
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.naming.core.Service;
@@ -73,12 +72,7 @@ public class DoubleWriteEventListener extends Subscriber<ServiceEvent.ServiceCha
         ServiceChangeV2Task task = new ServiceChangeV2Task(event.getService(), DoubleWriteContent.INSTANCE);
         doubleWriteDelayTaskEngine.addTask(taskKey, task);
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServiceEvent.ServiceChangedEvent.class;
-    }
-    
+
     /**
      * Double write service metadata from v2 to v1.
      *

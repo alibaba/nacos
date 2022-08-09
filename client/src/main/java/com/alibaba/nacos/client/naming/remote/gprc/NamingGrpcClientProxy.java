@@ -43,7 +43,6 @@ import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -103,12 +102,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void onEvent(ServerListChangedEvent event) {
         rpcClient.onServerListChange();
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServerListChangedEvent.class;
-    }
-    
+
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,

@@ -45,7 +45,6 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -134,12 +133,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public void onEvent(ServerListChangedEvent event) {
         // do nothing in http client
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return ServerListChangedEvent.class;
-    }
-    
+
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         

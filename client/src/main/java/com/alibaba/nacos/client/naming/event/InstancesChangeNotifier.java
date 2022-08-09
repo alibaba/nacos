@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
@@ -40,22 +39,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.4.1
  */
 public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
-    
+
     private final String eventScope;
-    
+
     private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<>();
-    
+
     private final Object lock = new Object();
-    
+
     @JustForTest
     public InstancesChangeNotifier() {
         this.eventScope = UUID.randomUUID().toString();
     }
-    
+
     public InstancesChangeNotifier(String eventScope) {
         this.eventScope = eventScope;
     }
-    
+
     /**
      * register listener.
      *
@@ -78,7 +77,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         }
         eventListeners.add(listener);
     }
-    
+
     /**
      * deregister listener.
      *
@@ -98,7 +97,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
             listenerMap.remove(key);
         }
     }
-    
+
     /**
      * check serviceName,clusters is subscribed.
      *
@@ -112,7 +111,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         return CollectionUtils.isNotEmpty(eventListeners);
     }
-    
+
     public List<ServiceInfo> getSubscribeServices() {
         List<ServiceInfo> serviceInfos = new ArrayList<>();
         for (String key : listenerMap.keySet()) {
@@ -120,11 +119,11 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         }
         return serviceInfos;
     }
-    
+
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        String key = ServiceInfo
-                .getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()), event.getClusters());
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()),
+                event.getClusters());
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (CollectionUtils.isEmpty(eventListeners)) {
             return;
@@ -138,18 +137,13 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
             }
         }
     }
-    
+
     private com.alibaba.nacos.api.naming.listener.Event transferToNamingEvent(
             InstancesChangeEvent instancesChangeEvent) {
         return new NamingEvent(instancesChangeEvent.getServiceName(), instancesChangeEvent.getGroupName(),
                 instancesChangeEvent.getClusters(), instancesChangeEvent.getHosts());
     }
-    
-    @Override
-    public Class<? extends Event> subscribeType() {
-        return InstancesChangeEvent.class;
-    }
-    
+
     @Override
     public boolean scopeMatches(InstancesChangeEvent event) {
         return this.eventScope.equals(event.scope());

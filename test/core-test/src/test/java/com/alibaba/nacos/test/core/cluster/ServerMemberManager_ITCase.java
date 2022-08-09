@@ -20,12 +20,12 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -114,11 +114,7 @@ public class ServerMemberManager_ITCase {
                 integer.incrementAndGet();
                 latch.countDown();
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return MembersChangeEvent.class;
-            }
+
         });
         Collection<Member> members = memberManager.allMembers();
         
@@ -154,11 +150,7 @@ public class ServerMemberManager_ITCase {
                     second.countDown();
                 }
             }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return MembersChangeEvent.class;
-            }
+
         });
         
         String firstIp = "127.0.0.1:8847";

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.notify.listener;
 
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 
 import java.util.concurrent.Executor;
 
@@ -41,7 +42,9 @@ public abstract class Subscriber<T extends Event> {
      *
      * @return Class which extends {@link Event}
      */
-    public abstract Class<? extends Event> subscribeType();
+    public Class<? extends Event> subscribeType() {
+        return (Class<? extends Event>) ReflectUtils.findGenericClass(this.getClass(), Subscriber.class, 0);
+    }
     
     /**
      * It is up to the listener to determine whether the callback is asynchronous or synchronous.
