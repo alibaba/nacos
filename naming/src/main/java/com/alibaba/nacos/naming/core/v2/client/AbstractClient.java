@@ -173,10 +173,9 @@ public abstract class AbstractClient implements Client {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
                 MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
             } else {
-                MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
+                MetricsMonitor.getIpCountMonitor().decrementAndGet();
             }
         }
         MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
     }
-    
 }
