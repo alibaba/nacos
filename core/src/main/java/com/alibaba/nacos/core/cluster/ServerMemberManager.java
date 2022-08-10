@@ -92,7 +92,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private static final String SPRING_MANAGEMENT_CONTEXT_NAMESPACE = "management";
     
     private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
-    
+
+    private static final String MEMBER_SPECIFY_IP_ADDRESS ="nacos.inetutils.ip-address";
+
     private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
     
     private static boolean isUseAddressServer = false;
@@ -149,7 +151,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
         this.port = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
-        this.localAddress = InetUtils.getSelfIP() + ":" + port;
+        String usedSelfIP = EnvUtil.getProperty(MEMBER_SPECIFY_IP_ADDRESS, String.class, InetUtils.getSelfIP());
+        this.localAddress = usedSelfIP + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
         
