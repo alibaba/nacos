@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.address.spi;
 
+import com.alibaba.nacos.plugin.address.exception.AddressException;
+
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -36,8 +38,12 @@ public abstract class AbstractAddressPlugin implements AddressPlugin {
     }
     
     @Override
-    public void registerListener(Consumer<List<String>> addressListener) {
+    public AddressPlugin registerListener(Consumer<List<String>> addressListener) throws AddressException {
+        if (addressListener == null) {
+            throw new AddressException("Address listener is null");
+        }
         this.addressListener = addressListener;
+        return this;
     }
     
     @Override

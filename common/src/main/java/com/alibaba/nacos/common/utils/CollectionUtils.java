@@ -338,29 +338,30 @@ public final class CollectionUtils {
      * <p>That is, iff the cardinality of <i>e</i> in <i>a</i> is equal to the cardinality of <i>e</i> in <i>b</i>, for
      * each element <i>e</i> in <i>a</i> or <i>b</i>.
      *
-     * @param a the first collection, must not be null
-     * @param b the second collection, must not be null
+     * @param a the first collection
+     * @param b the second collection
      * @return <code>true</code> iff the collections contain the same elements with the same cardinalities.
      */
     public static boolean isEqualCollection(final Collection a, final Collection b) {
-        if (a.size() != b.size()) {
+        if (a == null && b == null) {
+            return true;
+        }
+        if (a == null || b == null) {
             return false;
-        } else {
-            Map mapa = getCardinalityMap(a);
-            Map mapb = getCardinalityMap(b);
-            if (mapa.size() != mapb.size()) {
+        }
+        Map mapa = getCardinalityMap(a);
+        Map mapb = getCardinalityMap(b);
+        if (mapa.size() != mapb.size()) {
+            return false;
+        }
+        Iterator it = mapa.keySet().iterator();
+        while (it.hasNext()) {
+            Object obj = it.next();
+            if (getFreq(obj, mapa) != getFreq(obj, mapb)) {
                 return false;
-            } else {
-                Iterator it = mapa.keySet().iterator();
-                while (it.hasNext()) {
-                    Object obj = it.next();
-                    if (getFreq(obj, mapa) != getFreq(obj, mapb)) {
-                        return false;
-                    }
-                }
-                return true;
             }
         }
+        return true;
     }
     
     @SuppressWarnings("PMD.UndefineMagicConstantRule")

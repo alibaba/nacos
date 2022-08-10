@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.address.spi;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.plugin.address.exception.AddressException;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,7 @@ public interface AddressPlugin {
      * When nacos server list change, then call address listener.
      *@Param: address listener.
      */
-    void registerListener(Consumer<List<String>> addressListener);
+    AddressPlugin registerListener(Consumer<List<String>> addressListener) throws AddressException;
     
     /**
      * Address plugin shutdown.
