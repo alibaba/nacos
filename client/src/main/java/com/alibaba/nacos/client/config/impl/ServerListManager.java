@@ -254,8 +254,8 @@ public class ServerListManager implements Closeable {
                         ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName));
         boolean hasQueryString = false;
         if (StringUtils.isNotBlank(namespace)) {
-            addressServerUrlTem.append("?namespace=" + namespace);
-            hasQueryString = false;
+            addressServerUrlTem.append("?namespace=").append(namespace);
+            hasQueryString = true;
         }
         if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
             addressServerUrlTem
