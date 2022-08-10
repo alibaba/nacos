@@ -26,10 +26,10 @@ public interface ConnectionEventListener {
     /**
      * notify when  connected to server.
      */
-    public void onConnected();
+    void onConnected();
 
     /**
      * notify when  disconnected to server.
      */
-    public void onDisConnect();
+    void onDisConnect();
 }

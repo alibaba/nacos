@@ -54,9 +54,9 @@ public enum RpcClientStatus {
      */
     SHUTDOWN(5, "Client is shutdown");
     
-    int status;
+    final int status;
     
-    String desc;
+    final String desc;
     
     RpcClientStatus(int status, String desc) {
         this.status = status;

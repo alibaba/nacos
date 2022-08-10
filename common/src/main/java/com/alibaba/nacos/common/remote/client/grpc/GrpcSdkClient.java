@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.remote.client.RpcClientSystemConfig;
 
 /**
  * gRPC client for sdk.
@@ -37,8 +37,7 @@ public class GrpcSdkClient extends GrpcClient {
     
     @Override
     public int rpcPortOffset() {
-        return Integer.parseInt(System.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
-                String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET)));
+        return RpcClientSystemConfig.getSdkRpcPortOffset();
     }
     
 }

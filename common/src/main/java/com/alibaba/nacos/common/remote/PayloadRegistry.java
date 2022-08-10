@@ -26,7 +26,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * payload regitry,Define basic scan behavior request and response.
+ * payload registry, Define basic scan behavior request and response.
  *
  * @author liuzunfei
  * @author hujun

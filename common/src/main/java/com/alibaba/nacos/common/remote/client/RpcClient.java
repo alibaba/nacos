@@ -54,6 +54,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.exception.NacosException.SERVER_ERROR;
+import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getRpcKeepAliveMillis;
+import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getRpcRequestRetryTimes;
+import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getRpcRequestTimeoutMillis;
 
 /**
  * abstract remote client to connect to server.
@@ -85,16 +88,12 @@ public abstract class RpcClient implements Closeable {
     
     private String tenant;
     
-    private static final int RETRY_TIMES = 3;
-    
-    private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
-    
     protected ClientAbilities clientAbilities;
     
     /**
      * default keep alive time 5s.
      */
-    private long keepAliveTime = 5000L;
+    private long keepAliveTime = getRpcKeepAliveMillis();
     
     private long lastActiveTimeStamp = System.currentTimeMillis();
     
@@ -377,7 +376,7 @@ public abstract class RpcClient implements Closeable {
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
         
-        int startUpRetryTimes = RETRY_TIMES;
+        int startUpRetryTimes = getRpcRequestRetryTimes();
         while (startUpRetryTimes > 0 && connectToServer == null) {
             try {
                 startUpRetryTimes--;
@@ -465,7 +464,7 @@ public abstract class RpcClient implements Closeable {
             return false;
         }
         try {
-            Response response = this.currentConnection.request(healthCheckRequest, 3000L);
+            Response response = this.currentConnection.request(healthCheckRequest, getRpcRequestTimeoutMillis());
             // not only check server is ok, also check connection is register.
             return response != null && response.isSuccess();
         } catch (NacosException e) {
@@ -632,7 +631,7 @@ public abstract class RpcClient implements Closeable {
      * @return response from server.
      */
     public Response request(Request request) throws NacosException {
-        return request(request, DEFAULT_TIMEOUT_MILLS);
+        return request(request, getRpcRequestTimeoutMillis());
     }
     
     /**
@@ -646,7 +645,7 @@ public abstract class RpcClient implements Closeable {
         Response response;
         Exception exceptionThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < timeoutMills + start) {
+        while (retryTimes < getRpcRequestRetryTimes() && System.currentTimeMillis() < timeoutMills + start) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -719,7 +718,7 @@ public abstract class RpcClient implements Closeable {
         
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + callback.getTimeout()) {
+        while (retryTimes < getRpcRequestRetryTimes() && System.currentTimeMillis() < start + callback.getTimeout()) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -768,7 +767,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + DEFAULT_TIMEOUT_MILLS) {
+        while (retryTimes < getRpcRequestRetryTimes() && System.currentTimeMillis() < start + getRpcRequestTimeoutMillis()) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -920,7 +919,7 @@ public abstract class RpcClient implements Closeable {
         }
         
         String[] ipPortTuple = serverAddress.split(Constants.COLON, 2);
-        int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
+        int defaultPort = RpcClientSystemConfig.getNacosServerPort();
         String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, Integer.toString(defaultPort));
         
         return new ServerInfo(ipPortTuple[0], NumberUtils.toInt(serverPort, defaultPort));
