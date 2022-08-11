@@ -63,8 +63,8 @@ public class RpcClientSystemConfig {
     }
     
     public static int getGrpcChannelKeepAliveMillis() {
-        return Integer.parseInt(System.getProperty(GRPC_CHANNEL_KEEP_ALIVE_MILLIS,
-                String.valueOf(DEFAULT_CHANNEL_KEEP_ALIVE_MILLIS)));
+        return Integer.parseInt(
+                System.getProperty(GRPC_CHANNEL_KEEP_ALIVE_MILLIS, String.valueOf(DEFAULT_CHANNEL_KEEP_ALIVE_MILLIS)));
     }
     
     public static int getServerRpcPortOffset() {
@@ -78,8 +78,7 @@ public class RpcClientSystemConfig {
     }
     
     public static int getNacosServerPort() {
-        return Integer.parseInt(System.getProperty(NACOS_SERVER_PORT,
-                String.valueOf(DEFAULT_NACOS_SERVER_PORT)));
+        return Integer.parseInt(System.getProperty(NACOS_SERVER_PORT, String.valueOf(DEFAULT_NACOS_SERVER_PORT)));
     }
     
     public static long getGrpcExecutorKeepAliveMillis() {
@@ -88,22 +87,22 @@ public class RpcClientSystemConfig {
     }
     
     public static long getGrpcRequestTimeoutMillis() {
-        return Integer.parseInt(System.getProperty(GRPC_REQUEST_TIMEOUT_MILLIS,
-                String.valueOf(DEFAULT_GRPC_REQUEST_TIMEOUT_MILLIS)));
+        return Integer.parseInt(
+                System.getProperty(GRPC_REQUEST_TIMEOUT_MILLIS, String.valueOf(DEFAULT_GRPC_REQUEST_TIMEOUT_MILLIS)));
     }
     
     public static long getRpcRequestTimeoutMillis() {
-        return Integer.parseInt(System.getProperty(RPC_REQUEST_TIMEOUT_MILLIS,
-                String.valueOf(DEFAULT_RPC_REQUEST_TIMEOUT_MILLIS)));
+        return Integer.parseInt(
+                System.getProperty(RPC_REQUEST_TIMEOUT_MILLIS, String.valueOf(DEFAULT_RPC_REQUEST_TIMEOUT_MILLIS)));
     }
     
     public static int getRpcRequestRetryTimes() {
-        return Integer.parseInt(System.getProperty(RPC_REQUEST_RETRY_TIMES,
-                String.valueOf(DEFAULT_RPC_REQUEST_RETRY_TIMES)));
+        return Integer.parseInt(
+                System.getProperty(RPC_REQUEST_RETRY_TIMES, String.valueOf(DEFAULT_RPC_REQUEST_RETRY_TIMES)));
     }
     
     public static int getRpcKeepAliveMillis() {
-        return Integer.parseInt(System.getProperty(RPC_KEEP_ALIVE_TIME_MILLIS,
-                String.valueOf(DEFAULT_RPC_KEEP_ALIVE_TIME_MILLIS)));
+        return Integer.parseInt(
+                System.getProperty(RPC_KEEP_ALIVE_TIME_MILLIS, String.valueOf(DEFAULT_RPC_KEEP_ALIVE_TIME_MILLIS)));
     }
 }

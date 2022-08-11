@@ -30,6 +30,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
+import com.alibaba.nacos.common.remote.client.RpcClientSystemConfig;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -47,10 +48,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getGrpcChannelInboundMessageSize;
 import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getGrpcChannelKeepAliveMillis;
 import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getGrpcExecutorKeepAliveMillis;
-import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getGrpcRequestTimeoutMillis;
-import static com.alibaba.nacos.common.remote.client.RpcClientSystemConfig.getGrpcChannelInboundMessageSize;
 
 /**
  * gRPC Client.
@@ -68,6 +68,16 @@ public abstract class GrpcClient extends RpcClient {
     private Integer threadPoolCoreSize;
     
     private Integer threadPoolMaxSize;
+    
+    private Integer channelMaxInboundMessageSize;
+    
+    private Long channelKeepAliveMillis;
+    
+    private Long executorKeepAliveMillis;
+    
+    private Long grpcRequestTimeoutMillis;
+    
+    private Integer grpcPortOffset;
     
     @Override
     public ConnectionType getConnectionType() {
@@ -107,16 +117,51 @@ public abstract class GrpcClient extends RpcClient {
         return threadPoolMaxSize != null ? threadPoolMaxSize : ThreadUtils.getSuitableThreadCount(8);
     }
     
+    protected void setChannelMaxInboundMessageSize(Integer channelMaxInboundMessageSize) {
+        this.channelMaxInboundMessageSize = channelMaxInboundMessageSize;
+    }
+    
+    protected Integer getChannelMaxInboundMessageSize() {
+        return channelMaxInboundMessageSize != null ? channelMaxInboundMessageSize : getGrpcChannelInboundMessageSize();
+    }
+    
+    protected void setChannelKeepAliveMillis(Long channelKeepAlive, TimeUnit timeUnit) {
+        this.channelKeepAliveMillis = channelKeepAlive * timeUnit.toMillis(channelKeepAlive);
+    }
+    
+    protected Long getChannelKeepAliveMillis() {
+        return channelKeepAliveMillis != null ? channelKeepAliveMillis : getGrpcChannelKeepAliveMillis();
+    }
+    
+    protected void setExecutorKeepAliveMillis(Long executorKeepAlive, TimeUnit timeUnit) {
+        this.channelKeepAliveMillis = executorKeepAlive * timeUnit.toMillis(executorKeepAlive);
+    }
+    
+    protected Long getExecutorKeepAliveMillis() {
+        return executorKeepAliveMillis != null ? executorKeepAliveMillis : getGrpcExecutorKeepAliveMillis();
+    }
+    
+    protected void setGrpcRequestTimeoutMillis(Long grpcRequestTimeout, TimeUnit timeUnit) {
+        this.channelKeepAliveMillis = grpcRequestTimeout * timeUnit.toMillis(grpcRequestTimeout);
+    }
+    
+    protected Long getGrpcRequestTimeoutMillis() {
+        return grpcRequestTimeoutMillis != null ? grpcRequestTimeoutMillis
+                : RpcClientSystemConfig.getGrpcRequestTimeoutMillis();
+    }
+    
+    protected void setGrpcPortOffset(Integer grpcPortOffset) {
+        this.grpcPortOffset = grpcPortOffset;
+    }
+    
+    protected Integer getGrpcPortOffset() {
+        return grpcPortOffset != null ? grpcPortOffset : rpcPortOffset();
+    }
+    
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
-        ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(
-                getThreadPoolCoreSize(),
-                getThreadPoolMaxSize(),
-                getGrpcExecutorKeepAliveMillis(),
-                TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(10000),
-                new ThreadFactoryBuilder()
-                        .daemon(true)
-                        .nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
+        ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(getThreadPoolCoreSize(), getThreadPoolMaxSize(),
+                getExecutorKeepAliveMillis(), TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(10000),
+                new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
                         .build());
         grpcExecutor.allowCoreThreadTimeOut(true);
         return grpcExecutor;
@@ -130,7 +175,7 @@ public abstract class GrpcClient extends RpcClient {
             grpcExecutor.shutdown();
         }
     }
-
+    
     /**
      * Create a stub using a channel.
      *
@@ -140,7 +185,7 @@ public abstract class GrpcClient extends RpcClient {
     private RequestGrpc.RequestFutureStub createNewChannelStub(ManagedChannel managedChannelTemp) {
         return RequestGrpc.newFutureStub(managedChannelTemp);
     }
-
+    
     /**
      * create a new channel with specific server address.
      *
@@ -149,10 +194,11 @@ public abstract class GrpcClient extends RpcClient {
      * @return if server check success,return a non-null channel.
      */
     private ManagedChannel createNewManagedChannel(String serverIp, int serverPort) {
-        ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(serverIp, serverPort).executor(grpcExecutor)
-                .compressorRegistry(CompressorRegistry.getDefaultInstance()).decompressorRegistry(DecompressorRegistry.getDefaultInstance())
-                .maxInboundMessageSize(getGrpcChannelInboundMessageSize()).keepAliveTime(getGrpcChannelKeepAliveMillis(), TimeUnit.MILLISECONDS)
-                .usePlaintext();
+        ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(serverIp, serverPort)
+                .executor(grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
+                .maxInboundMessageSize(getChannelMaxInboundMessageSize())
+                .keepAliveTime(getChannelKeepAliveMillis(), TimeUnit.MILLISECONDS).usePlaintext();
         return managedChannelBuilder.build();
     }
     
@@ -219,8 +265,8 @@ public abstract class GrpcClient extends RpcClient {
                         } catch (Exception e) {
                             LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
                                     grpcConn.getConnectionId(), payload.toString(), e.getMessage());
-                            Response errResponse = ErrorResponse
-                                    .build(NacosException.CLIENT_ERROR, "Handle server request error");
+                            Response errResponse = ErrorResponse.build(NacosException.CLIENT_ERROR,
+                                    "Handle server request error");
                             errResponse.setRequestId(request.getRequestId());
                             sendResponse(errResponse);
                         }
@@ -298,8 +344,8 @@ public abstract class GrpcClient extends RpcClient {
                     return null;
                 }
                 
-                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
-                        .newStub(newChannelStubTemp.getChannel());
+                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(
+                        newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
                 
