@@ -125,7 +125,7 @@ class EditClusterDialog extends React.Component {
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${checkType}:`}>
+          <Form.Item label={`${checkType}`}>
             <Select
               className="in-select"
               defaultValue={type}
@@ -136,28 +136,28 @@ class EditClusterDialog extends React.Component {
               <Select.Option value="NONE">NONE</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label={`${checkPort}:`}>
+          <Form.Item label={`${checkPort}`}>
             <Input
               className="in-text"
               value={defaultCheckPort}
               onChange={defaultCheckPort => this.onChangeCluster({ defaultCheckPort })}
             />
           </Form.Item>
-          <Form.Item label={`${useIpPortCheck}:`}>
+          <Form.Item label={`${useIpPortCheck}`}>
             <Switch
               checked={useIPPort4Check}
               onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
             />
           </Form.Item>
           {type === 'HTTP' && [
-            <Form.Item label={`${checkPath}:`}>
+            <Form.Item label={`${checkPath}`}>
               <Input
                 className="in-text"
                 value={path}
                 onChange={path => healthCheckerChange({ path })}
               />
             </Form.Item>,
-            <Form.Item label={`${checkHeaders}:`}>
+            <Form.Item label={`${checkHeaders}`}>
               <Input
                 className="in-text"
                 value={headers}
@@ -165,7 +165,7 @@ class EditClusterDialog extends React.Component {
               />
             </Form.Item>,
           ]}
-          <Form.Item label={`${locale.metadata}:`}>
+          <Form.Item label={`${locale.metadata}`}>
             <MonacoEditor
               language="json"
               width={'100%'}
