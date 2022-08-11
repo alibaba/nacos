@@ -110,10 +110,10 @@ class HistoryDetail extends React.Component {
     };
     const { getOpType } = this;
     return (
-      <div style={{ padding: 10 }}>
+      <div>
         <h1>{locale.historyDetails}</h1>
         <Form field={this.field}>
-          <Form.Item label="Data ID:" required {...formItemLayout}>
+          <Form.Item label="Data ID" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>
               <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
@@ -122,7 +122,7 @@ class HistoryDetail extends React.Component {
             </div>
           </Form.Item>
           <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-            <Form.Item label="Group:" required {...formItemLayout}>
+            <Form.Item label="Group" required {...formItemLayout}>
               <Input htmlType="text" readOnly {...init('group')} />
             </Form.Item>
             <Form.Item label={locale.home} {...formItemLayout}>
