@@ -18,13 +18,14 @@ package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.util.IstioExecutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
+ * NacosResourceManager.
+ *
  * @author special.fy
  */
 @Component
@@ -40,11 +41,6 @@ public class NacosResourceManager {
 
     public NacosResourceManager() {
         resourceSnapshot = new ResourceSnapshot();
-    }
-
-    public void start() {
-        IstioExecutor.registerNacosResourceWatcher(serviceInfoResourceWatcher, istioConfig.getMcpPushInterval() * 2L,
-                istioConfig.getMcpPushInterval());
     }
 
     public Map<String, IstioService> services() {
@@ -68,6 +64,11 @@ public class NacosResourceManager {
         resourceSnapshot.initResourceSnapshot(this);
     }
 
+    /**
+     * description:snapshot.
+     * @param: []
+     * @return: com.alibaba.nacos.istio.common.ResourceSnapshot
+     */
     public ResourceSnapshot createResourceSnapshot() {
         ResourceSnapshot resourceSnapshot = new ResourceSnapshot();
         resourceSnapshot.initResourceSnapshot(this);

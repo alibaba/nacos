@@ -22,6 +22,7 @@ import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.google.protobuf.Timestamp;
+import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import istio.mcp.v1alpha1.MetadataOuterClass.Metadata;
 import istio.networking.v1alpha3.GatewayOuterClass;
 import istio.networking.v1alpha3.ServiceEntryOuterClass.ServiceEntry;
@@ -33,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
+/**.
  * @author special.fy
  */
 public class IstioCrdUtil {
@@ -42,9 +43,28 @@ public class IstioCrdUtil {
 
     private static final String ISTIO_HOSTNAME = "istio.hostname";
 
-    public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
+    public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?"
+            + "(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
+    
     public static final String VALID_LABEL_VALUE_FORMAT = "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
-
+    
+    public static String buildClusterName(TrafficDirection direction, String subset, String hostName, int port) {
+        return direction.toString() + "|" + port + "|" + subset + "|" + hostName;
+    }
+    
+    public static String buildLocalityName(WorkloadEntry workloadEntry) {
+        String region = workloadEntry.getLabelsOrDefault("region", "");
+        String zone = workloadEntry.getLabelsOrDefault("zone", "");
+        String subzone = workloadEntry.getLabelsOrDefault("subzone", "");
+        
+        return region + "." + zone + "." + subzone;
+    }
+    
+    /**
+     * description:buildServiceNameForServiceEntry.
+     * @param: [service]
+     * @return: java.lang.String
+     */
     public static String buildServiceNameForServiceEntry(Service service) {
         String group = !Constants.DEFAULT_GROUP.equals(service.getGroup()) ? service.getGroup() : VALID_DEFAULT_GROUP_NAME;
 
@@ -52,7 +72,12 @@ public class IstioCrdUtil {
         return service.getName() + "." + group + "." + service.getNamespace();
     }
 
-    public static ServiceEntryWrapper buildServiceEntry(String serviceName, String domainSuffix,IstioService istioService) {
+    /**
+     * description:buildServiceEntry.
+     * @param: [serviceName, domainSuffix, istioService]
+     * @return: com.alibaba.nacos.istio.model.ServiceEntryWrapper
+     */
+    public static ServiceEntryWrapper buildServiceEntry(String serviceName, String domainSuffix, IstioService istioService) {
         if (istioService.getHosts().isEmpty()) {
             return null;
         }
@@ -73,7 +98,7 @@ public class IstioCrdUtil {
             if (StringUtils.isNotEmpty(instance.getMetadata().get("protocol"))) {
                 protocol = instance.getMetadata().get("protocol");
 
-                if (protocol.equals("triple")||protocol.equals("tri")){
+                if (protocol.equals("triple") || protocol.equals("tri")) {
                     protocol = "grpc";
                 }
             }
@@ -92,14 +117,14 @@ public class IstioCrdUtil {
                 metadata.put("cluster", instance.getClusterName());
             }
 
-            for (Map.Entry<String,String> entry : instance.getMetadata().entrySet()){
-                if (!Pattern.matches(VALID_LABEL_KEY_FORMAT, entry.getKey())){
+            for (Map.Entry<String, String> entry : instance.getMetadata().entrySet()) {
+                if (!Pattern.matches(VALID_LABEL_KEY_FORMAT, entry.getKey())) {
                     continue;
                 }
-                if (!Pattern.matches(VALID_LABEL_VALUE_FORMAT, entry.getValue())){
+                if (!Pattern.matches(VALID_LABEL_VALUE_FORMAT, entry.getValue())) {
                     continue;
                 }
-                metadata.put(entry.getKey(), entry.getValue());
+                metadata.put(entry.getKey().toLowerCase(), entry.getValue());
             }
 
             WorkloadEntry workloadEntry = WorkloadEntry.newBuilder()
