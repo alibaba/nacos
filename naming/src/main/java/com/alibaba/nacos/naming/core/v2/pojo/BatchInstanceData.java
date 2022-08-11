@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class BatchInstanceData implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 7845847904043098494L;
     
     private List<String> namespaces;
     
