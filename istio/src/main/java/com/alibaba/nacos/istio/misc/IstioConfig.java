@@ -30,10 +30,10 @@ public class IstioConfig {
 
     @Value("${nacos.istio.mcp.server.enabled:false}")
     private boolean serverEnabled = false;
+    
     @Value("${nacos.istio.mcp.server.port:18848}")
     private int serverPort = 18848;
-    @Value("${nacos.istio.mcp.push.interval:3000}")
-    private int mcpPushInterval;
+    
     @Value("${nacos.istio.domain.suffix:nacos}")
     private String domainSuffix;
 
@@ -47,10 +47,6 @@ public class IstioConfig {
 
     public String getDomainSuffix() {
         return domainSuffix;
-    }
-
-    public int getMcpPushInterval() {
-        return mcpPushInterval;
     }
     
 }
