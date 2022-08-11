@@ -66,9 +66,13 @@ public class MetricsMonitor {
     
     private final AtomicInteger failedPush = new AtomicInteger();
     
+    private final AtomicInteger emptyPush = new AtomicInteger();
+    
     private final AtomicInteger serviceSubscribedEventQueueSize = new AtomicInteger();
     
     private final AtomicInteger serviceChangedEventQueueSize = new AtomicInteger();
+    
+    private final AtomicInteger pushPendingTaskCount = new AtomicInteger();
     
     /**
      * version -> naming subscriber count.
@@ -166,6 +170,10 @@ public class MetricsMonitor {
         return INSTANCE.failedPush;
     }
     
+    public static AtomicInteger getEmptyPushMonitor() {
+        return INSTANCE.emptyPush;
+    }
+    
     public static AtomicInteger getTotalPushCountForAvg() {
         return INSTANCE.totalPushCountForAvg;
     }
@@ -176,6 +184,10 @@ public class MetricsMonitor {
     
     public static AtomicInteger getServiceChangedEventQueueSize() {
         return INSTANCE.serviceChangedEventQueueSize;
+    }
+    
+    public static AtomicInteger getPushPendingTaskCount() {
+        return INSTANCE.pushPendingTaskCount;
     }
     
     public static AtomicLong getTotalPushCostForAvg() {
@@ -205,6 +217,10 @@ public class MetricsMonitor {
     
     public static void incrementFailPush() {
         INSTANCE.failedPush.incrementAndGet();
+    }
+    
+    public static void incrementEmptyPush() {
+        INSTANCE.emptyPush.incrementAndGet();
     }
     
     public static void incrementInstanceCount() {
@@ -267,6 +283,7 @@ public class MetricsMonitor {
     public static void resetPush() {
         getTotalPushMonitor().set(0);
         getFailedPushMonitor().set(0);
+        getEmptyPushMonitor().set(0);
         getTotalPushCostForAvg().set(0);
         getTotalPushCountForAvg().set(0);
         getMaxPushCostMonitor().set(-1);

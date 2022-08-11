@@ -138,4 +138,8 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         Collection<Service> services = indexesManager.getSubscribedService();
         return services.size() > PARALLEL_SIZE ? services.parallelStream() : services.stream();
     }
+    
+    public int getPushPendingTaskCount() {
+        return delayTaskEngine.size();
+    }
 }
