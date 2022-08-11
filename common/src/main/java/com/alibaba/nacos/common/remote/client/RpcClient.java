@@ -186,7 +186,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     public long getKeepAliveTime() {
-        return keepAliveTime != 0L ? keepAliveTime : getRpcKeepAliveMillis();
+        return keepAliveTime != null ? keepAliveTime : getRpcKeepAliveMillis();
     }
     
     public void setRequestRetryTimes(Integer requestRetryTimes) {
