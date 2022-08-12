@@ -49,7 +49,7 @@ public class IstioCrdUtil {
     public static final String VALID_LABEL_VALUE_FORMAT = "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
     
     public static String buildClusterName(TrafficDirection direction, String subset, String hostName, int port) {
-        return direction.toString() + "|" + port + "|" + subset + "|" + hostName;
+        return direction.toString().toLowerCase() + "|" + port + "|" + subset + "|" + hostName;
     }
     
     public static String buildLocalityName(WorkloadEntry workloadEntry) {
@@ -57,7 +57,11 @@ public class IstioCrdUtil {
         String zone = workloadEntry.getLabelsOrDefault("zone", "");
         String subzone = workloadEntry.getLabelsOrDefault("subzone", "");
         
-        return region + "." + zone + "." + subzone;
+        if (StringUtils.isEmpty(subzone)) {
+            return region + "." + zone + "." + "false";
+        } else {
+            return region + "." + zone + "." + subzone;
+        }
     }
     
     /**

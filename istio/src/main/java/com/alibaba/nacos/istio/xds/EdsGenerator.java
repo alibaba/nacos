@@ -84,7 +84,8 @@ public final class EdsGenerator implements ApiGenerator<Any> {
                 
                 if (!llbEndpointsBuilder.containsKey(label)) {
                     Locality locality = Locality.newBuilder().setRegion(label.split("\\.")[0]).setZone(
-                            label.split("\\.")[1]).setSubZone(label.split("\\.")[2]).build();
+                                label.split("\\.")[1]).setSubZone(
+                                        "false".equals(label.split("\\.")[2]) ? "" : label.split("\\.")[2]).build();
                     LocalityLbEndpoints.Builder llbEndpointBuilder = LocalityLbEndpoints.newBuilder()
                             .setLocality(locality).addLbEndpoints(lbEndpoint);
                     llbEndpointsBuilder.put(label, llbEndpointBuilder);
