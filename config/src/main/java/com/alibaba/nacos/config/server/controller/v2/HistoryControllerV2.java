@@ -77,8 +77,6 @@ public class HistoryControllerV2 {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        ParamUtils.checkTenantV2(tenant);
-        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
         return Result.success(historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize));
     }
     
@@ -98,9 +96,7 @@ public class HistoryControllerV2 {
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
-        ParamUtils.checkTenantV2(tenant);
-        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
+            @RequestParam("nid") Long nid) throws AccessException {
         return Result.success(historyService.getConfigHistoryInfo(dataId, group, tenant, nid));
     }
     
@@ -120,9 +116,7 @@ public class HistoryControllerV2 {
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam("id") Long id) throws AccessException, NacosApiException {
-        ParamUtils.checkTenantV2(tenant);
-        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
+            @RequestParam("id") Long id) throws AccessException {
         return Result.success(historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id));
     }
     
@@ -135,9 +129,10 @@ public class HistoryControllerV2 {
      */
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("tenant") String tenant) {
+    public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("tenant") String tenant)
+            throws NacosApiException {
         // check tenant
-        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkTenantV2(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return Result.success(historyService.getConfigListByNamespace(tenant));
     }

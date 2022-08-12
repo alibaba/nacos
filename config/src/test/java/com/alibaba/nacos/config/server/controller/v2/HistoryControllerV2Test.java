@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller.v2;
 
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -157,7 +158,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetConfigListByNamespace() {
+    public void testGetConfigListByNamespace() throws NacosApiException {
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
         configInfoWrapper.setDataId("test");
         configInfoWrapper.setGroup("test");
