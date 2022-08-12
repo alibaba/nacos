@@ -22,6 +22,8 @@ import com.alibaba.nacos.istio.common.ResourceSnapshot;
 import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
+import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
+import io.envoyproxy.envoy.config.core.v3.ConfigSource;
 import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import istio.networking.v1alpha3.ServiceEntryOuterClass;
@@ -30,6 +32,7 @@ import java.util.List;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
+import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V2_VALUE;
 
 /**
  * CdsGenerator.
@@ -63,7 +66,10 @@ public final class CdsGenerator implements ApiGenerator<Any> {
             String name = buildClusterName(TrafficDirection.OUTBOUND, "", serviceEntry.getHosts(0), port);
     
             Cluster cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
-                    .setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build()).build();
+                    .setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build()).setEdsClusterConfig(
+                            Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
+                                    ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder()).setResourceApiVersionValue(
+                                            V2_VALUE).build()).build()).build();
             
             result.add(Any.newBuilder().setValue(cluster.toByteString()).setTypeUrl(CLUSTER_TYPE).build());
         }
