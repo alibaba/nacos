@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
@@ -53,7 +54,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -86,6 +86,9 @@ public class ConfigControllerTest {
     private PersistService persistService;
     
     @Mock
+    private ConfigService configService;
+    
+    @Mock
     private ConfigSubService configSubService;
     
     @Before
@@ -94,6 +97,7 @@ public class ConfigControllerTest {
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(configController, "configSubService", configSubService);
         ReflectionTestUtils.setField(configController, "persistService", persistService);
+        ReflectionTestUtils.setField(configController, "configService", configService);
         ReflectionTestUtils.setField(configController, "inner", inner);
         mockmvc = MockMvcBuilders.standaloneSetup(configController).build();
     }
@@ -101,7 +105,7 @@ public class ConfigControllerTest {
     @Test
     public void testPublishConfig() throws Exception {
         
-        when(inner.publishConfig(any(HttpServletRequest.class), any(), anyString(), eq(false))).thenReturn(true);
+        when(configService.publishConfig(any(), any(), any(), anyString(), eq(false))).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test")
@@ -163,7 +167,7 @@ public class ConfigControllerTest {
     @Test
     public void testDeleteConfig() throws Exception {
         
-        when(inner.deleteConfig(any(HttpServletRequest.class), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(configService.deleteConfig(anyString(), anyString(), anyString(), anyString(), any(), any())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test")

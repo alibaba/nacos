@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.controller.v2;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -26,7 +27,9 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
+import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -44,6 +47,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Special controller v2 for soft load client to publish data.
@@ -59,15 +63,18 @@ public class ConfigControllerV2 {
     
     private final ConfigServletInner inner;
     
-    public ConfigControllerV2(ConfigServletInner inner) {
+    private final ConfigService configService;
+    
+    public ConfigControllerV2(ConfigServletInner inner, ConfigService configService) {
         this.inner = inner;
+        this.configService = configService;
     }
     
     /**
      * Get configure board information fail.
      *
-     * @throws ServletException            ServletException.
-     * @throws IOException                 IOException.
+     * @throws ServletException  ServletException.
+     * @throws IOException       IOException.
      * @throws NacosApiException NacosApiException.
      */
     @GetMapping
@@ -91,11 +98,12 @@ public class ConfigControllerV2 {
     /**
      * Adds or updates non-aggregated data.
      *
-     * @throws NacosApiException NacosApiException.
+     * @throws NacosException NacosException.
      */
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Result<Boolean> publishConfig(@RequestBody ConfigVo configVo, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> publishConfig(@RequestBody ConfigVo configVo, HttpServletRequest request)
+            throws NacosException {
         // check required field
         configVo.validate();
         // encrypted
@@ -106,19 +114,34 @@ public class ConfigControllerV2 {
         ParamUtils.checkParamV2(configVo.getDataId(), configVo.getGroup(), "datumId", configVo.getContent());
         ParamUtils.checkParamV2(configVo.getTag());
         
+        if (StringUtils.isBlank(configVo.getSrcUser())) {
+            configVo.setSrcUser(RequestUtil.getSrcUserName(request));
+        }
+        if (!ConfigType.isValidType(configVo.getType())) {
+            configVo.setType(ConfigType.getDefaultType().getType());
+        }
+    
+        Map<String, Object> configAdvanceInfo = configService.getConfigAdvanceInfo(configVo);
+        ParamUtils.checkParamV2(configAdvanceInfo);
+        
+        ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
+        configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfoVo.setBetaIps(request.getHeader("betaIps"));
+    
         String encryptedDataKey = pair.getFirst();
-        return Result.success(inner.publishConfig(request, configVo, encryptedDataKey, true));
+        
+        return Result.success(configService.publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, true));
     }
     
     /**
      * Synchronously delete all pre-aggregation data under a dataId.
      *
-     * @throws NacosException NacosException.
+     * @throws NacosApiException NacosApiException.
      */
     @DeleteMapping
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Result<Boolean> deleteConfig(HttpServletRequest request,
-            @RequestParam("dataId") String dataId,
+    public Result<Boolean> deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) throws NacosApiException {
@@ -126,6 +149,9 @@ public class ConfigControllerV2 {
         ParamUtils.checkTenantV2(tenant);
         ParamUtils.checkParamV2(dataId, group, "datumId", "rm");
         ParamUtils.checkParamV2(tag);
-        return Result.success(inner.deleteConfig(request, dataId, group, tenant, tag));
+        
+        String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
+        return Result.success(configService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser));
     }
 }

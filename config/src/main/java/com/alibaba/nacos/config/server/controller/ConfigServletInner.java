@@ -16,28 +16,19 @@
 
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.api.config.ConfigType;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.MapUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.vo.ConfigVo;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -45,16 +36,13 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
-import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
-import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
@@ -66,8 +54,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -345,104 +331,6 @@ public class ConfigServletInner {
         }
         
         return HttpServletResponse.SC_OK + "";
-    }
-    
-    /**
-     * Adds or updates non-aggregated data.
-     *
-     * @throws NacosException NacosException.
-     */
-    public Boolean publishConfig(HttpServletRequest request, ConfigVo configVo, String encryptedDataKey, Boolean isV2)
-            throws NacosException {
-        
-        if (StringUtils.isBlank(configVo.getSrcUser())) {
-            configVo.setSrcUser(RequestUtil.getSrcUserName(request));
-        }
-        if (!ConfigType.isValidType(configVo.getType())) {
-            configVo.setType(ConfigType.getDefaultType().getType());
-        }
-        
-        Map<String, Object> configAdvanceInfo = new HashMap<>(10);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configVo.getConfigTags());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "desc", configVo.getDesc());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "use", configVo.getUse());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "effect", configVo.getEffect());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "type", configVo.getType());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "schema", configVo.getSchema());
-        if (isV2) {
-            ParamUtils.checkParamV2(configAdvanceInfo);
-        } else {
-            ParamUtils.checkParam(configAdvanceInfo);
-        }
-        
-        final String srcIp = RequestUtil.getRemoteIp(request);
-        final String requestIpApp = RequestUtil.getAppName(request);
-        
-        if (AggrWhitelist.isAggrDataId(configVo.getDataId())) {
-            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", srcIp, configVo.getDataId(),
-                    configVo.getGroup());
-            if (isV2) {
-                throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
-                        "dataId:" + configVo.getDataId() + " is aggr");
-            } else {
-                throw new NacosException(NacosException.NO_RIGHT, "dataId:" + configVo.getDataId() + " is aggr");
-            }
-        }
-        
-        final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigInfo configInfo = new ConfigInfo(configVo.getDataId(), configVo.getGroup(), configVo.getTenant(),
-                configVo.getAppName(), configVo.getContent());
-        
-        configInfo.setType(configVo.getType());
-        configInfo.setEncryptedDataKey(encryptedDataKey);
-        
-        String betaIps = request.getHeader("betaIps");
-        if (StringUtils.isBlank(betaIps)) {
-            if (StringUtils.isBlank(configVo.getTag())) {
-                persistService.insertOrUpdate(srcIp, configVo.getSrcUser(), configInfo, time, configAdvanceInfo, false);
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, configVo.getDataId(), configVo.getGroup(),
-                                configVo.getTenant(), time.getTime()));
-            } else {
-                persistService
-                        .insertOrUpdateTag(configInfo, configVo.getTag(), srcIp, configVo.getSrcUser(), time, false);
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, configVo.getDataId(), configVo.getGroup(),
-                                configVo.getTenant(), configVo.getTag(), time.getTime()));
-            }
-        } else {
-            // beta publish
-            persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, configVo.getSrcUser(), time, false);
-            ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, configVo.getDataId(), configVo.getGroup(), configVo.getTenant(),
-                            time.getTime()));
-        }
-        ConfigTraceService
-                .logPersistenceEvent(configVo.getDataId(), configVo.getGroup(), configVo.getTenant(), requestIpApp,
-                        time.getTime(), InetUtils.getSelfIP(), ConfigTraceService.PERSISTENCE_EVENT_PUB,
-                        configVo.getContent());
-        
-        return true;
-    }
-    
-    /**
-     * Synchronously delete all pre-aggregation data under a dataId.
-     */
-    public Boolean deleteConfig(HttpServletRequest request, String dataId, String group, String tenant, String tag) {
-        String clientIp = RequestUtil.getRemoteIp(request);
-        String srcUser = RequestUtil.getSrcUserName(request);
-        if (StringUtils.isBlank(tag)) {
-            persistService.removeConfigInfo(dataId, group, tenant, clientIp, srcUser);
-        } else {
-            persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, srcUser);
-        }
-        final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
-                ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
-        
-        return true;
     }
     
     private static void releaseConfigReadLock(String groupKey) {

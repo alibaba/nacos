@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
@@ -36,9 +37,11 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
+import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -105,12 +108,15 @@ public class ConfigController {
     
     private final PersistService persistService;
     
+    private final ConfigService configService;
+    
     private final ConfigSubService configSubService;
     
-    public ConfigController(ConfigServletInner inner, PersistService persistService,
+    public ConfigController(ConfigServletInner inner, PersistService persistService, ConfigService configService,
             ConfigSubService configSubService) {
         this.inner = inner;
         this.persistService = persistService;
+        this.configService = configService;
         this.configSubService = configSubService;
     }
     
@@ -158,10 +164,25 @@ public class ConfigController {
         configVo.setEffect(effect);
         configVo.setType(type);
         configVo.setSchema(schema);
-        
+    
+        if (StringUtils.isBlank(srcUser)) {
+            configVo.setSrcUser(RequestUtil.getSrcUserName(request));
+        }
+        if (!ConfigType.isValidType(type)) {
+            configVo.setType(ConfigType.getDefaultType().getType());
+        }
+    
+        Map<String, Object> configAdvanceInfo = configService.getConfigAdvanceInfo(configVo);
+        ParamUtils.checkParam(configAdvanceInfo);
+    
+        ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
+        configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfoVo.setBetaIps(request.getHeader("betaIps"));
+    
         String encryptedDataKey = pair.getFirst();
        
-        return inner.publishConfig(request, configVo, encryptedDataKey, false);
+        return configService.publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, false);
     }
     
     /**
@@ -232,7 +253,10 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
     
-        return inner.deleteConfig(request, dataId, group, tenant, tag);
+        String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
+        
+        return configService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser);
     }
     
     /**

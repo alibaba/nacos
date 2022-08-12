@@ -18,18 +18,16 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
-import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +35,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * History management controller.
@@ -48,10 +45,10 @@ import java.util.Objects;
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 public class HistoryController {
     
-    private final PersistService persistService;
+    private final HistoryService historyService;
     
-    public HistoryController(PersistService persistService) {
-        this.persistService = persistService;
+    public HistoryController(HistoryService historyService) {
+        this.historyService = historyService;
     }
     
     /**
@@ -79,7 +76,7 @@ public class HistoryController {
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
         // configInfoBase has no appName field.
-        return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        return historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize);
     }
     
     /**
@@ -98,38 +95,7 @@ public class HistoryController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("nid") Long nid) throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = persistService.detailConfigHistory(nid);
-        if (Objects.isNull(configHistoryInfo)) {
-            return null;
-        }
-        // check if history config match the input
-        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
-    
-        String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
-        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                configHistoryInfo.getContent());
-        configHistoryInfo.setContent(pair.getSecond());
-        
-        return configHistoryInfo;
-    }
-    
-    /**
-     * Check if the input dataId,group and tenant match the history config.
-     *
-     * @param configHistoryInfo history config.
-     * @param dataId            dataId
-     * @param group             group
-     * @param tenant            tenant
-     * @throws AccessException not match exception.
-     * @since 2.0.3
-     */
-    private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
-            String tenant) throws AccessException {
-        if (!Objects.equals(configHistoryInfo.getDataId(), dataId)
-                || !Objects.equals(configHistoryInfo.getGroup(), group)
-                || !Objects.equals(configHistoryInfo.getTenant(), tenant)) {
-            throw new AccessException("Please check dataId, group or tenant.");
-        }
+        return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
     }
     
     /**
@@ -149,13 +115,7 @@ public class HistoryController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = persistService.detailPreviousConfigHistory(id);
-        if (Objects.isNull(configHistoryInfo)) {
-            return null;
-        }
-        // check if history config match the input
-        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
-        return configHistoryInfo;
+        return historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id);
     }
     
     /**
@@ -171,7 +131,7 @@ public class HistoryController {
         // check tenant
         ParamUtils.checkTenant(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        return persistService.queryConfigInfoByNamespace(tenant);
+        return historyService.getConfigListByNamespace(tenant);
     }
     
 }

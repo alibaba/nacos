@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller.v2;
+package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.api.model.v2.ErrorCode;
-import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.HistoryService;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,19 +37,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * HistoryV2ControllerTest.
- *
+ * HistoryServiceTest.
  * @author dongyafei
- * @date 2022/7/25
+ * @date 2022/8/11
  */
 
 @RunWith(MockitoJUnitRunner.class)
-public class HistoryControllerV2Test {
+public class HistoryServiceTest {
     
-    HistoryControllerV2 historyControllerV2;
+    private HistoryService historyService;
     
     @Mock
-    private HistoryService historyService;
+    private PersistService persistService;
     
     private static final String TEST_DATA_ID = "test";
     
@@ -62,13 +59,12 @@ public class HistoryControllerV2Test {
     private static final String TEST_CONTENT = "test config";
     
     @Before
-    public void setUp() {
-        historyControllerV2 = new HistoryControllerV2(historyService);
+    public void setUp() throws Exception {
+        this.historyService = new HistoryService(persistService);
     }
     
     @Test
-    public void testListConfigHistory() throws Exception {
-        
+    public void testListConfigHistory() {
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
         configHistoryInfo.setGroup(TEST_GROUP);
@@ -77,29 +73,27 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         List<ConfigHistoryInfo> configHistoryInfoList = new ArrayList<>();
         configHistoryInfoList.add(configHistoryInfo);
-        
+    
         Page<ConfigHistoryInfo> page = new Page<>();
         page.setTotalCount(15);
         page.setPageNumber(1);
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
-        
-        when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10)).thenReturn(page);
-        
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV2
+    
+        when(persistService.findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10)).thenReturn(page);
+    
+        Page<ConfigHistoryInfo> pageResult = historyService
                 .listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
-        
-        verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
-        
-        List<ConfigHistoryInfo> resultList = pageResult.getData().getPageItems();
+    
+        verify(persistService).findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
+    
+        List<ConfigHistoryInfo> resultList = pageResult.getPageItems();
         ConfigHistoryInfo resConfigHistoryInfo = resultList.get(0);
-        
-        assertEquals(ErrorCode.SUCCESS.getCode(), pageResult.getCode());
+    
         assertEquals(configHistoryInfoList.size(), resultList.size());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
         assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
-        
     }
     
     @Test
@@ -113,16 +107,13 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L)).thenReturn(configHistoryInfo);
+        when(persistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV2
+        ConfigHistoryInfo resConfigHistoryInfo = historyService
                 .getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
         
-        verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
+        verify(persistService).detailConfigHistory(1L);
         
-        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
-        
-        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
         assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
@@ -140,16 +131,13 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L)).thenReturn(configHistoryInfo);
-    
-        Result<ConfigHistoryInfo> result = historyControllerV2
+        when(persistService.detailPreviousConfigHistory(1L)).thenReturn(configHistoryInfo);
+        
+        ConfigHistoryInfo resConfigHistoryInfo = historyService
                 .getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
         
-        verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
+        verify(persistService).detailPreviousConfigHistory(1L);
         
-        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
-        
-        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
         assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
@@ -164,12 +152,12 @@ public class HistoryControllerV2Test {
         configInfoWrapper.setContent("test");
         List<ConfigInfoWrapper> configInfoWrappers = Collections.singletonList(configInfoWrapper);
         
-        when(historyService.getConfigListByNamespace("test")).thenReturn(configInfoWrappers);
-        Result<List<ConfigInfoWrapper>> result = historyControllerV2.getConfigsByTenant("test");
-        verify(historyService).getConfigListByNamespace("test");
+        when(persistService.queryConfigInfoByNamespace("test")).thenReturn(configInfoWrappers);
+    
+        List<ConfigInfoWrapper> actualList = historyService.getConfigListByNamespace("test");
         
-        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        List<ConfigInfoWrapper> actualList = result.getData();
+        verify(persistService).queryConfigInfoByNamespace("test");
+        
         assertEquals(configInfoWrappers.size(), actualList.size());
         ConfigInfoWrapper actualConfigInfoWrapper = actualList.get(0);
         assertEquals(configInfoWrapper.getDataId(), actualConfigInfoWrapper.getDataId());

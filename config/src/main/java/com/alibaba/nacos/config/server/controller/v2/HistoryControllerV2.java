@@ -17,24 +17,26 @@
 package com.alibaba.nacos.config.server.controller.v2;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.HistoryService;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Objects;
+import java.util.List;
 
 /**
  * config history management controller [v2].
@@ -47,10 +49,10 @@ import java.util.Objects;
 @RequestMapping(Constants.HISTORY_CONTROLLER_V2_PATH)
 public class HistoryControllerV2 {
     
-    private final PersistService persistService;
+    private final HistoryService historyService;
     
-    public HistoryControllerV2(PersistService persistService) {
-        this.persistService = persistService;
+    public HistoryControllerV2(HistoryService historyService) {
+        this.historyService = historyService;
     }
     
     /**
@@ -71,13 +73,13 @@ public class HistoryControllerV2 {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize) {
+            @RequestParam(value = "pageSize", required = false) Integer pageSize) throws NacosApiException {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        Page<ConfigHistoryInfo> configHistoryList = persistService
-                .findConfigHistory(dataId, group, tenant, pageNo, pageSize);
-        return Result.success(configHistoryList);
+        ParamUtils.checkTenantV2(tenant);
+        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
+        return Result.success(historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize));
     }
     
     /**
@@ -96,21 +98,10 @@ public class HistoryControllerV2 {
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam("nid") Long nid) throws AccessException {
-        
-        ConfigHistoryInfo configHistoryInfo = persistService.detailConfigHistory(nid);
-        if (Objects.isNull(configHistoryInfo)) {
-            return null;
-        }
-        // check if history config match the input
-        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
-        
-        String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
-        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey,
-                configHistoryInfo.getContent());
-        configHistoryInfo.setContent(pair.getSecond());
-        
-        return Result.success(configHistoryInfo);
+            @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
+        ParamUtils.checkTenantV2(tenant);
+        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
+        return Result.success(historyService.getConfigHistoryInfo(dataId, group, tenant, nid));
     }
     
     /**
@@ -129,25 +120,25 @@ public class HistoryControllerV2 {
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam("id") Long id) throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = persistService.detailPreviousConfigHistory(id);
-        if (Objects.isNull(configHistoryInfo)) {
-            return Result.success(null);
-        }
-        // check if history config match the input
-        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
-        return Result.success(configHistoryInfo);
+            @RequestParam("id") Long id) throws AccessException, NacosApiException {
+        ParamUtils.checkTenantV2(tenant);
+        ParamUtils.checkParamV2(dataId, group, "datumId", "content");
+        return Result.success(historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id));
     }
     
     /**
-     * Check if the input dataId,group and tenant match the history config.
+     * Query configs list by namespace.
+     *
+     * @param tenant config_info namespace
+     * @return list
+     * @since 2.1.1
      */
-    private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
-            String tenant) throws AccessException {
-        if (!Objects.equals(configHistoryInfo.getDataId(), dataId)
-                || !Objects.equals(configHistoryInfo.getGroup(), group)
-                || !Objects.equals(configHistoryInfo.getTenant(), tenant)) {
-            throw new AccessException("Please check dataId, group or tenant.");
-        }
+    @GetMapping(value = "/configs")
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("tenant") String tenant) {
+        // check tenant
+        ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        return Result.success(historyService.getConfigListByNamespace(tenant));
     }
 }
