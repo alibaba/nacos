@@ -24,6 +24,7 @@ import com.google.protobuf.Any;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
 import io.envoyproxy.envoy.config.core.v3.ConfigSource;
+import io.envoyproxy.envoy.config.core.v3.Http1ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import istio.networking.v1alpha3.ServiceEntryOuterClass;
@@ -63,15 +64,20 @@ public final class CdsGenerator implements ApiGenerator<Any> {
             ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
     
             int port = serviceEntry.getPorts(0).getNumber();
+            boolean protocolFlag = serviceEntry.getEndpointsList().get(0).getPortsMap().containsKey("grpc");
             String name = buildClusterName(TrafficDirection.OUTBOUND, "", serviceEntry.getHosts(0), port);
     
-            Cluster cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
-                    .setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build()).setEdsClusterConfig(
-                            Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
-                                    ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder()).setResourceApiVersionValue(
-                                            V2_VALUE).build()).build()).build();
+            Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
+                    .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
+                            ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder())
+                                    .setResourceApiVersionValue(V2_VALUE).build()).build());
+            if (protocolFlag) {
+                cluster.setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build());
+            } else {
+                cluster.setHttpProtocolOptions(Http1ProtocolOptions.newBuilder().build());
+            }
             
-            result.add(Any.newBuilder().setValue(cluster.toByteString()).setTypeUrl(CLUSTER_TYPE).build());
+            result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_TYPE).build());
         }
         
         return result;
