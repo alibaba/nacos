@@ -78,13 +78,13 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
 
             @Override
             public void onError(Throwable throwable) {
-                Loggers.MAIN.error("xds: {} stream error.", newConnection.getConnectionId(), throwable);
+                Loggers.MAIN.error("eds: {} stream error.", newConnection.getConnectionId(), throwable);
                 clear();
             }
 
             @Override
             public void onCompleted() {
-                Loggers.MAIN.info("xds: {} stream close.", newConnection.getConnectionId());
+                Loggers.MAIN.info("eds: {} stream close.", newConnection.getConnectionId());
                 responseObserver.onCompleted();
                 clear();
             }
@@ -114,12 +114,12 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
         // Suitable for bug of istio
         // See https://github.com/istio/istio/pull/34633
         if (type.equals(MESH_CONFIG_PROTO_PACKAGE)) {
-            Loggers.MAIN.info("xds: type {} should be ignored.", type);
+            Loggers.MAIN.info("eds: type {} should be ignored.", type);
             return false;
         }
 
         if (discoveryRequest.getErrorDetail().getCode() != 0) {
-            Loggers.MAIN.error("xds: ACK error, connection-id: {}, code: {}, message: {}",
+            Loggers.MAIN.error("eds: ACK error, connection-id: {}, code: {}, message: {}",
                     connectionId,
                     discoveryRequest.getErrorDetail().getCode(),
                     discoveryRequest.getErrorDetail().getMessage());
@@ -128,7 +128,7 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
 
         WatchedStatus watchedStatus;
         if (discoveryRequest.getResponseNonce().isEmpty()) {
-            Loggers.MAIN.info("xds: init request, type {}, connection-id {}, version {}",
+            Loggers.MAIN.info("eds: init request, type {}, connection-id {}, version {}",
                     type, connectionId, discoveryRequest.getVersionInfo());
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(discoveryRequest.getTypeUrl());
@@ -139,7 +139,7 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
 
         watchedStatus = connection.getWatchedStatusByType(discoveryRequest.getTypeUrl());
         if (watchedStatus == null) {
-            Loggers.MAIN.info("xds: reconnect, type {}, connection-id {}, version {}, nonce {}.",
+            Loggers.MAIN.info("eds: reconnect, type {}, connection-id {}, version {}, nonce {}.",
                     type, connectionId, discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(discoveryRequest.getTypeUrl());
@@ -149,7 +149,7 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
         }
 
         if (!watchedStatus.getLatestNonce().equals(discoveryRequest.getResponseNonce())) {
-            Loggers.MAIN.warn("xds: request dis match, type {}, connection-id {}",
+            Loggers.MAIN.warn("eds: request dis match, type {}, connection-id {}",
                     discoveryRequest.getTypeUrl(),
                     connection.getConnectionId());
             return false;
@@ -158,7 +158,7 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
         // This request is ack, we should record version and nonce.
         watchedStatus.setAckedVersion(discoveryRequest.getVersionInfo());
         watchedStatus.setAckedNonce(discoveryRequest.getResponseNonce());
-        Loggers.MAIN.info("xds: ack, type {}, connection-id {}, version {}, nonce {}", type, connectionId,
+        Loggers.MAIN.info("eds: ack, type {}, connection-id {}, version {}, nonce {}", type, connectionId,
                 discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
         return false;
     }
@@ -170,20 +170,16 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
                     return;
                 }
 
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-
-                // Service Entry via MCP
-                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
-                // TODO CDS, EDS
-
-
+                Loggers.MAIN.info("eds: event {} trigger push.", event.getType());
+    
+                //TODO CDS discriminate and increment
+                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
+    
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    // Service Entry via MCP
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
                     if (watchedStatus != null) {
-                        connection.push(serviceEntryResponse, watchedStatus);
+                        connection.push(edsResponse, watchedStatus);
                     }
-                    // TODO CDS, EDS
                 }
                 break;
 

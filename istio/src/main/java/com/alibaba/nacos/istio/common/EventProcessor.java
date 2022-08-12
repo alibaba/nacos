@@ -135,6 +135,7 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
         @Override
         public Void call() throws Exception {
             ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
+            //TODO event analysis
             nacosXdsService.handleEvent(snapshot, event);
             nacosMcpService.handleEvent(snapshot, event);
             return null;

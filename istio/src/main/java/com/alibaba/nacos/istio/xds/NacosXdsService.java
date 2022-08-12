@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
@@ -170,17 +172,19 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
 
                 Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
 
-                // Service Entry via MCP
-                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
-                // TODO CDS, EDS
+                //TODO CDS, EDS discriminate and increment
+                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_TYPE, resourceSnapshot);
+                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
 
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    // Service Entry via MCP
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
-                    if (watchedStatus != null) {
-                        connection.push(serviceEntryResponse, watchedStatus);
+                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_TYPE);
+                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+                    if (cdsWatchedStatus != null) {
+                        connection.push(cdsResponse, cdsWatchedStatus);
                     }
-                    // TODO CDS, EDS
+                    if (edsWatchedStatus != null) {
+                        connection.push(edsResponse, edsWatchedStatus);
+                    }
                 }
                 break;
             case Endpoint:
