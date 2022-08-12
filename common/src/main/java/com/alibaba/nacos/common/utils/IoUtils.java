@@ -52,9 +52,8 @@ public class IoUtils {
      *
      * @param raw compress stream
      * @return byte array after decompress
-     * @throws IOException exception
      */
-    public static byte[] tryDecompress(InputStream raw) throws IOException {
+    public static byte[] tryDecompress(InputStream raw) {
         GZIPInputStream gis = null;
         ByteArrayOutputStream out = null;
         try {
