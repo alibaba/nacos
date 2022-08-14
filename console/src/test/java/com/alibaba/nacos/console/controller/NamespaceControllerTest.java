@@ -24,11 +24,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -43,15 +40,13 @@ import static org.mockito.ArgumentMatchers.any;
  * @Date: 2022/8/13 09:32
  * @Description: TODO
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
+@RunWith(MockitoJUnitRunner.class)
 public class NamespaceControllerTest {
     
     @InjectMocks
     private NamespaceController namespaceController;
     
-    @Mock
+    @Mock(lenient = true)
     private PersistService persistService;
     
     private MockMvc mockmvc;
@@ -102,6 +97,7 @@ public class NamespaceControllerTest {
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         Assert.assertEquals("false", response.getContentAsString());
         Mockito.when(persistService.tenantInfoCountByTenantId("")).thenReturn(0);
+        Mockito.when(persistService.tenantInfoCountByTenantId("123")).thenReturn(1);
     }
     
     @Test

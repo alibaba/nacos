@@ -56,6 +56,6 @@ public class HessianSerializerTest {
     
     @Test
     public void testName() {
-        Assert.assertEquals("JSON", hessianSerializer.name());
+        Assert.assertEquals("Hessian", hessianSerializer.name());
     }
 }
