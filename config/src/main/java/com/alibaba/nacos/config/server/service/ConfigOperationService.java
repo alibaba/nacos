@@ -46,13 +46,13 @@ import java.util.Map;
  */
 
 @Service
-public class ConfigService {
+public class ConfigOperationService {
     
     private PersistService persistService;
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
-    public ConfigService(PersistService persistService) {
+    public ConfigOperationService(PersistService persistService) {
         this.persistService = persistService;
     }
     

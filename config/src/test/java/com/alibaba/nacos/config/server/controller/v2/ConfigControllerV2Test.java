@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +52,7 @@ public class ConfigControllerV2Test {
     private ConfigServletInner inner;
     
     @Mock
-    private ConfigService configService;
+    private ConfigOperationService configOperationService;
     
     private static final String TEST_DATA_ID = "test";
     
@@ -66,7 +66,7 @@ public class ConfigControllerV2Test {
     
     @Before
     public void setUp() {
-        configControllerV2 = new ConfigControllerV2(inner, configService);
+        configControllerV2 = new ConfigControllerV2(inner, configOperationService);
     }
     
     @Test
@@ -107,12 +107,13 @@ public class ConfigControllerV2Test {
         configVo.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configService.publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), any(), anyString(), eq(true)))
+        when(configOperationService
+                .publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), any(), anyString(), eq(true)))
                 .thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configVo, request);
         
-        verify(configService).publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), any(), anyString(), eq(true));
+        verify(configOperationService).publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), any(), anyString(), eq(true));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());
@@ -123,12 +124,13 @@ public class ConfigControllerV2Test {
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), any(), any())).thenReturn(true);
+        when(configOperationService
+                .deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), any(), any())).thenReturn(true);
     
         Result<Boolean> booleanResult = configControllerV2
                 .deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_TENANT, TEST_TAG);
     
-        verify(configService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), any(), any());
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), any(), any());
     
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());

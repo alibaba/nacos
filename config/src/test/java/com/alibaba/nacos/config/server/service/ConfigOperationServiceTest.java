@@ -45,9 +45,9 @@ import static org.mockito.Mockito.verify;
  */
 
 @RunWith(MockitoJUnitRunner.class)
-public class ConfigServiceTest {
+public class ConfigOperationServiceTest {
     
-    private ConfigService configService;
+    private ConfigOperationService configOperationService;
     
     @Mock
     private PersistService persistService;
@@ -55,7 +55,7 @@ public class ConfigServiceTest {
     @Before
     public void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        this.configService = new ConfigService(persistService);
+        this.configOperationService = new ConfigOperationService(persistService);
     }
     
     @Test
@@ -68,14 +68,14 @@ public class ConfigServiceTest {
         ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
         
         // if betaIps is blank and tag is blank
-        Boolean aResult = configService.publishConfig(configVo, configRequestInfoVo, null, "", true);
+        Boolean aResult = configOperationService.publishConfig(configVo, configRequestInfoVo, null, "", true);
         verify(persistService)
                 .insertOrUpdate(any(), any(), any(ConfigInfo.class), any(Timestamp.class), any(), anyBoolean());
         Assert.assertEquals(true, aResult);
         
         // if betaIps is blank and tag is not blank
         configVo.setTag("test tag");
-        Boolean bResult = configService.publishConfig(configVo, configRequestInfoVo, null, "", true);
+        Boolean bResult = configOperationService.publishConfig(configVo, configRequestInfoVo, null, "", true);
         verify(persistService)
                 .insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any(), any(Timestamp.class),
                         anyBoolean());
@@ -83,7 +83,7 @@ public class ConfigServiceTest {
         
         // if betaIps is not blank
         configRequestInfoVo.setBetaIps("test-betaIps");
-        Boolean cResult = configService.publishConfig(configVo, configRequestInfoVo, null, "", true);
+        Boolean cResult = configOperationService.publishConfig(configVo, configRequestInfoVo, null, "", true);
         verify(persistService)
                 .insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any(), any(Timestamp.class),
                         anyBoolean());
@@ -94,12 +94,12 @@ public class ConfigServiceTest {
     public void testDeleteConfig() {
         
         // if tag is blank
-        Boolean aResult = configService.deleteConfig("test", "test", "", "", "1.1.1.1", "test");
+        Boolean aResult = configOperationService.deleteConfig("test", "test", "", "", "1.1.1.1", "test");
         verify(persistService).removeConfigInfo(eq("test"), eq("test"), eq(""), any(), any());
         Assert.assertEquals(true, aResult);
     
         // if tag is not blank
-        Boolean bResult = configService.deleteConfig("test", "test", "", "test", "1.1.1.1", "test");
+        Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1", "test");
         verify(persistService).removeConfigInfoTag(eq("test"), eq("test"), eq(""), eq("test"), any(), any());
         Assert.assertEquals(true, bResult);
     }

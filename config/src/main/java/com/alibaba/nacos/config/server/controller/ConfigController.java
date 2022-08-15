@@ -41,7 +41,7 @@ import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -108,15 +108,15 @@ public class ConfigController {
     
     private final PersistService persistService;
     
-    private final ConfigService configService;
+    private final ConfigOperationService configOperationService;
     
     private final ConfigSubService configSubService;
     
-    public ConfigController(ConfigServletInner inner, PersistService persistService, ConfigService configService,
+    public ConfigController(ConfigServletInner inner, PersistService persistService, ConfigOperationService configOperationService,
             ConfigSubService configSubService) {
         this.inner = inner;
         this.persistService = persistService;
-        this.configService = configService;
+        this.configOperationService = configOperationService;
         this.configSubService = configSubService;
     }
     
@@ -172,7 +172,7 @@ public class ConfigController {
             configVo.setType(ConfigType.getDefaultType().getType());
         }
     
-        Map<String, Object> configAdvanceInfo = configService.getConfigAdvanceInfo(configVo);
+        Map<String, Object> configAdvanceInfo = configOperationService.getConfigAdvanceInfo(configVo);
         ParamUtils.checkParam(configAdvanceInfo);
     
         ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
@@ -182,7 +182,8 @@ public class ConfigController {
     
         String encryptedDataKey = pair.getFirst();
        
-        return configService.publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, false);
+        return configOperationService
+                .publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, false);
     }
     
     /**
@@ -256,7 +257,7 @@ public class ConfigController {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         
-        return configService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser);
+        return configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser);
     }
     
     /**

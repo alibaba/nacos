@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -38,7 +38,6 @@ import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -63,11 +62,11 @@ public class ConfigControllerV2 {
     
     private final ConfigServletInner inner;
     
-    private final ConfigService configService;
+    private final ConfigOperationService configOperationService;
     
-    public ConfigControllerV2(ConfigServletInner inner, ConfigService configService) {
+    public ConfigControllerV2(ConfigServletInner inner, ConfigOperationService configOperationService) {
         this.inner = inner;
-        this.configService = configService;
+        this.configOperationService = configOperationService;
     }
     
     /**
@@ -102,8 +101,7 @@ public class ConfigControllerV2 {
      */
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Result<Boolean> publishConfig(@RequestBody ConfigVo configVo, HttpServletRequest request)
-            throws NacosException {
+    public Result<Boolean> publishConfig(ConfigVo configVo, HttpServletRequest request) throws NacosException {
         // check required field
         configVo.validate();
         // encrypted
@@ -113,7 +111,7 @@ public class ConfigControllerV2 {
         ParamUtils.checkTenantV2(configVo.getTenant());
         ParamUtils.checkParamV2(configVo.getDataId(), configVo.getGroup(), "datumId", configVo.getContent());
         ParamUtils.checkParamV2(configVo.getTag());
-        
+    
         if (StringUtils.isBlank(configVo.getSrcUser())) {
             configVo.setSrcUser(RequestUtil.getSrcUserName(request));
         }
@@ -121,17 +119,18 @@ public class ConfigControllerV2 {
             configVo.setType(ConfigType.getDefaultType().getType());
         }
     
-        Map<String, Object> configAdvanceInfo = configService.getConfigAdvanceInfo(configVo);
+        Map<String, Object> configAdvanceInfo = configOperationService.getConfigAdvanceInfo(configVo);
         ParamUtils.checkParamV2(configAdvanceInfo);
-        
+    
         ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
         configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfoVo.setBetaIps(request.getHeader("betaIps"));
     
         String encryptedDataKey = pair.getFirst();
-        
-        return Result.success(configService.publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, true));
+    
+        return Result.success(configOperationService
+                .publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, true));
     }
     
     /**
@@ -152,6 +151,6 @@ public class ConfigControllerV2 {
         
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        return Result.success(configService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser));
+        return Result.success(configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser));
     }
 }
