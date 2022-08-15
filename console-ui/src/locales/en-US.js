@@ -35,6 +35,7 @@ const I18N_CONF = {
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',
     invalidUsernameOrPassword: 'invalid username or password',
+    productDesc: 'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
   },
   MainLayout: {
     nacosName: 'NACOS',

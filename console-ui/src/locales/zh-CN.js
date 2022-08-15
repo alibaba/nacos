@@ -34,6 +34,7 @@ const I18N_CONF = {
     invalidUsernameOrPassword: '用户名或密码错误',
     passwordRequired: '密码不能为空',
     usernameRequired: '用户名不能为空',
+    productDesc: '一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台',
   },
   MainLayout: {
     nacosName: 'NACOS',
