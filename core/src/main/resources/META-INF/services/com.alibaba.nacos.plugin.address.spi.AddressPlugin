@@ -14,5 +14,5 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.address.impl.EndpointAddressPlugin
-com.alibaba.nacos.plugin.address.impl.PropertyAddressPlugin
+com.alibaba.nacos.core.cluster.address.ServerConfAddressPlugin
+com.alibaba.nacos.core.cluster.address.StandAloneAddressPlugin

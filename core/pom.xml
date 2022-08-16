@@ -166,5 +166,9 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-testing</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-address-plugin</artifactId>
+        </dependency>
     </dependencies>
 </project>
