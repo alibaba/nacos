@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
+import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
@@ -66,6 +67,11 @@ public class MetricsMonitor {
      * version -> client config subscriber count.
      */
     private static ConcurrentHashMap<String, AtomicInteger> configSubscriber = new ConcurrentHashMap<>();
+    
+    /**
+     * config change count.
+     */
+    private static TopnCounterMetricsContainer configChangeCount = new TopnCounterMetricsContainer();
     
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "config");
@@ -158,6 +164,10 @@ public class MetricsMonitor {
         return configSubscriber.get(version);
     }
     
+    public static TopnCounterMetricsContainer getConfigChangeCount() {
+        return configChangeCount;
+    }
+    
     public static Timer getReadConfigRtTimer() {
         return Metrics.timer("nacos_timer", "module", "config", "name", "readConfigRt");
     }
@@ -198,4 +208,7 @@ public class MetricsMonitor {
         return Metrics.counter("nacos_exception", "module", "config", "name", "unhealth");
     }
     
+    public static void incrementConfigChangeCount(String tenant, String group, String dataId) {
+        configChangeCount.increment(tenant + "@" + group + "@" + dataId);
+    }
 }
