@@ -27,6 +27,9 @@ import org.junit.Test;
  */
 public class PasswordEncoderUtilTest {
     
+    /**
+     * encode test. run ci
+     */
     @Test
     public void encode() {
         String str = PasswordEncoderUtil.encode("nacos");
