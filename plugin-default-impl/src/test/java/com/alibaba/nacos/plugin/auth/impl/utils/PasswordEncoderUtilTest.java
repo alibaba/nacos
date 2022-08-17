@@ -28,7 +28,7 @@ import org.junit.Test;
 public class PasswordEncoderUtilTest {
     
     /**
-     * encode test. run ci
+     * encode test.
      */
     @Test
     public void encode() {
