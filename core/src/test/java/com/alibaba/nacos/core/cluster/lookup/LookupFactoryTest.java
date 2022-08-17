@@ -97,6 +97,10 @@ public class LookupFactoryTest extends TestCase {
         }
     }
     
+    /**
+     * testSwitch Lookup.
+     * @throws NacosException NacosException
+     */
     @Test
     public void testSwitchLookup() throws NacosException {
         String name1 = "file";
