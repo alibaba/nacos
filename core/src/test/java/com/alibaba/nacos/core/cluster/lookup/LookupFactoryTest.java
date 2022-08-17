@@ -78,12 +78,6 @@ public class LookupFactoryTest extends TestCase {
     }
     
     @Test
-    public void createLookUpAddressNoType() throws Exception {
-        memberLookup = LookupFactory.createLookUp(memberManager);
-        assertEquals(memberLookup.getClass(), FileConfigMemberLookup.class);
-    }
-    
-    @Test
     public void testSwitchLookup() throws Exception {
         EnvUtil.setIsStandalone(false);
         createLookUpFileConfigMemberLookup();
