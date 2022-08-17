@@ -2587,6 +2587,20 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public List<TenantInfo> tenantInfoCountByTenantName(String tenantName) {
+        if (Objects.isNull(tenantName)) {
+            throw new IllegalArgumentException("tenantName can not be null");
+        }
+        List<TenantInfo> tenantInfos = databaseOperate.queryMany(SQL_TENANT_INFO_COUNT_BY_NAMESPACE,
+                new String[] {tenantName}, TENANT_INFO_ROW_MAPPER);
+        
+        if (CollectionUtils.isEmpty(tenantInfos)) {
+            return Collections.emptyList();
+        }
+        return tenantInfos;
+    }
+    
+    @Override
     public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenantId) {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");

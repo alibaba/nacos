@@ -447,6 +447,7 @@ const I18N_CONF = {
     notice: '提示',
     pleaseDo: '请勿输入非法字符',
     publicSpace: '确认修改',
+    updateFailContent: '修改失败，请检查命名空间名称是否重复',
     confirmModify: '编辑命名空间',
     editNamespace: '加载中...',
     load: '命名空间名',

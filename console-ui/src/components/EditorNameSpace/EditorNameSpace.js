@@ -116,7 +116,7 @@ class EditorNameSpace extends React.Component {
           } else {
             Dialog.alert({
               title: locale.notice,
-              content: res.message,
+              content: locale.updateFailContent,
             });
           }
         },

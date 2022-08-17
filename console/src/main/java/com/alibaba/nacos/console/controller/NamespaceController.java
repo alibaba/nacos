@@ -173,9 +173,26 @@ public class NamespaceController {
     public Boolean editNamespace(@RequestParam("namespace") String namespace,
             @RequestParam("namespaceShowName") String namespaceShowName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
+        if (checkEditNamespaceShowNameExist(namespace, namespaceShowName)) {
+            return  false;
+        }
         // TODO 获取用kp
         persistService.updateTenantNameAtomic(DEFAULT_KP, namespace, namespaceShowName, namespaceDesc);
         return true;
+    }
+    
+    /**
+     * check namespaceShowName exist.
+     * Consistent with the logic of creating a new namespace.
+     * @param namespaceId namespaceId
+     * @param namespaceShowName namespaceShowName
+     */
+    private Boolean checkEditNamespaceShowNameExist(String namespaceId, String namespaceShowName) {
+        List<TenantInfo> tenantInfos = persistService.tenantInfoCountByTenantName(namespaceShowName);
+        if (tenantInfos.size() == 0) {
+            return  false;
+        }
+        return tenantInfos.size() != 1 || !tenantInfos.get(0).getTenantId().equals(namespaceId);
     }
     
     /**

@@ -61,6 +61,9 @@ public interface PersistService {
     String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
 
     String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(1) FROM tenant_info WHERE tenant_id = ?";
+    
+    String SQL_TENANT_INFO_COUNT_BY_NAMESPACE = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE tenant_name = ? ";
+
     String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
 
     String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
@@ -1338,6 +1341,14 @@ public interface PersistService {
      * @return count by tenantId
      */
     int tenantInfoCountByTenantId(String tenantId);
+    
+    
+    /**
+     *  query tenantInfo (namespace) existence based by tenantName.
+     * @param tenantName tenantName
+     * @return count by tenantName
+     */
+    List<TenantInfo> tenantInfoCountByTenantName(String tenantName);
 
     /**
      * Query dataId list by namespace.

@@ -110,6 +110,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(*) FROM tenant_info WHERE tenant_id = ?";
     
+    private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_NAME = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE tenant_name = ?";
+    
     private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
     
     private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
@@ -2823,7 +2825,21 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         return result.intValue();
     }
-
+    
+    @Override
+    public List<TenantInfo> tenantInfoCountByTenantName(String tenantName) {
+        if (Objects.isNull(tenantName)) {
+            throw new IllegalArgumentException("tenantName can not be null");
+        }
+        List<TenantInfo> tenantInfos = this.jt.query(SQL_TENANT_INFO_COUNT_BY_TENANT_NAME, new String[] {tenantName},
+                TENANT_INFO_ROW_MAPPER);
+    
+        if (CollectionUtils.isEmpty(tenantInfos)) {
+            return Collections.emptyList();
+        }
+        return tenantInfos;
+    }
+    
     @Override
     public List<ConfigInfoWrapper> queryConfigInfoByNamespace(String tenant) {
         if (Objects.isNull(tenant)) {
