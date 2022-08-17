@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -83,6 +84,11 @@ public class MetricsMonitor {
      * version -> naming publisher count.
      */
     private final ConcurrentHashMap<String, AtomicInteger> namingPublisher = new ConcurrentHashMap<>();
+    
+    /**
+     * topn service change count.
+     */
+    private final TopnCounterMetricsContainer serviceChangeCount = new TopnCounterMetricsContainer();
     
     private MetricsMonitor() {
         for (Field each : MetricsMonitor.class.getDeclaredFields()) {
@@ -202,6 +208,10 @@ public class MetricsMonitor {
         return INSTANCE.namingPublisher.get(version);
     }
     
+    public static TopnCounterMetricsContainer getServiceChangeCount() {
+        return INSTANCE.serviceChangeCount;
+    }
+    
     public static void compareAndSetMaxPushCost(long newCost) {
         INSTANCE.maxPushCost.getAndUpdate((prev) -> Math.max(newCost, prev));
     }
@@ -237,6 +247,10 @@ public class MetricsMonitor {
     
     public static void decrementSubscribeCount() {
         INSTANCE.subscriberCount.decrementAndGet();
+    }
+    
+    public static void incrementServiceChangeCount(String namespace, String group, String name) {
+        INSTANCE.serviceChangeCount.increment(namespace + "@" + group + "@" + name);
     }
     
     public static Counter getDiskException() {
