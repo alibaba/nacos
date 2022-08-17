@@ -47,7 +47,7 @@ public class TopnMetricsRefreshService {
     }
     
     /**
-     * refresh config change count top n.
+     * refresh config change count top n per 30s.
      */
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshTopnConfigChangeCount() {
@@ -59,5 +59,13 @@ public class TopnMetricsRefreshService {
             tags.add(new ImmutableTag("config", configChangeCount.getFirst()));
             topnConfigChangeRegistry.gauge("config_change_count", tags, configChangeCount.getSecond());
         }
+    }
+    
+    /**
+     * reset config change count to 0 every week.
+     */
+    @Scheduled(cron = "0 0 0 ? * 1")
+    public void resetTopnConfigChangeCount() {
+        MetricsMonitor.getConfigChangeCount().removeAll();
     }
 }

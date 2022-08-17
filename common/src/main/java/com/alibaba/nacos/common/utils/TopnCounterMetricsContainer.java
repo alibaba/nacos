@@ -142,6 +142,16 @@ public class TopnCounterMetricsContainer {
         return null;
     }
     
+    /**
+     * remove all data.
+     */
+    public void removeAll() {
+        for (String dataId : dataCount.keySet()) {
+            removeFromSpecifiedCountDataIdSets(dataId);
+        }
+        dataCount.clear();
+    }
+    
     private DoublyLinkedNode removeFromSpecifiedCountDataIdSets(String dataId) {
         int count = dataCount.get(dataId).get();
         DoublyLinkedNode node = specifiedCountDataIdSets.get(count);
@@ -152,6 +162,7 @@ public class TopnCounterMetricsContainer {
             if (node.next != null) {
                 node.next.prev = node.prev;
             }
+            specifiedCountDataIdSets.remove(node.count);
         }
         return node.prev;
     }

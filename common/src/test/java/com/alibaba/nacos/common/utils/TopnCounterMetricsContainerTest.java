@@ -64,7 +64,18 @@ public class TopnCounterMetricsContainerTest {
     }
     
     @Test
-    public void testGetTopNCounter() {
+    public void testRemoveAll() {
+        topnCounterMetricsContainer.put("test");
+        topnCounterMetricsContainer.put("test1");
+        topnCounterMetricsContainer.put("test2");
+        topnCounterMetricsContainer.removeAll();
+        Assert.assertEquals(-1, topnCounterMetricsContainer.get("test"));
+        Assert.assertEquals(-1, topnCounterMetricsContainer.get("test1"));
+        Assert.assertEquals(-1, topnCounterMetricsContainer.get("test2"));
+    }
+    
+    @Test
+    public void testGetTopNCounterAndRemoveAll() {
         final int N = 10;
         String dataIds = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         List<Pair<String, AtomicInteger>> dataList = new ArrayList<>();
@@ -74,7 +85,7 @@ public class TopnCounterMetricsContainerTest {
         }
         Random random = new Random();
         for (int i = 0; i < 10000; i++) {
-            int j = random.nextInt(26);
+            int j = random.nextInt(dataIds.length());
             topnCounterMetricsContainer.increment(dataIds.substring(j, j + 1));
             dataList.get(j).getSecond().incrementAndGet();
         }
@@ -89,5 +100,10 @@ public class TopnCounterMetricsContainerTest {
             }
         }
         Assert.assertTrue(right);
+        topnCounterMetricsContainer.removeAll();
+        for (int i = 0; i < dataIds.length(); i++) {
+            Assert.assertEquals(-1, topnCounterMetricsContainer.get(dataIds.substring(i, i + 1)));
+        }
+        Assert.assertEquals(0, topnCounterMetricsContainer.getTopNCounter(N).size());
     }
 }
