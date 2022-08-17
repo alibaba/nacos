@@ -17,12 +17,15 @@
 package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.common.utils.Pair;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,22 +39,25 @@ public class TopnMetricsRefreshService {
     
     private static final int CONFIG_CHANGE_N = 10;
     
-    private List<Gauge> topnConfigChangeGauge = new LinkedList<>();
+    private CompositeMeterRegistry topnConfigChangeRegistry = new CompositeMeterRegistry();
+    
+    @Autowired
+    public TopnMetricsRefreshService(PrometheusMeterRegistry prometheusMeterRegistry) {
+        topnConfigChangeRegistry.add(prometheusMeterRegistry);
+    }
     
     /**
      * refresh config change count top n.
      */
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshTopnConfigChangeCount() {
-        for (Gauge gauge : topnConfigChangeGauge) {
-            Metrics.globalRegistry.remove(gauge);
-        }
+        topnConfigChangeRegistry.clear();
         List<Pair<String, AtomicInteger>> topnConfigChangeCount = MetricsMonitor.getConfigChangeCount()
                 .getTopNCounter(CONFIG_CHANGE_N);
         for (Pair<String, AtomicInteger> configChangeCount : topnConfigChangeCount) {
-            Gauge gauge = Gauge.builder("config_change_count", configChangeCount.getSecond(), Number::doubleValue)
-                    .tags("config", configChangeCount.getFirst()).register(Metrics.globalRegistry);
-            topnConfigChangeGauge.add(gauge);
+            List<Tag> tags = new ArrayList<>();
+            tags.add(new ImmutableTag("config", configChangeCount.getFirst()));
+            topnConfigChangeRegistry.gauge("config_change_count", tags, configChangeCount.getSecond());
         }
     }
 }
