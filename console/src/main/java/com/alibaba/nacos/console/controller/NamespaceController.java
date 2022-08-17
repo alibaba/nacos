@@ -179,7 +179,7 @@ public class NamespaceController {
     }
     
     /**
-     * del namespace by id.
+     * del namespace by namespaceId .
      *
      * @param namespaceId namespace Id
      * @return whether del ok
