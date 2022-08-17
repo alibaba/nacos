@@ -56,6 +56,10 @@ public class LookupFactoryTest extends TestCase {
         memberManager.shutdown();
     }
     
+    /**
+     * createLookUpStandalone MemberLookup.
+     * @throws NacosException
+     */
     @Test
     public void createLookUpStandaloneMemberLookup() throws NacosException {
         EnvUtil.setIsStandalone(true);
