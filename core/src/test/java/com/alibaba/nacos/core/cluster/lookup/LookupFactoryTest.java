@@ -58,7 +58,7 @@ public class LookupFactoryTest extends TestCase {
     
     /**
      * createLookUpStandalone MemberLookup.
-     * @throws NacosException
+     * @throws NacosException NacosException
      */
     @Test
     public void createLookUpStandaloneMemberLookup() throws NacosException {
