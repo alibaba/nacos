@@ -33,8 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V2_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
-import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
 /**
  * @author special.fy
@@ -112,12 +114,12 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         // Suitable for bug of istio
         // See https://github.com/istio/istio/pull/34633
         if (type.equals(MESH_CONFIG_PROTO_PACKAGE)) {
-            Loggers.MAIN.info("xds: type {} should be ignored.", type);
+            Loggers.MAIN.info("ads: type {} should be ignored.", type);
             return false;
         }
 
         if (discoveryRequest.getErrorDetail().getCode() != 0) {
-            Loggers.MAIN.error("xds: ACK error, connection-id: {}, code: {}, message: {}",
+            Loggers.MAIN.error("ads: ACK error, connection-id: {}, code: {}, message: {}",
                     connectionId,
                     discoveryRequest.getErrorDetail().getCode(),
                     discoveryRequest.getErrorDetail().getMessage());
@@ -126,7 +128,7 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
 
         WatchedStatus watchedStatus;
         if (discoveryRequest.getResponseNonce().isEmpty()) {
-            Loggers.MAIN.info("xds: init request, type {}, connection-id {}, version {}",
+            Loggers.MAIN.info("ads: init request, type {}, connection-id {}, version {}",
                     type, connectionId, discoveryRequest.getVersionInfo());
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(discoveryRequest.getTypeUrl());
@@ -137,7 +139,7 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
 
         watchedStatus = connection.getWatchedStatusByType(discoveryRequest.getTypeUrl());
         if (watchedStatus == null) {
-            Loggers.MAIN.info("xds: reconnect, type {}, connection-id {}, version {}, nonce {}.",
+            Loggers.MAIN.info("ads: reconnect, type {}, connection-id {}, version {}, nonce {}.",
                     type, connectionId, discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
             watchedStatus = new WatchedStatus();
             watchedStatus.setType(discoveryRequest.getTypeUrl());
@@ -147,7 +149,7 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         }
 
         if (!watchedStatus.getLatestNonce().equals(discoveryRequest.getResponseNonce())) {
-            Loggers.MAIN.warn("xds: request dis match, type {}, connection-id {}",
+            Loggers.MAIN.warn("ads: request dis match, type {}, connection-id {}",
                     discoveryRequest.getTypeUrl(),
                     connection.getConnectionId());
             return false;
@@ -156,7 +158,7 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         // This request is ack, we should record version and nonce.
         watchedStatus.setAckedVersion(discoveryRequest.getVersionInfo());
         watchedStatus.setAckedNonce(discoveryRequest.getResponseNonce());
-        Loggers.MAIN.info("xds: ack, type {}, connection-id {}, version {}, nonce {}", type, connectionId,
+        Loggers.MAIN.info("ads: ack, type {}, connection-id {}, version {}, nonce {}", type, connectionId,
                 discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
         return false;
     }
@@ -168,20 +170,24 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                     return;
                 }
 
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-
-                // Service Entry via MCP
-                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, resourceSnapshot);
-                // TODO CDS, EDS
-
-
+                Loggers.MAIN.info("ads: event {} trigger push.", event.getType());
+    
+                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, resourceSnapshot);
+                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
+                
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    // Service Entry via MCP
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
-                    if (watchedStatus != null) {
-                        connection.push(serviceEntryResponse, watchedStatus);
+                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
+                    if (cdsWatchedStatus == null) {
+                        cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V2_TYPE);
+                        cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, resourceSnapshot);
                     }
-                    // TODO CDS, EDS
+                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+                    if (cdsWatchedStatus != null) {
+                        connection.push(cdsResponse, cdsWatchedStatus);
+                    }
+                    if (edsWatchedStatus != null) {
+                        connection.push(edsResponse, edsWatchedStatus);
+                    }
                 }
                 break;
 
@@ -194,7 +200,7 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         @SuppressWarnings("unchecked")
         ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
         List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
-
+        
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
                 .setTypeUrl(type)
@@ -202,37 +208,4 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 .setVersionInfo(resourceSnapshot.getVersion())
                 .setNonce(nonce).build();
     }
-
-    /**
-     * added by zxl
-     */
-    private DiscoveryResponse buildEDSResponse(String type, ResourceSnapshot resourceSnapshot) {
-        @SuppressWarnings("unchecked")
-        ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
-        List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
-
-        String nonce = NonceGenerator.generateNonce();
-        return DiscoveryResponse.newBuilder()
-                .setTypeUrl(type)
-                .addAllResources(rawResources)
-                .setVersionInfo(resourceSnapshot.getVersion())
-                .setNonce(nonce).build();
-    }
-
-    /**
-     * added by zxl
-     */
-    private DiscoveryResponse buildCDSResponse(String type, ResourceSnapshot resourceSnapshot) {
-        @SuppressWarnings("unchecked")
-        ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
-        List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
-
-        String nonce = NonceGenerator.generateNonce();
-        return DiscoveryResponse.newBuilder()
-                .setTypeUrl(type)
-                .addAllResources(rawResources)
-                .setVersionInfo(resourceSnapshot.getVersion())
-                .setNonce(nonce).build();
-    }
-
 }

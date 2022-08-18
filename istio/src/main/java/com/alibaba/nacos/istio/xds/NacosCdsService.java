@@ -93,8 +93,6 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
                 connections.remove(newConnection.getConnectionId());
             }
         };
-
-//        return createRequestHandler(responseObserver, false, Resources.V3.CLUSTER_TYPE_URL);
     }
 
     public void process(DiscoveryRequest discoveryRequest, AbstractConnection<DiscoveryResponse> connection) {
@@ -172,10 +170,10 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
                 Loggers.MAIN.info("cds: event {} trigger push.", event.getType());
     
                 //TODO CDS discriminate and increment
-                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_TYPE, resourceSnapshot);
+                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, resourceSnapshot);
 
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(CLUSTER_TYPE);
+                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
                     if (watchedStatus != null) {
                         connection.push(cdsResponse, watchedStatus);
                     }
@@ -189,12 +187,12 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
 
     private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
         @SuppressWarnings("unchecked")
-        ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(CLUSTER_TYPE);
+        ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
         List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
         
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
-                .setTypeUrl(CLUSTER_TYPE)
+                .setTypeUrl(type)
                 .addAllResources(rawResources)
                 .setVersionInfo(resourceSnapshot.getVersion())
                 .setNonce(nonce).build();

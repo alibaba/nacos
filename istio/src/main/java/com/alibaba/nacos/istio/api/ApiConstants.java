@@ -49,6 +49,13 @@ public class ApiConstants {
      * Standard xds type url
      * TODO Support lds, rds and sds
      */
-    public static final String CLUSTER_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
+    
+    /**
+     * envoy.config.cluster.v3.Cluster
+     */
+    public static final String CLUSTER_V2_TYPE = API_TYPE_PREFIX + "envoy.api.v2.Cluster";
+    
+    public static final String CLUSTER_V3_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
+    
     public static final String ENDPOINT_TYPE = API_TYPE_PREFIX + "envoy.config.endpoint.v3.ClusterLoadAssignment";
 }
