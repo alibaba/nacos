@@ -93,8 +93,6 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
                 connections.remove(newConnection.getConnectionId());
             }
         };
-
-//        return createRequestHandler(responseObserver, false, Resources.V3.CLUSTER_TYPE_URL);
     }
 
 

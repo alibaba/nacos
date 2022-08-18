@@ -33,10 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V2_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
-import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
 /**
  * @author special.fy
@@ -102,7 +102,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (!shouldPush(discoveryRequest, connection)) {
             return;
         }
-
+        
         DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), resourceManager.getResourceSnapshot());
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
@@ -171,18 +171,26 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 }
 
                 Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-
                 //TODO CDS, EDS discriminate and increment
-                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_TYPE, resourceSnapshot);
-                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
-
+                
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_TYPE);
-                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
-                    if (cdsWatchedStatus != null) {
+                    //CDS
+                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
+                    if (cdsWatchedStatus == null) {
+                        cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V2_TYPE);
+                        if (cdsWatchedStatus != null) {
+                            DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, resourceSnapshot);
+                            connection.push(cdsResponse, cdsWatchedStatus);
+                        }
+                    } else {
+                        DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, resourceSnapshot);
                         connection.push(cdsResponse, cdsWatchedStatus);
                     }
+                    
+                    //EDS
+                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
                     if (edsWatchedStatus != null) {
+                        DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
                         connection.push(edsResponse, edsWatchedStatus);
                     }
                 }

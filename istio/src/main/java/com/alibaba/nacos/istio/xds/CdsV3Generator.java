@@ -28,27 +28,27 @@ import io.envoyproxy.envoy.config.core.v3.Http1ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import istio.networking.v1alpha3.ServiceEntryOuterClass;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V2_VALUE;
 
 /**
- * CdsGenerator.
  * @author RocketEngine26
- * @date 2022/7/24 15:28
+ * @date 2022/8/17 下午8:09
  */
-public final class CdsGenerator implements ApiGenerator<Any> {
+public final class CdsV3Generator implements ApiGenerator<Any> {
     
-    private static volatile CdsGenerator singleton = null;
+    private static volatile CdsV3Generator singleton = null;
     
-    public static CdsGenerator getInstance() {
+    public static CdsV3Generator getInstance() {
         if (singleton == null) {
             synchronized (ServiceEntryXdsGenerator.class) {
                 if (singleton == null) {
-                    singleton = new CdsGenerator();
+                    singleton = new CdsV3Generator();
                 }
             }
         }
@@ -62,11 +62,11 @@ public final class CdsGenerator implements ApiGenerator<Any> {
         
         for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
             ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
-    
+            
             int port = serviceEntry.getPorts(0).getNumber();
             boolean protocolFlag = serviceEntry.getEndpointsList().get(0).getPortsMap().containsKey("grpc");
             String name = buildClusterName(TrafficDirection.OUTBOUND, "", serviceEntry.getHosts(0), port);
-    
+            
             Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
                     .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
                             ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder())
@@ -77,10 +77,9 @@ public final class CdsGenerator implements ApiGenerator<Any> {
                 cluster.setHttpProtocolOptions(Http1ProtocolOptions.newBuilder().build());
             }
             
-            result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_TYPE).build());
+            result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_V3_TYPE).build());
         }
         
         return result;
     }
 }
-
