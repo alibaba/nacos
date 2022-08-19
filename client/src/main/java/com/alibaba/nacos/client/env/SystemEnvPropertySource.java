@@ -25,7 +25,7 @@ class SystemEnvPropertySource extends AbstractPropertySource {
     
     @Override
     SourceType getType() {
-        return SourceType.SYS;
+        return SourceType.ENV;
     }
     
     @Override

@@ -25,9 +25,11 @@ class PropertiesPropertySource extends AbstractPropertySource {
     
     private final Properties properties = new Properties();
     
-    private PropertiesPropertySource parent;
+    private final PropertiesPropertySource parent;
     
-    PropertiesPropertySource(){}
+    PropertiesPropertySource() {
+        this.parent = null;
+    }
     
     PropertiesPropertySource(PropertiesPropertySource parent) {
         this.parent = parent;
@@ -40,51 +42,44 @@ class PropertiesPropertySource extends AbstractPropertySource {
     
     @Override
     String getProperty(String key) {
+        return getProperty(this, key);
+    }
     
-        String value = properties.getProperty(key);
+    private String getProperty(PropertiesPropertySource propertiesPropertySource, String key) {
+        final String value = propertiesPropertySource.properties.getProperty(key);
         if (value != null) {
             return value;
         }
-        PropertiesPropertySource parent = this.parent;
-        while (parent != null) {
-            value = parent.properties.getProperty(key);
-            if (value != null) {
-                return value;
-            }
-            parent = parent.parent;
+        final PropertiesPropertySource parent = propertiesPropertySource.parent;
+        if (parent == null) {
+            return null;
         }
-        
-        return null;
+        return getProperty(parent, key);
     }
     
     @Override
     boolean containsKey(String key) {
-        boolean exist = properties.containsKey(key);
+        return containsKey(this, key);
+    }
+    
+    boolean containsKey(PropertiesPropertySource propertiesPropertySource, String key) {
+        final boolean exist = propertiesPropertySource.properties.containsKey(key);
         if (exist) {
             return true;
         }
-        PropertiesPropertySource parent = this.parent;
-        while (parent != null) {
-            exist = parent.properties.containsKey(key);
-            if (exist) {
-                return true;
-            }
-            parent = parent.parent;
+        final PropertiesPropertySource parent = propertiesPropertySource.parent;
+        if (parent == null) {
+            return false;
         }
-        return false;
+        return containsKey(parent, key);
     }
     
     @Override
     Properties asProperties() {
         List<Properties> propertiesList = new ArrayList<>(8);
-        propertiesList.add(properties);
-    
-        PropertiesPropertySource parent = this.parent;
-        while (parent != null) {
-            propertiesList.add(parent.properties);
-            parent = parent.parent;
-        }
-    
+        
+        propertiesList = lookingForProperties(this, propertiesList);
+        
         Properties ret = new Properties();
         final ListIterator<Properties> iterator = propertiesList.listIterator(propertiesList.size());
         while (iterator.hasPrevious()) {
@@ -92,6 +87,15 @@ class PropertiesPropertySource extends AbstractPropertySource {
             ret.putAll(properties);
         }
         return ret;
+    }
+    
+    List<Properties> lookingForProperties(PropertiesPropertySource propertiesPropertySource, List<Properties> propertiesList) {
+        propertiesList.add(propertiesPropertySource.properties);
+        final PropertiesPropertySource parent = propertiesPropertySource.parent;
+        if (parent == null) {
+            return propertiesList;
+        }
+        return lookingForProperties(parent, propertiesList);
     }
     
     synchronized void setProperty(String key, String value) {

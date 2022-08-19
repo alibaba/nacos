@@ -48,7 +48,7 @@ class SearchableProperties implements NProperties {
     private static final DefaultSettingPropertySource DEFAULT_SETTING_PROPERTY_SOURCE = new DefaultSettingPropertySource();
     
     private static final List<SourceType> DEFAULT_ORDER = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM,
-            SourceType.SYS);
+            SourceType.ENV, SourceType.DEFAULT_SETTING);
     
     private static final CompositeConverter CONVERTER = new CompositeConverter();
     
@@ -64,10 +64,8 @@ class SearchableProperties implements NProperties {
     
     private SearchableProperties(PropertiesPropertySource propertiesPropertySource) {
         this.propertiesPropertySource = propertiesPropertySource;
-        final List<AbstractPropertySource> sourceList = build(propertiesPropertySource,
-                JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE);
-        sourceList.add(DEFAULT_SETTING_PROPERTY_SOURCE);
-        this.propertySources = sourceList;
+        this.propertySources = build(propertiesPropertySource,
+                JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE, DEFAULT_SETTING_PROPERTY_SOURCE);
     }
     
     @Override
@@ -184,7 +182,7 @@ class SearchableProperties implements NProperties {
             }
             return sortPropertySource(sourceType, propertySources);
         } catch (Exception e) {
-            LOGGER.error("first source type parse error, it will be used default order!");
+            LOGGER.error("first source type parse error, it will be used default order!", e);
             return sortPropertySourceDefaultOrder(propertySources);
         }
     }
@@ -195,7 +193,7 @@ class SearchableProperties implements NProperties {
                 .collect(Collectors.toMap(AbstractPropertySource::getType, propertySource -> propertySource));
         final List<AbstractPropertySource> collect = DEFAULT_ORDER.stream().map(sourceMap::get)
                 .collect(Collectors.toList());
-        LOGGER.info("properties search order:PROPERTIES->JVM->SYS->DEFAULT_SETTING");
+        LOGGER.info("properties search order:PROPERTIES->JVM->ENV->DEFAULT_SETTING");
         return collect;
     }
     
@@ -211,11 +209,13 @@ class SearchableProperties implements NProperties {
                 .stream().map(sourceMap::get).filter(Objects::nonNull).collect(Collectors.toList());
         
         StringBuilder orderInfo = new StringBuilder("properties search order:");
-        for (AbstractPropertySource abstractPropertySource : collect) {
-            orderInfo.append(abstractPropertySource.getType().toString()).append("->");
+        for (int i = 0; i < collect.size(); i++) {
+            final AbstractPropertySource abstractPropertySource = collect.get(i);
+            orderInfo.append(abstractPropertySource.getType().toString());
+            if (i < collect.size() - 1) {
+                orderInfo.append("->");
+            }
         }
-        orderInfo.append("DEFAULT_SETTING");
-        
         LOGGER.info(orderInfo.toString());
         
         return collect;

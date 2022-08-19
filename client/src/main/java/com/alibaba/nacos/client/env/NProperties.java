@@ -26,7 +26,7 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface NProperties {
     
-    NProperties SHARED = SearchableProperties.INSTANCE;
+    NProperties PROTOTYPE = SearchableProperties.INSTANCE;
     
     /**
      * get property, if the value can not be got by the special key, the null will be returned.

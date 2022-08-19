@@ -20,7 +20,11 @@ import java.util.Properties;
 
 class JvmArgsPropertySource extends AbstractPropertySource {
     
-    private final Properties properties = new Properties(System.getProperties());
+    private final Properties properties;
+    
+    JvmArgsPropertySource() {
+        this.properties = System.getProperties();
+    }
     
     @Override
     SourceType getType() {
