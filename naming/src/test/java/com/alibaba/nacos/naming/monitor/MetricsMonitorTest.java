@@ -16,15 +16,47 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class MetricsMonitorTest {
+    
+    @Mock
+    private ConfigurableApplicationContext context;
+    
+    @Mock
+    private PrometheusMeterRegistry prometheusMeterRegistry;
     
     @Before
     public void setUp() {
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(prometheusMeterRegistry);
+        // clear mocked PrometheusMeterRegistry.
+        Set<MeterRegistry> meterRegistries = NacosMeterRegistryCenter.getMeterRegistry(
+                NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY).getRegistries();
+        for (MeterRegistry meterRegistry : meterRegistries) {
+            NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY)
+                    .remove(meterRegistry);
+        }
+        // add simple meterRegistry.
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY)
+                .add(new SimpleMeterRegistry());
+        
         MetricsMonitor.resetPush();
     }
     

@@ -17,12 +17,21 @@
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
 import com.alibaba.nacos.naming.misc.ClientConfig;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import static org.junit.Assert.assertTrue;
 
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ConnectionBasedClientTest {
+    
+    @Mock
+    private ConfigurableApplicationContext context;
     
     private final String connectionId = System.currentTimeMillis() + "_127.0.0.1_80";
     
@@ -32,6 +41,7 @@ public class ConnectionBasedClientTest {
     
     @Before
     public void setUp() throws Exception {
+        ApplicationUtils.injectContext(context);
         connectionBasedClient = new ConnectionBasedClient(connectionId, isNative);
     }
     

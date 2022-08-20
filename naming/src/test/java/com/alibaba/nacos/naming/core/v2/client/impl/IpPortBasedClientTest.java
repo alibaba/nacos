@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
@@ -44,6 +46,9 @@ public class IpPortBasedClientTest {
     @Mock
     private Service service;
     
+    @Mock
+    private ConfigurableApplicationContext context;
+    
     private InstancePublishInfo instancePublishInfo;
     
     @BeforeClass
@@ -53,6 +58,7 @@ public class IpPortBasedClientTest {
     
     @Before
     public void setUp() throws Exception {
+        ApplicationUtils.injectContext(context);
         ipPortBasedClient = new IpPortBasedClient(clientId, true);
         ipPortBasedClient.init();
         instancePublishInfo = new InstancePublishInfo();

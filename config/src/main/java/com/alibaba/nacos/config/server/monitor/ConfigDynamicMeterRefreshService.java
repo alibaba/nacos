@@ -17,11 +17,9 @@
 package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -30,34 +28,29 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * top n metrics refresh service.
+ * dynamic meter refresh service.
  *
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
 @Service
-public class TopnMetricsRefreshService {
+public class ConfigDynamicMeterRefreshService {
+    
+    private static final String TOPN_CONFIG_CHANGE_REGISTRY = NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY;
     
     private static final int CONFIG_CHANGE_N = 10;
-    
-    private CompositeMeterRegistry topnConfigChangeRegistry = new CompositeMeterRegistry();
-    
-    @Autowired
-    public TopnMetricsRefreshService(PrometheusMeterRegistry prometheusMeterRegistry) {
-        topnConfigChangeRegistry.add(prometheusMeterRegistry);
-    }
     
     /**
      * refresh config change count top n per 30s.
      */
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshTopnConfigChangeCount() {
-        topnConfigChangeRegistry.clear();
+        NacosMeterRegistryCenter.clear(TOPN_CONFIG_CHANGE_REGISTRY);
         List<Pair<String, AtomicInteger>> topnConfigChangeCount = MetricsMonitor.getConfigChangeCount()
                 .getTopNCounter(CONFIG_CHANGE_N);
         for (Pair<String, AtomicInteger> configChangeCount : topnConfigChangeCount) {
             List<Tag> tags = new ArrayList<>();
             tags.add(new ImmutableTag("config", configChangeCount.getFirst()));
-            topnConfigChangeRegistry.gauge("config_change_count", tags, configChangeCount.getSecond());
+            NacosMeterRegistryCenter.gauge(TOPN_CONFIG_CHANGE_REGISTRY, "config_change_count", tags, configChangeCount.getSecond());
         }
     }
     

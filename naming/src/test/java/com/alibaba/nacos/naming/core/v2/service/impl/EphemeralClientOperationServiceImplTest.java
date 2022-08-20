@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Rule;
@@ -32,6 +33,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,6 +48,9 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     public ExpectedException expectedException = ExpectedException.none();
     
     private EphemeralClientOperationServiceImpl ephemeralClientOperationServiceImpl;
+    
+    @Mock
+    private ConfigurableApplicationContext context;
     
     @Mock
     private ClientManagerDelegate clientManager;
@@ -69,6 +74,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     
     @Before
     public void setUp() throws Exception {
+        ApplicationUtils.injectContext(context);
         when(instance.getIp()).thenReturn(ip);
         when(instance.getPort()).thenReturn(port);
         when(service.getNamespace()).thenReturn("public");
