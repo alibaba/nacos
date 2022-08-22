@@ -95,7 +95,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private static final String ADDRESS_PLUGIN = "address.plugin";
     
-    private static final String STANDALONE_ADDRESS_PLUGIN_NAME = "StandAloneAddressPlugin";
+    private static final String STANDALONE_ADDRESS_PLUGIN_NAME = "standalone";
     
     private static final String ADDRESS_PLUGIN_TYPE = "nacos.core.member.lookup.type";
     
