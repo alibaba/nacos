@@ -20,6 +20,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
@@ -37,6 +38,7 @@ import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V2_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
+import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
 
 /**
  * @author special.fy
@@ -102,8 +104,10 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (!shouldPush(discoveryRequest, connection)) {
             return;
         }
+    
+        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
         
-        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), resourceManager.getResourceSnapshot());
+        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushContext);
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
 
@@ -164,55 +168,77 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
+        if (connections.size() == 0) {
+            return;
+        }
+        boolean full = resourceSnapshot.getIstioConfig().isFullEnabled();
+        PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
+        
+        for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
+            //mcp
+            WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+            if (watchedStatus != null) {
+                Loggers.MAIN.info("mcp Pushing");
+                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushContext);
+                connection.push(serviceEntryResponse, watchedStatus);
+            }
+        }
+        
         switch (event.getType()) {
             case Service:
-                if (connections.size() == 0) {
-                    return;
-                }
-
                 Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-                //TODO CDS, EDS discriminate and increment
                 
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     //CDS
                     WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
                     if (cdsWatchedStatus == null) {
+                        Loggers.MAIN.info("V2 Cluster Pushing");
                         cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V2_TYPE);
                         if (cdsWatchedStatus != null) {
-                            DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, resourceSnapshot);
+                            DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, pushContext);
                             connection.push(cdsResponse, cdsWatchedStatus);
                         }
                     } else {
-                        DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, resourceSnapshot);
+                        Loggers.MAIN.info("V3 Cluster Pushing");
+                        DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, pushContext);
                         connection.push(cdsResponse, cdsWatchedStatus);
-                    }
-                    
-                    //EDS
-                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
-                    if (edsWatchedStatus != null) {
-                        DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
-                        connection.push(edsResponse, edsWatchedStatus);
                     }
                 }
                 break;
             case Endpoint:
-                Loggers.MAIN.warn("Currently, endpoint event is not supported.");
+                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
+    
+                for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
+                    //EDS
+                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType("Delta_ENDPOINT_TYPE");
+                    if (edsWatchedStatus == null) {
+                        edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+                        if (edsWatchedStatus != null) {
+                            DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
+                            connection.push(edsResponse, edsWatchedStatus);
+                        }
+                    } else {
+                        pushContext.setFull(full);
+                        DiscoveryResponse edsResponse = buildDiscoveryResponse("Delta_ENDPOINT_TYPE", pushContext);
+                        connection.push(edsResponse, edsWatchedStatus);
+                    }
+                }
                 break;
             default:
                 Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
         }
     }
 
-    private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
+    private DiscoveryResponse buildDiscoveryResponse(String type, PushContext pushContext) {
         @SuppressWarnings("unchecked")
-        ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
-        List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
+        ApiGenerator<Any> generator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
+        List<Any> rawResources = generator.generate(pushContext);
 
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
                 .setTypeUrl(type)
                 .addAllResources(rawResources)
-                .setVersionInfo(resourceSnapshot.getVersion())
+                .setVersionInfo(pushContext.getVersion())
                 .setNonce(nonce).build();
     }
 }

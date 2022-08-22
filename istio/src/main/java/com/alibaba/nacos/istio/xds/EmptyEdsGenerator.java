@@ -19,11 +19,13 @@
 package com.alibaba.nacos.istio.xds;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.google.protobuf.Any;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**.
  * @author RocketEngine26
@@ -45,7 +47,12 @@ public class EmptyEdsGenerator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Any> generate(ResourceSnapshot resourceSnapshot) {
+    public List<Any> generate(PushContext pushContext) {
+        return new ArrayList<>();
+    }
+    
+    @Override
+    public List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
         return new ArrayList<>();
     }
 }

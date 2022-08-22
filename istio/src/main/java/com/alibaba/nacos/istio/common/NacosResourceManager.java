@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * NacosResourceManager.
@@ -69,8 +70,9 @@ public class NacosResourceManager {
      * @param: []
      * @return: com.alibaba.nacos.istio.common.ResourceSnapshot
      */
-    public ResourceSnapshot createResourceSnapshot() {
-        ResourceSnapshot resourceSnapshot = new ResourceSnapshot();
+    public ResourceSnapshot createResourceSnapshot(Set<String> removedHostName, Set<String> removedClusterName,
+            Set<String> updateService, Set<String> updateInstance) {
+        ResourceSnapshot resourceSnapshot = new ResourceSnapshot(removedHostName, removedClusterName, updateService, updateInstance);
         resourceSnapshot.initResourceSnapshot(this);
         setResourceSnapshot(resourceSnapshot);
         return resourceSnapshot;

@@ -18,8 +18,10 @@
 package com.alibaba.nacos.istio.xds;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
-import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
+import com.alibaba.nacos.istio.misc.IstioConfig;
+import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.model.IstioService;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
@@ -27,10 +29,12 @@ import io.envoyproxy.envoy.config.core.v3.ConfigSource;
 import io.envoyproxy.envoy.config.core.v3.Http1ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.Http2ProtocolOptions;
 import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
-import istio.networking.v1alpha3.ServiceEntryOuterClass;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
@@ -56,30 +60,37 @@ public final class CdsV3Generator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Any> generate(ResourceSnapshot resourceSnapshot) {
+    public List<Any> generate(PushContext pushContext) {
         List<Any> result = new ArrayList<>();
-        List<ServiceEntryWrapper> serviceEntries = resourceSnapshot.getServiceEntries();
+        IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
+        Map<String, IstioService> istioServiceMap = pushContext.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         
-        for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
-            ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
-            
-            int port = serviceEntry.getPorts(0).getNumber();
-            boolean protocolFlag = serviceEntry.getEndpointsList().get(0).getPortsMap().containsKey("grpc");
-            String name = buildClusterName(TrafficDirection.OUTBOUND, "", serviceEntry.getHosts(0), port);
-            
+        for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
+            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
+            boolean protocolFlag = entry.getValue().getPortsMap().containsKey("grpc");
+            String name = buildClusterName(TrafficDirection.OUTBOUND, "",
+                    entry.getKey() + istioConfig.getDomainSuffix(), port);
+    
             Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
                     .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
                             ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder())
                                     .setResourceApiVersionValue(V2_VALUE).build()).build());
+            
             if (protocolFlag) {
                 cluster.setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build());
             } else {
                 cluster.setHttpProtocolOptions(Http1ProtocolOptions.newBuilder().build());
             }
-            
+    
             result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_V3_TYPE).build());
         }
         
         return result;
+    }
+    
+    @Override
+    public List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+        Loggers.MAIN.info("Delta Cds Not supported");
+        return null;
     }
 }

@@ -20,6 +20,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.cluster.v3.ClusterDiscoveryServiceGrpc;
@@ -99,8 +100,10 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
         if (!shouldPush(discoveryRequest, connection)) {
             return;
         }
+    
+        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
 
-        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), resourceManager.getResourceSnapshot());
+        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushContext);
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
 
@@ -161,6 +164,7 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
+        PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
         switch (event.getType()) {
             case Service:
                 if (connections.size() == 0) {
@@ -168,9 +172,8 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
                 }
 
                 Loggers.MAIN.info("cds: event {} trigger push.", event.getType());
-    
-                //TODO CDS discriminate and increment
-                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, resourceSnapshot);
+                
+                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, pushContext);
 
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
@@ -184,19 +187,17 @@ public class NacosCdsService extends ClusterDiscoveryServiceGrpc.ClusterDiscover
                 Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
         }
     }
-
-    private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
+    
+    private DiscoveryResponse buildDiscoveryResponse(String type, PushContext pushContext) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
-        List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
+        List<Any> rawResources = serviceEntryGenerator.generate(pushContext);
         
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
                 .setTypeUrl(type)
                 .addAllResources(rawResources)
-                .setVersionInfo(resourceSnapshot.getVersion())
+                .setVersionInfo(pushContext.getVersion())
                 .setNonce(nonce).build();
     }
-
-
 }
