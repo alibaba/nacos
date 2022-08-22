@@ -123,7 +123,7 @@ public class NacosClusterController {
     @PostMapping(value = "/switch/lookup")
     public RestResult<String> switchLookup(@RequestParam(name = "type") String type) {
         try {
-            memberManager.switchLookup(type);
+            memberManager.switchAddressPlugin(type);
             return RestResultUtils.success();
         } catch (Throwable ex) {
             return RestResultUtils.failed(ex.getMessage());

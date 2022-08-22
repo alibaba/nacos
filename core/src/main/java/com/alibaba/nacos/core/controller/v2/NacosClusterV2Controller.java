@@ -138,7 +138,7 @@ public class NacosClusterV2Controller {
     @PutMapping(value = "/lookup")
     public RestResult<Void> updateLookup(@RequestBody LookupUpdateRequest request) {
         try {
-            memberManager.switchLookup(request.getType());
+            memberManager.switchAddressPlugin(request.getType());
             return RestResultUtils.success();
         } catch (Throwable ex) {
             return RestResultUtils.failed(ex.getMessage());
