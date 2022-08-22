@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.controller;
+package com.alibaba.nacos.config.server.controller.v2;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -28,7 +31,6 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,46 +39,45 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * History management controller.
- *
- * @author Nacos
+ * config history management controller [v2].
+ * @author dongyafei
+ * @date 2022/7/25
  */
+
+@NacosApi
 @RestController
-@RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
-public class HistoryController {
+@RequestMapping(Constants.HISTORY_CONTROLLER_V2_PATH)
+public class HistoryControllerV2 {
     
     private final HistoryService historyService;
     
-    public HistoryController(HistoryService historyService) {
+    public HistoryControllerV2(HistoryService historyService) {
         this.historyService = historyService;
     }
     
     /**
      * Query the list history config. notes:
      *
-     * @param dataId   dataId string value.
-     * @param group    group string value.
+     * @param dataId   dataId string value [required].
+     * @param group    group string value [required].
      * @param tenant   tenant string value.
-     * @param appName  appName string value.
      * @param pageNo   pageNo integer value.
      * @param pageSize pageSize integer value.
-     * @param modelMap modelMap.
      * @return the page of history config.
      * @since 2.0.3 add {@link Secured} for history config permission check.
      */
-    @GetMapping(params = "search=accurate")
+    @GetMapping("/list")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId,
+    public Result<Page<ConfigHistoryInfo>> listConfigHistory(
+            @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize, ModelMap modelMap) {
+            @RequestParam(value = "pageSize", required = false) Integer pageSize) throws NacosApiException {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        // configInfoBase has no appName field.
-        return historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        return Result.success(historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize));
     }
     
     /**
@@ -91,11 +92,12 @@ public class HistoryController {
      */
     @GetMapping
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigHistoryInfo getConfigHistoryInfo(@RequestParam("dataId") String dataId,
+    public Result<ConfigHistoryInfo> getConfigHistoryInfo(
+            @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("nid") Long nid) throws AccessException {
-        return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
+        return Result.success(historyService.getConfigHistoryInfo(dataId, group, tenant, nid));
     }
     
     /**
@@ -107,15 +109,15 @@ public class HistoryController {
      * @param tenant tenantId  @since 2.0.3
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
-     * @since 1.4.0
      */
     @GetMapping(value = "/previous")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(@RequestParam("dataId") String dataId,
+    public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(
+            @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) throws AccessException {
-        return historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id);
+        return Result.success(historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id));
     }
     
     /**
@@ -127,11 +129,11 @@ public class HistoryController {
      */
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public List<ConfigInfoWrapper> getDataIds(@RequestParam("tenant") String tenant) {
+    public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("tenant") String tenant)
+            throws NacosApiException {
         // check tenant
-        ParamUtils.checkTenant(tenant);
+        ParamUtils.checkTenantV2(tenant);
         tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        return historyService.getConfigListByNamespace(tenant);
+        return Result.success(historyService.getConfigListByNamespace(tenant));
     }
-    
 }
