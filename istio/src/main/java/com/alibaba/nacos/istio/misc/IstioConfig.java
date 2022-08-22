@@ -34,6 +34,15 @@ public class IstioConfig {
     @Value("${nacos.istio.mcp.server.port:18848}")
     private int serverPort = 18848;
     
+    @Value("${nacos.istio.server.full:true}")
+    private boolean fullEnabled = true;
+    
+    @Value("${nacos.istio.debounce.max:10000}")
+    private long debounceMax;
+    
+    @Value("${nacos.istio.debounce.after:2000}")
+    private long debounceAfter;
+    
     @Value("${nacos.istio.domain.suffix:nacos}")
     private String domainSuffix;
 
@@ -49,4 +58,15 @@ public class IstioConfig {
         return domainSuffix;
     }
     
+    public boolean isFullEnabled() {
+        return fullEnabled;
+    }
+    
+    public long getDebounceMax() {
+        return debounceMax;
+    }
+    
+    public long getDebounceAfter() {
+        return debounceAfter;
+    }
 }

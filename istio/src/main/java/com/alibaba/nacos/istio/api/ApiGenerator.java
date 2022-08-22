@@ -16,9 +16,11 @@
 
 package com.alibaba.nacos.istio.api;
 
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.model.PushContext;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * This interface is used to generator mcp resources or xds data.
@@ -30,8 +32,17 @@ public interface ApiGenerator<T> {
     /**
      * Generate data based on resource snapshot.
      *
-     * @param resourceSnapshot Resource snapshot
+     * @param pushContext Push Context
      * @return data
      */
-    List<T> generate(ResourceSnapshot resourceSnapshot);
+    List<T> generate(PushContext pushContext);
+    
+    /**
+     * Generate data based on resource snapshot.
+     *
+     * @param pushContext Push Context
+     * @param removed resources of removed
+     * @return data
+     */
+    List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed);
 }

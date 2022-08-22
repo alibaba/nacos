@@ -16,19 +16,29 @@
 
 package com.alibaba.nacos.istio.common;
 
+import com.alibaba.nacos.istio.model.DeltaResources;
+
 /**
  * @author special.fy
  */
 public class Event {
-
-    public static final Event SERVICE_UPDATE_EVENT = new Event(EventType.Service);
-
     private EventType type;
-
+    
+    private DeltaResources deltaResources;
+    
+    public Event(EventType type, DeltaResources deltaResources) {
+        this.type = type;
+        this.deltaResources = deltaResources;
+    }
+    
     public Event(EventType type) {
         this.type = type;
     }
-
+    
+    public DeltaResources getDeltaResources() {
+        return deltaResources;
+    }
+    
     public EventType getType() {
         return type;
     }

@@ -17,18 +17,19 @@
 package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.model.PushContext;
 import istio.mcp.v1alpha1.ResourceOuterClass.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author special.fy
  */
 public class EmptyMcpGenerator implements ApiGenerator<Resource> {
 
-    private volatile static EmptyMcpGenerator singleton = null;
+    private static volatile EmptyMcpGenerator singleton = null;
 
     public static EmptyMcpGenerator getInstance() {
         if (singleton == null) {
@@ -42,7 +43,12 @@ public class EmptyMcpGenerator implements ApiGenerator<Resource> {
     }
 
     @Override
-    public List<Resource> generate(ResourceSnapshot resourceSnapshot) {
+    public List<Resource> generate(PushContext pushContext) {
+        return new ArrayList<>();
+    }
+    
+    @Override
+    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
         return new ArrayList<>();
     }
 }

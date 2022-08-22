@@ -16,70 +16,102 @@
 
 package com.alibaba.nacos.istio.common;
 
+import com.alibaba.nacos.istio.misc.IstioConfig;
+import com.alibaba.nacos.istio.model.IstioResources;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
-import com.alibaba.nacos.istio.util.IstioCrdUtil;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
+/**.
  * @author special.fy
  */
 public class ResourceSnapshot {
     private static AtomicLong versionSuffix = new AtomicLong(0);
-
-    private final List<ServiceEntryWrapper> serviceEntries;
-
+    
+    private Set<String> updateService;
+    
+    private Set<String> updateInstance;
+    
+    private Set<String> removedHostName;
+    
+    private Set<String> removedClusterName;
+    
+    private final IstioResources istioResources;
+    
+    private final IstioConfig istioConfig = new IstioConfig();
+    
     private boolean isCompleted;
-
+    
     private String version;
-
+    
     public ResourceSnapshot() {
         isCompleted = false;
-        serviceEntries = new ArrayList<>();
+        istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
+    }
+    
+    public ResourceSnapshot(Set<String> removedHostName, Set<String> removedClusterName, Set<String> updateService, Set<String> updateInstance) {
+        this.updateService = updateService;
+        this.updateInstance = updateInstance;
+        this.removedHostName = removedHostName;
+        this.removedClusterName = removedClusterName;
+        istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
+    
+        isCompleted = false;
     }
 
     public synchronized void initResourceSnapshot(NacosResourceManager manager) {
         if (isCompleted) {
             return;
         }
-
-        initServiceEntry(manager);
-
+        
+        initIstioResources(manager);
+        
         generateVersion();
-
+        
         isCompleted = true;
     }
-
+    
     private void generateVersion() {
         String time = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date());
         version = time + "/" + versionSuffix.getAndIncrement();
     }
-
-    private void initServiceEntry(NacosResourceManager manager) {
-       Map<String, IstioService> serviceInfoMap = manager.services();
-       for (String serviceName : serviceInfoMap.keySet()) {
-           ServiceEntryWrapper serviceEntryWrapper = IstioCrdUtil.buildServiceEntry(serviceName, manager.getIstioConfig().getDomainSuffix(), serviceInfoMap.get(serviceName));
-           if (serviceEntryWrapper != null) {
-               serviceEntries.add(serviceEntryWrapper);
-           }
-       }
-
+    
+    private void initIstioResources(NacosResourceManager manager) {
+        istioResources.setIstioServiceMap(manager.services());
     }
-
-    public List<ServiceEntryWrapper> getServiceEntries() {
-        return serviceEntries;
+    
+    public Set<String> getUpdateService() {
+        return updateService;
     }
-
+    
+    public Set<String> getUpdateInstance() {
+        return updateInstance;
+    }
+    
+    public Set<String> getRemovedHostName() {
+        return removedHostName;
+    }
+    
+    public Set<String> getRemovedClusterName() {
+        return removedClusterName;
+    }
+    
+    public IstioResources getIstioResources() {
+        return istioResources;
+    }
+    
+    public IstioConfig getIstioConfig() {
+        return istioConfig;
+    }
+    
     public boolean isCompleted() {
         return isCompleted;
     }
-
+    
     public String getVersion() {
         return version;
     }

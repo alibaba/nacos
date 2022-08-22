@@ -18,37 +18,35 @@
 package com.alibaba.nacos.istio.xds;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
-import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
+import com.alibaba.nacos.istio.misc.IstioConfig;
+import com.alibaba.nacos.istio.model.IstioEndpoint;
+import com.alibaba.nacos.istio.model.IstioService;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.google.protobuf.Any;
+import com.google.protobuf.ProtocolStringList;
 import com.google.protobuf.UInt32Value;
-import io.envoyproxy.envoy.config.core.v3.Address;
-import io.envoyproxy.envoy.config.core.v3.Locality;
-import io.envoyproxy.envoy.config.core.v3.SocketAddress;
 import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
 import io.envoyproxy.envoy.config.endpoint.v3.LbEndpoint;
 import io.envoyproxy.envoy.config.endpoint.v3.LocalityLbEndpoints;
-import io.envoyproxy.envoy.config.endpoint.v3.Endpoint;
-import istio.networking.v1alpha3.ServiceEntryOuterClass;
-import istio.networking.v1alpha3.WorkloadEntryOuterClass;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildLocalityName;
+import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildIstioServiceMapByInstance;
 
-/**
- * EdsGenerator.
+/**.
  * @author RocketEngine26
  * @date 2022/7/24 15:28
  */
 public final class EdsGenerator implements ApiGenerator<Any> {
-   
+    
     private static volatile EdsGenerator singleton = null;
     
     public static EdsGenerator getInstance() {
@@ -63,37 +61,70 @@ public final class EdsGenerator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Any> generate(ResourceSnapshot resourceSnapshot) {
-        List<Any> result = new ArrayList<>();
-        List<ServiceEntryWrapper> serviceEntries = resourceSnapshot.getServiceEntries();
+    public List<Any> generate(PushContext pushContext) {
+        IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
+        Map<String, IstioService> istioServiceMap = buildIstioServiceMapByInstance(pushContext);
         
-        for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
-            ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
-            List<WorkloadEntryOuterClass.WorkloadEntry> workloadEntries = serviceEntry.getEndpointsList();
-            Map<String, LocalityLbEndpoints.Builder> llbEndpointsBuilder = new HashMap<>(serviceEntry.getEndpointsCount());
+        return buildEndpoints(istioServiceMap, istioConfig.getDomainSuffix(), null);
+    }
+    
+    @Override
+    public List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+        List<Resource> result = new ArrayList<>();
+        IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
+        Set<String> removedClusterName = pushContext.getResourceSnapshot().getRemovedClusterName();
+        Map<String, IstioService> istioServiceMap = buildIstioServiceMapByInstance(pushContext);
+        ProtocolStringList subscribe = pushContext.getResourceNamesSubscribe();
+        
+        for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
+            String serviceName = entry.getKey();
+            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
+            String name = buildClusterName(TrafficDirection.OUTBOUND, "",
+                    serviceName + istioConfig.getDomainSuffix(), port);
+            if (!subscribe.contains(name)) {
+                istioServiceMap.remove(serviceName);
+            }
+        }
+        
+        for (String removedName : subscribe) {
+            if (removedClusterName.contains(removedName)) {
+                removed.add(removedName);
+            }
+        }
+        
+        List<Any> temp = buildEndpoints(istioServiceMap, istioConfig.getDomainSuffix(), removed);
+        
+        for (Any any : temp) {
+            result.add(Resource.newBuilder().setResource(any).setVersion(pushContext.getVersion()).build());
+        }
+    
+        return result;
+    }
+    
+    private static List<Any> buildEndpoints(Map<String, IstioService> istioServiceMap, String domain, Set<String> removed) {
+        List<Any> result = new ArrayList<>();
+        
+        for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
+            List<IstioEndpoint> istioEndpoints = entry.getValue().getHosts();
+            Map<String, LocalityLbEndpoints.Builder> llbEndpointsBuilder = new HashMap<>(istioEndpoints.size());
+        
+            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
+            String name = buildClusterName(TrafficDirection.OUTBOUND, "",
+                    entry.getKey() + domain, port);
+        
+            for (IstioEndpoint istioEndpoint : istioEndpoints) {
+                String label = istioEndpoint.getStringLocality();
+                LbEndpoint lbEndpoint = istioEndpoint.getLbEndpoint();
             
-            int port = serviceEntry.getPorts(0).getNumber();
-            String name = buildClusterName(TrafficDirection.OUTBOUND, "", serviceEntry.getHosts(0), port);
-            
-            for (WorkloadEntryOuterClass.WorkloadEntry workloadEntry : workloadEntries) {
-                String label = buildLocalityName(workloadEntry);
-                Address adder = Address.newBuilder().setSocketAddress(SocketAddress.newBuilder().setAddress(workloadEntry.getAddress())
-                        .setPortValue(port).setProtocol(SocketAddress.Protocol.TCP).build()).build();
-                LbEndpoint lbEndpoint = LbEndpoint.newBuilder().setLoadBalancingWeight(UInt32Value.newBuilder().setValue(
-                        workloadEntry.getWeight())).setEndpoint(Endpoint.newBuilder().setAddress(adder).build()).build();
-                
                 if (!llbEndpointsBuilder.containsKey(label)) {
-                    Locality locality = Locality.newBuilder().setRegion(label.split("\\.")[0]).setZone(
-                                label.split("\\.")[1]).setSubZone(
-                                        "false".equals(label.split("\\.")[2]) ? "" : label.split("\\.")[2]).build();
                     LocalityLbEndpoints.Builder llbEndpointBuilder = LocalityLbEndpoints.newBuilder()
-                            .setLocality(locality).addLbEndpoints(lbEndpoint);
+                            .setLocality(istioEndpoint.getLocality()).addLbEndpoints(lbEndpoint);
                     llbEndpointsBuilder.put(label, llbEndpointBuilder);
                 } else {
                     llbEndpointsBuilder.get(label).addLbEndpoints(lbEndpoint);
                 }
             }
-    
+        
             List<LocalityLbEndpoints> listlle = new ArrayList<>();
             for (LocalityLbEndpoints.Builder builder : llbEndpointsBuilder.values()) {
                 int weight = 0;
@@ -103,7 +134,12 @@ public final class EdsGenerator implements ApiGenerator<Any> {
                 LocalityLbEndpoints lle = builder.setLoadBalancingWeight(UInt32Value.newBuilder().setValue(weight)).build();
                 listlle.add(lle);
             }
-    
+            
+            if (listlle.size() == 0 && removed != null) {
+                removed.add(name);
+                continue;
+            }
+            
             ClusterLoadAssignment cla = ClusterLoadAssignment.newBuilder().setClusterName(name).addAllEndpoints(listlle).build();
             Any any = Any.newBuilder().setValue(cla.toByteString()).setTypeUrl(ENDPOINT_TYPE).build();
             result.add(any);

@@ -20,6 +20,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.DiscoveryRequest;
@@ -94,14 +95,15 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
             }
         };
     }
-
-
+    
     public void process(DiscoveryRequest discoveryRequest, AbstractConnection<DiscoveryResponse> connection) {
         if (!shouldPush(discoveryRequest, connection)) {
             return;
         }
-
-        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), resourceManager.getResourceSnapshot());
+    
+        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
+        
+        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushContext);
         connection.push(response, connection.getWatchedStatusByType(ENDPOINT_TYPE));
     }
 
@@ -162,6 +164,7 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
+        PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
         switch (event.getType()) {
             case Service:
                 if (connections.size() == 0) {
@@ -169,9 +172,8 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
                 }
 
                 Loggers.MAIN.info("eds: event {} trigger push.", event.getType());
-    
-                //TODO CDS discriminate and increment
-                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
+                
+                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
     
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
@@ -186,18 +188,16 @@ public class NacosEdsService extends EndpointDiscoveryServiceGrpc.EndpointDiscov
         }
     }
 
-    private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
+    private DiscoveryResponse buildDiscoveryResponse(String type, PushContext pushContext) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(ENDPOINT_TYPE);
-        List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
+        List<Any> rawResources = serviceEntryGenerator.generate(pushContext);
 
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
                 .setTypeUrl(ENDPOINT_TYPE)
                 .addAllResources(rawResources)
-                .setVersionInfo(resourceSnapshot.getVersion())
+                .setVersionInfo(pushContext.getVersion())
                 .setNonce(nonce).build();
     }
-
-
 }

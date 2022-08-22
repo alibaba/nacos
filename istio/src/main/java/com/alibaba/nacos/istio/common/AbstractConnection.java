@@ -27,17 +27,17 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author special.fy
  */
-public abstract class AbstractConnection<MessageT> {
+public abstract class AbstractConnection<T> {
 
     private static AtomicLong connectIdGenerator = new AtomicLong(0);
 
     private String connectionId;
 
-    protected StreamObserver<MessageT> streamObserver;
+    protected StreamObserver<T> streamObserver;
 
     private final Map<String, WatchedStatus> watchedResources;
-
-    public AbstractConnection(StreamObserver<MessageT> streamObserver) {
+    
+    public AbstractConnection(StreamObserver<T> streamObserver) {
         this.streamObserver = streamObserver;
         this.watchedResources = new HashMap<>(1 << 4);
     }
@@ -54,7 +54,7 @@ public abstract class AbstractConnection<MessageT> {
     public void addWatchedResource(String resourceType, WatchedStatus watchedStatus) {
         watchedResources.put(resourceType, watchedStatus);
     }
-
+    
     public WatchedStatus getWatchedStatusByType(String resourceType) {
         return watchedResources.get(resourceType);
     }
@@ -65,5 +65,5 @@ public abstract class AbstractConnection<MessageT> {
      * @param message response
      * @param watchedStatus watched status
      */
-    public abstract void push(MessageT message, WatchedStatus watchedStatus);
+    public abstract void push(T message, WatchedStatus watchedStatus);
 }

@@ -20,6 +20,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
@@ -103,7 +104,9 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
             return;
         }
 
-        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), resourceManager.getResourceSnapshot());
+        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
+        
+        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushContext);
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
 
@@ -164,6 +167,7 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     }
 
     public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
+        PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
         switch (event.getType()) {
             case Service:
                 if (connections.size() == 0) {
@@ -172,14 +176,14 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
 
                 Loggers.MAIN.info("ads: event {} trigger push.", event.getType());
     
-                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, resourceSnapshot);
-                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, resourceSnapshot);
+                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, pushContext);
+                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
                 
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
                     if (cdsWatchedStatus == null) {
                         cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V2_TYPE);
-                        cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, resourceSnapshot);
+                        cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, pushContext);
                     }
                     WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
                     if (cdsWatchedStatus != null) {
@@ -196,16 +200,16 @@ public class NacosAdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         }
     }
 
-    private DiscoveryResponse buildDiscoveryResponse(String type, ResourceSnapshot resourceSnapshot) {
+    private DiscoveryResponse buildDiscoveryResponse(String type, PushContext pushContext) {
         @SuppressWarnings("unchecked")
-        ApiGenerator<Any> serviceEntryGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
-        List<Any> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
+        ApiGenerator<Any> adsGenerator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
+        List<Any> rawResources = adsGenerator.generate(pushContext);
         
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
                 .setTypeUrl(type)
                 .addAllResources(rawResources)
-                .setVersionInfo(resourceSnapshot.getVersion())
+                .setVersionInfo(pushContext.getVersion())
                 .setNonce(nonce).build();
     }
 }
