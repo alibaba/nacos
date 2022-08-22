@@ -37,7 +37,7 @@ public class PropertyUtilsTest {
     
     @Test
     public void getPropertyWithDefaultValue() {
-        String property = PropertyUtils.getProperty("nacos.test", "xx","test001");
+        String property = PropertyUtils.getProperty("nacos.test", "xx", "test001");
         Assert.assertEquals(property, "test001");
     }
     

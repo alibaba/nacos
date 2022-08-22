@@ -20,7 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * InetAddressValidator Test
+ * InetAddressValidator Test.
  * @ClassName: InetAddressValidatorTest
  * @Author: ChenHao26
  * @Date: 2022/8/22 13:07
