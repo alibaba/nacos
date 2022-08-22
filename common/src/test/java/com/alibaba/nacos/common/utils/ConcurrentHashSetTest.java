@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import com.sun.istack.internal.logging.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,8 +31,6 @@ import java.util.Set;
  * @Date: 2022/8/22 11:21
  */
 public class ConcurrentHashSetTest {
-    
-    private static Logger logger = Logger.getLogger(ConcurrentHashSetTest.class);
     
     Set<Integer> concurrentHashSet;
 
@@ -132,11 +129,11 @@ public class ConcurrentHashSetTest {
     
         @Override
         public void run() {
-            logger.info("start -- hashSet.size() : " + hashSet.size());
+            System.out.println("start -- hashSet.size() : " + hashSet.size());
             for (Integer str : hashSet) {
-                logger.info("value : " + str);
+                System.out.println("value : " + str);
             }
-            logger.info("end -- hashSet.size() : " + hashSet.size());
+            System.out.println("end -- hashSet.size() : " + hashSet.size());
         }
     }
 }
