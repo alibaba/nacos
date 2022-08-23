@@ -99,7 +99,7 @@ public class TpsMonitorPoint {
     }
     
     /**
-     * get format string for "yyyy-MM-dd HH:mm:ss"
+     * get format string for "yyyy-MM-dd HH:mm:ss".
      *
      * @param timeStamp timestamp milliseconds.
      * @return datetime string.
