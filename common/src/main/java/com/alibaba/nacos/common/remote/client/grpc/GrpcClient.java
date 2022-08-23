@@ -63,9 +63,9 @@ public abstract class GrpcClient extends RpcClient {
     
     protected static final String NACOS_SERVER_GRPC_PORT_OFFSET_KEY = "nacos.server.grpc.port.offset";
     
-    protected static final String NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME = "nacos.client.grpc.pool.alive";
+    protected static final String NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME = "nacos.remote.client.grpc.pool.alive";
     
-    protected static final String NACOS_CLIENT_GRPC_TIMEOUT = "nacos.client.grpc.timeout";
+    protected static final String NACOS_CLIENT_GRPC_TIMEOUT = "nacos.remote.client.grpc.timeout";
     
     private ThreadPoolExecutor grpcExecutor = null;
     
@@ -118,7 +118,7 @@ public abstract class GrpcClient extends RpcClient {
         String value = configProperties.getProperty(name);
         if (StringUtils.isEmpty(value)) {
             String property = System.getProperty(name, defaultConfig);
-            configProperties.put(name, property);
+            configProperties.putIfAbsent(name, property);
         }
     }
     

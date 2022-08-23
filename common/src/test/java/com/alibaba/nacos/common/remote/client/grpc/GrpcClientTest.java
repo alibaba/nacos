@@ -48,8 +48,8 @@ public class GrpcClientTest {
     @Before
     public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Properties clientConfig = new Properties();
-        clientConfig.put("nacos.client.grpc.pool.alive", String.valueOf(20));
-        clientConfig.put("nacos.client.grpc.timeout", String.valueOf(5000));
+        clientConfig.put("nacos.remote.client.grpc.pool.alive", String.valueOf(20));
+        clientConfig.put("nacos.remote.client.grpc.timeout", String.valueOf(5000));
         grpcClient = spy(new GrpcClient("testClient", clientConfig) {
             @Override
             public int rpcPortOffset() {
