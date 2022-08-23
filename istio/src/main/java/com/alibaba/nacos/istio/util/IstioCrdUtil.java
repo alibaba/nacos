@@ -58,14 +58,14 @@ public class IstioCrdUtil {
         return direction.toString().toLowerCase() + "|" + port + "|" + subset + "|" + hostName;
     }
     
-    public static String buildServiceEntryHostName(String serviceName, String domain, IstioService istioService) {
-        String hostname = serviceName;
+    public static String buildServiceEntryName(String serviceName, String domain, IstioService istioService) {
+        String serviceEntryName = serviceName;
         for (IstioEndpoint istioEndpoint : istioService.getHosts()) {
             if (com.alibaba.nacos.common.utils.StringUtils.isNotEmpty(istioEndpoint.getHostName())) {
-                hostname = istioEndpoint.getHostName();
+                serviceEntryName = istioEndpoint.getHostName();
             }
         }
-        return hostname + "." + domain;
+        return serviceEntryName + "." + domain;
     }
     
     public static String buildServiceName(Service service) {

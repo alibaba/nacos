@@ -42,7 +42,6 @@ public class ApiConstants {
     public static final String SERVICE_ENTRY_COLLECTION = MCP_PREFIX + "networking/v1alpha3/serviceentries";
     
     public static final String WORKLOAD_ENTRY_COLLECTION = MCP_PREFIX + "networking/v1alpha3/workloadentries";
-    
 
     /**
      * Istio crd type url of api.

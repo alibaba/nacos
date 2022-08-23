@@ -34,7 +34,7 @@ import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntry;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryHostName;
+import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryName;
 
 /**
  * @author special.fy
@@ -67,7 +67,7 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
             String serviceName = entry.getKey();
-            String name = buildServiceEntryHostName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
+            String name = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
             
             ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName, name, serviceInfoMap.get(serviceName));
             if (serviceEntryWrapper != null) {
