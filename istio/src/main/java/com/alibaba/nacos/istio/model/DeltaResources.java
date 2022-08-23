@@ -33,7 +33,7 @@ public class DeltaResources {
     
     private final Map<String, PushChange.ChangeType> instanceChangeMap = new ConcurrentHashMap<>();
     
-    private final Set<String> removedHostName = new HashSet<>();
+    private final Set<String> removedServiceEntryName = new HashSet<>();
     
     private final Set<String> removedClusterName = new HashSet<>();
     
@@ -48,8 +48,8 @@ public class DeltaResources {
         }
     }
     
-    public void addRemovedHostName(String hostName) {
-        removedHostName.add(hostName);
+    public void addRemovedServiceEntryName(String serviceEntryName) {
+        removedServiceEntryName.add(serviceEntryName);
     }
     
     public void addRemovedClusterName(String clusterName) {
@@ -64,8 +64,8 @@ public class DeltaResources {
         return instanceChangeMap;
     }
     
-    public Set<String> getRemovedHostName() {
-        return removedHostName;
+    public Set<String> getRemovedServiceEntryName() {
+        return removedServiceEntryName;
     }
     
     public Set<String> getRemovedClusterName() {

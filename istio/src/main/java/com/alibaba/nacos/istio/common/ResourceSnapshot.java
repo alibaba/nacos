@@ -36,7 +36,7 @@ public class ResourceSnapshot {
     
     private Set<String> updateInstance;
     
-    private Set<String> removedHostName;
+    private Set<String> removedServiceEntryName;
     
     private Set<String> removedClusterName;
     
@@ -53,10 +53,11 @@ public class ResourceSnapshot {
         istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
     }
     
-    public ResourceSnapshot(Set<String> removedHostName, Set<String> removedClusterName, Set<String> updateService, Set<String> updateInstance) {
+    public ResourceSnapshot(Set<String> removedServiceEntryName, Set<String> removedClusterName,
+            Set<String> updateService, Set<String> updateInstance) {
         this.updateService = updateService;
         this.updateInstance = updateInstance;
-        this.removedHostName = removedHostName;
+        this.removedServiceEntryName = removedServiceEntryName;
         this.removedClusterName = removedClusterName;
         istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
     
@@ -92,8 +93,8 @@ public class ResourceSnapshot {
         return updateInstance;
     }
     
-    public Set<String> getRemovedHostName() {
-        return removedHostName;
+    public Set<String> getRemovedServiceEntryName() {
+        return removedServiceEntryName;
     }
     
     public Set<String> getRemovedClusterName() {

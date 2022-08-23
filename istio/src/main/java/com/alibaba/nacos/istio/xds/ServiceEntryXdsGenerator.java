@@ -29,7 +29,6 @@ import istio.networking.v1alpha3.ServiceEntryOuterClass;
 import istio.networking.v1alpha3.ServiceEntryOuterClass.ServiceEntry;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,7 +37,7 @@ import static com.alibaba.nacos.istio.api.ApiConstants.*;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildIstioServiceMapByInstance;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildIstioServiceMapByService;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntry;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryHostName;
+import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryName;
 
 /**
  * @author special.fy
@@ -48,8 +47,6 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
     private static volatile ServiceEntryXdsGenerator singleton = null;
     
     private List<ServiceEntryWrapper> serviceEntries;
-    
-    private final Map<String, Set<String>> hostNameToServiceName = new HashMap<>(16);
 
     public static ServiceEntryXdsGenerator getInstance() {
         if (singleton == null) {
@@ -71,7 +68,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
     
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
             String serviceName = entry.getKey();
-            String name = buildServiceEntryHostName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
+            String name = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
             
             ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName, name, serviceInfoMap.get(serviceName));
             if (serviceEntryWrapper != null) {
@@ -101,13 +98,13 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         serviceEntries = new ArrayList<>();
         IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
         Map<String, IstioService> istioServiceMap = buildIstioServiceMapByService(pushContext);
-        Set<String> removedHostName = pushContext.getResourceSnapshot().getRemovedHostName();
+        Set<String> removedHostName = pushContext.getResourceSnapshot().getRemovedServiceEntryName();
         buildIstioServiceMapByInstance(pushContext).forEach((key, value) -> istioServiceMap.merge(key, value, (v1, v2) -> v1));
         ProtocolStringList subscribe = pushContext.getResourceNamesSubscribe();
     
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
             String serviceName = entry.getKey();
-            String name = buildServiceEntryHostName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
+            String name = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
             
             if (subscribe.contains(name)) {
                 ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName, name, istioServiceMap.get(serviceName));
@@ -129,8 +126,7 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
             ServiceEntryOuterClass.ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
 
-            //TODO: type url
-            Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl("Delta_SERVICE_ENTRY_PROTO").build();
+            Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl(SERVICE_ENTRY_PROTO).build();
 
             result.add(io.envoyproxy.envoy.service.discovery.v3.Resource.newBuilder().setResource(any).setVersion(
                     pushContext.getVersion()).build());

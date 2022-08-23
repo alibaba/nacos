@@ -37,10 +37,10 @@ public class IstioConfig {
     @Value("${nacos.istio.server.full:true}")
     private boolean fullEnabled = true;
     
-    @Value("${nacos.istio.debounce.max:10000}")
+    @Value("${nacos.istio.debounce.max:5000}")
     private long debounceMax;
     
-    @Value("${nacos.istio.debounce.after:2000}")
+    @Value("${nacos.istio.debounce.after:100}")
     private long debounceAfter;
     
     @Value("${nacos.istio.domain.suffix:nacos}")

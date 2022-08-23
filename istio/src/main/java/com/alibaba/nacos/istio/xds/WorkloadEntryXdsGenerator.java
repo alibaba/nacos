@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.MCP_RESOURCE_PROTO;
+import static com.alibaba.nacos.istio.api.ApiConstants.WORKLOAD_ENTRY_PROTO;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildIstioServiceMapByInstance;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildWorkloadEntry;
 
@@ -65,15 +66,13 @@ public class WorkloadEntryXdsGenerator implements ApiGenerator<Any> {
         }
         
         for (WorkloadEntryOuterClass.WorkloadEntry workloadEntry : endpoints) {
-            //TODO: type url
-            Any any = Any.newBuilder().setValue(workloadEntry.toByteString()).setTypeUrl("Workload_ENTRY_PROTO").build();
+            Any any = Any.newBuilder().setValue(workloadEntry.toByteString()).setTypeUrl(WORKLOAD_ENTRY_PROTO).build();
     
             resources.add(ResourceOuterClass.Resource.newBuilder().setBody(any).build());
         }
     
         List<Any> result = new ArrayList<>();
         for (ResourceOuterClass.Resource resource : resources) {
-            //TODO:type url
             result.add(Any.newBuilder().setValue(resource.toByteString()).setTypeUrl(MCP_RESOURCE_PROTO).build());
         }
         
@@ -88,15 +87,14 @@ public class WorkloadEntryXdsGenerator implements ApiGenerator<Any> {
         ProtocolStringList subscribe = pushContext.getResourceNamesSubscribe();
     
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
-            //TODO: name
+            //TODO: removed
             if (subscribe.contains(entry.getKey())) {
                 endpoints.addAll(buildWorkloadEntry(entry.getValue().getHosts()));
             }
         }
         
         for (WorkloadEntryOuterClass.WorkloadEntry workloadEntry : endpoints) {
-            //TODO: type url
-            Any any = Any.newBuilder().setValue(workloadEntry.toByteString()).setTypeUrl("Delta_Workload_ENTRY_PROTO").build();
+            Any any = Any.newBuilder().setValue(workloadEntry.toByteString()).setTypeUrl(WORKLOAD_ENTRY_PROTO).build();
         
             result.add(Resource.newBuilder().setResource(any).setVersion(pushContext.getVersion()).build());
         }

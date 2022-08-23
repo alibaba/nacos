@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryHostName;
+import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryName;
 import static com.alibaba.nacos.istio.util.IstioExecutor.cycleDebounce;
 import static com.alibaba.nacos.istio.util.IstioExecutor.debouncePushChange;
 
@@ -206,13 +206,14 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
                 Loggers.MAIN.info("infoMap remove !");
                 IstioService istioService = serviceInfoMap.get(serviceName);
                 
-                String hostName = buildServiceEntryHostName(serviceName, istioConfig.getDomainSuffix(), istioService);
+                //In fact, only a table can be processed, but in order to have more operations later, separate
+                String serviceEntryName = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), istioService);
                 int port = (int) istioService.getPortsMap().values().toArray()[0];
                 String clusterName = buildClusterName(TrafficDirection.OUTBOUND, "",
                         serviceName + istioConfig.getDomainSuffix(), port);
                 
                 updatePush.addRemovedClusterName(clusterName);
-                updatePush.addRemovedHostName(hostName);
+                updatePush.addRemovedServiceEntryName(serviceName + "." + istioConfig.getDomainSuffix());
                 
                 serviceInfoMap.remove(serviceName);
             }
