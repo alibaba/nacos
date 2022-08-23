@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * {@link TpsMonitorPoint} unit tests.
@@ -29,14 +30,13 @@ public class TpsMonitorPointTest {
     
     @Test
     public void testStaticMethod() {
-        long current = System.currentTimeMillis();
-        String date = TpsMonitorPoint.getTimeFormatOfSecond(current);
-        Assert.assertNotNull(date);
-        
-        TpsMonitorPoint.getTrimMillsOfSecond(current);
-    
-        TpsMonitorPoint.getTrimMillsOfMinute(current);
-    
-        TpsMonitorPoint.getTrimMillsOfHour(current);
+        //2022-08-23 14:23:53
+        assertEquals(1661235833000L, TpsMonitorPoint.getTrimMillsOfSecond(1661235833111L));
+        //2022-08-23 14:23:00
+        assertEquals(1661235780000L, TpsMonitorPoint.getTrimMillsOfMinute(1661235833111L));
+        //2022-08-23 14:00:00
+        assertEquals(1661234400000L, TpsMonitorPoint.getTrimMillsOfHour(1661235833111L));
+        assertEquals("2022-08-23 14:23:53", TpsMonitorPoint.getTimeFormatOfSecond(1661235833111L));
     }
+
 }
