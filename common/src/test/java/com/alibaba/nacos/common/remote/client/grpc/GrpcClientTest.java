@@ -28,6 +28,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Properties;
 
 import static org.mockito.Mockito.spy;
 
@@ -46,17 +47,22 @@ public class GrpcClientTest {
 
     @Before
     public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        grpcClient = spy(new GrpcClient("testClient") {
+        Properties clientConfig = new Properties();
+        clientConfig.put("nacos.client.grpc.pool.alive", String.valueOf(20));
+        clientConfig.put("nacos.client.grpc.timeout", String.valueOf(5000));
+        grpcClient = spy(new GrpcClient("testClient", clientConfig) {
             @Override
             public int rpcPortOffset() {
                 return 1000;
             }
         });
         RpcClient.ServerInfo serverInfo = spy(new RpcClient.ServerInfo("10.10.10.10", 8848));
-        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class, int.class);
+        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class,
+                int.class);
         createNewManagedChannelMethod.setAccessible(true);
         int port = serverInfo.getServerPort() + grpcClient.rpcPortOffset();
-        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(), port);
+        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(),
+                port);
     }
 
     @Test
