@@ -57,12 +57,10 @@ public class GrpcClientTest {
             }
         });
         RpcClient.ServerInfo serverInfo = spy(new RpcClient.ServerInfo("10.10.10.10", 8848));
-        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class,
-                int.class);
+        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class, int.class);
         createNewManagedChannelMethod.setAccessible(true);
         int port = serverInfo.getServerPort() + grpcClient.rpcPortOffset();
-        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(),
-                port);
+        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(), port);
     }
     
     @Test
