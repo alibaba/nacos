@@ -19,21 +19,30 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <artifactId>nacos-plugin</artifactId>
         <groupId>com.alibaba.nacos</groupId>
-        <artifactId>nacos-all</artifactId>
         <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    <artifactId>nacos-plugin</artifactId>
-    <name>nacos-plugin ${project.version}</name>
+    <artifactId>nacos-config-plugin</artifactId>
+    <name>nacos-encryption-plugin ${project.version}</name>
     <url>http://nacos.io</url>
-    <modules>
-        <module>auth</module>
-        <module>encryption</module>
-        <module>config</module>
-    </modules>
-    <packaging>pom</packaging>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>
