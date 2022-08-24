@@ -18,8 +18,13 @@ package com.alibaba.nacos.core.remote.control;
 
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * {@link TpsMonitorPoint} unit tests.
@@ -38,7 +43,9 @@ public class TpsMonitorPointTest {
         //2022-08-23 14:00:00
         assertEquals(1661234400000L, TpsMonitorPoint.getTrimMillsOfHour(1661235833111L));
         
-        assertNotNull(TpsMonitorPoint.getTimeFormatOfSecond(1661235833111L));
+        assertEquals(LocalDateTime.of(2022, 8, 23, 14, 23, 53).atZone(ZoneOffset.ofHours(8))
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+                        .withLocale(Locale.getDefault())), TpsMonitorPoint.getTimeFormatOfSecond(1661235833111L));
     }
     
 }
