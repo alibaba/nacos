@@ -102,7 +102,7 @@ public class EncryptionHandler {
      * Check if encryption and decryption is needed.
      *
      * @param dataId dataId
-     * @return boolean
+     * @return boolean whether data id needs encrypt
      */
     private static boolean checkCipher(String dataId) {
         return dataId.startsWith(PREFIX) && !PREFIX.equals(dataId);
