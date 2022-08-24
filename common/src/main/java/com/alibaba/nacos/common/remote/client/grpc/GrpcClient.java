@@ -77,7 +77,7 @@ public abstract class GrpcClient extends RpcClient {
     
     private static final long DEFAULT_KEEP_ALIVE_TIME = 6 * 60 * 1000;
     
-    private Properties configProperties;
+    private Properties configProperties = new Properties();
     
     private final Long defaultTimeOut = 3000L;
     
@@ -106,10 +106,11 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private void initGrpcClient(Properties configProperties) {
-        if (Objects.isNull(configProperties)) {
-            this.configProperties = new Properties();
-        } else {
-            this.configProperties = configProperties;
+        if (!Objects.isNull(configProperties)) {
+            this.configProperties.put(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME,
+                    configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
+            this.configProperties.put(NACOS_CLIENT_GRPC_TIMEOUT,
+                    configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
         }
         checkInitProperties(this.configProperties);
     }
@@ -118,7 +119,7 @@ public abstract class GrpcClient extends RpcClient {
         String value = configProperties.getProperty(name);
         if (StringUtils.isEmpty(value)) {
             String property = System.getProperty(name, defaultConfig);
-            configProperties.putIfAbsent(name, property);
+            configProperties.put(name, property);
         }
     }
     
