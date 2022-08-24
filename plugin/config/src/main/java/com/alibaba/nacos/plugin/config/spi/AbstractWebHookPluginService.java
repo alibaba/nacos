@@ -52,6 +52,7 @@ public abstract class AbstractWebHookPluginService implements ConfigChangeServic
      * notify user by webhook.
      *
      * @param configChangeNotifyInfo Config Change information which need to push
+     * @param pushUrl                url which will push to
      */
     public abstract void notifyConfigChange(ConfigChangeNotifyInfo configChangeNotifyInfo, String pushUrl);
     

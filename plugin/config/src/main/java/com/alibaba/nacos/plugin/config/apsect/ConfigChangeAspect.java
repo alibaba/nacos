@@ -124,7 +124,7 @@ public class ConfigChangeAspect {
             String dataId, String group, String tenant, String content) throws Throwable {
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
         String handleType = "publish";
-        Map<String, Object> additionInfo = new HashMap<>();
+        Map<String, Object> additionInfo = new HashMap<>(2);
         if (configAllInfo != null) {
             handleType = "update";
             additionInfo.put("oldConfigAllInfo", configAllInfo);
@@ -181,7 +181,7 @@ public class ConfigChangeAspect {
                             time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
             ids.add(configInfo.getDataId());
         }
-        Map<String, Object> additionInfo = new HashMap<>();
+        Map<String, Object> additionInfo = new HashMap<>(2);
         additionInfo.put("ids", ids.toString());
         return ConfigChangePluginHandler.handle(configChangeServicePriorityQueue, pjp, "remove", additionInfo);
     }

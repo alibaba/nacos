@@ -35,7 +35,10 @@ public interface ConfigChangeService {
     /**
      * execute config change service.
      *
+     * @param pjp                      ProceedingJoinPoint
+     * @param configChangeHandleReport delivery sync plugin service handle situation
      * @return
+     * @throws Throwable exception
      */
     Object execute(ProceedingJoinPoint pjp, ConfigChangeHandleReport configChangeHandleReport) throws Throwable;
     
@@ -62,8 +65,7 @@ public interface ConfigChangeService {
     
     /**
      * what kind of plugin service,such as webhook,whiteList and other,need keep a way with the constants config of you
-     * enum in {@link ConfigChangeConstants},sample as {@link
-     * AbstractWebHookPluginService}.
+     * enum in {@link ConfigChangeConstants},sample as {@link AbstractWebHookPluginService}.
      *
      * @return
      */
