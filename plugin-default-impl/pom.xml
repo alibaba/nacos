@@ -38,7 +38,6 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-config-plugin</artifactId>
-            <version>2.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
