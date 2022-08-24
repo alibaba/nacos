@@ -51,9 +51,9 @@ public class EncryptionHandler {
         if (!checkCipher(dataId)) {
             return Pair.with("", content);
         }
-        String algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = EncryptionPluginManager.instance()
-                .findEncryptionService(algorithmName);
+        Optional<String> algorithmName = parseAlgorithmName(dataId);
+        Optional<EncryptionPluginService> optional = algorithmName
+                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
             LOGGER.warn("[EncryptionHandler] [encryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
@@ -63,7 +63,7 @@ public class EncryptionHandler {
         String encryptContent = encryptionPluginService.encrypt(secretKey, content);
         return Pair.with(encryptionPluginService.encryptSecretKey(secretKey), encryptContent);
     }
-    
+
     /**
      * Execute decryption.
      *
@@ -76,9 +76,9 @@ public class EncryptionHandler {
         if (!checkCipher(dataId)) {
             return Pair.with("", content);
         }
-        String algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = EncryptionPluginManager.instance()
-                .findEncryptionService(algorithmName);
+        Optional<String> algorithmName = parseAlgorithmName(dataId);
+        Optional<EncryptionPluginService> optional = algorithmName
+                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
             LOGGER.warn("[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
@@ -88,15 +88,15 @@ public class EncryptionHandler {
         String decryptContent = encryptionPluginService.decrypt(decryptSecretKey, content);
         return Pair.with(decryptSecretKey, decryptContent);
     }
-    
+
     /**
      * Parse encryption algorithm name.
      *
      * @param dataId dataId
      * @return algorithm name
      */
-    private static String parseAlgorithmName(String dataId) {
-        return Stream.of(dataId.split("-")).collect(Collectors.toList()).get(1);
+    private static Optional<String> parseAlgorithmName(String dataId) {
+        return Stream.of(dataId.split("-")).skip(1).findAny();
     }
     
     /**
@@ -106,6 +106,6 @@ public class EncryptionHandler {
      * @return boolean
      */
     private static boolean checkCipher(String dataId) {
-        return dataId.startsWith(PREFIX);
+        return dataId.startsWith(PREFIX) && !dataId.equals(PREFIX);
     }
 }

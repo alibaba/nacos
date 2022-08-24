@@ -76,4 +76,16 @@ public class EncryptionHandlerTest {
         Pair<String, String> pair = EncryptionHandler.decryptHandler("test-dataId", "12345678", "content");
         Assert.assertNotNull(pair);
     }
+
+    @Test
+    public void testCornerCaseDataIdAlgoParse() {
+        String dataId = "cipher-";
+        Exception e = null;
+        try {
+            EncryptionHandler.encryptHandler(dataId, "content");
+        } catch (IndexOutOfBoundsException ex) {
+            e = ex;
+        }
+        Assert.assertNull("should not throw exception when parsing enc algo for dataId '" + dataId + "'", e);
+    }
 }
