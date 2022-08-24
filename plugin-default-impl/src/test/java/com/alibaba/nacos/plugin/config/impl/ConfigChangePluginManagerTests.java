@@ -31,6 +31,8 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 
 /**
+ * tests for config change plugin manager.
+ *
  * @author liyunfei
  */
 public class ConfigChangePluginManagerTests {

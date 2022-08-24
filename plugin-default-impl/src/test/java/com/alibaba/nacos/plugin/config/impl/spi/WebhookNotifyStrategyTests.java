@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * tests for webhook notify.
+ *
  * @author liyunfei
  */
 public class WebhookNotifyStrategyTests {
@@ -60,13 +62,13 @@ public class WebhookNotifyStrategyTests {
     
     @Test
     public void testEventCloudNotify() {
-        WebHookCloudEventStrategy webHookCloudEventStrategy = new WebHookCloudEventStrategy();
         ConfigChangeNotifyInfo configChangeNotifyInfo = new ConfigChangeNotifyInfo("publish",
                 System.currentTimeMillis(), "publish-test.text", "DEFAULT_GROUP");
         configChangeNotifyInfo.setRequestIp("127.0.0.1");
         Map<String, String> contentItem = new HashMap<>();
         contentItem.put("newValue", "test,publish");
         configChangeNotifyInfo.setContentItem(contentItem);
+        WebHookCloudEventStrategy webHookCloudEventStrategy = new WebHookCloudEventStrategy();
         // push to default endpoint
         webHookCloudEventStrategy.notifyConfigChange(configChangeNotifyInfo, null);
         // push to the point url
