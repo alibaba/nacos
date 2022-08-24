@@ -19,7 +19,9 @@ package com.alibaba.nacos.console.controller.v2;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
+import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.model.vo.NamespaceVo;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import org.junit.Before;
@@ -46,7 +48,7 @@ public class NamespaceControllerV2Test {
     private NamespaceControllerV2 namespaceControllerV2;
     
     @Mock
-    private NamespaceOperationService namnamespaceOperationService;
+    private NamespaceOperationService namespaceOperationService;
     
     private static final String TEST_NAMESPACE_ID = "testId";
     
@@ -56,7 +58,7 @@ public class NamespaceControllerV2Test {
     
     @Before
     public void setUp() throws Exception {
-        namespaceControllerV2 = new NamespaceControllerV2(namnamespaceOperationService);
+        namespaceControllerV2 = new NamespaceControllerV2(namespaceOperationService);
     }
     
     @Test
@@ -66,10 +68,10 @@ public class NamespaceControllerV2Test {
         namespace.setNamespaceShowName(TEST_NAMESPACE_NAME);
         namespace.setNamespaceDesc(TEST_NAMESPACE_DESC);
         List<Namespace> namespaceList = Collections.singletonList(namespace);
-        when(namnamespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
+        when(namespaceOperationService.getNamespaceList()).thenReturn(namespaceList);
         
         Result<List<Namespace>> actualResult = namespaceControllerV2.getNamespaceList();
-        verify(namnamespaceOperationService).getNamespaceList();
+        verify(namespaceOperationService).getNamespaceList();
         assertEquals(ErrorCode.SUCCESS.getCode(), actualResult.getCode());
         
         List<Namespace> actualList = actualResult.getData();
@@ -82,13 +84,29 @@ public class NamespaceControllerV2Test {
     }
     
     @Test
+    public void testGetNamespace() throws NacosException {
+        NamespaceAllInfo namespaceAllInfo = new NamespaceAllInfo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, 200,
+                1, NamespaceTypeEnum.GLOBAL.getType(), TEST_NAMESPACE_DESC);
+        when(namespaceOperationService.getNamespace(TEST_NAMESPACE_ID, true)).thenReturn(namespaceAllInfo);
+        Result<NamespaceAllInfo> result = namespaceControllerV2.getNamespace(TEST_NAMESPACE_ID);
+        verify(namespaceOperationService).getNamespace(TEST_NAMESPACE_ID, true);
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        NamespaceAllInfo namespace = result.getData();
+        assertEquals(namespaceAllInfo.getNamespace(), namespace.getNamespace());
+        assertEquals(namespaceAllInfo.getNamespaceShowName(), namespace.getNamespaceShowName());
+        assertEquals(namespaceAllInfo.getNamespaceDesc(), namespace.getNamespaceDesc());
+        assertEquals(namespaceAllInfo.getQuota(), namespace.getQuota());
+        assertEquals(namespaceAllInfo.getConfigCount(), namespace.getConfigCount());
+    }
+    
+    @Test
     public void testCreateNamespace() throws NacosException {
-        when(namnamespaceOperationService
+        when(namespaceOperationService
                 .createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC, true)).thenReturn(true);
         Result<Boolean> result = namespaceControllerV2
                 .createNamespace(new NamespaceVo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
         
-        verify(namnamespaceOperationService).createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC, true);
+        verify(namespaceOperationService).createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC, true);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());
@@ -96,11 +114,11 @@ public class NamespaceControllerV2Test {
     
     @Test
     public void testEditNamespace() throws NacosException {
-        when(namnamespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC)).thenReturn(true);
+        when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC)).thenReturn(true);
         Result<Boolean> result = namespaceControllerV2
                 .editNamespace(new NamespaceVo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
         
-        verify(namnamespaceOperationService).editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
+        verify(namespaceOperationService).editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());
@@ -108,10 +126,10 @@ public class NamespaceControllerV2Test {
     
     @Test
     public void testDeleteNamespace() {
-        when(namnamespaceOperationService.removeNamespace(TEST_NAMESPACE_ID)).thenReturn(true);
+        when(namespaceOperationService.removeNamespace(TEST_NAMESPACE_ID)).thenReturn(true);
         Result<Boolean> result = namespaceControllerV2.deleteNamespace(TEST_NAMESPACE_ID);
         
-        verify(namnamespaceOperationService).removeNamespace(TEST_NAMESPACE_ID);
+        verify(namespaceOperationService).removeNamespace(TEST_NAMESPACE_ID);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());

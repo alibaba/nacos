@@ -17,9 +17,12 @@
 package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
+import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,6 +91,29 @@ public class NamespaceOperationServiceTest {
         assertEquals(TEST_NAMESPACE_ID, namespaceB.getNamespace());
         assertEquals(TEST_NAMESPACE_NAME, namespaceB.getNamespaceShowName());
         assertEquals(1, namespaceB.getConfigCount());
+    }
+    
+    @Test(expected = NacosApiException.class)
+    public void testGetNamespace() throws NacosException {
+    
+        TenantInfo tenantInfo = new TenantInfo();
+        tenantInfo.setTenantId(TEST_NAMESPACE_ID);
+        tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
+        tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
+        when(persistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID)).thenReturn(tenantInfo);
+        when(persistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id")).thenReturn(null);
+        when(persistService.configInfoCount(anyString())).thenReturn(1);
+        NamespaceAllInfo namespaceAllInfo = new NamespaceAllInfo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, DEFAULT_QUOTA,
+                1, NamespaceTypeEnum.GLOBAL.getType(), TEST_NAMESPACE_DESC);
+        NamespaceAllInfo namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID, true);
+        assertEquals(namespaceAllInfo.getNamespace(), namespace.getNamespace());
+        assertEquals(namespaceAllInfo.getNamespaceShowName(), namespace.getNamespaceShowName());
+        assertEquals(namespaceAllInfo.getNamespaceDesc(), namespace.getNamespaceDesc());
+        assertEquals(namespaceAllInfo.getQuota(), namespace.getQuota());
+        assertEquals(namespaceAllInfo.getConfigCount(), namespace.getConfigCount());
+    
+        namespaceOperationService.getNamespace("test_not_exist_id", true);
+        
     }
     
     @Test

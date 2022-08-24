@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.console.model.Namespace;
+import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.model.vo.NamespaceVo;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -69,6 +70,18 @@ public class NamespaceControllerV2 {
     @GetMapping("/list")
     public Result<List<Namespace>> getNamespaceList() {
         return Result.success(namespaceOperationService.getNamespaceList());
+    }
+    
+    /**
+     * get namespace all info by namespace id.
+     *
+     * @param namespaceId namespaceId
+     * @return namespace all info
+     */
+    @GetMapping()
+    public Result<NamespaceAllInfo> getNamespace(@RequestParam("namespaceId") String namespaceId)
+            throws NacosException {
+        return Result.success(namespaceOperationService.getNamespace(namespaceId, true));
     }
     
     /**

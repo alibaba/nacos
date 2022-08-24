@@ -21,9 +21,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
@@ -61,16 +59,6 @@ public class NamespaceController {
     
     private static final int NAMESPACE_ID_MAX_LENGTH = 128;
     
-    private static final int DEFAULT_QUOTA = 200;
-    
-    private static final String DEFAULT_NAMESPACE_SHOW_NAME = "Public";
-    
-    private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Public Namespace";
-    
-    private static final String DEFAULT_TENANT = "";
-    
-    private static final String DEFAULT_KP = "1";
-    
     /**
      * Get namespace list.
      *
@@ -88,18 +76,8 @@ public class NamespaceController {
      * @return namespace all info
      */
     @GetMapping(params = "show=all")
-    public NamespaceAllInfo getNamespace(@RequestParam("namespaceId") String namespaceId) {
-        // TODO 获取用kp
-        if (StringUtils.isBlank(namespaceId)) {
-            return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
-                    persistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType(),
-                    DEFAULT_NAMESPACE_DESCRIPTION);
-        } else {
-            TenantInfo tenantInfo = persistService.findTenantByKp(DEFAULT_KP, namespaceId);
-            int configCount = persistService.configInfoCount(namespaceId);
-            return new NamespaceAllInfo(namespaceId, tenantInfo.getTenantName(), DEFAULT_QUOTA, configCount,
-                    NamespaceTypeEnum.CUSTOM.getType(), tenantInfo.getTenantDesc());
-        }
+    public NamespaceAllInfo getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
+        return namespaceOperationService.getNamespace(namespaceId, false);
     }
     
     /**

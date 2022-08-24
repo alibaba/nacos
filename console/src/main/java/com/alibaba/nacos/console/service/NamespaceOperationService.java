@@ -19,10 +19,12 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
+import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ import java.util.List;
 
 /**
  * NamespaceOperationService.
+ *
  * @author dongyafei
  * @date 2022/8/16
  */
@@ -41,6 +44,10 @@ public class NamespaceOperationService {
     private final PersistService persistService;
     
     private static final String DEFAULT_NAMESPACE = "public";
+    
+    private static final String DEFAULT_NAMESPACE_SHOW_NAME = "Public";
+    
+    private static final String DEFAULT_NAMESPACE_DESCRIPTION = "Public Namespace";
     
     private static final int DEFAULT_QUOTA = 200;
     
@@ -70,6 +77,30 @@ public class NamespaceOperationService {
             namespaceList.add(namespaceTmp);
         }
         return namespaceList;
+    }
+    
+    /**
+     * query namespace by namespace id.
+     *
+     * @param namespaceId namespace Id.
+     * @return NamespaceAllInfo.
+     */
+    public NamespaceAllInfo getNamespace(String namespaceId, Boolean isV2) throws NacosException {
+        // TODO 获取用kp
+        if (StringUtils.isBlank(namespaceId)) {
+            return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
+                    persistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType(),
+                    DEFAULT_NAMESPACE_DESCRIPTION);
+        } else {
+            TenantInfo tenantInfo = persistService.findTenantByKp(DEFAULT_KP, namespaceId);
+            if (isV2 && null == tenantInfo) {
+                throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.NAMESPACE_NOT_EXIST,
+                        "namespaceId [ " + namespaceId + " ] not exist");
+            }
+            int configCount = persistService.configInfoCount(namespaceId);
+            return new NamespaceAllInfo(namespaceId, tenantInfo.getTenantName(), DEFAULT_QUOTA, configCount,
+                    NamespaceTypeEnum.CUSTOM.getType(), tenantInfo.getTenantDesc());
+        }
     }
     
     /**
