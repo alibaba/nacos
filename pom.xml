@@ -142,6 +142,8 @@
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
         <guava.version>30.1-jre</guava.version>
+        <fastjson.version>1.2.62</fastjson.version>
+        <cloudevents.version>2.0.0-milestone1</cloudevents.version>
         <javatuples.version>1.2</javatuples.version>
         <grpc-java.version>1.30.2</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
@@ -715,6 +717,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-config-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -909,7 +916,33 @@
                 <artifactId>javatuples</artifactId>
                 <version>${javatuples.version}</version>
             </dependency>
-            
+    
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>${fastjson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cloudevents</groupId>
+                <artifactId>cloudevents-core</artifactId>
+                <version>${cloudevents.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cloudevents</groupId>
+                <artifactId>cloudevents-http-vertx</artifactId>
+                <version>${cloudevents.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cloudevents</groupId>
+                <artifactId>cloudevents-api</artifactId>
+                <version>${cloudevents.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cloudevents</groupId>
+                <artifactId>cloudevents-json-jackson</artifactId>
+                <version>${cloudevents.version}</version>
+            </dependency>
+    
             <!-- gRPC dependency start -->
             <dependency>
                 <groupId>io.grpc</groupId>
