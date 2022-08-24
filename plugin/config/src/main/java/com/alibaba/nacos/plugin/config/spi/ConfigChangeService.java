@@ -37,7 +37,7 @@ public interface ConfigChangeService {
      *
      * @param pjp                      ProceedingJoinPoint
      * @param configChangeHandleReport delivery sync plugin service handle situation
-     * @return
+     * @return retVal
      * @throws Throwable exception
      */
     Object execute(ProceedingJoinPoint pjp, ConfigChangeHandleReport configChangeHandleReport) throws Throwable;
@@ -45,21 +45,21 @@ public interface ConfigChangeService {
     /**
      * when pointcut the same method,according to order to load plugin service. order is lower,prior is higher.
      *
-     * @return
+     * @return order
      */
     int getOrder();
     
     /**
      * execute type(aysnc/sync).
      *
-     * @return
+     * @return type
      */
     String executeType();
     
     /**
      * implements way (nacos/other).
      *
-     * @return
+     * @return implements way
      */
     String getImplWay();
     
@@ -67,7 +67,7 @@ public interface ConfigChangeService {
      * what kind of plugin service,such as webhook,whiteList and other,need keep a way with the constants config of you
      * enum in {@link ConfigChangeConstants},sample as {@link AbstractWebHookPluginService}.
      *
-     * @return
+     * @return service type
      */
     String getServiceType();
     
@@ -78,7 +78,7 @@ public interface ConfigChangeService {
      * config change info. can point method see to {@link com.alibaba.nacos.plugin.config.apsect.ConfigChangeAspect}
      * </p>
      *
-     * @return
+     * @return set of pointcut the methods
      */
     default Set<String> pointcutMethodNames() {
         Set<String> set = new HashSet<>(5);
@@ -91,7 +91,7 @@ public interface ConfigChangeService {
      * identify the config change plugin service detail name,which point to what kind of plugin service.
      * nacos/other(such as self,..) + the respond static class name {@link ConfigChangeConstants}
      *
-     * @return
+     * @return service name
      */
     default String getServiceName() {
         return getImplWay() + ":" + getServiceType();
