@@ -191,38 +191,49 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             Loggers.MAIN.info("not valid");
             serviceInfoMap.remove(serviceName);
         }
+    
+        IstioService old = serviceInfoMap.get(serviceName);
         
-        if (serviceInfoMap.containsKey(serviceName)) {
-            IstioService old = serviceInfoMap.get(serviceName);
-            if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
-                if (old != null) {
-                    Loggers.MAIN.info("infoMap old put");
-                    serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
+        if (flagType) {
+            if (serviceInfoMap.containsKey(serviceName)) {
+                if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
+                    if (old != null) {
+                        Loggers.MAIN.info("infoMap old put");
+                        serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
+                    } else {
+                        Loggers.MAIN.info("infoMap put");
+                        serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+                    }
                 } else {
-                    Loggers.MAIN.info("infoMap put");
-                    serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+                    Loggers.MAIN.info("infoMap remove !");
+                    IstioService istioService = serviceInfoMap.get(serviceName);
+            
+                    //In fact, only a table can be processed, but in order to have more operations later, separate
+                    String serviceEntryName = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), istioService);
+                    int port = (int) istioService.getPortsMap().values().toArray()[0];
+                    String clusterName = buildClusterName(TrafficDirection.OUTBOUND, "",
+                            serviceName + istioConfig.getDomainSuffix(), port);
+            
+                    updatePush.addRemovedClusterName(clusterName);
+                    updatePush.addRemovedServiceEntryName(serviceName + "." + istioConfig.getDomainSuffix());
+            
+                    serviceInfoMap.remove(serviceName);
                 }
-            } else if (flagType) {
-                Loggers.MAIN.info("infoMap remove !");
-                IstioService istioService = serviceInfoMap.get(serviceName);
-                
-                //In fact, only a table can be processed, but in order to have more operations later, separate
-                String serviceEntryName = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), istioService);
-                int port = (int) istioService.getPortsMap().values().toArray()[0];
-                String clusterName = buildClusterName(TrafficDirection.OUTBOUND, "",
-                        serviceName + istioConfig.getDomainSuffix(), port);
-                
-                updatePush.addRemovedClusterName(clusterName);
-                updatePush.addRemovedServiceEntryName(serviceName + "." + istioConfig.getDomainSuffix());
-                
-                serviceInfoMap.remove(serviceName);
+            } else {
+                Loggers.MAIN.info("new service");
+                if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
+                    serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+                } else {
+                    Loggers.MAIN.info("no change");
+                }
             }
         } else {
-            Loggers.MAIN.info("new service");
-            if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
-                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+            if (old != null) {
+                Loggers.MAIN.info("infoMap old put");
+                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
             } else {
-                Loggers.MAIN.info("no change");
+                Loggers.MAIN.info("infoMap put");
+                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
             }
         }
     }
