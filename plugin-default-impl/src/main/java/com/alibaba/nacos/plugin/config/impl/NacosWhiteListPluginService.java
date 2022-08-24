@@ -73,10 +73,10 @@ public class NacosWhiteListPluginService extends AbstractWhiteListPluginService 
     }
     
     void filterFile(Object[] args, Set<String> whiteList) throws IOException {
-        if (args[4] instanceof MultipartFile) {
+        final int fileIndex = 4;
+        if (args[fileIndex] instanceof MultipartFile) {
             MultipartFile file = (MultipartFile) args[4];
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
-            // metaData为空 TODO 只适合V2版本，V1版本的导出无metaData
             if (unziped.getMetaDataItem() == null) {
                 LOGGER.warn("whitelist plugin service can not support V2 export file");
                 return;
@@ -92,7 +92,7 @@ public class NacosWhiteListPluginService extends AbstractWhiteListPluginService 
                 return;
             }
             
-            Map<String, String> dataIdTypeMap = new HashMap<>();
+            Map<String, String> dataIdTypeMap = new HashMap<>(8);
             List<ZipUtils.ZipItem> itemList = new ArrayList<>();
             lists.forEach(item0 -> {
                 dataIdTypeMap.put(item0.get("group") + "/" + item0.get("dataId"), item0.get("type"));
@@ -107,7 +107,7 @@ public class NacosWhiteListPluginService extends AbstractWhiteListPluginService 
             byte[] fileByFilteredBytes = ZipUtils.zip(itemList);
             MultipartFile fileByFiltered = new MockMultipartFile(ContentType.APPLICATION_OCTET_STREAM.toString(),
                     fileByFilteredBytes);
-            args[4] = fileByFiltered;
+            args[fileIndex] = fileByFiltered;
         }
     }
     
