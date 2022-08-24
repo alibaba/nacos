@@ -105,6 +105,6 @@ public class EncryptionHandler {
      * @return boolean
      */
     private static boolean checkCipher(String dataId) {
-        return dataId.startsWith(PREFIX) && !dataId.equals(PREFIX);
+        return dataId.startsWith(PREFIX) && !PREFIX.equals(dataId);
     }
 }
