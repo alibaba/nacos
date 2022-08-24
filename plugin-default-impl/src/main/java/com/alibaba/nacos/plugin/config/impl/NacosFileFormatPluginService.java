@@ -48,6 +48,8 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosFileFormatPluginService.class);
     
+    private static final int RPC_ARGS_LENGTH = 2;
+    
     /**
      * the relationship of type and function of validating the file.
      */
@@ -57,7 +59,7 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
     public Object execute(ProceedingJoinPoint pjp, ConfigChangeHandleReport configChangeHandleReport) throws Throwable {
         Object[] args = pjp.getArgs();
         // RPC- dont need to validate
-        if (args.length == 2) {
+        if (args.length == RPC_ARGS_LENGTH) {
             return pjp.proceed();
         }
         String content = (String) args[5];
@@ -99,8 +101,7 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
         Function<String, Boolean> function = null;
         function = fileValidateMap.get(type);
         if (function == null) {
-            LOGGER.warn("load {} file format util fail,please add it at {}", type,
-                    NacosFileFormatPluginService.class);
+            LOGGER.warn("load {} file format util fail,please add it at {}", type, NacosFileFormatPluginService.class);
             return false;
         }
         return function.apply(content);

@@ -54,6 +54,16 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
     
     private static final String WEBHOOK_URL = ConfigPropertyUtil.getWebHookUrl();
     
+    private static final int PUBLISH_UPDATE_ARGS_LENGTH = 15;
+    
+    private static final int REMOVE_ARGS_LENGTH = 6;
+    
+    private static final int RPC_ARGS_LENGTH = 2;
+    
+    private static final int IMPORT_ARGS_LENGTH = 4;
+    
+    private static final String UPDATE_POINT = "update";
+    
     private static WebHookNotifyStrategy notifyStrategy;
     
     private final int maxContent = 10 * 1024;
@@ -85,7 +95,7 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
         String requestIpApp = null;
         String scrName = null;
         
-        if (args.length == 15 || args.length == 6) {
+        if (args.length == PUBLISH_UPDATE_ARGS_LENGTH || args.length == REMOVE_ARGS_LENGTH) {
             
             HttpServletRequest request = (HttpServletRequest) args[0];
             srcIp = RequestUtil.getRemoteIp(request);
@@ -102,7 +112,7 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
             }
         }
         
-        if (args.length == 15) {
+        if (args.length == PUBLISH_UPDATE_ARGS_LENGTH) {
             tenant = (String) args[4];
             tag = (String) args[9];
             desc = (String) args[10];
@@ -117,18 +127,18 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
         configChangeNotifyInfo.setRequestIp(requestIpApp);
         configChangeNotifyInfo.setScrName(scrName);
         
-        Map<String, String> contentItem = new HashMap<>();
+        Map<String, String> contentItem = new HashMap<>(2);
         contentItem.put("newValue", content);
-        Map<String, String> tenantItem = new HashMap<>();
+        Map<String, String> tenantItem = new HashMap<>(2);
         tenantItem.put("newValue", tenant);
-        Map<String, String> tagItem = new HashMap<>();
+        Map<String, String> tagItem = new HashMap<>(2);
         tagItem.put("newValue", tag);
-        Map<String, String> typeItem = new HashMap<>();
+        Map<String, String> typeItem = new HashMap<>(2);
         typeItem.put("newValue", type);
-        Map<String, String> descItem = new HashMap<>();
+        Map<String, String> descItem = new HashMap<>(2);
         descItem.put("newValue", desc);
         
-        if ("update".equals(pointType)) {
+        if (UPDATE_POINT.equals(pointType)) {
             Map<String, Object> additionInfo = configChangeHandleReport.getAdditionInfo();
             ConfigAllInfo configAllInfo = (ConfigAllInfo) additionInfo.get("oldConfigAllInfo");
             contentItem.put("oldValue", configAllInfo.getContent());
@@ -144,7 +154,7 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
         configChangeNotifyInfo.setTypeItem(typeItem);
         
         if (configChangeNotifyInfo.getDataId() == null) {
-            if (args.length == 2) {
+            if (args.length == RPC_ARGS_LENGTH) {
                 
                 if (args[0] instanceof HttpServletRequest) {
                     Map<String, Object> additionInfo = configChangeHandleReport.getAdditionInfo();
@@ -171,7 +181,7 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
                     configChangeNotifyInfo.setSrcIp(meta.getClientIp());
                 }
                 
-            } else if (args.length == 4) {
+            } else if (args.length == IMPORT_ARGS_LENGTH) {
                 // import file
             }
         }

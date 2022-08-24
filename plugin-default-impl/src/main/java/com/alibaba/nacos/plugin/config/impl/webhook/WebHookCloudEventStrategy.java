@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.config.impl.webhook;
 
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeNotifyInfo;
 import com.alibaba.nacos.plugin.config.util.ConfigPropertyUtil;
@@ -71,6 +72,8 @@ public class WebHookCloudEventStrategy implements WebHookNotifyStrategy {
     
     private static final String PUT_EVENT_API = "/openapi/putEvents";
     
+    private static final int SUCCESS_CODE = 200;
+    
     @Override
     public void notifyConfigChange(ConfigChangeNotifyInfo configChangeNotifyInfo, String httpUrl) {
         CloudEventBuilder eventTemplate = CloudEventBuilder.v1().withSource(URI.create("app.microservice"))
@@ -118,7 +121,7 @@ public class WebHookCloudEventStrategy implements WebHookNotifyStrategy {
             final Vertx vertx = Vertx.vertx();
             final HttpClient httpClient = vertx.createHttpClient();
             final HttpClientRequest request = httpClient.postAbs(url).handler(response -> {
-                if (response.statusCode() != 200) {
+                if (response.statusCode() != SUCCESS_CODE) {
                     LOGGER.warn("push fail {},ready to retry", response.statusMessage());
                     retryRequest();
                 }
@@ -137,12 +140,11 @@ public class WebHookCloudEventStrategy implements WebHookNotifyStrategy {
             VertxMessageFactory.createWriter(request).writeStructured(event, new JsonFormat());
         }
         
-        // 1,4,9,16,25,36
-        long getDelay() {
+        private long getDelay() {
             return (long) retry * retry;
         }
         
-        void retryRequest() {
+        private void retryRequest() {
             retry++;
             if (retry > maxRetry) {
                 LOGGER.error("retry to much,give up to push");
@@ -168,7 +170,7 @@ public class WebHookCloudEventStrategy implements WebHookNotifyStrategy {
     }
     
     Map<String, String> buildQueryMap(String query) {
-        Map<String, String> map = new HashMap<>();
+        Map<String, String> map = new HashMap<>(8);
         if (!StringUtil.isNullOrEmpty(query)) {
             String[] params = query.split("&");
             Arrays.stream(params).forEach(param -> {

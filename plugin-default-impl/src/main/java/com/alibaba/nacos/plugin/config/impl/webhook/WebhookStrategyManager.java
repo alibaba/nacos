@@ -40,7 +40,6 @@ public class WebhookStrategyManager {
     }
     
     private void loadStrategies() {
-        // webHookNotifyStrategyMap.put("eventBridge", new WebHookEventBridgeStrategy());
         webHookNotifyStrategyMap.put("cloudevent", new WebHookCloudEventStrategy());
     }
     
