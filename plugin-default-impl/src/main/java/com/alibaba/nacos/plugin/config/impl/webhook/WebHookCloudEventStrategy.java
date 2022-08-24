@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.plugin.config.impl.webhook;
 
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeNotifyInfo;
 import com.alibaba.nacos.plugin.config.util.ConfigPropertyUtil;
