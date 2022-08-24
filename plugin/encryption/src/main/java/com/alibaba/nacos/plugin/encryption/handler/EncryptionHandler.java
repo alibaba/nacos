@@ -95,7 +95,7 @@ public class EncryptionHandler {
      * @return algorithm name
      */
     private static Optional<String> parseAlgorithmName(String dataId) {
-        return Stream.of(dataId.split("-")).skip(1).findAny();
+        return Stream.of(dataId.split("-")).skip(1).findFirst();
     }
     
     /**
