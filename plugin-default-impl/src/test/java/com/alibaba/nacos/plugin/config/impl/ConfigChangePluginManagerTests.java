@@ -40,19 +40,23 @@ public class ConfigChangePluginManagerTests {
         MockEnvironment env = new MockEnvironment();
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENABLED, "true");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_WAY, "nacos");
-        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL, "http://localhost:8080/webhook/send");
+        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL,
+                "http://localhost:8080/webhook/send");
         // optional if webhook_url is not empty,will push to url;if not will push the endpoint
-        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_ID, "LTAI5t9pwBXagE9vWP4ZRs1i");
-        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_SECRET, "OGWpp3FpvsgRUNicLeXI1tODmn0ajN");
-        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENDPOINT, "1017438417648207.eventbridge.cn-hangzhou.aliyuncs.com");
+        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_ID,
+                "LTAI5t9pwBXagE9vWP4ZRs1i");
+        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_SECRET,
+                "OGWpp3FpvsgRUNicLeXI1tODmn0ajN");
+        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENDPOINT,
+                "1017438417648207.eventbridge.cn-hangzhou.aliyuncs.com");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_EVENT_BUS, "demo-bus");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_SOURCE, "webhook.event");
-
+        
         env.setProperty(ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_ENABLED, "true");
         env.setProperty(ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_WAY, "nacos");
         env.setProperty(ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_URLS, "");
         env.setProperty(ConfigChangeConstants.FileFormatCheck.NACOS_CORE_CONFIG_PLUGIN_FILEFORMATCHECK_ENABLED, "true");
-
+        
         EnvUtil.setEnvironment(env);
     }
     
@@ -70,6 +74,7 @@ public class ConfigChangePluginManagerTests {
                     throws Throwable {
                 return pjp.proceed();
             }
+            
             @Override
             public int getOrder() {
                 return 0;

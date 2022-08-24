@@ -27,9 +27,12 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class NacosFileFormatPluginServiceTests {
-    private String textContent="text123";
-    private String jsonContent="{\"hello\":\"hello\"}";
-    private String propertiesContent="#\n" + "# Copyright 1999-2018 Alibaba Group Holding Ltd.\n" + "#\n"
+    
+    private String textContent = "text123";
+    
+    private String jsonContent = "{\"hello\":\"hello\"}";
+    
+    private String propertiesContent = "#\n" + "# Copyright 1999-2018 Alibaba Group Holding Ltd.\n" + "#\n"
             + "# Licensed under the Apache License, Version 2.0 (the \"License\");\n"
             + "# you may not use this file except in compliance with the License.\n"
             + "# You may obtain a copy of the License at\n" + "#\n"
@@ -160,7 +163,8 @@ public class NacosFileFormatPluginServiceTests {
             + "# nacos.core.protocol.raft.data.read_index_type=ReadOnlySafe\n"
             + "### rpc request timeout, default 5 seconds\n"
             + "# nacos.core.protocol.raft.data.rpc_request_timeout_ms=5000\n" + "\n";
-    private String xmlContent="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<!--\n"
+    
+    private String xmlContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<!--\n"
             + "  ~ Copyright 1999-2021 Alibaba Group Holding Ltd.\n" + "  ~\n"
             + "  ~ Licensed under the Apache License, Version 2.0 (the \"License\");\n"
             + "  ~ you may not use this file except in compliance with the License.\n"
@@ -209,7 +213,8 @@ public class NacosFileFormatPluginServiceTests {
             + "            <groupId>com.aliyun</groupId>\n"
             + "            <artifactId>eventbridge-client</artifactId>\n" + "            <version>1.2.6</version>\n"
             + "        </dependency>\n" + "    </dependencies>\n" + "</project>\n";
-    private String htmlContent="<!--\n" + "  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.\n" + "  ~\n"
+    
+    private String htmlContent = "<!--\n" + "  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.\n" + "  ~\n"
             + "  ~ Licensed under the Apache License, Version 2.0 (the \"License\");\n"
             + "  ~ you may not use this file except in compliance with the License.\n"
             + "  ~ You may obtain a copy of the License at\n" + "  ~\n"
@@ -251,82 +256,83 @@ public class NacosFileFormatPluginServiceTests {
             + "\t<script src=\"console-ui/public/js/loader.js\"></script>\n" + "\t<!-- 第三方js结束 -->\n"
             + "<script type=\"text/javascript\" src=\"./js/main.js?7449a5cb967e58fecbaa\"></script></body>\n" + "\n"
             + "</html>\n";
-    private String yamlContent="hello: hello";
+    
+    private String yamlContent = "hello: hello";
     
     @Test
-    public void testValidateText(){
+    public void testValidateText() {
         String type = "text";
-        boolean rs = NacosFileFormatPluginService.validate(textContent,type);
+        boolean rs = NacosFileFormatPluginService.validate(textContent, type);
         Assert.assertTrue(rs);
-        rs = NacosFileFormatPluginService.validate(jsonContent,type);
+        rs = NacosFileFormatPluginService.validate(jsonContent, type);
         Assert.assertFalse(rs);
     }
     
     @Test
-    public void testValidateJson(){
+    public void testValidateJson() {
         String type = "json";
-        boolean rs = NacosFileFormatPluginService.validate(jsonContent,type);
+        boolean rs = NacosFileFormatPluginService.validate(jsonContent, type);
         Assert.assertTrue(rs);
-        rs = NacosFileFormatPluginService.validate(xmlContent,type);
+        rs = NacosFileFormatPluginService.validate(xmlContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(propertiesContent,type);
+        rs = NacosFileFormatPluginService.validate(propertiesContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(textContent,type);
+        rs = NacosFileFormatPluginService.validate(textContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(htmlContent,type);
+        rs = NacosFileFormatPluginService.validate(htmlContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(yamlContent,type);
+        rs = NacosFileFormatPluginService.validate(yamlContent, type);
         Assert.assertFalse(rs);
     }
     
     @Test
-    public void testValidateXml(){
+    public void testValidateXml() {
         String type = "xml";
-        boolean rs = NacosFileFormatPluginService.validate(xmlContent,type);
+        boolean rs = NacosFileFormatPluginService.validate(xmlContent, type);
         Assert.assertTrue(rs);
-        rs = NacosFileFormatPluginService.validate(jsonContent,type);
+        rs = NacosFileFormatPluginService.validate(jsonContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(propertiesContent,type);
+        rs = NacosFileFormatPluginService.validate(propertiesContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(textContent,type);
+        rs = NacosFileFormatPluginService.validate(textContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(htmlContent,type);
+        rs = NacosFileFormatPluginService.validate(htmlContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(yamlContent,type);
+        rs = NacosFileFormatPluginService.validate(yamlContent, type);
         Assert.assertFalse(rs);
     }
     
     @Test
-    public void testValidateHtml(){
+    public void testValidateHtml() {
         String type = "html";
-        boolean rs = NacosFileFormatPluginService.validate(htmlContent,type);
+        boolean rs = NacosFileFormatPluginService.validate(htmlContent, type);
         Assert.assertTrue(rs);
-        rs = NacosFileFormatPluginService.validate(jsonContent,type);
+        rs = NacosFileFormatPluginService.validate(jsonContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(propertiesContent,type);
+        rs = NacosFileFormatPluginService.validate(propertiesContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(textContent,type);
+        rs = NacosFileFormatPluginService.validate(textContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(yamlContent,type);
+        rs = NacosFileFormatPluginService.validate(yamlContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(xmlContent,type);
+        rs = NacosFileFormatPluginService.validate(xmlContent, type);
         Assert.assertFalse(rs);
     }
     
     @Test
-    public void testValidateProperties(){
+    public void testValidateProperties() {
         String type = "properties";
-        boolean rs = NacosFileFormatPluginService.validate(propertiesContent,type);
+        boolean rs = NacosFileFormatPluginService.validate(propertiesContent, type);
         Assert.assertTrue(rs);
-        rs = NacosFileFormatPluginService.validate(textContent,type);
+        rs = NacosFileFormatPluginService.validate(textContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(xmlContent,type);
+        rs = NacosFileFormatPluginService.validate(xmlContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(yamlContent,type);
+        rs = NacosFileFormatPluginService.validate(yamlContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(jsonContent,type);
+        rs = NacosFileFormatPluginService.validate(jsonContent, type);
         Assert.assertFalse(rs);
-        rs = NacosFileFormatPluginService.validate(htmlContent,type);
+        rs = NacosFileFormatPluginService.validate(htmlContent, type);
         Assert.assertFalse(rs);
     }
     
