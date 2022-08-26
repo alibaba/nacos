@@ -29,7 +29,6 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.core.v2.cleaner.EmptyServiceAutoCleaner;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
@@ -43,7 +42,6 @@ import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -96,15 +94,6 @@ public class ServiceManager implements RecordListener<Service> {
     
     private final UdpPushService pushService;
     
-    @Value("${nacos.naming.empty-service.auto-clean:false}")
-    private boolean emptyServiceAutoClean;
-    
-    @Value("${nacos.naming.empty-service.clean.initial-delay-ms:60000}")
-    private int cleanEmptyServiceDelay;
-    
-    @Value("${nacos.naming.empty-service.clean.period-time-ms:20000}")
-    private int cleanEmptyServicePeriod;
-    
     public ServiceManager(SwitchDomain switchDomain, DistroMapper distroMapper, ServerMemberManager memberManager,
             UdpPushService pushService) {
         this.switchDomain = switchDomain;
@@ -121,22 +110,6 @@ public class ServiceManager implements RecordListener<Service> {
         GlobalExecutor.scheduleServiceReporter(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
         
         GlobalExecutor.submitServiceUpdateManager(new UpdatedServiceProcessor());
-        
-        if (emptyServiceAutoClean) {
-            
-            Loggers.SRV_LOG.info("open empty service auto clean job, initialDelay : {} ms, period : {} ms",
-                    cleanEmptyServiceDelay, cleanEmptyServicePeriod);
-            
-            // delay 60s, period 20s;
-            
-            // This task is not recommended to be performed frequently in order to avoid
-            // the possibility that the service cache information may just be deleted
-            // and then created due to the heartbeat mechanism
-            
-            GlobalExecutor
-                    .scheduleServiceAutoClean(new EmptyServiceAutoCleaner(this, distroMapper), cleanEmptyServiceDelay,
-                            cleanEmptyServicePeriod);
-        }
         
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
