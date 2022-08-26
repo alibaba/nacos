@@ -23,31 +23,22 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Message;
-import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.UdpPushService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -58,8 +49,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -78,10 +67,6 @@ public class ServiceManager implements RecordListener<Service> {
      * Map(namespace, Map(group::serviceName, Service)).
      */
     private final Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
-    
-    private final LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
-    
-    private final Synchronizer synchronizer = new ServiceStatusSynchronizer();
     
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
@@ -107,10 +92,6 @@ public class ServiceManager implements RecordListener<Service> {
      */
     @PostConstruct
     public void init() {
-        GlobalExecutor.scheduleServiceReporter(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
-        
-        GlobalExecutor.submitServiceUpdateManager(new UpdatedServiceProcessor());
-        
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
             consistencyService.listen(KeyBuilder.SERVICE_META_KEY_PREFIX, this);
@@ -121,26 +102,6 @@ public class ServiceManager implements RecordListener<Service> {
     
     public Map<String, Service> chooseServiceMap(String namespaceId) {
         return serviceMap.get(namespaceId);
-    }
-    
-    /**
-     * Add a service into queue to update.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @param serverIP    target server ip
-     * @param checksum    checksum of service
-     */
-    public synchronized void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP,
-            String checksum) {
-        try {
-            toBeUpdatedServicesQueue
-                    .offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            toBeUpdatedServicesQueue.poll();
-            toBeUpdatedServicesQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
-            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updated to queue.", e);
-        }
     }
     
     @Override
@@ -198,115 +159,6 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         chooseServiceMap(namespace).remove(name);
-    }
-    
-    private class UpdatedServiceProcessor implements Runnable {
-        
-        //get changed service from other server asynchronously
-        @Override
-        public void run() {
-            ServiceKey serviceKey = null;
-            
-            try {
-                while (true) {
-                    try {
-                        serviceKey = toBeUpdatedServicesQueue.take();
-                    } catch (Exception e) {
-                        Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while taking item from LinkedBlockingDeque.");
-                    }
-                    
-                    if (serviceKey == null) {
-                        continue;
-                    }
-                    GlobalExecutor.submitServiceUpdate(new ServiceUpdater(serviceKey));
-                }
-            } catch (Exception e) {
-                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update service: {}", serviceKey, e);
-            }
-        }
-    }
-    
-    private class ServiceUpdater implements Runnable {
-        
-        String namespaceId;
-        
-        String serviceName;
-        
-        String serverIP;
-        
-        public ServiceUpdater(ServiceKey serviceKey) {
-            this.namespaceId = serviceKey.getNamespaceId();
-            this.serviceName = serviceKey.getServiceName();
-            this.serverIP = serviceKey.getServerIP();
-        }
-        
-        @Override
-        public void run() {
-            try {
-                updatedHealthStatus(namespaceId, serviceName, serverIP);
-            } catch (Exception e) {
-                Loggers.SRV_LOG
-                        .warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}", serviceName,
-                                serverIP, e);
-            }
-        }
-    }
-    
-    /**
-     * Update health status of instance in service.
-     *
-     * @param namespaceId namespace
-     * @param serviceName service name
-     * @param serverIP    source server Ip
-     */
-    public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
-        Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-        JsonNode serviceJson = JacksonUtils.toObj(msg.getData());
-        
-        ArrayNode ipList = (ArrayNode) serviceJson.get("ips");
-        Map<String, String> ipsMap = new HashMap<>(ipList.size());
-        for (int i = 0; i < ipList.size(); i++) {
-            
-            String ip = ipList.get(i).asText();
-            String[] strings = ip.split("_");
-            ipsMap.put(strings[0], strings[1]);
-        }
-        
-        Service service = getService(namespaceId, serviceName);
-        
-        if (service == null) {
-            return;
-        }
-        
-        boolean changed = false;
-        
-        List<Instance> instances = service.allIPs();
-        for (Instance instance : instances) {
-            
-            boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIpAddr()));
-            if (valid != instance.isHealthy()) {
-                changed = true;
-                instance.setHealthy(valid);
-                Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}:{}@{}", serviceName,
-                        (instance.isHealthy() ? "ENABLED" : "DISABLED"), instance.getIp(), instance.getPort(),
-                        instance.getClusterName());
-            }
-        }
-        
-        if (changed) {
-            pushService.serviceChanged(service);
-            if (Loggers.EVT_LOG.isDebugEnabled()) {
-                StringBuilder stringBuilder = new StringBuilder();
-                List<Instance> allIps = service.allIPs();
-                for (Instance instance : allIps) {
-                    stringBuilder.append(instance.toIpAddr()).append('_').append(instance.isHealthy()).append(',');
-                }
-                Loggers.EVT_LOG
-                        .debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}", service.getNamespaceId(),
-                                service.getName(), stringBuilder);
-            }
-        }
-        
     }
     
     public Set<String> getAllServiceNames(String namespaceId) {
@@ -1004,95 +856,6 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.unListen(persistInstanceListKey, service);
         consistencyService.unListen(serviceMetaKey, service);
         Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJson());
-    }
-    
-    public static class ServiceChecksum {
-        
-        public String namespaceId;
-        
-        public Map<String, String> serviceName2Checksum = new HashMap<String, String>();
-        
-        public ServiceChecksum() {
-            this.namespaceId = Constants.DEFAULT_NAMESPACE_ID;
-        }
-        
-        public ServiceChecksum(String namespaceId) {
-            this.namespaceId = namespaceId;
-        }
-        
-        /**
-         * Add service checksum.
-         *
-         * @param serviceName service name
-         * @param checksum    checksum of service
-         */
-        public void addItem(String serviceName, String checksum) {
-            if (StringUtils.isEmpty(serviceName) || StringUtils.isEmpty(checksum)) {
-                Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] serviceName or checksum is empty,serviceName: {}, checksum: {}",
-                        serviceName, checksum);
-                return;
-            }
-            serviceName2Checksum.put(serviceName, checksum);
-        }
-    }
-    
-    private class ServiceReporter implements Runnable {
-        
-        @Override
-        public void run() {
-            try {
-                
-                Map<String, Set<String>> allServiceNames = getAllServiceNames();
-                
-                if (allServiceNames.size() <= 0) {
-                    //ignore
-                    return;
-                }
-                
-                for (String namespaceId : allServiceNames.keySet()) {
-                    
-                    ServiceChecksum checksum = new ServiceChecksum(namespaceId);
-                    
-                    for (String serviceName : allServiceNames.get(namespaceId)) {
-                        if (!distroMapper.responsible(serviceName)) {
-                            continue;
-                        }
-                        
-                        Service service = getService(namespaceId, serviceName);
-                        
-                        if (service == null || service.isEmpty()) {
-                            continue;
-                        }
-                        
-                        service.recalculateChecksum();
-                        
-                        checksum.addItem(serviceName, service.getChecksum());
-                    }
-                    
-                    Message msg = new Message();
-                    
-                    msg.setData(JacksonUtils.toJson(checksum));
-                    
-                    Collection<Member> sameSiteServers = memberManager.allMembers();
-                    
-                    if (sameSiteServers == null || sameSiteServers.size() <= 0) {
-                        return;
-                    }
-                    
-                    for (Member server : sameSiteServers) {
-                        if (server.getAddress().equals(NetUtils.localServer())) {
-                            continue;
-                        }
-                        synchronizer.send(server.getAddress(), msg);
-                    }
-                }
-            } catch (Exception e) {
-                Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending service status", e);
-            } finally {
-                GlobalExecutor.scheduleServiceReporter(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(),
-                        TimeUnit.MILLISECONDS);
-            }
-        }
     }
     
     private static class ServiceKey {

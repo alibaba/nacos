@@ -23,9 +23,6 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
-import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
@@ -113,18 +110,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     
     public void setIpDeleteTimeout(long ipDeleteTimeout) {
         this.ipDeleteTimeout = ipDeleteTimeout;
-    }
-    
-    /**
-     * Process client beat.
-     *
-     * @param rsInfo metrics info of server
-     */
-    public void processClientBeat(final RsInfo rsInfo) {
-        ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
-        clientBeatProcessor.setService(this);
-        clientBeatProcessor.setRsInfo(rsInfo);
-        HealthCheckReactor.scheduleNow(clientBeatProcessor);
     }
     
     public Boolean getEnabled() {
