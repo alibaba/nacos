@@ -19,11 +19,9 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Spy;
 
 import java.util.List;
@@ -33,9 +31,6 @@ public class DomainsManagerTest extends BaseTest {
     @Spy
     @InjectMocks
     private ServiceManager manager;
-    
-    @Mock
-    private DistroConsistencyServiceImpl consistencyService;
     
     @Test
     public void easyRemoveDom() throws Exception {
