@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,10 +88,16 @@ public class JacksonUtilsTest {
                 "[{\"key\":\"value\"}]".getBytes(),
                 JacksonUtils.toJsonBytes(Collections.singletonList(Collections.singletonMap("key", "value")))
         );
-        Assert.assertArrayEquals(
-                "{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(),
-                JacksonUtils.toJsonBytes(new TestOfAtomicObject())
-        );
+
+        byte[] atomicArr = JacksonUtils.toJsonBytes(new TestOfAtomicObject());
+
+        Assert.assertTrue(Arrays.equals("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(), atomicArr)
+                 || Arrays.equals("{\"aLong\":0,\"aBoolean\":false,\"aInteger\":1}".getBytes(), atomicArr)
+                 || Arrays.equals("{\"aBoolean\":false,\"aLong\":0,\"aInteger\":1}".getBytes(), atomicArr)
+                 || Arrays.equals("{\"aBoolean\":false,\"aInteger\":1,\"aLong\":0}".getBytes(), atomicArr)
+                 || Arrays.equals("{\"aInteger\":1,\"aBoolean\":false,\"aLong\":0}".getBytes(), atomicArr)
+                 || Arrays.equals("{\"aInteger\":1,\"aLong\":0,\"aBoolean\":false}".getBytes(), atomicArr));
+
         Assert.assertArrayEquals("{\"date\":1626192000000}".getBytes(), JacksonUtils.toJsonBytes(new TestOfDate()));
         // only public
         Assert.assertArrayEquals(
@@ -463,6 +470,7 @@ public class JacksonUtilsTest {
             result = 31 * result + (aBoolean != null ? aBoolean.hashCode() : 0);
             return result;
         }
+
     }
     
     static class TestOfAccessModifier {
