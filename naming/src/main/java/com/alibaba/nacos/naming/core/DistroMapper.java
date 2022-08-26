@@ -70,8 +70,8 @@ public class DistroMapper extends MemberChangeListener {
     }
     
     public boolean responsible(Cluster cluster, Instance instance) {
-        return switchDomain.isHealthCheckEnabled(cluster.getServiceName()) && !cluster.getHealthCheckTask()
-                .isCancelled() && responsible(cluster.getServiceName()) && cluster.contains(instance);
+        return switchDomain.isHealthCheckEnabled(cluster.getServiceName()) && responsible(cluster.getServiceName())
+                && cluster.contains(instance);
     }
     
     /**

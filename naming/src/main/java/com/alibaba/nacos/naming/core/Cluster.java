@@ -16,14 +16,11 @@
 
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import org.apache.commons.collections.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
@@ -56,9 +53,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private int defCkport = 80;
     
     private int defIpPort = -1;
-    
-    @JsonIgnore
-    private HealthCheckTask checkTask;
     
     @JsonIgnore
     private Set<Instance> persistentInstances = new HashSet<>();
@@ -144,9 +138,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         if (inited) {
             return;
         }
-        checkTask = new HealthCheckTask(this);
-        
-        HealthCheckReactor.scheduleCheck(checkTask);
         inited = true;
     }
     
@@ -154,14 +145,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      * Destroy cluster.
      */
     public void destroy() {
-        if (checkTask != null) {
-            checkTask.setCancelled(true);
-        }
-    }
-    
-    @JsonIgnore
-    public HealthCheckTask getHealthCheckTask() {
-        return checkTask;
     }
     
     public Service getService() {
@@ -220,7 +203,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         Cluster cluster = new Cluster(this.getName(), service);
         cluster.setHealthChecker(getHealthChecker().clone());
         cluster.persistentInstances = new HashSet<>();
-        cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
     }
