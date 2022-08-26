@@ -19,8 +19,8 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -30,19 +30,15 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v1.ClientInfo;
 import com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.naming.push.v1.PushClient;
-import com.alibaba.nacos.naming.push.v1.ServiceChangeEvent;
 import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.naming.remote.udp.AckPacket;
 import com.alibaba.nacos.naming.remote.udp.UdpConnector;
-import com.alibaba.nacos.naming.constants.Constants;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.apache.commons.collections.MapUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -69,7 +65,7 @@ import java.util.zip.GZIPOutputStream;
  */
 @Component
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
-public class UdpPushService implements ApplicationContextAware, ApplicationListener<ServiceChangeEvent> {
+public class UdpPushService implements ApplicationContextAware {
     
     @Autowired
     private SwitchDomain switchDomain;
@@ -112,80 +108,6 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
-    }
-    
-    @Override
-    public void onApplicationEvent(ServiceChangeEvent event) {
-        // If upgrade to 2.0.X, do not push for v1.
-        if (ApplicationUtils.getBean(UpgradeJudgement.class).isUseGrpcFeatures()) {
-            return;
-        }
-        Service service = event.getService();
-        String serviceName = service.getName();
-        String namespaceId = service.getNamespaceId();
-        //merge some change events to reduce the push frequency:
-        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))) {
-            return;
-        }
-        Future future = GlobalExecutor.scheduleUdpSender(() -> {
-            try {
-                Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
-                ConcurrentMap<String, PushClient> clients = subscriberServiceV1.getClientMap()
-                        .get(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-                if (MapUtils.isEmpty(clients)) {
-                    return;
-                }
-                
-                Map<String, Object> cache = new HashMap<>(16);
-                long lastRefTime = System.nanoTime();
-                for (PushClient client : clients.values()) {
-                    if (client.zombie()) {
-                        Loggers.PUSH.debug("client is zombie: " + client);
-                        clients.remove(client.toString());
-                        Loggers.PUSH.debug("client is zombie: " + client);
-                        continue;
-                    }
-                    
-                    AckEntry ackEntry;
-                    Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client);
-                    String key = getPushCacheKey(serviceName, client.getIp(), client.getAgent());
-                    byte[] compressData = null;
-                    Map<String, Object> data = null;
-                    if (switchDomain.getDefaultPushCacheMillis() >= 20000 && cache.containsKey(key)) {
-                        org.javatuples.Pair pair = (org.javatuples.Pair) cache.get(key);
-                        compressData = (byte[]) (pair.getValue0());
-                        data = (Map<String, Object>) pair.getValue1();
-                        
-                        Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getAddrStr());
-                    }
-                    
-                    if (compressData != null) {
-                        ackEntry = prepareAckEntry(client, compressData, data, lastRefTime);
-                    } else {
-                        ackEntry = prepareAckEntry(client, prepareHostsData(client), lastRefTime);
-                        if (ackEntry != null) {
-                            cache.put(key,
-                                    new org.javatuples.Pair<>(ackEntry.getOrigin().getData(), ackEntry.getData()));
-                        }
-                    }
-                    
-                    Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
-                            client.getServiceName(), client.getAddrStr(), client.getAgent(),
-                            (ackEntry == null ? null : ackEntry.getKey()));
-                    
-                    udpPush(ackEntry);
-                }
-            } catch (Exception e) {
-                Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
-                
-            } finally {
-                futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-            }
-            
-        }, 1000, TimeUnit.MILLISECONDS);
-        
-        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
-        
     }
     
     /**
@@ -289,7 +211,6 @@ public class UdpPushService implements ApplicationContextAware, ApplicationListe
      * @param service service
      */
     public void serviceChanged(Service service) {
-        this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
     }
     
     /**

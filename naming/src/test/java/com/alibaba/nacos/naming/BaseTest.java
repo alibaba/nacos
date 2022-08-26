@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming;
 
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -72,9 +71,6 @@ public abstract class BaseTest {
     @Mock
     protected UdpPushService pushService;
     
-    @Mock
-    protected UpgradeJudgement upgradeJudgement;
-    
     @Spy
     protected MockEnvironment environment;
     
@@ -94,9 +90,5 @@ public abstract class BaseTest {
     
     protected void mockInjectDistroMapper() {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
-    }
-    
-    protected void mockInjectUpgradeJudgement() {
-        doReturn(upgradeJudgement).when(context).getBean(UpgradeJudgement.class);
     }
 }
