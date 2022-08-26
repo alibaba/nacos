@@ -21,15 +21,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,9 +35,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CatalogControllerTest {
-    
-    @Mock
-    protected UpgradeJudgement upgradeJudgement;
     
     private CatalogController catalogController;
     
@@ -51,7 +45,6 @@ public class CatalogControllerTest {
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
         catalogController = new CatalogController();
-        ReflectionTestUtils.setField(catalogController, "upgradeJudgement", upgradeJudgement);
         service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         service.setProtectThreshold(12.34f);
