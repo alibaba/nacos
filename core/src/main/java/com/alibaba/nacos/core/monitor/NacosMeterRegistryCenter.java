@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -50,9 +51,15 @@ public final class NacosMeterRegistryCenter {
     
     private static final ConcurrentHashMap<String, CompositeMeterRegistry> METER_REGISTRIES = new ConcurrentHashMap<>();
     
-    private static final PrometheusMeterRegistry PROMETHEUS_METER_REGISTRY = ApplicationUtils.getBean(PrometheusMeterRegistry.class);
+    private static PrometheusMeterRegistry PROMETHEUS_METER_REGISTRY = null;
     
     static {
+        try {
+            PROMETHEUS_METER_REGISTRY = ApplicationUtils.getBean(PrometheusMeterRegistry.class);
+        } catch (Throwable t) {
+            Loggers.CORE.warn("Metrics init failed :", t);
+        }
+        
         CompositeMeterRegistry compositeMeterRegistry;
         
         compositeMeterRegistry = new CompositeMeterRegistry();

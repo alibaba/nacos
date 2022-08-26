@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.monitor;
 
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -29,7 +28,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -47,20 +45,10 @@ public class MetricsMonitorTest {
     @Mock
     private ConfigurableApplicationContext context;
     
-    @Mock
-    private PrometheusMeterRegistry prometheusMeterRegistry;
-    
     @Before
     public void initMeterRegistry() {
         ApplicationUtils.injectContext(context);
-        when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(prometheusMeterRegistry);
-        // clear mocked PrometheusMeterRegistry.
-        Set<MeterRegistry> meterRegistries = NacosMeterRegistryCenter.getMeterRegistry(
-                NacosMeterRegistryCenter.CORE_STABLE_REGISTRY).getRegistries();
-        for (MeterRegistry meterRegistry : meterRegistries) {
-            NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
-                    .remove(meterRegistry);
-        }
+        when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
         // add simple meterRegistry.
         NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
                 .add(new SimpleMeterRegistry());
