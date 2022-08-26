@@ -36,11 +36,9 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.ServiceOperator;
-import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -87,13 +85,7 @@ public class ServiceController {
     private SubscribeManager subscribeManager;
     
     @Autowired
-    private ServiceOperatorV1Impl serviceOperatorV1;
-    
-    @Autowired
     private ServiceOperatorV2Impl serviceOperatorV2;
-    
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
     
     @Autowired
     private SelectorManager selectorManager;
@@ -122,8 +114,8 @@ public class ServiceController {
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
         serviceMetadata.setEphemeral(false);
         getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
-        NotifyCenter.publishEvent(new RegisterServiceTraceEvent(System.currentTimeMillis(),
-                namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName)));
+        NotifyCenter.publishEvent(new RegisterServiceTraceEvent(System.currentTimeMillis(), namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName)));
         return "ok";
     }
     
@@ -141,8 +133,8 @@ public class ServiceController {
             @RequestParam String serviceName) throws Exception {
         
         getServiceOperator().delete(namespaceId, serviceName);
-        NotifyCenter.publishEvent(new DeregisterServiceTraceEvent(System.currentTimeMillis(),
-                namespaceId, "", serviceName));
+        NotifyCenter.publishEvent(
+                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, "", serviceName));
         return "ok";
     }
     
@@ -405,6 +397,6 @@ public class ServiceController {
     }
     
     private ServiceOperator getServiceOperator() {
-        return upgradeJudgement.isUseGrpcFeatures() ? serviceOperatorV2 : serviceOperatorV1;
+        return serviceOperatorV2;
     }
 }

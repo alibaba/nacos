@@ -26,11 +26,9 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.CatalogService;
-import com.alibaba.nacos.naming.core.CatalogServiceV1Impl;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -59,13 +57,7 @@ public class CatalogController {
     protected ServiceManager serviceManager;
     
     @Autowired
-    private CatalogServiceV1Impl catalogServiceV1;
-    
-    @Autowired
     private CatalogServiceV2Impl catalogServiceV2;
-    
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
     
     /**
      * Get service detail.
@@ -192,6 +184,6 @@ public class CatalogController {
     }
     
     private CatalogService judgeCatalogService() {
-        return upgradeJudgement.isUseGrpcFeatures() ? catalogServiceV2 : catalogServiceV1;
+        return catalogServiceV2;
     }
 }

@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.InstanceOperatorServiceImpl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
@@ -66,9 +65,6 @@ public class InstanceControllerTest extends BaseTest {
     @InjectMocks
     private InstanceController instanceController;
     
-    @InjectMocks
-    private InstanceOperatorServiceImpl instanceOperatorService;
-    
     @Mock
     private DoubleWriteEventListener doubleWriteEventListener;
     
@@ -85,7 +81,6 @@ public class InstanceControllerTest extends BaseTest {
         super.before();
         mockInjectPushServer();
         ReflectionTestUtils.setField(instanceController, "upgradeJudgement", upgradeJudgement);
-        ReflectionTestUtils.setField(instanceController, "instanceServiceV1", instanceOperatorService);
         when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
         when(instanceUpgradeHelper.toV1(any())).thenReturn(new Instance("1.1.1.1", 9999));
         mockmvc = MockMvcBuilders.standaloneSetup(instanceController).build();
