@@ -135,6 +135,4 @@ public class EncryptionHandlerTest {
         Assert.assertEquals("should return original content.", oContent, pair.getSecond());
         Assert.assertEquals("should return original secret key.", oSec, pair.getFirst());
     }
-
-
 }
