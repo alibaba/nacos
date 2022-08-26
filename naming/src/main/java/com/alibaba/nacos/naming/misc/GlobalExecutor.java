@@ -118,10 +118,6 @@ public class GlobalExecutor {
         return NAMING_HEALTH_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
     
-    public static void scheduleRetransmitter(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
-        RETRANSMITTER_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
-    }
-    
     public static void scheduleRetransmitter(Runnable runnable, long delay, TimeUnit unit) {
         RETRANSMITTER_EXECUTOR.schedule(runnable, delay, unit);
     }
