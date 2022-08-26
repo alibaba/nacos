@@ -18,38 +18,26 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class CatalogControllerTest {
-    
-    @Mock
-    private ServiceManager serviceManager;
     
     @Mock
     protected UpgradeJudgement upgradeJudgement;
@@ -60,13 +48,9 @@ public class CatalogControllerTest {
     
     private Cluster cluster;
     
-    @Mock
-    private HealthCheckTask healthCheckTask;
-    
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
         catalogController = new CatalogController();
-        ReflectionTestUtils.setField(catalogController, "serviceManager", serviceManager);
         ReflectionTestUtils.setField(catalogController, "upgradeJudgement", upgradeJudgement);
         service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
@@ -74,13 +58,7 @@ public class CatalogControllerTest {
         service.setGroupName(TEST_GROUP_NAME);
         cluster = new Cluster(TEST_CLUSTER_NAME, service);
         cluster.setDefaultPort(1);
-        Mockito.when(healthCheckTask.getCheckRtBest()).thenReturn(1L);
-        Mockito.when(healthCheckTask.getCheckRtWorst()).thenReturn(1L);
-        ReflectionTestUtils.setField(cluster, "checkTask", healthCheckTask);
         service.addCluster(cluster);
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID,
-                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME)).thenReturn(service);
-        doCallRealMethod().when(serviceManager).checkServiceIsNull(eq(null), anyString(), anyString());
     }
     
     @Test
@@ -136,21 +114,6 @@ public class CatalogControllerTest {
                     TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_GROUP_NAME, null, true);
             Assert.assertTrue(res instanceof List);
             Assert.assertEquals(0, ((List) res).size());
-        } catch (NacosException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
-    }
-    
-    @Test
-    public void testRt4Service() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addParameter(CommonParams.SERVICE_NAME,
-                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
-        try {
-            ObjectNode objectNode = catalogController.rt4Service(request);
-            String result = objectNode.toString();
-            assertTrue(result.contains("\"checkRTWorst\":1"));
         } catch (NacosException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());

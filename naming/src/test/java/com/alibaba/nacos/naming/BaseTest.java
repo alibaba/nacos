@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -71,9 +70,6 @@ public abstract class BaseTest {
     protected SwitchDomain switchDomain;
     
     @Mock
-    protected HealthCheckProcessorDelegate delegate;
-    
-    @Mock
     protected UdpPushService pushService;
     
     @Mock
@@ -90,10 +86,6 @@ public abstract class BaseTest {
     
     protected void mockInjectPushServer() {
         doReturn(pushService).when(context).getBean(UdpPushService.class);
-    }
-    
-    protected void mockInjectHealthCheckProcessor() {
-        doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
     }
     
     protected void mockInjectSwitchDomain() {
