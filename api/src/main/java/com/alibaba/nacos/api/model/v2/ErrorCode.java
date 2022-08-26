@@ -161,6 +161,11 @@ public enum ErrorCode {
     NAMESPACE_NOT_EXIST(22001, "namespace not exist"),
     
     /**
+     *  namespace already exist.
+     */
+    NAMESPACE_ALREADY_EXIST(22002, "namespace already exist"),
+    
+    /**
      *  illegal state.
      */
     ILLEGAL_STATE(23000, "illegal state"),
