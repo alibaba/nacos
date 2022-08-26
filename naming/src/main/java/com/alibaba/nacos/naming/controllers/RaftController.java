@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -38,7 +38,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -70,16 +69,13 @@ public class RaftController {
     
     private final RaftConsistencyServiceImpl raftConsistencyService;
     
-    private final ServiceManager serviceManager;
-    
     private final RaftCore raftCore;
     
     private final ClusterVersionJudgement versionJudgement;
     
-    public RaftController(RaftConsistencyServiceImpl raftConsistencyService, ServiceManager serviceManager,
-            RaftCore raftCore, ClusterVersionJudgement versionJudgement) {
+    public RaftController(RaftConsistencyServiceImpl raftConsistencyService, RaftCore raftCore,
+            ClusterVersionJudgement versionJudgement) {
         this.raftConsistencyService = raftConsistencyService;
-        this.serviceManager = serviceManager;
         this.raftCore = raftCore;
         this.versionJudgement = versionJudgement;
     }
@@ -260,30 +256,6 @@ public class RaftController {
         }
         
         return JacksonUtils.toJson(datums);
-    }
-    
-    /**
-     * Get state of raft peer.
-     *
-     * @param request  http request
-     * @param response http response
-     * @return datum
-     * @throws Exception exception
-     */
-    @GetMapping("/state")
-    public JsonNode state(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        if (versionJudgement.allMemberIsNewVersion()) {
-            throw new IllegalStateException("old raft protocol already stop");
-        }
-        response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
-        response.setHeader("Cache-Control", "no-cache");
-        response.setHeader("Content-Encode", "gzip");
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("services", serviceManager.getServiceCount());
-        result.replace("peers", JacksonUtils.transferToJsonNode(raftCore.getPeers()));
-        
-        return result;
     }
     
     /**

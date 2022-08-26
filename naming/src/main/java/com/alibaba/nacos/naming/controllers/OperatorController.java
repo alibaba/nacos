@@ -16,10 +16,7 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -31,8 +28,7 @@ import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -41,13 +37,12 @@ import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -70,8 +65,6 @@ public class OperatorController {
     
     private final ServerListManager serverListManager;
     
-    private final ServiceManager serviceManager;
-    
     private final ServerMemberManager memberManager;
     
     private final ServerStatusManager serverStatusManager;
@@ -85,11 +78,10 @@ public class OperatorController {
     private final ClientManager clientManager;
     
     public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
-            ServiceManager serviceManager, ServerMemberManager memberManager, ServerStatusManager serverStatusManager,
-            SwitchDomain switchDomain, DistroMapper distroMapper, RaftCore raftCore, ClientManager clientManager) {
+            ServerMemberManager memberManager, ServerStatusManager serverStatusManager, SwitchDomain switchDomain,
+            DistroMapper distroMapper, RaftCore raftCore, ClientManager clientManager) {
         this.switchManager = switchManager;
         this.serverListManager = serverListManager;
-        this.serviceManager = serviceManager;
         this.memberManager = memberManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
@@ -186,6 +178,7 @@ public class OperatorController {
         int ephemeralIpPortClient = 0;
         int persistentIpPortClient = 0;
         int responsibleClientCount = 0;
+        int responsibleIpCount = 0;
         for (String clientId : allClientId) {
             if (clientId.contains(IpPortBasedClient.ID_DELIMITER)) {
                 if (clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX)) {
@@ -193,21 +186,19 @@ public class OperatorController {
                 } else {
                     ephemeralIpPortClient += 1;
                 }
-            } else  {
+            } else {
                 connectionBasedClient += 1;
             }
-            if (clientManager.isResponsibleClient(clientManager.getClient(clientId))) {
+            Client client = clientManager.getClient(clientId);
+            if (clientManager.isResponsibleClient(client)) {
                 responsibleClientCount += 1;
+                responsibleIpCount += client.getAllPublishedService().size();
             }
         }
-        
-        int responsibleDomCount = serviceManager.getResponsibleServiceCount();
-        int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
         result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
         result.put("instanceCount", MetricsMonitor.getIpCountMonitor().get());
         result.put("subscribeCount", MetricsMonitor.getSubscriberCount().get());
         result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
-        result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);
         result.put("clientCount", allClientId.size());
         result.put("connectionBasedClientCount", connectionBasedClient);
@@ -217,19 +208,6 @@ public class OperatorController {
         result.put("cpu", EnvUtil.getCpu());
         result.put("load", EnvUtil.getLoad());
         result.put("mem", EnvUtil.getMem());
-        return result;
-    }
-    
-    @GetMapping("/distro/server")
-    public ObjectNode getResponsibleServer4Service(
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName) throws NacosException {
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        
-        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("responsibleServer", distroMapper.mapSrv(serviceName));
         return result;
     }
     
@@ -282,17 +260,5 @@ public class OperatorController {
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);
         return "ok";
-    }
-    
-    /**
-     * This interface will be removed in a future release.
-     *
-     * @return {@link JsonNode}
-     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
-     */
-    @Deprecated
-    @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
-    public JsonNode getClusterStates() {
-        return JacksonUtils.transferToJsonNode(serviceManager.getMySelfClusterState());
     }
 }
