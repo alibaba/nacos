@@ -28,7 +28,6 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.ServiceManager.ServiceChecksum;
-import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.misc.Message;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -73,9 +72,6 @@ public class ServiceManagerTest extends BaseTest {
     @Mock
     private ServerMemberManager serverMemberManager;
     
-    @Mock
-    private DoubleWriteEventListener doubleWriteEventListener;
-    
     private Service service;
     
     private Cluster cluster;
@@ -98,7 +94,6 @@ public class ServiceManagerTest extends BaseTest {
         mockCluster();
         mockInstance();
         mockServiceName();
-        when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
     }
     
     @After
