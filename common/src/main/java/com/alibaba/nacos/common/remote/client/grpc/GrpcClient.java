@@ -67,6 +67,8 @@ public abstract class GrpcClient extends RpcClient {
     
     protected static final String NACOS_CLIENT_GRPC_TIMEOUT = "nacos.remote.client.grpc.timeout";
     
+    protected static final String NACOS_CLIENT_GRPC_QUEUESIZE = "nacos.remote.client.grpc.queue.size";
+    
     private ThreadPoolExecutor grpcExecutor = null;
     
     private Integer threadPoolCoreSize;
@@ -79,11 +81,11 @@ public abstract class GrpcClient extends RpcClient {
     
     private Properties configProperties = new Properties();
     
-    private final Long defaultTimeOut = 3000L;
+    private static final String defaultTimeOut = "3000";
     
-    private final int queueSize = 10000;
+    private static final String queueSize = "10000";
     
-    private final Long keepAlive = 10L;
+    private static final String keepAlive = "10";
     
     private Long timeOut;
     
@@ -111,6 +113,8 @@ public abstract class GrpcClient extends RpcClient {
                     configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
             this.configProperties.put(NACOS_CLIENT_GRPC_TIMEOUT,
                     configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
+            this.configProperties.put(NACOS_CLIENT_GRPC_QUEUESIZE,
+                    configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
         }
         checkInitProperties(this.configProperties);
     }
@@ -124,8 +128,9 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private void checkInitProperties(Properties configProperties) {
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME, String.valueOf(keepAlive));
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_TIMEOUT, String.valueOf(defaultTimeOut));
+        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME, keepAlive);
+        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_TIMEOUT, defaultTimeOut);
+        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_QUEUESIZE, queueSize);
         this.timeOut = Long.parseLong(configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
     }
     
@@ -158,6 +163,8 @@ public abstract class GrpcClient extends RpcClient {
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
         Long keepAliveTime = Long.parseLong(
                 this.configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
+        int queueSize = Integer.parseInt(
+                this.configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
         ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(getThreadPoolCoreSize(), getThreadPoolMaxSize(),
                 keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueSize),
                 new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
