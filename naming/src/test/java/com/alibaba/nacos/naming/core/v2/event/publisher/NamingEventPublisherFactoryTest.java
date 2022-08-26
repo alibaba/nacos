@@ -21,7 +21,9 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +38,11 @@ public class NamingEventPublisherFactoryTest {
     public void setUp() throws Exception {
         originalEventPublisherMap = new HashMap<>(NotifyCenter.getPublisherMap());
         NotifyCenter.getPublisherMap().clear();
+        // Protect other unit test publisher affect this case.
+        Field field = ReflectionUtils.findField(NamingEventPublisherFactory.class, "publisher", Map.class);
+        field.setAccessible(true);
+        Map map = (Map) field.get(NamingEventPublisherFactory.getInstance());
+        map.clear();
     }
     
     @After

@@ -77,7 +77,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
         page.setTotalCount(rowCountInt);
@@ -122,7 +122,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
         page.setTotalCount(rowCountInt);
@@ -162,7 +162,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
         page.setTotalCount(rowCountInt);
@@ -190,7 +190,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
         // Create Page object
-        final Page<E> page = new Page<E>();
+        final Page<E> page = new Page<>();
         
         String selectSql = sqlFetchRows;
         if (isDerby()) {
@@ -214,6 +214,20 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         
         try {
             jdbcTemplate.update(sqlUpdate, args);
+        } finally {
+            EmbeddedStorageContextUtils.cleanAllContext();
+        }
+    }
+    
+    public int updateLimitWithResponse(final String sql, final Object[] args) {
+        String sqlUpdate = sql;
+        
+        if (isDerby()) {
+            sqlUpdate = sqlUpdate.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        }
+        
+        try {
+            return jdbcTemplate.update(sqlUpdate, args);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }

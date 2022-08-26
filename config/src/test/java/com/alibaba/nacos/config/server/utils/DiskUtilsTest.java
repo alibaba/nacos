@@ -23,15 +23,12 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.File;
 import java.io.IOException;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 public class DiskUtilsTest {
     
     static MockedStatic<FileUtils> fileUtils;
@@ -100,13 +97,13 @@ public class DiskUtilsTest {
     @Test
     public void testTargetFile() {
         File file = DiskUtil.targetFile("test1", "test2", "test3");
-        String[] arr = file.getPath().split("\\\\");
+        String[] arr = file.getPath().split(File.separator);
         Assert.assertEquals("test1", arr[arr.length - 1]);
         Assert.assertEquals("test2", arr[arr.length - 2]);
         Assert.assertEquals("test3", arr[arr.length - 3]);
 
         File file2 = DiskUtil.targetFile("test1", "test2", "");
-        String[] arr2 = file2.getPath().split("\\\\");
+        String[] arr2 = file2.getPath().split(File.separator);
         Assert.assertEquals("test1", arr2[arr2.length - 1]);
         Assert.assertEquals("test2", arr2[arr2.length - 2]);
         Assert.assertEquals("config-data", arr2[arr2.length - 3]);
@@ -115,13 +112,13 @@ public class DiskUtilsTest {
     @Test
     public void testTargetBetaFile() {
         File file = DiskUtil.targetBetaFile("test1", "test2", "test3");
-        String[] arr = file.getPath().split("\\\\");
+        String[] arr = file.getPath().split(File.separator);
         Assert.assertEquals("test1", arr[arr.length - 1]);
         Assert.assertEquals("test2", arr[arr.length - 2]);
         Assert.assertEquals("test3", arr[arr.length - 3]);
 
         File file2 = DiskUtil.targetBetaFile("test1", "test2", "");
-        String[] arr2 = file2.getPath().split("\\\\");
+        String[] arr2 = file2.getPath().split(File.separator);
         Assert.assertEquals("test1", arr2[arr2.length - 1]);
         Assert.assertEquals("test2", arr2[arr2.length - 2]);
         Assert.assertEquals("beta-data", arr2[arr2.length - 3]);
@@ -130,14 +127,14 @@ public class DiskUtilsTest {
     @Test
     public void testTargetTagFile() {
         File file = DiskUtil.targetTagFile("test1", "test2", "test3", "tag");
-        String[] arr = file.getPath().split("\\\\");
+        String[] arr = file.getPath().split(File.separator);
         Assert.assertEquals("tag", arr[arr.length - 1]);
         Assert.assertEquals("test1", arr[arr.length - 2]);
         Assert.assertEquals("test2", arr[arr.length - 3]);
         Assert.assertEquals("test3", arr[arr.length - 4]);
 
         File file2 = DiskUtil.targetTagFile("test1", "test2", "", "tag");
-        String[] arr2 = file2.getPath().split("\\\\");
+        String[] arr2 = file2.getPath().split(File.separator);
         Assert.assertEquals("tag", arr2[arr2.length - 1]);
         Assert.assertEquals("test1", arr2[arr2.length - 2]);
         Assert.assertEquals("test2", arr2[arr2.length - 3]);
@@ -162,7 +159,7 @@ public class DiskUtilsTest {
     @Test
     public void testHeartBeatFile() {
         File file = DiskUtil.heartBeatFile();
-        String[] arr = file.getPath().split("\\\\");
+        String[] arr = file.getPath().split(File.separator);
         Assert.assertEquals("heartBeat.txt", arr[arr.length - 1]);
         Assert.assertEquals("status", arr[arr.length - 2]);
         Assert.assertEquals("nacos", arr[arr.length - 3]);
@@ -171,7 +168,7 @@ public class DiskUtilsTest {
     @Test
     public void testRelativePath() {
         String relativePath = DiskUtil.relativePath("test1", "test2");
-        String[] arr = relativePath.split("/");
+        String[] arr = relativePath.split(File.separator);
         Assert.assertEquals("test2", arr[arr.length - 1]);
         Assert.assertEquals("test1", arr[arr.length - 2]);
     }

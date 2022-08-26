@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Aggregation naming subscriber service. Aggregate all implementation of {@link NamingSubscriberService} and
  * subscribers from other nodes.
@@ -101,7 +103,7 @@ public class NamingSubscriberServiceAggregationImpl implements NamingSubscriberS
             paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
             // TODO replace with gRPC
             RestResult<String> response = HttpClient.httpGet(
-                    "http://" + server.getAddress() + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                    HTTP_PREFIX + server.getAddress() + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                             + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
             if (response.ok()) {
                 Subscribers subscribers = JacksonUtils.toObj(response.getData(), Subscribers.class);

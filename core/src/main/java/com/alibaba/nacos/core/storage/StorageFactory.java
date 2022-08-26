@@ -43,7 +43,6 @@ public final class StorageFactory {
                 return new FileKvStorage(baseDir);
             case Memory:
                 return new MemoryKvStorage();
-            case RocksDB:
             default:
                 throw new IllegalArgumentException("this kv type : [" + type.name() + "] not support");
         }

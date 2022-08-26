@@ -53,4 +53,12 @@ public class AutoExpireCacheTest {
         TimeUnit.SECONDS.sleep(2);
         Assert.assertNull(cache.get("a"));
     }
+
+    @Test
+    public void testGetCache() {
+        Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.MINUTES).build();
+        cache.put("test", "test");
+        Assert.assertNotNull(cache.get("test"));
+        Assert.assertNull(cache.get("test2"));
+    }
 }

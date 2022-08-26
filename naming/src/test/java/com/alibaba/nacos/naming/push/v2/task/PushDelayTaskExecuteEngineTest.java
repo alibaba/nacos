@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
@@ -83,8 +82,8 @@ public class PushDelayTaskExecuteEngineTest {
         when(clientManager.getClient(clientId)).thenReturn(client);
         when(client.getSubscriber(service)).thenReturn(subscriber);
         when(switchDomain.isPushEnabled()).thenReturn(true);
-        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, metadataManager, pushExecutor,
-                switchDomain);
+        executeEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage, metadataManager,
+                pushExecutor, switchDomain);
     }
     
     @After
@@ -98,6 +97,6 @@ public class PushDelayTaskExecuteEngineTest {
         executeEngine.addTask(service, pushDelayTask);
         TimeUnit.MILLISECONDS.sleep(200L);
         verify(pushExecutor).doPushWithCallback(anyString(), any(Subscriber.class), any(PushDataWrapper.class),
-                any(PushCallBack.class));
+                any(NamingPushCallback.class));
     }
 }

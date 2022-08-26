@@ -135,17 +135,17 @@ class EditServiceDialog extends React.Component {
 
   getSelectorTypes() {
     request({
-        method: 'GET',
-        url: 'v1/ns/service/selector/types',
-        success: response => {
-          if (response.code !== 200) {
-            Message.error(response.message);
-            return;
-          }
-          this.setState({
-            selectorTypes: response.data
-          });
+      method: 'GET',
+      url: 'v1/ns/service/selector/types',
+      success: response => {
+        if (response.code !== 200) {
+          Message.error(response.message);
+          return;
         }
+        this.setState({
+          selectorTypes: response.data,
+        });
+      },
     });
   }
 
@@ -173,7 +173,7 @@ class EditServiceDialog extends React.Component {
           <Form.Item
             required={isCreate}
             {...formItemLayout}
-            label={`${locale.serviceName}:`}
+            label={`${locale.serviceName}`}
             {...errors.name}
           >
             {!isCreate ? (
@@ -185,7 +185,7 @@ class EditServiceDialog extends React.Component {
           <Form.Item
             required
             {...formItemLayout}
-            label={`${locale.protectThreshold}:`}
+            label={`${locale.protectThreshold}`}
             {...errors.protectThreshold}
           >
             <Input
@@ -193,7 +193,7 @@ class EditServiceDialog extends React.Component {
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item {...formItemLayout} label={`${locale.groupName}:`}>
+          <Form.Item {...formItemLayout} label={`${locale.groupName}`}>
             <Input
               defaultValue={groupName}
               placeholder="DEFAULT_GROUP"
@@ -201,7 +201,7 @@ class EditServiceDialog extends React.Component {
               onChange={groupName => this.onChangeCluster({ groupName })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.metadata}`} {...formItemLayout}>
             <MonacoEditor
               language="json"
               width={'100%'}
@@ -210,19 +210,19 @@ class EditServiceDialog extends React.Component {
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.type}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.type}`} {...formItemLayout}>
             <Select
               className="full-width"
               defaultValue={selector.type}
               onChange={type => this.onChangeCluster({ selector: { ...selector, type } })}
             >
-              {
-                selectorTypes.map((selectorType) => (<Select.Option value={selectorType}>{selectorType}</Select.Option>))
-              }
+              {selectorTypes.map(selectorType => (
+                <Select.Option value={selectorType}>{selectorType}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
           {selector.type !== 'none' && (
-            <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
+            <Form.Item label={`${locale.selector}`} {...formItemLayout}>
               <Input.TextArea
                 value={selector.expression}
                 onChange={expression =>

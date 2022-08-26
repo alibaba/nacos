@@ -64,18 +64,10 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         final JdkHttpClientRequest clientRequest = new JdkHttpClientRequest(httpClientConfig);
         
         // enable ssl
-        initTls(new BiConsumer<SSLContext, HostnameVerifier>() {
-            @Override
-            public void accept(SSLContext sslContext, HostnameVerifier hostnameVerifier) {
-                clientRequest.setSSLContext(loadSSLContext());
-                clientRequest.replaceSSLHostnameVerifier(hostnameVerifier);
-            }
-        }, new TlsFileWatcher.FileChangeListener() {
-            @Override
-            public void onChanged(String filePath) {
-                clientRequest.setSSLContext(loadSSLContext());
-            }
-        });
+        initTls((sslContext, hostnameVerifier) -> {
+            clientRequest.setSSLContext(loadSSLContext());
+            clientRequest.replaceSSLHostnameVerifier(hostnameVerifier);
+        }, filePath -> clientRequest.setSSLContext(loadSSLContext()));
         
         return new NacosRestTemplate(assignLogger(), clientRequest);
     }
@@ -83,16 +75,46 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     @Override
     public NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
+        final DefaultConnectingIOReactor ioreactor = getIoReactor();
+        final RequestConfig defaultConfig = getRequestConfig();
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
                 HttpAsyncClients.custom()
                         .addInterceptorLast(new RequestContent(true))
                         .setDefaultIOReactorConfig(getIoReactorConfig())
-                        .setDefaultRequestConfig(getRequestConfig())
+                        .setDefaultRequestConfig(defaultConfig)
                         .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
                         .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
                         .setUserAgent(originalRequestConfig.getUserAgent())
-                        .setConnectionManager(getConnectionManager(originalRequestConfig))
-                        .build()));
+                        .setConnectionManager(getConnectionManager(originalRequestConfig, ioreactor))
+                        .build(), ioreactor, defaultConfig));
+    }
+    
+    private DefaultConnectingIOReactor getIoReactor() {
+        final DefaultConnectingIOReactor ioreactor;
+        try {
+            ioreactor = new DefaultConnectingIOReactor(getIoReactorConfig());
+        } catch (IOReactorException e) {
+            assignLogger().error("[NHttpClientConnectionManager] Create DefaultConnectingIOReactor failed", e);
+            throw new IllegalStateException();
+        }
+
+        // if the handle return true, then the exception thrown by IOReactor will be ignore, and will not finish the IOReactor.
+        ioreactor.setExceptionHandler(new IOReactorExceptionHandler() {
+
+            @Override
+            public boolean handle(IOException ex) {
+                assignLogger().warn("[NHttpClientConnectionManager] handle IOException, ignore it.", ex);
+                return true;
+            }
+
+            @Override
+            public boolean handle(RuntimeException ex) {
+                assignLogger().warn("[NHttpClientConnectionManager] handle RuntimeException, ignore it.", ex);
+                return true;
+            }
+        });
+
+        return ioreactor;
     }
     
     /**
@@ -102,36 +124,13 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
      * Using this way to avoid the {@link DefaultConnectingIOReactor} killed by unknown error of network.
      *
      * @param originalRequestConfig request config.
+     * @param ioreactor I/O reactor.
      * @return {@link NHttpClientConnectionManager}.
      */
-    private NHttpClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig) {
+    private NHttpClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig, DefaultConnectingIOReactor ioreactor) {
         SSLContext sslcontext = SSLContexts.createDefault();
         HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
         SchemeIOSessionStrategy sslStrategy = new SSLIOSessionStrategy(sslcontext, null, null, hostnameVerifier);
-        
-        final DefaultConnectingIOReactor ioreactor;
-        try {
-            ioreactor = new DefaultConnectingIOReactor(getIoReactorConfig());
-        } catch (IOReactorException e) {
-            assignLogger().error("[NHttpClientConnectionManager] Create DefaultConnectingIOReactor failed", e);
-            throw new IllegalStateException();
-        }
-        
-        // if the handle return true, then the exception thrown by IOReactor will be ignore, and will not finish the IOReactor.
-        ioreactor.setExceptionHandler(new IOReactorExceptionHandler() {
-            
-            @Override
-            public boolean handle(IOException ex) {
-                assignLogger().warn("[NHttpClientConnectionManager] handle IOException, ignore it.", ex);
-                return true;
-            }
-    
-            @Override
-            public boolean handle(RuntimeException ex) {
-                assignLogger().warn("[NHttpClientConnectionManager] handle RuntimeException, ignore it.", ex);
-                return true;
-            }
-        });
         
         Registry<SchemeIOSessionStrategy> registry = RegistryBuilder.<SchemeIOSessionStrategy>create()
                 .register("http", NoopIOSessionStrategy.INSTANCE)

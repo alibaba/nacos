@@ -68,7 +68,7 @@ public final class ExecutorFactory {
     public static ThreadPoolExecutor newCustomerThreadExecutor(final int coreThreads, final int maxThreads,
             final long keepAliveTimeMs, final ThreadFactory threadFactory) {
         return new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(), threadFactory);
+                new LinkedBlockingQueue<>(), threadFactory);
     }
     
     public static final class Managed {
@@ -172,7 +172,7 @@ public final class ExecutorFactory {
         public static ThreadPoolExecutor newCustomerThreadExecutor(final String group, final int coreThreads,
                 final int maxThreads, final long keepAliveTimeMs, final ThreadFactory threadFactory) {
             ThreadPoolExecutor executor = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs,
-                    TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+                    TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executor);
             return executor;
         }

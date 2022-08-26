@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Server list manager.
@@ -66,7 +68,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private final List<String> serverList = new ArrayList<>();
     
-    private List<String> serversFromEndpoint = new ArrayList<>();
+    private volatile List<String> serversFromEndpoint = new ArrayList<>();
     
     private ScheduledExecutorService refreshServerListExecutor;
     
@@ -85,6 +87,9 @@ public class ServerListManager implements ServerListFactory, Closeable {
         initServerAddr(properties);
         if (!serverList.isEmpty()) {
             currentIndex.set(new Random().nextInt(serverList.size()));
+        }
+        if (serverList.isEmpty() && StringUtils.isEmpty(endpoint)) {
+            throw new NacosLoadException("serverList is empty,please check configuration");
         }
     }
     
@@ -110,7 +115,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private List<String> getServerListFromEndpoint() {
         try {
-            String urlString = "http://" + endpoint + "/nacos/serverlist";
+            String urlString = HTTP_PREFIX + endpoint + "/nacos/serverlist";
             Header header = NamingHttpUtil.builderHeader();
             Query query = StringUtils.isNotBlank(namespace)
                     ? Query.newInstance().addParam("namespace", namespace)
@@ -121,7 +126,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
                         "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
             }
             String content = restResult.getData();
-            List<String> list = new ArrayList<String>();
+            List<String> list = new ArrayList<>();
             for (String line : IoUtils.readLines(new StringReader(content))) {
                 if (!line.trim().isEmpty()) {
                     list.add(line.trim());

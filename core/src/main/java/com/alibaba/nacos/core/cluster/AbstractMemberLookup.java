@@ -44,7 +44,9 @@ public abstract class AbstractMemberLookup implements MemberLookup {
     
     @Override
     public void destroy() throws NacosException {
-    
+        if (start.compareAndSet(true, false)) {
+            doDestroy();
+        }
     }
     
     @Override
@@ -59,4 +61,10 @@ public abstract class AbstractMemberLookup implements MemberLookup {
      * @throws NacosException NacosException
      */
     protected abstract void doStart() throws NacosException;
+    
+    /**
+     * subclass can override this method if need.
+     * @throws NacosException nacosException
+     */
+    protected abstract void doDestroy() throws NacosException;
 }

@@ -58,7 +58,7 @@ public interface PersistService {
     String SPOT = ".";
     Object[] EMPTY_ARRAY = new Object[] {};
     @SuppressWarnings("checkstyle:linelength")
-    String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema FROM config_info";
+    String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
 
     String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(1) FROM tenant_info WHERE tenant_id = ?";
     String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
@@ -411,6 +411,7 @@ public interface PersistService {
      * @param startTime start time
      * @return count of history config that meet the conditions
      */
+    @Deprecated
     int findConfigHistoryCountByTime(final Timestamp startTime);
     
     /**

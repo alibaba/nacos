@@ -24,7 +24,9 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -32,7 +34,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
 /**
@@ -47,11 +49,10 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     private final ServiceStorage serviceStorage;
     
     private final NamingMetadataManager metadataManager;
-
+    
     private final EphemeralClientOperationServiceImpl clientOperationService;
     
-    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage,
-            NamingMetadataManager metadataManager,
+    public SubscribeServiceRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager,
             EphemeralClientOperationServiceImpl clientOperationService) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
@@ -59,7 +60,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     }
     
     @Override
-    @Secured(action = ActionTypes.READ, parser = NamingResourceParser.class)
+    @Secured(action = ActionTypes.READ)
     public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
         String namespaceId = request.getNamespace();
         String serviceName = request.getServiceName();
@@ -67,14 +68,19 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         String app = request.getHeader("app", "unknown");
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
-        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app,
-                meta.getClientIp(), namespaceId, groupedServiceName, 0, request.getClusters());
+        Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),
+                namespaceId, groupedServiceName, 0, request.getClusters());
         ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
-                metadataManager.getServiceMetadata(service).orElse(null), subscriber);
+                metadataManager.getServiceMetadata(service).orElse(null), subscriber.getCluster(), false,
+                true, subscriber.getIp());
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
+            NotifyCenter.publishEvent(new SubscribeServiceTraceEvent(System.currentTimeMillis(),
+                    meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
         } else {
             clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
+            NotifyCenter.publishEvent(new UnsubscribeServiceTraceEvent(System.currentTimeMillis(),
+                    meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }

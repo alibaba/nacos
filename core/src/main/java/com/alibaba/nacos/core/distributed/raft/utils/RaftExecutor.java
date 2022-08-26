@@ -59,10 +59,10 @@ public final class RaftExecutor {
                 .parseInt(config.getValOfDefault(RaftSysConstants.RAFT_CLI_SERVICE_THREAD_NUM, "4"));
         
         raftCoreExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, raftCoreThreadNum,
-                new NameThreadFactory("com.alibaba.naocs.core.raft-core"));
+                new NameThreadFactory("com.alibaba.nacos.core.raft-core"));
         
         raftCliServiceExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, raftCliServiceThreadNum,
-                new NameThreadFactory("com.alibaba.naocs.core.raft-cli-service"));
+                new NameThreadFactory("com.alibaba.nacos.core.raft-cli-service"));
         
         raftCommonExecutor = ExecutorFactory.Managed.newScheduledExecutorService(OWNER, 8,
                 new NameThreadFactory("com.alibaba.nacos.core.protocol.raft-common"));
@@ -71,7 +71,7 @@ public final class RaftExecutor {
         snapshotNum = snapshotNum == 0 ? raftCoreThreadNum : snapshotNum;
         
         raftSnapshotExecutor = ExecutorFactory.Managed.newFixedExecutorService(OWNER, snapshotNum,
-                        new NameThreadFactory("com.alibaba.naocs.core.raft-snapshot"));
+                        new NameThreadFactory("com.alibaba.nacos.core.raft-snapshot"));
         
     }
     

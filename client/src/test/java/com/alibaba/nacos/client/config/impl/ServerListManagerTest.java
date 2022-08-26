@@ -36,7 +36,7 @@ public class ServerListManagerTest {
             Assert.fail();
         } catch (NacosException e) {
             Assert.assertEquals(
-                    "fail to get NACOS-server serverlist! env:custom-localhost-0, not connnect url:http://localhost:0/nacos/serverlist",
+                    "fail to get NACOS-server serverlist! env:custom-localhost_0_nacos_serverlist, not connnect url:http://localhost:0/nacos/serverlist",
                     e.getErrMsg());
         }
         mgr.shutdown();
@@ -59,6 +59,16 @@ public class ServerListManagerTest {
             properties.put(PropertyKeyConst.ENDPOINT, "endpoint");
             final ServerListManager mgr2 = new ServerListManager(properties);
             Assert.assertEquals("aaa", mgr2.getContentPath());
+        }
+
+        // Test https
+        {
+            Properties properties = new Properties();
+            properties.put(PropertyKeyConst.CONTEXT_PATH, "aaa");
+            properties.put(PropertyKeyConst.SERVER_ADDR, "https://1.1.1.1:8848");
+            final ServerListManager mgr2 = new ServerListManager(properties);
+            Assert.assertEquals("aaa", mgr2.getContentPath());
+            Assert.assertEquals("[https://1.1.1.1:8848]", mgr2.getServerUrls().toString());
         }
         
         {

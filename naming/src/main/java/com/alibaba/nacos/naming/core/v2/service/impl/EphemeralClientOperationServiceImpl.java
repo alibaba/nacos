@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core.v2.service.impl;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
@@ -26,12 +27,16 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Operation service for ephemeral clients and services.
@@ -48,7 +53,9 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     }
     
     @Override
-    public void registerInstance(Service service, Instance instance, String clientId) {
+    public void registerInstance(Service service, Instance instance, String clientId) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
+    
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
@@ -65,6 +72,32 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
         NotifyCenter
                 .publishEvent(new MetadataEvent.InstanceMetadataEvent(singleton, instanceInfo.getMetadataId(), false));
+    }
+    
+    @Override
+    public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        if (!singleton.isEphemeral()) {
+            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
+                    String.format("Current service %s is persistent service, can't batch register ephemeral instance.",
+                            singleton.getGroupedServiceName()));
+        }
+        Client client = clientManager.getClient(clientId);
+        if (!clientIsLegal(client, clientId)) {
+            return;
+        }
+        BatchInstancePublishInfo batchInstancePublishInfo = new BatchInstancePublishInfo();
+        List<InstancePublishInfo> resultList = new ArrayList<>();
+        for (Instance instance : instances) {
+            InstancePublishInfo instanceInfo = getPublishInfo(instance);
+            resultList.add(instanceInfo);
+        }
+        batchInstancePublishInfo.setInstancePublishInfos(resultList);
+        client.addServiceInstance(singleton, batchInstancePublishInfo);
+        client.setLastUpdatedTime();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new MetadataEvent.InstanceMetadataEvent(singleton, batchInstancePublishInfo.getMetadataId(), false));
     }
     
     @Override

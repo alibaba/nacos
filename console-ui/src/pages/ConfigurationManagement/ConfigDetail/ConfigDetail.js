@@ -226,7 +226,7 @@ class ConfigDetail extends React.Component {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
-    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}`;
+    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -292,7 +292,7 @@ class ConfigDetail extends React.Component {
     };
     const activeKey = this.state.activeKey.split('-')[0];
     return (
-      <div style={{ padding: 10 }}>
+      <div>
         <Loading
           shape={'flower'}
           tip={'Loading...'}
@@ -318,10 +318,10 @@ class ConfigDetail extends React.Component {
             ''
           )}
           <Form inline={false} field={this.field} {...formItemLayout}>
-            <FormItem label={'Data ID:'} required>
+            <FormItem label={'Data ID'} required>
               <Input htmlType={'text'} readOnly {...init('dataId')} />
             </FormItem>
-            <FormItem label={'Group:'} required>
+            <FormItem label={'Group'} required>
               <Input htmlType={'text'} readOnly {...init('group')} />
             </FormItem>
             <FormItem label=" ">

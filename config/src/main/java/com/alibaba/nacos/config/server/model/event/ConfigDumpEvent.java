@@ -49,6 +49,8 @@ public class ConfigDumpEvent extends Event {
     
     private long lastModifiedTs;
     
+    private String encryptedDataKey;
+    
     public boolean isRemove() {
         return remove;
     }
@@ -137,6 +139,14 @@ public class ConfigDumpEvent extends Event {
         this.lastModifiedTs = lastModifiedTs;
     }
     
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
+    }
+    
     public static ConfigDumpEventBuilder builder() {
         return new ConfigDumpEventBuilder();
     }
@@ -164,6 +174,8 @@ public class ConfigDumpEvent extends Event {
         private String type;
         
         private long lastModifiedTs;
+        
+        private String encryptedDataKey;
         
         private ConfigDumpEventBuilder() {
         }
@@ -223,6 +235,11 @@ public class ConfigDumpEvent extends Event {
             return this;
         }
         
+        public ConfigDumpEventBuilder encryptedDataKey(String encryptedDataKey) {
+            this.encryptedDataKey = encryptedDataKey;
+            return this;
+        }
+        
         /**
          * Build a configDumpEvent.
          *
@@ -241,6 +258,7 @@ public class ConfigDumpEvent extends Event {
             configDumpEvent.setType(type);
             configDumpEvent.setLastModifiedTs(lastModifiedTs);
             configDumpEvent.isBeta = this.isBeta;
+            configDumpEvent.setEncryptedDataKey(encryptedDataKey);
             return configDumpEvent;
         }
     }

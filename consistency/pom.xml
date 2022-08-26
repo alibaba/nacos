@@ -33,7 +33,7 @@
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.5.0</version>
+                <version>0.6.1</version>
                 <configuration>
                     <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}
                     </protocArtifact>

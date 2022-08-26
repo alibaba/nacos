@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,6 +43,17 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     void registerService(String serviceName, String groupName, Instance instance) throws NacosException;
+    
+    /**
+     * Batch register instance to service with specified instance properties.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instances   instance
+     * @throws NacosException nacos exception
+     * @since 2.1.1
+     */
+    void batchRegisterService(String serviceName, String groupName, List<Instance> instances) throws NacosException;
     
     /**
      * Deregister instance from a service.
@@ -148,6 +160,17 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException;
+    
+    /**
+     * Judge whether service has been subscribed.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param clusters    clusters, current only support subscribe all clusters, maybe deprecated
+     * @return {@code true} if subscribed, otherwise {@code false}
+     * @throws NacosException nacos exception
+     */
+    boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException;
     
     /**
      * Update beat info.

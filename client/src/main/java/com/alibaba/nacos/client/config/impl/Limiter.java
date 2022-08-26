@@ -40,7 +40,7 @@ public class Limiter {
     private static final Cache<String, RateLimiter> CACHE;
     
     static {
-        CACHE = CacheBuilder.builder()
+        CACHE = CacheBuilder.<String, RateLimiter>builder()
                 .expireNanos(1, TimeUnit.MINUTES)
                 .initializeCapacity(CAPACITY_SIZE)
                 .sync(true)

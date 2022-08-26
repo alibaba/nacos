@@ -39,6 +39,7 @@ public class ServiceInfoUpdateServiceTest {
         info.setGroupName(group);
         info.setClusters(clusters);
         info.setLastRefTime(System.currentTimeMillis());
+        info.setCacheMillis(10000L);
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         NamingClientProxy proxy = Mockito.mock(NamingClientProxy.class);
         Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, 0, false)).thenReturn(info);

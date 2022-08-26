@@ -27,14 +27,19 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchManager;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Collection;
@@ -73,8 +78,16 @@ public class OperatorControllerTest {
     @Mock
     private DistroMapper distroMapper;
     
+    @Before
+    public void setUp() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
+        EnvUtil.setEnvironment(environment);
+    }
+    
     @Test
     public void testPushState() {
+        MetricsMonitor.resetPush();
         ObjectNode objectNode = operatorController.pushState(true, true);
         Assert.assertTrue(objectNode.toString().contains("succeed\":0"));
     }
@@ -83,6 +96,17 @@ public class OperatorControllerTest {
     public void testSwitchDomain() {
         SwitchDomain switchDomain = operatorController.switches(new MockHttpServletRequest());
         Assert.assertEquals(this.switchDomain, switchDomain);
+    }
+    
+    @Test
+    public void testSwitchDomainForNotSupportUpgrade() {
+        MockEnvironment environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
+        SwitchDomain switchDomain = operatorController.switches(new MockHttpServletRequest());
+        SwitchDomain expected = new SwitchDomain();
+        expected.update(switchDomain);
+        expected.setDoubleWriteEnabled(false);
+        Assert.assertEquals(expected.toString(), switchDomain.toString());
     }
     
     @Test

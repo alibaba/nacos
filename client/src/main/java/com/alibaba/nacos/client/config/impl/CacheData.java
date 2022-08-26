@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigChangeEvent;
+import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.listener.AbstractSharedListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -47,6 +48,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CacheData {
     
+    private static final Logger LOGGER = LogUtils.logger(CacheData.class);
+    
     static final int CONCURRENCY = 5;
     
     static ThreadFactory internalNotifierFactory = r -> {
@@ -56,10 +59,15 @@ public class CacheData {
         return t;
     };
     
+    static boolean initSnapshot;
+    
+    static {
+        initSnapshot = Boolean.valueOf(System.getProperty("nacos.cache.data.init.snapshot", "true"));
+        LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
+    }
+    
     static final ThreadPoolExecutor INTERNAL_NOTIFIER = new ThreadPoolExecutor(0, CONCURRENCY, 60L, TimeUnit.SECONDS,
             new SynchronousQueue<>(), internalNotifierFactory);
-    
-    private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
     private final String name;
     
@@ -127,7 +135,7 @@ public class CacheData {
     
     public void setContent(String content) {
         this.content = content;
-        this.md5 = getMd5String(this.content);
+        this.md5 = getMd5String();
     }
     
     /**
@@ -161,13 +169,23 @@ public class CacheData {
      *
      * @param listener listener
      */
-    public void addListener(Listener listener) {
+    public void addListener(Listener listener) throws NacosException {
         if (null == listener) {
             throw new IllegalArgumentException("listener is null");
         }
-        ManagerListenerWrap wrap =
-                (listener instanceof AbstractConfigChangeListener) ? new ManagerListenerWrap(listener, md5, content)
-                        : new ManagerListenerWrap(listener, md5);
+        ManagerListenerWrap wrap;
+        if (listener instanceof AbstractConfigChangeListener) {
+            ConfigResponse cr = new ConfigResponse();
+            cr.setDataId(dataId);
+            cr.setGroup(group);
+            cr.setContent(content);
+            cr.setEncryptedDataKey(encryptedDataKey);
+            configFilterChainManager.doFilter(null, cr);
+            String contentTmp = cr.getContent();
+            wrap = new ManagerListenerWrap(listener, md5, contentTmp);
+        } else {
+            wrap = new ManagerListenerWrap(listener, md5);
+        }
         
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
@@ -195,7 +213,7 @@ public class CacheData {
      * Returns the iterator on the listener list, read-only. It is guaranteed not to return NULL.
      */
     public List<Listener> getListeners() {
-        List<Listener> result = new ArrayList<Listener>();
+        List<Listener> result = new ArrayList<>();
         for (ManagerListenerWrap wrap : listeners) {
             result.add(wrap.listener);
         }
@@ -310,22 +328,22 @@ public class CacheData {
                 listener.receiveConfigInfo(contentTmp);
                 // compare lastContent and content
                 if (listener instanceof AbstractConfigChangeListener) {
-                    Map data = ConfigChangeHandler.getInstance()
-                            .parseChangeData(listenerWrap.lastContent, content, type);
+                    Map<String, ConfigChangeItem> data = ConfigChangeHandler.getInstance()
+                            .parseChangeData(listenerWrap.lastContent, contentTmp, type);
                     ConfigChangeEvent event = new ConfigChangeEvent(data);
                     ((AbstractConfigChangeListener) listener).receiveConfigChange(event);
-                    listenerWrap.lastContent = content;
+                    listenerWrap.lastContent = contentTmp;
                 }
                 
                 listenerWrap.lastCallMd5 = md5;
-                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name,
-                        dataId, group, md5, listener, (System.currentTimeMillis() - start));
+                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ,cost={} millis.", name, dataId,
+                        group, md5, listener, (System.currentTimeMillis() - start));
             } catch (NacosException ex) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}",
-                        name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
+                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", name,
+                        dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
             } catch (Throwable t) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
-                        group, md5, listener, t.getCause());
+                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={}", name, dataId, group, md5,
+                        listener, t);
             } finally {
                 listenerWrap.inNotifying = false;
                 Thread.currentThread().setContextClassLoader(myClassLoader);
@@ -360,8 +378,8 @@ public class CacheData {
                 name, (finishNotify - startNotify), dataId, group, md5, listener);
     }
     
-    public static String getMd5String(String config) {
-        return (null == config) ? Constants.NULL : MD5Utils.md5Hex(config, Constants.ENCODE);
+    public String getMd5String() {
+        return (null == content) ? Constants.NULL : MD5Utils.md5Hex(content, Constants.ENCODE);
     }
     
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
@@ -385,19 +403,7 @@ public class CacheData {
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
-        }
-        this.name = name;
-        this.configFilterChainManager = configFilterChainManager;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = TenantUtil.getUserTenantForAcm();
-        listeners = new CopyOnWriteArrayList<>();
-        this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
-        this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
+        this(configFilterChainManager, name, dataId, group, TenantUtil.getUserTenantForAcm());
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
@@ -405,15 +411,18 @@ public class CacheData {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
         }
-        this.name = name;
         this.configFilterChainManager = configFilterChainManager;
+        this.name = name;
         this.dataId = dataId;
         this.group = group;
         this.tenant = tenant;
-        listeners = new CopyOnWriteArrayList<>();
+        this.listeners = new CopyOnWriteArrayList<>();
         this.isInitializing = true;
-        this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
-        this.md5 = getMd5String(content);
+        if (initSnapshot) {
+            this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+            this.encryptedDataKey = loadEncryptedDataKeyFromDiskLocal(name, dataId, group, tenant);
+            this.md5 = getMd5String();
+        }
     }
     
     // ==================
@@ -442,8 +451,11 @@ public class CacheData {
         
         final Listener listener;
         
-        String lastCallMd5 = CacheData.getMd5String(null);
+        String lastCallMd5 = Constants.NULL;
         
+        /**
+         * here is a decryptContent.
+         */
         String lastContent = null;
         
         ManagerListenerWrap(Listener listener) {

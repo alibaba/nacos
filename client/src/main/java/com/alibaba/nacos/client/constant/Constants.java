@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.constant;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * All the constants.
  *
@@ -33,6 +35,8 @@ public class Constants {
         
         public static final String JM_SNAPSHOT_PATH = "JM.SNAPSHOT.PATH";
         
+        public static final String NACOS_ENVS_SEARCH = "nacos.envs.search";
+        
     }
     
     public static class Disk {
@@ -49,11 +53,10 @@ public class Constants {
         public static final String DOWN = "DOWN";
     }
     
-    public static class Protocols {
+    public static class Security {
+    
+        public static final long SECURITY_INFO_REFRESH_INTERVAL_MILLS = TimeUnit.SECONDS.toMillis(5);
         
-        public static final String HTTP = "http://";
-        
-        public static final String HTTPS = "https://";
     }
     
 }

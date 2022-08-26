@@ -34,7 +34,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -49,6 +51,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -63,10 +66,35 @@ public class NamingClientProxyDelegateTest {
         instance.setClusterName(groupName);
         instance.setIp("1.1.1.1");
         instance.setPort(1);
-        // use http
         instance.setEphemeral(true);
         delegate.registerService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).registerService(serviceName, groupName, instance);
+    }
+    
+    @Test
+    public void testBatchRegisterServiceByGrpc() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        String ns = "ns1";
+        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
+        Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
+        InstancesChangeNotifier notifier = new InstancesChangeNotifier();
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+        NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
+        Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
+        grpcClientProxyField.setAccessible(true);
+        grpcClientProxyField.set(delegate, mockGrpcClient);
+        
+        String serviceName = "service1";
+        String groupName = "group1";
+        Instance instance = new Instance();
+        instance.setServiceName(serviceName);
+        instance.setClusterName(groupName);
+        instance.setIp("1.1.1.1");
+        instance.setPort(1);
+        instance.setEphemeral(true);
+        List<Instance> instanceList = new ArrayList<>();
+        delegate.batchRegisterService(serviceName, groupName, instanceList);
+        verify(mockGrpcClient, times(1)).batchRegisterService(serviceName, groupName, instanceList);
     }
     
     @Test
@@ -74,6 +102,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
@@ -99,6 +128,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -124,6 +154,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
@@ -149,6 +180,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         String serviceName = "service1";
@@ -166,6 +198,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -185,6 +218,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         Service service = delegate.queryService("a", "b");
@@ -196,6 +230,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         Service service = new Service();
@@ -211,6 +246,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         Assert.assertFalse(delegate.deleteService("service", "group1"));
@@ -221,6 +257,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         Service service = new Service();
@@ -236,6 +273,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -257,6 +295,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -285,6 +324,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -305,6 +345,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
@@ -323,6 +364,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
@@ -339,6 +381,7 @@ public class NamingClientProxyDelegateTest {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
+        props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
         NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);

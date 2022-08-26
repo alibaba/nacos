@@ -37,14 +37,15 @@
             <artifactId>nacos-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-jasper</artifactId>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
-        
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-plugin-default-impl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-istio</artifactId>

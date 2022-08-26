@@ -22,12 +22,15 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.impl.BasePersistentServiceProcessor;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.sys.env.Constants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Field;
 
@@ -58,6 +61,10 @@ public class PersistentConsistencyServiceDelegateImplTest {
     
     @Before
     public void setUp() throws Exception {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
+        EnvUtil.setEnvironment(environment);
+        EnvUtil.setIsStandalone(true);
         oldPersistentConsistencyServiceDelegate = new PersistentConsistencyServiceDelegateImpl(clusterVersionJudgement,
                 raftConsistencyService, protocolManager);
         

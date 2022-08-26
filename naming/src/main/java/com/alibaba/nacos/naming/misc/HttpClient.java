@@ -274,7 +274,7 @@ public class HttpClient {
             header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
             AuthHeaderUtil.addIdentityToHeader(header);
             HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(5000)
-                    .setReadTimeOutMillis(5000).setConnectionRequestTimeout(5000).setMaxRedirects(5).build();
+                    .setReadTimeOutMillis(5000).build();
             return APACHE_SYNC_NACOS_REST_TEMPLATE.postForm(url, httpClientConfig, header, paramValues, String.class);
         } catch (Throwable e) {
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();

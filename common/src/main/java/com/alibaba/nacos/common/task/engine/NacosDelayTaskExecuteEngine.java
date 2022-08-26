@@ -104,7 +104,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
     
     @Override
     public Collection<Object> getAllTaskKeys() {
-        Collection<Object> keys = new HashSet<Object>();
+        Collection<Object> keys = new HashSet<>();
         lock.lock();
         try {
             keys.addAll(tasks.keySet());
@@ -155,7 +155,7 @@ public class NacosDelayTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<
                     retryFailedTask(taskKey, task);
                 }
             } catch (Throwable e) {
-                getEngineLog().error("Nacos task execute error : " + e.toString(), e);
+                getEngineLog().error("Nacos task execute error ", e);
                 retryFailedTask(taskKey, task);
             }
         }

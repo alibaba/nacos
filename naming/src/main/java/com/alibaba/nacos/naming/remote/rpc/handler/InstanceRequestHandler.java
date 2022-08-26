@@ -22,11 +22,14 @@ import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
 /**
@@ -44,7 +47,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     }
     
     @Override
-    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
+    @Secured(action = ActionTypes.WRITE)
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
@@ -59,13 +62,20 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
         }
     }
     
-    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta) {
+    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
+            throws NacosException {
         clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                meta.getClientIp(), true, service.getNamespace(), service.getGroup(), service.getName(),
+                request.getInstance().getIp(), request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
     
     private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
         clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                meta.getClientIp(), true, DeregisterInstanceReason.REQUEST, service.getNamespace(),
+                service.getGroup(), service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
     

@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.consistency.ProtoMessageUtil;
 import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -104,15 +105,6 @@ import java.util.function.BiConsumer;
 public class JRaftServer {
     
     // Existential life cycle
-    
-    static {
-        // Set bolt buffer
-        // System.getProperties().setProperty("bolt.channel_write_buf_low_water_mark", String.valueOf(64 * 1024 * 1024));
-        // System.getProperties().setProperty("bolt.channel_write_buf_high_water_mark", String.valueOf(256 * 1024 * 1024));
-        
-        System.getProperties().setProperty("bolt.netty.buffer.low.watermark", String.valueOf(128 * 1024 * 1024));
-        System.getProperties().setProperty("bolt.netty.buffer.high.watermark", String.valueOf(256 * 1024 * 1024));
-    }
     
     private RpcServer rpcServer;
     
@@ -357,15 +349,19 @@ public class JRaftServer {
      */
     void registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
         for (; ; ) {
-            List<PeerId> peerIds = cliService.getPeers(groupId, conf);
-            if (peerIds.contains(selfIp)) {
-                return;
+            try {
+                List<PeerId> peerIds = cliService.getPeers(groupId, conf);
+                if (peerIds.contains(selfIp)) {
+                    return;
+                }
+                Status status = cliService.addPeer(groupId, conf, selfIp);
+                if (status.isOk()) {
+                    return;
+                }
+                Loggers.RAFT.warn("Failed to join the cluster, retry...");
+            } catch (Exception e) {
+                Loggers.RAFT.error("Failed to join the cluster, retry...", e);
             }
-            Status status = cliService.addPeer(groupId, conf, selfIp);
-            if (status.isOk()) {
-                return;
-            }
-            Loggers.RAFT.warn("Failed to join the cluster, retry...");
             ThreadUtils.sleep(1_000L);
         }
     }
@@ -406,7 +402,19 @@ public class JRaftServer {
             closure.setResponse(nacosStatus.getResponse());
             closure.run(nacosStatus);
         }));
-        task.setData(ByteBuffer.wrap(data.toByteArray()));
+        
+        // add request type field at the head of task data.
+        byte[] requestTypeFieldBytes = new byte[2];
+        requestTypeFieldBytes[0] = ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG;
+        if (data instanceof ReadRequest) {
+            requestTypeFieldBytes[1] = ProtoMessageUtil.REQUEST_TYPE_READ;
+        } else {
+            requestTypeFieldBytes[1] = ProtoMessageUtil.REQUEST_TYPE_WRITE;
+        }
+        
+        byte[] dataBytes = data.toByteArray();
+        task.setData((ByteBuffer) ByteBuffer.allocate(requestTypeFieldBytes.length + dataBytes.length)
+                .put(requestTypeFieldBytes).put(dataBytes).position(0));
         node.apply(task);
     }
     

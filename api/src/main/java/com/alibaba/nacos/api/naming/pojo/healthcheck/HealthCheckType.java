@@ -54,7 +54,7 @@ public enum HealthCheckType {
      * In JDK 1.6, the map need full class for general. So ignore check style.
      */
     @SuppressWarnings("checkstyle:linelength")
-    private static final Map<String, Class<? extends AbstractHealthChecker>> EXTEND = new ConcurrentHashMap<String, Class<? extends AbstractHealthChecker>>();
+    private static final Map<String, Class<? extends AbstractHealthChecker>> EXTEND = new ConcurrentHashMap<>();
     
     HealthCheckType(Class<? extends AbstractHealthChecker> healthCheckerClass) {
         this.healthCheckerClass = healthCheckerClass;
@@ -90,7 +90,7 @@ public enum HealthCheckType {
     }
     
     public static List<Class<? extends AbstractHealthChecker>> getLoadedHealthCheckerClasses() {
-        List<Class<? extends AbstractHealthChecker>> all = new ArrayList<Class<? extends AbstractHealthChecker>>();
+        List<Class<? extends AbstractHealthChecker>> all = new ArrayList<>();
         for (HealthCheckType type : values()) {
             all.add(type.healthCheckerClass);
         }

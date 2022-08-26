@@ -93,8 +93,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         //  Database health check
         
-        testJtList = new ArrayList<JdbcTemplate>();
-        isHealthList = new ArrayList<Boolean>();
+        testJtList = new ArrayList<>();
+        isHealthList = new ArrayList<>();
         
         tm = new DataSourceTransactionManager();
         tjt = new TransactionTemplate(tm);
@@ -105,7 +105,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             try {
                 reload();
             } catch (IOException e) {
-                FATAL_LOG.error("[ExternalDataSourceService] dats source reload error", e);
+                FATAL_LOG.error("[ExternalDataSourceService] datasource reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG);
             }
 

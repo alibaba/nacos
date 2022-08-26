@@ -147,16 +147,16 @@ class ServiceDetail extends React.Component {
           </h1>
 
           <Form {...pageFormLayout}>
-            <FormItem label={`${locale.serviceName}:`}>
+            <FormItem label={`${locale.serviceName}`}>
               <Input value={service.name} readOnly />
             </FormItem>
-            <FormItem label={`${locale.groupName}:`}>
+            <FormItem label={`${locale.groupName}`}>
               <Input value={service.groupName} readOnly />
             </FormItem>
-            <FormItem label={`${locale.protectThreshold}:`}>
+            <FormItem label={`${locale.protectThreshold}`}>
               <Input value={service.protectThreshold} readOnly />
             </FormItem>
-            <FormItem label={`${locale.metadata}:`}>
+            <FormItem label={`${locale.metadata}`}>
               <MonacoEditor
                 language="json"
                 width={'100%'}
@@ -165,11 +165,11 @@ class ServiceDetail extends React.Component {
                 options={MONACO_READONLY_OPTIONS}
               />
             </FormItem>
-            <FormItem label={`${locale.type}:`}>
+            <FormItem label={`${locale.type}`}>
               <Input value={selector.type} readOnly />
             </FormItem>
             {selector.type !== 'none' && (
-              <FormItem label={`${locale.selector}:`}>
+              <FormItem label={`${locale.selector}`}>
                 <Input value={selector.expression} readOnly />
               </FormItem>
             )}
@@ -178,7 +178,7 @@ class ServiceDetail extends React.Component {
             <Card
               key={cluster.name}
               className="cluster-card"
-              title={`${locale.cluster}:`}
+              title={`${locale.cluster}`}
               subTitle={cluster.name}
               contentHeight="auto"
               extra={
@@ -187,7 +187,10 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceFilter setFilters={this.setFilters(cluster.name)} locale={locale.InstanceFilter} />
+              <InstanceFilter
+                setFilters={this.setFilters(cluster.name)}
+                locale={locale.InstanceFilter}
+              />
               <InstanceTable
                 clusterName={cluster.name}
                 serviceName={serviceName}

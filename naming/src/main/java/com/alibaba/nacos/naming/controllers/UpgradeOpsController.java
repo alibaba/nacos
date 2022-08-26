@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -50,7 +49,7 @@ import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.collections.CollectionUtils;
@@ -232,7 +231,7 @@ public class UpgradeOpsController {
      * @throws Exception exception
      */
     @PostMapping("/service")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public String createService(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request, @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName,
@@ -259,7 +258,7 @@ public class UpgradeOpsController {
      * @throws Exception exception
      */
     @DeleteMapping("/service")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public String removeService(@RequestParam(defaultValue = "v2", required = false) String ver,
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws Exception {
@@ -280,7 +279,7 @@ public class UpgradeOpsController {
      * @throws NacosException nacos exception
      */
     @GetMapping("/service")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public ObjectNode detailService(@RequestParam(defaultValue = "v2", required = false) String ver,
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws NacosException {
@@ -295,7 +294,7 @@ public class UpgradeOpsController {
      * @throws Exception exception
      */
     @GetMapping("/service/list")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public ObjectNode listService(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
@@ -304,9 +303,11 @@ public class UpgradeOpsController {
         String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        Collection<String> serviceNameList = getServiceOperator(ver).listService(namespaceId, groupName, selectorString);
+        Collection<String> serviceNameList = getServiceOperator(ver)
+                .listService(namespaceId, groupName, selectorString);
         result.put("count", serviceNameList.size());
-        result.replace("doms", JacksonUtils.transferToJsonNode(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList)));
+        result.replace("doms",
+                JacksonUtils.transferToJsonNode(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList)));
         return result;
     }
     
@@ -318,7 +319,7 @@ public class UpgradeOpsController {
      * @throws Exception exception
      */
     @PutMapping("/service")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public String updateService(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -344,7 +345,7 @@ public class UpgradeOpsController {
      * @return search result
      */
     @RequestMapping("/service/names")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public ObjectNode searchService(@RequestParam(defaultValue = "v2", required = false) String ver,
             @RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
@@ -373,14 +374,12 @@ public class UpgradeOpsController {
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
         }
-    
+        
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
         String type = Optional.ofNullable(selectorJson.get("type"))
                 .orElseThrow(() -> new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!"))
                 .asText();
-        String expression = Optional.ofNullable(selectorJson.get("expression"))
-                .map(JsonNode::asText)
-                .orElse(null);
+        String expression = Optional.ofNullable(selectorJson.get("expression")).map(JsonNode::asText).orElse(null);
         Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
             throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
@@ -398,7 +397,7 @@ public class UpgradeOpsController {
      */
     @CanDistro
     @PostMapping("/instance")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public String registerInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         
@@ -423,7 +422,7 @@ public class UpgradeOpsController {
      */
     @CanDistro
     @DeleteMapping("/instance")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public String deregisterInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         Instance instance = HttpRequestInstanceBuilder.newBuilder()
@@ -445,7 +444,7 @@ public class UpgradeOpsController {
      */
     @CanDistro
     @PutMapping("/instance")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public String updateInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -466,7 +465,7 @@ public class UpgradeOpsController {
      * @throws Exception any error during list
      */
     @GetMapping("/instance/list")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public Object listInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         
@@ -499,7 +498,7 @@ public class UpgradeOpsController {
      * @throws Exception any error during get
      */
     @GetMapping("/instance")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public ObjectNode detailInstance(@RequestParam(defaultValue = "v2", required = false) String ver,
             HttpServletRequest request) throws Exception {
         
@@ -523,7 +522,7 @@ public class UpgradeOpsController {
         result.set("metadata", JacksonUtils.transferToJsonNode(instance.getMetadata()));
         return result;
     }
-  
+    
     private InstanceOperator getInstanceOperator(String ver) {
         return "v2".equals(ver) ? instanceServiceV2 : instanceServiceV1;
     }

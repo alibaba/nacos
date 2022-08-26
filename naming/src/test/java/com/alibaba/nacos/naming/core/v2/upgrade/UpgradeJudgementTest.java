@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
@@ -27,6 +28,8 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteDelayTaskEngine;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
@@ -86,13 +89,18 @@ public class UpgradeJudgementTest {
     
     @Before
     public void setUp() throws Exception {
-        EnvUtil.setEnvironment(new MockEnvironment());
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
+        EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
         when(context.getBean(ServiceManager.class)).thenReturn(serviceManager);
         when(context.getBean(ServiceStorage.class)).thenReturn(serviceStorage);
         ApplicationUtils.injectContext(context);
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,
                 upgradeStates, doubleWriteDelayTaskEngine);
+        NotifyCenter.deregisterSubscriber(upgradeJudgement);
+        MetricsMonitor.getIpCountMonitor().set(0);
+        MetricsMonitor.getDomCountMonitor().set(0);
     }
     
     @After
@@ -317,6 +325,7 @@ public class UpgradeJudgementTest {
         upgradeJudgement.shutdown();
         MockEnvironment mockEnvironment = new MockEnvironment();
         mockEnvironment.setProperty("upgrading.checker.type", "mock");
+        mockEnvironment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(mockEnvironment);
         mockMember("1.3.2", "2.0.0", "2.0.0");
         upgradeJudgement = new UpgradeJudgement(raftPeerSet, raftCore, versionJudgement, memberManager, serviceManager,

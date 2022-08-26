@@ -66,7 +66,7 @@ public class Cluster implements Serializable {
      */
     private boolean useIPPort4Check = true;
     
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
     
     public Cluster() {
     

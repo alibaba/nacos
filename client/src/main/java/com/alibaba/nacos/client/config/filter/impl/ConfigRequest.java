@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static com.alibaba.nacos.client.config.common.ConfigConstants.CONTENT;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.DATA_ID;
+import static com.alibaba.nacos.client.config.common.ConfigConstants.ENCRYPTED_DATA_KEY;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.GROUP;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
 import static com.alibaba.nacos.client.config.common.ConfigConstants.TYPE;
@@ -35,7 +36,7 @@ import static com.alibaba.nacos.client.config.common.ConfigConstants.TYPE;
  */
 public class ConfigRequest implements IConfigRequest {
     
-    private final Map<String, Object> param = new HashMap<String, Object>();
+    private final Map<String, Object> param = new HashMap<>();
     
     private final IConfigContext configContext = new ConfigContext();
     
@@ -77,6 +78,14 @@ public class ConfigRequest implements IConfigRequest {
     
     public void setType(String type) {
         param.put(TYPE, type);
+    }
+    
+    public String getEncryptedDataKey() {
+        return (String) param.get(ENCRYPTED_DATA_KEY);
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        param.put(ENCRYPTED_DATA_KEY, encryptedDataKey);
     }
     
     @Override

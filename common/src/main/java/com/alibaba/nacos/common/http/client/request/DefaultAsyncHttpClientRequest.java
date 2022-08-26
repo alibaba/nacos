@@ -22,13 +22,19 @@ import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.client.response.DefaultClientHttpResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.impl.nio.reactor.ExceptionEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 /**
  * {@link AsyncHttpClientRequest} implementation that uses apache async http client to execute streaming requests.
@@ -37,10 +43,18 @@ import java.net.URI;
  */
 public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAsyncHttpClientRequest.class);
+    
     private final CloseableHttpAsyncClient asyncClient;
     
-    public DefaultAsyncHttpClientRequest(CloseableHttpAsyncClient asyncClient) {
+    private final DefaultConnectingIOReactor ioreactor;
+    
+    private final RequestConfig defaultConfig;
+    
+    public DefaultAsyncHttpClientRequest(CloseableHttpAsyncClient asyncClient, DefaultConnectingIOReactor ioreactor, RequestConfig defaultConfig) {
         this.asyncClient = asyncClient;
+        this.ioreactor = ioreactor;
+        this.defaultConfig = defaultConfig;
         if (!this.asyncClient.isRunning()) {
             this.asyncClient.start();
         }
@@ -49,31 +63,44 @@ public class DefaultAsyncHttpClientRequest implements AsyncHttpClientRequest {
     @Override
     public <T> void execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity,
             final ResponseHandler<T> responseHandler, final Callback<T> callback) throws Exception {
-        HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity);
-        asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
-            @Override
-            public void completed(HttpResponse result) {
-                DefaultClientHttpResponse response = new DefaultClientHttpResponse(result);
-                try {
-                    HttpRestResult<T> httpRestResult = responseHandler.handle(response);
-                    callback.onReceive(httpRestResult);
-                } catch (Exception e) {
-                    callback.onError(e);
-                } finally {
-                    HttpClientUtils.closeQuietly(result);
+        HttpRequestBase httpRequestBase = DefaultHttpClientRequest.build(uri, httpMethod, requestHttpEntity, defaultConfig);
+        try {
+            asyncClient.execute(httpRequestBase, new FutureCallback<HttpResponse>() {
+                @Override
+                public void completed(HttpResponse result) {
+                    DefaultClientHttpResponse response = new DefaultClientHttpResponse(result);
+                    try {
+                        HttpRestResult<T> httpRestResult = responseHandler.handle(response);
+                        callback.onReceive(httpRestResult);
+                    } catch (Exception e) {
+                        callback.onError(e);
+                    } finally {
+                        HttpClientUtils.closeQuietly(result);
+                    }
+                }
+                
+                @Override
+                public void failed(Exception ex) {
+                    callback.onError(ex);
+                }
+                
+                @Override
+                public void cancelled() {
+                    callback.onCancel();
+                }
+            });
+        } catch (IllegalStateException e) {
+            final List<ExceptionEvent> events = ioreactor.getAuditLog();
+            if (events != null) {
+                for (ExceptionEvent event : events) {
+                    if (event != null) {
+                        LOGGER.error("[DefaultAsyncHttpClientRequest] IllegalStateException! I/O Reactor error time: {}",
+                                event.getTimestamp(), event.getCause());
+                    }
                 }
             }
-            
-            @Override
-            public void failed(Exception ex) {
-                callback.onError(ex);
-            }
-            
-            @Override
-            public void cancelled() {
-                callback.onCancel();
-            }
-        });
+            throw e;
+        }
         
     }
     

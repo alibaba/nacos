@@ -39,6 +39,7 @@ const request = () => {
       if (!params) {
         config.params = {};
       }
+      config.params.message = true;
       if (!url.includes('auth/users/login')) {
         let token = {};
         try {
@@ -89,7 +90,9 @@ const request = () => {
 
         if (
           [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid!', 'token expired!'].includes(message)
+          ['unknown user!', 'token invalid!', 'token expired!', 'session expired!'].includes(
+            message
+          )
         ) {
           goLogin();
         }

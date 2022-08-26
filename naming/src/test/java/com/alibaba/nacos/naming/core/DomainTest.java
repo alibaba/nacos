@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +47,11 @@ public class DomainTest extends BaseTest {
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
         service.addCluster(cluster);
         mockInjectPushServer();
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        service.destroy();
     }
     
     @Test

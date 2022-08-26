@@ -42,8 +42,11 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     private long loadDataRetryDelayMillis = DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
     
+    private long loadDataTimeoutMillis = DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS;
+    
     private DistroConfig() {
         super(DISTRO);
+        resetConfig();
     }
     
     @Override
@@ -60,6 +63,8 @@ public class DistroConfig extends AbstractDynamicConfig {
                 DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS);
         loadDataRetryDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS, Long.class,
                 DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
+        loadDataTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
     }
     
     public static DistroConfig getInstance() {
@@ -112,6 +117,14 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     public void setLoadDataRetryDelayMillis(long loadDataRetryDelayMillis) {
         this.loadDataRetryDelayMillis = loadDataRetryDelayMillis;
+    }
+    
+    public long getLoadDataTimeoutMillis() {
+        return loadDataTimeoutMillis;
+    }
+    
+    public void setLoadDataTimeoutMillis(long loadDataTimeoutMillis) {
+        this.loadDataTimeoutMillis = loadDataTimeoutMillis;
     }
     
     @Override

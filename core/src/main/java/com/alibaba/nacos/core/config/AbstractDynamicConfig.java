@@ -33,7 +33,6 @@ public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChang
     
     protected AbstractDynamicConfig(String configName) {
         this.configName = configName;
-        resetConfig();
         NotifyCenter.registerSubscriber(this);
     }
     
@@ -47,7 +46,7 @@ public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChang
         return ServerConfigChangeEvent.class;
     }
     
-    private void resetConfig() {
+    protected void resetConfig() {
         try {
             getConfigFromEnv();
             Loggers.CORE.info("Get {} config from env, {}", configName, printConfig());

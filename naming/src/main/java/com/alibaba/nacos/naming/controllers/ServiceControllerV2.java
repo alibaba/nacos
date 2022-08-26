@@ -21,10 +21,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -38,7 +40,7 @@ import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -86,7 +88,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @PostMapping(value = "/{serviceName}")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public RestResult<String> create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(required = false, defaultValue = "false") boolean ephemeral,
@@ -99,6 +101,8 @@ public class ServiceControllerV2 {
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
         serviceMetadata.setEphemeral(ephemeral);
         serviceOperatorV2.create(Service.newService(namespaceId, groupName, serviceName, ephemeral), serviceMetadata);
+        NotifyCenter.publishEvent(new RegisterServiceTraceEvent(System.currentTimeMillis(),
+                namespaceId, groupName, serviceName));
         return RestResultUtils.success("ok");
     }
     
@@ -111,11 +115,13 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @DeleteMapping(value = "/{serviceName}")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public RestResult<String> remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
+        NotifyCenter.publishEvent(new DeregisterServiceTraceEvent(System.currentTimeMillis(),
+                namespaceId, groupName, serviceName));
         return RestResultUtils.success("ok");
     }
     
@@ -128,7 +134,7 @@ public class ServiceControllerV2 {
      * @throws NacosException nacos exception
      */
     @GetMapping(value = "/{serviceName}")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public RestResult<ServiceDetailInfo> detail(
             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName)
@@ -146,7 +152,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @GetMapping("/list")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.READ)
+    @Secured(action = ActionTypes.READ)
     public RestResult<ServiceNameView> list(HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         final int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
@@ -173,7 +179,7 @@ public class ServiceControllerV2 {
      * @throws Exception exception
      */
     @PutMapping(value = "/{serviceName}")
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE)
     public RestResult<String> update(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,

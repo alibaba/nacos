@@ -107,6 +107,13 @@ class NacosStateMachine extends StateMachineAdapter {
                     } else {
                         final ByteBuffer data = iter.getData();
                         message = ProtoMessageUtil.parse(data.array());
+                        if (message instanceof ReadRequest) {
+                            //'iter.done() == null' means current node is follower, ignore read operation
+                            applied++;
+                            index++;
+                            iter.next();
+                            continue;
+                        }
                     }
                     
                     LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", message);

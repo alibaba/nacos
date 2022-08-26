@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -60,7 +62,11 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
-            MetricsMonitor.incrementInstanceCount();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.incrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.incrementInstanceCount();
+            }
         }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
@@ -71,7 +77,11 @@ public abstract class AbstractClient implements Client {
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
-            MetricsMonitor.decrementInstanceCount();
+            if (result instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.decrementIpCountWithBatchRegister(result);
+            } else {
+                MetricsMonitor.decrementInstanceCount();
+            }
             NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
         Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
@@ -119,19 +129,53 @@ public abstract class AbstractClient implements Client {
         List<String> namespaces = new LinkedList<>();
         List<String> groupNames = new LinkedList<>();
         List<String> serviceNames = new LinkedList<>();
+    
+        List<String> batchNamespaces = new LinkedList<>();
+        List<String> batchGroupNames = new LinkedList<>();
+        List<String> batchServiceNames = new LinkedList<>();
+        
         List<InstancePublishInfo> instances = new LinkedList<>();
+        List<BatchInstancePublishInfo> batchInstancePublishInfos = new LinkedList<>();
+        BatchInstanceData  batchInstanceData = new BatchInstanceData();
         for (Map.Entry<Service, InstancePublishInfo> entry : publishers.entrySet()) {
-            namespaces.add(entry.getKey().getNamespace());
-            groupNames.add(entry.getKey().getGroup());
-            serviceNames.add(entry.getKey().getName());
-            instances.add(entry.getValue());
+            InstancePublishInfo instancePublishInfo = entry.getValue();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                BatchInstancePublishInfo batchInstance = (BatchInstancePublishInfo) instancePublishInfo;
+                batchInstancePublishInfos.add(batchInstance);
+                buildBatchInstanceData(batchInstanceData, batchNamespaces, batchGroupNames, batchServiceNames, entry);
+                batchInstanceData.setBatchInstancePublishInfos(batchInstancePublishInfos);
+            } else {
+                namespaces.add(entry.getKey().getNamespace());
+                groupNames.add(entry.getKey().getGroup());
+                serviceNames.add(entry.getKey().getName());
+                instances.add(entry.getValue());
+            }
         }
-        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances);
+        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
+    }
+    
+    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
+            List<String> batchGroupNames, List<String> batchServiceNames, Map.Entry<Service, InstancePublishInfo> entry) {
+        batchNamespaces.add(entry.getKey().getNamespace());
+        batchGroupNames.add(entry.getKey().getGroup());
+        batchServiceNames.add(entry.getKey().getName());
+        
+        batchInstanceData.setNamespaces(batchNamespaces);
+        batchInstanceData.setGroupNames(batchGroupNames);
+        batchInstanceData.setServiceNames(batchServiceNames);
+        return batchInstanceData;
     }
     
     @Override
     public void release() {
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
-        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
+        Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
+        for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.getIpCountMonitor().decrementAndGet();
+            }
+        }
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
     }
 }

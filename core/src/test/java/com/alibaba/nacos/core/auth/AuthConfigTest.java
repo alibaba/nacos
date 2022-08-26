@@ -19,6 +19,9 @@ package com.alibaba.nacos.core.auth;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 /**
@@ -27,12 +30,16 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
  * @author chenglu
  * @date 2021-07-06 13:36
  */
+@RunWith(MockitoJUnitRunner.class)
 public class AuthConfigTest {
+    
+    @Mock
+    private AuthFilter authFilter;
     
     @Test
     public void testAuthFilterRegistration() {
         AuthConfig config = new AuthConfig();
-        FilterRegistrationBean filter = config.authFilterRegistration();
+        FilterRegistrationBean filter = config.authFilterRegistration(authFilter);
         Assert.assertTrue(filter.getFilter() instanceof AuthFilter);
         
         Assert.assertTrue(filter.getUrlPatterns().contains("/*"));

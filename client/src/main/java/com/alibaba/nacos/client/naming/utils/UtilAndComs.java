@@ -26,9 +26,9 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  */
 public class UtilAndComs {
     
-    // using  ClientCommonUtils#VERSION instead.
+    // using  com.alibaba.nacos.common.utils.VersionUtils.getFullClientVersion instead.
     @Deprecated
-    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.version;
+    public static final String VERSION = VersionUtils.getFullClientVersion();
     
     public static String webContext = "/nacos";
     
@@ -37,8 +37,6 @@ public class UtilAndComs {
     public static String nacosUrlInstance = nacosUrlBase + "/instance";
     
     public static String nacosUrlService = nacosUrlBase + "/service";
-    
-    public static final String ENCODING = "UTF-8";
     
     public static final String ENV_LIST_KEY = "envList";
     
@@ -59,10 +57,6 @@ public class UtilAndComs {
     
     public static final int DEFAULT_POLLING_THREAD_COUNT =
             ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
-    
-    public static final String HTTP = "http://";
-    
-    public static final String HTTPS = "https://";
     
     public static final String ENV_CONFIGS = "00-00---000-ENV_CONFIGS-000---00-00";
     

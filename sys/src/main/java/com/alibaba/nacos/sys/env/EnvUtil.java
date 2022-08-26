@@ -17,12 +17,12 @@
 package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.sun.management.OperatingSystemMXBean;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -63,7 +62,7 @@ public class EnvUtil {
      */
     public static final String NACOS_HOME_KEY = "nacos.home";
     
-    private static String localAddress = "";
+    private static volatile String localAddress = "";
     
     private static int port = -1;
     
@@ -106,9 +105,6 @@ public class EnvUtil {
     
     @JustForTest
     private static String nacosHomePath = null;
-    
-    private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (com.sun.management.OperatingSystemMXBean) ManagementFactory
-            .getOperatingSystemMXBean();
     
     private static ConfigurableEnvironment environment;
     
@@ -213,6 +209,17 @@ public class EnvUtil {
     }
     
     /**
+     * Whether open upgrade from 1.X nacos server. Might effect `doubleWrite` and `Old raft`.
+     *
+     * @since 2.1.0
+     * @return {@code true} open upgrade feature, otherwise {@code false}, default {@code false}
+     * @deprecated 2.2.0
+     */
+    public static boolean isSupportUpgradeFrom1X() {
+        return ConvertUtils.toBoolean(getProperty(Constants.SUPPORT_UPGRADE_FROM_1X), false);
+    }
+    
+    /**
      * Standalone mode or not.
      */
     public static boolean getStandaloneMode() {
@@ -272,18 +279,15 @@ public class EnvUtil {
     }
     
     public static float getLoad() {
-        return (float) OPERATING_SYSTEM_MX_BEAN.getSystemLoadAverage();
+        return (float) OperatingSystemBeanManager.getOperatingSystemBean().getSystemLoadAverage();
     }
-    
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static float getCPU() {
-        return (float) OPERATING_SYSTEM_MX_BEAN.getSystemCpuLoad();
+
+    public static float getCpu() {
+        return (float) OperatingSystemBeanManager.getSystemCpuUsage();
     }
     
     public static float getMem() {
-        return (float) (1
-                - (double) OPERATING_SYSTEM_MX_BEAN.getFreePhysicalMemorySize() / (double) OPERATING_SYSTEM_MX_BEAN
-                .getTotalPhysicalMemorySize());
+        return (float) (1 - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
