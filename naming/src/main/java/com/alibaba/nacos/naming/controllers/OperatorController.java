@@ -25,7 +25,6 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
@@ -73,20 +72,17 @@ public class OperatorController {
     
     private final DistroMapper distroMapper;
     
-    private final RaftCore raftCore;
-    
     private final ClientManager clientManager;
     
     public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
             ServerMemberManager memberManager, ServerStatusManager serverStatusManager, SwitchDomain switchDomain,
-            DistroMapper distroMapper, RaftCore raftCore, ClientManager clientManager) {
+            DistroMapper distroMapper, ClientManager clientManager) {
         this.switchManager = switchManager;
         this.serverListManager = serverListManager;
         this.memberManager = memberManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
-        this.raftCore = raftCore;
         this.clientManager = clientManager;
     }
     
@@ -198,7 +194,6 @@ public class OperatorController {
         result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
         result.put("instanceCount", MetricsMonitor.getIpCountMonitor().get());
         result.put("subscribeCount", MetricsMonitor.getSubscriberCount().get());
-        result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleInstanceCount", responsibleIpCount);
         result.put("clientCount", allClientId.size());
         result.put("connectionBasedClientCount", connectionBasedClient);

@@ -20,13 +20,9 @@ import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -42,12 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class PerformanceLoggerThread {
-    
-    @Autowired
-    private RaftCore raftCore;
-    
-    @Autowired
-    private ClusterVersionJudgement versionJudgement;
     
     private static final long PERIOD = 60;
     
@@ -76,23 +66,6 @@ public class PerformanceLoggerThread {
     public void collectMetrics() {
         MetricsMonitor.getDomCountMonitor().set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
         MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
-        metricsRaftLeader();
-    }
-    
-    /**
-     * Will deprecated after v1.4.x
-     */
-    @Deprecated
-    private void metricsRaftLeader() {
-        if (!versionJudgement.allMemberIsNewVersion()) {
-            if (raftCore.isLeader()) {
-                MetricsMonitor.getLeaderStatusMonitor().set(1);
-            } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
-                MetricsMonitor.getLeaderStatusMonitor().set(0);
-            } else {
-                MetricsMonitor.getLeaderStatusMonitor().set(2);
-            }
-        }
     }
     
     class PerformanceLogTask implements Runnable {
