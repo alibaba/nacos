@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
@@ -52,9 +51,6 @@ public class ClusterControllerTest extends BaseTest {
     @InjectMocks
     private ClusterController clusterController;
     
-    @InjectMocks
-    private ClusterOperatorV1Impl clusterOperatorV1;
-    
     private MockMvc mockmvc;
     
     @Before
@@ -64,7 +60,6 @@ public class ClusterControllerTest extends BaseTest {
         mockInjectDistroMapper();
         mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
         ReflectionTestUtils.setField(clusterController, "upgradeJudgement", upgradeJudgement);
-        ReflectionTestUtils.setField(clusterController, "clusterOperatorV1", clusterOperatorV1);
         try {
             doCallRealMethod().when(serviceManager).checkServiceIsNull(eq(null), anyString(), anyString());
         } catch (NacosException e) {

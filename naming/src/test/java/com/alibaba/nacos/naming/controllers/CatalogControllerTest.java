@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.naming.core.CatalogServiceV1Impl;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -55,8 +54,6 @@ public class CatalogControllerTest {
     @Mock
     protected UpgradeJudgement upgradeJudgement;
     
-    private CatalogServiceV1Impl catalogServiceV1;
-    
     private CatalogController catalogController;
     
     private Service service;
@@ -69,10 +66,8 @@ public class CatalogControllerTest {
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
         catalogController = new CatalogController();
-        catalogServiceV1 = new CatalogServiceV1Impl(serviceManager);
         ReflectionTestUtils.setField(catalogController, "serviceManager", serviceManager);
         ReflectionTestUtils.setField(catalogController, "upgradeJudgement", upgradeJudgement);
-        ReflectionTestUtils.setField(catalogController, "catalogServiceV1", catalogServiceV1);
         service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
         service.setProtectThreshold(12.34f);
@@ -150,7 +145,8 @@ public class CatalogControllerTest {
     @Test
     public void testRt4Service() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addParameter(CommonParams.SERVICE_NAME, TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
+        request.addParameter(CommonParams.SERVICE_NAME,
+                TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
         try {
             ObjectNode objectNode = catalogController.rt4Service(request);
             String result = objectNode.toString();
