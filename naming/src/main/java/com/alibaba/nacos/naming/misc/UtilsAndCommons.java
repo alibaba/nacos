@@ -63,10 +63,6 @@ public class UtilsAndCommons {
     
     public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
     
-    public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
-    
-    public static final String NACOS_NAMING_PARTITION_CONTEXT = "/distro";
-    
     public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
     
     // ********************** Nacos HTTP Context ************************ //
@@ -74,12 +70,6 @@ public class UtilsAndCommons {
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
     
     public static final String NACOS_VERSION = VersionUtils.version;
-    
-    public static final String SUPER_TOKEN = "xy";
-    
-    public static final String DOMAINS_DATA_ID_PRE = "com.alibaba.nacos.naming.domains.meta.";
-    
-    public static final String IPADDRESS_DATA_ID_PRE = "com.alibaba.nacos.naming.iplist.";
     
     public static final String SWITCH_DOMAIN_NAME = "00-00---000-NACOS_SWITCH_DOMAIN-000---00-00";
     
@@ -90,8 +80,6 @@ public class UtilsAndCommons {
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
     
     public static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
-    
-    public static final int RAFT_PUBLISH_TIMEOUT = 5000;
     
     public static final String SERVER_VERSION = NACOS_SERVER_HEADER + ":" + NACOS_VERSION;
     
