@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyServiceDelegateImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.context.annotation.DependsOn;
@@ -37,12 +36,8 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     
     private final PersistentConsistencyServiceDelegateImpl persistentConsistencyService;
     
-    private final EphemeralConsistencyService ephemeralConsistencyService;
-    
-    public DelegateConsistencyServiceImpl(PersistentConsistencyServiceDelegateImpl persistentConsistencyService,
-            EphemeralConsistencyService ephemeralConsistencyService) {
+    public DelegateConsistencyServiceImpl(PersistentConsistencyServiceDelegateImpl persistentConsistencyService) {
         this.persistentConsistencyService = persistentConsistencyService;
-        this.ephemeralConsistencyService = ephemeralConsistencyService;
     }
     
     @Override
@@ -66,7 +61,6 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         // this special key is listened by both:
         if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
             persistentConsistencyService.listen(key, listener);
-            ephemeralConsistencyService.listen(key, listener);
             return;
         }
         
@@ -80,21 +74,13 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     
     @Override
     public boolean isAvailable() {
-        return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
+        return persistentConsistencyService.isAvailable();
     }
     
     @Override
     public Optional<String> getErrorMsg() {
         String errorMsg;
-        if (ephemeralConsistencyService.getErrorMsg().isPresent()
-                && persistentConsistencyService.getErrorMsg().isPresent()) {
-            errorMsg = "'" + ephemeralConsistencyService.getErrorMsg().get() + "' in Distro protocol and '"
-                    + persistentConsistencyService.getErrorMsg().get() + "' in jRaft protocol";
-        } else if (ephemeralConsistencyService.getErrorMsg().isPresent()
-                && !persistentConsistencyService.getErrorMsg().isPresent()) {
-            errorMsg = ephemeralConsistencyService.getErrorMsg().get();
-        } else if (!ephemeralConsistencyService.getErrorMsg().isPresent()
-                && persistentConsistencyService.getErrorMsg().isPresent()) {
+        if (persistentConsistencyService.getErrorMsg().isPresent()) {
             errorMsg = persistentConsistencyService.getErrorMsg().get();
         } else {
             errorMsg = null;
@@ -103,6 +89,6 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
     
     private ConsistencyService mapConsistencyService(String key) {
-        return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
+        return persistentConsistencyService;
     }
 }

@@ -17,19 +17,17 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyServiceDelegateImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import junit.framework.TestCase;
 import org.junit.Before;
-
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DelegateConsistencyServiceImplTest extends TestCase {
@@ -38,9 +36,6 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     
     @Mock
     private PersistentConsistencyServiceDelegateImpl persistentConsistencyService;
-    
-    @Mock
-    private EphemeralConsistencyService ephemeralConsistencyService;
     
     private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
     
@@ -60,8 +55,7 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     
     @Before
     public void setUp() {
-        delegateConsistencyService
-                = new DelegateConsistencyServiceImpl(persistentConsistencyService, ephemeralConsistencyService);
+        delegateConsistencyService = new DelegateConsistencyServiceImpl(persistentConsistencyService);
         ephemeralKey = ephemeralPrefix + "test-key";
         peristentKey = "persistent-test-key";
     }
@@ -69,9 +63,8 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     @Test
     public void testPut() throws NacosException {
         delegateConsistencyService.put(ephemeralKey, record);
-        verify(ephemeralConsistencyService).put(ephemeralKey, record);
         verify(persistentConsistencyService, never()).put(ephemeralKey, record);
-    
+        
         delegateConsistencyService.put(peristentKey, record);
         verify(persistentConsistencyService).put(peristentKey, record);
     }
@@ -79,9 +72,8 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     @Test
     public void testRemove() throws NacosException {
         delegateConsistencyService.remove(ephemeralKey);
-        verify(ephemeralConsistencyService).remove(ephemeralKey);
         verify(persistentConsistencyService, never()).remove(ephemeralKey);
-    
+        
         delegateConsistencyService.remove(peristentKey);
         verify(persistentConsistencyService).remove(peristentKey);
     }
@@ -89,9 +81,8 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     @Test
     public void testGet() throws NacosException {
         delegateConsistencyService.get(ephemeralKey);
-        verify(ephemeralConsistencyService).get(ephemeralKey);
         verify(persistentConsistencyService, never()).get(ephemeralKey);
-    
+        
         delegateConsistencyService.get(peristentKey);
         verify(persistentConsistencyService).get(peristentKey);
     }
@@ -99,9 +90,8 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     @Test
     public void testListen() throws NacosException {
         delegateConsistencyService.listen(ephemeralKey, null);
-        verify(ephemeralConsistencyService).listen(ephemeralKey, null);
         verify(persistentConsistencyService, never()).listen(ephemeralKey, null);
-    
+        
         delegateConsistencyService.listen(peristentKey, null);
         verify(persistentConsistencyService).listen(peristentKey, null);
     }
@@ -109,9 +99,8 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     @Test
     public void testUnListen() throws NacosException {
         delegateConsistencyService.unListen(ephemeralKey, null);
-        verify(ephemeralConsistencyService).unListen(ephemeralKey, null);
         verify(persistentConsistencyService, never()).unListen(ephemeralKey, null);
-    
+        
         delegateConsistencyService.unListen(peristentKey, null);
         verify(persistentConsistencyService).unListen(peristentKey, null);
     }
@@ -119,7 +108,6 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     @Test
     public void testIsAvailable() {
         delegateConsistencyService.isAvailable();
-        verify(ephemeralConsistencyService).isAvailable();
         verify(persistentConsistencyService, never()).isAvailable();
     }
     
@@ -127,7 +115,6 @@ public class DelegateConsistencyServiceImplTest extends TestCase {
     public void testGetErrorMsg() {
         int ephemeralCalledTimes = 3;
         delegateConsistencyService.getErrorMsg();
-        verify(ephemeralConsistencyService, times(ephemeralCalledTimes)).getErrorMsg();
         verify(persistentConsistencyService).getErrorMsg();
     }
     
