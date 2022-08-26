@@ -85,7 +85,7 @@ public class ServiceManagerTest extends BaseTest {
     @Before
     public void before() {
         super.before();
-        serviceManager = new ServiceManager(switchDomain, distroMapper, serverMemberManager, pushService, peerSet);
+        serviceManager = new ServiceManager(switchDomain, distroMapper, serverMemberManager, pushService);
         ReflectionTestUtils.setField(serviceManager, "consistencyService", consistencyService);
         ReflectionTestUtils.setField(serviceManager, "synchronizer", synchronizer);
         mockInjectSwitchDomain();

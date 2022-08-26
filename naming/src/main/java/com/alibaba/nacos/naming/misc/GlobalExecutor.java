@@ -155,10 +155,6 @@ public class GlobalExecutor {
         return NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
     
-    public static void registerServerInfoUpdater(Runnable runnable) {
-        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, 2, TimeUnit.SECONDS);
-    }
-    
     public static void registerServerStatusReporter(Runnable runnable, long delay) {
         SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }

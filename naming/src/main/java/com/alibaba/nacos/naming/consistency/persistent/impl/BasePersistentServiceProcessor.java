@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.TypeUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -34,15 +35,13 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentNotifier;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.constants.Constants;
 import com.google.protobuf.ByteString;
-import com.alibaba.nacos.common.utils.TypeUtils;
 
 import java.lang.reflect.Type;
 import java.nio.file.Paths;
@@ -106,16 +105,13 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     protected final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
-    protected final ClusterVersionJudgement versionJudgement;
-    
     protected final PersistentNotifier notifier;
     
     protected final int queueMaxSize = 16384;
     
     protected final int priority = 10;
     
-    public BasePersistentServiceProcessor(final ClusterVersionJudgement judgement) throws Exception {
-        this.versionJudgement = judgement;
+    public BasePersistentServiceProcessor() throws Exception {
         this.kvStorage = new NamingKvStorage(Paths.get(UtilsAndCommons.DATA_BASE_DIR, "data").toString());
         this.serializer = SerializeFactory.getSerializer("JSON");
         this.notifier = new PersistentNotifier(key -> {
@@ -132,16 +128,6 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     @SuppressWarnings("unchecked")
     public void afterConstruct() {
         NotifyCenter.registerToPublisher(ValueChangeEvent.class, queueMaxSize);
-        listenOldRaftClose();
-    }
-    
-    private void listenOldRaftClose() {
-        this.versionJudgement.registerObserver(isNewVersion -> {
-            if (isNewVersion) {
-                NotifyCenter.registerSubscriber(notifier);
-                startNotify = true;
-            }
-        }, priority);
     }
     
     @Override

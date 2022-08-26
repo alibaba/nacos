@@ -22,14 +22,13 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.v2.cleaner.EmptyServiceAutoCleaner;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -44,7 +43,6 @@ import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -98,8 +96,6 @@ public class ServiceManager implements RecordListener<Service> {
     
     private final UdpPushService pushService;
     
-    private final RaftPeerSet raftPeerSet;
-    
     @Value("${nacos.naming.empty-service.auto-clean:false}")
     private boolean emptyServiceAutoClean;
     
@@ -110,12 +106,11 @@ public class ServiceManager implements RecordListener<Service> {
     private int cleanEmptyServicePeriod;
     
     public ServiceManager(SwitchDomain switchDomain, DistroMapper distroMapper, ServerMemberManager memberManager,
-            UdpPushService pushService, RaftPeerSet raftPeerSet) {
+            UdpPushService pushService) {
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
         this.memberManager = memberManager;
         this.pushService = pushService;
-        this.raftPeerSet = raftPeerSet;
     }
     
     /**
@@ -163,7 +158,8 @@ public class ServiceManager implements RecordListener<Service> {
      * @param serverIP    target server ip
      * @param checksum    checksum of service
      */
-    public synchronized void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP, String checksum) {
+    public synchronized void addUpdatedServiceToQueue(String namespaceId, String serviceName, String serverIP,
+            String checksum) {
         try {
             toBeUpdatedServicesQueue
                     .offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
@@ -281,10 +277,6 @@ public class ServiceManager implements RecordListener<Service> {
                                 serverIP, e);
             }
         }
-    }
-    
-    public RaftPeer getMySelfClusterState() {
-        return raftPeerSet.local();
     }
     
     /**
@@ -450,7 +442,7 @@ public class ServiceManager implements RecordListener<Service> {
         if (service != null) {
             return;
         }
-
+        
         Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
         service = new Service();
         service.setName(serviceName);
@@ -464,7 +456,7 @@ public class ServiceManager implements RecordListener<Service> {
             service.getClusterMap().put(cluster.getName(), cluster);
         }
         service.validate();
-
+        
         putServiceAndInit(service);
         if (!local) {
             addOrReplaceService(service);
@@ -951,8 +943,9 @@ public class ServiceManager implements RecordListener<Service> {
                 List<Instance> instances = service.allIPs();
                 for (Instance instance : instances) {
                     if (InternetAddressUtil.containsPort(containedInstance)) {
-                        if (StringUtils.equals(instance.getIp() + InternetAddressUtil.IP_PORT_SPLITER + instance.getPort(),
-                                containedInstance)) {
+                        if (StringUtils
+                                .equals(instance.getIp() + InternetAddressUtil.IP_PORT_SPLITER + instance.getPort(),
+                                        containedInstance)) {
                             contained = true;
                             break;
                         }

@@ -16,14 +16,10 @@
 
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
-import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -33,7 +29,6 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -63,12 +58,6 @@ public abstract class BaseTest {
     @Mock
     public ServiceManager serviceManager;
     
-    @Mock
-    public RaftPeerSet peerSet;
-    
-    @Mock
-    public RaftCore raftCore;
-    
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
     
@@ -97,15 +86,6 @@ public abstract class BaseTest {
     public void before() {
         EnvUtil.setEnvironment(environment);
         ApplicationUtils.injectContext(context);
-    }
-    
-    protected void mockRaft() {
-        RaftPeer peer = new RaftPeer();
-        peer.ip = NetUtils.localServer();
-        raftCore.setPeerSet(peerSet);
-        Mockito.when(peerSet.local()).thenReturn(peer);
-        Mockito.when(peerSet.getLeader()).thenReturn(peer);
-        Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
     }
     
     protected void mockInjectPushServer() {

@@ -18,31 +18,25 @@ package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Message;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.ServerStatusSynchronizer;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.Synchronizer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -76,7 +70,6 @@ public class ServerListManager extends MemberChangeListener {
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
-        GlobalExecutor.registerServerInfoUpdater(new ServerInfoUpdater());
     }
     
     /**
@@ -124,11 +117,10 @@ public class ServerListManager extends MemberChangeListener {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
-    
+            
             String[] info = InternetAddressUtil.splitIPPortStr(params[1]);
             Member server = Optional.ofNullable(memberManager.find(params[1]))
-                    .orElse(Member.builder().ip(info[0]).state(NodeState.UP)
-                            .port(Integer.parseInt(info[1])).build());
+                    .orElse(Member.builder().ip(info[0]).state(NodeState.UP).port(Integer.parseInt(info[1])).build());
             
             // This metadata information exists from 1.3.0 onwards "version"
             if (server.getExtendVal(MemberMetaDataConstants.VERSION) == null) {
@@ -150,51 +142,6 @@ public class ServerListManager extends MemberChangeListener {
         }
     }
     
-    private class ServerInfoUpdater implements Runnable {
-        
-        private int cursor = 0;
-        
-        @Override
-        public void run() {
-            List<Member> members = servers;
-            if (members.isEmpty()) {
-                return;
-            }
-            
-            this.cursor = (this.cursor + 1) % members.size();
-            Member target = members.get(cursor);
-            if (Objects.equals(target.getAddress(), EnvUtil.getLocalAddress())) {
-                return;
-            }
-            
-            // This metadata information exists from 1.3.0 onwards "version"
-            if (target.getExtendVal(MemberMetaDataConstants.VERSION) != null) {
-                return;
-            }
-            
-            final String path =
-                    UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT
-                            + "/state";
-            final Map<String, String> params = new HashMap(2);
-            final String server = target.getAddress();
-            
-            try {
-                String content = NamingProxy.reqCommon(path, params, server, false);
-                if (!StringUtils.EMPTY.equals(content)) {
-                    RaftPeer raftPeer = JacksonUtils.toObj(content, RaftPeer.class);
-                    if (null != raftPeer) {
-                        String json = JacksonUtils.toJson(raftPeer);
-                        Map map = JacksonUtils.toObj(json, HashMap.class);
-                        target.setExtendVal("naming", map);
-                        memberManager.update(target);
-                    }
-                }
-            } catch (Exception ignore) {
-                //
-            }
-        }
-    }
-    
     private class ServerStatusReporter implements Runnable {
         
         @Override
@@ -211,19 +158,19 @@ public class ServerListManager extends MemberChangeListener {
                 }
                 
                 long curTime = System.currentTimeMillis();
-                String status = LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight
-                        + "\r\n";
+                String status =
+                        LOCALHOST_SITE + "#" + EnvUtil.getLocalAddress() + "#" + curTime + "#" + weight + "\r\n";
                 
                 List<Member> allServers = getServers();
                 
                 if (!contains(EnvUtil.getLocalAddress())) {
-                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}",
-                            EnvUtil.getLocalAddress(), allServers);
+                    Loggers.SRV_LOG
+                            .error("local ip is not in serverlist, ip: {}, serverlist: {}", EnvUtil.getLocalAddress(),
+                                    allServers);
                     return;
                 }
                 
-                if (allServers.size() > 0 && !EnvUtil.getLocalAddress()
-                        .contains(InternetAddressUtil.localHostIP())) {
+                if (allServers.size() > 0 && !EnvUtil.getLocalAddress().contains(InternetAddressUtil.localHostIP())) {
                     for (Member server : allServers) {
                         if (Objects.equals(server.getAddress(), EnvUtil.getLocalAddress())) {
                             continue;

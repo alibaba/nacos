@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -66,9 +65,6 @@ public class InstanceControllerTest extends BaseTest {
     
     @Mock
     private InstanceUpgradeHelper instanceUpgradeHelper;
-    
-    @Mock
-    private RaftPeerSet peerSet;
     
     private MockMvc mockmvc;
     

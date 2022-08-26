@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.upgrade;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -27,9 +26,6 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.RefreshStorageDataTask;
@@ -67,12 +63,6 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private final AtomicBoolean all20XVersion = new AtomicBoolean(false);
     
-    private final RaftPeerSet raftPeerSet;
-    
-    private final RaftCore raftCore;
-    
-    private final ClusterVersionJudgement versionJudgement;
-    
     private final ServerMemberManager memberManager;
     
     private final ServiceManager serviceManager;
@@ -87,13 +77,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     
     private static final int MINOR_VERSION = 4;
     
-    public UpgradeJudgement(RaftPeerSet raftPeerSet, RaftCore raftCore, ClusterVersionJudgement versionJudgement,
-            ServerMemberManager memberManager, ServiceManager serviceManager,
-            UpgradeStates upgradeStates,
-            DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine) {
-        this.raftPeerSet = raftPeerSet;
-        this.raftCore = raftCore;
-        this.versionJudgement = versionJudgement;
+    public UpgradeJudgement(ServerMemberManager memberManager, ServiceManager serviceManager,
+            UpgradeStates upgradeStates, DoubleWriteDelayTaskEngine doubleWriteDelayTaskEngine) {
         this.memberManager = memberManager;
         this.serviceManager = serviceManager;
         this.doubleWriteDelayTaskEngine = doubleWriteDelayTaskEngine;
@@ -113,7 +98,8 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     }
     
     private void initUpgradeChecker() {
-        selfUpgradeChecker = SelfUpgradeCheckerSpiHolder.findSelfChecker(EnvUtil.getProperty("upgrading.checker.type", "default"));
+        selfUpgradeChecker = SelfUpgradeCheckerSpiHolder
+                .findSelfChecker(EnvUtil.getProperty("upgrading.checker.type", "default"));
         upgradeChecker = ExecutorFactory.newSingleScheduledExecutorService(new NameThreadFactory("upgrading.checker"));
         upgradeChecker.scheduleAtFixedRate(() -> {
             if (isUseGrpcFeatures()) {
@@ -152,9 +138,9 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
     @Override
     public void onEvent(MembersChangeEvent event) {
         if (!event.hasTriggers()) {
-            Loggers.SRV_LOG.info("Member change without no trigger. "
-                    + "It may be triggered by member lookup on startup. "
-                    + "Skip.");
+            Loggers.SRV_LOG
+                    .info("Member change without no trigger. " + "It may be triggered by member lookup on startup. "
+                            + "Skip.");
             return;
         }
         Loggers.SRV_LOG.info("member change, event: {}", event);
@@ -182,13 +168,6 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
         if (isDowngradeGrpc && isDowngradeJraft && !jraftFeature) {
             Loggers.SRV_LOG.info("Downgrade to 1.X");
             NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(false));
-            try {
-                raftPeerSet.init();
-                raftCore.init();
-                versionJudgement.reset();
-            } catch (Exception e) {
-                Loggers.SRV_LOG.error("Downgrade rafe failed ", e);
-            }
         }
     }
     
@@ -242,26 +221,5 @@ public class UpgradeJudgement extends Subscriber<MembersChangeEvent> {
             upgradeChecker.shutdownNow();
         }
         NotifyCenter.deregisterSubscriber(this);
-    }
-    
-    /**
-     * Stop judgement and clear all cache.
-     */
-    public void stopAll() {
-        try {
-            Loggers.SRV_LOG.info("Disable Double write, stop and clean v1.x cache and features");
-            useGrpcFeatures.set(true);
-            NotifyCenter.publishEvent(new UpgradeStates.UpgradeStateChangedEvent(true));
-            useJraftFeatures.set(true);
-            NotifyCenter.deregisterSubscriber(this);
-            doubleWriteDelayTaskEngine.shutdown();
-            if (null != upgradeChecker) {
-                upgradeChecker.shutdownNow();
-            }
-            serviceManager.shutdown();
-            raftCore.shutdown();
-        } catch (NacosException e) {
-            Loggers.SRV_LOG.info("Close double write with exception", e);
-        }
     }
 }
