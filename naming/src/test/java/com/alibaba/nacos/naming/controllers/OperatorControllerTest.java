@@ -20,7 +20,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -58,9 +57,6 @@ public class OperatorControllerTest {
     
     @Mock
     private ServerStatusManager serverStatusManager;
-    
-    @Mock
-    private ServiceManager serviceManager;
     
     @Mock
     private ClientManager clientManager;
@@ -113,8 +109,6 @@ public class OperatorControllerTest {
     @Test
     public void testMetrics() {
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
-        Mockito.when(serviceManager.getResponsibleServiceCount()).thenReturn(1);
-        Mockito.when(serviceManager.getResponsibleInstanceCount()).thenReturn(1);
         Collection<String> clients = new HashSet<>();
         clients.add("1628132208793_127.0.0.1_8080");
         clients.add("127.0.0.1:8081#true");

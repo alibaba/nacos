@@ -233,7 +233,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     }
     
     /**
-     * This notify should only notify once during startup. See {@link com.alibaba.nacos.naming.core.ServiceManager#init()}
+     * This notify should only notify once during startup.
      */
     private void notifierAllServiceMeta(RecordListener listener) throws NacosException {
         for (byte[] each : kvStorage.allKeys()) {

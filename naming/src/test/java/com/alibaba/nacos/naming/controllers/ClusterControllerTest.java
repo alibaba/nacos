@@ -37,10 +37,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.hamcrest.CoreMatchers.isA;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -58,18 +54,12 @@ public class ClusterControllerTest extends BaseTest {
         mockInjectSwitchDomain();
         mockInjectDistroMapper();
         mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
-        try {
-            doCallRealMethod().when(serviceManager).checkServiceIsNull(eq(null), anyString(), anyString());
-        } catch (NacosException e) {
-            e.printStackTrace();
-        }
     }
     
     @Test
     public void testUpdate() throws Exception {
         Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId("test-namespace");
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
@@ -101,7 +91,6 @@ public class ClusterControllerTest extends BaseTest {
         
         Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)

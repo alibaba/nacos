@@ -23,7 +23,6 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -62,8 +61,6 @@ public class OperatorController {
     
     private final SwitchManager switchManager;
     
-    private final ServerListManager serverListManager;
-    
     private final ServerMemberManager memberManager;
     
     private final ServerStatusManager serverStatusManager;
@@ -74,11 +71,10 @@ public class OperatorController {
     
     private final ClientManager clientManager;
     
-    public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
-            ServerMemberManager memberManager, ServerStatusManager serverStatusManager, SwitchDomain switchDomain,
-            DistroMapper distroMapper, ClientManager clientManager) {
+    public OperatorController(SwitchManager switchManager, ServerMemberManager memberManager,
+            ServerStatusManager serverStatusManager, SwitchDomain switchDomain, DistroMapper distroMapper,
+            ClientManager clientManager) {
         this.switchManager = switchManager;
-        this.serverListManager = serverListManager;
         this.memberManager = memberManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
@@ -235,20 +231,6 @@ public class OperatorController {
         }
         
         return result;
-    }
-    
-    /**
-     * This interface will be removed in a future release.
-     *
-     * @param serverStatus server status
-     * @return "ok"
-     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
-     */
-    @Deprecated
-    @RequestMapping("/server/status")
-    public String serverStatus(@RequestParam String serverStatus) {
-        serverListManager.onReceiveServerStatus(serverStatus);
-        return "ok";
     }
     
     @PutMapping("/log")
