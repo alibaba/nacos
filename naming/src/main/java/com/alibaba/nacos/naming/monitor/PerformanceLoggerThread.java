@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientData
 import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
@@ -43,9 +42,6 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class PerformanceLoggerThread {
-    
-    @Autowired
-    private ServiceManager serviceManager;
     
     @Autowired
     private RaftCore raftCore;
