@@ -89,24 +89,6 @@ public class GlobalExecutor {
             .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), 2,
                     new NameThreadFactory("com.alibaba.nacos.naming.service.update.http.handler"));
     
-    /**
-     * Empty service auto clean executor.
-     *
-     * @deprecated will remove in v2.1.x.
-     */
-    @Deprecated
-    private static final ScheduledExecutorService EMPTY_SERVICE_AUTO_CLEAN_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.service.empty.auto-clean"));
-    
-    private static final ScheduledExecutorService DISTRO_NOTIFY_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.distro.notifier"));
-    
-    private static final ScheduledExecutorService NAMING_HEALTH_CHECK_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.health-check.notifier"));
-    
     private static final ExecutorService MYSQL_CHECK_EXECUTOR = ExecutorFactory.Managed
             .newFixedExecutorService(ClassUtils.getCanonicalName(NamingApp.class), DEFAULT_THREAD_COUNT,
                     new NameThreadFactory("com.alibaba.nacos.naming.mysql.checker"));
@@ -175,18 +157,6 @@ public class GlobalExecutor {
         return NAMING_TIMER_EXECUTOR.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
     
-    public static void scheduleMcpPushTask(Runnable runnable, long initialDelay, long period) {
-        NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
-    }
-    
-    public static ScheduledFuture submitClusterVersionJudge(Runnable runnable, long delay) {
-        return NAMING_TIMER_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
-    }
-    
-    public static void submitDistroNotifyTask(Runnable runnable) {
-        DISTRO_NOTIFY_EXECUTOR.submit(runnable);
-    }
-    
     /**
      * Submit service update for v1.x.
      *
@@ -196,19 +166,6 @@ public class GlobalExecutor {
     @Deprecated
     public static void submitServiceUpdate(Runnable runnable) {
         SERVICE_UPDATE_EXECUTOR.execute(runnable);
-    }
-    
-    /**
-     * Schedule empty service auto clean for v1.x.
-     *
-     * @param runnable     runnable
-     * @param initialDelay initial delay milliseconds
-     * @param period       period between twice clean
-     * @deprecated will remove in v2.1.x.
-     */
-    @Deprecated
-    public static void scheduleServiceAutoClean(Runnable runnable, long initialDelay, long period) {
-        EMPTY_SERVICE_AUTO_CLEAN_EXECUTOR.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -233,10 +190,6 @@ public class GlobalExecutor {
     @Deprecated
     public static void scheduleServiceReporter(Runnable command, long delay, TimeUnit unit) {
         SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(command, delay, unit);
-    }
-    
-    public static void scheduleNamingHealthCheck(Runnable command, long delay, TimeUnit unit) {
-        NAMING_HEALTH_CHECK_EXECUTOR.schedule(command, delay, unit);
     }
     
     public static void executeMysqlCheckTask(Runnable runnable) {
