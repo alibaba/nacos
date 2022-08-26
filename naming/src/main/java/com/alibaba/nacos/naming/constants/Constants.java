@@ -56,21 +56,6 @@ public final class Constants {
     public static final String EXPIRED_METADATA_EXPIRED_TIME = "nacos.naming.clean.expired-metadata.expired-time";
     
     /**
-     * Task time interval between twice processing, unit is millisecond. default: 2000 ms.
-     */
-    public static final String DISTRO_TASK_DISPATCH_PERIOD = "nacos.naming.distro.taskDispatchPeriod";
-    
-    /**
-     * The batch size of the key that distro combined  delay task for http. default: 1000.
-     */
-    public static final String DISTRO_BATCH_SYNC_KEY_COUNT = "nacos.naming.distro.batchSyncKeyCount";
-    
-    /**
-     * Task time interval between twice processing, unit is millisecond. default: 5000ms
-     */
-    public static final String DISTRO_SYNC_RETRY_DELAY = "nacos.naming.distro.syncRetryDelay";
-    
-    /**
      * default: false.
      */
     public static final String DATA_WARMUP = "nacos.naming.data.warmup";
@@ -79,11 +64,6 @@ public final class Constants {
      * default : true.
      */
     public static final String EXPIRE_INSTANCE = "nacos.naming.expireInstance";
-    
-    /**
-     * default 60000L.
-     */
-    public static final String LOAD_DATA_RETRY_DELAY_MILLIS = "nacos.naming.clean.loadDataRetryDelayMillis";
     
     /**
      * UDP max retry times.
