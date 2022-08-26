@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -109,21 +108,27 @@ public abstract class GrpcClient extends RpcClient {
     
     private void initGrpcClient(Properties configProperties) {
         if (!Objects.isNull(configProperties)) {
-            this.configProperties.put(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME,
-                    configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
-            this.configProperties.put(NACOS_CLIENT_GRPC_TIMEOUT,
-                    configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
-            this.configProperties.put(NACOS_CLIENT_GRPC_QUEUESIZE,
-                    configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
+            if (configProperties.contains(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME)) {
+                this.configProperties.put(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME,
+                        configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
+            }
+            if (configProperties.contains(NACOS_CLIENT_GRPC_TIMEOUT)) {
+                this.configProperties.put(NACOS_CLIENT_GRPC_TIMEOUT,
+                        configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
+            }
+            if (configProperties.contains(NACOS_CLIENT_GRPC_QUEUESIZE)) {
+                this.configProperties.put(NACOS_CLIENT_GRPC_QUEUESIZE,
+                        configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
+            }
         }
         checkInitProperties(this.configProperties);
     }
     
     private void addDefaultConfig(Properties configProperties, String name, String defaultConfig) {
-        String value = configProperties.getProperty(name);
-        if (StringUtils.isEmpty(value)) {
-            String property = System.getProperty(name, defaultConfig);
-            configProperties.put(name, property);
+        if (null != System.getProperty(name)) {
+            configProperties.put(name, System.getProperty(name));
+        } else if (null == configProperties.getProperty(name)) {
+            configProperties.put(name, defaultConfig);
         }
     }
     
@@ -163,8 +168,7 @@ public abstract class GrpcClient extends RpcClient {
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
         Long keepAliveTime = Long.parseLong(
                 this.configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
-        int queueSize = Integer.parseInt(
-                this.configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
+        int queueSize = Integer.parseInt(this.configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
         ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(getThreadPoolCoreSize(), getThreadPoolMaxSize(),
                 keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueSize),
                 new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
