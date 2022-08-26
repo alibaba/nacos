@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -88,16 +87,10 @@ public class JacksonUtilsTest {
                 "[{\"key\":\"value\"}]".getBytes(),
                 JacksonUtils.toJsonBytes(Collections.singletonList(Collections.singletonMap("key", "value")))
         );
-
-        byte[] atomicArr = JacksonUtils.toJsonBytes(new TestOfAtomicObject());
-
-        Assert.assertTrue(Arrays.equals("{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(), atomicArr)
-                 || Arrays.equals("{\"aLong\":0,\"aBoolean\":false,\"aInteger\":1}".getBytes(), atomicArr)
-                 || Arrays.equals("{\"aBoolean\":false,\"aLong\":0,\"aInteger\":1}".getBytes(), atomicArr)
-                 || Arrays.equals("{\"aBoolean\":false,\"aInteger\":1,\"aLong\":0}".getBytes(), atomicArr)
-                 || Arrays.equals("{\"aInteger\":1,\"aBoolean\":false,\"aLong\":0}".getBytes(), atomicArr)
-                 || Arrays.equals("{\"aInteger\":1,\"aLong\":0,\"aBoolean\":false}".getBytes(), atomicArr));
-
+        Assert.assertArrayEquals(
+                "{\"aBoolean\":false,\"aInteger\":1,\"aLong\":0}".getBytes(),
+                JacksonUtils.toJsonBytes(new TestOfAtomicObject())
+        );
         Assert.assertArrayEquals("{\"date\":1626192000000}".getBytes(), JacksonUtils.toJsonBytes(new TestOfDate()));
         // only public
         Assert.assertArrayEquals(
@@ -106,13 +99,13 @@ public class JacksonUtilsTest {
         );
         // getter is also recognized
         Assert.assertArrayEquals(
-                "{\"value\":\"value\",\"key\":\"key\"}".getBytes(),
+                "{\"key\":\"key\",\"value\":\"value\"}".getBytes(),
                 JacksonUtils.toJsonBytes(new TestOfGetter())
         );
         // annotation available
         Assert.assertArrayEquals(
-                ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\"," 
-                        + "\"camelCase\":\"value\"}").getBytes(), 
+                ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"camelCase\":\"value\",\"date\":\"2021-07-14\"," 
+                        + "\"subField\":\"subField\"}").getBytes(), 
                 JacksonUtils.toJsonBytes(new TestOfAnnotationSub())
         );
     }
@@ -470,7 +463,6 @@ public class JacksonUtilsTest {
             result = 31 * result + (aBoolean != null ? aBoolean.hashCode() : 0);
             return result;
         }
-
     }
     
     static class TestOfAccessModifier {
