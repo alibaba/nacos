@@ -81,11 +81,11 @@ public abstract class GrpcClient extends RpcClient {
     
     private Properties configProperties = new Properties();
     
-    private static final String defaultTimeOut = "3000";
+    private static final String DEFAULT_TIME_OUT = "3000";
     
-    private static final String queueSize = "10000";
+    private static final String QUEUE_SIZE = "10000";
     
-    private static final String keepAlive = "10";
+    private static final String KEEP_ALIVE = "10";
     
     private Long timeOut;
     
@@ -128,9 +128,9 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private void checkInitProperties(Properties configProperties) {
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME, keepAlive);
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_TIMEOUT, defaultTimeOut);
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_QUEUESIZE, queueSize);
+        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME, KEEP_ALIVE);
+        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_TIMEOUT, DEFAULT_TIME_OUT);
+        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_QUEUESIZE, QUEUE_SIZE);
         this.timeOut = Long.parseLong(configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
     }
     
