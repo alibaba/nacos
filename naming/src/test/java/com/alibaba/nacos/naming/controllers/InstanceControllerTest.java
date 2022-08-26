@@ -23,7 +23,6 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.execute.InstanceUpgradeHelper;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,7 +32,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -51,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -62,16 +59,12 @@ public class InstanceControllerTest extends BaseTest {
     @InjectMocks
     private InstanceController instanceController;
     
-    @Mock
-    private InstanceUpgradeHelper instanceUpgradeHelper;
-    
     private MockMvc mockmvc;
     
     @Before
     public void before() {
         super.before();
         mockInjectPushServer();
-        when(instanceUpgradeHelper.toV1(any())).thenReturn(new Instance("1.1.1.1", 9999));
         mockmvc = MockMvcBuilders.standaloneSetup(instanceController).build();
     }
     
