@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming;
 
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -52,9 +51,6 @@ public abstract class BaseTest {
     protected static final String TEST_INSTANCE_INFO_LIST = "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
             + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
             + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
-    
-    @Mock
-    public ServiceManager serviceManager;
     
     @Rule
     public ExpectedException expectedException = ExpectedException.none();

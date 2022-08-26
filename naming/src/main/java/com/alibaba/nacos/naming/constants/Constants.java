@@ -29,8 +29,6 @@ public final class Constants {
     
     public static final String INSTANCE_METADATA = "naming_instance_metadata";
     
-    public static final String OLD_NAMING_RAFT_GROUP = "naming";
-    
     public static final String NAMING_PERSISTENT_SERVICE_GROUP = "naming_persistent_service";
     
     public static final String NAMING_PERSISTENT_SERVICE_GROUP_V2 = "naming_persistent_service_v2";
@@ -96,11 +94,6 @@ public final class Constants {
      * The Nanoseconds for receive UDP ack time out.
      */
     public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
-    
-    /**
-     * The Milliseconds for push timeout.
-     */
-    public static final long DEFAULT_PUSH_TIMEOUT_MILLS = TimeUnit.SECONDS.toNanos(3L);
     
     /**
      * The custom instance id key.

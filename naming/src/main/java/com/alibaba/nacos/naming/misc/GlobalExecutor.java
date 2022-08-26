@@ -55,10 +55,6 @@ public class GlobalExecutor {
             .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
                     EnvUtil.getAvailableProcessors(2), new NameThreadFactory("com.alibaba.nacos.naming.timer"));
     
-    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR = ExecutorFactory.Managed
-            .newSingleScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
-                    new NameThreadFactory("com.alibaba.nacos.naming.status.worker"));
-    
     /**
      * Service synchronization executor.
      *
@@ -135,10 +131,6 @@ public class GlobalExecutor {
     @Deprecated
     public static ScheduledFuture registerMasterElection(Runnable runnable) {
         return NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
-    }
-    
-    public static void registerServerStatusReporter(Runnable runnable, long delay) {
-        SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
     
     public static void registerServerStatusUpdater(Runnable runnable) {

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.BaseTest;
@@ -24,13 +23,11 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -47,9 +44,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -83,8 +77,6 @@ public class InstanceControllerTest extends BaseTest {
         List<Instance> ipList = new ArrayList<>();
         ipList.add(instance);
         service.updateIPs(ipList, false);
-        
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .post(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance").param("serviceName", TEST_SERVICE_NAME)
@@ -124,8 +116,6 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         service.updateIPs(ipList, false);
         
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
-        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list").param("serviceName", TEST_SERVICE_NAME)
                 .header(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:v1");
@@ -148,8 +138,6 @@ public class InstanceControllerTest extends BaseTest {
     
     @Test
     public void getNullServiceInstances() throws Exception {
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(null);
-        
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list").param("serviceName", TEST_SERVICE_NAME)
                 .header(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server:v1");
@@ -176,10 +164,6 @@ public class InstanceControllerTest extends BaseTest {
         List<Instance> instanceList = new LinkedList<>();
         instanceList.add(instance);
         instanceList.add(instance2);
-        
-        when(serviceManager
-                .batchOperate(ArgumentMatchers.anyString(), ArgumentMatchers.any(InstanceOperationInfo.class),
-                        ArgumentMatchers.any(Function.class))).thenReturn(instanceList);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/metadata/batch").param("namespace", "public")
@@ -221,10 +205,6 @@ public class InstanceControllerTest extends BaseTest {
         List<Instance> instanceList = new LinkedList<>();
         instanceList.add(instance);
         instanceList.add(instance2);
-        
-        when(serviceManager
-                .batchOperate(ArgumentMatchers.anyString(), ArgumentMatchers.any(InstanceOperationInfo.class),
-                        ArgumentMatchers.any(Function.class))).thenReturn(instanceList);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
                 .delete(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/metadata/batch").param("namespace", "public")
