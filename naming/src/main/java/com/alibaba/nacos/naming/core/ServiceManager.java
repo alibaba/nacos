@@ -31,8 +31,6 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.InstanceOperationContext;
-import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +47,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.UPDATE_INSTANCE_METADATA_ACTION_REMOVE;
@@ -518,59 +515,6 @@ public class ServiceManager implements RecordListener<Service> {
         }
         
         return null;
-    }
-    
-    /**
-     * batch operate kinds of resources.
-     *
-     * @param namespace       namespace.
-     * @param operationInfo   operation resources description.
-     * @param operateFunction some operation defined by kinds of situation.
-     */
-    public List<Instance> batchOperate(String namespace, InstanceOperationInfo operationInfo,
-            Function<InstanceOperationContext, List<Instance>> operateFunction) {
-        List<Instance> operatedInstances = new ArrayList<>();
-        try {
-            String serviceName = operationInfo.getServiceName();
-            NamingUtils.checkServiceNameFormat(serviceName);
-            // type: ephemeral/persist
-            InstanceOperationContext operationContext;
-            String type = operationInfo.getConsistencyType();
-            if (!StringUtils.isEmpty(type)) {
-                switch (type) {
-                    case UtilsAndCommons.EPHEMERAL:
-                        operationContext = new InstanceOperationContext(namespace, serviceName, true, true);
-                        operatedInstances.addAll(operateFunction.apply(operationContext));
-                        break;
-                    case UtilsAndCommons.PERSIST:
-                        operationContext = new InstanceOperationContext(namespace, serviceName, false, true);
-                        operatedInstances.addAll(operateFunction.apply(operationContext));
-                        break;
-                    default:
-                        Loggers.SRV_LOG
-                                .warn("UPDATE-METADATA: services.all value is illegal, it should be ephemeral/persist. ignore the service '"
-                                        + serviceName + "'");
-                        break;
-                }
-            } else {
-                List<Instance> instances = (List<Instance>) operationInfo.getInstances();
-                if (!CollectionUtils.isEmpty(instances)) {
-                    //ephemeral:instances or persist:instances
-                    Map<Boolean, List<Instance>> instanceMap = instances.stream()
-                            .collect(Collectors.groupingBy(ele -> ele.isEphemeral()));
-                    
-                    for (Map.Entry<Boolean, List<Instance>> entry : instanceMap.entrySet()) {
-                        operationContext = new InstanceOperationContext(namespace, serviceName, entry.getKey(), false,
-                                entry.getValue());
-                        operatedInstances.addAll(operateFunction.apply(operationContext));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("UPDATE-METADATA: update metadata failed, ignore the service '" + operationInfo
-                    .getServiceName() + "'", e);
-        }
-        return operatedInstances;
     }
     
     /**
