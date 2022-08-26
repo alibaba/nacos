@@ -29,48 +29,51 @@ import org.junit.Test;
  * @author lixiaoshuang
  */
 public class EncryptionHandlerTest {
-    
+
+    private EncryptionPluginService mockEncryptionPluginService;
+
     @Before
     public void setUp() {
-        EncryptionPluginManager.join(new EncryptionPluginService() {
+        mockEncryptionPluginService = new EncryptionPluginService() {
             @Override
             public String encrypt(String secretKey, String content) {
-                return content;
+                return secretKey + content;
             }
-            
+
             @Override
             public String decrypt(String secretKey, String content) {
-                return content;
+                return content.replaceFirst(secretKey, "");
             }
-            
+
             @Override
             public String generateSecretKey() {
                 return "12345678";
             }
-            
+
             @Override
             public String algorithmName() {
-                return "aes";
+                return "mockAlgo";
             }
-    
+
             @Override
             public String encryptSecretKey(String secretKey) {
-                return secretKey;
+                return secretKey + secretKey;
             }
-    
+
             @Override
             public String decryptSecretKey(String secretKey) {
-                return secretKey;
+                return generateSecretKey();
             }
-        });
+        };
+        EncryptionPluginManager.join(mockEncryptionPluginService);
     }
-    
+
     @Test
     public void testEncryptHandler() {
         Pair<String, String> pair = EncryptionHandler.encryptHandler("test-dataId", "content");
         Assert.assertNotNull(pair);
     }
-    
+
     @Test
     public void testDecryptHandler() {
         Pair<String, String> pair = EncryptionHandler.decryptHandler("test-dataId", "12345678", "content");
@@ -88,4 +91,50 @@ public class EncryptionHandlerTest {
         }
         Assert.assertNull("should not throw exception when parsing enc algo for dataId '" + dataId + "'", e);
     }
+
+    @Test
+    public void testUnknownAlgorithmNameEnc() {
+        String dataId = "cipher-mySM4-application";
+        String content = "content";
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals("should return original content if algorithm is not defined.", content, pair.getSecond());
+    }
+
+    @Test
+    public void testUnknownAlgorithmNameDecrypt() {
+        String dataId = "cipher-mySM4-application";
+        String content = "content";
+        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, "", content);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals("should return original content if algorithm is not defined.", content, pair.getSecond());
+    }
+
+    @Test
+    public void testEncrypt() {
+        String dataId = "cipher-mockAlgo-application";
+        String content = "content";
+        String sec = mockEncryptionPluginService.generateSecretKey();
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals("should return encrypted content.",
+                mockEncryptionPluginService.encrypt(sec, content), pair.getSecond());
+        Assert.assertEquals("should return encrypted secret key.",
+                mockEncryptionPluginService.encryptSecretKey(sec), pair.getFirst());
+    }
+
+    @Test
+    public void testDecrypt() {
+        String dataId = "cipher-mockAlgo-application";
+        String oContent = "content";
+        String oSec = mockEncryptionPluginService.generateSecretKey();
+        String content = mockEncryptionPluginService.encrypt(oSec, oContent);
+        String sec = mockEncryptionPluginService.encryptSecretKey(oSec);
+        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, sec, content);
+        Assert.assertNotNull(pair);
+        Assert.assertEquals("should return original content.", oContent, pair.getSecond());
+        Assert.assertEquals("should return original secret key.", oSec, pair.getFirst());
+    }
+
+
 }
