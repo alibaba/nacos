@@ -24,14 +24,17 @@ import com.alibaba.nacos.sys.file.WatchFileCenter;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 @RunWith(MockitoJUnitRunner.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LookupFactoryTest extends TestCase {
     
     private static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
@@ -58,27 +61,30 @@ public class LookupFactoryTest extends TestCase {
     
     /**
      * createLookUpStandalone MemberLookup.
+     *
      * @throws NacosException NacosException
      */
     @Test
     public void createLookUpStandaloneMemberLookup() throws NacosException {
         EnvUtil.setIsStandalone(true);
         memberLookup = LookupFactory.createLookUp(memberManager);
-        assertEquals(memberLookup.getClass(), StandaloneMemberLookup.class);
+        assertEquals(StandaloneMemberLookup.class, memberLookup.getClass());
     }
     
     @Test
     public void createLookUpFileConfigMemberLookup() throws Exception {
+        EnvUtil.setIsStandalone(false);
         mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "file");
         memberLookup = LookupFactory.createLookUp(memberManager);
-        assertEquals(memberLookup.getClass(), FileConfigMemberLookup.class);
+        assertEquals(FileConfigMemberLookup.class, memberLookup.getClass());
     }
     
     @Test
     public void createLookUpAddressServerMemberLookup() throws Exception {
+        EnvUtil.setIsStandalone(false);
         mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "address-server");
         memberLookup = LookupFactory.createLookUp(memberManager);
-        assertEquals(memberLookup.getClass(), AddressServerMemberLookup.class);
+        assertEquals(AddressServerMemberLookup.class, memberLookup.getClass());
     }
     
     @Test
@@ -94,7 +100,7 @@ public class LookupFactoryTest extends TestCase {
         String name2 = "address-server";
         memberLookup = LookupFactory.switchLookup(name2, memberManager);
         assertEquals(memberLookup.getClass(), AddressServerMemberLookup.class);
-
+        
         createLookUpStandaloneMemberLookup();
         String name3 = "address-server";
         memberLookup = LookupFactory.switchLookup(name3, memberManager);
