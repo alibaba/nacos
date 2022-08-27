@@ -356,7 +356,7 @@ public class ConfigCacheService {
      * @return return diff result list.
      */
     public static List<String> checkMd5() {
-        List<String> diffList = new ArrayList<String>();
+        List<String> diffList = new ArrayList<>();
         long startTime = System.currentTimeMillis();
         for (Entry<String/* groupKey */, CacheItem> entry : CACHE.entrySet()) {
             String groupKey = entry.getKey();
@@ -521,7 +521,7 @@ public class ConfigCacheService {
     public static void updateBetaMd5(String groupKey, String md5, List<String> ips4Beta, long lastModifiedTs,
             String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey, true);
-        if (cache.md54Beta == null || !cache.md54Beta.equals(md5)) {
+        if (cache.md54Beta == null || !cache.md54Beta.equals(md5) || !ips4Beta.equals(cache.ips4Beta)) {
             cache.isBeta = true;
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;

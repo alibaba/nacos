@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -194,6 +195,7 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testUpdateGroupCapacity() {
+        final MockedStatic<TimeUtils> timeUtilsMockedStatic = Mockito.mockStatic(TimeUtils.class);
         
         List<Object> argList = CollectionUtils.list();
         
@@ -210,8 +212,8 @@ public class GroupCapacityPersistServiceTest {
         argList.add(maxAggrSize);
         
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Mockito.mockStatic(TimeUtils.class);
-        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
+        
+        timeUtilsMockedStatic.when(TimeUtils::getCurrentTime).thenReturn(timestamp);
         argList.add(timestamp);
         
         String group = "test";
@@ -230,6 +232,7 @@ public class GroupCapacityPersistServiceTest {
                     return 0;
                 });
         Assert.assertTrue(service.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize));
+        timeUtilsMockedStatic.close();
     }
     
     @Test

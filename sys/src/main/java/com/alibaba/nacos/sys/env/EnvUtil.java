@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.sun.management.OperatingSystemMXBean;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -35,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -107,9 +105,6 @@ public class EnvUtil {
     
     @JustForTest
     private static String nacosHomePath = null;
-    
-    private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (com.sun.management.OperatingSystemMXBean) ManagementFactory
-            .getOperatingSystemMXBean();
     
     private static ConfigurableEnvironment environment;
     
@@ -284,18 +279,15 @@ public class EnvUtil {
     }
     
     public static float getLoad() {
-        return (float) OPERATING_SYSTEM_MX_BEAN.getSystemLoadAverage();
+        return (float) OperatingSystemBeanManager.getOperatingSystemBean().getSystemLoadAverage();
     }
-    
-    @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static float getCPU() {
-        return (float) OPERATING_SYSTEM_MX_BEAN.getSystemCpuLoad();
+
+    public static float getCpu() {
+        return (float) OperatingSystemBeanManager.getSystemCpuUsage();
     }
     
     public static float getMem() {
-        return (float) (1
-                - (double) OPERATING_SYSTEM_MX_BEAN.getFreePhysicalMemorySize() / (double) OPERATING_SYSTEM_MX_BEAN
-                .getTotalPhysicalMemorySize());
+        return (float) (1 - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {

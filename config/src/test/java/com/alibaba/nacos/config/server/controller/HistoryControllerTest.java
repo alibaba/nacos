@@ -122,6 +122,7 @@ public class HistoryControllerTest {
         configHistoryInfo.setDataId("test");
         configHistoryInfo.setGroup("test");
         configHistoryInfo.setContent("test");
+        configHistoryInfo.setTenant("");
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
@@ -149,6 +150,7 @@ public class HistoryControllerTest {
         configHistoryInfo.setDataId("test");
         configHistoryInfo.setGroup("test");
         configHistoryInfo.setContent("test");
+        configHistoryInfo.setTenant("");
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         

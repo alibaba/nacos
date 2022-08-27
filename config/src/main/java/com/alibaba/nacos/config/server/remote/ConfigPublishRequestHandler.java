@@ -82,7 +82,7 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             // check tenant
             ParamUtils.checkParam(dataId, group, "datumId", content);
             ParamUtils.checkParam(tag);
-            Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
+            Map<String, Object> configAdvanceInfo = new HashMap<>(10);
             MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", request.getAdditionParam("config_tags"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "desc", request.getAdditionParam("desc"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "use", request.getAdditionParam("use"));

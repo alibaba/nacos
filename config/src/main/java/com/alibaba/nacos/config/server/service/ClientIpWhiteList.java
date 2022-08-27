@@ -37,8 +37,8 @@ public class ClientIpWhiteList {
 
     public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
 
-    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<List<String>>(
-            new ArrayList<String>());
+    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<>(
+            new ArrayList<>());
 
     private static Boolean isOpen = false;
     

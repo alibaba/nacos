@@ -18,7 +18,7 @@ import $ from 'jquery';
 import React from 'react';
 import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
+import { getParams, setParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
 import {
   Balloon,
@@ -313,6 +313,13 @@ class NewConfig extends React.Component {
       },
       error: err => {
         // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        const { status } = err || {};
+        if (status === 403) {
+          Dialog.alert({
+            content: locale.publishFailed403,
+          });
+          return;
+        }
         this._publishConfig(content);
       },
     });
@@ -455,165 +462,159 @@ class NewConfig extends React.Component {
     const { editorClass } = this.state;
 
     return (
-      <div style={{ padding: 10 }}>
-        <Loading
-          shape={'flower'}
-          tip={'Loading...'}
-          style={{ width: '100%', position: 'relative' }}
-          visible={this.state.loading}
-          color={'#333'}
-        >
-          <h1>{locale.newListing}</h1>
-          <Form className="new-config-form" field={this.field} {...formItemLayout}>
-            <FormItem label={'Data ID:'} required>
-              <Input
-                {...init('dataId', {
-                  rules: [
-                    {
-                      required: true,
-                      message: locale.newConfig,
-                    },
-                    { validator: this.validateChart.bind(this) },
-                  ],
-                })}
-                maxLength={255}
-                addonTextBefore={
-                  this.state.addonBefore ? (
-                    <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
-                  ) : null
-                }
-              />
-            </FormItem>
-            <FormItem label={'Group:'} required>
-              <Combobox
-                style={{ width: '100%' }}
-                size={'large'}
-                hasArrow
-                dataSource={this.state.groups}
-                placeholder={locale.groupPlaceholder}
-                defaultValue={this.group}
-                {...init('group', {
-                  rules: [
-                    {
-                      required: true,
-                      message: locale.moreAdvanced,
-                    },
-                    {
-                      maxLength: 127,
-                      message: locale.groupNotEmpty,
-                    },
-                    { validator: this.validateChart.bind(this) },
-                  ],
-                })}
-                onChange={this.setGroup.bind(this)}
-                hasClear
-              />
-            </FormItem>
-            <FormItem
-              label={' '}
-              style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}
-            >
-              <Message type={'warning'} size={'medium'} animation={false}>
-                {locale.annotation}
-              </Message>
-            </FormItem>
-            <FormItem label=" ">
-              <div>
-                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
-                </a>
-              </div>
-            </FormItem>
-            <FormItem
-              label={locale.tags}
-              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
-            >
-              <Select
-                size={'medium'}
-                showSearch
-                hasArrow
-                style={{ width: '100%', height: '100%!important' }}
-                autoWidth
-                multiple
-                mode="tag"
-                filterLocal
-                placeholder={locale.pleaseEnterTag}
-                dataSource={this.state.tagLst}
-                value={this.state.config_tags}
-                onChange={this.setConfigTags.bind(this)}
-                onSearch={val => this.tagSearch(val)}
-                hasClear
-              />
-            </FormItem>
-
-            <FormItem
-              label={locale.groupIdCannotBeLonger}
-              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
-            >
-              <Input {...init('appName')} readOnly={this.inApp} />
-            </FormItem>
-
-            <FormItem label={locale.description}>
-              <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
-            </FormItem>
-
-            <FormItem label={locale.targetEnvironment}>
-              <RadioGroup
-                dataSource={list}
-                value={this.state.configType}
-                onChange={this.newChangeConfig.bind(this)}
-              />
-            </FormItem>
-            <FormItem
-              label={
-                <span>
-                  {locale.configurationFormat}
-                  <Balloon
-                    trigger={
-                      <Icon
-                        type={'help'}
-                        size={'small'}
-                        style={{
-                          color: '#1DC11D',
-                          margin: '0 5px',
-                          verticalAlign: 'middle',
-                        }}
-                      />
-                    }
-                    align={'t'}
-                    style={{ marginRight: 5 }}
-                    triggerType={'hover'}
-                  >
-                    <p>{locale.configureContentsOf}</p>
-                    <p>{locale.fullScreen}</p>
-                  </Balloon>
-                  :
-                </span>
+      <Loading
+        shape={'flower'}
+        tip={'Loading...'}
+        style={{ width: '100%', position: 'relative' }}
+        visible={this.state.loading}
+        color={'#333'}
+      >
+        <h1>{locale.newListing}</h1>
+        <Form className="new-config-form" field={this.field} {...formItemLayout}>
+          <FormItem label={'Data ID'} required>
+            <Input
+              {...init('dataId', {
+                rules: [
+                  {
+                    required: true,
+                    message: locale.newConfig,
+                  },
+                  { validator: this.validateChart.bind(this) },
+                ],
+              })}
+              maxLength={255}
+              addonTextBefore={
+                this.state.addonBefore ? (
+                  <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
+                ) : null
               }
-              required
-            >
-              <div id={'container'} className={editorClass} style={{ minHeight: 450 }} />
-            </FormItem>
+            />
+          </FormItem>
+          <FormItem label={'Group'} required>
+            <Combobox
+              style={{ width: '100%' }}
+              size={'large'}
+              hasArrow
+              dataSource={this.state.groups}
+              placeholder={locale.groupPlaceholder}
+              defaultValue={this.group}
+              {...init('group', {
+                rules: [
+                  {
+                    required: true,
+                    message: locale.moreAdvanced,
+                  },
+                  {
+                    maxLength: 127,
+                    message: locale.groupNotEmpty,
+                  },
+                  { validator: this.validateChart.bind(this) },
+                ],
+              })}
+              onChange={this.setGroup.bind(this)}
+              hasClear
+            />
+          </FormItem>
+          <FormItem label={' '} style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}>
+            <Message type={'warning'} size={'medium'} animation={false}>
+              {locale.annotation}
+            </Message>
+          </FormItem>
+          <FormItem label=" ">
+            <div>
+              <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
+                {this.state.showmore ? locale.dataIdLength : locale.collapse}
+              </a>
+            </div>
+          </FormItem>
+          <FormItem
+            label={locale.tags}
+            className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+          >
+            <Select
+              size={'medium'}
+              showSearch
+              hasArrow
+              style={{ width: '100%', height: '100%!important' }}
+              autoWidth
+              mode="multiple"
+              filterLocal
+              placeholder={locale.pleaseEnterTag}
+              dataSource={this.state.tagLst}
+              value={this.state.config_tags}
+              onChange={this.setConfigTags.bind(this)}
+              onSearch={val => this.tagSearch(val)}
+              hasClear
+            />
+          </FormItem>
 
-            <FormItem label=" ">
-              <div style={{ textAlign: 'right' }}>
-                <Button
-                  type={'primary'}
-                  style={{ marginRight: 10 }}
-                  onClick={this.publishConfig.bind(this)}
+          <FormItem
+            label={locale.groupIdCannotBeLonger}
+            className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+          >
+            <Input {...init('appName')} readOnly={this.inApp} />
+          </FormItem>
+
+          <FormItem label={locale.description}>
+            <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
+          </FormItem>
+
+          <FormItem label={locale.targetEnvironment}>
+            <RadioGroup
+              dataSource={list}
+              value={this.state.configType}
+              onChange={this.newChangeConfig.bind(this)}
+            />
+          </FormItem>
+          <FormItem
+            label={
+              <span>
+                {locale.configurationFormat}
+                <Balloon
+                  trigger={
+                    <Icon
+                      type={'help'}
+                      size={'small'}
+                      style={{
+                        color: '#1DC11D',
+                        margin: '0 5px',
+                        verticalAlign: 'middle',
+                      }}
+                    />
+                  }
+                  align={'t'}
+                  style={{ marginRight: 5 }}
+                  triggerType={'hover'}
                 >
-                  {locale.escExit}
-                </Button>
+                  <p>{locale.configureContentsOf}</p>
+                  <p>{locale.fullScreen}</p>
+                </Balloon>
+                :
+              </span>
+            }
+            required
+          >
+            <div id={'container'} className={editorClass} style={{ minHeight: 450 }} />
+          </FormItem>
 
-                <Button type={'light'} onClick={this.goList.bind(this)}>
-                  {locale.release}
-                </Button>
-              </div>
-            </FormItem>
-          </Form>
-          <SuccessDialog ref={this.successDialog} />
-        </Loading>
-      </div>
+          <FormItem label=" ">
+            <div style={{ textAlign: 'right' }}>
+              <Button
+                type={'primary'}
+                style={{ marginRight: 10 }}
+                onClick={this.publishConfig.bind(this)}
+              >
+                {locale.escExit}
+              </Button>
+
+              <Button type={'normal'} onClick={this.goList.bind(this)}>
+                {locale.release}
+              </Button>
+            </div>
+          </FormItem>
+        </Form>
+        <SuccessDialog ref={this.successDialog} />
+      </Loading>
     );
   }
 }

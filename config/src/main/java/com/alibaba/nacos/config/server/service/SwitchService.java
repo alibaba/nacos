@@ -47,7 +47,7 @@ public class SwitchService {
     
     public static final String DISABLE_APP_COLLECTOR = "disableAppCollector";
     
-    private static volatile Map<String, String> switches = new HashMap<String, String>();
+    private static volatile Map<String, String> switches = new HashMap<>();
     
     public static boolean getSwitchBoolean(String key, boolean defaultValue) {
         boolean rtn;
@@ -90,7 +90,7 @@ public class SwitchService {
         }
         FATAL_LOG.warn("[switch-config] {}", config);
         
-        Map<String, String> map = new HashMap<String, String>(30);
+        Map<String, String> map = new HashMap<>(30);
         try {
             for (String line : IoUtils.readLines(new StringReader(config))) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {

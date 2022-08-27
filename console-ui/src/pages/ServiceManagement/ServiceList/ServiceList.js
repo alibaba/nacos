@@ -35,6 +35,7 @@ import { generateUrl } from '../../../utils/nacosutil';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
+import PageTitle from '../../../components/PageTitle';
 
 import './ServiceList.scss';
 import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
@@ -202,18 +203,11 @@ class ServiceList extends React.Component {
 
     return (
       <div className="main-container service-management">
-        <div style={{ marginTop: -15 }}>
-          <RegionGroup
-            setNowNameSpace={this.setNowNameSpace}
-            namespaceCallBack={this.getQueryLater}
-          />
-        </div>
-        <h3 className="page-title">
-          <span className="title-item">{serviceList}</span>
-          <span className="title-item">|</span>
-          <span className="title-item">{nowNamespaceName}</span>
-          <span className="title-item">{nowNamespaceId}</span>
-        </h3>
+        <PageTitle title={serviceList} desc={nowNamespaceId} nameSpace />
+        <RegionGroup
+          setNowNameSpace={this.setNowNameSpace}
+          namespaceCallBack={this.getQueryLater}
+        />
         <Row
           className="demo-row"
           style={{
@@ -245,7 +239,7 @@ class ServiceList extends React.Component {
                   }
                 />
               </FormItem>
-              <Form.Item label={`${hiddenEmptyService}:`}>
+              <Form.Item label={`${hiddenEmptyService}`}>
                 <Switch
                   checked={hasIpCount}
                   onChange={hasIpCount =>
@@ -266,7 +260,7 @@ class ServiceList extends React.Component {
                 </Button>
               </FormItem>
               <FormItem label="" style={{ float: 'right' }}>
-                <Button type="secondary" onClick={() => this.openEditServiceDialog()}>
+                <Button type="primary" onClick={() => this.openEditServiceDialog()}>
                   {create}
                 </Button>
               </FormItem>
@@ -278,7 +272,7 @@ class ServiceList extends React.Component {
             <Table
               dataSource={this.state.dataSource}
               locale={{ empty: pubNoData }}
-              getRowProps={row => this.rowColor(row)}
+              rowProps={row => this.rowColor(row)}
               loading={this.state.loading}
             >
               <Column title={locale.columnServiceName} dataIndex="name" />

@@ -18,8 +18,10 @@ package com.alibaba.nacos.naming.push.v1;
 
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -32,6 +34,7 @@ public class NamingSubscriberServiceV1ImplTest {
     
     @BeforeClass
     public static void setUp() throws Exception {
+        EnvUtil.setEnvironment(new MockEnvironment());
         namingSubscriberService = new NamingSubscriberServiceV1Impl();
         InetSocketAddress socketAddress = new InetSocketAddress(8848);
         PushClient pushClient = new PushClient("1", "G1@@S1", "", "", socketAddress, null, "", "");

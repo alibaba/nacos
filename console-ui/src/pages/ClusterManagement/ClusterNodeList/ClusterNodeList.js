@@ -33,6 +33,7 @@ import {
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
 import axios from 'axios';
+import PageTitle from '../../../components/PageTitle';
 
 import './ClusterNodeList.scss';
 
@@ -165,18 +166,11 @@ class ClusterNodeList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <div style={{ marginTop: -15 }}>
-            <RegionGroup
-              setNowNameSpace={this.setNowNameSpace}
-              namespaceCallBack={this.getQueryLater}
-            />
-          </div>
-          <h3 className="page-title">
-            <span className="title-item">{clusterNodeList}</span>
-            <span className="title-item">|</span>
-            <span className="title-item">{nowNamespaceName}</span>
-            <span className="title-item">{nowNamespaceId}</span>
-          </h3>
+          <PageTitle title={clusterNodeList} desc={nowNamespaceId} nameSpace />
+          <RegionGroup
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.getQueryLater}
+          />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
@@ -210,7 +204,7 @@ class ClusterNodeList extends React.Component {
               <Table
                 dataSource={this.state.dataSource}
                 locale={{ empty: pubNoData }}
-                getRowProps={row => this.rowColor(row)}
+                rowProps={row => this.rowColor(row)}
               >
                 <Column title={locale.nodeIp} dataIndex="address" width="20%" />
                 <Column

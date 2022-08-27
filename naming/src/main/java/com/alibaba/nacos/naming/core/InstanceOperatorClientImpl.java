@@ -96,7 +96,9 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
      * This method creates {@code IpPortBasedClient} if it don't exist.
      */
     @Override
-    public void registerInstance(String namespaceId, String serviceName, Instance instance) {
+    public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
+        
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
         createIpPortClientIfAbsent(clientId);
@@ -118,6 +120,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     @Override
     public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+        NamingUtils.checkInstanceIsLegal(instance);
+        
         Service service = getService(namespaceId, serviceName, instance.isEphemeral());
         if (!ServiceManager.getInstance().containSingleton(service)) {
             throw new NacosException(NacosException.INVALID_PARAM,

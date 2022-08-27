@@ -24,6 +24,9 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -68,11 +71,16 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),
                 namespaceId, groupedServiceName, 0, request.getClusters());
         ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
-                metadataManager.getServiceMetadata(service).orElse(null), subscriber);
+                metadataManager.getServiceMetadata(service).orElse(null), subscriber.getCluster(), false,
+                true, subscriber.getIp());
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
+            NotifyCenter.publishEvent(new SubscribeServiceTraceEvent(System.currentTimeMillis(),
+                    meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
         } else {
             clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
+            NotifyCenter.publishEvent(new UnsubscribeServiceTraceEvent(System.currentTimeMillis(),
+                    meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }

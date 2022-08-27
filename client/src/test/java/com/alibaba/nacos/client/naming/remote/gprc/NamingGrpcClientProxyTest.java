@@ -24,8 +24,10 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
+import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
@@ -34,6 +36,7 @@ import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
@@ -53,9 +56,11 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -72,6 +77,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NamingGrpcClientProxyTest {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
     
     private static final String NAMESPACE_ID = "ns1";
     
@@ -138,12 +146,62 @@ public class NamingGrpcClientProxyTest {
     }
     
     @Test
+    public void testRegisterServiceThrowsNacosException() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage("err args");
+        
+        when(this.rpcClient.request(Mockito.any())).thenReturn(ErrorResponse.build(400, "err args"));
+        
+        try {
+            client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+        } catch (NacosException ex) {
+            Assert.assertEquals(null, ex.getCause());
+            
+            throw ex;
+        }
+    }
+    
+    @Test
+    public void testRegisterServiceThrowsException() throws NacosException {
+        expectedException.expect(NacosException.class);
+        expectedException.expectMessage("Request nacos server failed: ");
+    
+        when(this.rpcClient.request(Mockito.any())).thenReturn(null);
+        
+        try {
+            client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+        } catch (NacosException ex) {
+            Assert.assertEquals(NullPointerException.class, ex.getCause().getClass());
+            
+            throw ex;
+        }
+    }
+    
+    @Test
     public void testDeregisterService() throws NacosException {
         client.deregisterService(SERVICE_NAME, GROUP_NAME, instance);
         verify(this.rpcClient, times(1)).request(argThat(request -> {
             if (request instanceof InstanceRequest) {
                 InstanceRequest request1 = (InstanceRequest) request;
                 return request1.getType().equals(NamingRemoteConstants.DE_REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+    
+    @Test
+    public void testBatchRegisterService() throws NacosException {
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        response = new BatchInstanceResponse();
+        when(this.rpcClient.request(any())).thenReturn(response);
+        client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof BatchInstanceRequest) {
+                BatchInstanceRequest request1 = (BatchInstanceRequest) request;
+                request1.setRequestId("1");
+                return request1.getType().equals(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
             }
             return false;
         }));

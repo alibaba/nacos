@@ -262,16 +262,26 @@ class ConfigEditor extends React.Component {
       method: 'post',
       data: stringify(payload),
       headers,
-    }).then(res => {
-      if (res) {
-        if (isNewConfig) {
-          this.setState({ isNewConfig: false });
+    }).then(
+      res => {
+        if (res) {
+          if (isNewConfig) {
+            this.setState({ isNewConfig: false });
+          }
+          this.getConfig(beta);
         }
-        this.getConfig(beta);
+        this.setState({ loading: false });
+        return res;
+      },
+      error => {
+        this.setState({ loading: false });
+        if (error.status && error.status === 403) {
+          Dialog.alert({
+            content: this.props.locale.publishFailed403,
+          });
+        }
       }
-      this.setState({ loading: false });
-      return res;
-    });
+    );
   }
 
   publishBeta() {
@@ -483,7 +493,7 @@ class ConfigEditor extends React.Component {
             </Tab>
           )}
           <Form className="new-config-form" {...formItemLayout}>
-            <Form.Item label="Data ID:" required {...dataIdError}>
+            <Form.Item label="Data ID" required {...dataIdError}>
               <Input
                 value={form.dataId}
                 onChange={dataId =>
@@ -492,7 +502,7 @@ class ConfigEditor extends React.Component {
                 disabled={!isNewConfig}
               />
             </Form.Item>
-            <Form.Item label="Group:" required {...groupError}>
+            <Form.Item label="Group" required {...groupError}>
               <Input
                 value={form.group}
                 onChange={group =>

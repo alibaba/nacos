@@ -35,7 +35,7 @@ public class TpsControlRule {
     /**
      * Pattern,Rule map.
      */
-    private Map<String, Rule> monitorKeyRule = new HashMap<String, Rule>();
+    private Map<String, Rule> monitorKeyRule = new HashMap<>();
     
     public String getPointName() {
         return pointName;

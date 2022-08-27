@@ -39,6 +39,7 @@ class NameSpace extends React.Component {
     this.state = {
       loading: false,
       defaultNamespace: '',
+      defaultNamespaceName: 'public',
       dataSource: [],
     };
   }
@@ -125,21 +126,21 @@ class NameSpace extends React.Component {
               <div>
                 <div style={{ marginTop: '10px' }}>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceName}:`}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceName}`}</span>
                     <span style={{ color: '#c7254e' }}>{res.namespaceShowName}</span>
                   </p>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceID}:`}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceID}`}</span>
                     <span style={{ color: '#c7254e' }}>{res.namespace}</span>
                   </p>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{`${configuration}:`}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${configuration}`}</span>
                     <span style={{ color: '#c7254e' }}>
                       {res.configCount} / {res.quota}
                     </span>
                   </p>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{`${description}:`}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${description}`}</span>
                     <span style={{ color: '#c7254e' }}>{res.namespaceDesc}</span>
                   </p>
                 </div>
@@ -162,8 +163,6 @@ class NameSpace extends React.Component {
       namespaceName,
       namespaceID,
       configurationManagement,
-      removeSuccess,
-      deletedSuccessfully,
       deletedFailure,
     } = locale;
     Dialog.confirm({
@@ -172,11 +171,11 @@ class NameSpace extends React.Component {
         <div style={{ marginTop: '-20px' }}>
           <h3>{confirmDelete}</h3>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceName}:`}</span>
+            <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceName}`}</span>
             <span style={{ color: '#c7254e' }}>{record.namespaceShowName}</span>
           </p>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceID}:`}</span>
+            <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceID}`}</span>
             <span style={{ color: '#c7254e' }}>{record.namespace}</span>
           </p>
         </div>
@@ -193,6 +192,9 @@ class NameSpace extends React.Component {
               const urlnamespace = getParams('namespace');
               if (record.namespace === urlnamespace) {
                 setParams('namespace', this.state.defaultNamespace);
+                setParams('namespaceShowName', this.state.defaultNamespaceName);
+                window.nownamespace = this.state.defaultNamespace;
+                window.namespaceShowName = this.state.defaultNamespaceName;
               }
             } else {
               Dialog.alert({ content: res.message, title: deletedFailure });
@@ -239,7 +241,7 @@ class NameSpace extends React.Component {
     );
     if (record.type === 1 || record.type === 0) {
       _delinfo = (
-        <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled>
+        <span style={{ marginRight: 10, cursor: 'not-allowed', color: '#999' }} disabled>
           {namespaceDelete}
         </span>
       );
@@ -253,7 +255,7 @@ class NameSpace extends React.Component {
     let _editinfo = <a onClick={this.openToEdit.bind(this, record)}>{edit}</a>;
     if (record.type === 0 || record.type === 1) {
       _editinfo = (
-        <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled>
+        <span style={{ marginRight: 10, cursor: 'not-allowed', color: '#999' }} disabled>
           {edit}
         </span>
       );
@@ -288,6 +290,7 @@ class NameSpace extends React.Component {
       namespace,
       namespaceAdd,
       namespaceNames,
+      description,
       namespaceNumber,
       configuration,
       namespaceOperation,
@@ -328,6 +331,7 @@ class NameSpace extends React.Component {
                     cell={this.renderName.bind(this)}
                   />
                   <Table.Column title={namespaceNumber} dataIndex="namespace" />
+                  <Table.Column title={description} dataIndex="namespaceDesc" />
                   <Table.Column title={configuration} dataIndex="configCount" />
                   <Table.Column
                     title={namespaceOperation}

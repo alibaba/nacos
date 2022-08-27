@@ -469,10 +469,16 @@ public class RaftCore implements Closeable {
         Loggers.RAFT.warn("start to close old raft protocol!!!");
         Loggers.RAFT.warn("stop old raft protocol task for notifier");
         NotifyCenter.deregisterSubscriber(notifier);
-        Loggers.RAFT.warn("stop old raft protocol task for master task");
-        masterTask.cancel(true);
-        Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
-        heartbeatTask.cancel(true);
+        if (masterTask != null) {
+            Loggers.RAFT.warn("stop old raft protocol task for master task");
+            masterTask.cancel(true);
+        }
+        
+        if (heartbeatTask != null) {
+            Loggers.RAFT.warn("stop old raft protocol task for heartbeat task");
+            heartbeatTask.cancel(true);
+        }
+       
         Loggers.RAFT.warn("clean old cache datum for old raft");
         datums.clear();
     }

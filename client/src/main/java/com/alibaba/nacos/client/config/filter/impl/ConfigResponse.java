@@ -36,7 +36,7 @@ import static com.alibaba.nacos.client.config.common.ConfigConstants.TENANT;
  */
 public class ConfigResponse implements IConfigResponse {
     
-    private final Map<String, Object> param = new HashMap<String, Object>();
+    private final Map<String, Object> param = new HashMap<>();
     
     private final IConfigContext configContext = new ConfigContext();
     

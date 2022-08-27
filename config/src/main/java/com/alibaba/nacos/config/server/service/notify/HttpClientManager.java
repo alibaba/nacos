@@ -52,12 +52,7 @@ public final class HttpClientManager {
                 new ConfigHttpClientFactory(PropertyUtil.getNotifyConnectTimeout(),
                         PropertyUtil.getNotifySocketTimeout()));
         
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(HttpClientManager::shutdown);
     }
     
     public static NacosRestTemplate getNacosRestTemplate() {

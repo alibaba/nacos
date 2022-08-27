@@ -87,7 +87,7 @@ public class ConnectionMeta {
      */
     String tenant;
     
-    protected Map<String, String> labels = new HashMap<String, String>();
+    protected Map<String, String> labels = new HashMap<>();
     
     public String getLabel(String labelKey) {
         return labels.get(labelKey);

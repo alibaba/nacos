@@ -270,9 +270,10 @@ public final class ServiceUtil {
      * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, boolean healthyOnly,
-            boolean enableOnly, Subscriber subscriber) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly, subscriber.getIp());
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
+            ServiceMetadata serviceMetadata, boolean healthyOnly, boolean enableOnly, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), healthyOnly,
+                enableOnly, subscriber.getIp());
     }
 
     /**

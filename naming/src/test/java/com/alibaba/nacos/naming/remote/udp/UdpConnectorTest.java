@@ -20,6 +20,7 @@ package com.alibaba.nacos.naming.remote.udp;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -36,6 +37,11 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 
 /**
  * {@link UdpConnector} unit tests.
@@ -64,21 +70,33 @@ public class UdpConnectorTest {
     }
     
     @Before
-    public void setUp() {
+    public void setUp() throws IOException, InterruptedException {
         ReflectionTestUtils.setField(udpConnector, "ackMap", ackMap);
         ReflectionTestUtils.setField(udpConnector, "callbackMap", callbackMap);
+        DatagramSocket oldSocket = (DatagramSocket) ReflectionTestUtils.getField(udpConnector, "udpSocket");
         ReflectionTestUtils.setField(udpConnector, "udpSocket", udpSocket);
+        doAnswer(invocationOnMock -> {
+            TimeUnit.MINUTES.sleep(1);
+            return null;
+        }).when(udpSocket).receive(any(DatagramPacket.class));
+        oldSocket.close();
+        TimeUnit.SECONDS.sleep(1);
+    }
+    
+    @After
+    public void tearDown() {
+        udpConnector.shutdown();
     }
     
     @Test
     public void testContainAck() {
-        Mockito.when(ackMap.containsKey(Mockito.anyString())).thenReturn(true);
+        when(ackMap.containsKey(Mockito.anyString())).thenReturn(true);
         Assert.assertTrue(udpConnector.containAck("1111"));
     }
     
     @Test
     public void testSendData() throws NacosException, IOException {
-        Mockito.when(udpSocket.isClosed()).thenReturn(false);
+        when(udpSocket.isClosed()).thenReturn(false);
         AckEntry ackEntry = new AckEntry("A", new DatagramPacket(new byte[2], 2));
         udpConnector.sendData(ackEntry);
         Mockito.verify(udpSocket).send(ackEntry.getOrigin());
@@ -86,19 +104,19 @@ public class UdpConnectorTest {
     
     @Test
     public void testSendDataWithCallback() throws IOException, InterruptedException {
-        Mockito.when(udpSocket.isClosed()).thenReturn(false);
+        when(udpSocket.isClosed()).thenReturn(false);
         AckEntry ackEntry = new AckEntry("A", new DatagramPacket(new byte[2], 2));
         udpConnector.sendDataWithCallback(ackEntry, new PushCallBack() {
             @Override
             public long getTimeout() {
                 return 0;
             }
-    
+            
             @Override
             public void onSuccess() {
             
             }
-    
+            
             @Override
             public void onFail(Throwable e) {
                 Assert.fail(e.getMessage());

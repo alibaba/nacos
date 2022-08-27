@@ -74,9 +74,8 @@ public class BeatInfoInstanceBuilderTest {
         assertTrue(actual.isEnabled());
         assertTrue(actual.isHealthy());
         assertThat(actual.getInstanceId(), is("1.1.1.1#8848#c#g@@s"));
-        assertThat(actual.getMetadata().size(), is(2));
+        assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get("mock"), is("mock"));
-        assertThat(actual.getMetadata().get("app"), is("DEFAULT"));
         verify(request).getParameter("mock");
     }
 }

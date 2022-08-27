@@ -22,8 +22,8 @@ import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.ClassUtils;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -174,7 +174,7 @@ import java.util.zip.ZipException;
  */
 public class PathMatchingResourcePatternResolver implements ResourcePatternResolver {
 
-    private static final Log LOGGER = LogFactory.getLog(PathMatchingResourcePatternResolver.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PathMatchingResourcePatternResolver.class);
 
     private static Method equinoxResolveMethod;
 
@@ -867,10 +867,10 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             String methodName = method.getName();
             if (Object.class == method.getDeclaringClass()) {
-                if (methodName.equals("equals")) {
+                if ("equals".equals(methodName)) {
                     // Only consider equal when proxies are identical.
                     return (proxy == args[0]);
-                } else if (methodName.equals("hashCode")) {
+                } else if ("hashCode".equals(methodName)) {
                     return System.identityHashCode(proxy);
                 }
             } else if ("getAttributes".equals(methodName)) {

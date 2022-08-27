@@ -77,7 +77,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     }
     
     private Map<String, Object> getFlattenedMap(Map<String, Object> source) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>(128);
+        Map<String, Object> result = new LinkedHashMap<>(128);
         buildFlattenedMap(result, source, null);
         return result;
     }

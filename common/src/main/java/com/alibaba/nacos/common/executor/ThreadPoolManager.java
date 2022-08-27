@@ -44,7 +44,7 @@ public final class ThreadPoolManager {
     
     private Map<String, Map<String, Set<ExecutorService>>> resourcesManager;
     
-    private Map<String, Object> lockers = new ConcurrentHashMap<String, Object>(8);
+    private Map<String, Object> lockers = new ConcurrentHashMap<>(8);
     
     private static final ThreadPoolManager INSTANCE = new ThreadPoolManager();
     
@@ -52,13 +52,10 @@ public final class ThreadPoolManager {
     
     static {
         INSTANCE.init();
-        ThreadUtils.addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
-                shutdown();
-                LOGGER.warn("[ThreadPoolManager] Destruction of the end");
-            }
+        ThreadUtils.addShutdownHook(new Thread(() -> {
+            LOGGER.warn("[ThreadPoolManager] Start destroying ThreadPool");
+            shutdown();
+            LOGGER.warn("[ThreadPoolManager] Destruction of the end");
         }));
     }
     
@@ -70,7 +67,7 @@ public final class ThreadPoolManager {
     }
     
     private void init() {
-        resourcesManager = new ConcurrentHashMap<String, Map<String, Set<ExecutorService>>>(8);
+        resourcesManager = new ConcurrentHashMap<>(8);
     }
     
     /**
@@ -88,16 +85,12 @@ public final class ThreadPoolManager {
         synchronized (monitor) {
             Map<String, Set<ExecutorService>> map = resourcesManager.get(namespace);
             if (map == null) {
-                map = new HashMap<String, Set<ExecutorService>>(8);
-                map.put(group, new HashSet<ExecutorService>());
-                map.get(group).add(executor);
+                map = new HashMap<>(8);
+                map.computeIfAbsent(group, key -> new HashSet<>()).add(executor);
                 resourcesManager.put(namespace, map);
                 return;
             }
-            if (!map.containsKey(group)) {
-                map.put(group, new HashSet<ExecutorService>());
-            }
-            map.get(group).add(executor);
+            map.computeIfAbsent(group, key -> new HashSet<>()).add(executor);
         }
     }
     

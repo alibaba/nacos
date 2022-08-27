@@ -17,29 +17,17 @@
 package com.alibaba.nacos.plugin.auth.spi.mock;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
 
-import java.util.List;
 import java.util.Properties;
 
 public class MockClientAuthService extends AbstractClientAuthService {
     
     @Override
     public Boolean login(Properties properties) {
-        return null;
-    }
-    
-    @Override
-    public void setServerList(List<String> serverList) {
-    
-    }
-    
-    @Override
-    public void setNacosRestTemplate(NacosRestTemplate nacosRestTemplate) {
-    
+        return true;
     }
     
     @Override
