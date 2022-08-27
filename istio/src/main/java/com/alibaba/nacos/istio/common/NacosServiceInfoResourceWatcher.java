@@ -63,7 +63,8 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     
     private boolean flagNotify = true;
     
-    private IstioConfig istioConfig = new IstioConfig();
+    @Autowired
+    private IstioConfig istioConfig;
     
     @Autowired
     private ServiceStorage serviceStorage;
@@ -98,9 +99,8 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
         if (flagNotify) {
             flagNotify = false;
             cycleDebounce(new ToNotify());
-            Loggers.MAIN.info("already toNotify");
         }
-        
+        //TODO: service or instance data change
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             // If service changed, push to all subscribers.
             ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent = (ClientOperationEvent.ClientRegisterServiceEvent) event;
@@ -108,36 +108,43 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             
             String serviceName = IstioCrdUtil.buildServiceName(service);
             IstioService old = serviceInfoMap.get(serviceName);
+            PushChange pushChange;
             
             if (old != null) {
-                //TODO: instance change
+                //instance change
                 Loggers.MAIN.info("have old");
                 //instance name is cate + . + instance id + . + service name,e.g
-                String instanceName = "service.51247." + serviceName;
-                serviceCache.put(serviceName, service);
-                PushChange pushChange = new PushChange(instanceName, PushChange.ChangeType.UP);
-                pushChangeQueue.add(pushChange);
-                Loggers.MAIN.info("already have old add" + pushChange);
+                pushChange = new PushChange("instance.51247." + serviceName, PushChange.ChangeType.UP);
             } else {
-                PushChange pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.UP);
-                serviceCache.put(serviceName, service);
+                Loggers.MAIN.info("have new");
+                pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.UP);
                 pushChangeQueue.add(pushChange);
-                Loggers.MAIN.info("already add:" + pushChange.getName());
+                pushChange = new PushChange("instance.51247." + serviceName, PushChange.ChangeType.UP);
             }
+    
+            serviceCache.put(serviceName, service);
+            pushChangeQueue.add(pushChange);
             
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
             ClientOperationEvent.ClientDeregisterServiceEvent clientDeregisterServiceEvent = (ClientOperationEvent
                     .ClientDeregisterServiceEvent) event;
             Service service = clientDeregisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
+            PushChange pushChange;
             
-            Loggers.MAIN.info("down");
-            PushChange pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DOWN);
+            if (serviceStorage.getPushData(service).ipCount() > 0) {
+                Loggers.MAIN.info("remain instance");
+                pushChange = new PushChange("instance.5666." + serviceName, PushChange.ChangeType.DOWN);
+            } else {
+                Loggers.MAIN.info("no instance left");
+                pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DOWN);
+                pushChangeQueue.add(pushChange);
+                pushChange = new PushChange("instance.5666." + serviceName, PushChange.ChangeType.DOWN);
+            }
+    
             serviceCache.put(serviceName, service);
             pushChangeQueue.add(pushChange);
-            Loggers.MAIN.info("already down add:" + pushChange.getName());
         }
-        //TODO: service data change event, instance event
     }
     
     private class ToNotify implements Runnable {
@@ -146,37 +153,39 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             while (true) {
                 if (pushChangeQueue.size() > 0) {
                     DeltaResources updatePush;
-                    Future<DeltaResources> futureUpdate = debouncePushChange(new Debounce(pushChangeQueue));
+                    Future<DeltaResources> futureUpdate = debouncePushChange(new Debounce(pushChangeQueue, istioConfig));
     
                     try {
                         updatePush = futureUpdate.get();
-                        if (updatePush == null) {
-                            Loggers.MAIN.info("updatePush is null");
-                        }
                         Loggers.MAIN.info("updatePush get!");
                     } catch (InterruptedException | ExecutionException e) {
                         throw new RuntimeException(e);
                     }
     
-                    Map<String, PushChange.ChangeType> serviceMap = updatePush.getServiceChangeMap();
-                    Map<String, PushChange.ChangeType> instanceMap = updatePush.getInstanceChangeMap();
+                    if (updatePush != null) {
+                        Map<String, PushChange.ChangeType> serviceMap = updatePush.getServiceChangeMap();
+                        Map<String, PushChange.ChangeType> instanceMap = updatePush.getInstanceChangeMap();
     
-                    for (Map.Entry<String, PushChange.ChangeType> entry : serviceMap.entrySet()) {
-                        String serviceName = entry.getKey();
-                        PushChange.ChangeType changeType = entry.getValue();
-                        Loggers.MAIN.info("entrySet:{serviceName:{}, changeType:{}}", serviceName, changeType);
-                        updateServiceInfoMap(true, serviceName, changeType, updatePush);
-                    }
+                        for (Map.Entry<String, PushChange.ChangeType> entry : serviceMap.entrySet()) {
+                            String serviceName = entry.getKey();
+                            PushChange.ChangeType changeType = entry.getValue();
+                            Loggers.MAIN.info("service map entrySet:{serviceName:{}, changeType:{}}", serviceName, changeType);
+                            updateServiceInfoMap(true, serviceName, changeType, updatePush);
+                        }
     
-                    for (Map.Entry<String, PushChange.ChangeType> entry : instanceMap.entrySet()) {
-                        String serviceName = entry.getKey().split("\\.", 2)[1];
-                        PushChange.ChangeType changeType = entry.getValue();
+                        for (Map.Entry<String, PushChange.ChangeType> entry : instanceMap.entrySet()) {
+                            String serviceName = entry.getKey().split("\\.", 2)[1];
+                            PushChange.ChangeType changeType = entry.getValue();
         
-                        updateServiceInfoMap(false, serviceName, changeType, updatePush);
-                    }
+                            Loggers.MAIN.info("instance map entrySet:{serviceName:{}, changeType:{}}", serviceName, changeType);
+                            updateServiceInfoMap(false, serviceName, changeType, updatePush);
+                        }
     
-                    Event event = new Event(serviceMap.size() != 0 ? EventType.Service : EventType.Endpoint, updatePush);
-                    eventProcessor.notify(event);
+                        Event event = new Event(serviceMap.size() != 0 ? EventType.Service : EventType.Endpoint, updatePush);
+                        eventProcessor.notify(event);
+                    } else {
+                        Loggers.MAIN.info("updatePush is null");
+                    }
                 }
             }
         }

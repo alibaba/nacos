@@ -182,8 +182,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (connections.size() == 0) {
             return;
         }
-        boolean full = resourceSnapshot.getIstioConfig().isFullEnabled();
-        PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
+        PushContext pushContext = new PushContext(resourceSnapshot, false, null, null);
         
         for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
             //mcp
@@ -221,16 +220,10 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     //EDS
-                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType("Delta_ENDPOINT_TYPE");
-                    if (edsWatchedStatus == null) {
-                        edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
-                        if (edsWatchedStatus != null) {
-                            DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
-                            connection.push(edsResponse, edsWatchedStatus);
-                        }
-                    } else {
-                        pushContext.setFull(full);
-                        DiscoveryResponse edsResponse = buildDiscoveryResponse("Delta_ENDPOINT_TYPE", pushContext);
+                    Loggers.MAIN.info("Eds Pushing");
+                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+                    if (edsWatchedStatus != null) {
+                        DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
                         connection.push(edsResponse, edsWatchedStatus);
                     }
                 }
@@ -380,6 +373,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 
                 for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
                     //mcp
+                    Loggers.MAIN.info("delta mcp Pushing");
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
                     if (watchedStatus != null && watchedStatus.isLastAckOrNack()) {
                         PushContext pushContext = new PushContext(resourceSnapshot, full,
@@ -394,6 +388,7 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 
                 for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
                     //EDS
+                    Loggers.MAIN.info("delta Eds Pushing");
                     WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
                     if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
                         //TODO:incremental true or false

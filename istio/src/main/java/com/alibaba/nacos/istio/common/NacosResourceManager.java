@@ -41,7 +41,7 @@ public class NacosResourceManager {
     private IstioConfig istioConfig;
 
     public NacosResourceManager() {
-        resourceSnapshot = new ResourceSnapshot();
+        resourceSnapshot = new ResourceSnapshot(istioConfig);
     }
 
     public Map<String, IstioService> services() {
@@ -72,7 +72,7 @@ public class NacosResourceManager {
      */
     public ResourceSnapshot createResourceSnapshot(Set<String> removedHostName, Set<String> removedClusterName,
             Set<String> updateService, Set<String> updateInstance) {
-        ResourceSnapshot resourceSnapshot = new ResourceSnapshot(removedHostName, removedClusterName, updateService, updateInstance);
+        ResourceSnapshot resourceSnapshot = new ResourceSnapshot(removedHostName, removedClusterName, updateService, updateInstance, istioConfig);
         resourceSnapshot.initResourceSnapshot(this);
         setResourceSnapshot(resourceSnapshot);
         return resourceSnapshot;

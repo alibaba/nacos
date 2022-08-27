@@ -70,7 +70,7 @@ public final class CdsV2Generator implements ApiGenerator<Any> {
             int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
             boolean protocolFlag = entry.getValue().getPortsMap().containsKey("grpc");
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + istioConfig.getDomainSuffix(), port);
+                    entry.getKey() + '.' + istioConfig.getDomainSuffix(), port);
     
             Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
                     .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(

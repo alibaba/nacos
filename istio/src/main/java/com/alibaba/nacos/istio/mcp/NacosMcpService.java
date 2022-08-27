@@ -178,6 +178,8 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     }
                 }
                 break;
+            case Endpoint:
+                break;
             default:
                 Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
         }
