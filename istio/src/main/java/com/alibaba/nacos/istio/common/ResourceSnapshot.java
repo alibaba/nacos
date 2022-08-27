@@ -42,23 +42,25 @@ public class ResourceSnapshot {
     
     private final IstioResources istioResources;
     
-    private final IstioConfig istioConfig = new IstioConfig();
+    private IstioConfig istioConfig;
     
     private boolean isCompleted;
     
     private String version;
     
-    public ResourceSnapshot() {
+    public ResourceSnapshot(IstioConfig istioConfig) {
         isCompleted = false;
         istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
+        this.istioConfig = istioConfig;
     }
     
     public ResourceSnapshot(Set<String> removedServiceEntryName, Set<String> removedClusterName,
-            Set<String> updateService, Set<String> updateInstance) {
+            Set<String> updateService, Set<String> updateInstance, IstioConfig istioConfig) {
         this.updateService = updateService;
         this.updateInstance = updateInstance;
         this.removedServiceEntryName = removedServiceEntryName;
         this.removedClusterName = removedClusterName;
+        this.istioConfig = istioConfig;
         istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
     
         isCompleted = false;

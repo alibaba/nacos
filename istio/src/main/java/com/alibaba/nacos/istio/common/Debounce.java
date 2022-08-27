@@ -37,7 +37,7 @@ public class Debounce implements Callable<DeltaResources> {
     
     private Date lastConfigUpdateTime;
     
-    private final IstioConfig istioConfig = new IstioConfig();
+    private final IstioConfig istioConfig;
     
     private final Queue<PushChange> pushChangeQueue;
     
@@ -49,8 +49,9 @@ public class Debounce implements Callable<DeltaResources> {
     
     private boolean flag = false;
     
-    public Debounce(Queue<PushChange> pushChangeQueue) {
+    public Debounce(Queue<PushChange> pushChangeQueue, IstioConfig istioConfig) {
         this.pushChangeQueue = pushChangeQueue;
+        this.istioConfig = istioConfig;
     }
     
     @Override
@@ -62,19 +63,16 @@ public class Debounce implements Callable<DeltaResources> {
             }
             
             PushChange pushChange = pushChangeQueue.poll();
-            Loggers.MAIN.info("debounce: " + pushChange);
             
             if (pushChange != null) {
                 lastConfigUpdateTime = new Date();
                 if (debouncedEvents == 0) {
                     startDebounce = lastConfigUpdateTime;
-                    Loggers.MAIN.info("debouncedEvents == 0");
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
                             if (free) {
                                 try {
-                                    Loggers.MAIN.info("pushWorker " + debouncedEvents);
                                     pushWorker();
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
@@ -84,7 +82,6 @@ public class Debounce implements Callable<DeltaResources> {
                     }, istioConfig.getDebounceAfter());
                 }
     
-                Loggers.MAIN.info("debouncedEvents: {}", debouncedEvents);
                 debouncedEvents++;
     
                 merge(pushChange);
@@ -102,7 +99,6 @@ public class Debounce implements Callable<DeltaResources> {
             if (deltaResources != null) {
                 free = false;
                 flag = true;
-                Loggers.MAIN.info("flag already true");
                 debouncedEvents = 0;
             }
         } else {
@@ -111,7 +107,6 @@ public class Debounce implements Callable<DeltaResources> {
                 public void run() {
                     if (free) {
                         try {
-                            Loggers.MAIN.info("second pushWorker " + debouncedEvents);
                             pushWorker();
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -127,6 +122,6 @@ public class Debounce implements Callable<DeltaResources> {
         PushChange.ChangeType changeType = pushChange.getChangeType();
     
         deltaResources.putChangeType(name[0], name[1], changeType);
-        Loggers.MAIN.info("merge back");
+        Loggers.MAIN.info(name[1] + " merge back");
     }
 }

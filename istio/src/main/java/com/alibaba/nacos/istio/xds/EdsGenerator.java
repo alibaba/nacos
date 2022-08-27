@@ -80,7 +80,7 @@ public final class EdsGenerator implements ApiGenerator<Any> {
             String serviceName = entry.getKey();
             int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    serviceName + istioConfig.getDomainSuffix(), port);
+                    serviceName + '.' + istioConfig.getDomainSuffix(), port);
             if (!subscribe.contains(name)) {
                 istioServiceMap.remove(serviceName);
             }
@@ -110,7 +110,7 @@ public final class EdsGenerator implements ApiGenerator<Any> {
         
             int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + domain, port);
+                    entry.getKey() + '.' + domain, port);
         
             for (IstioEndpoint istioEndpoint : istioEndpoints) {
                 String label = istioEndpoint.getStringLocality();
