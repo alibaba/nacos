@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-
 import java.util.HashMap;
 import java.util.Map;
 

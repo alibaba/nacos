@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
 /**
  * Cluster node management in Nacos.
@@ -176,7 +177,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * Init the ability of current node
      *
      * @return ServerAbilities
-     * @deprecated ability of current node and event cluster can be managed by {@link com.alibaba.nacos.core.ability.control.ServerAbilityControlManager}
+     * @deprecated ability of current node and event cluster can be managed by {@link ServerAbilityControlManager}
      */
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();

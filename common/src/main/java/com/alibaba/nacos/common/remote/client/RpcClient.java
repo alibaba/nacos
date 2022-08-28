@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.remote.client;
 
-import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.common.Constants;
