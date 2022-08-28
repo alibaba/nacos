@@ -51,7 +51,7 @@ public class AbilityKey {
          *   This field can be used outside.
          *
          *   And then you need to declare the offset of the flag bit of this ability in the ability table, you can:
-         *       <code>CURRENT_NODE_ABILITY_TABLE.put("compression", 1);</code> means that is the first bit from left to right in the table.
+         *       <code>CURRENT_SERVER_ABILITY_OFFSET.put("compression", 1);</code> means that is the first bit from left to right in the table.
          *
          */
 
