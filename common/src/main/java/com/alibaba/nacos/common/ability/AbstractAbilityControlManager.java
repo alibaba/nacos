@@ -180,7 +180,7 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
             // hook method
             remove(connectionId);
             // remove
-            nodeAbilityTable.remove(connectionId);
+            removingTable = nodeAbilityTable.remove(connectionId);
         } finally {
             lockForAbilityTable.unlock();
         }

@@ -32,6 +32,8 @@ public abstract class Connection implements Requester {
     
     private boolean traced = false;
     
+    private Map<String, Boolean> abilityTable;
+    
     private ClientAbilities abilities;
     
     private final ConnectionMeta metaInfo;
@@ -50,6 +52,14 @@ public abstract class Connection implements Requester {
     
     public void setTraced(boolean traced) {
         this.traced = traced;
+    }
+    
+    public Map<String, Boolean> getAbilityTable() {
+        return abilityTable;
+    }
+    
+    public void setAbilityTable(Map<String, Boolean> abilityTable) {
+        this.abilityTable = abilityTable;
     }
     
     /**
@@ -95,7 +105,7 @@ public abstract class Connection implements Requester {
     
     @Override
     public String toString() {
-        return "Connection{" + "traced=" + traced + ", abilities=" + abilities + ", metaInfo=" + metaInfo + '}';
+        return "Connection{" + "traced=" + traced + ", abilities=" + abilityTable + ", metaInfo=" + metaInfo + '}';
     }
 }
 
