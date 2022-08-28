@@ -67,6 +67,7 @@ public class MemberUtil {
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
         oldMember.setAbilities(newMember.getAbilities());
+        oldMember.setSupportRemoteConnection(newMember.isSupportRemoteConnection());
     }
     
     /**
@@ -108,7 +109,10 @@ public class MemberUtil {
         if (member.getAbilities() == null || member.getAbilities().getRemoteAbility() == null) {
             return false;
         }
-        return member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+        
+        boolean oldVerJudge = member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+        
+        return member.isSupportRemoteConnection() || oldVerJudge;
     }
     
     public static int calculateRaftPort(Member member) {
@@ -279,8 +283,8 @@ public class MemberUtil {
         if (!expected.getState().equals(actual.getState())) {
             return true;
         }
-        
-        if (!expected.getAbilities().equals(actual.getAbilities())) {
+    
+        if (!(expected.isSupportRemoteConnection() && actual.isSupportRemoteConnection())) {
             return true;
         }
         

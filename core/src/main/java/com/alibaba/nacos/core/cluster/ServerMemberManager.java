@@ -152,6 +152,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
+        this.self.setSupportRemoteConnection(true);
         
         // init abilities.
         this.self.setAbilities(initMemberAbilities());
@@ -171,6 +172,12 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         Loggers.CORE.info("The cluster resource is initialized");
     }
     
+    /**.
+     * Init the ability of current node
+     *
+     * @return ServerAbilities
+     * @deprecated ability of current node and event cluster can be managed by {@link com.alibaba.nacos.core.ability.control.ServerAbilityControlManager}
+     */
     private ServerAbilities initMemberAbilities() {
         ServerAbilities serverAbilities = new ServerAbilities();
         for (ServerAbilityInitializer each : ServerAbilityInitializerHolder.getInstance().getInitializers()) {
@@ -550,13 +557,17 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                         Loggers.CLUSTER.warn("{} : Clean up version info,"
                                                 + " target has been downgrade to old version.", memberNew);
                                     }
-                                    if (target.getAbilities() != null
-                                            && target.getAbilities().getRemoteAbility() != null && target.getAbilities()
-                                            .getRemoteAbility().isSupportRemoteConnection()) {
+                                    // adapt old version
+                                    boolean oldVersionJudge = target.getAbilities() != null
+                                            && target.getAbilities().getRemoteAbility() != null
+                                            && target.getAbilities().getRemoteAbility().isSupportRemoteConnection();
+                                    boolean newVersionJudge = target.isSupportRemoteConnection();
+                                    if (oldVersionJudge || newVersionJudge) {
                                         if (memberNew == null) {
                                             memberNew = target.copy();
                                         }
                                         memberNew.getAbilities().getRemoteAbility().setSupportRemoteConnection(false);
+                                        target.setSupportRemoteConnection(false);
                                         Loggers.CLUSTER
                                                 .warn("{} : Clear support remote connection flag,target may rollback version ",
                                                         memberNew);
