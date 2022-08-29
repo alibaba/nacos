@@ -47,14 +47,4 @@ public interface Serializer {
      * @return deserialized data map
      */
     <T> T deserialize(byte[] data, Class<T> clazz);
-    
-    /**
-     * Deserialize byte array data to target type.
-     *
-     * @param <T>   target type
-     * @param data  data to deserialize
-     * @param clazz target type
-     * @return deserialized data map
-     */
-    <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz);
 }

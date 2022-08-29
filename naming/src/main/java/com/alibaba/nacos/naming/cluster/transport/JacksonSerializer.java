@@ -50,25 +50,4 @@ public class JacksonSerializer implements Serializer {
     public <T> T deserialize(byte[] data, Class<T> clazz) {
         return JacksonUtils.toObj(data, clazz);
     }
-    
-    @Override
-    public <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
-        Map<String, Datum<T>> resultMap;
-        try {
-            resultMap = JacksonUtils.toObj(data, new TypeReference<Map<String, Datum<T>>>() {
-            });
-        } catch (Exception e) {
-            Map<String, JsonNode> dataMap = JacksonUtils.toObj(data, new TypeReference<Map<String, JsonNode>>() {
-            });
-            resultMap = new HashMap<>(dataMap.size());
-            for (Map.Entry<String, JsonNode> entry : dataMap.entrySet()) {
-                Datum<T> datum = new Datum<>();
-                datum.timestamp.set(entry.getValue().get(TIMESTAMP_KEY).asLong());
-                datum.key = entry.getValue().get(KEY).asText();
-                datum.value = JacksonUtils.toObj(entry.getValue().get(VALUE).toString(), clazz);
-                resultMap.put(entry.getKey(), datum);
-            }
-        }
-        return resultMap;
-    }
 }

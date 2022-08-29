@@ -91,22 +91,6 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
      * @param <T>    type
      */
     public <T extends Record> void notify(final String key, final DataOperation action, final T value) {
-        if (listenerMap.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
-            if (KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key)) {
-                for (RecordListener listener : listenerMap.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
-                    try {
-                        if (action == DataOperation.CHANGE) {
-                            listener.onChange(key, value);
-                        }
-                        if (action == DataOperation.DELETE) {
-                            listener.onDelete(key);
-                        }
-                    } catch (Throwable e) {
-                        Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", key, e);
-                    }
-                }
-            }
-        }
         
         if (!listenerMap.containsKey(key)) {
             return;
