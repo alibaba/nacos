@@ -19,8 +19,8 @@ package com.alibaba.nacos.naming.web;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -30,6 +30,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 
 /**
  * Service name filter. This class is created for adapting 1.x. client and old openAPI.
@@ -63,6 +65,12 @@ public class ServiceNameFilter implements Filter {
             if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
             }
+            if (StringUtils.isNotBlank(groupedServiceName)) {
+                boolean checkServiceNameFormat = checkServiceNameFormat(groupedServiceName, resp);
+                if (!checkServiceNameFormat) {
+                    return;
+                }
+            }
             OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
             filterChain.doFilter(requestWrapper, servletResponse);
@@ -70,5 +78,19 @@ public class ServiceNameFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
         }
+    }
+    
+    private boolean checkServiceNameFormat(String combineServiceName, HttpServletResponse resp) throws IOException {
+        String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
+        if (split.length <= 1) {
+            resp.sendError(SC_BAD_REQUEST,
+                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
+            return false;
+        }
+        if (split[0].isEmpty()) {
+            resp.sendError(SC_BAD_REQUEST, "Param 'serviceName' is illegal, groupName can't be empty");
+            return false;
+        }
+        return true;
     }
 }
