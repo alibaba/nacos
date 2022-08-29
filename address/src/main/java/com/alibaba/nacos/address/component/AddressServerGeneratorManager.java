@@ -99,7 +99,7 @@ public class AddressServerGeneratorManager {
      * @param instanceList a instance set will generate string response to client.
      * @return the result of response to client
      */
-    public String generateResponseIps(List<Instance> instanceList) {
+    public String generateResponseIps(List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
         
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
