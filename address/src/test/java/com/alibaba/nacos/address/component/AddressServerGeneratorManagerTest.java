@@ -17,7 +17,7 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
-import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.Assert;
 import org.junit.Test;
 
