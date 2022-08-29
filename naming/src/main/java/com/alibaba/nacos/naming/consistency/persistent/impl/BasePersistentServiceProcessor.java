@@ -182,7 +182,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
         for (int i = 0; i < keys.size(); i++) {
             final String key = new String(keys.get(i));
             // Ignore old 1.x version data
-            if (KeyBuilder.matchServiceMetaKey(key) || KeyBuilder.matchInstanceListKey(key)) {
+            if (!KeyBuilder.matchSwitchKey(key)) {
                 continue;
             }
             final Datum datum = serializer.deserialize(values.get(i), getDatumTypeFromKey(key));

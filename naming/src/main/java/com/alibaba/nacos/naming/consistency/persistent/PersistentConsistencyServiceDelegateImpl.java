@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServicePro
 import com.alibaba.nacos.naming.consistency.persistent.impl.StandalonePersistentServiceProcessor;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -34,55 +35,52 @@ import java.util.Optional;
  *
  * @author xiweng.yy
  */
+@DependsOn("ProtocolManager")
 @Component("persistentConsistencyServiceDelegate")
 public class PersistentConsistencyServiceDelegateImpl implements PersistentConsistencyService {
     
-    private final BasePersistentServiceProcessor newPersistentConsistencyService;
+    private final BasePersistentServiceProcessor persistentServiceProcessor;
     
     public PersistentConsistencyServiceDelegateImpl(ProtocolManager protocolManager) throws Exception {
-        this.newPersistentConsistencyService = createNewPersistentServiceProcessor(protocolManager);
+        this.persistentServiceProcessor = createPersistentServiceProcessor(protocolManager);
     }
     
     @Override
     public void put(String key, Record value) throws NacosException {
-        switchOne().put(key, value);
+        persistentServiceProcessor.put(key, value);
     }
     
     @Override
     public void remove(String key) throws NacosException {
-        switchOne().remove(key);
+        persistentServiceProcessor.remove(key);
     }
     
     @Override
     public Datum get(String key) throws NacosException {
-        return switchOne().get(key);
+        return persistentServiceProcessor.get(key);
     }
     
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        newPersistentConsistencyService.listen(key, listener);
+        persistentServiceProcessor.listen(key, listener);
     }
     
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
-        newPersistentConsistencyService.unListen(key, listener);
+        persistentServiceProcessor.unListen(key, listener);
     }
     
     @Override
     public boolean isAvailable() {
-        return switchOne().isAvailable();
+        return persistentServiceProcessor.isAvailable();
     }
     
     @Override
     public Optional<String> getErrorMsg() {
-        return switchOne().getErrorMsg();
+        return persistentServiceProcessor.getErrorMsg();
     }
     
-    private PersistentConsistencyService switchOne() {
-        return newPersistentConsistencyService;
-    }
-    
-    private BasePersistentServiceProcessor createNewPersistentServiceProcessor(ProtocolManager protocolManager)
+    private BasePersistentServiceProcessor createPersistentServiceProcessor(ProtocolManager protocolManager)
             throws Exception {
         final BasePersistentServiceProcessor processor =
                 EnvUtil.getStandaloneMode() ? new StandalonePersistentServiceProcessor()

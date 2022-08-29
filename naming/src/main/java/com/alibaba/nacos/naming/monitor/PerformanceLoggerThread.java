@@ -105,14 +105,6 @@ public class PerformanceLoggerThread {
         }
         
         private void printDistroMonitor() {
-            Optional<DistroRecord> v1Record = DistroRecordsHolder.getInstance()
-                    .getRecordIfExist(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
-            long v1SyncDone = 0;
-            long v1SyncFail = 0;
-            if (v1Record.isPresent()) {
-                v1SyncDone = v1Record.get().getSuccessfulSyncCount();
-                v1SyncFail = v1Record.get().getFailedSyncCount();
-            }
             Optional<DistroRecord> v2Record = DistroRecordsHolder.getInstance()
                     .getRecordIfExist(DistroClientDataProcessor.TYPE);
             long v2SyncDone = 0;
@@ -124,7 +116,7 @@ public class PerformanceLoggerThread {
                 v2VerifyFail = v2Record.get().getFailedVerifyCount();
             }
             Loggers.PERFORMANCE_LOG
-                    .info("DISTRO:|{}|{}|{}|{}|{}|", v1SyncDone, v1SyncFail, v2SyncDone, v2SyncFail, v2VerifyFail);
+                    .info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
     
