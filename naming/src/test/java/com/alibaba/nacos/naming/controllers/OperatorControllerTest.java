@@ -20,8 +20,13 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -54,6 +59,9 @@ public class OperatorControllerTest {
     
     @Mock
     private SwitchDomain switchDomain;
+    
+    @Mock
+    private SwitchManager switchManager;
     
     @Mock
     private ServerStatusManager serverStatusManager;
@@ -114,20 +122,22 @@ public class OperatorControllerTest {
         clients.add("127.0.0.1:8081#true");
         clients.add("127.0.0.1:8082#false");
         Mockito.when(clientManager.allClientId()).thenReturn(clients);
-        Mockito.when(clientManager.isResponsibleClient(null)).thenReturn(Boolean.TRUE);
+        Client client = new IpPortBasedClient("127.0.0.1:8081#true", true);
+        client.addServiceInstance(Service.newService("", "", ""), new InstancePublishInfo());
+        Mockito.when(clientManager.getClient("127.0.0.1:8081#true")).thenReturn(client);
+        Mockito.when(clientManager.isResponsibleClient(client)).thenReturn(Boolean.TRUE);
         
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter("onlyStatus", "false");
         ObjectNode objectNode = operatorController.metrics(servletRequest);
         
-        Assert.assertEquals(1, objectNode.get("responsibleServiceCount").asInt());
         Assert.assertEquals(1, objectNode.get("responsibleInstanceCount").asInt());
         Assert.assertEquals(ServerStatus.UP.toString(), objectNode.get("status").asText());
         Assert.assertEquals(3, objectNode.get("clientCount").asInt());
         Assert.assertEquals(1, objectNode.get("connectionBasedClientCount").asInt());
         Assert.assertEquals(1, objectNode.get("ephemeralIpPortClientCount").asInt());
         Assert.assertEquals(1, objectNode.get("persistentIpPortClientCount").asInt());
-        Assert.assertEquals(3, objectNode.get("responsibleClientCount").asInt());
+        Assert.assertEquals(1, objectNode.get("responsibleClientCount").asInt());
     }
     
     @Test
