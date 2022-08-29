@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -137,14 +136,6 @@ public class UdpPushService {
                     .error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}", data, socketAddress, e);
         }
         return null;
-    }
-    
-    /**
-     * Service changed.
-     *
-     * @param service service
-     */
-    public void serviceChanged(Service service) {
     }
     
     /**

@@ -181,6 +181,10 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
         final List<byte[]> values = request.getValues();
         for (int i = 0; i < keys.size(); i++) {
             final String key = new String(keys.get(i));
+            // Ignore old 1.x version data
+            if (KeyBuilder.matchServiceMetaKey(key) || KeyBuilder.matchInstanceListKey(key)) {
+                continue;
+            }
             final Datum datum = serializer.deserialize(values.get(i), getDatumTypeFromKey(key));
             final Record value = null != datum ? datum.value : null;
             final ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
@@ -213,10 +217,6 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     protected Class<? extends Record> getClassOfRecordFromKey(String key) {
         if (KeyBuilder.matchSwitchKey(key)) {
             return com.alibaba.nacos.naming.misc.SwitchDomain.class;
-        } else if (KeyBuilder.matchServiceMetaKey(key)) {
-            return com.alibaba.nacos.naming.core.Service.class;
-        } else if (KeyBuilder.matchInstanceListKey(key)) {
-            return com.alibaba.nacos.naming.core.Instances.class;
         }
         return Record.class;
     }

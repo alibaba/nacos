@@ -18,9 +18,6 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertTrue;
@@ -38,20 +34,9 @@ public class CatalogControllerTest {
     
     private CatalogController catalogController;
     
-    private Service service;
-    
-    private Cluster cluster;
-    
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
         catalogController = new CatalogController();
-        service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
-        service.setProtectThreshold(12.34f);
-        service.setGroupName(TEST_GROUP_NAME);
-        cluster = new Cluster(TEST_CLUSTER_NAME, service);
-        cluster.setDefaultPort(1);
-        service.addCluster(cluster);
     }
     
     @Test
@@ -88,8 +73,6 @@ public class CatalogControllerTest {
     
     @Test
     public void testInstanceList() throws NacosException {
-        Instance instance = new Instance("1.1.1.1", 1234, TEST_CLUSTER_NAME);
-        cluster.updateIps(Collections.singletonList(instance), false);
         ObjectNode result = catalogController.instanceList(Constants.DEFAULT_NAMESPACE_ID,
                 TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_CLUSTER_NAME, 1, 10);
         String actual = result.toString();
