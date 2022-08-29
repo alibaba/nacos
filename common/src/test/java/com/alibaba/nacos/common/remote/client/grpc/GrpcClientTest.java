@@ -28,43 +28,49 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Properties;
 
 import static org.mockito.Mockito.spy;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GrpcClientTest {
-
+    
     GrpcClient grpcClient;
-
+    
     Method createNewManagedChannelMethod;
-
+    
     Method createNewChannelStubMethod;
-
+    
     ManagedChannel managedChannel;
-
+    
     RpcClient.ServerInfo serverInfo;
-
+    
     @Before
     public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        grpcClient = spy(new GrpcClient("testClient") {
+        Properties clientConfig = new Properties();
+        clientConfig.put("nacos.remote.client.grpc.pool.alive", String.valueOf(20));
+        clientConfig.put("nacos.remote.client.grpc.timeout", String.valueOf(5000));
+        grpcClient = spy(new GrpcClient("testClient", clientConfig) {
             @Override
             public int rpcPortOffset() {
                 return 1000;
             }
         });
         RpcClient.ServerInfo serverInfo = spy(new RpcClient.ServerInfo("10.10.10.10", 8848));
-        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class, int.class);
+        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class,
+                int.class);
         createNewManagedChannelMethod.setAccessible(true);
         int port = serverInfo.getServerPort() + grpcClient.rpcPortOffset();
-        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(), port);
+        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(),
+                port);
     }
-
+    
     @Test
     public void testCreateNewManagedChannel() throws InvocationTargetException, IllegalAccessException {
         GrpcConnection grpcConnection = new GrpcConnection(serverInfo, null);
         grpcConnection.setChannel(managedChannel);
     }
-
+    
     @Test
     public void createNewChannelStub() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         createNewChannelStubMethod = GrpcClient.class.getDeclaredMethod("createNewChannelStub", ManagedChannel.class);
@@ -72,10 +78,10 @@ public class GrpcClientTest {
         Object invoke = createNewChannelStubMethod.invoke(grpcClient, managedChannel);
         Assert.assertTrue(invoke instanceof RequestGrpc.RequestFutureStub);
     }
-
+    
     @After
     public void close() {
         managedChannel.shutdownNow();
     }
-
+    
 }
