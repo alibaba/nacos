@@ -49,7 +49,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
     @Autowired
     private SwitchDomain switchDomain;
     
-    @Resource(name = "consistencyDelegate")
+    @Resource(name = "persistentConsistencyServiceDelegate")
     private ConsistencyService consistencyService;
     
     ReentrantLock lock = new ReentrantLock();
