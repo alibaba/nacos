@@ -27,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -91,10 +92,13 @@ public class JacksonUtilsTest {
                 "[{\"key\":\"value\"}]".getBytes(),
                 JacksonUtils.toJsonBytes(Collections.singletonList(Collections.singletonMap("key", "value")))
         );
-        Assert.assertArrayEquals(
-                "{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes(),
-                JacksonUtils.toJsonBytes(new TestOfAtomicObject())
-        );
+
+        byte[] a1 = "{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}".getBytes();
+        byte[] a2 = JacksonUtils.toJsonBytes(new TestOfAtomicObject());
+        Arrays.sort(a1);
+        Arrays.sort(a2);
+        Assert.assertArrayEquals(a1, a2);
+
         Assert.assertArrayEquals("{\"date\":1626192000000}".getBytes(), JacksonUtils.toJsonBytes(new TestOfDate()));
         // only public
         Assert.assertArrayEquals(
@@ -102,10 +106,12 @@ public class JacksonUtilsTest {
                 JacksonUtils.toJsonBytes(new TestOfAccessModifier())
         );
         // getter is also recognized
-        Assert.assertArrayEquals(
-                "{\"value\":\"value\",\"key\":\"key\"}".getBytes(),
-                JacksonUtils.toJsonBytes(new TestOfGetter())
-        );
+        byte[] b1 = "{\"value\":\"value\",\"key\":\"key\"}".getBytes();
+        byte[] b2 = JacksonUtils.toJsonBytes(new TestOfGetter());
+        Arrays.sort(b1);
+        Arrays.sort(b2);
+        Assert.assertArrayEquals(b1, b2);
+
         // annotation available
         Assert.assertArrayEquals(
                 ("{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\"," 
