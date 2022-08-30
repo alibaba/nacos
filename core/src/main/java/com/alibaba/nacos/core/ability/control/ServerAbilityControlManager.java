@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.ability.control;
 
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
@@ -80,17 +79,6 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
             return false;
         }
         AbilityTable abilityTable = nodeAbilityTable.get(connectionId);
-        // it is null, check if initialing
-        if (abilityTable == null && AbilityStatus.INITIALIZING.equals(trace(connectionId))) {
-            // wait for ready
-            boolean finish = traceReadySyn(connectionId);
-            // if expired
-            if (!finish) {
-                return false;
-            } else {
-                abilityTable = nodeAbilityTable.get(connectionId);
-            }
-        }
         // false if null
         return abilityTable != null
                 && Optional.ofNullable(abilityTable.getAbility())

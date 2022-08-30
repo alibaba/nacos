@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.test.ability;
 
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
-import com.alibaba.nacos.common.ability.handler.AbilityHandlePreProcessor;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import org.junit.Assert;
 import org.junit.Before;
@@ -118,9 +116,9 @@ public class AbilityControlManagerTest {
         clientTable.setAbility(clientTa);
         clientTable.setServer(true);
         clientAbilityControlManager.addNewTable(clientTable);
-        Assert.assertEquals(AbilityStatus.READY, clientAbilityControlManager.trace("test-01111"));
+        Assert.assertTrue(clientAbilityControlManager.contains(clientTable.getConnectionId()));
         clientAbilityControlManager.removeTable("test-01111");
-        Assert.assertEquals(AbilityStatus.NOT_EXIST, clientAbilityControlManager.trace("test-01111"));
+        Assert.assertFalse(clientAbilityControlManager.contains(clientTable.getConnectionId()));
     }
 
     @Test
@@ -212,36 +210,6 @@ public class AbilityControlManagerTest {
         keySet.forEach(key -> {
             Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(key));
         });
-    }
-    
-    @Test
-    public void testPre() {
-        clientAbilityControlManager.addPostProcessor(new TestPreHandler());
-        clientAbilityControlManager.enableCurrentNodeAbility("stop-raft");
-        AbilityTable abilityTable = new AbilityTable();
-        abilityTable.setConnectionId("1111");
-        HashMap<String, Boolean> table = new HashMap<>();
-        table.put("stop-raft", false);
-        abilityTable.setAbility(table);
-        clientAbilityControlManager.addNewTable(abilityTable);
-        Assert.assertFalse(clientAbilityControlManager.isSupport("1111", "stop-raft"));
-    }
-    
-    @Test
-    public void testStateSyn() {
-        // register a processing long time handler
-        AbilityTable abilityTable = new AbilityTable();
-        abilityTable.setConnectionId("1111");
-        HashMap<String, Boolean> table = new HashMap<>();
-        table.put("stop-raft", false);
-        abilityTable.setAbility(table);
-        clientAbilityControlManager.addPostProcessor(new TestStatusPreHandler());
-        // 追踪状态
-        long begin = System.currentTimeMillis();
-        clientAbilityControlManager.addNewTable(abilityTable);
-        Assert.assertTrue(clientAbilityControlManager.traceReadySyn("1111"));
-        long end = System.currentTimeMillis();
-        Assert.assertTrue(end - begin > 5000);
     }
     
     @Test
@@ -352,29 +320,7 @@ public class AbilityControlManagerTest {
         }
 
     }
-
-    class TestPreHandler implements AbilityHandlePreProcessor {
-        
-        @Override
-        public AbilityTable handle(AbilityTable source) {
-            source.setConnectionId("pre-handle");
-            return source;
-        }
-    }
     
-    class TestStatusPreHandler implements AbilityHandlePreProcessor {
-        
-        @Override
-        public AbilityTable handle(AbilityTable source) {
-            try {
-                // block
-                Thread.sleep(5000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return source;
-        }
-    }
 }
 
 

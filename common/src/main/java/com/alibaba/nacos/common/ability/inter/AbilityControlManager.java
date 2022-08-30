@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.ability.inter;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
-import com.alibaba.nacos.common.ability.handler.AbilityHandlePreProcessor;
 
 import java.util.Map;
 
@@ -74,14 +73,6 @@ public interface AbilityControlManager {
      * @return ability table
      */
     Map<String, Boolean> getCurrentRunningAbility();
-    
-    /**.
-     * They will be invoked before updating ability table, but the order in which
-     * they are called cannot be guaranteed
-     *
-     * @param postProcessor PostProcessor instance
-     */
-    void addPostProcessor(AbilityHandlePreProcessor postProcessor);
     
     /**.
      * Initialize the manager

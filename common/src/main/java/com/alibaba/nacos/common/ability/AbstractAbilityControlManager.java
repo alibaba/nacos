@@ -17,23 +17,16 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
-import com.alibaba.nacos.common.ability.handler.AbilityHandlePreProcessor;
-import com.alibaba.nacos.common.ability.inter.TraceableAbilityControlManager;
+import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**.
@@ -42,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @date 2022/7/12 19:18
  **/
 @SuppressWarnings("all")
-public abstract class AbstractAbilityControlManager implements TraceableAbilityControlManager {
+public abstract class AbstractAbilityControlManager implements AbilityControlManager {
 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAbilityControlManager.class);
@@ -62,17 +55,6 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
      * value: AbilityTable
      */
     protected final Map<String, AbilityTable> nodeAbilityTable = new ConcurrentHashMap<>();
-    
-    /**.
-     * These handlers will be invoke before combine the ability table
-     */
-    private final List<AbilityHandlePreProcessor> abilityHandlePreProcessors = new ArrayList<>();
-
-    /**
-     * This map is used to trace the status of ability table.
-     * Its status should be update after {@link #addNewTable(AbilityTable)} and {@link #removeTable(String)}
-     */
-    protected final Map<String, AtomicReference<AbilityStatus>> abilityStatus = new ConcurrentHashMap<>();
     
     private final ReentrantLock lockForProcessors = new ReentrantLock();
     
@@ -124,33 +106,18 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
             if (contains(connectionId)) {
                 return;
             }
-            // update status
-            abilityStatus.put(connectionId, new AtomicReference<>(AbilityStatus.INITIALIZING));
-            // handle ability table before joining current node
-            AbilityTable processed = process(table);
             // hook method
-            add(processed);
+            add(table);
             // add to node
             nodeAbilityTable.put(connectionId, table);
         } finally {
             lockForAbilityTable.unlock();
         }
-        // update status
-        AtomicReference<AbilityStatus> abilityStatusAtomicReference = abilityStatus.get(table.getConnectionId());
-        if (abilityStatusAtomicReference != null) {
-            // try one time
-            // do nothing if AbilityStatus == Expired
-            // if ready
-            if(abilityStatusAtomicReference.compareAndSet(AbilityStatus.INITIALIZING, AbilityStatus.READY)) {
-                // publish event to subscriber
-                AbilityComeEvent updateEvent = new AbilityComeEvent();
-                updateEvent.setConnectionId(table.getConnectionId());
-                updateEvent.setTable(table);
-                NotifyCenter.publishEvent(updateEvent);
-            }
-        } else {
-            LOGGER.warn("[AbiityControlManager] Cannot get connection status after processing ability table, possible reason is that the network is unstable");
-        }
+        // publish event to subscriber
+        AbilityComeEvent updateEvent = new AbilityComeEvent();
+        updateEvent.setConnectionId(table.getConnectionId());
+        updateEvent.setTable(table);
+        NotifyCenter.publishEvent(updateEvent);
     }
 
     /**
@@ -171,12 +138,6 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
             if (!nodeAbilityTable.containsKey(connectionId)) {
                 return;
             }
-            nodeAbilityTable.get(connectionId);
-            // update status
-            abilityStatus.computeIfPresent(connectionId, (k, v) -> {
-                v.set(AbilityStatus.EXPIRED);
-                return v;
-            });
             // hook method
             remove(connectionId);
             // remove
@@ -184,8 +145,6 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
         } finally {
             lockForAbilityTable.unlock();
         }
-        // remove status
-        abilityStatus.remove(connectionId);
         // publish event
         if (removingTable != null) {
             AbilityExpiredEvent expiredEvent = new AbilityExpiredEvent();
@@ -194,7 +153,6 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
             NotifyCenter.publishEvent(expiredEvent);
         }
     }
-
 
     /**
      * Register a new ability table. This is a ThreadSafe method for {@link AbstractAbilityControlManager#remove(String)}.
@@ -220,97 +178,6 @@ public abstract class AbstractAbilityControlManager implements TraceableAbilityC
     @Override
     public boolean contains(String connectionId) {
         return nodeAbilityTable.containsKey(connectionId);
-    }
-
-
-    /**
-     * Get the status of the ability table.
-     *
-     * @param connectionId connection id
-     * @return status of ability table {@link AbilityStatus}
-     */
-    @Override
-    public AbilityStatus trace(String connectionId) {
-        if (connectionId == null) {
-            return AbilityStatus.NOT_EXIST;
-        }
-        return abilityStatus.getOrDefault(connectionId, new AtomicReference<>(AbilityStatus.NOT_EXIST)).get();
-    }
-
-    /**
-     * Trace the status of connection if <p>{@link AbilityStatus#INITIALIZING}<p/>, wake up if <p>{@link AbilityStatus#READY}<p/>
-     * It will return if status is <p>{@link AbilityStatus#EXPIRED}<p/> or <p>{@link AbilityStatus#NOT_EXIST}<p/>
-     *
-     * @param connectionId connection id
-     * @param source       source status
-     * @param target       target status
-     * @return if success
-     */
-    @Override
-    public boolean traceReadySyn(String connectionId) {
-        AbilityStatus source = AbilityStatus.INITIALIZING;
-        AbilityStatus target = AbilityStatus.READY;
-        AtomicReference<AbilityStatus> atomicReference = abilityStatus.get(connectionId);
-        // return if null
-        if (atomicReference == null || atomicReference.get().equals(AbilityStatus.EXPIRED)) {
-            return false;
-        } else if (target == atomicReference.get()) {
-            return true;
-        }
-        // try if status legal
-        while (!atomicReference.get().equals(target) && atomicReference.get().equals(source)) {
-            LockSupport.parkNanos(100L);
-            // if expired
-            if (atomicReference.get().equals(AbilityStatus.EXPIRED)) {
-                return false;
-            }
-        }
-        return atomicReference.get().equals(target);
-    }
-    
-    /**.
-     * Invoking {@link AbilityHandlePreProcessor}
-     *
-     * @param source source ability table
-     * @return result
-     */
-    protected AbilityTable process(AbilityTable source) {
-        // do nothing if no processor
-        if (CollectionUtils.isEmpty(abilityHandlePreProcessors)) {
-            return source;
-        }
-        // copy to advoid error process
-        AbilityTable abilityTable = source;
-        AbilityTable copy = new AbilityTable(source.getConnectionId(), new HashMap<>(source.getAbility()), source.isServer(), source.getVersion());
-        for (AbilityHandlePreProcessor handler : abilityHandlePreProcessors) {
-            try {
-                abilityTable = handler.handle(abilityTable);
-            } catch (Throwable t) {
-                LOGGER.warn("[AbilityHandlePostProcessor] Failed to invoke {} :{}",
-                        handler.getClass().getSimpleName(), t.getLocalizedMessage());
-                // ensure normal operation
-                abilityTable = copy;
-            }
-        }
-        return abilityTable;
-    }
-    
-    /**.
-     * They will be invoked before updating ability table, but the order in which
-     * they are called cannot be guaranteed
-     *
-     * @param postProcessor PostProcessor instance
-     */
-    @Override
-    public void addPostProcessor(AbilityHandlePreProcessor postProcessor) {
-        lockForProcessors.lock();
-        try {
-            abilityHandlePreProcessors.add(postProcessor);
-        } finally {
-            lockForProcessors.unlock();
-            LOGGER.info("[AbilityHandlePostProcessor] registry handler: {}",
-                    postProcessor.getClass().getSimpleName());
-        }
     }
     
     /**

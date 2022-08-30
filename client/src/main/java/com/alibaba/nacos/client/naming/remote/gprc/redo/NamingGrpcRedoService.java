@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 
 import java.util.HashSet;
@@ -73,13 +74,13 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     @Override
-    public void onConnected() {
+    public void onConnected(Connection connection) {
         connected = true;
         LogUtils.NAMING_LOGGER.info("Grpc connection connect");
     }
     
     @Override
-    public void onDisConnect() {
+    public void onDisConnect(Connection connection) {
         connected = false;
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
         synchronized (registeredInstances) {

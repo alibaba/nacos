@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.api.utils.AbilityTableUtils;
+import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
@@ -317,10 +319,11 @@ public abstract class GrpcClient extends RpcClient {
                 ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
                 Map<String, Boolean> abilityTable = AbilityTableUtils
                         .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
-                String oldConnId = currentConnection == null ? null : currentConnection.getConnectionId();
-                RecServerAbilityContext recServerAbilityContext = new RecServerAbilityContext(serverCheckResponse.getConnectionId(),
-                        abilityTable, null, oldConnId);
-                recServerAbilitySignal.offer(recServerAbilityContext);
+                AbilityTable table = new AbilityTable();
+                table.setServer(true)
+                        .setConnectionId(serverCheckResponse.getConnectionId())
+                        .setAbility(abilityTable);
+                NacosAbilityManagerHolder.getInstance().addNewTable(table);
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());

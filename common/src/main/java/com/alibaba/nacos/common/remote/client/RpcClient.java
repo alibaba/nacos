@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.remote.client;
 
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
-import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
@@ -30,8 +28,8 @@ import com.alibaba.nacos.api.remote.response.ClientDetectionResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
+import com.alibaba.nacos.common.ability.listener.ClientAbilityEventListener;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
@@ -53,7 +51,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,8 +77,6 @@ public abstract class RpcClient implements Closeable {
     protected ScheduledExecutorService clientEventExecutor;
     
     private final BlockingQueue<ReconnectContext> reconnectionSignal = new ArrayBlockingQueue<>(1);
-    
-    protected final BlockingQueue<RecServerAbilityContext> recServerAbilitySignal = new LinkedBlockingQueue<>();
     
     protected volatile Connection currentConnection;
     
@@ -191,15 +186,17 @@ public abstract class RpcClient implements Closeable {
     
     /**
      * Notify when client disconnected.
+     *
+     * @param connection connection has disconnected
      */
-    protected void notifyDisConnected() {
+    protected void notifyDisConnected(Connection connection) {
         if (connectionEventListeners.isEmpty()) {
             return;
         }
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Notify disconnected event to listeners", name);
         for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
             try {
-                connectionEventListener.onDisConnect();
+                connectionEventListener.onDisConnect(connection);
             } catch (Throwable throwable) {
                 LoggerUtils.printIfErrorEnabled(LOGGER, "[{}] Notify disconnect listener error, listener = {}", name,
                         connectionEventListener.getClass().getName());
@@ -209,15 +206,17 @@ public abstract class RpcClient implements Closeable {
     
     /**
      * Notify when client new connected.
+     *
+     *  @param connection connection has connected
      */
-    protected void notifyConnected() {
+    protected void notifyConnected(Connection connection) {
         if (connectionEventListeners.isEmpty()) {
             return;
         }
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Notify connected event to listeners.", name);
         for (ConnectionEventListener connectionEventListener : connectionEventListeners) {
             try {
-                connectionEventListener.onConnected();
+                connectionEventListener.onConnected(connection);
             } catch (Throwable throwable) {
                 LoggerUtils.printIfErrorEnabled(LOGGER, "[{}] Notify connect listener error, listener = {}", name,
                         connectionEventListener.getClass().getName());
@@ -285,7 +284,10 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         
-        clientEventExecutor = new ScheduledThreadPoolExecutor(3, r -> {
+        // add listener to remove expired ability table
+        registerConnectionListener(new ClientAbilityEventListener());
+        
+        clientEventExecutor = new ScheduledThreadPoolExecutor(2, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.client.remote.worker");
             t.setDaemon(true);
@@ -299,38 +301,12 @@ public abstract class RpcClient implements Closeable {
                 try {
                     take = eventLinkedBlockingQueue.take();
                     if (take.isConnected()) {
-                        notifyConnected();
+                        notifyConnected(take.connection);
                     } else if (take.isDisConnected()) {
-                        notifyDisConnected();
+                        notifyDisConnected(take.connection);
                     }
                 } catch (Throwable e) {
                     // Do nothing
-                }
-            }
-        });
-    
-        // receive ability table
-        clientEventExecutor.submit(() -> {
-            // save server ability table or remove
-            while (!clientEventExecutor.isTerminated() && !clientEventExecutor.isShutdown()) {
-                try {
-                    RecServerAbilityContext take = recServerAbilitySignal.take();
-                    // avoid interrupted should not null
-                    if (take != null) {
-                        DefaultAbilityControlManager manager = NacosAbilityManagerHolder.getInstance();
-                        // remove
-                        manager.removeTable(take.oldConnectionId);
-                        // and add
-                        manager.addNewTable(
-                                new AbilityTable()
-                                        .setAbility(take.abilityTable)
-                                        .setConnectionId(take.connectionId)
-                                        .setVersion(take.version)
-                                        .setServer(true)
-                        );
-                    }
-                } catch (InterruptedException e) {
-                    // do nothing
                 }
             }
         });
@@ -427,30 +403,12 @@ public abstract class RpcClient implements Closeable {
             
         }
         
-        // try to wait for the ability table to be added, but it will check three time at most
-        AbilityStatus status = AbilityStatus.NOT_EXIST;
-        int reCheckTimes = RETRY_TIMES;
-        while (!isShutdown() && connectToServer != null && status.equals(AbilityStatus.NOT_EXIST) && reCheckTimes > 0) {
-            LockSupport.parkNanos(100L);
-            status = NacosAbilityManagerHolder.getInstance().trace(connectToServer.getConnectionId());
-            reCheckTimes--;
-        }
-    
-        // judge whether support ability table
-        // wait to get ability table if initializing, it will pass if server doesn't support ability table or table ready
-        boolean connected = true;
-        while (!isShutdown() && connectToServer != null && AbilityStatus.INITIALIZING.equals(status) && connected) {
-            // wait for complete
-            // return false if disconnect
-            connected = NacosAbilityManagerHolder.getInstance().traceReadySyn(connectToServer.getConnectionId());
-        }
-        
         if (connectToServer != null) {
             LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Success to connect to server [{}] on start up, connectionId = {}",
                     name, connectToServer.serverInfo.getAddress(), connectToServer.getConnectionId());
             this.currentConnection = connectToServer;
             rpcClientStatus.set(RpcClientStatus.RUNNING);
-            eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED));
+            eventLinkedBlockingQueue.offer(new ConnectionEvent(ConnectionEvent.CONNECTED, currentConnection));
         } else {
             switchServerAsync();
         }
@@ -576,28 +534,6 @@ public abstract class RpcClient implements Closeable {
                         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Success to connect a server [{}], connectionId = {}",
                                 name, serverInfo.getAddress(), connectionNew.getConnectionId());
     
-                        // try to wait for the ability table to be added, but it will check three time at most
-                        AbilityStatus status = AbilityStatus.NOT_EXIST;
-                        int reCheckTimes = RETRY_TIMES;
-                        while (status.equals(AbilityStatus.NOT_EXIST) && reCheckTimes > 0) {
-                            LockSupport.parkNanos(100L);
-                            status = NacosAbilityManagerHolder.getInstance().trace(connectionNew.getConnectionId());
-                            reCheckTimes--;
-                        }
-    
-                        // judge whether support ability table
-                        // wait to get ability table if initializing, it will pass if server doesn't support ability table or table ready
-                        boolean connected = true;
-                        while (!isShutdown() && AbilityStatus.INITIALIZING.equals(status) && connected) {
-                            // wait for complete
-                            // return false if disconnect
-                            connected = NacosAbilityManagerHolder.getInstance()
-                                    .traceReadySyn(connectionNew.getConnectionId());
-                        }
-    
-                        LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Success to get server ability table, connectionId = {}",
-                                name, connectionNew.getConnectionId());
-    
                         // successfully create a new connect
                         if (currentConnection != null) {
                             LoggerUtils.printIfInfoEnabled(LOGGER,
@@ -610,7 +546,7 @@ public abstract class RpcClient implements Closeable {
                         currentConnection = connectionNew;
                         rpcClientStatus.set(RpcClientStatus.RUNNING);
                         switchSuccess = true;
-                        eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.CONNECTED));
+                        eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.CONNECTED, currentConnection));
                         return;
                     }
                     
@@ -671,7 +607,7 @@ public abstract class RpcClient implements Closeable {
         if (connection != null) {
             LOGGER.info("Close current connection " + connection.getConnectionId());
             connection.close();
-            eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.DISCONNECTED));
+            eventLinkedBlockingQueue.add(new ConnectionEvent(ConnectionEvent.DISCONNECTED, connection));
         }
     }
     
@@ -1076,8 +1012,11 @@ public abstract class RpcClient implements Closeable {
         
         int eventType;
         
-        public ConnectionEvent(int eventType) {
+        Connection connection;
+        
+        public ConnectionEvent(int eventType, Connection connection) {
             this.eventType = eventType;
+            this.connection = connection;
         }
         
         public boolean isConnected() {

@@ -17,10 +17,12 @@
 package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -68,13 +70,13 @@ public class NamingGrpcRedoServiceTest {
     @Test
     public void testOnConnected() {
         assertFalse(redoService.isConnected());
-        redoService.onConnected();
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         assertTrue(redoService.isConnected());
     }
     
     @Test
     public void testOnDisConnect() {
-        redoService.onConnected();
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         redoService.instanceRegistered(SERVICE, GROUP);
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
@@ -82,7 +84,7 @@ public class NamingGrpcRedoServiceTest {
         assertTrue(redoService.isConnected());
         assertTrue(redoService.findInstanceRedoData().isEmpty());
         assertTrue(redoService.findSubscriberRedoData().isEmpty());
-        redoService.onDisConnect();
+        redoService.onDisConnect(new TestConnection(new RpcClient.ServerInfo()));
         assertFalse(redoService.isConnected());
         assertFalse(redoService.findInstanceRedoData().isEmpty());
         assertFalse(redoService.findSubscriberRedoData().isEmpty());

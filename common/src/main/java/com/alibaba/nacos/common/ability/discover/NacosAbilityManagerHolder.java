@@ -64,9 +64,6 @@ public class NacosAbilityManagerHolder {
                 abstractAbilityControlManager = clazz;
             });
             LOGGER.info("[AbilityControlManager] Successfully initialize AbilityControlManager");
-            // init pre processor
-            AbilityHandleLoader loader = new AbilityHandleLoader();
-            loader.getInitializers().forEach(processor -> abstractAbilityControlManager.addPostProcessor(processor));
         }
     }
     
