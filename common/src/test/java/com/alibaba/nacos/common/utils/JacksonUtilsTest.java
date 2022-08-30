@@ -56,18 +56,18 @@ public class JacksonUtilsTest {
                 JacksonUtils.toJson(Collections.singletonList(Collections.singletonMap("key", "value")))
         );
         Assert.assertEquals(
-                "{\"aLong\":0,\"aInteger\":1,\"aBoolean\":false}",
+                "{\"aBoolean\":false,\"aInteger\":1,\"aLong\":0}",
                 JacksonUtils.toJson(new TestOfAtomicObject())
         );
         Assert.assertEquals("{\"date\":1626192000000}", JacksonUtils.toJson(new TestOfDate()));
         // only public
         Assert.assertEquals("{\"publicAccessModifier\":\"public\"}", JacksonUtils.toJson(new TestOfAccessModifier()));
         // getter is also recognized
-        Assert.assertEquals("{\"value\":\"value\",\"key\":\"key\"}", JacksonUtils.toJson(new TestOfGetter()));
+        Assert.assertEquals("{\"key\":\"key\",\"value\":\"value\"}", JacksonUtils.toJson(new TestOfGetter()));
         // annotation available
         Assert.assertEquals(
-                "{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"date\":\"2021-07-14\",\"subField\":\"subField\"," 
-                        + "\"camelCase\":\"value\"}", 
+                "{\"@type\":\"JacksonUtilsTest$TestOfAnnotationSub\",\"camelCase\":\"value\",\"date\":\"2021-07-14\"," 
+                        + "\"subField\":\"subField\"}", 
                 JacksonUtils.toJson(new TestOfAnnotationSub())
         );
     }
