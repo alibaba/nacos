@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**.
  * @author Daydreamer
@@ -97,5 +98,19 @@ public class AbilityTableUtils {
             res.put(abilityKey, x == tmp);
         }
         return res;
+    }
+    
+    /**.
+     * get ability bit table by existed ability table and offset map
+     *
+     * @param offsetMap offset from {@link AbilityBitOperate}
+     * @return Return the Map containing AbilityTableKey and isRunning.
+     */
+    public static byte[] getAbilityBiTableBy(Map<AbilityKey, Integer> offsetMap, Map<AbilityKey, Boolean> abilityTable) {
+        // filter the element which <code>abilityTable</code> don't have or value is false
+        Map<AbilityKey, Integer> res = offsetMap.entrySet().stream()
+                .filter(item -> abilityTable.getOrDefault(item.getKey(), false))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return getAbilityBitBy(res.values());
     }
 }

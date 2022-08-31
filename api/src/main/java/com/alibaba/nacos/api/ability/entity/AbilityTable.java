@@ -95,5 +95,10 @@ public class AbilityTable implements Cloneable {
         this.ability = ability;
         return this;
     }
-
+    
+    @Override
+    public String toString() {
+        return "AbilityTable{" + "connectionId='" + connectionId + '\'' + ", ability=" + ability + ", isServer="
+                + isServer + ", version='" + version + '\'' + '}';
+    }
 }

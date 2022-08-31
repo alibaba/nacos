@@ -83,10 +83,6 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     
     @Override
     public AbilityStatus isSupport(String connectionId, AbilityKey abilityKey) {
-        Boolean isRunning = currentRunningAbility.getOrDefault(abilityKey, false);
-        if (!isRunning) {
-            return AbilityStatus.NOT_SUPPORTED;
-        }
         AbilityTable abilityTable = nodeAbilityTable.get(connectionId);
         if(abilityTable == null) {
             return AbilityStatus.UNKNOWN;

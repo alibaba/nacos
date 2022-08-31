@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -117,6 +118,14 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
             // hook method
             add(table);
             // add to node
+            Set<AbilityKey> abilityKeys = table.getAbility().keySet();
+            Map<AbilityKey, Boolean> clientAbilities = table.getAbility();
+            abilityKeys.forEach(abilityKey -> {
+                Boolean res = currentRunningAbility.getOrDefault(abilityKey, false);
+                Boolean coming = clientAbilities.getOrDefault(abilityKey, false);
+                clientAbilities.put(abilityKey, res && coming);
+            });
+            System.out.println(table);
             nodeAbilityTable.put(connectionId, table);
         } finally {
             lockForAbilityTable.unlock();
