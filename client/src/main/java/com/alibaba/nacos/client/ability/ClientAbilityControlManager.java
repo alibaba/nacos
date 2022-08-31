@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
 import com.alibaba.nacos.api.utils.AbilityTableUtils;
@@ -43,17 +44,19 @@ public class ClientAbilityControlManager extends DefaultAbilityControlManager {
     }
     
     @Override
-    public boolean isSupport(String connectionId, AbilityKey abilityKey) {
+    public AbilityStatus isSupport(String connectionId, AbilityKey abilityKey) {
         Boolean isRunning = currentRunningAbility.getOrDefault(abilityKey, false);
         if (!isRunning) {
-            return false;
+            return AbilityStatus.NOT_SUPPORTED;
         }
         AbilityTable abilityTable = nodeAbilityTable.get(connectionId);
-        // false if null
-        return abilityTable != null
-                && Optional.ofNullable(abilityTable.getAbility())
-                        .orElse(Collections.emptyMap())
-                        .getOrDefault(abilityKey, false);
+        if(abilityTable == null) {
+            return AbilityStatus.UNKNOWN;
+        }
+        Boolean isSupport = Optional.ofNullable(abilityTable.getAbility())
+                .orElse(Collections.emptyMap())
+                .getOrDefault(abilityKey, false);
+        return isSupport ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
     }
     
     @Override

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.ability.inter;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 
@@ -36,7 +37,7 @@ public interface AbilityControlManager {
      * @param abilityKey   key name which comes from {@link AbilityBitOperate}.
      * @return whether the ability is supported in certain connection.
      */
-    boolean isSupport(String connectionId, AbilityKey abilityKey);
+    AbilityStatus isSupport(String connectionId, AbilityKey abilityKey);
     
     /**
      * Whether the ability current node supporting is running. Return false if current node doesn't support.
