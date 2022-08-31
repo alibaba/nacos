@@ -67,6 +67,7 @@ public class ConfigChangeAspect {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangeAspect.class);
     
+    //FIXME 发布与更新无需判断
     @Autowired
     PersistService persistService;
     
@@ -122,7 +123,9 @@ public class ConfigChangeAspect {
     @Around(CLIENT_INTERFACE_PUBLISH_CONFIG)
     Object publishConfigAround(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
             String dataId, String group, String tenant, String content) throws Throwable {
+        // publish - update ;
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
+        //FIXME 枚举
         String handleType = "publish";
         Map<String, Object> additionInfo = new HashMap<>(2);
         if (configAllInfo != null) {

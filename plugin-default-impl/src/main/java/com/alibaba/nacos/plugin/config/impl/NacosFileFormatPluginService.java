@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.plugin.config.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeHandleReport;
 import com.alibaba.nacos.plugin.config.spi.AbstractFileFormatPluginService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.json.JacksonJsonParser;
+import org.springframework.util.StringUtils;
 import org.xml.sax.InputSource;
 import org.yaml.snakeyaml.Yaml;
 
@@ -62,6 +62,8 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
         if (args.length == RPC_ARGS_LENGTH) {
             return pjp.proceed();
         }
+        // FIXME 注释，能否校验 alibaba.nacos.yaml
+        // according to pjp acquire content and type
         String content = (String) args[5];
         String type = (String) args[13];
         boolean isValidate = validate(content, type);
@@ -74,7 +76,7 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
     
     @Override
     public String getImplWay() {
-        return "nacos";
+        return ConfigChangeConstants.NACOS_IMPL_WAY;
     }
     
     static {
@@ -122,7 +124,43 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
      * @return
      */
     static Function<String, Boolean> jsonValidate() {
-        return JSON::isValid;
+        return (content) -> {
+            try {
+                boolean result = false;
+                String jsonRegexp = "^(?:(?:\\s*\\[\\s*(?:(?:"
+                        + "(?:\"[^\"]*?\")|(?:true|false|null)|(?:[+-]?\\d+(?:\\.?\\d+)?(?:[eE][+-]?\\d+)?)|(?<json1>(?:\\[.*?\\])|(?:\\{.*?\\})))\\s*,\\s*)*(?:"
+                        + "(?:\"[^\"]*?\")|(?:true|false|null)|(?:[+-]?\\d+(?:\\.?\\d+)?(?:[eE][+-]?\\d+)?)|(?<json2>(?:\\[.*?\\])|(?:\\{.*?\\})))\\s*\\]\\s*)"
+                        + "|(?:\\s*\\{\\s*"
+                        + "(?:\"[^\"]*?\"\\s*:\\s*(?:(?:\"[^\"]*?\")|(?:true|false|null)|(?:[+-]?\\d+(?:\\.?\\d+)?(?:[eE][+-]?\\d+)?)|(?<json3>(?:\\[.*?\\])|(?:\\{.*?\\})))\\s*,\\s*)*"
+                        + "(?:\"[^\"]*?\"\\s*:\\s*(?:(?:\"[^\"]*?\")|(?:true|false|null)|(?:[+-]?\\d+(?:\\.?\\d+)?(?:[eE][+-]?\\d+)?)|(?<json4>(?:\\[.*?\\])|(?:\\{.*?\\}))))\\s*\\}\\s*))$";
+                Pattern jsonPattern = Pattern.compile(jsonRegexp);
+                Matcher jsonMatcher = jsonPattern.matcher(content);
+                // recursion to validate
+                if (jsonMatcher.matches()) {
+                    result = true;
+                    for (int i = 4; i >= 1; i--) {
+                        if (!StringUtils.isEmpty(jsonMatcher.group("json" + i))) {
+                            result = jsonValidate()
+                                    .apply(jsonMatcher.group("json" + i)); //isJSON(jsonMatcher.group("json" + i));
+                            if (!result) {
+                                break;
+                            }
+                            if (i == 3 || i == 1) {
+                                result = jsonValidate()
+                                        .apply(content.substring(0, jsonMatcher.start("json" + i)) + (i == 3
+                                                ? "\"JSON\"}" : "\"JSON\"]"));
+                                if (!result) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                return result;
+            } catch (Exception e) {
+                return false;
+            }
+        };
     }
     
     /**

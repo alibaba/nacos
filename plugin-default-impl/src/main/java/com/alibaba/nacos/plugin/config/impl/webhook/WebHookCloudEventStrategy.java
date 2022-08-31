@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.plugin.config.impl.webhook;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeNotifyInfo;
 import com.alibaba.nacos.plugin.config.util.ConfigPropertyUtil;
-import com.google.gson.Gson;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.http.vertx.VertxMessageFactory;
@@ -78,17 +78,16 @@ public class WebHookCloudEventStrategy implements WebHookNotifyStrategy {
         CloudEventBuilder eventTemplate = CloudEventBuilder.v1().withSource(URI.create("app.microservice"))
                 .withType("webhook.notify");
         String id = UUID.randomUUID().toString();
-        Gson gson = new Gson();
         CloudEvent event;
         String url = PROTOCOL_HTTP + ENDPOINT + PUT_EVENT_API;
         if (httpUrl != null) {
             url = httpUrl;
             event = eventTemplate.newBuilder().withId(id)
-                    .withData("application/json", gson.toJson(configChangeNotifyInfo).getBytes())
+                    .withData("application/json", JacksonUtils.toJson(configChangeNotifyInfo).getBytes())
                     .withSource(URI.create("webhook.source")).withType("webhook.notify").build();
         } else {
             event = eventTemplate.newBuilder().withId(id)
-                    .withData("application/json", gson.toJson(configChangeNotifyInfo).getBytes())
+                    .withData("application/json", JacksonUtils.toJson(configChangeNotifyInfo).getBytes())
                     .withExtension("aliyuneventbusname", EVENT_BUS).withSource(URI.create(SOURCE))
                     .withType("webhook.notify").build();
         }
@@ -126,7 +125,7 @@ public class WebHookCloudEventStrategy implements WebHookNotifyStrategy {
                 }
             }).exceptionHandler(throwable -> {
                 LOGGER.warn("push fail {},ready to retry", throwable.getMessage());
-                retryRequest();
+                // retryRequest();
             });
             request.putHeader("content-type", "application/cloudevents+json");
             try {

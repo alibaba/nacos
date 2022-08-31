@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.config.impl;
 
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeHandleReport;
 import com.alibaba.nacos.plugin.config.spi.AbstractWhiteListPluginService;
 import com.alibaba.nacos.plugin.config.util.ConfigPropertyUtil;
@@ -69,7 +70,7 @@ public class NacosWhiteListPluginService extends AbstractWhiteListPluginService 
     
     @Override
     public String getImplWay() {
-        return "nacos";
+        return ConfigChangeConstants.NACOS_IMPL_WAY;
     }
     
     void filterFile(Object[] args, Set<String> whiteList) throws IOException {

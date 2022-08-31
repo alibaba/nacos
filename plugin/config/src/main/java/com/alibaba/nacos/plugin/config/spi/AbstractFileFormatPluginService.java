@@ -44,6 +44,6 @@ public abstract class AbstractFileFormatPluginService implements ConfigChangeSer
     
     @Override
     public String executeType() {
-        return "sync";
+        return ConfigChangeConstants.SYNC_TYPE;
     }
 }

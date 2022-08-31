@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
+import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.impl.webhook.WebHookCloudEventStrategy;
 import com.alibaba.nacos.plugin.config.impl.webhook.WebHookNotifyStrategy;
 import com.alibaba.nacos.plugin.config.impl.webhook.WebhookStrategyManager;
@@ -54,6 +55,8 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
     
     private static final String WEBHOOK_URL = ConfigPropertyUtil.getWebHookUrl();
     
+    private static final int MAX_CONTENT = ConfigPropertyUtil.getWebHookMaxContentCapacity();
+    
     private static final int PUBLISH_UPDATE_ARGS_LENGTH = 15;
     
     private static final int REMOVE_ARGS_LENGTH = 6;
@@ -65,8 +68,6 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
     private static final String UPDATE_POINT = "update";
     
     private static WebHookNotifyStrategy notifyStrategy;
-    
-    private final int maxContent = 10 * 1024;
     
     static {
         Optional<WebHookNotifyStrategy> webHookNotifyStrategyOptional = WebhookStrategyManager.getInstance()
@@ -106,9 +107,9 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
             group = (String) args[3];
             content = (String) args[5];
             
-            if (content != null && content.length() > maxContent) {
-                String warning = "warning:[content is big]";
-                content = warning + content.substring(0, maxContent - warning.length());
+            if (content != null && content.length() > MAX_CONTENT) {
+                String warning = "warning:[content is too big]";
+                content = warning + content.substring(0, MAX_CONTENT);
             }
         }
         
@@ -241,6 +242,6 @@ public class NacosWebHookPluginService extends AbstractWebHookPluginService {
     
     @Override
     public String getImplWay() {
-        return "nacos";
+        return ConfigChangeConstants.NACOS_IMPL_WAY;
     }
 }

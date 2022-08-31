@@ -45,7 +45,7 @@ public abstract class AbstractWebHookPluginService implements ConfigChangeServic
     
     @Override
     public String executeType() {
-        return "async";
+        return ConfigChangeConstants.ASYNC_TYPE;
     }
     
     /**

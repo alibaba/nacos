@@ -27,12 +27,9 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 public class ConfigPropertyUtil {
     
     public static boolean getWebHookEnabled() {
-        Object enabled = EnvUtil
+        Boolean enabled = EnvUtil
                 .getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENABLED, Boolean.class);
-        if (enabled == null) {
-            return false;
-        }
-        return (boolean) enabled;
+        return enabled != null && enabled;
     }
     
     public static String getWebHookUrl() {
@@ -47,14 +44,22 @@ public class ConfigPropertyUtil {
         return EnvUtil.getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_TYPE, String.class);
     }
     
+    public static int getWebHookMaxContentCapacity() {
+        Integer maxContentCapacity = EnvUtil
+                .getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_MAX_CONTENT_CAPACITY,
+                        Integer.class);
+        // default 100kb
+        return maxContentCapacity == null ? 100 * 1024 : maxContentCapacity;
+    }
+    
     public static String getWebHookAccessKeyId() {
-        return EnvUtil
-                .getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_ID, String.class);
+        return EnvUtil.getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_ID,
+                String.class);
     }
     
     public static String getWebHookAccessKeySecret() {
-        return EnvUtil
-                .getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_SECRET, String.class);
+        return EnvUtil.getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_SECRET,
+                String.class);
     }
     
     public static String getWebHookEndpoint() {
@@ -68,17 +73,13 @@ public class ConfigPropertyUtil {
     }
     
     public static String getWebHookSource() {
-        return EnvUtil
-                .getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_SOURCE, String.class);
+        return EnvUtil.getProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_SOURCE, String.class);
     }
     
     public static boolean getWhiteListEnabled() {
-        Object enabled = EnvUtil
+        Boolean enabled = EnvUtil
                 .getProperty(ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_ENABLED, Boolean.class);
-        if (enabled == null) {
-            return false;
-        }
-        return (boolean) enabled;
+        return enabled != null && enabled;
     }
     
     public static String getWhiteListWay() {
@@ -92,13 +93,10 @@ public class ConfigPropertyUtil {
     }
     
     public static boolean getFileCheckEnabled() {
-        Object enabled = EnvUtil
+        Boolean enabled = EnvUtil
                 .getProperty(ConfigChangeConstants.FileFormatCheck.NACOS_CORE_CONFIG_PLUGIN_FILEFORMATCHECK_ENABLED,
                         Boolean.class);
-        if (enabled == null) {
-            return false;
-        }
-        return (boolean) enabled;
+        return enabled != null && enabled;
     }
     
     public static String getFileCheckWay() {

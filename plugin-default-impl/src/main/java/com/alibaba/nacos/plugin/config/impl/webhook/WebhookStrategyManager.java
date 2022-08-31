@@ -54,6 +54,6 @@ public class WebhookStrategyManager {
     }
     
     public WebHookNotifyStrategy getDefaultStrategy() {
-        return webHookNotifyStrategyMap.get("eventBridge");
+        return webHookNotifyStrategyMap.get("cloudevent");
     }
 }

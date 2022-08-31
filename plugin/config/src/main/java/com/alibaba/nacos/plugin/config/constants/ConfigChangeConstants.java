@@ -32,11 +32,22 @@ public class ConfigChangeConstants {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangeConstants.class);
     
-    public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
-    
     private static Map<String, String> pointcutsMap = new ConcurrentHashMap<>();
     
+    public static final String ASYNC_TYPE = "async";
+    
+    public static final String SYNC_TYPE = "sync";
+    
+    public static final String NACOS_IMPL_WAY = "nacos";
+    
+    public static final String CLOUD_EVENT_WEBHOOK_NOTIFY_TYPE = "cloudevent";
+    
+    public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
+    
     public static class Webhook {
+        
+        public static final ConfigChangeType[] CONFIG_CHANGE_TYPES = {ConfigChangeType.IMPORT,
+                ConfigChangeType.PUBLISH,ConfigChangeType.REMOVE,ConfigChangeType.UPDATE,ConfigChangeType.BATCH_REMOVE};
         
         public static final String NACOS_CORE_CONFIG_PLUGIN_POINTCUT_NAMES = "import,publish,remove,update";
         
@@ -55,15 +66,17 @@ public class ConfigChangeConstants {
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_TYPE = "nacos.core.config.plugin.webhook.type";
         
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL = "nacos.core.config.plugin.webhook.url";
-    
+        
+        public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_MAX_CONTENT_CAPACITY = "nacos.core.config.plugin.webhook.maxContentCapacity";
+        
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_ID = "nacos.core.config.plugin.webhook.accessKeyId";
-    
+        
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_SECRET = "nacos.core.config.plugin.webhook.accessKeySecret";
-    
+        
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENDPOINT = "nacos.core.config.plugin.webhook.endpoint";
-    
+        
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_EVENT_BUS = "nacos.core.config.plugin.webhook.eventbus";
-    
+        
         public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_SOURCE = "nacos.core.config.plugin.webhook.source";
         
     }

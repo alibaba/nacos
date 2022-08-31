@@ -84,7 +84,7 @@ public class ConfigChangePluginManager {
                 if (enabled != null && enabled) {
                     String implWayType = EnvUtil.getProperty(configImplType);
                     if (implWayType == null) {
-                        implWayType = "nacos";
+                        implWayType = ConfigChangeConstants.NACOS_IMPL_WAY;
                     }
                     if (implWayType.equals(each.getImplWay())) {
                         configChangeServicePriorityQueue.add(each);

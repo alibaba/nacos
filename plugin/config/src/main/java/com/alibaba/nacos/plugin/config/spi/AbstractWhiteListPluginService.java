@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.config.spi;
 
+import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 
 import java.util.Locale;
@@ -44,6 +45,6 @@ public abstract class AbstractWhiteListPluginService implements ConfigChangeServ
     
     @Override
     public String executeType() {
-        return "sync";
+        return ConfigChangeConstants.SYNC_TYPE;
     }
 }

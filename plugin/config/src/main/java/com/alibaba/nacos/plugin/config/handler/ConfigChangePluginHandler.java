@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeHandleReport;
 import com.alibaba.nacos.plugin.config.spi.ConfigChangeService;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -57,7 +58,7 @@ public class ConfigChangePluginHandler {
         PriorityQueue<ConfigChangeService> asyncPriorityQueue = new PriorityQueue<>(3);
         
         for (ConfigChangeService ccs : priorityQueue) {
-            if ("async".equals(ccs.executeType())) {
+            if (ConfigChangeConstants.ASYNC_TYPE.equals(ccs.executeType())) {
                 asyncPriorityQueue.add(ccs);
                 continue;
             }

@@ -16,7 +16,13 @@
 
 package com.alibaba.nacos.plugin.config.impl.spi;
 
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.config.server.service.notify.HttpClientManager;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
+import com.alibaba.nacos.plugin.config.constants.ConfigChangeType;
 import com.alibaba.nacos.plugin.config.impl.webhook.WebHookCloudEventStrategy;
 import com.alibaba.nacos.plugin.config.model.ConfigChangeNotifyInfo;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -24,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +86,29 @@ public class WebhookNotifyStrategyTests {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+    
+    @Test
+    public void testHttpNotify() throws Exception {
+        //"http://localhost:8080/webhook/send";
+        final String url = "http://localhost:8080/webhook/send";
+                // "http://1017438417648207.eventbridge.cn-hangzhou.aliyuncs.com/webhook/putEvents?token=2a1679ee328c4c898dc0e446454ea4afe986028c79f24ed6951c44ff822b8c3aaabbd4fb95b849148e32d943fef87839405d14e9d1c540bc8287dd11f3f9423d";
+        ConfigChangeNotifyInfo configChangeNotifyInfo = new ConfigChangeNotifyInfo("publish",
+                System.currentTimeMillis(), "publish-test.text", "DEFAULT_GROUP");
+        configChangeNotifyInfo.setRequestIp("127.0.0.1");
+        Map<String, String> contentItem = new HashMap<>();
+        contentItem.put("newValue", "test,publish");
+        configChangeNotifyInfo.setContentItem(contentItem);
+        NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
+       try {
+           HttpRestResult<String> restResult = restTemplate.post(url,Header.EMPTY, Query.EMPTY, configChangeNotifyInfo,String.class);
+       
+       }catch (ConnectException exception){
+           
+           // TimeUnit.SECONDS.sleep(2);
+         //  HttpRestResult<String> restResult = restTemplate.post(url,Header.EMPTY, Query.EMPTY, configChangeNotifyInfo,String.class);
+       }
+      
     }
     
 }
