@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -174,6 +176,26 @@ public class MetricsMonitor {
     
     public static Counter getLeaderSendBeatFailedException() {
         return Metrics.counter("nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+    }
+    
+    /**
+     * increment IpCount when use batchRegister instance.
+     * @param instancePublishInfo must be BatchInstancePublishInfo
+     */
+    public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        getIpCountMonitor().addAndGet(instancePublishInfos.size());
+    }
+    
+    /**
+     * decrement IpCount when use batchRegister instance.
+     * @param instancePublishInfo must be BatchInstancePublishInfo
+     */
+    public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        getIpCountMonitor().addAndGet(-1 * instancePublishInfos.size());
     }
     
     /**
