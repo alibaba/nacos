@@ -132,7 +132,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         connection.setAbilityTable(AbilityTableUtils.getAbilityTableBy(setUpRequest.getAbilityTable(),
                                 ClientAbilities.getOffset()));
                     }
-                    System.out.println(connection.getAbilityTable());
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
                     
                     if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {

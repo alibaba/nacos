@@ -36,15 +36,15 @@ public class ClientAbilities extends AbilityBitOperate {
          *   There is a function named "compression".
          *   The key is "compression", the value is the offset of the flag bit of this ability in the ability table. The value should be unique.
          *
-         *   You can add a new public static field in <p>AbilityKeyConstant</p> like:
-         *       <code>public static final String COMPRESSION = "compression";</code>
+         *   You can add a new public field in <p>AbilityKey</p> like:
+         *       <code>DATA_COMPRESSION</code>
          *   This field can be used outside.
          *
          *   And then you need to declare the offset of the flag bit of this ability in the ability table, you can:
-         *       <code>abilityOffset.put("compression", 1);</code> means that is the first bit from left to right in the table.
+         *       <code>abilityOffset.put(AbilityKey.DATA_COMPRESSION, 1);</code> means that is the first bit from left to right in the table.
          *
          */
-        // put ability here, which you want current server supports
+        // put ability here, which you want current client supports
     }
     
     private ClientAbilities() {
