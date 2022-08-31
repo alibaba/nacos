@@ -29,9 +29,9 @@ import org.junit.Test;
  * @author lixiaoshuang
  */
 public class EncryptionHandlerTest {
-
+    
     private EncryptionPluginService mockEncryptionPluginService;
-
+    
     @Before
     public void setUp() {
         mockEncryptionPluginService = new EncryptionPluginService() {
@@ -39,27 +39,27 @@ public class EncryptionHandlerTest {
             public String encrypt(String secretKey, String content) {
                 return secretKey + content;
             }
-
+            
             @Override
             public String decrypt(String secretKey, String content) {
                 return content.replaceFirst(secretKey, "");
             }
-
+            
             @Override
             public String generateSecretKey() {
                 return "12345678";
             }
-
+            
             @Override
             public String algorithmName() {
                 return "mockAlgo";
             }
-
+            
             @Override
             public String encryptSecretKey(String secretKey) {
                 return secretKey + secretKey;
             }
-
+            
             @Override
             public String decryptSecretKey(String secretKey) {
                 return generateSecretKey();
@@ -67,31 +67,26 @@ public class EncryptionHandlerTest {
         };
         EncryptionPluginManager.join(mockEncryptionPluginService);
     }
-
+    
     @Test
     public void testEncryptHandler() {
         Pair<String, String> pair = EncryptionHandler.encryptHandler("test-dataId", "content");
         Assert.assertNotNull(pair);
     }
-
+    
     @Test
     public void testDecryptHandler() {
         Pair<String, String> pair = EncryptionHandler.decryptHandler("test-dataId", "12345678", "content");
         Assert.assertNotNull(pair);
     }
-
+    
     @Test
     public void testCornerCaseDataIdAlgoParse() {
         String dataId = "cipher-";
-        Exception e = null;
-        try {
-            EncryptionHandler.encryptHandler(dataId, "content");
-        } catch (IndexOutOfBoundsException ex) {
-            e = ex;
-        }
-        Assert.assertNull("should not throw exception when parsing enc algo for dataId '" + dataId + "'", e);
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, "content");
+        Assert.assertNotNull("should not throw exception when parsing enc algo for dataId '" + dataId + "'", pair);
     }
-
+    
     @Test
     public void testUnknownAlgorithmNameEnc() {
         String dataId = "cipher-mySM4-application";
@@ -100,7 +95,7 @@ public class EncryptionHandlerTest {
         Assert.assertNotNull(pair);
         Assert.assertEquals("should return original content if algorithm is not defined.", content, pair.getSecond());
     }
-
+    
     @Test
     public void testUnknownAlgorithmNameDecrypt() {
         String dataId = "cipher-mySM4-application";
@@ -109,7 +104,7 @@ public class EncryptionHandlerTest {
         Assert.assertNotNull(pair);
         Assert.assertEquals("should return original content if algorithm is not defined.", content, pair.getSecond());
     }
-
+    
     @Test
     public void testEncrypt() {
         String dataId = "cipher-mockAlgo-application";
@@ -122,7 +117,7 @@ public class EncryptionHandlerTest {
         Assert.assertEquals("should return encrypted secret key.",
                 mockEncryptionPluginService.encryptSecretKey(sec), pair.getFirst());
     }
-
+    
     @Test
     public void testDecrypt() {
         String dataId = "cipher-mockAlgo-application";

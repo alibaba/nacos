@@ -62,7 +62,7 @@ public class EncryptionHandler {
         String encryptContent = encryptionPluginService.encrypt(secretKey, content);
         return Pair.with(encryptionPluginService.encryptSecretKey(secretKey), encryptContent);
     }
-
+    
     /**
      * Execute decryption.
      *
@@ -87,7 +87,7 @@ public class EncryptionHandler {
         String decryptContent = encryptionPluginService.decrypt(decryptSecretKey, content);
         return Pair.with(decryptSecretKey, decryptContent);
     }
-
+    
     /**
      * Parse encryption algorithm name.
      *
