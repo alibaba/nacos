@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
@@ -46,16 +47,18 @@ import java.util.concurrent.locks.ReentrantLock;
  * @description It is a relatively complete capability control center implementation.
  * @date 2022/7/12 19:18
  **/
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DefaultAbilityControlManager extends AbstractAbilityControlManager
         implements AbilityHandlerRegistry {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAbilityControlManager.class);
     
-    /**
-     * . These handlers will be invoked when the flag of ability change key: ability key from {@link AbilityKey} value:
-     * componments who want to be invoked if its interested ability turn on/off
+    /**.
+     * These handlers will be invoked when the flag of ability change key:
+     * ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey} value:
+     * components who want to be invoked if its interested ability turn on/off
      */
-    private final Map<String, List<HandlerWithPriority>> handlerMappings = new ConcurrentHashMap<>();
+    private final Map<AbilityKey, List<HandlerWithPriority>> handlerMappings = new ConcurrentHashMap<>();
     
     /**.
      * run for HandlerMapping
@@ -76,7 +79,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
      * @return if turn success
      */
     @Override
-    public boolean enableCurrentNodeAbility(String abilityKey) {
+    public boolean enableCurrentNodeAbility(AbilityKey abilityKey) {
         return doTurn(true, abilityKey);
     }
     
@@ -87,7 +90,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
      * @return if turn success
      */
     @Override
-    public boolean disableCurrentNodeAbility(String abilityKey) {
+    public boolean disableCurrentNodeAbility(AbilityKey abilityKey) {
         return doTurn(false, abilityKey);
     }
     
@@ -98,7 +101,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
      * @param abilityKey ability key from {@link AbilityKey}
      * @return if turn success
      */
-    private boolean doTurn(boolean isOn, String abilityKey) {
+    private boolean doTurn(boolean isOn, AbilityKey abilityKey) {
         Boolean isEnabled = currentRunningAbility.get(abilityKey);
         // if not supporting this key
         if (isEnabled == null) {
@@ -130,12 +133,12 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
      * @param handlerMapping component instance.
      */
     @Override
-    public void registerComponent(String abilityKey, HandlerMapping handlerMapping, int priority) {
+    public void registerComponent(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority) {
         doRegisterComponent(abilityKey, handlerMapping, this.handlerMappings, lockForHandlerMappings, priority, currentRunningAbility);
     }
     
     @Override
-    public int removeComponent(String abilityKey, Class<? extends HandlerMapping> handlerMappingClazz) {
+    public int removeComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz) {
         return doRemove(abilityKey, handlerMappingClazz, lockForHandlerMappings, handlerMappings);
     }
     
@@ -161,14 +164,14 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Remove the component instance of <p>handlerMappingClazz</p>.
      *
-     * @param abilityKey ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey ability key from {@link AbstractAbilityRegistry}
      * @param handlerMappingClazz implement of {@link HandlerMapping}
      * @param lock lock for operation
      * @param handlerMappingsMap handler collection map
      * @return the count of components have removed
      */
-    protected int doRemove(String abilityKey, Class<? extends HandlerMapping> handlerMappingClazz, Lock lock,
-            Map<String, List<HandlerWithPriority>> handlerMappingsMap) {
+    protected int doRemove(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz, Lock lock,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappingsMap) {
         List<HandlerWithPriority> handlerMappings = handlerMappingsMap.get(abilityKey);
         if (CollectionUtils.isEmpty(handlerMappings)) {
             return 0;
@@ -190,7 +193,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     }
     
     @Override
-    public int removeAll(String abilityKey) {
+    public int removeAll(AbilityKey abilityKey) {
         List<HandlerWithPriority> remove = this.handlerMappings.remove(abilityKey);
         return Optional.ofNullable(remove).orElse(Collections.emptyList()).size();
     }
@@ -204,9 +207,9 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
      * @param lockForHandlerMappings lock to ensure concurrency
      * @param abilityTable           behavioral basis of handler
      */
-    protected void doRegisterComponent(String abilityKey, HandlerMapping handlerMapping,
-            Map<String, List<HandlerWithPriority>> handlerMappings, Lock lockForHandlerMappings,
-            int priority, Map<String, Boolean> abilityTable) {
+    protected void doRegisterComponent(AbilityKey abilityKey, HandlerMapping handlerMapping,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappings, Lock lockForHandlerMappings,
+            int priority, Map<AbilityKey, Boolean> abilityTable) {
         if (!currentRunningAbility.containsKey(abilityKey)) {
             LOGGER.warn("[AbilityHandlePostProcessor] Failed to register processor: {}, because illegal key!",
                     handlerMapping.getClass().getSimpleName());
@@ -239,24 +242,24 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Invoke componments which linked to ability key asyn.
      *
-     * @param key ability key from {@link AbilityKey}
+     * @param key ability key from {@link AbstractAbilityRegistry}
      * @param isEnabled turn on/off
      * @param handlerMappingsMap handler collection
      */
-    protected void triggerHandlerMappingAsyn(String key, boolean isEnabled,
-            Map<String, List<HandlerWithPriority>> handlerMappingsMap) {
+    protected void triggerHandlerMappingAsyn(AbilityKey key, boolean isEnabled,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappingsMap) {
         simpleThreadPool.execute(() -> doTriggerSyn(key, isEnabled, handlerMappingsMap));
     }
     
     /**
      * Invoke componments which linked to ability key syn.
      *
-     * @param key ability key from {@link AbilityKey}
+     * @param key ability key from {@link AbstractAbilityRegistry}
      * @param isEnabled turn on/off
      * @param handlerMappingsMap handler collection
      */
-    protected void doTriggerSyn(String key, boolean isEnabled,
-            Map<String, List<HandlerWithPriority>> handlerMappingsMap) {
+    protected void doTriggerSyn(AbilityKey key, boolean isEnabled,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappingsMap) {
         List<HandlerWithPriority> handlerWithPriorities = handlerMappingsMap.get(key);
         // return if empty
         if (CollectionUtils.isEmpty(handlerWithPriorities)) {
@@ -281,7 +284,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     }
     
     @JustForTest
-    protected Map<String, List<HandlerWithPriority>> handlerMapping() {
+    protected Map<AbilityKey, List<HandlerWithPriority>> handlerMapping() {
         return this.handlerMappings;
     }
     
@@ -318,17 +321,17 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
         
         private static final long serialVersionUID = -1232411212311111L;
         
-        private String abilityKey;
+        private AbilityKey abilityKey;
         
         private boolean isOn;
         
         private AbilityUpdateEvent(){}
         
-        public String getAbilityKey() {
+        public AbilityKey getAbilityKey() {
             return abilityKey;
         }
     
-        public void setAbilityKey(String abilityKey) {
+        public void setAbilityKey(AbilityKey abilityKey) {
             this.abilityKey = abilityKey;
         }
     

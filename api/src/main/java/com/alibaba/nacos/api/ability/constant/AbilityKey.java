@@ -16,96 +16,59 @@
 
 package com.alibaba.nacos.api.ability.constant;
 
-import com.alibaba.nacos.api.utils.AbilityTableUtils;
-
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**.
  * @author Daydreamer
- * @description Ability table key. It can be a replacement of {@link com.alibaba.nacos.api.ability.ServerAbilities}
- *              and {@link com.alibaba.nacos.api.ability.ClientAbilities}.
- * @date 2022/7/12 19:23
+ * @description Ability key constant.
+ * @date 2022/8/31 12:27
  **/
-@SuppressWarnings("unchecked")
-public class AbilityKey {
-
-    private static final HashMap<String, Boolean> CURRENT_SERVER_SUPPORT_ABILITY = new HashMap<>();
-
-    private static final HashMap<String, Integer> CURRENT_SERVER_ABILITY_OFFSET = new HashMap<>();
-
-    private static final byte[] ABILITY_BIT_FLAGS;
-
-    private AbilityKey() {
+public enum AbilityKey {
+    
+    /**.
+     * just for junit test
+     */
+    TEST_1("test_1", 1),
+    
+    /**.
+     * just for junit test
+     */
+    TEST_2("test_2", 2);
+    
+    /**.
+     * the name of a certain ability
+     */
+    private final String name;
+    
+    /**.
+     * the offset in ability table
+     */
+    private final int offset;
+    
+    AbilityKey(String name, int offset) {
+        this.name = name;
+        this.offset = offset;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public int getOffset() {
+        return offset;
+    }
+    
+    private static final Map<AbilityKey, Integer> OFFSET_MAP;
+    
+    public static Map<AbilityKey, Integer> offset() {
+        return OFFSET_MAP;
     }
     
     static {
-        /*
-         * example:
-         *   There is a function named "compression".
-         *   The key is "compression", the value is the offset of the flag bit of this ability in the ability table. The value should be unique.
-         *
-         *   You can add a new public static field like:
-         *       <code>public static final String COMPRESSION = "compression";</code>
-         *   This field can be used outside.
-         *
-         *   And then you need to declare the offset of the flag bit of this ability in the ability table, you can:
-         *       <code>CURRENT_SERVER_ABILITY_OFFSET.put("compression", 1);</code> means that is the first bit from left to right in the table.
-         *
-         */
-
-        // put ability here, which you want current server supports
-        
+        OFFSET_MAP = Arrays.stream(AbilityKey.values())
+                .collect(Collectors.toMap(Function.identity(), AbilityKey::getOffset));
     }
-    
-    /**.
-     * Return ability table of current node
-     * But this ability is static which means that this ability table is all function this node supports if no one to ask it to close some functions.
-     * If you want to get what function current node is supporting, you should call AbilityControlManager#getCurrentAbility
-     * By the way, AbilityControlManager is singleton, you can get it by static method
-     *
-     * @return ability table
-     */
-    public static Map<String, Boolean> getCurrentNodeSupportAbility() {
-        return Collections.unmodifiableMap(CURRENT_SERVER_SUPPORT_ABILITY);
-    }
-    
-    /**.
-     * Return the static ability bit table
-     *
-     * @return ability bit table
-     */
-    public static byte[] getAbilityBitFlags() {
-        return ABILITY_BIT_FLAGS.clone();
-    }
-
-    /**.
-     * Is it a legal key
-     *
-     * @param key input
-     * @return whether a legal key
-     */
-    public static boolean isLegal(String key) {
-        return CURRENT_SERVER_SUPPORT_ABILITY.containsKey(key);
-    }
-    
-    static {
-        // init the bits table
-        ABILITY_BIT_FLAGS = AbilityTableUtils.getAbilityBitBy(CURRENT_SERVER_ABILITY_OFFSET.values());
-        // init the ability table, default all true
-        CURRENT_SERVER_ABILITY_OFFSET.forEach((k, v) -> {
-            CURRENT_SERVER_SUPPORT_ABILITY.put(k, Boolean.TRUE);
-        });
-    }
-
-    /**.
-     * Return the ability bit offsets
-     *
-     * @return bit offset
-     */
-    public static Map<String, Integer> offset() {
-        return CURRENT_SERVER_ABILITY_OFFSET;
-    }
-
 }

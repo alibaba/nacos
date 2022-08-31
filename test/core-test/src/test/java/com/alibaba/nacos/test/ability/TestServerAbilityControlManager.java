@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.ability;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
@@ -27,12 +28,12 @@ import java.util.Map;
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
 
     @JustForTest
-    public void setCurrentSupportingAbility(Map<String, Boolean> ability) {
+    public void setCurrentSupportingAbility(Map<AbilityKey, Boolean> ability) {
         currentRunningAbility.putAll(ability);
     }
 
     @JustForTest
-    public void setClusterAbility(Map<String, Boolean> ability) {
+    public void setClusterAbility(Map<AbilityKey, Boolean> ability) {
         super.setClusterAbilityTable(ability);
     }
 
@@ -42,7 +43,7 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     }
     
     @JustForTest
-    public List<HandlerWithPriority> getHandlerMapping(String abilityKey) {
+    public List<HandlerWithPriority> getHandlerMapping(AbilityKey abilityKey) {
         return super.handlerMapping().get(abilityKey);
     }
 
@@ -52,7 +53,7 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     }
     
     @JustForTest
-    public List<HandlerWithPriority> getClusterHandlerMapping(String abilityKey) {
+    public List<HandlerWithPriority> getClusterHandlerMapping(AbilityKey abilityKey) {
         return super.clusterHandlerMapping().get(abilityKey);
     }
     
@@ -60,19 +61,19 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
      * Just a test method.
      */
     @JustForTest
-    public void registerClusterHandlerMapping(String key, HandlerMapping handlerMapping, int priority) {
+    public void registerClusterHandlerMapping(AbilityKey key, HandlerMapping handlerMapping, int priority) {
         List<HandlerWithPriority> orDefault = super.clusterHandlerMapping().getOrDefault(key, new ArrayList<>());
         orDefault.add(new HandlerWithPriority(handlerMapping, priority));
         clusterHandlerMapping().put(key, orDefault);
     }
     
     @JustForTest
-    public void triggerCluster(String abilityKey) {
+    public void triggerCluster(AbilityKey abilityKey) {
         triggerHandlerMappingAsyn(abilityKey, true, clusterHandlerMapping());
     }
     
     @JustForTest
-    public void trigger(String abilityKey) {
+    public void trigger(AbilityKey abilityKey) {
         triggerHandlerMappingAsyn(abilityKey, true, handlerMapping());
     }
 }

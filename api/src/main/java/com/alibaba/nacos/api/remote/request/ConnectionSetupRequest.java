@@ -35,6 +35,19 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private byte[] abilityTable;
     
+    /**.
+     * server will resolve {@link ConnectionSetupRequest#abilityTable} to server abilities, or to client abilities
+     */
+    private boolean isServer;
+    
+    public boolean isServer() {
+        return isServer;
+    }
+    
+    public void setServer(boolean server) {
+        isServer = server;
+    }
+    
     public ConnectionSetupRequest() {
     }
     

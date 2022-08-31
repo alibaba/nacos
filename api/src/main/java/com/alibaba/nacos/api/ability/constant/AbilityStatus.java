@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.ability;
+package com.alibaba.nacos.api.ability.constant;
 
-import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.client.ability.ClientAbilityControlManager;
-import com.alibaba.nacos.common.JustForTest;
-
-import java.util.Map;
-
-public class TestClientAbilityControlManager extends ClientAbilityControlManager {
-
-    @JustForTest
-    public void setCurrentSupportingAbility(Map<AbilityKey, Boolean> ability) {
-        currentRunningAbility.putAll(ability);
-    }
+/**.
+ * @author Daydreamer
+ * @description It is used to know a certain ability whether supporting.
+ * @date 2022/8/31 12:27
+ **/
+public enum  AbilityStatus {
+    
+    /**.
+     * Support a certain ability
+     */
+    SUPPORTED,
+    
+    /**.
+     * Not support a certain ability
+     */
+    NOT_SUPPORTED,
+    
+    /**.
+     * Cannot find ability table, unknown
+     */
+    UNKNOWN
 }

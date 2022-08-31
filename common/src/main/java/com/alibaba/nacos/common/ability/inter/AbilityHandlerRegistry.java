@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.ability.inter;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 
@@ -32,7 +34,7 @@ public interface AbilityHandlerRegistry {
      * @param abilityKey ability key
      * @return if turn success
      */
-    boolean enableCurrentNodeAbility(String abilityKey);
+    boolean enableCurrentNodeAbility(AbilityKey abilityKey);
     
     /**.
      * Turn off the ability whose key is <p>abilityKey</p>
@@ -40,42 +42,42 @@ public interface AbilityHandlerRegistry {
      * @param abilityKey ability key
      * @return if turn success
      */
-    boolean disableCurrentNodeAbility(String abilityKey);
+    boolean disableCurrentNodeAbility(AbilityKey abilityKey);
     
     /**.
      * Register the component which is managed by {@link AbstractAbilityControlManager}.
      * if you are hoping that a component will be invoked when turn on/off the ability whose key is <p>abilityKey</p>.
      *
-     * @param abilityKey     component key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey     component key from {@link AbstractAbilityRegistry}
      * @param priority       a positive number, the higher the priority is, the faster it will be called. `1` is the lowest priority.
      * @param handlerMapping component instance.
      */
-    void registerComponent(String abilityKey, HandlerMapping handlerMapping, int priority);
+    void registerComponent(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority);
     
     /**.
      * Default method to register component with the lowest priority.
      *
-     * @param abilityKey     component key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey     component key from {@link AbstractAbilityRegistry}
      * @param handlerMapping component instance.
      */
-    default void registerComponent(String abilityKey, HandlerMapping handlerMapping) {
+    default void registerComponent(AbilityKey abilityKey, HandlerMapping handlerMapping) {
         registerComponent(abilityKey, handlerMapping, 1);
     }
     
     /**
      * Remove the component instance of <p>handlerMappingClazz</p>.
      *
-     * @param abilityKey ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey ability key from {@link AbstractAbilityRegistry}
      * @param handlerMappingClazz implement of {@link HandlerMapping}
      * @return the count of components have removed
      */
-    int removeComponent(String abilityKey, Class<? extends HandlerMapping> handlerMappingClazz);
+    int removeComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz);
     
     /**
      * Remove all {@link HandlerMapping} interested in the special ability.
-     * @param abilityKey abnility key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey abnility key from {@link AbstractAbilityRegistry}
      * @return the count of components have removed
      */
-    int removeAll(String abilityKey);
+    int removeAll(AbilityKey abilityKey);
     
 }

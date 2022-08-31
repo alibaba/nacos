@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -885,17 +884,12 @@ public class ClientWorker implements Closeable {
                 if (rpcClient.isWaitInitiated()) {
                     initRpcClientHandler(rpcClient);
                     rpcClient.setTenant(getTenant());
-                    rpcClient.clientAbilities(initAbilities());
                     rpcClient.start();
                 }
                 
                 return rpcClient;
             }
             
-        }
-    
-        private byte[] initAbilities() {
-            return AbilityKey.getAbilityBitFlags();
         }
         
         /**

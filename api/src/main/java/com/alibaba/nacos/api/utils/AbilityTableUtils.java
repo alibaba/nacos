@@ -17,12 +17,16 @@
 package com.alibaba.nacos.api.utils;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**.
  * @author Daydreamer
@@ -67,18 +71,18 @@ public class AbilityTableUtils {
      * get ability table by bits
      *
      * @param bits      bit flag
-     * @param offsetMap offset from {@link AbilityKey}
+     * @param offsetMap offset from {@link AbstractAbilityRegistry}
      * @return Return the Map containing AbilityTableKey and isRunning.
      */
-    public static Map<String, Boolean> getAbilityTableBy(byte[] bits, Map<String, Integer> offsetMap) {
+    public static Map<AbilityKey, Boolean> getAbilityTableBy(byte[] bits, Map<AbilityKey, Integer> offsetMap) {
         if (bits == null || offsetMap.size() == 0) {
             return Collections.emptyMap();
         }
         int length = bits.length;
-        Set<Map.Entry<String, Integer>> entries = offsetMap.entrySet();
-        Map<String, Boolean> res = new HashMap<>(offsetMap.size());
-        for (Map.Entry<String, Integer> entry : entries) {
-            String abilityKey = entry.getKey();
+        Set<Map.Entry<AbilityKey, Integer>> entries = offsetMap.entrySet();
+        Map<AbilityKey, Boolean> res = new HashMap<>(offsetMap.size());
+        for (Map.Entry<AbilityKey, Integer> entry : entries) {
+            AbilityKey abilityKey = entry.getKey();
             Integer offset = entry.getValue();
             // if not exists
             int index = offset / 8 + (offset % 8 == 0 ? -1 : 0);
@@ -96,5 +100,33 @@ public class AbilityTableUtils {
             res.put(abilityKey, x == tmp);
         }
         return res;
+    }
+    
+    /**.
+     * get ability bit table by existed ability table and offset map
+     *
+     * @param offsetMap offset from {@link AbstractAbilityRegistry}
+     * @return Return the Map containing AbilityTableKey and isRunning.
+     */
+    public static byte[] getAbilityBiTableBy(Map<AbilityKey, Integer> offsetMap, Map<AbilityKey, Boolean> abilityTable) {
+        // filter the element which <code>abilityTable</code> don't have or value is false
+        Map<AbilityKey, Integer> res = offsetMap.entrySet().stream()
+                .filter(item -> abilityTable.getOrDefault(item.getKey(), false))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        return getAbilityBitBy(res.values());
+    }
+    
+    /**
+     * get ability bit table by existed ability table and abilityKeys array
+     *
+     * @param abilityKeys abilityKeys array
+     * @param abilityTable existed ability table
+     * @return filter ability which value is false in <code>abilityTable<code/>
+     */
+    public static byte[] getAbilityBiTableBy(AbilityKey[] abilityKeys, Map<AbilityKey, Boolean> abilityTable) {
+        // filter the element which <code>abilityTable</code> don't have or value is false
+        List<AbilityKey> keyList = Arrays.stream(abilityKeys).collect(Collectors.toList());
+        keyList.removeIf(key -> !abilityTable.getOrDefault(key, false));
+        return getAbilityBitBy(keyList.stream().map(AbilityKey::getOffset).collect(Collectors.toList()));
     }
 }
