@@ -65,7 +65,13 @@ public class RpcClientTest {
     
     Field timeoutMillsField;
     
+    Field healthCheckRetryTimes;
+    
+    Field healthCheckTimeOut;
+    
     Method resolveServerInfoMethod;
+    
+    Method healthCheck;
     
     Answer<?> runAsSync;
     
@@ -122,6 +128,15 @@ public class RpcClientTest {
         
         resolveServerInfoMethod = RpcClient.class.getDeclaredMethod("resolveServerInfo", String.class);
         resolveServerInfoMethod.setAccessible(true);
+    
+        healthCheck = RpcClient.class.getDeclaredMethod("healthCheck");
+        healthCheck.setAccessible(true);
+    
+        healthCheckRetryTimes = RpcClient.class.getDeclaredField("healthCheckRetryTimes");
+        healthCheckRetryTimes.setAccessible(true);
+    
+        healthCheckTimeOut = RpcClient.class.getDeclaredField("healthCheckTimeOut");
+        healthCheckTimeOut.setAccessible(true);
         
         runAsSync = invocationOnMock -> {
             Runnable runnable = (Runnable) invocationOnMock.getArguments()[0];
@@ -410,5 +425,20 @@ public class RpcClientTest {
         };
         
         rpcClient.shutdown();
+    }
+    
+    @Test
+    public void testHealthCheck() throws IllegalAccessException, NacosException {
+        healthCheckRetryTimes.set(rpcClient, 3);
+        healthCheckTimeOut.set(rpcClient, 3000L);
+        rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
+        rpcClient.currentConnection = connection;
+        doThrow(new NacosException()).when(connection).request(any(),anyLong());
+        try {
+             healthCheck.invoke(rpcClient);
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        verify(connection, times(3)).request(any(),anyLong());
     }
 }
