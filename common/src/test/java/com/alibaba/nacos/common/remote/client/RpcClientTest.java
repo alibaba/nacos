@@ -128,13 +128,13 @@ public class RpcClientTest {
         
         resolveServerInfoMethod = RpcClient.class.getDeclaredMethod("resolveServerInfo", String.class);
         resolveServerInfoMethod.setAccessible(true);
-    
+        
         healthCheck = RpcClient.class.getDeclaredMethod("healthCheck");
         healthCheck.setAccessible(true);
-    
+        
         healthCheckRetryTimes = RpcClient.class.getDeclaredField("healthCheckRetryTimes");
         healthCheckRetryTimes.setAccessible(true);
-    
+        
         healthCheckTimeOut = RpcClient.class.getDeclaredField("healthCheckTimeOut");
         healthCheckTimeOut.setAccessible(true);
         
@@ -323,7 +323,7 @@ public class RpcClientTest {
         rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
         rpcClient.currentConnection = connection;
         doReturn(new ErrorResponse()).when(connection).request(any(), anyLong());
-    
+        
         rpcClient.request(null, 10000);
     }
     
@@ -364,7 +364,7 @@ public class RpcClientTest {
         RequestCallBack<?> requestCallBack = mock(RequestCallBack.class);
         doReturn(10000L).when(requestCallBack).getTimeout();
         Exception exception = null;
-    
+        
         try {
             rpcClient.asyncRequest(null, requestCallBack);
         } catch (NacosException e) {
@@ -385,7 +385,8 @@ public class RpcClientTest {
     }
     
     @Test
-    public void testRequestFutureWhenRetryReachMaxRetryTimesThenSwitchServer() throws NacosException, IllegalAccessException {
+    public void testRequestFutureWhenRetryReachMaxRetryTimesThenSwitchServer()
+            throws NacosException, IllegalAccessException {
         timeoutMillsField.set(rpcClient, 5000L);
         retryTimesField.set(rpcClient, 3);
         rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
@@ -412,12 +413,12 @@ public class RpcClientTest {
             public ConnectionType getConnectionType() {
                 return null;
             }
-    
+            
             @Override
             public int rpcPortOffset() {
                 return 0;
             }
-    
+            
             @Override
             public Connection connectToServer(ServerInfo serverInfo) throws Exception {
                 return null;
@@ -433,12 +434,12 @@ public class RpcClientTest {
         healthCheckTimeOut.set(rpcClient, 3000L);
         rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
         rpcClient.currentConnection = connection;
-        doThrow(new NacosException()).when(connection).request(any(),anyLong());
+        doThrow(new NacosException()).when(connection).request(any(), anyLong());
         try {
-             healthCheck.invoke(rpcClient);
+            healthCheck.invoke(rpcClient);
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        verify(connection, times(3)).request(any(),anyLong());
+        verify(connection, times(3)).request(any(), anyLong());
     }
 }
