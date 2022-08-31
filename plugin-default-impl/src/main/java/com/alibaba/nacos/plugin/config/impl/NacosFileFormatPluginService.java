@@ -62,7 +62,6 @@ public class NacosFileFormatPluginService extends AbstractFileFormatPluginServic
         if (args.length == RPC_ARGS_LENGTH) {
             return pjp.proceed();
         }
-        // FIXME 注释，能否校验 alibaba.nacos.yaml
         // according to pjp acquire content and type
         String content = (String) args[5];
         String type = (String) args[13];

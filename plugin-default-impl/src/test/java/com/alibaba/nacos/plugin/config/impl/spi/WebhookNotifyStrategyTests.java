@@ -48,16 +48,16 @@ public class WebhookNotifyStrategyTests {
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENABLED, "true");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_WAY, "nacos");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL,
-                "http://localhost:8080/webhook/send");
+                "http://**");
         // optional if webhook_url is not empty,will push to url;if not will push the endpoint
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_ID,
-                "LTAI5t9pwBXagE9vWP4ZRs1i");
+                "**");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ACCESS_KEY_SECRET,
-                "OGWpp3FpvsgRUNicLeXI1tODmn0ajN");
+                "**");
         env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENDPOINT,
-                "1017438417648207.eventbridge.cn-hangzhou.aliyuncs.com");
-        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_EVENT_BUS, "demo-bus");
-        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_SOURCE, "webhook.event");
+                "**");
+        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_EVENT_BUS, "**");
+        env.setProperty(ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_SOURCE, "**");
         
         env.setProperty(ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_ENABLED, "true");
         env.setProperty(ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_WAY, "nacos");
@@ -86,29 +86,6 @@ public class WebhookNotifyStrategyTests {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-    
-    @Test
-    public void testHttpNotify() throws Exception {
-        //"http://localhost:8080/webhook/send";
-        final String url = "http://localhost:8080/webhook/send";
-                // "http://1017438417648207.eventbridge.cn-hangzhou.aliyuncs.com/webhook/putEvents?token=2a1679ee328c4c898dc0e446454ea4afe986028c79f24ed6951c44ff822b8c3aaabbd4fb95b849148e32d943fef87839405d14e9d1c540bc8287dd11f3f9423d";
-        ConfigChangeNotifyInfo configChangeNotifyInfo = new ConfigChangeNotifyInfo("publish",
-                System.currentTimeMillis(), "publish-test.text", "DEFAULT_GROUP");
-        configChangeNotifyInfo.setRequestIp("127.0.0.1");
-        Map<String, String> contentItem = new HashMap<>();
-        contentItem.put("newValue", "test,publish");
-        configChangeNotifyInfo.setContentItem(contentItem);
-        NacosRestTemplate restTemplate = HttpClientManager.getNacosRestTemplate();
-       try {
-           HttpRestResult<String> restResult = restTemplate.post(url,Header.EMPTY, Query.EMPTY, configChangeNotifyInfo,String.class);
-       
-       }catch (ConnectException exception){
-           
-           // TimeUnit.SECONDS.sleep(2);
-         //  HttpRestResult<String> restResult = restTemplate.post(url,Header.EMPTY, Query.EMPTY, configChangeNotifyInfo,String.class);
-       }
-      
     }
     
 }
