@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.ability.entity;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 
 import java.util.Map;
 
@@ -34,10 +35,10 @@ public class AbilityTable implements Cloneable {
 
     /**.
      * ability table
-     * key: name from {@link AbilityKey}
+     * key: name from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
      * value: whether to turn on
      */
-    private Map<String, Boolean> ability;
+    private Map<AbilityKey, Boolean> ability;
 
     /**.
      * whether it from a server node
@@ -70,7 +71,7 @@ public class AbilityTable implements Cloneable {
         return this;
     }
     
-    public AbilityTable(String connectionId, Map<String, Boolean> ability, boolean isServer, String version) {
+    public AbilityTable(String connectionId, Map<AbilityKey, Boolean> ability, boolean isServer, String version) {
         this.connectionId = connectionId;
         this.ability = ability;
         this.isServer = isServer;
@@ -86,11 +87,11 @@ public class AbilityTable implements Cloneable {
         return this;
     }
 
-    public Map<String, Boolean> getAbility() {
+    public Map<AbilityKey, Boolean> getAbility() {
         return ability;
     }
 
-    public AbilityTable setAbility(Map<String, Boolean> ability) {
+    public AbilityTable setAbility(Map<AbilityKey, Boolean> ability) {
         this.ability = ability;
         return this;
     }

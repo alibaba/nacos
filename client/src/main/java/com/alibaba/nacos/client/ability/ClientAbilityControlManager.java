@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.client.ability;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
+import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
+import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 /**.
@@ -34,7 +38,12 @@ public class ClientAbilityControlManager extends DefaultAbilityControlManager {
     }
     
     @Override
-    public boolean isSupport(String connectionId, String abilityKey) {
+    protected Map<AbilityKey, Boolean> getCurrentNodeSupportAbility() {
+        return AbilityTableUtils.getAbilityTableBy(ClientAbilities.getBitFlags(), ClientAbilities.getOffset());
+    }
+    
+    @Override
+    public boolean isSupport(String connectionId, AbilityKey abilityKey) {
         Boolean isRunning = currentRunningAbility.getOrDefault(abilityKey, false);
         if (!isRunning) {
             return false;

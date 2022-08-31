@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.ability;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.client.ability.ClientAbilityControlManager;
 import com.alibaba.nacos.common.JustForTest;
 
@@ -24,7 +25,7 @@ import java.util.Map;
 public class TestClientAbilityControlManager extends ClientAbilityControlManager {
 
     @JustForTest
-    public void setCurrentSupportingAbility(Map<String, Boolean> ability) {
+    public void setCurrentSupportingAbility(Map<AbilityKey, Boolean> ability) {
         currentRunningAbility.putAll(ability);
     }
 }

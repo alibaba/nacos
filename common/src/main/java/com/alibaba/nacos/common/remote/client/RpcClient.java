@@ -90,8 +90,6 @@ public abstract class RpcClient implements Closeable {
     
     private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
     
-    protected byte[] clientAbilities;
-    
     /**
      * default keep alive time 5s.
      */
@@ -131,16 +129,6 @@ public abstract class RpcClient implements Closeable {
             LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory = {}",
                     serverListFactory.getClass().getName());
         }
-    }
-    
-    /**
-     * init client abilities.
-     *
-     * @param clientAbilities clientAbilities.
-     */
-    public RpcClient clientAbilities(byte[] clientAbilities) {
-        this.clientAbilities = clientAbilities;
-        return this;
     }
     
     /**

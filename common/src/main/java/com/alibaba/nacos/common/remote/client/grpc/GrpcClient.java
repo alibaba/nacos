@@ -17,7 +17,9 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
+import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -317,8 +319,8 @@ public abstract class GrpcClient extends RpcClient {
                 // submit ability table as soon as possible
                 // ability table will be null if server doesn't support ability table
                 ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
-                Map<String, Boolean> abilityTable = AbilityTableUtils
-                        .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
+                Map<AbilityKey, Boolean> abilityTable = AbilityTableUtils
+                        .getAbilityTableBy(serverCheckResponse.getAbilities(), ServerAbilities.getOffset());
                 AbilityTable table = new AbilityTable();
                 table.setServer(true)
                         .setConnectionId(serverCheckResponse.getConnectionId())
@@ -341,7 +343,8 @@ public abstract class GrpcClient extends RpcClient {
                 ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
-                conSetupRequest.setAbilityTable(super.clientAbilities == null ? AbilityKey.getAbilityBitFlags() : clientAbilities);
+                conSetupRequest.setAbilityTable(getAbilityBit());
+                conSetupRequest.setServer(isServer());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 //wait to register connection setup
@@ -354,6 +357,21 @@ public abstract class GrpcClient extends RpcClient {
         }
         return null;
     }
+    
+    /**
+     * get ability, server or client
+     *
+     * @return bit table
+     */
+    protected abstract byte[] getAbilityBit();
+    
+    /**
+     * Return whether server environment
+     * The same offset may refer to different functions in the client capability table and the server capability table.
+     *
+     * @return whether server environment
+     */
+    protected abstract boolean isServer();
     
 }
 

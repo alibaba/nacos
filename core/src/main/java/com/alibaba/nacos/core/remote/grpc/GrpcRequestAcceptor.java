@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
@@ -90,7 +90,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         // server check.
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get(),
-                    AbilityKey.getAbilityBitFlags()));
+                    ServerAbilities.getBitFlags()));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
             responseObserver.onCompleted();

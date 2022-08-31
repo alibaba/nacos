@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.ability.inter;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 
 import java.util.Map;
@@ -32,10 +33,10 @@ public interface AbilityControlManager {
      * Whether the ability is supported for Connection. If the ability of current node is closed, it will return false.
      *
      * @param connectionId the connection range of ability table.
-     * @param abilityKey   key name which comes from {@link AbilityKey}.
+     * @param abilityKey   key name which comes from {@link AbilityBitOperate}.
      * @return whether the ability is supported in certain connection.
      */
-    boolean isSupport(String connectionId, String abilityKey);
+    boolean isSupport(String connectionId, AbilityKey abilityKey);
     
     /**
      * Whether the ability current node supporting is running. Return false if current node doesn't support.
@@ -43,7 +44,7 @@ public interface AbilityControlManager {
      * @param abilityKey ability key
      * @return is running
      */
-    boolean isCurrentNodeAbilityRunning(String abilityKey);
+    boolean isCurrentNodeAbilityRunning(AbilityKey abilityKey);
     
     /**
      * Register a new ability table.
@@ -72,7 +73,7 @@ public interface AbilityControlManager {
      *
      * @return ability table
      */
-    Map<String, Boolean> getCurrentRunningAbility();
+    Map<AbilityKey, Boolean> getCurrentRunningAbility();
     
     /**.
      * Initialize the manager

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.test.ability;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import org.junit.Assert;
@@ -43,74 +44,74 @@ public class AbilityControlManagerTest {
 
     @Before
     public void inject() {
-        Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put("stop-raft", true);
+        Map<AbilityKey, Boolean> newTable = new HashMap<>();
+        newTable.put(AbilityKey.TEST_1, true);
         clientAbilityControlManager.setCurrentSupportingAbility(newTable);
 
-        Map<String, Boolean> table = new HashMap<>();
-        table.put("stop-raft", true);
+        Map<AbilityKey, Boolean> table = new HashMap<>();
+        table.put(AbilityKey.TEST_1, true);
         serverAbilityControlManager.setCurrentSupportingAbility(table);
 
-        Map<String, Boolean> cluster = new HashMap<>();
-        cluster.put("stop-raft", true);
+        Map<AbilityKey, Boolean> cluster = new HashMap<>();
+        cluster.put(AbilityKey.TEST_1, true);
         serverAbilityControlManager.setClusterAbility(cluster);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
     }
     
     @Test
     public void testClientAdd() {
-        Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put("test-no-existed", true);
-        newTable.put("stop-raft", true);
+        Map<AbilityKey, Boolean> newTable = new HashMap<>();
+        newTable.put(AbilityKey.TEST_2, true);
+        newTable.put(AbilityKey.TEST_1, true);
         AbilityTable table = new AbilityTable();
         table.setConnectionId("test-00001");
         table.setAbility(newTable);
         table.setServer(true);
         clientAbilityControlManager.addNewTable(table);
-        Assert.assertFalse(clientAbilityControlManager.isSupport("test-00001", "test-no-existed"));
-        Assert.assertTrue(clientAbilityControlManager.isSupport("test-00001", "stop-raft"));
+        Assert.assertFalse(clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
+        Assert.assertTrue(clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
     }
     
     @Test
     public void testServerAdd() {
-        Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put("test-no-existed", true);
-        newTable.put("stop-raft", true);
+        Map<AbilityKey, Boolean> newTable = new HashMap<>();
+        newTable.put(AbilityKey.TEST_2, true);
+        newTable.put(AbilityKey.TEST_1, true);
         AbilityTable table = new AbilityTable();
         table.setConnectionId("test-00001");
         table.setAbility(newTable);
         table.setServer(true);
         serverAbilityControlManager.addNewTable(table);
-        Assert.assertFalse(serverAbilityControlManager.isSupport("test-00001", "test-no-existed"));
-        Assert.assertTrue(serverAbilityControlManager.isSupport("test-00001", "stop-raft"));
-        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility("stop-raft"));
+        Assert.assertFalse(serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
+        Assert.assertTrue(serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
 
-        Map<String, Boolean> otherServer = new HashMap<>();
-        otherServer.put("test-no-existed", true);
-        otherServer.put("stop-raft", false);
+        Map<AbilityKey, Boolean> otherServer = new HashMap<>();
+        otherServer.put(AbilityKey.TEST_2, true);
+        otherServer.put(AbilityKey.TEST_1, false);
         AbilityTable otherServerTable = new AbilityTable();
         otherServerTable.setConnectionId("test-00000");
         otherServerTable.setAbility(otherServer);
         otherServerTable.setServer(true);
         serverAbilityControlManager.addNewTable(otherServerTable);
-        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility("stop-raft"));
+        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
 
-        Map<String, Boolean> clientTa = new HashMap<>();
-        clientTa.put("test-no-existed", true);
-        clientTa.put("stop-raft", false);
+        Map<AbilityKey, Boolean> clientTa = new HashMap<>();
+        clientTa.put(AbilityKey.TEST_2, true);
+        clientTa.put(AbilityKey.TEST_1, false);
         AbilityTable clientTable = new AbilityTable();
         clientTable.setConnectionId("test-00002");
         clientTable.setAbility(clientTa);
         clientTable.setServer(false);
         serverAbilityControlManager.addNewTable(clientTable);
-        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility("stop-raft"));
+        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
     }
     
     @Test
     public void testClientRemove() {
-        Map<String, Boolean> clientTa = new HashMap<>();
-        clientTa.put("test-no-existed", true);
-        clientTa.put("stop-raft", false);
+        Map<AbilityKey, Boolean> clientTa = new HashMap<>();
+        clientTa.put(AbilityKey.TEST_2, true);
+        clientTa.put(AbilityKey.TEST_1, false);
         AbilityTable clientTable = new AbilityTable();
         clientTable.setConnectionId("test-01111");
         clientTable.setAbility(clientTa);
@@ -125,56 +126,56 @@ public class AbilityControlManagerTest {
     public void testComponent() throws InterruptedException {
         enabled = 0;
         // invoke enable() or disable() when registering
-        serverAbilityControlManager.registerComponent("stop-raft", new TestHandlerMapping(), -1);
+        serverAbilityControlManager.registerComponent(AbilityKey.TEST_1, new TestHandlerMapping(), -1);
         Assert.assertEquals(1, serverAbilityControlManager.handlerMappingCount());
 
-        serverAbilityControlManager.enableCurrentNodeAbility("stop-raft");
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         // nothing happens if it has enabled
         Assert.assertEquals(enabled, 1);
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning("stop-raft"));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
 
         // invoke disable()
-        serverAbilityControlManager.disableCurrentNodeAbility("stop-raft");
+        serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         // disable will invoke handler
         Assert.assertEquals(enabled, 0);
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning("stop-raft"));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
 
-        serverAbilityControlManager.disableCurrentNodeAbility("stop-raft");
+        serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         // nothing to do because it has disable
         Assert.assertEquals(enabled, 0);
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning("stop-raft"));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
 
-        serverAbilityControlManager.enableCurrentNodeAbility("stop-raft");
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         Assert.assertEquals(enabled, 1);
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning("stop-raft"));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
 
-        serverAbilityControlManager.enableCurrentNodeAbility("stop-raft");
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         Assert.assertEquals(enabled, 1);
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning("stop-raft"));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
     }
 
     @Test
     public void testClusterComponent() throws InterruptedException {
         clusterEnabled = 0;
         // invoke enable() because it turn on
-        serverAbilityControlManager.registerComponentForCluster("stop-raft", new ClusterHandlerMapping(), -1);
+        serverAbilityControlManager.registerComponentForCluster(AbilityKey.TEST_1, new ClusterHandlerMapping(), -1);
         Assert.assertEquals(1, serverAbilityControlManager.clusterHandlerMappingCount());
-        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility("stop-raft"));
+        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
         Assert.assertEquals(clusterEnabled, 1);
 
-        Map<String, Boolean> serverAbility = new HashMap<>();
-        serverAbility.put("test-no-existed", true);
-        serverAbility.put("stop-raft", false);
+        Map<AbilityKey, Boolean> serverAbility = new HashMap<>();
+        serverAbility.put(AbilityKey.TEST_2, true);
+        serverAbility.put(AbilityKey.TEST_1, false);
         AbilityTable serverTable = new AbilityTable();
         serverTable.setConnectionId("test-01111");
         serverTable.setAbility(serverAbility);
@@ -184,20 +185,20 @@ public class AbilityControlManagerTest {
         Thread.sleep(200L);
 
         // disabled
-        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility("stop-raft"));
+        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
         Assert.assertEquals(clusterEnabled, 0);
 
         // remove this table to enabled
         serverAbilityControlManager.removeTable("test-01111");
         // wait for invoking handler asyn
         Thread.sleep(200L);
-        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility("stop-raft"));
+        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
         Assert.assertEquals(clusterEnabled, 1);
     }
     
     @Test
     public void testCurrentNodeAbility() {
-        Set<String> keySet = serverAbilityControlManager.getCurrentRunningAbility().keySet();
+        Set<AbilityKey> keySet = serverAbilityControlManager.getCurrentRunningAbility().keySet();
         // diable all
         keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(key));
         // get all
@@ -215,7 +216,7 @@ public class AbilityControlManagerTest {
     @Test
     public void testPriority() throws InterruptedException {
         TestServerAbilityControlManager testServerAbilityControlManager = new TestServerAbilityControlManager();
-        String key = "key";
+        AbilityKey key = AbilityKey.TEST_1;
         TestPriority clusterHandlerMapping1 = new TestPriority("1");
         TestPriority clusterHandlerMapping2 = new TestPriority("2");
         TestPriority clusterHandlerMapping3 = new TestPriority("3");

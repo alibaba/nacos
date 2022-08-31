@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.core.ability.control;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
+import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
+import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
@@ -48,7 +51,7 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     /**.
      * ability for cluster
      */
-    private final Map<String, Boolean> clusterAbilityTable = new ConcurrentHashMap<>();
+    private final Map<AbilityKey, Boolean> clusterAbilityTable = new ConcurrentHashMap<>();
 
     /**.
      * ability for server
@@ -58,7 +61,7 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     /**
      * components for cluster. these will be invoked if cluster ability table changes.
      */
-    private final Map<String, List<HandlerWithPriority>> clusterHandlerMapping = new ConcurrentHashMap<>();
+    private final Map<AbilityKey, List<HandlerWithPriority>> clusterHandlerMapping = new ConcurrentHashMap<>();
     
     private Lock lockForClusterComponents = new ReentrantLock();
     
@@ -73,7 +76,12 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     }
     
     @Override
-    public boolean isSupport(String connectionId, String abilityKey) {
+    protected Map<AbilityKey, Boolean> getCurrentNodeSupportAbility() {
+        return AbilityTableUtils.getAbilityTableBy(ServerAbilities.getBitFlags(), ServerAbilities.getOffset());
+    }
+    
+    @Override
+    public boolean isSupport(String connectionId, AbilityKey abilityKey) {
         Boolean isRunning = currentRunningAbility.getOrDefault(abilityKey, false);
         if (!isRunning) {
             return false;
@@ -93,12 +101,12 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
      * @return whether it is turn on
      */
     @Override
-    public boolean isClusterEnableAbility(String abilityKey) {
+    public boolean isClusterEnableAbility(AbilityKey abilityKey) {
         return clusterAbilityTable.getOrDefault(abilityKey, Boolean.FALSE);
     }
     
     @Override
-    public Map<String, Boolean> getClusterAbility() {
+    public Map<AbilityKey, Boolean> getClusterAbility() {
         return Collections.unmodifiableMap(clusterAbilityTable);
     }
     
@@ -110,17 +118,17 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
      * @param handlerMapping component
      */
     @Override
-    public void registerComponentForCluster(String abilityKey, HandlerMapping handlerMapping, int priority) {
+    public void registerComponentForCluster(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority) {
         doRegisterComponent(abilityKey, handlerMapping, this.clusterHandlerMapping, lockForClusterComponents, priority, clusterAbilityTable);
     }
     
     @Override
-    public int removeClusterComponent(String abilityKey, Class<? extends HandlerMapping> handlerMappingClazz) {
+    public int removeClusterComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz) {
         return doRemove(abilityKey, handlerMappingClazz, lockForClusterComponents, clusterHandlerMapping);
     }
     
     @Override
-    public int removeAllForCluster(String abilityKey) {
+    public int removeAllForCluster(AbilityKey abilityKey) {
         List<HandlerWithPriority> remove = this.clusterHandlerMapping.remove(abilityKey);
         return Optional.ofNullable(remove).orElse(Collections.emptyList()).size();
     }
@@ -134,8 +142,8 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
             if (isServer) {
                 serversAbilityTable.put(table.getConnectionId(), table);
                 // enter cluster
-                Map<String, Boolean> nodeAbility = table.getAbility();
-                Set<String> keySet = clusterAbilityTable.keySet();
+                Map<AbilityKey, Boolean> nodeAbility = table.getAbility();
+                Set<AbilityKey> keySet = clusterAbilityTable.keySet();
                 keySet.forEach(abilityKey -> {
                     Boolean isEnabled = clusterAbilityTable.get(abilityKey);
                     Boolean val = nodeAbility.getOrDefault(abilityKey, Boolean.FALSE);
@@ -153,7 +161,7 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
         }
     }
     
-    private ClusterAbilityUpdateEvent buildClusterEvent(String abilityKey, boolean isOn) {
+    private ClusterAbilityUpdateEvent buildClusterEvent(AbilityKey abilityKey, boolean isOn) {
         // notify
         ClusterAbilityUpdateEvent event = new ClusterAbilityUpdateEvent();
         event.setAbilityKey(abilityKey);
@@ -176,7 +184,7 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
             serversAbilityTable.remove(connectionId);
             // remove from cluster
             if (MapUtil.isNotEmpty(serversAbilityTable)) {
-                Set<String> keySet = clusterAbilityTable.keySet();
+                Set<AbilityKey> keySet = clusterAbilityTable.keySet();
                 keySet.forEach(abilityKey -> {
                     Boolean isEnabled = clusterAbilityTable.getOrDefault(abilityKey, Boolean.FALSE);
                     // nothing to do if enabled
@@ -219,17 +227,17 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
         
         private static final long serialVersionUID = -122222411212200111L;
         
-        private String abilityKey;
+        private AbilityKey abilityKey;
         
         private boolean isOn;
         
         private ClusterAbilityUpdateEvent(){}
         
-        public String getAbilityKey() {
+        public AbilityKey getAbilityKey() {
             return abilityKey;
         }
         
-        public void setAbilityKey(String abilityKey) {
+        public void setAbilityKey(AbilityKey abilityKey) {
             this.abilityKey = abilityKey;
         }
         
@@ -244,12 +252,12 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     }
     
     @JustForTest
-    protected void setClusterAbilityTable(Map<String, Boolean> map) {
+    protected void setClusterAbilityTable(Map<AbilityKey, Boolean> map) {
         clusterAbilityTable.putAll(map);
     }
 
     @JustForTest
-    protected Map<String, List<HandlerWithPriority>> clusterHandlerMapping() {
+    protected Map<AbilityKey, List<HandlerWithPriority>> clusterHandlerMapping() {
         return this.clusterHandlerMapping;
     }
 

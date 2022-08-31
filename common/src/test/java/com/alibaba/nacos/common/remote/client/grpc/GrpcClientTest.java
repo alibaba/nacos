@@ -48,6 +48,16 @@ public class GrpcClientTest {
     public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         grpcClient = spy(new GrpcClient("testClient") {
             @Override
+            public byte[] getAbilityBit() {
+                return new byte[1];
+            }
+    
+            @Override
+            protected boolean isServer() {
+                return false;
+            }
+    
+            @Override
             public int rpcPortOffset() {
                 return 1000;
             }

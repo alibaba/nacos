@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.api.common.Constants;
 
 /**
@@ -33,6 +34,16 @@ public class GrpcClusterClient extends GrpcClient {
      */
     public GrpcClusterClient(String name) {
         super(name);
+    }
+    
+    @Override
+    public byte[] getAbilityBit() {
+        return ServerAbilities.getBitFlags();
+    }
+    
+    @Override
+    protected boolean isServer() {
+        return true;
     }
     
     @Override

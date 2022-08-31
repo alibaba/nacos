@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.utils;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -67,18 +68,18 @@ public class AbilityTableUtils {
      * get ability table by bits
      *
      * @param bits      bit flag
-     * @param offsetMap offset from {@link AbilityKey}
+     * @param offsetMap offset from {@link AbilityBitOperate}
      * @return Return the Map containing AbilityTableKey and isRunning.
      */
-    public static Map<String, Boolean> getAbilityTableBy(byte[] bits, Map<String, Integer> offsetMap) {
+    public static Map<AbilityKey, Boolean> getAbilityTableBy(byte[] bits, Map<AbilityKey, Integer> offsetMap) {
         if (bits == null || offsetMap.size() == 0) {
             return Collections.emptyMap();
         }
         int length = bits.length;
-        Set<Map.Entry<String, Integer>> entries = offsetMap.entrySet();
-        Map<String, Boolean> res = new HashMap<>(offsetMap.size());
-        for (Map.Entry<String, Integer> entry : entries) {
-            String abilityKey = entry.getKey();
+        Set<Map.Entry<AbilityKey, Integer>> entries = offsetMap.entrySet();
+        Map<AbilityKey, Boolean> res = new HashMap<>(offsetMap.size());
+        for (Map.Entry<AbilityKey, Integer> entry : entries) {
+            AbilityKey abilityKey = entry.getKey();
             Integer offset = entry.getValue();
             // if not exists
             int index = offset / 8 + (offset % 8 == 0 ? -1 : 0);

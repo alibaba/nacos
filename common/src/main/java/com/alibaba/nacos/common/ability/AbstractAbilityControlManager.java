@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 import com.alibaba.nacos.common.notify.Event;
@@ -43,10 +44,10 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
     /**
      * Abilities current supporting
      * <p>
-     * key: ability key from {@link AbilityKey}
+     * key: ability key from {@link AbilityBitOperate}
      * value: whether to turn on
      */
-    protected final Map<String, Boolean> currentRunningAbility = new ConcurrentHashMap<>();
+    protected final Map<AbilityKey, Boolean> currentRunningAbility = new ConcurrentHashMap<>();
 
     /**
      * Ability table collections
@@ -64,10 +65,17 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
         // register events
         registerAbilityEvent();
         // put abilities
-        currentRunningAbility.putAll(AbilityKey.getCurrentNodeSupportAbility());
+        currentRunningAbility.putAll(getCurrentNodeSupportAbility());
         // initialize
         init();
     }
+    
+    /**
+     * This is a hook for subclass to init current node ability
+     *
+     * @return current node ability
+     */
+    protected abstract Map<AbilityKey, Boolean> getCurrentNodeSupportAbility();
 
 
     private void registerAbilityEvent(){
@@ -83,7 +91,7 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
      * @return is running
      */
     @Override
-    public boolean isCurrentNodeAbilityRunning(String abilityKey) {
+    public boolean isCurrentNodeAbilityRunning(AbilityKey abilityKey) {
         return currentRunningAbility.getOrDefault(abilityKey, false);
     }
 
@@ -204,7 +212,7 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
      * @return ability table
      */
     @Override
-    public Map<String, Boolean> getCurrentRunningAbility() {
+    public Map<AbilityKey, Boolean> getCurrentRunningAbility() {
         return new HashMap<>(this.currentRunningAbility);
     }
 

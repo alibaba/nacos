@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.ability.inte;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 
@@ -33,7 +35,7 @@ public interface ClusterAbilityControlSupport {
      *
      * @return the cluster abilities.
      */
-    Map<String, Boolean> getClusterAbility();
+    Map<AbilityKey, Boolean> getClusterAbility();
     
     /**.
      * Register components for cluster. These will be trigger when its interested ability changes
@@ -42,7 +44,7 @@ public interface ClusterAbilityControlSupport {
      * @param priority       a positive number, the higher the priority, the faster it will be called
      * @param handlerMapping component
      */
-    void registerComponentForCluster(String abilityKey, HandlerMapping handlerMapping, int priority);
+    void registerComponentForCluster(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority);
     
     /**.
      * Default method to register component
@@ -50,25 +52,25 @@ public interface ClusterAbilityControlSupport {
      * @param abilityKey     component key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}.
      * @param handlerMapping component instance.
      */
-    default void registerComponentForCluster(String abilityKey, HandlerMapping handlerMapping) {
+    default void registerComponentForCluster(AbilityKey abilityKey, HandlerMapping handlerMapping) {
         registerComponentForCluster(abilityKey, handlerMapping, 1);
     }
     
     /**
      * Remove the component instance of <p>handlerMappingClazz</p>.
      *
-     * @param abilityKey ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}.
      * @param handlerMappingClazz implement of {@link HandlerMapping}
      * @return the count of components have removed
      */
-    int removeClusterComponent(String abilityKey, Class<? extends HandlerMapping> handlerMappingClazz);
+    int removeClusterComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz);
     
     /**
      * Remove all {@link HandlerMapping} interested in the special ability.
-     * @param abilityKey abnility key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}
+     * @param abilityKey abnility key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}.
      * @return the count of components have removed
      */
-    int removeAllForCluster(String abilityKey);
+    int removeAllForCluster(AbilityKey abilityKey);
     
     /**.
      * Whether current cluster supports ability
@@ -76,5 +78,5 @@ public interface ClusterAbilityControlSupport {
      * @param abilityKey ability key
      * @return whether it is turn on
      */
-    boolean isClusterEnableAbility(String abilityKey);
+    boolean isClusterEnableAbility(AbilityKey abilityKey);
 }
