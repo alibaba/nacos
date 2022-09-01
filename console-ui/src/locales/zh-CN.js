@@ -341,6 +341,7 @@ const I18N_CONF = {
     newListingMain: '新建配置',
     newListing: '新建配置',
     publishFailed: '发布失败。请检查参数是否正确。',
+    publishFailed403: '发布失败,请检查是否有权限新增配置',
     doNotEnter: '不允许非法字符',
     newConfig: 'Data ID 不能为空',
     dataIdIsNotEmpty: 'Data ID 长度不能超过255字符',
@@ -424,6 +425,7 @@ const I18N_CONF = {
     dialogTitle: '内容比较',
     dialogCurrentArea: '当前值',
     dialogOriginalArea: '原始值',
+    publishFailed403: '发布失败,请检查是否有权限',
   },
   EditorNameSpace: {
     notice: '提示',

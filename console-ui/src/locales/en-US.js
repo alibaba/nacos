@@ -344,6 +344,7 @@ const I18N_CONF = {
     newListingMain: 'Create Configuration',
     newListing: 'Create Configuration',
     publishFailed: 'Publish failed. Make sure parameters are entered correctly.',
+    publishFailed403: 'Publish failed. No permission to create Configuration',
     doNotEnter: 'Illegal characters not allowed',
     newConfig: 'Data ID cannot be empty.',
     dataIdIsNotEmpty: 'Data ID cannot exceed 255 characters in length',
@@ -427,6 +428,7 @@ const I18N_CONF = {
     dialogTitle: 'Content Comparison',
     dialogCurrentArea: 'Current Value',
     dialogOriginalArea: 'Original Value',
+    publishFailed403: 'Publish failed. No operation permission',
   },
   EditorNameSpace: {
     notice: 'Notice',

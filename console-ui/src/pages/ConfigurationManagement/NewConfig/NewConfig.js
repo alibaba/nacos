@@ -315,6 +315,13 @@ class NewConfig extends React.Component {
       },
       error: err => {
         // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        const { status } = err || {};
+        if (status === 403) {
+          Dialog.alert({
+            content: locale.publishFailed403,
+          });
+          return;
+        }
         this._publishConfig(content);
       },
     });
