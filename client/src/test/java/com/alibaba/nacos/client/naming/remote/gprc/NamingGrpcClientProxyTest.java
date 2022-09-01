@@ -284,8 +284,13 @@ public class NamingGrpcClientProxyTest {
         verify(this.rpcClient, times(1)).request(argThat(request -> {
             if (request instanceof SubscribeServiceRequest) {
                 SubscribeServiceRequest request1 = (SubscribeServiceRequest) request;
-                // not subscribe
-                return !request1.isSubscribe();
+
+                // verify request fields
+                return !request1.isSubscribe()
+                        && SERVICE_NAME.equals(request1.getServiceName())
+                        && GROUP_NAME.equals(request1.getGroupName())
+                        && CLUSTERS.equals(request1.getClusters())
+                        && NAMESPACE_ID.equals(request1.getNamespace());
             }
             return false;
         }));
