@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,28 +37,44 @@ public class GrpcConsts {
     
     public static final String NACOS_CLIENT_GRPC = "nacos.remote.client.grpc";
     
+    @GRpcConfigLabel
     public static final String NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME = NACOS_CLIENT_GRPC + ".pool.alive";
     
+    @GRpcConfigLabel
     public static final String NACOS_CLIENT_GRPC_TIMEOUT = NACOS_CLIENT_GRPC + ".timeout";
     
+    @GRpcConfigLabel
     public static final String NACOS_CLIENT_GRPC_QUEUESIZE = NACOS_CLIENT_GRPC + ".queue.size";
     
+    @GRpcConfigLabel
     public static final String NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES = NACOS_CLIENT_GRPC + ".health.retry";
     
+    @GRpcConfigLabel
     public static final String NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".health.timeout";
     
+    @GRpcConfigLabel
     public static final String MAX_INBOUND_MESSAGE_SIZE = NACOS_CLIENT_GRPC + ".maxinbound.message.size";
     
+    @GRpcConfigLabel
     public static final String KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".keep.alive.millis";
     
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
+    
+    @Documented
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    protected @interface GRpcConfigLabel {
+    
+    }
+    
     
     static {
         Class clazz = GrpcConsts.class;
         Field[] declaredFields = clazz.getDeclaredFields();
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
-            if (declaredField.getType().equals(String.class)) {
+            if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
+                    GRpcConfigLabel.class)) {
                 try {
                     CONFIG_NAMES.add((String) declaredField.get(null));
                 } catch (IllegalAccessException e) {
