@@ -172,9 +172,6 @@ public class ConfigController {
             configVo.setType(ConfigType.getDefaultType().getType());
         }
     
-        Map<String, Object> configAdvanceInfo = configOperationService.getConfigAdvanceInfo(configVo);
-        ParamUtils.checkParam(configAdvanceInfo);
-    
         ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
         configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
@@ -182,8 +179,7 @@ public class ConfigController {
     
         String encryptedDataKey = pair.getFirst();
        
-        return configOperationService
-                .publishConfig(configVo, configRequestInfoVo, configAdvanceInfo, encryptedDataKey, false);
+        return configOperationService.publishConfig(configVo, configRequestInfoVo, encryptedDataKey);
     }
     
     /**
