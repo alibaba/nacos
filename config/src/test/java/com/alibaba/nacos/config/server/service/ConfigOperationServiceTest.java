@@ -68,14 +68,14 @@ public class ConfigOperationServiceTest {
         ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
         
         // if betaIps is blank and tag is blank
-        Boolean aResult = configOperationService.publishConfig(configVo, configRequestInfoVo, null, "", true);
+        Boolean aResult = configOperationService.publishConfig(configVo, configRequestInfoVo,  "");
         verify(persistService)
                 .insertOrUpdate(any(), any(), any(ConfigInfo.class), any(Timestamp.class), any(), anyBoolean());
         Assert.assertEquals(true, aResult);
         
         // if betaIps is blank and tag is not blank
         configVo.setTag("test tag");
-        Boolean bResult = configOperationService.publishConfig(configVo, configRequestInfoVo, null, "", true);
+        Boolean bResult = configOperationService.publishConfig(configVo, configRequestInfoVo, "");
         verify(persistService)
                 .insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any(), any(Timestamp.class),
                         anyBoolean());
@@ -83,7 +83,7 @@ public class ConfigOperationServiceTest {
         
         // if betaIps is not blank
         configRequestInfoVo.setBetaIps("test-betaIps");
-        Boolean cResult = configOperationService.publishConfig(configVo, configRequestInfoVo, null, "", true);
+        Boolean cResult = configOperationService.publishConfig(configVo, configRequestInfoVo, "");
         verify(persistService)
                 .insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any(), any(Timestamp.class),
                         anyBoolean());

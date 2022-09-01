@@ -108,12 +108,12 @@ public class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService
-                .publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), any(), anyString(), eq(true)))
+                .publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), anyString()))
                 .thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configVo, request);
         
-        verify(configOperationService).publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), any(), anyString(), eq(true));
+        verify(configOperationService).publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());

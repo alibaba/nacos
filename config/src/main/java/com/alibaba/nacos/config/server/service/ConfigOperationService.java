@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
 import com.alibaba.nacos.config.server.model.vo.ConfigVo;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.slf4j.Logger;
@@ -61,18 +62,17 @@ public class ConfigOperationService {
      *
      * @throws NacosException NacosException.
      */
-    public Boolean publishConfig(ConfigVo configVo, ConfigRequestInfoVo configRequestInfoVo,
-            Map<String, Object> configAdvanceInfo, String encryptedDataKey, Boolean isV2) throws NacosException {
+    public Boolean publishConfig(ConfigVo configVo, ConfigRequestInfoVo configRequestInfoVo, String encryptedDataKey)
+            throws NacosException {
+        
+        Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configVo);
+        ParamUtils.checkParam(configAdvanceInfo);
         
         if (AggrWhitelist.isAggrDataId(configVo.getDataId())) {
             LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", configRequestInfoVo.getSrcIp(),
                     configVo.getDataId(), configVo.getGroup());
-            if (isV2) {
-                throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
-                        "dataId:" + configVo.getDataId() + " is aggr");
-            } else {
-                throw new NacosException(NacosException.NO_RIGHT, "dataId:" + configVo.getDataId() + " is aggr");
-            }
+            throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
+                    "dataId:" + configVo.getDataId() + " is aggr");
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();

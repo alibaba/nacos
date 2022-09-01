@@ -105,21 +105,21 @@ public class NamespaceOperationServiceTest {
         when(persistService.configInfoCount(anyString())).thenReturn(1);
         NamespaceAllInfo namespaceAllInfo = new NamespaceAllInfo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, DEFAULT_QUOTA,
                 1, NamespaceTypeEnum.GLOBAL.getType(), TEST_NAMESPACE_DESC);
-        NamespaceAllInfo namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID, true);
+        NamespaceAllInfo namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID);
         assertEquals(namespaceAllInfo.getNamespace(), namespace.getNamespace());
         assertEquals(namespaceAllInfo.getNamespaceShowName(), namespace.getNamespaceShowName());
         assertEquals(namespaceAllInfo.getNamespaceDesc(), namespace.getNamespaceDesc());
         assertEquals(namespaceAllInfo.getQuota(), namespace.getQuota());
         assertEquals(namespaceAllInfo.getConfigCount(), namespace.getConfigCount());
     
-        namespaceOperationService.getNamespace("test_not_exist_id", true);
+        namespaceOperationService.getNamespace("test_not_exist_id");
         
     }
     
     @Test
     public void testCreateNamespace() throws NacosException {
         when(persistService.tenantInfoCountByTenantId(anyString())).thenReturn(0);
-        namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC, true);
+        namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         verify(persistService)
                 .insertTenantInfoAtomic(eq(DEFAULT_KP), eq(TEST_NAMESPACE_ID), eq(TEST_NAMESPACE_NAME), eq(TEST_NAMESPACE_DESC),
                         any(), anyLong());
