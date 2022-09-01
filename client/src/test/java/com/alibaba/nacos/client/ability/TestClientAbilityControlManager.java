@@ -14,29 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.ability;
+package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.ability.handler.HandlerMapping;
-import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class TestServerAbilityControlManager extends ServerAbilityControlManager {
+public class TestClientAbilityControlManager extends ClientAbilityControlManager {
 
     @JustForTest
     public void setCurrentSupportingAbility(Map<AbilityKey, Boolean> ability) {
         currentRunningAbility.putAll(ability);
     }
-
-    @JustForTest
-    public void setClusterAbility(Map<AbilityKey, Boolean> ability) {
-        super.setClusterAbilityTable(ability);
-    }
-
+    
     @JustForTest
     public int handlerMappingCount() {
         return super.handlerMapping().size();
@@ -45,31 +37,6 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     @JustForTest
     public List<HandlerWithPriority> getHandlerMapping(AbilityKey abilityKey) {
         return super.handlerMapping().get(abilityKey);
-    }
-
-    @JustForTest
-    public int clusterHandlerMappingCount() {
-        return super.clusterHandlerMapping().size();
-    }
-    
-    @JustForTest
-    public List<HandlerWithPriority> getClusterHandlerMapping(AbilityKey abilityKey) {
-        return super.clusterHandlerMapping().get(abilityKey);
-    }
-    
-    /**
-     * Just a test method.
-     */
-    @JustForTest
-    public void registerClusterHandlerMapping(AbilityKey key, HandlerMapping handlerMapping, int priority) {
-        List<HandlerWithPriority> orDefault = super.clusterHandlerMapping().getOrDefault(key, new ArrayList<>());
-        orDefault.add(new HandlerWithPriority(handlerMapping, priority));
-        clusterHandlerMapping().put(key, orDefault);
-    }
-    
-    @JustForTest
-    public void triggerCluster(AbilityKey abilityKey) {
-        triggerHandlerMappingAsyn(abilityKey, true, clusterHandlerMapping());
     }
     
     @JustForTest

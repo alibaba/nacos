@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.test.ability;
+package com.alibaba.nacos.core.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
@@ -33,8 +33,6 @@ import java.util.Set;
 @SpringBootTest
 public class AbilityControlManagerTest {
 
-    private TestClientAbilityControlManager clientAbilityControlManager = new TestClientAbilityControlManager();
-
     private TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
 
     private volatile int clusterEnabled = 0;
@@ -47,7 +45,7 @@ public class AbilityControlManagerTest {
     public void inject() {
         Map<AbilityKey, Boolean> newTable = new HashMap<>();
         newTable.put(AbilityKey.TEST_1, true);
-        clientAbilityControlManager.setCurrentSupportingAbility(newTable);
+        serverAbilityControlManager.setCurrentSupportingAbility(newTable);
 
         Map<AbilityKey, Boolean> table = new HashMap<>();
         table.put(AbilityKey.TEST_1, true);
@@ -68,9 +66,9 @@ public class AbilityControlManagerTest {
         table.setConnectionId("test-00001");
         table.setAbility(newTable);
         table.setServer(true);
-        clientAbilityControlManager.addNewTable(table);
-        Assert.assertEquals(AbilityStatus.NOT_SUPPORTED, clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
-        Assert.assertEquals(AbilityStatus.SUPPORTED, clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
+        serverAbilityControlManager.addNewTable(table);
+        Assert.assertEquals(AbilityStatus.NOT_SUPPORTED, serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
+        Assert.assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
     }
     
     @Test
@@ -117,10 +115,10 @@ public class AbilityControlManagerTest {
         clientTable.setConnectionId("test-01111");
         clientTable.setAbility(clientTa);
         clientTable.setServer(true);
-        clientAbilityControlManager.addNewTable(clientTable);
-        Assert.assertTrue(clientAbilityControlManager.contains(clientTable.getConnectionId()));
-        clientAbilityControlManager.removeTable("test-01111");
-        Assert.assertFalse(clientAbilityControlManager.contains(clientTable.getConnectionId()));
+        serverAbilityControlManager.addNewTable(clientTable);
+        Assert.assertTrue(serverAbilityControlManager.contains(clientTable.getConnectionId()));
+        serverAbilityControlManager.removeTable("test-01111");
+        Assert.assertFalse(serverAbilityControlManager.contains(clientTable.getConnectionId()));
     }
 
     @Test
