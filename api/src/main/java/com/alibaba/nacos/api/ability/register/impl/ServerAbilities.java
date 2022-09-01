@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.ability.register.impl;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 
 import java.util.Map;
 
@@ -26,7 +26,7 @@ import java.util.Map;
  * @description It is used to register server abilities.
  * @date 2022/8/31 12:32
  **/
-public class ServerAbilities extends AbstractAbilityBitOperate {
+public class ServerAbilities extends AbstractAbilityRegistry {
     
     private static final ServerAbilities INSTANCE = new ServerAbilities();
     
@@ -34,14 +34,14 @@ public class ServerAbilities extends AbstractAbilityBitOperate {
         /*
          * example:
          *   There is a function named "compression".
-         *   The key is "compression", the value is the offset of the flag bit of this ability in the ability table. The value should be unique.
+         *   The key is from <p>AbilityKey</p>, the value is whether turn on.
          *
          *   You can add a new public field in <p>AbilityKey</p> like:
-         *       <code>DATA_COMPRESSION</code>
-         *   This field can be used outside.
+         *       <code>DATA_COMPRESSION("compression", 1)</code>
+         *   This field can be used outside, and the offset should be unique.
          *
          *   And then you need to declare the offset of the flag bit of this ability in the ability table, you can:
-         *       <code>abilityOffset.put(AbilityKey.DATA_COMPRESSION, 1);</code> means that is the first bit from left to right in the table.
+         *       <code>supportedAbilities.put(AbilityKey.DATA_COMPRESSION, true);</code> means that is the first bit from left to right in the table.
          *
          */
         // put ability here, which you want current server supports
@@ -61,13 +61,13 @@ public class ServerAbilities extends AbstractAbilityBitOperate {
         return INSTANCE.getAbilityBitFlags();
     }
     
-    /**.
-     * get the ability offset for server
+    /**
+     * get static ability current server supports
      *
-     * @return  ability offset
+     * @return static ability
      */
-    public static Map<AbilityKey, Integer> getOffset() {
-        return INSTANCE.offset();
+    public static Map<AbilityKey, Boolean> getStaticAbilities(){
+        return INSTANCE.getSupportedAbilities();
     }
     
 }

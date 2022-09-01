@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
@@ -164,7 +164,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Remove the component instance of <p>handlerMappingClazz</p>.
      *
-     * @param abilityKey ability key from {@link AbstractAbilityBitOperate}
+     * @param abilityKey ability key from {@link AbstractAbilityRegistry}
      * @param handlerMappingClazz implement of {@link HandlerMapping}
      * @param lock lock for operation
      * @param handlerMappingsMap handler collection map
@@ -242,7 +242,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Invoke componments which linked to ability key asyn.
      *
-     * @param key ability key from {@link AbstractAbilityBitOperate}
+     * @param key ability key from {@link AbstractAbilityRegistry}
      * @param isEnabled turn on/off
      * @param handlerMappingsMap handler collection
      */
@@ -254,7 +254,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Invoke componments which linked to ability key syn.
      *
-     * @param key ability key from {@link AbstractAbilityBitOperate}
+     * @param key ability key from {@link AbstractAbilityRegistry}
      * @param isEnabled turn on/off
      * @param handlerMappingsMap handler collection
      */

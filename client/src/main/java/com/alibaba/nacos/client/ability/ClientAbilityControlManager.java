@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
-import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
 
@@ -40,7 +39,7 @@ public class ClientAbilityControlManager extends DefaultAbilityControlManager {
     
     @Override
     protected Map<AbilityKey, Boolean> getCurrentNodeSupportAbility() {
-        return AbilityTableUtils.getAbilityTableBy(ClientAbilities.getBitFlags(), ClientAbilities.getOffset());
+        return ClientAbilities.getStaticAbilities();
     }
     
     @Override

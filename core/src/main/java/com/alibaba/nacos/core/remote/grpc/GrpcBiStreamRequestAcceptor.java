@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
-import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -123,15 +122,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
-                    if (setUpRequest.isServer()) {
-                        // if from server
-                        connection.setAbilityTable(AbilityTableUtils.getAbilityTableBy(setUpRequest.getAbilityTable(),
-                                ServerAbilities.getOffset()));
-                    } else {
-                        // if from client
-                        connection.setAbilityTable(AbilityTableUtils.getAbilityTableBy(setUpRequest.getAbilityTable(),
-                                ClientAbilities.getOffset()));
-                    }
+                    connection.setAbilityTable(AbilityTableUtils.getAbilityTableBy(setUpRequest.getAbilityTable(),
+                            AbilityKey.offset()));
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
                     
                     if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {

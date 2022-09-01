@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import org.junit.Assert;
@@ -68,8 +69,8 @@ public class AbilityControlManagerTest {
         table.setAbility(newTable);
         table.setServer(true);
         clientAbilityControlManager.addNewTable(table);
-        Assert.assertFalse(clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
-        Assert.assertTrue(clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
+        Assert.assertEquals(AbilityStatus.NOT_SUPPORTED, clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
+        Assert.assertEquals(AbilityStatus.SUPPORTED, clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
     }
     
     @Test
@@ -82,8 +83,8 @@ public class AbilityControlManagerTest {
         table.setAbility(newTable);
         table.setServer(true);
         serverAbilityControlManager.addNewTable(table);
-        Assert.assertFalse(serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
-        Assert.assertTrue(serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
+        Assert.assertEquals(AbilityStatus.NOT_SUPPORTED, serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
+        Assert.assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
         Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
 
         Map<AbilityKey, Boolean> otherServer = new HashMap<>();

@@ -48,6 +48,7 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -319,7 +320,7 @@ public abstract class GrpcClient extends RpcClient {
                 // ability table will be null if server doesn't support ability table
                 ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
                 Map<AbilityKey, Boolean> abilityTable = AbilityTableUtils
-                        .getAbilityTableBy(serverCheckResponse.getAbilities(), ServerAbilities.getOffset());
+                        .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
                 AbilityTable table = new AbilityTable();
                 table.setServer(true)
                         .setConnectionId(serverCheckResponse.getConnectionId())
@@ -342,7 +343,10 @@ public abstract class GrpcClient extends RpcClient {
                 ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
-                conSetupRequest.setAbilityTable(getAbilityBit());
+                // set ability table
+                byte[] bitTable = AbilityTableUtils.getAbilityBiTableBy(AbilityKey.values(),
+                        NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility());
+                conSetupRequest.setAbilityTable(bitTable);
                 conSetupRequest.setServer(isServer());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
@@ -356,13 +360,6 @@ public abstract class GrpcClient extends RpcClient {
         }
         return null;
     }
-    
-    /**.
-     * get ability, server or client
-     *
-     * @return bit table
-     */
-    protected abstract byte[] getAbilityBit();
     
     /**
      * Return whether server environment

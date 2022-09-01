@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.api.ability.constant;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 /**.
  * @author Daydreamer
  * @description Ability key constant.
@@ -26,23 +31,44 @@ public enum AbilityKey {
     /**.
      * just for junit test
      */
-    TEST_1("test_1"),
+    TEST_1("test_1", 1),
     
     /**.
      * just for junit test
      */
-    TEST_2("test_2");
+    TEST_2("test_2", 2);
     
-    
-    
-    
-    
-    
-    
-    
+    /**.
+     * the name of a certain ability
+     */
     private final String name;
     
-    AbilityKey(String name) {
+    /**.
+     * the offset in ability table
+     */
+    private final int offset;
+    
+    AbilityKey(String name, int offset) {
         this.name = name;
+        this.offset = offset;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public int getOffset() {
+        return offset;
+    }
+    
+    private static final Map<AbilityKey, Integer> OFFSET_MAP;
+    
+    public static Map<AbilityKey, Integer> offset() {
+        return OFFSET_MAP;
+    }
+    
+    static {
+        OFFSET_MAP = Arrays.stream(AbilityKey.values())
+                .collect(Collectors.toMap(Function.identity(), AbilityKey::getOffset));
     }
 }

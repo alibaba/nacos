@@ -28,9 +28,9 @@ import java.util.Map;
  * @description Operation for bit table.
  * @date 2022/7/12 19:23
  **/
-public abstract class AbstractAbilityBitOperate {
+public abstract class AbstractAbilityRegistry {
     
-    protected final HashMap<AbilityKey, Integer> abilityOffset = new HashMap<>();
+    protected final Map<AbilityKey, Boolean> supportedAbilities = new HashMap<>();
 
     private byte[] abilityBitFlag;
     
@@ -42,21 +42,21 @@ public abstract class AbstractAbilityBitOperate {
     public byte[] getAbilityBitFlags() {
         return abilityBitFlag.clone();
     }
-
-    /**.
-     * Return the ability bit offsets
-     *
-     * @return bit offset
-     */
-    public Map<AbilityKey, Integer> offset() {
-        return Collections.unmodifiableMap(abilityOffset);
-    }
     
     /**.
-     * put the bit offset to {@link AbstractAbilityBitOperate#abilityBitFlag}
+     * put the bit offset to {@link AbstractAbilityRegistry#abilityBitFlag}
      */
     protected void init() {
         // init the bits table
-        abilityBitFlag = AbilityTableUtils.getAbilityBitBy(abilityOffset.values());
+        abilityBitFlag = AbilityTableUtils.getAbilityBiTableBy(AbilityKey.values(), supportedAbilities);
+    }
+    
+    /**
+     * get static ability current server supports
+     *
+     * @return static ability
+     */
+    public Map<AbilityKey, Boolean> getSupportedAbilities() {
+        return Collections.unmodifiableMap(supportedAbilities);
     }
 }

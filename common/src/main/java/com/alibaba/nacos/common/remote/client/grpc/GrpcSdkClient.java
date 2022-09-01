@@ -16,10 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.utils.AbilityTableUtils;
-import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 
 /**
  * gRPC client for sdk.
@@ -36,12 +33,6 @@ public class GrpcSdkClient extends GrpcClient {
      */
     public GrpcSdkClient(String name) {
         super(name);
-    }
-    
-    @Override
-    public byte[] getAbilityBit() {
-        // calculate the ability bit table based on ability of current client
-        return AbilityTableUtils.getAbilityBiTableBy(ClientAbilities.getOffset(), NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility());
     }
     
     @Override

@@ -17,11 +17,13 @@
 package com.alibaba.nacos.api.utils;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -69,7 +71,7 @@ public class AbilityTableUtils {
      * get ability table by bits
      *
      * @param bits      bit flag
-     * @param offsetMap offset from {@link AbstractAbilityBitOperate}
+     * @param offsetMap offset from {@link AbstractAbilityRegistry}
      * @return Return the Map containing AbilityTableKey and isRunning.
      */
     public static Map<AbilityKey, Boolean> getAbilityTableBy(byte[] bits, Map<AbilityKey, Integer> offsetMap) {
@@ -103,7 +105,7 @@ public class AbilityTableUtils {
     /**.
      * get ability bit table by existed ability table and offset map
      *
-     * @param offsetMap offset from {@link AbstractAbilityBitOperate}
+     * @param offsetMap offset from {@link AbstractAbilityRegistry}
      * @return Return the Map containing AbilityTableKey and isRunning.
      */
     public static byte[] getAbilityBiTableBy(Map<AbilityKey, Integer> offsetMap, Map<AbilityKey, Boolean> abilityTable) {
@@ -112,5 +114,19 @@ public class AbilityTableUtils {
                 .filter(item -> abilityTable.getOrDefault(item.getKey(), false))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         return getAbilityBitBy(res.values());
+    }
+    
+    /**
+     * get ability bit table by existed ability table and abilityKeys array
+     *
+     * @param abilityKeys abilityKeys array
+     * @param abilityTable existed ability table
+     * @return filter ability which value is false in <code>abilityTable<code/>
+     */
+    public static byte[] getAbilityBiTableBy(AbilityKey[] abilityKeys, Map<AbilityKey, Boolean> abilityTable) {
+        // filter the element which <code>abilityTable</code> don't have or value is false
+        List<AbilityKey> keyList = Arrays.stream(abilityKeys).collect(Collectors.toList());
+        keyList.removeIf(key -> !abilityTable.getOrDefault(key, false));
+        return getAbilityBitBy(keyList.stream().map(AbilityKey::getOffset).collect(Collectors.toList()));
     }
 }
