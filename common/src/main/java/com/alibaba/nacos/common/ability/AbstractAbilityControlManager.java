@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 import com.alibaba.nacos.common.notify.Event;
@@ -45,7 +45,7 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
     /**
      * Abilities current supporting
      * <p>
-     * key: ability key from {@link AbilityBitOperate}
+     * key: ability key from {@link AbstractAbilityBitOperate}
      * value: whether to turn on
      */
     protected final Map<AbilityKey, Boolean> currentRunningAbility = new ConcurrentHashMap<>();
@@ -125,7 +125,6 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
                 Boolean coming = clientAbilities.getOrDefault(abilityKey, false);
                 clientAbilities.put(abilityKey, res && coming);
             });
-            System.out.println(table);
             nodeAbilityTable.put(connectionId, table);
         } finally {
             lockForAbilityTable.unlock();

@@ -23,17 +23,17 @@ package com.alibaba.nacos.api.ability.constant;
  **/
 public enum  AbilityStatus {
     
-    /**
+    /**.
      * Support a certain ability
      */
     SUPPORTED,
     
-    /**
+    /**.
      * Not support a certain ability
      */
     NOT_SUPPORTED,
     
-    /**
+    /**.
      * Cannot find ability table, unknown
      */
     UNKNOWN

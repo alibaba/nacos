@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ability.entity;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 
 import java.util.Map;
 

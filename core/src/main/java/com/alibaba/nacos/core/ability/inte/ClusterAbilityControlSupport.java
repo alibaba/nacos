@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.ability.inte;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 

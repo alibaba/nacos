@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
@@ -47,13 +47,15 @@ import java.util.concurrent.locks.ReentrantLock;
  * @description It is a relatively complete capability control center implementation.
  * @date 2022/7/12 19:18
  **/
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class DefaultAbilityControlManager extends AbstractAbilityControlManager
         implements AbilityHandlerRegistry {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAbilityControlManager.class);
     
-    /**
-     * These handlers will be invoked when the flag of ability change key: ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey} value:
+    /**.
+     * These handlers will be invoked when the flag of ability change key:
+     * ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey} value:
      * components who want to be invoked if its interested ability turn on/off
      */
     private final Map<AbilityKey, List<HandlerWithPriority>> handlerMappings = new ConcurrentHashMap<>();
@@ -162,7 +164,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Remove the component instance of <p>handlerMappingClazz</p>.
      *
-     * @param abilityKey ability key from {@link AbilityBitOperate}
+     * @param abilityKey ability key from {@link AbstractAbilityBitOperate}
      * @param handlerMappingClazz implement of {@link HandlerMapping}
      * @param lock lock for operation
      * @param handlerMappingsMap handler collection map
@@ -240,7 +242,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Invoke componments which linked to ability key asyn.
      *
-     * @param key ability key from {@link AbilityBitOperate}
+     * @param key ability key from {@link AbstractAbilityBitOperate}
      * @param isEnabled turn on/off
      * @param handlerMappingsMap handler collection
      */
@@ -252,7 +254,7 @@ public abstract class DefaultAbilityControlManager extends AbstractAbilityContro
     /**
      * Invoke componments which linked to ability key syn.
      *
-     * @param key ability key from {@link AbilityBitOperate}
+     * @param key ability key from {@link AbstractAbilityBitOperate}
      * @param isEnabled turn on/off
      * @param handlerMappingsMap handler collection
      */

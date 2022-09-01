@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.ability.register.impl;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
 
 import java.util.Map;
 
@@ -26,7 +26,7 @@ import java.util.Map;
  * @description It is used to register client abilities.
  * @date 2022/8/31 12:32
  **/
-public class ClientAbilities extends AbilityBitOperate {
+public class ClientAbilities extends AbstractAbilityBitOperate {
     
     private static final ClientAbilities INSTANCE = new ClientAbilities();
     
@@ -52,7 +52,7 @@ public class ClientAbilities extends AbilityBitOperate {
         init();
     }
     
-    /**
+    /**.
      * get the ability offset for server
      *
      * @return  ability offset
@@ -61,7 +61,7 @@ public class ClientAbilities extends AbilityBitOperate {
         return INSTANCE.getAbilityBitFlags();
     }
     
-    /**
+    /**.
      * get the ability offset for server
      *
      * @return  ability offset

@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.ability.register;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.utils.AbilityTableUtils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ import java.util.Map;
  * @description Operation for bit table.
  * @date 2022/7/12 19:23
  **/
-public abstract class AbilityBitOperate {
+public abstract class AbstractAbilityBitOperate {
     
     protected final HashMap<AbilityKey, Integer> abilityOffset = new HashMap<>();
 
@@ -48,11 +49,11 @@ public abstract class AbilityBitOperate {
      * @return bit offset
      */
     public Map<AbilityKey, Integer> offset() {
-        return abilityOffset;
+        return Collections.unmodifiableMap(abilityOffset);
     }
     
-    /**
-     * put the bit offset to {@link AbilityBitOperate#abilityBitFlag}
+    /**.
+     * put the bit offset to {@link AbstractAbilityBitOperate#abilityBitFlag}
      */
     protected void init() {
         // init the bits table

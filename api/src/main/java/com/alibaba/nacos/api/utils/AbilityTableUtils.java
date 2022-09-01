@@ -17,7 +17,7 @@
 package com.alibaba.nacos.api.utils;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -69,7 +69,7 @@ public class AbilityTableUtils {
      * get ability table by bits
      *
      * @param bits      bit flag
-     * @param offsetMap offset from {@link AbilityBitOperate}
+     * @param offsetMap offset from {@link AbstractAbilityBitOperate}
      * @return Return the Map containing AbilityTableKey and isRunning.
      */
     public static Map<AbilityKey, Boolean> getAbilityTableBy(byte[] bits, Map<AbilityKey, Integer> offsetMap) {
@@ -103,7 +103,7 @@ public class AbilityTableUtils {
     /**.
      * get ability bit table by existed ability table and offset map
      *
-     * @param offsetMap offset from {@link AbilityBitOperate}
+     * @param offsetMap offset from {@link AbstractAbilityBitOperate}
      * @return Return the Map containing AbilityTableKey and isRunning.
      */
     public static byte[] getAbilityBiTableBy(Map<AbilityKey, Integer> offsetMap, Map<AbilityKey, Boolean> abilityTable) {

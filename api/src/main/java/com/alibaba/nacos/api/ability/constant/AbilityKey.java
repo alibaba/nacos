@@ -23,9 +23,26 @@ package com.alibaba.nacos.api.ability.constant;
  **/
 public enum AbilityKey {
     
-    /**
+    /**.
      * just for junit test
      */
-    TEST_1, TEST_2,
+    TEST_1("test_1"),
     
+    /**.
+     * just for junit test
+     */
+    TEST_2("test_2");
+    
+    
+    
+    
+    
+    
+    
+    
+    private final String name;
+    
+    AbilityKey(String name) {
+        this.name = name;
+    }
 }

@@ -46,7 +46,7 @@ public class ClientAbilityControlManager extends DefaultAbilityControlManager {
     @Override
     public AbilityStatus isSupport(String connectionId, AbilityKey abilityKey) {
         AbilityTable abilityTable = nodeAbilityTable.get(connectionId);
-        if(abilityTable == null) {
+        if (abilityTable == null) {
             return AbilityStatus.UNKNOWN;
         }
         Boolean isSupport = Optional.ofNullable(abilityTable.getAbility())

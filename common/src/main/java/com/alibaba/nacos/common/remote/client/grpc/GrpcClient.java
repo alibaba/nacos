@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -358,7 +357,7 @@ public abstract class GrpcClient extends RpcClient {
         return null;
     }
     
-    /**
+    /**.
      * get ability, server or client
      *
      * @return bit table

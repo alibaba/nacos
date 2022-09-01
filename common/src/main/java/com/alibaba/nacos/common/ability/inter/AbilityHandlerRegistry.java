@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.ability.inter;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.AbilityBitOperate;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityBitOperate;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 
@@ -48,7 +48,7 @@ public interface AbilityHandlerRegistry {
      * Register the component which is managed by {@link AbstractAbilityControlManager}.
      * if you are hoping that a component will be invoked when turn on/off the ability whose key is <p>abilityKey</p>.
      *
-     * @param abilityKey     component key from {@link AbilityBitOperate}
+     * @param abilityKey     component key from {@link AbstractAbilityBitOperate}
      * @param priority       a positive number, the higher the priority is, the faster it will be called. `1` is the lowest priority.
      * @param handlerMapping component instance.
      */
@@ -57,7 +57,7 @@ public interface AbilityHandlerRegistry {
     /**.
      * Default method to register component with the lowest priority.
      *
-     * @param abilityKey     component key from {@link AbilityBitOperate}
+     * @param abilityKey     component key from {@link AbstractAbilityBitOperate}
      * @param handlerMapping component instance.
      */
     default void registerComponent(AbilityKey abilityKey, HandlerMapping handlerMapping) {
@@ -67,7 +67,7 @@ public interface AbilityHandlerRegistry {
     /**
      * Remove the component instance of <p>handlerMappingClazz</p>.
      *
-     * @param abilityKey ability key from {@link AbilityBitOperate}
+     * @param abilityKey ability key from {@link AbstractAbilityBitOperate}
      * @param handlerMappingClazz implement of {@link HandlerMapping}
      * @return the count of components have removed
      */
@@ -75,7 +75,7 @@ public interface AbilityHandlerRegistry {
     
     /**
      * Remove all {@link HandlerMapping} interested in the special ability.
-     * @param abilityKey abnility key from {@link AbilityBitOperate}
+     * @param abilityKey abnility key from {@link AbstractAbilityBitOperate}
      * @return the count of components have removed
      */
     int removeAll(AbilityKey abilityKey);
