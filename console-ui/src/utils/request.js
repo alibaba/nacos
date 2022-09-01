@@ -39,7 +39,6 @@ const request = () => {
       if (!params) {
         config.params = {};
       }
-      config.params.message = true;
       if (!url.includes('auth/users/login')) {
         let token = {};
         try {
