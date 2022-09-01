@@ -67,7 +67,6 @@ public class GrpcConsts {
     
     }
     
-    
     static {
         Class clazz = GrpcConsts.class;
         Field[] declaredFields = clazz.getDeclaredFields();
