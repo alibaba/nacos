@@ -30,13 +30,7 @@ import com.alibaba.nacos.console.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -92,7 +86,7 @@ public class NamespaceControllerV2 {
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Result<Boolean> createNamespace(NamespaceVo namespaceVo) throws NacosException {
+    public Result<Boolean> createNamespace(@RequestBody NamespaceVo namespaceVo) throws NacosException {
         
         namespaceVo.validate();
         
@@ -124,7 +118,7 @@ public class NamespaceControllerV2 {
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Result<Boolean> editNamespace(NamespaceVo namespaceVo) throws NacosException {
+    public Result<Boolean> editNamespace(@RequestBody NamespaceVo namespaceVo) throws NacosException {
         namespaceVo.validate();
         return Result.success(namespaceOperationService.editNamespace(namespaceVo.getNamespaceId(),
                 namespaceVo.getNamespaceName(), namespaceVo.getNamespaceDesc()));
