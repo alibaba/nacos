@@ -35,8 +35,8 @@ public class AbilityTableUtilsTest {
         Assert.assertEquals(abilityBitBy[2], -128);
         // clear
         byte[] abilityBits = AbilityTableUtils.getAbilityBitBy(Collections.emptyList());
-        Assert.assertEquals(abilityBits.length , 1);
-        Assert.assertEquals(abilityBits[0] , 0);
+        Assert.assertEquals(abilityBits.length, 1);
+        Assert.assertEquals(abilityBits[0], 0);
     }
     
     @Test

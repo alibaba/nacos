@@ -169,7 +169,6 @@ public class AbilityControlManagerTest {
         }
     }
     
-    
     class TestHandlerMapping implements HandlerMapping {
         
         @Override

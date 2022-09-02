@@ -116,12 +116,12 @@ public class AbilityTableUtils {
         return getAbilityBitBy(res.values());
     }
     
-    /**
+    /**.
      * get ability bit table by existed ability table and abilityKeys array
      *
      * @param abilityKeys abilityKeys array
      * @param abilityTable existed ability table
-     * @return filter ability which value is false in <code>abilityTable<code/>
+     * @return filter ability which value is false in <code>abilityTable</code>
      */
     public static byte[] getAbilityBiTableBy(AbilityKey[] abilityKeys, Map<AbilityKey, Boolean> abilityTable) {
         // filter the element which <code>abilityTable</code> don't have or value is false

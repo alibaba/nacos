@@ -51,7 +51,7 @@ public abstract class AbstractAbilityRegistry {
         abilityBitFlag = AbilityTableUtils.getAbilityBiTableBy(AbilityKey.values(), supportedAbilities);
     }
     
-    /**
+    /**.
      * get static ability current server supports
      *
      * @return static ability

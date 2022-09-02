@@ -61,12 +61,12 @@ public class ServerAbilities extends AbstractAbilityRegistry {
         return INSTANCE.getAbilityBitFlags();
     }
     
-    /**
+    /**.
      * get static ability current server supports
      *
      * @return static ability
      */
-    public static Map<AbilityKey, Boolean> getStaticAbilities(){
+    public static Map<AbilityKey, Boolean> getStaticAbilities() {
         return INSTANCE.getSupportedAbilities();
     }
     

@@ -18,12 +18,10 @@ package com.alibaba.nacos.core.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.common.JustForTest;
-import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
 
@@ -43,37 +41,8 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     }
     
     @JustForTest
-    public List<HandlerWithPriority> getHandlerMapping(AbilityKey abilityKey) {
-        return super.handlerMapping().get(abilityKey);
-    }
-
-    @JustForTest
-    public int clusterHandlerMappingCount() {
-        return super.clusterHandlerMapping().size();
+    public Set<String> getServerNotSupportAbility() {
+        return super.serverNotSupport();
     }
     
-    @JustForTest
-    public List<HandlerWithPriority> getClusterHandlerMapping(AbilityKey abilityKey) {
-        return super.clusterHandlerMapping().get(abilityKey);
-    }
-    
-    /**
-     * Just a test method.
-     */
-    @JustForTest
-    public void registerClusterHandlerMapping(AbilityKey key, HandlerMapping handlerMapping, int priority) {
-        List<HandlerWithPriority> orDefault = super.clusterHandlerMapping().getOrDefault(key, new ArrayList<>());
-        orDefault.add(new HandlerWithPriority(handlerMapping, priority));
-        clusterHandlerMapping().put(key, orDefault);
-    }
-    
-    @JustForTest
-    public void triggerCluster(AbilityKey abilityKey) {
-        triggerHandlerMappingAsyn(abilityKey, true, clusterHandlerMapping());
-    }
-    
-    @JustForTest
-    public void trigger(AbilityKey abilityKey) {
-        triggerHandlerMappingAsyn(abilityKey, true, handlerMapping());
-    }
 }

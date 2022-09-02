@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,11 +34,7 @@ public class AbilityControlManagerTest {
 
     private TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
 
-    private volatile int clusterEnabled = 0;
-
     private volatile int enabled = 0;
-    
-    private volatile LinkedList<String> testPriority = new LinkedList<>();
 
     @Before
     public void inject() {
@@ -83,7 +78,6 @@ public class AbilityControlManagerTest {
         serverAbilityControlManager.addNewTable(table);
         Assert.assertEquals(AbilityStatus.NOT_SUPPORTED, serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
         Assert.assertEquals(AbilityStatus.SUPPORTED, serverAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
 
         Map<AbilityKey, Boolean> otherServer = new HashMap<>();
         otherServer.put(AbilityKey.TEST_2, true);
@@ -93,7 +87,6 @@ public class AbilityControlManagerTest {
         otherServerTable.setAbility(otherServer);
         otherServerTable.setServer(true);
         serverAbilityControlManager.addNewTable(otherServerTable);
-        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
 
         Map<AbilityKey, Boolean> clientTa = new HashMap<>();
         clientTa.put(AbilityKey.TEST_2, true);
@@ -103,7 +96,31 @@ public class AbilityControlManagerTest {
         clientTable.setAbility(clientTa);
         clientTable.setServer(false);
         serverAbilityControlManager.addNewTable(clientTable);
-        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
+        
+        // if not support
+        AbilityTable serverTable = new AbilityTable();
+        serverTable.setConnectionId("test-001231");
+        serverTable.setServer(true);
+        serverAbilityControlManager.addNewTable(serverTable);
+        // unknown because not support
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.UNKNOWN);
+        Assert.assertEquals(serverAbilityControlManager.getServerNotSupportAbility().size(), 1);
+        Assert.assertTrue(serverAbilityControlManager.getServerNotSupportAbility().contains("test-001231"));
+        
+        AbilityTable serverTable1 = new AbilityTable();
+        serverTable1.setConnectionId("test-001231231");
+        serverTable1.setServer(true);
+        serverAbilityControlManager.addNewTable(serverTable1);
+        // unknown because not support
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.UNKNOWN);
+        Assert.assertEquals(serverAbilityControlManager.getServerNotSupportAbility().size(), 2);
+        Assert.assertTrue(serverAbilityControlManager.getServerNotSupportAbility().contains("test-001231231"));
+    
+        // remove then support
+        serverAbilityControlManager.removeTable("test-001231");
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.UNKNOWN);
+        serverAbilityControlManager.removeTable("test-001231231");
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.NOT_SUPPORTED);
     }
     
     @Test
@@ -162,38 +179,6 @@ public class AbilityControlManagerTest {
         Assert.assertEquals(enabled, 1);
         Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
     }
-
-    @Test
-    public void testClusterComponent() throws InterruptedException {
-        clusterEnabled = 0;
-        // invoke enable() because it turn on
-        serverAbilityControlManager.registerComponentForCluster(AbilityKey.TEST_1, new ClusterHandlerMapping(), -1);
-        Assert.assertEquals(1, serverAbilityControlManager.clusterHandlerMappingCount());
-        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
-        Assert.assertEquals(clusterEnabled, 1);
-
-        Map<AbilityKey, Boolean> serverAbility = new HashMap<>();
-        serverAbility.put(AbilityKey.TEST_2, true);
-        serverAbility.put(AbilityKey.TEST_1, false);
-        AbilityTable serverTable = new AbilityTable();
-        serverTable.setConnectionId("test-01111");
-        serverTable.setAbility(serverAbility);
-        serverTable.setServer(true);
-        serverAbilityControlManager.addNewTable(serverTable);
-        // wait for invoking handler asyn
-        Thread.sleep(200L);
-
-        // disabled
-        Assert.assertFalse(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
-        Assert.assertEquals(clusterEnabled, 0);
-
-        // remove this table to enabled
-        serverAbilityControlManager.removeTable("test-01111");
-        // wait for invoking handler asyn
-        Thread.sleep(200L);
-        Assert.assertTrue(serverAbilityControlManager.isClusterEnableAbility(AbilityKey.TEST_1));
-        Assert.assertEquals(clusterEnabled, 1);
-    }
     
     @Test
     public void testCurrentNodeAbility() {
@@ -212,101 +197,6 @@ public class AbilityControlManagerTest {
         });
     }
     
-    @Test
-    public void testPriority() throws InterruptedException {
-        TestServerAbilityControlManager testServerAbilityControlManager = new TestServerAbilityControlManager();
-        AbilityKey key = AbilityKey.TEST_1;
-        TestPriority clusterHandlerMapping1 = new TestPriority("1");
-        TestPriority clusterHandlerMapping2 = new TestPriority("2");
-        TestPriority clusterHandlerMapping3 = new TestPriority("3");
-        // first one, invoke enable()
-        testServerAbilityControlManager.registerComponentForCluster(key, clusterHandlerMapping2, 128);
-        // last one, invoke enable()
-        testServerAbilityControlManager.registerComponentForCluster(key, clusterHandlerMapping3);
-        // second one, invoke enable()
-        testServerAbilityControlManager.registerComponentForCluster(key, clusterHandlerMapping1, 12);
-        // trigger cluster
-        testServerAbilityControlManager.triggerCluster(key);
-        Assert.assertEquals(3, testServerAbilityControlManager.getClusterHandlerMapping(key).size());
-        // wait for invoking
-        Thread.sleep(200L);
-        Assert.assertEquals("2", testPriority.poll());
-        Assert.assertEquals("3", testPriority.poll());
-        Assert.assertEquals("1", testPriority.poll());
-        // here are priority
-        Assert.assertEquals("2", testPriority.poll());
-        Assert.assertEquals("1", testPriority.poll());
-        Assert.assertEquals("3", testPriority.poll());
-        // remove
-        testServerAbilityControlManager.registerClusterHandlerMapping(key, new ClusterHandlerMapping(), -1);
-        Assert.assertEquals(4, testServerAbilityControlManager.getClusterHandlerMapping(key).size());
-        Assert.assertEquals(1, testServerAbilityControlManager.removeClusterComponent(key, ClusterHandlerMapping.class));
-        Assert.assertEquals(3, testServerAbilityControlManager.getClusterHandlerMapping(key).size());
-        testServerAbilityControlManager.removeAllForCluster(key);
-        Assert.assertNull(testServerAbilityControlManager.getClusterHandlerMapping(key));
-    
-        // first one
-        testServerAbilityControlManager.registerComponent(key, clusterHandlerMapping2, 128);
-        // last one
-        testServerAbilityControlManager.registerComponent(key, clusterHandlerMapping3);
-        // second one
-        testServerAbilityControlManager.registerComponent(key, clusterHandlerMapping1, 12);
-        Assert.assertEquals(3, testServerAbilityControlManager.getHandlerMapping(key).size());
-        // wait for invoking
-        Thread.sleep(200L);
-        // trigger
-        testServerAbilityControlManager.trigger(key);
-        // wait for invoking
-        Thread.sleep(200L);
-        Assert.assertEquals("2", testPriority.poll());
-        Assert.assertEquals("3", testPriority.poll());
-        Assert.assertEquals("1", testPriority.poll());
-        // here are priority
-        Assert.assertEquals("2", testPriority.poll());
-        Assert.assertEquals("1", testPriority.poll());
-        Assert.assertEquals("3", testPriority.poll());
-        // remove
-        testServerAbilityControlManager.registerComponent(key, new ClusterHandlerMapping(), -1);
-        Assert.assertEquals(4, testServerAbilityControlManager.getHandlerMapping(key).size());
-        Assert.assertEquals(1, testServerAbilityControlManager.removeComponent(key, ClusterHandlerMapping.class));
-        Assert.assertEquals(3, testServerAbilityControlManager.getHandlerMapping(key).size());
-        testServerAbilityControlManager.removeAll(key);
-        Assert.assertNull(testServerAbilityControlManager.getClusterHandlerMapping(key));
-    }
-    
-    class TestPriority implements HandlerMapping {
-        
-        String mark;
-    
-        public TestPriority(String mark) {
-            // unique one
-            this.mark = mark.intern();
-        }
-    
-        @Override
-        public void enable() {
-            testPriority.offer(mark);
-        }
-    
-        @Override
-        public void disable() {
-            testPriority.offer(mark);
-        }
-    }
-    
-    class ClusterHandlerMapping implements HandlerMapping {
-
-        @Override
-        public void enable() {
-            clusterEnabled++;
-        }
-
-        @Override
-        public void disable() {
-            clusterEnabled--;
-        }
-    }
-
     class TestHandlerMapping implements HandlerMapping {
 
         @Override

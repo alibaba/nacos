@@ -23,21 +23,16 @@ import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
-import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.core.ability.inte.ClusterAbilityControlSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**.
  * @author Daydreamer
@@ -46,8 +41,6 @@ import java.util.concurrent.locks.ReentrantLock;
  **/
 public class ServerAbilityControlManager extends DefaultAbilityControlManager implements ClusterAbilityControlSupport {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ServerAbilityControlManager.class);
-
     /**.
      * ability for cluster
      */
@@ -57,13 +50,11 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
      * ability for server
      */
     private final Map<String, AbilityTable> serversAbilityTable = new ConcurrentHashMap<>();
-
-    /**
-     * components for cluster. these will be invoked if cluster ability table changes.
-     */
-    private final Map<AbilityKey, List<HandlerWithPriority>> clusterHandlerMapping = new ConcurrentHashMap<>();
     
-    private Lock lockForClusterComponents = new ReentrantLock();
+    /**.
+     * Number of servers that do not support capability negotiation
+     */
+    private final ConcurrentHashSet<String> serverNoAbilityNegotiation = new ConcurrentHashSet<>();
     
     public ServerAbilityControlManager() {
         // add current node into
@@ -92,42 +83,22 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     }
     
     /**.
-     * Whether current cluster supports ability
+     * Whether all the servers currently connected support a certain capability
      *
      * @param abilityKey ability key
      * @return whether it is turn on
      */
     @Override
-    public boolean isClusterEnableAbility(AbilityKey abilityKey) {
-        return clusterAbilityTable.getOrDefault(abilityKey, Boolean.FALSE);
+    public AbilityStatus isClusterEnableAbilityNow(AbilityKey abilityKey) {
+        if (serverNoAbilityNegotiation.size() > 0) {
+            return AbilityStatus.UNKNOWN;
+        }
+        return clusterAbilityTable.getOrDefault(abilityKey, Boolean.FALSE) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
     }
     
     @Override
     public Map<AbilityKey, Boolean> getClusterAbility() {
         return Collections.unmodifiableMap(clusterAbilityTable);
-    }
-    
-    /**.
-     * Register components for cluster. These will be trigger when its interested ability changes
-     *
-     * @param abilityKey     ability key
-     * @param priority       the higher the priority, the faster it will be called
-     * @param handlerMapping component
-     */
-    @Override
-    public void registerComponentForCluster(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority) {
-        doRegisterComponent(abilityKey, handlerMapping, this.clusterHandlerMapping, lockForClusterComponents, priority, clusterAbilityTable);
-    }
-    
-    @Override
-    public int removeClusterComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz) {
-        return doRemove(abilityKey, handlerMappingClazz, lockForClusterComponents, clusterHandlerMapping);
-    }
-    
-    @Override
-    public int removeAllForCluster(AbilityKey abilityKey) {
-        List<HandlerWithPriority> remove = this.clusterHandlerMapping.remove(abilityKey);
-        return Optional.ofNullable(remove).orElse(Collections.emptyList()).size();
     }
     
     @Override
@@ -148,13 +119,15 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
                     Boolean newRes = val && isEnabled;
                     // if ability changes
                     if (!newRes.equals(isEnabled)) {
-                        triggerHandlerMappingAsyn(abilityKey, false, this.clusterHandlerMapping);
                         clusterAbilityTable.replace(abilityKey, false);
                         // notify
                         NotifyCenter.publishEvent(buildClusterEvent(abilityKey, false));
                     }
                 });
             }
+        } else if (isServer && table.getAbility() == null) {
+            // add mark if server doesn't support ability table
+            serverNoAbilityNegotiation.add(table.getConnectionId());
         }
     }
     
@@ -171,13 +144,15 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     protected void remove(String connectionId) {
         // from which
         AbilityTable abilityTable = nodeAbilityTable.get(connectionId);
+        // if not support
+        serverNoAbilityNegotiation.remove(connectionId);
         // return if null
         if (abilityTable == null) {
             return;
         }
         // from which env
         if (abilityTable.isServer()) {
-            // remove from server ability collection
+            // remove from server ability collection if support
             serversAbilityTable.remove(connectionId);
             // remove from cluster
             if (MapUtil.isNotEmpty(serversAbilityTable)) {
@@ -198,23 +173,12 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
                     clusterAbilityTable.replace(abilityKey, newVal);
                     // if change
                     if (!isEnabled.equals(newVal)) {
-                        triggerHandlerMappingAsyn(abilityKey, newVal, this.clusterHandlerMapping);
                         // notify
                         NotifyCenter.publishEvent(buildClusterEvent(abilityKey, newVal));
                     }
                 });
             }
         }
-    }
-    
-    @Override
-    protected void doDestroy() {
-        if (MapUtil.isNotEmpty(clusterHandlerMapping)) {
-            if (MapUtil.isNotEmpty(clusterHandlerMapping)) {
-                clusterHandlerMapping.keySet().forEach(key -> doTriggerSyn(key, false, clusterHandlerMapping));
-            }
-        }
-        LOGGER.warn("[ServerAbilityControlManager] - Destruction of the end");
     }
     
     /**.
@@ -252,10 +216,10 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     protected void setClusterAbilityTable(Map<AbilityKey, Boolean> map) {
         clusterAbilityTable.putAll(map);
     }
-
+    
     @JustForTest
-    protected Map<AbilityKey, List<HandlerWithPriority>> clusterHandlerMapping() {
-        return this.clusterHandlerMapping;
+    protected Set<String> serverNotSupport() {
+        return serverNoAbilityNegotiation;
     }
 
 }

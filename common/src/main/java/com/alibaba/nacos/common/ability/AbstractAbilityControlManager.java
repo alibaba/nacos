@@ -117,15 +117,18 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
             }
             // hook method
             add(table);
-            // add to node
-            Set<AbilityKey> abilityKeys = table.getAbility().keySet();
+            // null if not support ability table
             Map<AbilityKey, Boolean> clientAbilities = table.getAbility();
-            abilityKeys.forEach(abilityKey -> {
-                Boolean res = currentRunningAbility.getOrDefault(abilityKey, false);
-                Boolean coming = clientAbilities.getOrDefault(abilityKey, false);
-                clientAbilities.put(abilityKey, res && coming);
-            });
-            nodeAbilityTable.put(connectionId, table);
+            if (clientAbilities != null) {
+                // add to nod
+                Set<AbilityKey> abilityKeys = table.getAbility().keySet();
+                abilityKeys.forEach(abilityKey -> {
+                    Boolean res = currentRunningAbility.getOrDefault(abilityKey, false);
+                    Boolean coming = clientAbilities.getOrDefault(abilityKey, false);
+                    clientAbilities.put(abilityKey, res && coming);
+                });
+                nodeAbilityTable.put(connectionId, table);
+            }
         } finally {
             lockForAbilityTable.unlock();
         }
@@ -143,17 +146,9 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
      */
     @Override
     public final void removeTable(String connectionId) {
-        // if not exists
-        if(connectionId == null || !nodeAbilityTable.containsKey(connectionId)){
-            return;
-        }
         AbilityTable removingTable = null;
         lockForAbilityTable.lock();
         try {
-            // check
-            if (!nodeAbilityTable.containsKey(connectionId)) {
-                return;
-            }
             // hook method
             remove(connectionId);
             // remove

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.ability.inte;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.common.ability.handler.HandlerMapping;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 
 import java.util.Map;
@@ -37,45 +37,10 @@ public interface ClusterAbilityControlSupport {
     Map<AbilityKey, Boolean> getClusterAbility();
     
     /**.
-     * Register components for cluster. These will be trigger when its interested ability changes
-     *
-     * @param abilityKey     ability key
-     * @param priority       a positive number, the higher the priority, the faster it will be called
-     * @param handlerMapping component
-     */
-    void registerComponentForCluster(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority);
-    
-    /**.
-     * Default method to register component
-     *
-     * @param abilityKey     component key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}.
-     * @param handlerMapping component instance.
-     */
-    default void registerComponentForCluster(AbilityKey abilityKey, HandlerMapping handlerMapping) {
-        registerComponentForCluster(abilityKey, handlerMapping, 1);
-    }
-    
-    /**
-     * Remove the component instance of <p>handlerMappingClazz</p>.
-     *
-     * @param abilityKey ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}.
-     * @param handlerMappingClazz implement of {@link HandlerMapping}
-     * @return the count of components have removed
-     */
-    int removeClusterComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz);
-    
-    /**
-     * Remove all {@link HandlerMapping} interested in the special ability.
-     * @param abilityKey abnility key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey}.
-     * @return the count of components have removed
-     */
-    int removeAllForCluster(AbilityKey abilityKey);
-    
-    /**.
-     * Whether current cluster supports ability
+     * Whether all the servers currently connected support a certain capability
      *
      * @param abilityKey ability key
      * @return whether it is turn on
      */
-    boolean isClusterEnableAbility(AbilityKey abilityKey);
+    AbilityStatus isClusterEnableAbilityNow(AbilityKey abilityKey);
 }

@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.entity.AbilityTable;
-import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -48,7 +47,6 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -319,12 +317,15 @@ public abstract class GrpcClient extends RpcClient {
                 // submit ability table as soon as possible
                 // ability table will be null if server doesn't support ability table
                 ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
-                Map<AbilityKey, Boolean> abilityTable = AbilityTableUtils
-                        .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
                 AbilityTable table = new AbilityTable();
                 table.setServer(true)
-                        .setConnectionId(serverCheckResponse.getConnectionId())
-                        .setAbility(abilityTable);
+                        .setConnectionId(serverCheckResponse.getConnectionId());
+                // if not supported, it will be null
+                if (serverCheckResponse.getAbilities() != null) {
+                    Map<AbilityKey, Boolean> abilityTable = AbilityTableUtils
+                            .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
+                    table.setAbility(abilityTable);
+                }
                 NacosAbilityManagerHolder.getInstance().addNewTable(table);
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
