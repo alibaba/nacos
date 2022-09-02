@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
