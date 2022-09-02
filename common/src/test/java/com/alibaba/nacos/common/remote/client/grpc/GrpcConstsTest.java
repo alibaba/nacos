@@ -21,6 +21,8 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 
+import static org.junit.Assert.assertEquals;
+
 public class GrpcConstsTest {
     
     @Test
@@ -35,6 +37,6 @@ public class GrpcConstsTest {
                 i++;
             }
         }
-        Assert.assertEquals(i, GrpcConsts.getRpcParams().size());
+        assertEquals(i, GrpcConsts.getRpcParams().size());
     }
 }
