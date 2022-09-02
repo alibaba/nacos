@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -60,23 +61,15 @@ public abstract class GrpcClient extends RpcClient {
     
     static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
     
-    protected static final String NACOS_SERVER_GRPC_PORT_OFFSET_KEY = "nacos.server.grpc.port.offset";
-    
-    protected static final String NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME = "nacos.remote.client.grpc.pool.alive";
-    
-    protected static final String NACOS_CLIENT_GRPC_TIMEOUT = "nacos.remote.client.grpc.timeout";
-    
-    protected static final String NACOS_CLIENT_GRPC_QUEUESIZE = "nacos.remote.client.grpc.queue.size";
-    
     private ThreadPoolExecutor grpcExecutor = null;
     
     private Integer threadPoolCoreSize;
     
     private Integer threadPoolMaxSize;
     
-    private static final long DEFAULT_MAX_INBOUND_MESSAGE_SIZE = 10 * 1024 * 1024L;
+    private static final String DEFAULT_MAX_INBOUND_MESSAGE_SIZE = String.valueOf(10 * 1024 * 1024L);
     
-    private static final long DEFAULT_KEEP_ALIVE_TIME = 6 * 60 * 1000;
+    private static final String DEFAULT_KEEP_ALIVE_TIME = String.valueOf(6 * 60 * 1000);
     
     private Properties configProperties = new Properties();
     
@@ -86,7 +79,7 @@ public abstract class GrpcClient extends RpcClient {
     
     private static final String KEEP_ALIVE = "10";
     
-    private Long timeOut;
+    private long timeOut = 3000L;
     
     @Override
     public ConnectionType getConnectionType() {
@@ -98,30 +91,32 @@ public abstract class GrpcClient extends RpcClient {
      */
     public GrpcClient(String name) {
         super(name);
-        initGrpcClient(null);
+        initGrpcClient(null, null);
     }
     
     public GrpcClient(String name, Properties configProperties) {
         super(name);
-        initGrpcClient(configProperties);
+        initGrpcClient(configProperties, GrpcConsts.getRpcParams());
     }
     
-    private void initGrpcClient(Properties configProperties) {
+    private void initGrpcClient(Properties configProperties, Set<String> configName) {
         if (!Objects.isNull(configProperties)) {
-            if (configProperties.contains(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME)) {
-                this.configProperties.put(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME,
-                        configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
-            }
-            if (configProperties.contains(NACOS_CLIENT_GRPC_TIMEOUT)) {
-                this.configProperties.put(NACOS_CLIENT_GRPC_TIMEOUT,
-                        configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
-            }
-            if (configProperties.contains(NACOS_CLIENT_GRPC_QUEUESIZE)) {
-                this.configProperties.put(NACOS_CLIENT_GRPC_QUEUESIZE,
-                        configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
+            for (String name : configName) {
+                if (configProperties.contains(name)) {
+                    this.configProperties.put(name, configProperties.getProperty(name));
+                }
             }
         }
+        addDefaultConfig();
         checkInitProperties(this.configProperties);
+    }
+    
+    private void addDefaultConfig() {
+        addDefaultConfig(configProperties, GrpcConsts.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME, KEEP_ALIVE);
+        addDefaultConfig(configProperties, GrpcConsts.NACOS_CLIENT_GRPC_TIMEOUT, DEFAULT_TIME_OUT);
+        addDefaultConfig(configProperties, GrpcConsts.NACOS_CLIENT_GRPC_QUEUESIZE, QUEUE_SIZE);
+        addDefaultConfig(configProperties, GrpcConsts.MAX_INBOUND_MESSAGE_SIZE, DEFAULT_MAX_INBOUND_MESSAGE_SIZE);
+        addDefaultConfig(configProperties, GrpcConsts.KEEP_ALIVE_TIME, DEFAULT_KEEP_ALIVE_TIME);
     }
     
     private void addDefaultConfig(Properties configProperties, String name, String defaultConfig) {
@@ -133,10 +128,17 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private void checkInitProperties(Properties configProperties) {
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME, KEEP_ALIVE);
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_TIMEOUT, DEFAULT_TIME_OUT);
-        addDefaultConfig(configProperties, NACOS_CLIENT_GRPC_QUEUESIZE, QUEUE_SIZE);
-        this.timeOut = Long.parseLong(configProperties.getProperty(NACOS_CLIENT_GRPC_TIMEOUT));
+        if (configProperties.contains(GrpcConsts.NACOS_CLIENT_GRPC_TIMEOUT)) {
+            this.timeOut = Long.parseLong(configProperties.getProperty(GrpcConsts.NACOS_CLIENT_GRPC_TIMEOUT));
+        }
+        if (configProperties.contains(GrpcConsts.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES)) {
+            this.healthCheckRetryTimes = Integer.parseInt(
+                    configProperties.getProperty(GrpcConsts.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES));
+        }
+        if (configProperties.contains(GrpcConsts.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT)) {
+            this.healthCheckTimeOut = Long.parseLong(
+                    configProperties.getProperty(GrpcConsts.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT));
+        }
     }
     
     /**
@@ -167,8 +169,8 @@ public abstract class GrpcClient extends RpcClient {
     
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
         Long keepAliveTime = Long.parseLong(
-                this.configProperties.getProperty(NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
-        int queueSize = Integer.parseInt(this.configProperties.getProperty(NACOS_CLIENT_GRPC_QUEUESIZE));
+                this.configProperties.getProperty(GrpcConsts.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
+        int queueSize = Integer.parseInt(this.configProperties.getProperty(GrpcConsts.NACOS_CLIENT_GRPC_QUEUESIZE));
         ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(getThreadPoolCoreSize(), getThreadPoolMaxSize(),
                 keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueSize),
                 new ThreadFactoryBuilder().daemon(true).nameFormat("nacos-grpc-client-executor-" + serverIp + "-%d")
@@ -213,15 +215,11 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private int getInboundMessageSize() {
-        String messageSize = System.getProperty("nacos.remote.client.grpc.maxinbound.message.size",
-                String.valueOf(DEFAULT_MAX_INBOUND_MESSAGE_SIZE));
-        return Integer.parseInt(messageSize);
+        return Integer.parseInt(configProperties.getProperty(GrpcConsts.MAX_INBOUND_MESSAGE_SIZE));
     }
     
     private int keepAliveTimeMillis() {
-        String keepAliveTimeMillis = System.getProperty("nacos.remote.grpc.keep.alive.millis",
-                String.valueOf(DEFAULT_KEEP_ALIVE_TIME));
-        return Integer.parseInt(keepAliveTimeMillis);
+        return Integer.parseInt(configProperties.getProperty(GrpcConsts.KEEP_ALIVE_TIME));
     }
     
     /**
