@@ -72,8 +72,8 @@ public class NamespaceControllerV2 {
      * @param namespaceId namespaceId
      * @return namespace all info
      */
-    @GetMapping()
-    public Result<NamespaceAllInfo> getNamespace(@RequestParam("namespaceId") String namespaceId)
+    @GetMapping("/{namespaceId}")
+    public Result<NamespaceAllInfo> getNamespace(@PathVariable("namespaceId") String namespaceId)
             throws NacosException {
         return Result.success(namespaceOperationService.getNamespace(namespaceId));
     }
@@ -130,9 +130,9 @@ public class NamespaceControllerV2 {
      * @param namespaceId   namespace ID
      * @return whether delete ok
      */
-    @DeleteMapping
+    @DeleteMapping("/{namespaceId}")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
+    public Result<Boolean> deleteNamespace(@PathVariable("namespaceId") String namespaceId) {
         return Result.success(namespaceOperationService.removeNamespace(namespaceId));
     }
 }
