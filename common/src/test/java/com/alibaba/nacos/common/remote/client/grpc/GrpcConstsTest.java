@@ -16,29 +16,26 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.common.Constants;
+import org.junit.Test;
 
-/**
- * gRPC client for cluster.
- *
- * @author liuzunfei
- * @version $Id: GrpcClusterClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
- */
-public class GrpcClusterClient extends GrpcClient {
+import java.lang.reflect.Field;
+
+import static org.junit.Assert.assertEquals;
+
+public class GrpcConstsTest {
     
-    /**
-     * Empty constructor.
-     *
-     * @param name name of client.
-     */
-    public GrpcClusterClient(String name) {
-        super(name);
+    @Test
+    public void testGetRpcParams() {
+        Class clazz = GrpcConsts.class;
+        Field[] declaredFields = clazz.getDeclaredFields();
+        int i = 0;
+        for (Field declaredField : declaredFields) {
+            declaredField.setAccessible(true);
+            if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
+                    GrpcConsts.GRpcConfigLabel.class)) {
+                i++;
+            }
+        }
+        assertEquals(i, GrpcConsts.getRpcParams().size());
     }
-    
-    @Override
-    public int rpcPortOffset() {
-        return Integer.parseInt(System.getProperty(GrpcConsts.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
-                String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
-    }
-    
 }
