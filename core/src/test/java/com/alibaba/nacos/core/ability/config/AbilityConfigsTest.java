@@ -112,7 +112,6 @@ public class AbilityConfigsTest {
         Assert.assertEquals(tmp, 0);
     }
     
-    
     class TestHandler implements HandlerMapping {
     
         @Override

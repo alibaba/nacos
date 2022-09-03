@@ -26,9 +26,12 @@ import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.MapUtil;
+import com.alibaba.nacos.core.ability.config.AbilityConfigs;
 import com.alibaba.nacos.core.ability.inte.ClusterAbilityControlSupport;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -68,7 +71,20 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     
     @Override
     protected Map<AbilityKey, Boolean> getCurrentNodeSupportAbility() {
-        return ServerAbilities.getStaticAbilities();
+        Set<AbilityKey> abilityKeys = ServerAbilities.getStaticAbilities().keySet();
+        Map<AbilityKey, Boolean> abilityTable = new HashMap<>(abilityKeys.size());
+        abilityKeys.forEach(abilityKey -> {
+            String key = AbilityConfigs.PREFIX + abilityKey.getName();
+            try {
+                // default true
+                Boolean property = EnvUtil.getProperty(key, Boolean.class, true);
+                abilityTable.put(abilityKey, property);
+            } catch (Exception e) {
+                // default true
+                abilityTable.put(abilityKey, true);
+            }
+        });
+        return abilityTable;
     }
     
     @Override
