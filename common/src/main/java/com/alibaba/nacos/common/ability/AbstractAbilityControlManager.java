@@ -58,8 +58,6 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
      */
     protected final Map<String, AbilityTable> nodeAbilityTable = new ConcurrentHashMap<>();
     
-    private final ReentrantLock lockForProcessors = new ReentrantLock();
-    
     private final ReentrantLock lockForAbilityTable = new ReentrantLock();
     
     protected AbstractAbilityControlManager() {
