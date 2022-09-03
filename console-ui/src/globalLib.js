@@ -504,7 +504,6 @@ const request = (function(_global) {
     const [url, paramsStr] = config.url.split('?');
     const params = paramsStr ? paramsStr.split('&') : [];
     params.push(`accessToken=${accessToken}`);
-    params.push('message=true');
 
     return $.ajax(
       Object.assign({}, config, {

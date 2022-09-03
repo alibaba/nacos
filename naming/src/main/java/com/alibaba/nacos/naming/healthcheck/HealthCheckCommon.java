@@ -49,7 +49,7 @@ public class HealthCheckCommon {
     private UdpPushService pushService;
     
     /**
-     * Re-evaluate check responsce time.
+     * Re-evaluate check response time.
      *
      * @param checkRT check response time
      * @param task    health check task
