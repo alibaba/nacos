@@ -181,6 +181,11 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
         }
     }
     
+    @Override
+    public int getPriority() {
+        return 1;
+    }
+    
     /**.
      * notify when current node ability changing
      */

@@ -208,6 +208,14 @@ public abstract class AbstractAbilityControlManager implements AbilityControlMan
         // default destroy
         // nothing to do
     }
+    
+    /**
+     * A Nacos application can only have one {@link AbilityControlManager}.
+     * When multiple control centers exist, it is used to determine which one is preferred
+     *
+     * @return priority
+     */
+    public abstract int getPriority();
 
     /**
      * Return ability table of current node

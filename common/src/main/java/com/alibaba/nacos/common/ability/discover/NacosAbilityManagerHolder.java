@@ -24,7 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.ServiceConfigurationError;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to discover {@link AbstractAbilityControlManager} implements. All the
@@ -55,14 +58,15 @@ public class NacosAbilityManagerHolder {
             // if server
             load = NacosServiceLoader.load(DefaultAbilityControlManager.class);
         } catch (ServiceConfigurationError e) {
-            // if client or not ability control manager
-            load = NacosServiceLoader.load(DefaultAbilityControlManager.class);
+            throw new RuntimeException("[AbilityControlManager] Cannot find AbilityControlManger");
         }
         // the priority of the server is higher
+        List<DefaultAbilityControlManager> collect = load.stream()
+                .sorted(Comparator.comparingInt(AbstractAbilityControlManager::getPriority))
+                .collect(Collectors.toList());
+        // get the highest priority one
         if (load.size() > 0) {
-            load.forEach(clazz -> {
-                abstractAbilityControlManager = clazz;
-            });
+            abstractAbilityControlManager = collect.get(collect.size() - 1);
             LOGGER.info("[AbilityControlManager] Successfully initialize AbilityControlManager");
         }
     }

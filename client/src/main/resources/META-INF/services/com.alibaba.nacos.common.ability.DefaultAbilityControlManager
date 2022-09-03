@@ -16,4 +16,3 @@
 #
 
 com.alibaba.nacos.client.ability.ClientAbilityControlManager
-com.alibaba.nacos.core.ability.control.ServerAbilityControlManager

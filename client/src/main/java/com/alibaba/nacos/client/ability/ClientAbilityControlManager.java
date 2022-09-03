@@ -63,5 +63,11 @@ public class ClientAbilityControlManager extends DefaultAbilityControlManager {
     protected void remove(String connectionId) {
         // nothing to do
     }
-
+    
+    @Override
+    public int getPriority() {
+        // if server ability manager exist, you should choose the server one
+        return 0;
+    }
+    
 }
