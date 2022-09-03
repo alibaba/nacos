@@ -323,12 +323,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         
         for (Instance instance : newInstance) {
             if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
-                
-                if (intersectMap.containsKey(instance.toString())) {
-                    intersectMap.put(instance.toString(), 2);
-                } else {
-                    intersectMap.put(instance.toString(), 1);
-                }
+                intersectMap.put(instance.toString(), intersectMap.containsKey(instance.toString()) ? 2 : 1);
             }
             
             newInstancesMap.put(instance.toString(), instance);
@@ -338,11 +333,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         for (Map.Entry<String, Integer> entry : intersectMap.entrySet()) {
             String key = entry.getKey();
             Integer value = entry.getValue();
-            
-            if (value == 1) {
-                if (newInstancesMap.containsKey(key)) {
-                    updatedInstancesMap.put(key, newInstancesMap.get(key));
-                }
+
+            if (value == 1 && newInstancesMap.containsKey(key)) {
+                updatedInstancesMap.put(key, newInstancesMap.get(key));
             }
         }
         
