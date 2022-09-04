@@ -114,7 +114,7 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     
     @Override
     public Map<AbilityKey, Boolean> getClusterAbility() {
-        return Collections.unmodifiableMap(clusterAbilityTable);
+        return serverNoAbilityNegotiation.size() > 0 ? null : Collections.unmodifiableMap(clusterAbilityTable);
     }
     
     @Override
