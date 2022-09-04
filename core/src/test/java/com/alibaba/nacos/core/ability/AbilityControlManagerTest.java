@@ -40,11 +40,6 @@ public class AbilityControlManagerTest {
     public void inject() {
         Map<AbilityKey, Boolean> newTable = new HashMap<>();
         newTable.put(AbilityKey.TEST_1, true);
-        serverAbilityControlManager.setCurrentSupportingAbility(newTable);
-
-        Map<AbilityKey, Boolean> table = new HashMap<>();
-        table.put(AbilityKey.TEST_1, true);
-        serverAbilityControlManager.setCurrentSupportingAbility(table);
 
         Map<AbilityKey, Boolean> cluster = new HashMap<>();
         cluster.put(AbilityKey.TEST_1, true);
@@ -195,6 +190,42 @@ public class AbilityControlManagerTest {
         keySet.forEach(key -> {
             Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(key));
         });
+        
+        // add node doesn't support ability table
+        AbilityTable abilityTable = new AbilityTable();
+        abilityTable.setServer(true);
+        abilityTable.setConnectionId("adsadsa1");
+        serverAbilityControlManager.addNewTable(abilityTable);
+        // cluster abilities close
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.UNKNOWN);
+        
+        AbilityTable abilityTable1 = new AbilityTable();
+        abilityTable1.setServer(true);
+        abilityTable1.setConnectionId("adsadsa2");
+        serverAbilityControlManager.addNewTable(abilityTable1);
+        // cluster abilities still close
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.UNKNOWN);
+        Assert.assertNull(serverAbilityControlManager.getClusterAbility());
+    
+        AbilityTable abilityTable2 = new AbilityTable();
+        abilityTable2.setServer(true);
+        abilityTable2.setConnectionId("adsadsa3");
+        Map<AbilityKey, Boolean> clientTa = new HashMap<>();
+        clientTa.put(AbilityKey.TEST_2, true);
+        clientTa.put(AbilityKey.TEST_1, false);
+        abilityTable2.setAbility(clientTa);
+        serverAbilityControlManager.addNewTable(abilityTable2);
+        // cluster abilities still close
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.UNKNOWN);
+        Assert.assertNull(serverAbilityControlManager.getClusterAbility());
+        
+        // remove
+        serverAbilityControlManager.removeTable("adsadsa3");
+        serverAbilityControlManager.removeTable("adsadsa2");
+        serverAbilityControlManager.removeTable("adsadsa1");
+        // cluster abilities open
+        Assert.assertEquals(serverAbilityControlManager.isClusterEnableAbilityNow(AbilityKey.TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertNotNull(serverAbilityControlManager.getClusterAbility());
     }
     
     class TestHandlerMapping implements HandlerMapping {

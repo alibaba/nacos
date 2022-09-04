@@ -27,6 +27,7 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
 
     @JustForTest
     public void setCurrentSupportingAbility(Map<AbilityKey, Boolean> ability) {
+        currentRunningAbility.clear();
         currentRunningAbility.putAll(ability);
     }
 
