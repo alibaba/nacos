@@ -32,6 +32,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -71,19 +72,30 @@ public class ServerAbilityControlManager extends DefaultAbilityControlManager im
     
     @Override
     protected Map<AbilityKey, Boolean> getCurrentNodeSupportAbility() {
-        Set<AbilityKey> abilityKeys = ServerAbilities.getStaticAbilities().keySet();
+        // static abilities
+        Map<AbilityKey, Boolean> staticAbilities = ServerAbilities.getStaticAbilities();
+        // all function server can support
+        Set<AbilityKey> abilityKeys = staticAbilities.keySet();
         Map<AbilityKey, Boolean> abilityTable = new HashMap<>(abilityKeys.size());
+        // if not define in config, then load from ServerAbilities
+        Set<AbilityKey> unIncludedInConfig = new HashSet<>();
         abilityKeys.forEach(abilityKey -> {
             String key = AbilityConfigs.PREFIX + abilityKey.getName();
             try {
-                // default true
-                Boolean property = EnvUtil.getProperty(key, Boolean.class, true);
-                abilityTable.put(abilityKey, property);
+                Boolean property = EnvUtil.getProperty(key, Boolean.class);
+                // if not null
+                if (property != null) {
+                    abilityTable.put(abilityKey, property);
+                } else {
+                    unIncludedInConfig.add(abilityKey);
+                }
             } catch (Exception e) {
-                // default true
-                abilityTable.put(abilityKey, true);
+                // from ServerAbilities
+                unIncludedInConfig.add(abilityKey);
             }
         });
+        // load from ServerAbilities
+        unIncludedInConfig.forEach(abilityKey -> abilityTable.put(abilityKey, staticAbilities.get(abilityKey)));
         return abilityTable;
     }
     
