@@ -22,7 +22,7 @@ import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertEquals;
 
-public class GrpcConstsTest {
+public class GrpcConstantsTest {
     
     @Test
     public void testGetRpcParams() {

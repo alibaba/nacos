@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -585,7 +586,9 @@ public class RpcClientTest {
     
     @Test
     public void testHealthCheck() throws IllegalAccessException, NacosException {
-        healthCheckRetryTimes.set(rpcClient, 3);
+        Random random = new Random();
+        int retry = random.nextInt(10);
+        healthCheckRetryTimes.set(rpcClient, retry);
         healthCheckTimeOut.set(rpcClient, 3000L);
         rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
         rpcClient.currentConnection = connection;
@@ -595,6 +598,6 @@ public class RpcClientTest {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        verify(connection, times(3)).request(any(), anyLong());
+        verify(connection, times(retry)).request(any(), anyLong());
     }
 }

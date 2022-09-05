@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Default ClientConfig config.
+ * Default grpc client config.
  *
  * @author karsonto
  */
@@ -60,6 +60,11 @@ public class DefaultClientConfig implements GrpcClientConfig {
     
     private Map<String, String> labels;
     
+    /**
+     * constructor.
+     *
+     * @param builder builder of DefaultClientConfig builder.
+     */
     public DefaultClientConfig(Builder builder) {
         this.name = builder.name;
         this.serverListFactory = builder.serverListFactory;
@@ -199,7 +204,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         private Map<String, String> labels = new HashMap<>();
         
         /**
-         * set name.
+         * set client name.
          */
         public Builder name(String name) {
             this.name = name;
