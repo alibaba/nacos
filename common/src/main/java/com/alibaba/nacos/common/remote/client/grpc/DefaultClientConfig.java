@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Default ClientConfig config.
@@ -102,8 +103,8 @@ public class DefaultClientConfig implements GrpcClientConfig {
     
     @Override
     public long connectionKeepAlive() {
-        return Long.parseLong(
-                System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME, String.valueOf(this.channelKeepAlive)));
+        return Long.parseLong(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME,
+                String.valueOf(this.channelKeepAlive)));
     }
     
     @Override
@@ -162,7 +163,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
     
     @Override
     public Map<String, String> labels() {
-        return this.labels();
+        return this.labels;
     }
     
     public static class Builder {
@@ -197,81 +198,133 @@ public class DefaultClientConfig implements GrpcClientConfig {
         
         private Map<String, String> labels = new HashMap<>();
         
+        /**
+         * set name.
+         */
         public Builder name(String name) {
             this.name = name;
             return this;
         }
         
+        /**
+         * set serverListFactory.
+         */
         public Builder serverListFactory(ServerListFactory serverListFactory) {
             this.serverListFactory = serverListFactory;
             return this;
         }
         
+        /**
+         * set retryTimes.
+         */
         public Builder retryTimes(int retryTimes) {
             this.retryTimes = retryTimes;
             return this;
         }
-        
+    
+        /**
+         * set timeOutMills.
+         */
         public Builder timeOutMills(long timeOutMills) {
             this.timeOutMills = timeOutMills;
             return this;
         }
-        
+    
+        /**
+         * set connectionKeepAlive.
+         */
         public Builder connectionKeepAlive(long connectionKeepAlive) {
             this.connectionKeepAlive = connectionKeepAlive;
             return this;
         }
         
+        /**
+         * set threadPoolKeepAlive.
+         */
         public Builder threadPoolKeepAlive(Long threadPoolKeepAlive) {
             this.threadPoolKeepAlive = threadPoolKeepAlive;
             return this;
         }
         
-        public Builder threadPoolCoreSize(int threadPoolCoreSize) {
-            this.threadPoolCoreSize = threadPoolCoreSize;
+        /**
+         * set threadPoolCoreSize.
+         */
+        public Builder threadPoolCoreSize(Integer threadPoolCoreSize) {
+            if (!Objects.isNull(threadPoolCoreSize)) {
+                this.threadPoolCoreSize = threadPoolCoreSize;
+            }
             return this;
         }
         
-        public Builder threadPoolMaxSize(int threadPoolMaxSize) {
-            this.threadPoolMaxSize = threadPoolMaxSize;
+        /**
+         * set threadPoolMaxSize.
+         */
+        public Builder threadPoolMaxSize(Integer threadPoolMaxSize) {
+            if (!Objects.isNull(threadPoolMaxSize)) {
+                this.threadPoolMaxSize = threadPoolMaxSize;
+            }
             return this;
         }
-        
+    
+        /**
+         * set serverCheckTimeOut.
+         */
         public Builder serverCheckTimeOut(Long serverCheckTimeOut) {
             this.serverCheckTimeOut = serverCheckTimeOut;
             return this;
         }
-        
+    
+        /**
+         * set threadPoolQueueSize.
+         */
         public Builder threadPoolQueueSize(int threadPoolQueueSize) {
             this.threadPoolQueueSize = threadPoolQueueSize;
             return this;
         }
-        
+    
+        /**
+         * set maxInboundMessageSize.
+         */
         public Builder maxInboundMessageSize(int maxInboundMessageSize) {
             this.maxInboundMessageSize = maxInboundMessageSize;
             return this;
         }
-        
+    
+        /**
+         * set channelKeepAlive.
+         */
         public Builder channelKeepAlive(int channelKeepAlive) {
             this.channelKeepAlive = channelKeepAlive;
             return this;
         }
-        
+    
+        /**
+         * set healthCheckRetryTimes.
+         */
         public Builder healthCheckRetryTimes(int healthCheckRetryTimes) {
             this.healthCheckRetryTimes = healthCheckRetryTimes;
             return this;
         }
-        
+    
+        /**
+         * set healthCheckTimeOut.
+         */
         public Builder healthCheckTimeOut(long healthCheckTimeOut) {
             this.healthCheckTimeOut = healthCheckTimeOut;
             return this;
         }
-        
+    
+        /**
+         * set labels.
+         */
         public Builder labels(Map<String, String> labels) {
-            this.labels = labels;
+            this.labels.putAll(labels);
             return this;
         }
-        
+    
+        /**
+         * build GrpcClientConfig.
+         */
         public GrpcClientConfig build() {
             return new DefaultClientConfig(this);
         }
