@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.vo;
+package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * ConfigRequestInfoVo.
+ * ConfigRequestInfo.
  * @author dongyafei
  * @date 2022/8/11
  */
-public class ConfigRequestInfoVo implements Serializable {
+public class ConfigRequestInfo implements Serializable {
     
     private static final long serialVersionUID = 326726654448860273L;
     
@@ -34,13 +34,13 @@ public class ConfigRequestInfoVo implements Serializable {
     
     private String betaIps;
     
-    public ConfigRequestInfoVo(String srcIp, String requestIpApp, String betaIps) {
+    public ConfigRequestInfo(String srcIp, String requestIpApp, String betaIps) {
         this.srcIp = srcIp;
         this.requestIpApp = requestIpApp;
         this.betaIps = betaIps;
     }
     
-    public ConfigRequestInfoVo() {
+    public ConfigRequestInfo() {
     }
     
     public String getSrcIp() {
@@ -75,7 +75,7 @@ public class ConfigRequestInfoVo implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ConfigRequestInfoVo that = (ConfigRequestInfoVo) o;
+        ConfigRequestInfo that = (ConfigRequestInfo) o;
         return Objects.equals(srcIp, that.srcIp) && Objects.equals(requestIpApp, that.requestIpApp) && Objects
                 .equals(betaIps, that.betaIps);
     }

@@ -27,8 +27,8 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
-import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
-import com.alibaba.nacos.config.server.model.vo.ConfigVo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
@@ -100,32 +100,32 @@ public class ConfigControllerV2 {
      */
     @PostMapping()
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Result<Boolean> publishConfig(ConfigVo configVo, HttpServletRequest request) throws NacosException {
+    public Result<Boolean> publishConfig(ConfigForm configForm, HttpServletRequest request) throws NacosException {
         // check required field
-        configVo.validate();
+        configForm.validate();
         // encrypted
-        Pair<String, String> pair = EncryptionHandler.encryptHandler(configVo.getDataId(), configVo.getContent());
-        configVo.setContent(pair.getSecond());
+        Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
+        configForm.setContent(pair.getSecond());
         // check param
-        ParamUtils.checkTenantV2(configVo.getTenant());
-        ParamUtils.checkParam(configVo.getDataId(), configVo.getGroup(), "datumId", configVo.getContent());
-        ParamUtils.checkParamV2(configVo.getTag());
+        ParamUtils.checkTenantV2(configForm.getTenant());
+        ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId", configForm.getContent());
+        ParamUtils.checkParamV2(configForm.getTag());
     
-        if (StringUtils.isBlank(configVo.getSrcUser())) {
-            configVo.setSrcUser(RequestUtil.getSrcUserName(request));
+        if (StringUtils.isBlank(configForm.getSrcUser())) {
+            configForm.setSrcUser(RequestUtil.getSrcUserName(request));
         }
-        if (!ConfigType.isValidType(configVo.getType())) {
-            configVo.setType(ConfigType.getDefaultType().getType());
+        if (!ConfigType.isValidType(configForm.getType())) {
+            configForm.setType(ConfigType.getDefaultType().getType());
         }
     
-        ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
-        configRequestInfoVo.setSrcIp(RequestUtil.getRemoteIp(request));
-        configRequestInfoVo.setRequestIpApp(RequestUtil.getAppName(request));
-        configRequestInfoVo.setBetaIps(request.getHeader("betaIps"));
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
+        configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
+        configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
+        configRequestInfo.setBetaIps(request.getHeader("betaIps"));
     
         String encryptedDataKey = pair.getFirst();
     
-        return Result.success(configOperationService.publishConfig(configVo, configRequestInfoVo, encryptedDataKey));
+        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey));
     }
     
     /**

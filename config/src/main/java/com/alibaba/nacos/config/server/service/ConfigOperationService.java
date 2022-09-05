@@ -23,8 +23,8 @@ import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
-import com.alibaba.nacos.config.server.model.vo.ConfigVo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -62,52 +62,52 @@ public class ConfigOperationService {
      *
      * @throws NacosException NacosException.
      */
-    public Boolean publishConfig(ConfigVo configVo, ConfigRequestInfoVo configRequestInfoVo, String encryptedDataKey)
+    public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey)
             throws NacosException {
         
-        Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configVo);
+        Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
         
-        if (AggrWhitelist.isAggrDataId(configVo.getDataId())) {
-            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", configRequestInfoVo.getSrcIp(),
-                    configVo.getDataId(), configVo.getGroup());
+        if (AggrWhitelist.isAggrDataId(configForm.getDataId())) {
+            LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", configRequestInfo.getSrcIp(),
+                    configForm.getDataId(), configForm.getGroup());
             throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
-                    "dataId:" + configVo.getDataId() + " is aggr");
+                    "dataId:" + configForm.getDataId() + " is aggr");
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigInfo configInfo = new ConfigInfo(configVo.getDataId(), configVo.getGroup(), configVo.getTenant(),
-                configVo.getAppName(), configVo.getContent());
+        ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(), configForm.getTenant(),
+                configForm.getAppName(), configForm.getContent());
         
-        configInfo.setType(configVo.getType());
+        configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
         
-        if (StringUtils.isBlank(configRequestInfoVo.getBetaIps())) {
-            if (StringUtils.isBlank(configVo.getTag())) {
-                persistService.insertOrUpdate(configRequestInfoVo.getSrcIp(), configVo.getSrcUser(), configInfo, time,
+        if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
+            if (StringUtils.isBlank(configForm.getTag())) {
+                persistService.insertOrUpdate(configRequestInfo.getSrcIp(), configForm.getSrcUser(), configInfo, time,
                         configAdvanceInfo, false);
                 ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, configVo.getDataId(), configVo.getGroup(),
-                                configVo.getTenant(), time.getTime()));
+                        new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
+                                configForm.getTenant(), time.getTime()));
             } else {
-                persistService.insertOrUpdateTag(configInfo, configVo.getTag(), configRequestInfoVo.getSrcIp(),
-                        configVo.getSrcUser(), time, false);
+                persistService.insertOrUpdateTag(configInfo, configForm.getTag(), configRequestInfo.getSrcIp(),
+                        configForm.getSrcUser(), time, false);
                 ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(false, configVo.getDataId(), configVo.getGroup(),
-                                configVo.getTenant(), configVo.getTag(), time.getTime()));
+                        new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
+                                configForm.getTenant(), configForm.getTag(), time.getTime()));
             }
         } else {
             // beta publish
             persistService
-                    .insertOrUpdateBeta(configInfo, configRequestInfoVo.getBetaIps(), configRequestInfoVo.getSrcIp(),
-                            configVo.getSrcUser(), time, false);
+                    .insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(),
+                            configForm.getSrcUser(), time, false);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, configVo.getDataId(), configVo.getGroup(), configVo.getTenant(),
+                    new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(), configForm.getTenant(),
                             time.getTime()));
         }
-        ConfigTraceService.logPersistenceEvent(configVo.getDataId(), configVo.getGroup(), configVo.getTenant(),
-                configRequestInfoVo.getRequestIpApp(), time.getTime(), InetUtils.getSelfIP(),
-                ConfigTraceService.PERSISTENCE_EVENT_PUB, configVo.getContent());
+        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(), configForm.getTenant(),
+                configRequestInfo.getRequestIpApp(), time.getTime(), InetUtils.getSelfIP(),
+                ConfigTraceService.PERSISTENCE_EVENT_PUB, configForm.getContent());
         
         return true;
     }
@@ -131,14 +131,14 @@ public class ConfigOperationService {
         return true;
     }
     
-    public Map<String, Object> getConfigAdvanceInfo(ConfigVo configVo) {
+    public Map<String, Object> getConfigAdvanceInfo(ConfigForm configForm) {
         Map<String, Object> configAdvanceInfo = new HashMap<>(10);
-        MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configVo.getConfigTags());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "desc", configVo.getDesc());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "use", configVo.getUse());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "effect", configVo.getEffect());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "type", configVo.getType());
-        MapUtil.putIfValNoNull(configAdvanceInfo, "schema", configVo.getSchema());
+        MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", configForm.getConfigTags());
+        MapUtil.putIfValNoNull(configAdvanceInfo, "desc", configForm.getDesc());
+        MapUtil.putIfValNoNull(configAdvanceInfo, "use", configForm.getUse());
+        MapUtil.putIfValNoNull(configAdvanceInfo, "effect", configForm.getEffect());
+        MapUtil.putIfValNoNull(configAdvanceInfo, "type", configForm.getType());
+        MapUtil.putIfValNoNull(configAdvanceInfo, "schema", configForm.getSchema());
         return configAdvanceInfo;
     }
 }

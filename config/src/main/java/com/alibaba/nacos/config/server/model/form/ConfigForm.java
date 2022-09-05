@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.vo;
+package com.alibaba.nacos.config.server.model.form;
 
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -25,12 +25,12 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Config.
+ * ConfigForm.
  *
  * @author dongyafei
  * @date 2022/7/24
  */
-public class ConfigVo implements Serializable {
+public class ConfigForm implements Serializable {
     
     private static final long serialVersionUID = 4124932564086863921L;
     
@@ -60,10 +60,10 @@ public class ConfigVo implements Serializable {
     
     private String schema;
     
-    public ConfigVo() {
+    public ConfigForm() {
     }
     
-    public ConfigVo(String dataId, String group, String tenant, String content, String tag, String appName,
+    public ConfigForm(String dataId, String group, String tenant, String content, String tag, String appName,
             String srcUser, String configTags, String desc, String use, String effect, String type, String schema) {
         this.dataId = dataId;
         this.group = group;
@@ -192,13 +192,13 @@ public class ConfigVo implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ConfigVo configVo = (ConfigVo) o;
-        return dataId.equals(configVo.dataId) && group.equals(configVo.group) && Objects.equals(tenant, configVo.tenant)
-                && content.equals(configVo.content) && Objects.equals(tag, configVo.tag) && Objects
-                .equals(appName, configVo.appName) && Objects.equals(srcUser, configVo.srcUser) && Objects
-                .equals(configTags, configVo.configTags) && Objects.equals(desc, configVo.desc) && Objects
-                .equals(use, configVo.use) && Objects.equals(effect, configVo.effect) && Objects
-                .equals(type, configVo.type) && Objects.equals(schema, configVo.schema);
+        ConfigForm configForm = (ConfigForm) o;
+        return dataId.equals(configForm.dataId) && group.equals(configForm.group) && Objects.equals(tenant, configForm.tenant)
+                && content.equals(configForm.content) && Objects.equals(tag, configForm.tag) && Objects
+                .equals(appName, configForm.appName) && Objects.equals(srcUser, configForm.srcUser) && Objects
+                .equals(configTags, configForm.configTags) && Objects.equals(desc, configForm.desc) && Objects
+                .equals(use, configForm.use) && Objects.equals(effect, configForm.effect) && Objects
+                .equals(type, configForm.type) && Objects.equals(schema, configForm.schema);
     }
     
     @Override
