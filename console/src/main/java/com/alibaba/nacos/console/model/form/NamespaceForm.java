@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.model.vo;
+package com.alibaba.nacos.console.model.form;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
@@ -25,11 +25,11 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * NamespaceVo.
+ * NamespaceForm.
  * @author dongyafei
  * @date 2022/8/16
  */
-public class NamespaceVo implements Serializable {
+public class NamespaceForm implements Serializable {
     
     private static final long serialVersionUID = -1078976569495343487L;
     
@@ -39,10 +39,10 @@ public class NamespaceVo implements Serializable {
     
     private String namespaceDesc;
     
-    public NamespaceVo() {
+    public NamespaceForm() {
     }
     
-    public NamespaceVo(String namespaceId, String namespaceName, String namespaceDesc) {
+    public NamespaceForm(String namespaceId, String namespaceName, String namespaceDesc) {
         this.namespaceId = namespaceId;
         this.namespaceName = namespaceName;
         this.namespaceDesc = namespaceDesc;
@@ -80,7 +80,7 @@ public class NamespaceVo implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        NamespaceVo that = (NamespaceVo) o;
+        NamespaceForm that = (NamespaceForm) o;
         return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(namespaceName, that.namespaceName)
                 && Objects.equals(namespaceDesc, that.namespaceDesc);
     }

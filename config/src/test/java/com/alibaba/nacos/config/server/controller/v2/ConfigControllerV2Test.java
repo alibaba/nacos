@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
-import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
-import com.alibaba.nacos.config.server.model.vo.ConfigVo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
@@ -100,20 +100,20 @@ public class ConfigControllerV2Test {
     @Test
     public void testPublishConfig() throws Exception {
         
-        ConfigVo configVo = new ConfigVo();
-        configVo.setDataId(TEST_DATA_ID);
-        configVo.setGroup(TEST_GROUP);
-        configVo.setTenant(TEST_TENANT);
-        configVo.setContent(TEST_CONTENT);
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroup(TEST_GROUP);
+        configForm.setTenant(TEST_TENANT);
+        configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService
-                .publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), anyString()))
+                .publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString()))
                 .thenReturn(true);
         
-        Result<Boolean> booleanResult = configControllerV2.publishConfig(configVo, request);
+        Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
-        verify(configOperationService).publishConfig(any(ConfigVo.class), any(ConfigRequestInfoVo.class), anyString());
+        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());

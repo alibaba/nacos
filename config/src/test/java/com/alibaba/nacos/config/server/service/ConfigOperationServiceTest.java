@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.vo.ConfigRequestInfoVo;
-import com.alibaba.nacos.config.server.model.vo.ConfigVo;
+import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -60,30 +60,30 @@ public class ConfigOperationServiceTest {
     
     @Test
     public void testPublishConfig() throws NacosException {
-        ConfigVo configVo = new ConfigVo();
-        configVo.setDataId("test");
-        configVo.setGroup("test");
-        configVo.setContent("test content");
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId("test");
+        configForm.setGroup("test");
+        configForm.setContent("test content");
         
-        ConfigRequestInfoVo configRequestInfoVo = new ConfigRequestInfoVo();
+        ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         
         // if betaIps is blank and tag is blank
-        Boolean aResult = configOperationService.publishConfig(configVo, configRequestInfoVo,  "");
+        Boolean aResult = configOperationService.publishConfig(configForm, configRequestInfo,  "");
         verify(persistService)
                 .insertOrUpdate(any(), any(), any(ConfigInfo.class), any(Timestamp.class), any(), anyBoolean());
         Assert.assertEquals(true, aResult);
         
         // if betaIps is blank and tag is not blank
-        configVo.setTag("test tag");
-        Boolean bResult = configOperationService.publishConfig(configVo, configRequestInfoVo, "");
+        configForm.setTag("test tag");
+        Boolean bResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(persistService)
                 .insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any(), any(Timestamp.class),
                         anyBoolean());
         Assert.assertEquals(true, bResult);
         
         // if betaIps is not blank
-        configRequestInfoVo.setBetaIps("test-betaIps");
-        Boolean cResult = configOperationService.publishConfig(configVo, configRequestInfoVo, "");
+        configRequestInfo.setBetaIps("test-betaIps");
+        Boolean cResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(persistService)
                 .insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any(), any(Timestamp.class),
                         anyBoolean());

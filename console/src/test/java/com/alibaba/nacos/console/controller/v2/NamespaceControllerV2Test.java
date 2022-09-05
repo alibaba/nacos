@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
-import com.alibaba.nacos.console.model.vo.NamespaceVo;
+import com.alibaba.nacos.console.model.form.NamespaceForm;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +104,7 @@ public class NamespaceControllerV2Test {
         when(namespaceOperationService
                 .createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC)).thenReturn(true);
         Result<Boolean> result = namespaceControllerV2
-                .createNamespace(new NamespaceVo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
+                .createNamespace(new NamespaceForm(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
         
         verify(namespaceOperationService).createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         
@@ -116,7 +116,7 @@ public class NamespaceControllerV2Test {
     public void testEditNamespace() throws NacosException {
         when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC)).thenReturn(true);
         Result<Boolean> result = namespaceControllerV2
-                .editNamespace(new NamespaceVo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
+                .editNamespace(new NamespaceForm(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
         
         verify(namespaceOperationService).editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         
