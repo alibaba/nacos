@@ -18,7 +18,9 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.DefaultClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
 import org.slf4j.Logger;
@@ -94,10 +96,10 @@ public class RpcClientFactory {
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             try {
-                GrpcClient client = new GrpcSdkClient(clientNameInner);
-                client.setThreadPoolCoreSize(threadPoolCoreSize);
-                client.setThreadPoolMaxSize(threadPoolMaxSize);
-                client.labels(labels);
+                GrpcClientConfig config = new DefaultClientConfig.Builder().name(clientNameInner)
+                        .threadPoolCoreSize(threadPoolCoreSize).threadPoolMaxSize(threadPoolMaxSize).labels(labels)
+                        .build();
+                GrpcClient client = new GrpcSdkClient(config);
                 return client;
             } catch (Throwable throwable) {
                 LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
@@ -135,10 +137,10 @@ public class RpcClientFactory {
         }
         
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
-            GrpcClient client = new GrpcClusterClient(clientNameInner);
-            client.setThreadPoolCoreSize(threadPoolCoreSize);
-            client.setThreadPoolMaxSize(threadPoolMaxSize);
-            client.labels(labels);
+            GrpcClientConfig config = new DefaultClientConfig.Builder().name(clientNameInner)
+                    .threadPoolCoreSize(threadPoolCoreSize).threadPoolMaxSize(threadPoolMaxSize).labels(labels)
+                    .build();
+            GrpcClient client = new GrpcClusterClient(config);
             return client;
         });
     }

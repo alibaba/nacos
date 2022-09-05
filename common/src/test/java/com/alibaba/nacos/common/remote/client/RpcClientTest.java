@@ -85,7 +85,47 @@ public class RpcClientTest {
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
-        rpcClient = spy(new RpcClient("testClient") {
+        rpcClient = spy(new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test";
+            }
+    
+            @Override
+            public ServerListFactory serverListFactory() {
+                return null;
+            }
+    
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+    
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+    
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+    
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+    
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+    
+            @Override
+            public Map<String, String> labels() {
+                return null;
+            }
+        }) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -168,7 +208,47 @@ public class RpcClientTest {
         rpcClient.serverListFactory(serverListFactory);
         Assert.assertEquals(RpcClientStatus.INITIALIZED, rpcClient.rpcClientStatus.get());
         
-        RpcClient client1 = new RpcClient("test", serverListFactory) {
+        RpcClient client1 = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test";
+            }
+    
+            @Override
+            public ServerListFactory serverListFactory() {
+                return serverListFactory;
+            }
+    
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+    
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+    
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+    
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+    
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+    
+            @Override
+            public Map<String, String> labels() {
+                return null;
+            }
+        }) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -186,7 +266,47 @@ public class RpcClientTest {
         };
         Assert.assertEquals(RpcClientStatus.INITIALIZED, client1.rpcClientStatus.get());
         
-        RpcClient client2 = new RpcClient(serverListFactory) {
+        RpcClient client2 = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return null;
+            }
+    
+            @Override
+            public ServerListFactory serverListFactory() {
+                return serverListFactory;
+            }
+    
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+    
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+    
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+    
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+    
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+    
+            @Override
+            public Map<String, String> labels() {
+                return null;
+            }
+        }) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -408,7 +528,47 @@ public class RpcClientTest {
     
     @Test
     public void testRpcClientShutdownWhenClientDidntStart() throws NacosException {
-        RpcClient rpcClient = new RpcClient("test-client") {
+        RpcClient rpcClient = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test-client";
+            }
+    
+            @Override
+            public ServerListFactory serverListFactory() {
+                return null;
+            }
+    
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+    
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+    
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+    
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+    
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+    
+            @Override
+            public Map<String, String> labels() {
+                return null;
+            }
+        }) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;

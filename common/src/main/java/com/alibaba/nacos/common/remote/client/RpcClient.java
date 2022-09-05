@@ -85,16 +85,16 @@ public abstract class RpcClient implements Closeable {
     
     private String tenant;
     
-    private static final int RETRY_TIMES = 3;
+    private int retryTimes;
     
-    private static final long DEFAULT_TIMEOUT_MILLS = 3000L;
+    private long timeOutMills;
     
     protected ClientAbilities clientAbilities;
     
     /**
      * default keep alive time 5s.
      */
-    private long keepAliveTime = 5000L;
+    private long keepAliveTime;
     
     private long lastActiveTimeStamp = System.currentTimeMillis();
     
@@ -110,26 +110,31 @@ public abstract class RpcClient implements Closeable {
     
     private static final Pattern EXCLUDE_PROTOCOL_PATTERN = Pattern.compile("(?<=\\w{1,5}://)(.*)");
     
-    protected int healthCheckRetryTimes = 1;
+    protected int healthCheckRetryTimes;
     
-    protected Long healthCheckTimeOut = 3000L;
+    protected Long healthCheckTimeOut;
+    
+    protected RpcClientConfig rpcClientConfig;
     
     static {
         PayloadRegistry.init();
     }
     
-    public RpcClient(String name) {
-        this(name, null);
+    public RpcClient(RpcClientConfig rpcClientConfig) {
+        this.rpcClientConfig = rpcClientConfig;
+        init();
     }
     
-    public RpcClient(ServerListFactory serverListFactory) {
-        this(null, serverListFactory);
-    }
-    
-    public RpcClient(String name, ServerListFactory serverListFactory) {
-        this.name = name;
-        if (serverListFactory != null) {
-            this.serverListFactory = serverListFactory;
+    private void init() {
+        this.name = rpcClientConfig.name();
+        this.healthCheckTimeOut = rpcClientConfig.healthCheckTimeOut();
+        this.healthCheckRetryTimes = rpcClientConfig.healthCheckRetryTimes();
+        this.labels.putAll(rpcClientConfig.labels());
+        this.retryTimes = rpcClientConfig.retryTimes();
+        this.timeOutMills = rpcClientConfig.timeOutMills();
+        this.keepAliveTime = rpcClientConfig.connectionKeepAlive();
+        if (rpcClientConfig.serverListFactory() != null) {
+            serverListFactory = rpcClientConfig.serverListFactory();
             rpcClientStatus.compareAndSet(RpcClientStatus.WAIT_INIT, RpcClientStatus.INITIALIZED);
             LoggerUtils.printIfInfoEnabled(LOGGER, "RpcClient init in constructor, ServerListFactory = {}",
                     serverListFactory.getClass().getName());
@@ -181,7 +186,7 @@ public abstract class RpcClient implements Closeable {
      * @param timeUnit      timeUnit
      */
     public RpcClient keepAlive(long keepAliveTime, TimeUnit timeUnit) {
-        this.keepAliveTime = keepAliveTime * timeUnit.toMillis(keepAliveTime);
+        this.keepAliveTime = timeUnit.toMillis(keepAliveTime);
         LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] RpcClient init keepalive time, keepAliveTimeMillis = {}", name,
                 keepAliveTime);
         return this;
@@ -376,11 +381,11 @@ public abstract class RpcClient implements Closeable {
             }
         });
         
-        // connect to server, try to connect to server sync RETRY_TIMES times, async starting if failed.
+        // connect to server, try to connect to server sync retryTimes times, async starting if failed.
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
         
-        int startUpRetryTimes = RETRY_TIMES;
+        int startUpRetryTimes = retryTimes;
         while (startUpRetryTimes > 0 && connectToServer == null) {
             try {
                 startUpRetryTimes--;
@@ -641,7 +646,7 @@ public abstract class RpcClient implements Closeable {
      * @return response from server.
      */
     public Response request(Request request) throws NacosException {
-        return request(request, DEFAULT_TIMEOUT_MILLS);
+        return request(request, timeOutMills);
     }
     
     /**
@@ -655,7 +660,7 @@ public abstract class RpcClient implements Closeable {
         Response response;
         Exception exceptionThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < timeoutMills + start) {
+        while (retryTimes < retryTimes && System.currentTimeMillis() < timeoutMills + start) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -729,7 +734,7 @@ public abstract class RpcClient implements Closeable {
         
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + callback.getTimeout()) {
+        while (retryTimes < retryTimes && System.currentTimeMillis() < start + callback.getTimeout()) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -778,7 +783,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < RETRY_TIMES && System.currentTimeMillis() < start + DEFAULT_TIMEOUT_MILLS) {
+        while (retryTimes < retryTimes && System.currentTimeMillis() < start + timeOutMills) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {

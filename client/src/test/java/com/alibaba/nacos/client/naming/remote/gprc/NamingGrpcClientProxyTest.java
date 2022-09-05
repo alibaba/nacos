@@ -48,6 +48,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,6 +65,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -325,7 +327,47 @@ public class NamingGrpcClientProxyTest {
     @Test
     public void testServerListChanged() throws Exception {
         
-        RpcClient rpc = new RpcClient("testServerListHasChanged", factory) {
+        RpcClient rpc = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "testServerListHasChanged";
+            }
+    
+            @Override
+            public ServerListFactory serverListFactory() {
+                return factory;
+            }
+    
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+    
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+    
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+    
+            @Override
+            public int healthCheckRetryTimes() {
+                return 0;
+            }
+    
+            @Override
+            public long healthCheckTimeOut() {
+                return 0;
+            }
+    
+            @Override
+            public Map<String, String> labels() {
+                return null;
+            }
+        }) {
             @Override
             public ConnectionType getConnectionType() {
                 return ConnectionType.GRPC;

@@ -26,16 +26,16 @@ public class GrpcConstsTest {
     
     @Test
     public void testGetRpcParams() {
-        Class clazz = GrpcConsts.class;
+        Class clazz = GrpcConstants.class;
         Field[] declaredFields = clazz.getDeclaredFields();
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    GrpcConsts.GRpcConfigLabel.class)) {
+                    GrpcConstants.GRpcConfigLabel.class)) {
                 i++;
             }
         }
-        assertEquals(i, GrpcConsts.getRpcParams().size());
+        assertEquals(i, GrpcConstants.getRpcParams().size());
     }
 }

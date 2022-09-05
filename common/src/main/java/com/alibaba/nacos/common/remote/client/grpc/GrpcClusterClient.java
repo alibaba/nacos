@@ -35,9 +35,18 @@ public class GrpcClusterClient extends GrpcClient {
         super(name);
     }
     
+    /**
+     * Empty constructor.
+     *
+     * @param config of GrpcClientConfig.
+     */
+    public GrpcClusterClient(GrpcClientConfig config) {
+        super(config);
+    }
+    
     @Override
     public int rpcPortOffset() {
-        return Integer.parseInt(System.getProperty(GrpcConsts.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
+        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
                 String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
     }
     
