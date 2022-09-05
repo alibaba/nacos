@@ -71,6 +71,24 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
+/**
+ * Cluster node management in Nacos.
+ *
+ * <p>{@link ServerMemberManager#init()} Cluster node manager initialization {@link ServerMemberManager#shutdown()} The
+ * cluster node manager is down {@link ServerMemberManager#getSelf()} Gets local node information {@link
+ * ServerMemberManager#getServerList()} Gets the cluster node dictionary {@link ServerMemberManager#getMemberAddressInfos()}
+ * Gets the address information of the healthy member node {@link ServerMemberManager#allMembers()} Gets a list of
+ * member information objects {@link ServerMemberManager#allMembersWithoutSelf()} Gets a list of cluster member nodes
+ * with the exception of this node {@link ServerMemberManager#hasMember(String)} Is there a node {@link
+ * ServerMemberManager#memberChange(Collection)} The final node list changes the method, making the full size more
+ * {@link ServerMemberManager#memberJoin(Collection)} Node join, can automatically trigger {@link
+ * ServerMemberManager#memberLeave(Collection)} When the node leaves, only the interface call can be manually triggered
+ * {@link ServerMemberManager#update(Member)} Update the target node information {@link
+ * ServerMemberManager#isUnHealth(String)} Whether the target node is healthy {@link
+ * ServerMemberManager#initAndStartAddressPlugin()} ()} Initializes the addressing mode
+ *
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ */
 @Component(value = "serverMemberManager")
 public class ServerMemberManager implements ApplicationListener<WebServerInitializedEvent> {
     
@@ -85,7 +103,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
     
-    private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 18;
+    private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
     
     private static final long DEFAULT_TASK_DELAY_TIME = 5_000L;
     
@@ -546,7 +564,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         String serverNamespace = event.getApplicationContext().getServerNamespace();
         if (SPRING_MANAGEMENT_CONTEXT_NAMESPACE.equals(serverNamespace)) {
             // ignore
-            // fix#issue https://github.com/alibaba/nacos/issues/730
+            // fix#issue https://github.com/alibaba/nacos/issues/7230
             return;
         }
         getSelf().setState(NodeState.UP);
