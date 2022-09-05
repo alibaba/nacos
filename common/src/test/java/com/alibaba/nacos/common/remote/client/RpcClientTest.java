@@ -36,6 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -123,7 +124,7 @@ public class RpcClientTest {
     
             @Override
             public Map<String, String> labels() {
-                return null;
+                return new HashMap<>();
             }
         }) {
             @Override
@@ -154,17 +155,11 @@ public class RpcClientTest {
         modifiersField1.setAccessible(true);
         modifiersField1.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
         
-        retryTimesField = RpcClient.class.getDeclaredField("RETRY_TIMES");
+        retryTimesField = RpcClient.class.getDeclaredField("sendRetryTimes");
         retryTimesField.setAccessible(true);
-        Field modifiersField3 = Field.class.getDeclaredField("modifiers");
-        modifiersField3.setAccessible(true);
-        modifiersField3.setInt(retryTimesField, retryTimesField.getModifiers() & ~Modifier.FINAL);
         
-        timeoutMillsField = RpcClient.class.getDeclaredField("DEFAULT_TIMEOUT_MILLS");
+        timeoutMillsField = RpcClient.class.getDeclaredField("timeOutMills");
         timeoutMillsField.setAccessible(true);
-        Field modifiersField4 = Field.class.getDeclaredField("modifiers");
-        modifiersField4.setAccessible(true);
-        modifiersField4.setInt(timeoutMillsField, timeoutMillsField.getModifiers() & ~Modifier.FINAL);
         
         resolveServerInfoMethod = RpcClient.class.getDeclaredMethod("resolveServerInfo", String.class);
         resolveServerInfoMethod.setAccessible(true);
@@ -246,7 +241,7 @@ public class RpcClientTest {
     
             @Override
             public Map<String, String> labels() {
-                return null;
+                return new HashMap<>();
             }
         }) {
             @Override
@@ -304,7 +299,7 @@ public class RpcClientTest {
     
             @Override
             public Map<String, String> labels() {
-                return null;
+                return new HashMap<>();
             }
         }) {
             @Override
@@ -566,7 +561,7 @@ public class RpcClientTest {
     
             @Override
             public Map<String, String> labels() {
-                return null;
+                return new HashMap<>();
             }
         }) {
             @Override

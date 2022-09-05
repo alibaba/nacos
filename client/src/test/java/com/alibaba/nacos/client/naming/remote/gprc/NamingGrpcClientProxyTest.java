@@ -63,6 +63,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -365,7 +366,7 @@ public class NamingGrpcClientProxyTest {
     
             @Override
             public Map<String, String> labels() {
-                return null;
+                return new HashMap<>();
             }
         }) {
             @Override

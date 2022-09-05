@@ -85,7 +85,7 @@ public abstract class RpcClient implements Closeable {
     
     private String tenant;
     
-    private int retryTimes;
+    private int sendRetryTimes;
     
     private long timeOutMills;
     
@@ -130,7 +130,7 @@ public abstract class RpcClient implements Closeable {
         this.healthCheckTimeOut = rpcClientConfig.healthCheckTimeOut();
         this.healthCheckRetryTimes = rpcClientConfig.healthCheckRetryTimes();
         this.labels.putAll(rpcClientConfig.labels());
-        this.retryTimes = rpcClientConfig.retryTimes();
+        this.sendRetryTimes = rpcClientConfig.retryTimes();
         this.timeOutMills = rpcClientConfig.timeOutMills();
         this.keepAliveTime = rpcClientConfig.connectionKeepAlive();
         if (rpcClientConfig.serverListFactory() != null) {
@@ -385,7 +385,7 @@ public abstract class RpcClient implements Closeable {
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
         
-        int startUpRetryTimes = retryTimes;
+        int startUpRetryTimes = sendRetryTimes;
         while (startUpRetryTimes > 0 && connectToServer == null) {
             try {
                 startUpRetryTimes--;
@@ -660,7 +660,7 @@ public abstract class RpcClient implements Closeable {
         Response response;
         Exception exceptionThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < retryTimes && System.currentTimeMillis() < timeoutMills + start) {
+        while (retryTimes < sendRetryTimes && System.currentTimeMillis() < timeoutMills + start) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -734,7 +734,7 @@ public abstract class RpcClient implements Closeable {
         
         Exception exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < retryTimes && System.currentTimeMillis() < start + callback.getTimeout()) {
+        while (retryTimes < sendRetryTimes && System.currentTimeMillis() < start + callback.getTimeout()) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -783,7 +783,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < retryTimes && System.currentTimeMillis() < start + timeOutMills) {
+        while (retryTimes < sendRetryTimes && System.currentTimeMillis() < start + timeOutMills) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
