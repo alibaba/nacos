@@ -76,6 +76,16 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-encryption-plugin</artifactId>
         </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-address-plugin</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-plugin-default-impl</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client;
+package com.alibaba.nacos.client.address;
+
+import com.alibaba.nacos.api.exception.NacosException;
 
 import java.util.List;
 
 /**
- * server list factory . use to inner client to connecte and switch servers.
- * @author liuzunfei
- * @version $Id: ServerListFactory.java, v 0.1 2020年07月14日 1:11 PM liuzunfei Exp $
+ * ServerListManager Interface
+ * Date 2022/8/30.
+ *
+ * @author GuoJiangFu
  */
-public interface ServerListFactory {
+public interface ServerListManager {
     
-    /**
-     * switch to a new server and get it.
-     *
-     * @return server " ip:port".
-     */
-    String getNextServer();
+    void start() throws NacosException;
     
-    /**
-     * get current server.
-     * @return server " ip:port".
-     */
-    String getCurrentServer();
-    
-    /**
-     * get current server.
-     *
-     * @return servers.
-     */
     List<String> getServerList();
     
+    String getCurrentServer();
+    
+    String getNextServer();
+    
+    void shutdown();
 }

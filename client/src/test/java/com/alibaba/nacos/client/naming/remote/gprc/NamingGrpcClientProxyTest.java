@@ -118,7 +118,7 @@ public class NamingGrpcClientProxyTest {
     public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         List<String> serverList = Stream.of(ORIGIN_SERVER, "anotherServer").collect(Collectors.toList());
         when(factory.getServerList()).thenReturn(serverList);
-        when(factory.genNextServer()).thenReturn(ORIGIN_SERVER);
+        when(factory.getNextServer()).thenReturn(ORIGIN_SERVER);
         
         prop = new Properties();
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, prop, holder);
@@ -381,7 +381,7 @@ public class NamingGrpcClientProxyTest {
         Assert.assertEquals(ORIGIN_SERVER, rpc.getCurrentServer().getServerIp());
         
         String newServer = "www.aliyun.com";
-        when(factory.genNextServer()).thenReturn(newServer);
+        when(factory.getNextServer()).thenReturn(newServer);
         when(factory.getServerList()).thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
         NotifyCenter.publishEvent(new ServerListChangedEvent());
         
