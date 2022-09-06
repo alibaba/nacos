@@ -38,6 +38,9 @@ public class GrpcConstants {
     public static final String NACOS_CLIENT_GRPC = "nacos.remote.client.grpc";
     
     @GRpcConfigLabel
+    public static final String NACOS_CLIENT_GRPC_NAME = NACOS_CLIENT_GRPC + ".name";
+    
+    @GRpcConfigLabel
     public static final String NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME = NACOS_CLIENT_GRPC + ".pool.alive";
     
     @GRpcConfigLabel

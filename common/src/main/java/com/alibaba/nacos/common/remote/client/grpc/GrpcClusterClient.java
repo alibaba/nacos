@@ -18,6 +18,9 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
 
+import java.util.Map;
+import java.util.Properties;
+
 /**
  * gRPC client for cluster.
  *
@@ -42,6 +45,28 @@ public class GrpcClusterClient extends GrpcClient {
      */
     public GrpcClusterClient(GrpcClientConfig config) {
         super(config);
+    }
+    
+    /**
+     * Constructor.
+     *
+     * @param properties .
+     */
+    public GrpcClusterClient(Properties properties) {
+        super(properties);
+    }
+    
+    /**
+     * Constructor.
+     *
+     * @param name               name of client.
+     * @param threadPoolCoreSize .
+     * @param threadPoolMaxSize  .
+     * @param labels             .
+     */
+    public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
+            Map<String, String> labels) {
+        super(name, threadPoolCoreSize, threadPoolMaxSize, labels);
     }
     
     @Override

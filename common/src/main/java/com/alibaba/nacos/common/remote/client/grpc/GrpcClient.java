@@ -30,6 +30,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -42,6 +43,8 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -79,14 +82,50 @@ public abstract class GrpcClient extends RpcClient {
     /**
      * constructor.
      *
+     * @param name               .
+     * @param threadPoolCoreSize .
+     * @param threadPoolMaxSize  .
+     * @param labels             .
+     */
+    public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
+        super();
+        GrpcClientConfig config = new DefaultClientConfig.Builder().name(name).threadPoolCoreSize(threadPoolCoreSize)
+                .threadPoolMaxSize(threadPoolMaxSize).labels(labels).build();
+        rpcClientConfig = config;
+        this.clientConfig = config;
+        init();
+    }
+    
+    /**
+     * constructor.
+     *
+     * @param clientConfig      .
+     * @param serverListFactory .
+     */
+    public GrpcClient(GrpcClientConfig clientConfig, ServerListFactory serverListFactory) {
+        super(clientConfig, serverListFactory);
+        this.clientConfig = clientConfig;
+    }
+    
+    /**
+     * constructor.
+     *
      * @param name .
      */
     public GrpcClient(String name) {
         this(new DefaultClientConfig.Builder().name(name).build());
     }
     
+    /**
+     * constructor.
+     *
+     * @param properties .
+     */
+    public GrpcClient(Properties properties) {
+        this(new DefaultClientConfig.Builder(properties).build());
+    }
+    
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
-        
         ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(clientConfig.threadPoolCoreSize(),
                 clientConfig.threadPoolMaxSize(), clientConfig.threadPoolKeepAlive(), TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(clientConfig.threadPoolQueueSize()),

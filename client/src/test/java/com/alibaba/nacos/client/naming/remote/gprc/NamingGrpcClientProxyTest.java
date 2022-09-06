@@ -80,7 +80,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NamingGrpcClientProxyTest {
-
+    
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
     
@@ -168,7 +168,7 @@ public class NamingGrpcClientProxyTest {
     public void testRegisterServiceThrowsException() throws NacosException {
         expectedException.expect(NacosException.class);
         expectedException.expectMessage("Request nacos server failed: ");
-    
+        
         when(this.rpcClient.request(Mockito.any())).thenReturn(null);
         
         try {
@@ -287,13 +287,11 @@ public class NamingGrpcClientProxyTest {
         verify(this.rpcClient, times(1)).request(argThat(request -> {
             if (request instanceof SubscribeServiceRequest) {
                 SubscribeServiceRequest request1 = (SubscribeServiceRequest) request;
-
+                
                 // verify request fields
-                return !request1.isSubscribe()
-                        && SERVICE_NAME.equals(request1.getServiceName())
-                        && GROUP_NAME.equals(request1.getGroupName())
-                        && CLUSTERS.equals(request1.getClusters())
-                        && NAMESPACE_ID.equals(request1.getNamespace());
+                return !request1.isSubscribe() && SERVICE_NAME.equals(request1.getServiceName()) && GROUP_NAME.equals(
+                        request1.getGroupName()) && CLUSTERS.equals(request1.getClusters()) && NAMESPACE_ID.equals(
+                        request1.getNamespace());
             }
             return false;
         }));
@@ -333,42 +331,37 @@ public class NamingGrpcClientProxyTest {
             public String name() {
                 return "testServerListHasChanged";
             }
-    
-            @Override
-            public ServerListFactory serverListFactory() {
-                return factory;
-            }
-    
+            
             @Override
             public int retryTimes() {
                 return 3;
             }
-    
+            
             @Override
             public long timeOutMills() {
                 return 3000L;
             }
-    
+            
             @Override
             public long connectionKeepAlive() {
                 return 5000L;
             }
-    
+            
             @Override
             public int healthCheckRetryTimes() {
                 return 0;
             }
-    
+            
             @Override
             public long healthCheckTimeOut() {
                 return 0;
             }
-    
+            
             @Override
             public Map<String, String> labels() {
                 return new HashMap<>();
             }
-        }) {
+        }, factory) {
             @Override
             public ConnectionType getConnectionType() {
                 return ConnectionType.GRPC;

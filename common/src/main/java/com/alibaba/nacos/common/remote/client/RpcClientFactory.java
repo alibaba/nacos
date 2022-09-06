@@ -18,9 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.grpc.DefaultClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
 import org.slf4j.Logger;
@@ -96,10 +94,7 @@ public class RpcClientFactory {
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             try {
-                GrpcClientConfig config = new DefaultClientConfig.Builder().name(clientNameInner)
-                        .threadPoolCoreSize(threadPoolCoreSize).threadPoolMaxSize(threadPoolMaxSize).labels(labels)
-                        .build();
-                GrpcClient client = new GrpcSdkClient(config);
+                GrpcClient client = new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
                 return client;
             } catch (Throwable throwable) {
                 LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
@@ -137,10 +132,7 @@ public class RpcClientFactory {
         }
         
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
-            GrpcClientConfig config = new DefaultClientConfig.Builder().name(clientNameInner)
-                    .threadPoolCoreSize(threadPoolCoreSize).threadPoolMaxSize(threadPoolMaxSize).labels(labels)
-                    .build();
-            GrpcClient client = new GrpcClusterClient(config);
+            GrpcClient client = new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
             return client;
         });
     }

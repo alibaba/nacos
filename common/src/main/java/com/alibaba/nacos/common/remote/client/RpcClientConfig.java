@@ -33,13 +33,6 @@ public interface RpcClientConfig {
     String name();
     
     /**
-     * get serverListFactory.
-     *
-     * @return serverListFactory.
-     */
-    ServerListFactory serverListFactory();
-    
-    /**
      * get request retry times.
      *
      * @return retryTimes.

@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 /**
  * Default grpc client config.
@@ -31,8 +31,6 @@ import java.util.Objects;
 public class DefaultClientConfig implements GrpcClientConfig {
     
     private String name;
-    
-    private ServerListFactory serverListFactory;
     
     private int retryTimes;
     
@@ -67,7 +65,6 @@ public class DefaultClientConfig implements GrpcClientConfig {
      */
     public DefaultClientConfig(Builder builder) {
         this.name = builder.name;
-        this.serverListFactory = builder.serverListFactory;
         this.retryTimes = builder.retryTimes;
         this.timeOutMills = builder.timeOutMills;
         this.connectionKeepAlive = builder.connectionKeepAlive;
@@ -87,11 +84,6 @@ public class DefaultClientConfig implements GrpcClientConfig {
     @Override
     public String name() {
         return this.name;
-    }
-    
-    @Override
-    public ServerListFactory serverListFactory() {
-        return this.serverListFactory;
     }
     
     @Override
@@ -175,8 +167,6 @@ public class DefaultClientConfig implements GrpcClientConfig {
         
         private String name;
         
-        private ServerListFactory serverListFactory;
-        
         private int retryTimes = 3;
         
         private long timeOutMills = 3000L;
@@ -203,19 +193,66 @@ public class DefaultClientConfig implements GrpcClientConfig {
         
         private Map<String, String> labels = new HashMap<>();
         
+        public Builder(Properties properties) {
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_NAME)) {
+                this.name = properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_NAME);
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_RETRY_TIMES)) {
+                this.retryTimes = Integer.parseInt(properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_RETRY_TIMES));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_TIMEOUT_MILLS)) {
+                this.timeOutMills = Long.parseLong(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_TIMEOUT_MILLS));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME)) {
+                this.connectionKeepAlive = Long.parseLong(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME)) {
+                this.threadPoolKeepAlive = Long.parseLong(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_CORE_SIZE)) {
+                this.threadPoolCoreSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_CORE_SIZE));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_MAX_SIZE)) {
+                this.threadPoolMaxSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_MAX_SIZE));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_SERVER_CHECK_TIMEOUT)) {
+                this.serverCheckTimeOut = Long.parseLong(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_SERVER_CHECK_TIMEOUT));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_QUEUESIZE)) {
+                this.threadPoolQueueSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_QUEUESIZE));
+            }
+            if (properties.contains(GrpcConstants.MAX_INBOUND_MESSAGE_SIZE)) {
+                this.maxInboundMessageSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.MAX_INBOUND_MESSAGE_SIZE));
+            }
+            if (properties.contains(GrpcConstants.CHANNEL_KEEP_ALIVE_TIME)) {
+                this.channelKeepAlive = Integer.parseInt(properties.getProperty(GrpcConstants.CHANNEL_KEEP_ALIVE_TIME));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES)) {
+                this.healthCheckRetryTimes = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES));
+            }
+            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT)) {
+                this.healthCheckTimeOut = Long.parseLong(
+                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT));
+            }
+        }
+        
+        public Builder() {
+        }
+        
         /**
          * set client name.
          */
         public Builder name(String name) {
             this.name = name;
-            return this;
-        }
-        
-        /**
-         * set serverListFactory.
-         */
-        public Builder serverListFactory(ServerListFactory serverListFactory) {
-            this.serverListFactory = serverListFactory;
             return this;
         }
         
@@ -226,7 +263,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.retryTimes = retryTimes;
             return this;
         }
-    
+        
         /**
          * set timeOutMills.
          */
@@ -234,7 +271,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.timeOutMills = timeOutMills;
             return this;
         }
-    
+        
         /**
          * set connectionKeepAlive.
          */
@@ -270,7 +307,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             }
             return this;
         }
-    
+        
         /**
          * set serverCheckTimeOut.
          */
@@ -278,7 +315,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.serverCheckTimeOut = serverCheckTimeOut;
             return this;
         }
-    
+        
         /**
          * set threadPoolQueueSize.
          */
@@ -286,7 +323,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.threadPoolQueueSize = threadPoolQueueSize;
             return this;
         }
-    
+        
         /**
          * set maxInboundMessageSize.
          */
@@ -294,7 +331,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.maxInboundMessageSize = maxInboundMessageSize;
             return this;
         }
-    
+        
         /**
          * set channelKeepAlive.
          */
@@ -302,7 +339,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.channelKeepAlive = channelKeepAlive;
             return this;
         }
-    
+        
         /**
          * set healthCheckRetryTimes.
          */
@@ -310,7 +347,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.healthCheckRetryTimes = healthCheckRetryTimes;
             return this;
         }
-    
+        
         /**
          * set healthCheckTimeOut.
          */
@@ -318,7 +355,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.healthCheckTimeOut = healthCheckTimeOut;
             return this;
         }
-    
+        
         /**
          * set labels.
          */
@@ -326,7 +363,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
             this.labels.putAll(labels);
             return this;
         }
-    
+        
         /**
          * build GrpcClientConfig.
          */
