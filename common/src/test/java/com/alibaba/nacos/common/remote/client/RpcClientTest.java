@@ -511,6 +511,6 @@ public class RpcClientTest {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        verify(connection, times(retry)).request(any(), anyLong());
+        verify(connection, times(retry + 1)).request(any(), anyLong());
     }
 }
