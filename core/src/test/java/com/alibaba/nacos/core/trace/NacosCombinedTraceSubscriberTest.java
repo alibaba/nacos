@@ -77,6 +77,7 @@ public class NacosCombinedTraceSubscriberTest {
                 .getField(NacosTracePluginManager.getInstance(), "traceSubscribers");
         traceSubscribers.remove("nacos-combined");
         traceSubscribers.remove("nacos-combined2");
+        combinedTraceSubscriber.shutdown();
     }
     
     @Test

@@ -81,4 +81,8 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
             }
         }
     }
+    
+    public void shutdown() {
+        NotifyCenter.deregisterSubscriber(this);
+    }
 }
