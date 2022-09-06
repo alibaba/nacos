@@ -349,12 +349,12 @@ public class NamingGrpcClientProxyTest {
             
             @Override
             public int healthCheckRetryTimes() {
-                return 0;
+                return 1;
             }
             
             @Override
             public long healthCheckTimeOut() {
-                return 0;
+                return 3000L;
             }
             
             @Override
