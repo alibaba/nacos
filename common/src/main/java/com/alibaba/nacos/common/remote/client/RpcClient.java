@@ -469,7 +469,7 @@ public abstract class RpcClient implements Closeable {
             return false;
         }
         int reTryTimes = healthCheckRetryTimes;
-        while (reTryTimes > 0) {
+        while (reTryTimes >= 0) {
             reTryTimes--;
             try {
                 Response response = this.currentConnection.request(healthCheckRequest, healthCheckTimeOut);
