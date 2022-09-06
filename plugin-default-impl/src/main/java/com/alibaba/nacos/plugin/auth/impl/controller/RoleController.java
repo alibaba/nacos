@@ -19,8 +19,10 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -51,13 +53,31 @@ public class RoleController {
      * @param pageNo   number index of page
      * @param pageSize page size
      * @param username optional, username of user
+     * @param role optional role
      * @return role list
      */
-    @GetMapping
+    @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
-            @RequestParam(name = "username", defaultValue = "") String username) {
-        return roleService.getRolesFromDatabase(username, pageNo, pageSize);
+            @RequestParam(name = "username", defaultValue = "") String username,
+            @RequestParam(name = "role", defaultValue = "") String role) {
+        return roleService.getRolesFromDatabase(username, role, pageNo, pageSize);
+    }
+
+    /**
+     * Fuzzy query role information.
+     * @param pageNo number index of page
+     * @param pageSize page size
+     * @param username username of user
+     * @param role role
+     * @return role list
+     */
+    @GetMapping(params = "search=blur")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
+    public Page<RoleInfo> fuzzySearchRole(@RequestParam int pageNo, @RequestParam int pageSize,
+            @RequestParam(name = "username", defaultValue = "") String username,
+            @RequestParam(name = "role", defaultValue = "") String role) {
+        return roleService.findRolesLike4Page(username, role, pageNo, pageSize);
     }
     
     /**

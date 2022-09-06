@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -45,6 +49,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
+
+    private static final String PATTERN_STR = "*";
     
     /**
      * Execute create user operation.
@@ -104,17 +110,22 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     }
     
     @Override
-    public Page<User> getUsers(int pageNo, int pageSize) {
+    public Page<User> getUsers(int pageNo, int pageSize, String username) {
         
         PaginationHelper<User> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT count(*) FROM users WHERE ";
+        String sqlCountRows = "SELECT count(*) FROM users ";
         
-        String sqlFetchRows = "SELECT username,password FROM users WHERE ";
-        
-        String where = " 1=1 ";
+        String sqlFetchRows = "SELECT username,password FROM users ";
+
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username = ? ");
+            params.add(username);
+        }
         Page<User> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
                         pageSize, USER_ROW_MAPPER);
         if (pageInfo == null) {
             pageInfo = new Page<>();
@@ -128,5 +139,33 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ? ";
         return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
+    }
+
+    @Override
+    public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
+        String sqlCountRows = "SELECT count(*) FROM users ";
+        String sqlFetchRows = "SELECT username,password FROM users ";
+
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username LIKE ? ");
+            params.add(generateLikeArgument(username));
+        }
+
+        PaginationHelper<User> helper = persistService.createPaginationHelper();
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                params.toArray(), pageNo, pageSize, USER_ROW_MAPPER);
+    }
+
+    @Override
+    public String generateLikeArgument(String s) {
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
     }
 }
