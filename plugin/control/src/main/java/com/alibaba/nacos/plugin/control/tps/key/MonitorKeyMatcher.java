@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.plugin.control.tps.key;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -36,13 +36,13 @@ public class MonitorKeyMatcher {
      * @param monitorKey monitorKey.
      * @return type matched result.
      */
-    public static boolean matchWithType(String pattern, String monitorKey) {
+    public static boolean match(String pattern, String monitorKey) {
         String[] typeInPattern = pattern.split(Constants.COLON);
         String[] typeInMonitorKey = monitorKey.split(Constants.COLON);
         if (!Objects.equals(typeInPattern[0], typeInMonitorKey[0])) {
             return false;
         }
-        return match(pattern.substring(pattern.indexOf(Constants.COLON)),
+        return matchPattern(pattern.substring(pattern.indexOf(Constants.COLON)),
                 monitorKey.substring(monitorKey.indexOf(Constants.COLON)));
     }
     
@@ -52,7 +52,7 @@ public class MonitorKeyMatcher {
      * @param monitorKey monitorKey.
      * @return matched result.
      */
-    private static boolean match(String pattern, String monitorKey) {
+    private static boolean matchPattern(String pattern, String monitorKey) {
         pattern = pattern.trim();
         monitorKey = monitorKey.trim();
         //"AB",equals.
@@ -73,6 +73,7 @@ public class MonitorKeyMatcher {
             if (StringUtils.isBlank(split[0])) {
                 return monitorKey.endsWith(split[1]);
             }
+            //A*B prefix & postfix match
             return monitorKey.startsWith(split[0]) && monitorKey.endsWith(split[1]);
         }
         

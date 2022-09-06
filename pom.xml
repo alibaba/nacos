@@ -595,6 +595,7 @@
         <module>sys</module>
         <module>plugin</module>
         <module>plugin-default-impl</module>
+        <module>control</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -711,6 +712,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-encryption-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-control-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
