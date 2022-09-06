@@ -449,7 +449,7 @@ public class ConfigController {
         }
         ConfigChangePublisher.notifyConfigChange(
                 new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
-        return RestResultUtils.success("remove beta ok", true);
+        return RestResultUtils.success("stop beta ok", true);
     }
     
     /**
