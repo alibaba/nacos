@@ -94,8 +94,7 @@ public class RpcClientFactory {
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             try {
-                GrpcClient client = new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
-                return client;
+                return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
             } catch (Throwable throwable) {
                 LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
                 throw throwable;
@@ -131,10 +130,9 @@ public class RpcClientFactory {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
         
-        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
-            GrpcClient client = new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
-            return client;
-        });
+        return CLIENT_MAP.computeIfAbsent(clientName,
+                clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize,
+                        labels));
     }
     
 }
