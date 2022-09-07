@@ -58,15 +58,33 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class GrpcClient extends RpcClient {
     
-    static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GrpcClient.class);
     
-    private ThreadPoolExecutor grpcExecutor = null;
+    private final GrpcClientConfig clientConfig;
     
-    private GrpcClientConfig clientConfig = null;
+    private ThreadPoolExecutor grpcExecutor;
     
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
+    }
+    
+    /**
+     * constructor.
+     *
+     * @param name .
+     */
+    public GrpcClient(String name) {
+        this(DefaultGrpcClientConfig.newBuilder().setName(name).build());
+    }
+    
+    /**
+     * constructor.
+     *
+     * @param properties .
+     */
+    public GrpcClient(Properties properties) {
+        this(DefaultGrpcClientConfig.newBuilder().fromProperties(properties).build());
     }
     
     /**
@@ -77,23 +95,6 @@ public abstract class GrpcClient extends RpcClient {
     public GrpcClient(GrpcClientConfig clientConfig) {
         super(clientConfig);
         this.clientConfig = clientConfig;
-    }
-    
-    /**
-     * constructor.
-     *
-     * @param name               .
-     * @param threadPoolCoreSize .
-     * @param threadPoolMaxSize  .
-     * @param labels             .
-     */
-    public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
-        super();
-        GrpcClientConfig config = DefaultClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
-                .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build();
-        rpcClientConfig = config;
-        this.clientConfig = config;
-        init();
     }
     
     /**
@@ -110,19 +111,14 @@ public abstract class GrpcClient extends RpcClient {
     /**
      * constructor.
      *
-     * @param name .
+     * @param name               .
+     * @param threadPoolCoreSize .
+     * @param threadPoolMaxSize  .
+     * @param labels             .
      */
-    public GrpcClient(String name) {
-        this(DefaultClientConfig.newBuilder().setName(name).build());
-    }
-    
-    /**
-     * constructor.
-     *
-     * @param properties .
-     */
-    public GrpcClient(Properties properties) {
-        this(DefaultClientConfig.newBuilder().fromProperties(properties).build());
+    public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
+        this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
+                .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
     
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
