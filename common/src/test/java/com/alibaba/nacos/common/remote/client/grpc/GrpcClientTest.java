@@ -46,7 +46,7 @@ public class GrpcClientTest {
     
     @Before
     public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        GrpcClientConfig clientConfig = new DefaultClientConfig.Builder().name("testClient").build();
+        GrpcClientConfig clientConfig = DefaultClientConfig.newBuilder().setName("testClient").build();
         grpcClient = spy(new GrpcClient(clientConfig) {
             @Override
             public int rpcPortOffset() {

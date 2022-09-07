@@ -63,7 +63,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
      *
      * @param builder builder of DefaultClientConfig builder.
      */
-    public DefaultClientConfig(Builder builder) {
+    private DefaultClientConfig(Builder builder) {
         this.name = builder.name;
         this.retryTimes = builder.retryTimes;
         this.timeOutMills = builder.timeOutMills;
@@ -101,7 +101,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
     @Override
     public long connectionKeepAlive() {
         return Long.parseLong(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME,
-                String.valueOf(this.channelKeepAlive)));
+                String.valueOf(this.connectionKeepAlive)));
     }
     
     @Override
@@ -163,6 +163,10 @@ public class DefaultClientConfig implements GrpcClientConfig {
         return this.labels;
     }
     
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+    
     public static class Builder {
         
         private String name;
@@ -193,7 +197,16 @@ public class DefaultClientConfig implements GrpcClientConfig {
         
         private Map<String, String> labels = new HashMap<>();
         
-        public Builder(Properties properties) {
+        private Builder() {
+        }
+    
+        /**
+         * Set config from properties.
+         *
+         * @param properties properties
+         * @return Builder
+         */
+        public Builder fromProperties(Properties properties) {
             if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_NAME)) {
                 this.name = properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_NAME);
             }
@@ -243,15 +256,13 @@ public class DefaultClientConfig implements GrpcClientConfig {
                 this.healthCheckTimeOut = Long.parseLong(
                         properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT));
             }
-        }
-        
-        public Builder() {
+            return this;
         }
         
         /**
          * set client name.
          */
-        public Builder name(String name) {
+        public Builder setName(String name) {
             this.name = name;
             return this;
         }
@@ -259,7 +270,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set retryTimes.
          */
-        public Builder retryTimes(int retryTimes) {
+        public Builder setRetryTimes(int retryTimes) {
             this.retryTimes = retryTimes;
             return this;
         }
@@ -267,7 +278,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set timeOutMills.
          */
-        public Builder timeOutMills(long timeOutMills) {
+        public Builder setTimeOutMills(long timeOutMills) {
             this.timeOutMills = timeOutMills;
             return this;
         }
@@ -275,7 +286,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set connectionKeepAlive.
          */
-        public Builder connectionKeepAlive(long connectionKeepAlive) {
+        public Builder setConnectionKeepAlive(long connectionKeepAlive) {
             this.connectionKeepAlive = connectionKeepAlive;
             return this;
         }
@@ -283,7 +294,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set threadPoolKeepAlive.
          */
-        public Builder threadPoolKeepAlive(Long threadPoolKeepAlive) {
+        public Builder setThreadPoolKeepAlive(Long threadPoolKeepAlive) {
             this.threadPoolKeepAlive = threadPoolKeepAlive;
             return this;
         }
@@ -291,7 +302,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set threadPoolCoreSize.
          */
-        public Builder threadPoolCoreSize(Integer threadPoolCoreSize) {
+        public Builder setThreadPoolCoreSize(Integer threadPoolCoreSize) {
             if (!Objects.isNull(threadPoolCoreSize)) {
                 this.threadPoolCoreSize = threadPoolCoreSize;
             }
@@ -301,7 +312,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set threadPoolMaxSize.
          */
-        public Builder threadPoolMaxSize(Integer threadPoolMaxSize) {
+        public Builder setThreadPoolMaxSize(Integer threadPoolMaxSize) {
             if (!Objects.isNull(threadPoolMaxSize)) {
                 this.threadPoolMaxSize = threadPoolMaxSize;
             }
@@ -311,7 +322,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set serverCheckTimeOut.
          */
-        public Builder serverCheckTimeOut(Long serverCheckTimeOut) {
+        public Builder setServerCheckTimeOut(Long serverCheckTimeOut) {
             this.serverCheckTimeOut = serverCheckTimeOut;
             return this;
         }
@@ -319,7 +330,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set threadPoolQueueSize.
          */
-        public Builder threadPoolQueueSize(int threadPoolQueueSize) {
+        public Builder setThreadPoolQueueSize(int threadPoolQueueSize) {
             this.threadPoolQueueSize = threadPoolQueueSize;
             return this;
         }
@@ -327,7 +338,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set maxInboundMessageSize.
          */
-        public Builder maxInboundMessageSize(int maxInboundMessageSize) {
+        public Builder setMaxInboundMessageSize(int maxInboundMessageSize) {
             this.maxInboundMessageSize = maxInboundMessageSize;
             return this;
         }
@@ -335,7 +346,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set channelKeepAlive.
          */
-        public Builder channelKeepAlive(int channelKeepAlive) {
+        public Builder setChannelKeepAlive(int channelKeepAlive) {
             this.channelKeepAlive = channelKeepAlive;
             return this;
         }
@@ -343,7 +354,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set healthCheckRetryTimes.
          */
-        public Builder healthCheckRetryTimes(int healthCheckRetryTimes) {
+        public Builder setHealthCheckRetryTimes(int healthCheckRetryTimes) {
             this.healthCheckRetryTimes = healthCheckRetryTimes;
             return this;
         }
@@ -351,7 +362,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set healthCheckTimeOut.
          */
-        public Builder healthCheckTimeOut(long healthCheckTimeOut) {
+        public Builder setHealthCheckTimeOut(long healthCheckTimeOut) {
             this.healthCheckTimeOut = healthCheckTimeOut;
             return this;
         }
@@ -359,7 +370,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
         /**
          * set labels.
          */
-        public Builder labels(Map<String, String> labels) {
+        public Builder setLabels(Map<String, String> labels) {
             this.labels.putAll(labels);
             return this;
         }
