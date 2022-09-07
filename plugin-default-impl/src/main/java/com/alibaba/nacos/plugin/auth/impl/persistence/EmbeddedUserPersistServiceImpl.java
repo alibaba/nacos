@@ -51,8 +51,6 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     private EmbeddedStoragePersistServiceImpl persistService;
 
     private static final String PATTERN_STR = "*";
-
-    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     /**
      * Execute create user operation.
@@ -139,7 +137,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public List<String> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
+        String sql = "SELECT username FROM users WHERE username LIKE ? ";
         return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
     }
 
@@ -152,7 +150,6 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username LIKE ? ");
-            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             params.add(generateLikeArgument(username));
         }
 
@@ -163,10 +160,6 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
 
     @Override
     public String generateLikeArgument(String s) {
-        String underscore = "_";
-        if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
-        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {

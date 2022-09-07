@@ -17,9 +17,9 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
@@ -50,8 +50,6 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     private EmbeddedStoragePersistServiceImpl persistService;
 
     private static final String PATTERN_STR = "*";
-
-    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
@@ -155,16 +153,12 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
+        String sql = "SELECT role FROM roles WHERE role LIKE ? ";
         return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
     }
 
     @Override
     public String generateLikeArgument(String s) {
-        String underscore = "_";
-        if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
-        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
@@ -188,9 +182,6 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         if (StringUtils.isNotBlank(role)) {
             where.append(" AND role LIKE ? ");
             params.add(generateLikeArgument(role));
-        }
-        if (CollectionUtils.isNotEmpty(params)) {
-            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
         }
 
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();

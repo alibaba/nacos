@@ -49,8 +49,6 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     private EmbeddedStoragePersistServiceImpl persistService;
 
     private static final String PATTERN_STR = "*";
-
-    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
@@ -120,7 +118,6 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(role)) {
             where.append(" AND role LIKE ?");
-            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             params.add(generateLikeArgument(role));
         }
 
@@ -138,10 +135,6 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
 
     @Override
     public String generateLikeArgument(String s) {
-        String underscore = "_";
-        if (s.contains(underscore)) {
-            s = s.replaceAll(underscore, "\\\\_");
-        }
         String fuzzySearchSign = "\\*";
         String sqlLikePercentSign = "%";
         if (s.contains(PATTERN_STR)) {
