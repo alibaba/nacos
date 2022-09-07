@@ -32,6 +32,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
+import com.alibaba.nacos.common.remote.client.grpc.DefaultGrpcClientConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -103,17 +104,14 @@ public abstract class RpcClient implements Closeable {
         PayloadRegistry.init();
     }
     
-    public RpcClient() {
+    public RpcClient(RpcClientConfig rpcClientConfig) {
+        this(rpcClientConfig, null);
     }
     
     public RpcClient(RpcClientConfig rpcClientConfig, ServerListFactory serverListFactory) {
         this.rpcClientConfig = rpcClientConfig;
         this.serverListFactory = serverListFactory;
         init();
-    }
-    
-    public RpcClient(RpcClientConfig rpcClientConfig) {
-        this(rpcClientConfig, null);
     }
     
     protected void init() {
