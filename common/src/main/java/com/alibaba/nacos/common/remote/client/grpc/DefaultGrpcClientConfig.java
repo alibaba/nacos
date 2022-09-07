@@ -28,7 +28,7 @@ import java.util.Properties;
  *
  * @author karsonto
  */
-public class DefaultClientConfig implements GrpcClientConfig {
+public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
     private String name;
     
@@ -61,9 +61,9 @@ public class DefaultClientConfig implements GrpcClientConfig {
     /**
      * constructor.
      *
-     * @param builder builder of DefaultClientConfig builder.
+     * @param builder builder of DefaultGrpcClientConfig builder.
      */
-    private DefaultClientConfig(Builder builder) {
+    private DefaultGrpcClientConfig(Builder builder) {
         this.name = builder.name;
         this.retryTimes = builder.retryTimes;
         this.timeOutMills = builder.timeOutMills;
@@ -379,7 +379,7 @@ public class DefaultClientConfig implements GrpcClientConfig {
          * build GrpcClientConfig.
          */
         public GrpcClientConfig build() {
-            return new DefaultClientConfig(this);
+            return new DefaultGrpcClientConfig(this);
         }
     }
     
