@@ -65,20 +65,32 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
      */
     private DefaultGrpcClientConfig(Builder builder) {
         this.name = builder.name;
-        this.retryTimes = builder.retryTimes;
-        this.timeOutMills = builder.timeOutMills;
-        this.connectionKeepAlive = builder.connectionKeepAlive;
-        this.threadPoolKeepAlive = builder.threadPoolKeepAlive;
-        this.threadPoolCoreSize = builder.threadPoolCoreSize;
-        this.threadPoolMaxSize = builder.threadPoolMaxSize;
-        this.serverCheckTimeOut = builder.serverCheckTimeOut;
-        this.threadPoolQueueSize = builder.threadPoolQueueSize;
-        this.maxInboundMessageSize = builder.maxInboundMessageSize;
-        this.channelKeepAlive = builder.channelKeepAlive;
-        this.healthCheckRetryTimes = builder.healthCheckRetryTimes;
-        this.healthCheckTimeOut = builder.healthCheckTimeOut;
+        this.retryTimes = loadIntegerConfig(GrpcConstants.GRPC_RETRY_TIMES, builder.retryTimes);
+        this.timeOutMills = loadLongConfig(GrpcConstants.GRPC_TIMEOUT_MILLS, builder.timeOutMills);
+        this.connectionKeepAlive = loadLongConfig(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME,
+                builder.connectionKeepAlive);
+        this.threadPoolKeepAlive = loadLongConfig(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME,
+                builder.threadPoolKeepAlive);
+        this.threadPoolCoreSize = loadIntegerConfig(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE,
+                builder.threadPoolCoreSize);
+        this.threadPoolMaxSize = loadIntegerConfig(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE, builder.threadPoolMaxSize);
+        this.serverCheckTimeOut = loadLongConfig(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, builder.serverCheckTimeOut);
+        this.threadPoolQueueSize = loadIntegerConfig(GrpcConstants.GRPC_QUEUESIZE, builder.threadPoolQueueSize);
+        this.maxInboundMessageSize = loadIntegerConfig(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE,
+                builder.maxInboundMessageSize);
+        this.channelKeepAlive = loadIntegerConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME, builder.channelKeepAlive);
+        this.healthCheckRetryTimes = loadIntegerConfig(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES,
+                builder.healthCheckRetryTimes);
+        this.healthCheckTimeOut = loadLongConfig(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT, builder.healthCheckTimeOut);
         this.labels = builder.labels;
-        
+    }
+    
+    private int loadIntegerConfig(String key, int builderValue) {
+        return Integer.getInteger(key, builderValue);
+    }
+    
+    private long loadLongConfig(String key, long builderValue) {
+        return Long.getLong(key, builderValue);
     }
     
     @Override
@@ -88,74 +100,62 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
     @Override
     public int retryTimes() {
-        return Integer.parseInt(
-                System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_RETRY_TIMES, String.valueOf(this.retryTimes)));
+        return retryTimes;
     }
     
     @Override
     public long timeOutMills() {
-        return Long.parseLong(
-                System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_TIMEOUT_MILLS, String.valueOf(this.timeOutMills)));
+        return timeOutMills;
     }
     
     @Override
     public long connectionKeepAlive() {
-        return Long.parseLong(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME,
-                String.valueOf(this.connectionKeepAlive)));
+        return connectionKeepAlive;
     }
     
     @Override
     public int threadPoolCoreSize() {
-        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_CORE_SIZE,
-                String.valueOf(this.threadPoolCoreSize)));
+        return threadPoolCoreSize;
     }
     
     @Override
     public int threadPoolMaxSize() {
-        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_MAX_SIZE,
-                String.valueOf(this.threadPoolMaxSize)));
+        return threadPoolMaxSize;
     }
     
     @Override
     public long threadPoolKeepAlive() {
-        return Long.parseLong(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME,
-                String.valueOf(this.threadPoolKeepAlive)));
+        return threadPoolKeepAlive;
     }
     
     @Override
     public long serverCheckTimeOut() {
-        return Long.parseLong(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_SERVER_CHECK_TIMEOUT,
-                String.valueOf(this.serverCheckTimeOut)));
+        return serverCheckTimeOut;
     }
     
     @Override
     public int threadPoolQueueSize() {
-        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_QUEUESIZE,
-                String.valueOf(this.threadPoolQueueSize)));
+        return threadPoolQueueSize;
     }
     
     @Override
     public int maxInboundMessageSize() {
-        return Integer.parseInt(
-                System.getProperty(GrpcConstants.MAX_INBOUND_MESSAGE_SIZE, String.valueOf(this.maxInboundMessageSize)));
+        return maxInboundMessageSize;
     }
     
     @Override
     public int channelKeepAlive() {
-        return Integer.parseInt(
-                System.getProperty(GrpcConstants.CHANNEL_KEEP_ALIVE_TIME, String.valueOf(this.channelKeepAlive)));
+        return channelKeepAlive;
     }
     
     @Override
     public int healthCheckRetryTimes() {
-        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES,
-                String.valueOf(this.healthCheckRetryTimes)));
+        return healthCheckRetryTimes;
     }
     
     @Override
     public long healthCheckTimeOut() {
-        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT,
-                String.valueOf(this.healthCheckTimeOut)));
+        return healthCheckTimeOut;
     }
     
     @Override
@@ -199,7 +199,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         
         private Builder() {
         }
-    
+        
         /**
          * Set config from properties.
          *
@@ -207,54 +207,53 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @return Builder
          */
         public Builder fromProperties(Properties properties) {
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_NAME)) {
-                this.name = properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_NAME);
+            if (properties.contains(GrpcConstants.GRPC_NAME)) {
+                this.name = properties.getProperty(GrpcConstants.GRPC_NAME);
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_RETRY_TIMES)) {
-                this.retryTimes = Integer.parseInt(properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_RETRY_TIMES));
+            if (properties.contains(GrpcConstants.GRPC_RETRY_TIMES)) {
+                this.retryTimes = Integer.parseInt(properties.getProperty(GrpcConstants.GRPC_RETRY_TIMES));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_TIMEOUT_MILLS)) {
-                this.timeOutMills = Long.parseLong(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_TIMEOUT_MILLS));
+            if (properties.contains(GrpcConstants.GRPC_TIMEOUT_MILLS)) {
+                this.timeOutMills = Long.parseLong(properties.getProperty(GrpcConstants.GRPC_TIMEOUT_MILLS));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME)) {
-                this.connectionKeepAlive = Long.parseLong(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME));
+            if (properties.contains(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME)) {
+                this.connectionKeepAlive = Long
+                        .parseLong(properties.getProperty(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME)) {
-                this.threadPoolKeepAlive = Long.parseLong(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME));
+            if (properties.contains(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME)) {
+                this.threadPoolKeepAlive = Long
+                        .parseLong(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_CORE_SIZE)) {
-                this.threadPoolCoreSize = Integer.parseInt(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_CORE_SIZE));
+            if (properties.contains(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE)) {
+                this.threadPoolCoreSize = Integer
+                        .parseInt(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_MAX_SIZE)) {
-                this.threadPoolMaxSize = Integer.parseInt(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_THREADPOOL_MAX_SIZE));
+            if (properties.contains(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE)) {
+                this.threadPoolMaxSize = Integer
+                        .parseInt(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_SERVER_CHECK_TIMEOUT)) {
-                this.serverCheckTimeOut = Long.parseLong(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_SERVER_CHECK_TIMEOUT));
+            if (properties.contains(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT)) {
+                this.serverCheckTimeOut = Long
+                        .parseLong(properties.getProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_QUEUESIZE)) {
-                this.threadPoolQueueSize = Integer.parseInt(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_QUEUESIZE));
+            if (properties.contains(GrpcConstants.GRPC_QUEUESIZE)) {
+                this.threadPoolQueueSize = Integer.parseInt(properties.getProperty(GrpcConstants.GRPC_QUEUESIZE));
             }
-            if (properties.contains(GrpcConstants.MAX_INBOUND_MESSAGE_SIZE)) {
-                this.maxInboundMessageSize = Integer.parseInt(
-                        properties.getProperty(GrpcConstants.MAX_INBOUND_MESSAGE_SIZE));
+            if (properties.contains(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE)) {
+                this.maxInboundMessageSize = Integer
+                        .parseInt(properties.getProperty(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE));
             }
-            if (properties.contains(GrpcConstants.CHANNEL_KEEP_ALIVE_TIME)) {
-                this.channelKeepAlive = Integer.parseInt(properties.getProperty(GrpcConstants.CHANNEL_KEEP_ALIVE_TIME));
+            if (properties.contains(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME)) {
+                this.channelKeepAlive = Integer
+                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES)) {
-                this.healthCheckRetryTimes = Integer.parseInt(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES));
+            if (properties.contains(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES)) {
+                this.healthCheckRetryTimes = Integer
+                        .parseInt(properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES));
             }
-            if (properties.contains(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT)) {
-                this.healthCheckTimeOut = Long.parseLong(
-                        properties.getProperty(GrpcConstants.NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT));
+            if (properties.contains(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT)) {
+                this.healthCheckTimeOut = Long
+                        .parseLong(properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT));
             }
             return this;
         }

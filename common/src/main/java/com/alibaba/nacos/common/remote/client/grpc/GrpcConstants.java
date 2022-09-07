@@ -38,43 +38,43 @@ public class GrpcConstants {
     public static final String NACOS_CLIENT_GRPC = "nacos.remote.client.grpc";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_NAME = NACOS_CLIENT_GRPC + ".name";
+    public static final String GRPC_NAME = NACOS_CLIENT_GRPC + ".name";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_THREADPOOL_KEEPALIVETIME = NACOS_CLIENT_GRPC + ".pool.alive";
+    public static final String GRPC_THREADPOOL_KEEPALIVETIME = NACOS_CLIENT_GRPC + ".pool.alive";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_THREADPOOL_CORE_SIZE = NACOS_CLIENT_GRPC + ".pool.core.size";
+    public static final String GRPC_THREADPOOL_CORE_SIZE = NACOS_CLIENT_GRPC + ".pool.core.size";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_RETRY_TIMES = NACOS_CLIENT_GRPC + ".retry.times";
+    public static final String GRPC_RETRY_TIMES = NACOS_CLIENT_GRPC + ".retry.times";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_TIMEOUT_MILLS = NACOS_CLIENT_GRPC + ".timeout";
+    public static final String GRPC_TIMEOUT_MILLS = NACOS_CLIENT_GRPC + ".timeout";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_CONNECT_KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".connect.keep.alive";
+    public static final String GRPC_CONNECT_KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".connect.keep.alive";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_THREADPOOL_MAX_SIZE = NACOS_CLIENT_GRPC + ".pool.max.size";
+    public static final String GRPC_THREADPOOL_MAX_SIZE = NACOS_CLIENT_GRPC + ".pool.max.size";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_SERVER_CHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".server.check.timeout";
+    public static final String GRPC_SERVER_CHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".server.check.timeout";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_QUEUESIZE = NACOS_CLIENT_GRPC + ".queue.size";
+    public static final String GRPC_QUEUESIZE = NACOS_CLIENT_GRPC + ".queue.size";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_HEALTHCHECK_RETRY_TIMES = NACOS_CLIENT_GRPC + ".health.retry";
+    public static final String GRPC_HEALTHCHECK_RETRY_TIMES = NACOS_CLIENT_GRPC + ".health.retry";
     
     @GRpcConfigLabel
-    public static final String NACOS_CLIENT_GRPC_HEALTHCHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".health.timeout";
+    public static final String GRPC_HEALTHCHECK_TIMEOUT = NACOS_CLIENT_GRPC + ".health.timeout";
     
     @GRpcConfigLabel
-    public static final String MAX_INBOUND_MESSAGE_SIZE = NACOS_CLIENT_GRPC + ".maxinbound.message.size";
+    public static final String GRPC_MAX_INBOUND_MESSAGE_SIZE = NACOS_CLIENT_GRPC + ".maxinbound.message.size";
     
     @GRpcConfigLabel
-    public static final String CHANNEL_KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".channel.keep.alive";
+    public static final String GRPC_CHANNEL_KEEP_ALIVE_TIME = NACOS_CLIENT_GRPC + ".channel.keep.alive";
     
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
     
