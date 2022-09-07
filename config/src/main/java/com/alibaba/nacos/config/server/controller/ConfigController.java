@@ -473,10 +473,10 @@ public class ConfigController {
                 Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, ci.getContent());
                 ci.setContent(pair.getSecond());
             }
-            return RestResultUtils.success("stop beta ok", ci);
+            return RestResultUtils.success("query beta ok", ci);
         } catch (Throwable e) {
-            LOGGER.error("remove beta data error", e);
-            return RestResultUtils.failed("remove beta data error");
+            LOGGER.error("query beta data error", e);
+            return RestResultUtils.failed("query beta data error");
         }
     }
     
