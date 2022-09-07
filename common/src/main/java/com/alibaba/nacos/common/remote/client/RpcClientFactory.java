@@ -94,10 +94,7 @@ public class RpcClientFactory {
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             try {
-                GrpcClient client = new GrpcSdkClient(clientNameInner);
-                client.setThreadPoolCoreSize(threadPoolCoreSize);
-                client.setThreadPoolMaxSize(threadPoolMaxSize);
-                client.labels(labels);
+                GrpcClient client = new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
                 return client;
             } catch (Throwable throwable) {
                 LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
@@ -135,10 +132,7 @@ public class RpcClientFactory {
         }
         
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
-            GrpcClient client = new GrpcClusterClient(clientNameInner);
-            client.setThreadPoolCoreSize(threadPoolCoreSize);
-            client.setThreadPoolMaxSize(threadPoolMaxSize);
-            client.labels(labels);
+            GrpcClient client = new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
             return client;
         });
     }
