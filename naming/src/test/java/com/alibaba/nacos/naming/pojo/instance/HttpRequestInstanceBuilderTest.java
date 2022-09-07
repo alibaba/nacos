@@ -87,14 +87,6 @@ public class HttpRequestInstanceBuilderTest {
     
     @Test
     public void testBuildFull() throws NacosException {
-        Map<String, String[]> mockMap = new HashMap<>();
-        mockMap.put("weight", new String[] {""});
-        mockMap.put("healthy", new String[] {""});
-        mockMap.put("enabled", new String[] {""});
-        mockMap.put("ephemeral", new String[] {""});
-        mockMap.put("metadata", new String[] {""});
-        mockMap.put(CommonParams.CLUSTER_NAME, new String[] {""});
-        when(request.getParameterMap()).thenReturn(mockMap);
         when(request.getParameter("weight")).thenReturn("2");
         when(request.getParameter("healthy")).thenReturn("false");
         when(request.getParameter("enabled")).thenReturn("false");
@@ -119,9 +111,6 @@ public class HttpRequestInstanceBuilderTest {
     
     @Test(expected = NacosException.class)
     public void testBuildWithIllegalWeight() throws NacosException {
-        Map<String, String[]> mockMap = new HashMap<>();
-        mockMap.put("weight", new String[] {""});
-        when(request.getParameterMap()).thenReturn(mockMap);
         when(request.getParameter("weight")).thenReturn("10001");
         Instance actual = builder.setRequest(request).build();
     }
