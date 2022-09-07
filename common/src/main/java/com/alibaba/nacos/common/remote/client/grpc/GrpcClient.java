@@ -89,8 +89,8 @@ public abstract class GrpcClient extends RpcClient {
      */
     public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
         super();
-        GrpcClientConfig config = new DefaultClientConfig.Builder().name(name).threadPoolCoreSize(threadPoolCoreSize)
-                .threadPoolMaxSize(threadPoolMaxSize).labels(labels).build();
+        GrpcClientConfig config = DefaultClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
+                .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build();
         rpcClientConfig = config;
         this.clientConfig = config;
         init();
@@ -113,7 +113,7 @@ public abstract class GrpcClient extends RpcClient {
      * @param name .
      */
     public GrpcClient(String name) {
-        this(new DefaultClientConfig.Builder().name(name).build());
+        this(DefaultClientConfig.newBuilder().setName(name).build());
     }
     
     /**
@@ -122,7 +122,7 @@ public abstract class GrpcClient extends RpcClient {
      * @param properties .
      */
     public GrpcClient(Properties properties) {
-        this(new DefaultClientConfig.Builder(properties).build());
+        this(DefaultClientConfig.newBuilder().fromProperties(properties).build());
     }
     
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
@@ -233,8 +233,8 @@ public abstract class GrpcClient extends RpcClient {
                         } catch (Exception e) {
                             LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
                                     grpcConn.getConnectionId(), payload.toString(), e.getMessage());
-                            Response errResponse = ErrorResponse.build(NacosException.CLIENT_ERROR,
-                                    "Handle server request error");
+                            Response errResponse = ErrorResponse
+                                    .build(NacosException.CLIENT_ERROR, "Handle server request error");
                             errResponse.setRequestId(request.getRequestId());
                             sendResponse(errResponse);
                         }
@@ -312,8 +312,8 @@ public abstract class GrpcClient extends RpcClient {
                     return null;
                 }
                 
-                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(
-                        newChannelStubTemp.getChannel());
+                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
+                        .newStub(newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
                 
