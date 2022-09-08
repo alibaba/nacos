@@ -382,7 +382,6 @@ public abstract class GrpcClient extends RpcClient {
                 byte[] bitTable = AbilityTableUtils.getAbilityBiTableBy(AbilityKey.values(),
                         NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility());
                 conSetupRequest.setAbilityTable(bitTable);
-                conSetupRequest.setServer(isServer());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response
@@ -418,14 +417,6 @@ public abstract class GrpcClient extends RpcClient {
                     .countDown();
         }
     }
-    
-    /**
-     * Return whether server environment
-     * The same offset may refer to different functions in the client capability table and the server capability table.
-     *
-     * @return whether server environment
-     */
-    protected abstract boolean isServer();
     
 }
 

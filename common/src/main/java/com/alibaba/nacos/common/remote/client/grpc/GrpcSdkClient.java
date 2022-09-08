@@ -36,11 +36,6 @@ public class GrpcSdkClient extends GrpcClient {
     }
     
     @Override
-    protected boolean isServer() {
-        return false;
-    }
-    
-    @Override
     public int rpcPortOffset() {
         return Integer.parseInt(System.getProperty(NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
                 String.valueOf(Constants.SDK_GRPC_PORT_DEFAULT_OFFSET)));

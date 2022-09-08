@@ -49,11 +49,6 @@ public class GrpcClientTest {
         grpcClient = spy(new GrpcClient("testClient") {
     
             @Override
-            protected boolean isServer() {
-                return false;
-            }
-    
-            @Override
             public int rpcPortOffset() {
                 return 1000;
             }
