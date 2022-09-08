@@ -64,9 +64,11 @@ public class AbilityConfigs extends Subscriber<ServerConfigChangeEvent> {
         serverAbilityKeys.forEach(abilityKey -> {
             String key = PREFIX + abilityKey.getName();
             try {
-                // default true
-                Boolean property = EnvUtil.getProperty(key, Boolean.class, true);
-                newValues.put(abilityKey, property);
+                // scan
+                Boolean property = EnvUtil.getProperty(key, Boolean.class);
+                if (property != null) {
+                    newValues.put(abilityKey, property);
+                }
             } catch (Exception e) {
                 LOGGER.warn("Update ability config from env failed, use old val, ability : {} , because : {}", key, e);
             }

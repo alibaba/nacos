@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;

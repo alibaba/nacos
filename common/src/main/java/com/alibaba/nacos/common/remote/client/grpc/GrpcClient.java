@@ -22,12 +22,15 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
+import com.alibaba.nacos.api.remote.request.SetupAckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.api.remote.response.SetupAckResponse;
 import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -48,6 +51,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +81,11 @@ public abstract class GrpcClient extends RpcClient {
     
     private static final long DEFAULT_KEEP_ALIVE_TIME = 6 * 60 * 1000;
     
+    /**.
+     * Block to wait setup success response
+     */
+    private final Map<String, CountDownLatch> markForSetup = new ConcurrentHashMap<>();
+    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -85,6 +96,19 @@ public abstract class GrpcClient extends RpcClient {
      */
     public GrpcClient(String name) {
         super(name);
+        
+        // register to handler setup request
+        registerServerRequestHandler((request) -> {
+            // if finish setup
+            if (request instanceof SetupAckRequest) {
+                SetupAckRequest setupAckRequest = (SetupAckRequest) request;
+                // remove and count down
+                Optional.ofNullable(markForSetup.remove((setupAckRequest.getConnectionId())))
+                        .orElse(new CountDownLatch(1))
+                        .countDown();
+            }
+            return new SetupAckResponse();
+        });
     }
     
     /**
@@ -247,6 +271,10 @@ public abstract class GrpcClient extends RpcClient {
                     
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Error to process server push response: {}",
                             grpcConn.getConnectionId(), payload.getBody().getValue().toStringUtf8());
+                    // remove and notify
+                    Optional.ofNullable(markForSetup.remove(grpcConn.getConnectionId()))
+                            .orElse(new CountDownLatch(1))
+                            .countDown();
                 }
             }
             
@@ -299,6 +327,8 @@ public abstract class GrpcClient extends RpcClient {
     
     @Override
     public Connection connectToServer(ServerInfo serverInfo) {
+        // the newest connection id
+        String connectionId = "";
         try {
             if (grpcExecutor == null) {
                 this.grpcExecutor = createGrpcExecutor(serverInfo.getServerIp());
@@ -317,21 +347,25 @@ public abstract class GrpcClient extends RpcClient {
                 // submit ability table as soon as possible
                 // ability table will be null if server doesn't support ability table
                 ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
+                connectionId = serverCheckResponse.getConnectionId();
                 AbilityTable table = new AbilityTable();
                 table.setServer(true)
-                        .setConnectionId(serverCheckResponse.getConnectionId());
+                        .setConnectionId(connectionId);
+                
                 // if not supported, it will be null
                 if (serverCheckResponse.getAbilities() != null) {
                     Map<AbilityKey, Boolean> abilityTable = AbilityTableUtils
                             .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
                     table.setAbility(abilityTable);
+                    // mark
+                    markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
                 }
                 NacosAbilityManagerHolder.getInstance().addNewTable(table);
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
-                grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
+                grpcConn.setConnectionId(connectionId);
                 
                 //create stream request and bind connection event to this connection.
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
@@ -351,6 +385,14 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setServer(isServer());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
+                // wait for response
+                CountDownLatch synResponse = markForSetup.get(connectionId);
+                if (synResponse != null) {
+                    synResponse.await(2000L, TimeUnit.MICROSECONDS);
+                    // ensure remove, it may being reset
+                    markForSetup.remove(connectionId);
+                }
+                // leave for adapting old version server
                 //wait to register connection setup
                 Thread.sleep(100L);
                 return grpcConn;
@@ -358,8 +400,23 @@ public abstract class GrpcClient extends RpcClient {
             return null;
         } catch (Exception e) {
             LOGGER.error("[{}]Fail to connect to server!,error={}", GrpcClient.this.getName(), e);
+            // remove and notify
+            Optional.ofNullable(markForSetup.remove(connectionId))
+                    .orElse(new CountDownLatch(1))
+                    .countDown();
         }
         return null;
+    }
+    
+    @Override
+    protected void afterReset(ConnectResetRequest request) {
+        String connectionId = request.getConnectionId();
+        if (connectionId != null) {
+            // remove and notify
+            Optional.ofNullable(markForSetup.remove(connectionId))
+                    .orElse(new CountDownLatch(1))
+                    .countDown();
+        }
     }
     
     /**

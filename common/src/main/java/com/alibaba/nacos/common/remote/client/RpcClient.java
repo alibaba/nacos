@@ -433,6 +433,7 @@ public abstract class RpcClient implements Closeable {
                             } else {
                                 switchServerAsync();
                             }
+                            afterReset(connectResetRequest);
                         }
                     }
                 } catch (Exception e) {
@@ -442,6 +443,15 @@ public abstract class RpcClient implements Closeable {
             }
             return null;
         }
+    }
+    
+    /**.
+     * invoke after receiving reset request
+     *
+     * @param request request for resetting
+     */
+    protected void afterReset(ConnectResetRequest request) {
+        // hook for GrpcClient
     }
     
     @Override
