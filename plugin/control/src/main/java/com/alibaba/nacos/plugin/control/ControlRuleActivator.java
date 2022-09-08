@@ -3,7 +3,7 @@ package com.alibaba.nacos.plugin.control;
 import com.alibaba.nacos.plugin.control.capacity.CapacityControlManager;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
-import com.alibaba.nacos.plugin.control.tps.TpsControlRule;
+import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
 import java.util.Map;
 import java.util.Set;

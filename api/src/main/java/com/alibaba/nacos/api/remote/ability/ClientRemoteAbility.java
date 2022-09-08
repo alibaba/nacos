@@ -33,6 +33,8 @@ public class ClientRemoteAbility implements Serializable {
      */
     private boolean supportRemoteConnection;
     
+    
+    
     public boolean isSupportRemoteConnection() {
         return this.supportRemoteConnection;
     }

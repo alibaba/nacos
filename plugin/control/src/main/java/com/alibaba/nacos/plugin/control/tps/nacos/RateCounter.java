@@ -1,17 +1,26 @@
-package com.alibaba.nacos.plugin.control.tps;
+package com.alibaba.nacos.plugin.control.tps.nacos;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * abstract rate counter.
+ *
+ * @author zunfei.lzf
+ */
 public abstract class RateCounter {
     
+    /**
+     * rate count name;
+     */
+    private String name;
     
-    public RateCounter() {
-    
-    }
-    
+    /**
+     * rate period.
+     */
     private TimeUnit period;
     
-    public RateCounter(TimeUnit period) {
+    public RateCounter(String name, TimeUnit period) {
+        this.name = name;
         this.period = period;
     }
     
@@ -48,5 +57,8 @@ public abstract class RateCounter {
      */
     abstract public long getCount(long timestamp);
     
+    public String getName() {
+        return name;
+    }
     
 }

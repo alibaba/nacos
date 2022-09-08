@@ -1,12 +1,16 @@
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * abstract tps control manager
  */
-public abstract class TpsControlManager {
+public class TpsControlManager {
     
     /**
      * point name -> tps barrier
@@ -18,13 +22,6 @@ public abstract class TpsControlManager {
      */
     public final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
     
-    /**
-     * manager name
-     *
-     * @return
-     */
-    public abstract String getName();
-    
     
     /**
      * apple tps rule.
@@ -33,7 +30,7 @@ public abstract class TpsControlManager {
      */
     public synchronized void registerTpsPoint(String pointName) {
         if (!points.containsKey(pointName)) {
-            points.put(pointName, new TpsBarrier());
+            points.put(pointName, new TpsBarrier(pointName));
             if (rules.containsKey(pointName)) {
                 points.get(pointName).applyRule(rules.get(pointName));
                 
@@ -48,7 +45,12 @@ public abstract class TpsControlManager {
      * @param rule
      */
     public synchronized void applyTpsRule(String pointName, TpsControlRule rule) {
-        rules.put(pointName, rule);
+        if (rule == null) {
+            rules.remove(pointName);
+        } else {
+            rules.put(pointName, rule);
+            
+        }
         if (points.containsKey(pointName)) {
             points.get(pointName).applyRule(rule);
         }

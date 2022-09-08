@@ -1,8 +1,4 @@
-package com.alibaba.nacos.plugin.control.tps;
-
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-
-import java.util.List;
+package com.alibaba.nacos.plugin.control.tps.response;
 
 /**
  * tps request.

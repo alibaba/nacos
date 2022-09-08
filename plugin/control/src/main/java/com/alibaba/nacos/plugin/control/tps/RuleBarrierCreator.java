@@ -2,7 +2,7 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import java.util.concurrent.TimeUnit;
 
-public interface RateCountCreator {
+public interface RuleBarrierCreator {
     
     /**
      * create a count for time unit period.
@@ -10,7 +10,7 @@ public interface RateCountCreator {
      * @param period
      * @return
      */
-    RateCounter createRateCount(TimeUnit period);
+    RuleBarrier createRateCount(String name, String pattern, TimeUnit period);
     
     /**
      * rate count creator name.

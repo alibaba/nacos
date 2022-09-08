@@ -1,7 +1,5 @@
 package com.alibaba.nacos.plugin.control.tps.nacos;
 
-import com.alibaba.nacos.plugin.control.tps.RateCounter;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -15,8 +13,8 @@ public class SimpleCountRateCounter extends RateCounter {
     
     private List<TpsSlot> slotList;
     
-    public SimpleCountRateCounter(TimeUnit period) {
-        super(period);
+    public SimpleCountRateCounter(String name,TimeUnit period) {
+        super(name,period);
         slotList = new ArrayList<>(DEFAULT_RECORD_SIZE);
         for (int i = 0; i < DEFAULT_RECORD_SIZE; i++) {
             slotList.add(new TpsSlot());
