@@ -19,12 +19,14 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
+import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
 import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,7 +72,8 @@ public class InstanceControllerV2Test extends BaseTest {
     
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
-        instanceForm.setServiceName(TEST_SERVICE_NAME);
+        instanceForm.setGroupName("DEFAULT_GROUP");
+        instanceForm.setServiceName("test-service");
         instanceForm.setIp(TEST_IP);
         instanceForm.setClusterName(TEST_CLUSTER_NAME);
         instanceForm.setPort(9999);
@@ -93,7 +96,8 @@ public class InstanceControllerV2Test extends BaseTest {
         
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
-        instanceForm.setServiceName(TEST_SERVICE_NAME);
+        instanceForm.setGroupName("DEFAULT_GROUP");
+        instanceForm.setServiceName("test-service");
         instanceForm.setIp(TEST_IP);
         instanceForm.setClusterName(TEST_CLUSTER_NAME);
         instanceForm.setPort(9999);
@@ -116,7 +120,8 @@ public class InstanceControllerV2Test extends BaseTest {
     public void updateInstance() throws Exception {
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
-        instanceForm.setServiceName(TEST_SERVICE_NAME);
+        instanceForm.setGroupName("DEFAULT_GROUP");
+        instanceForm.setServiceName("test-service");
         instanceForm.setIp(TEST_IP);
         instanceForm.setClusterName(TEST_CLUSTER_NAME);
         instanceForm.setPort(9999);
@@ -139,7 +144,8 @@ public class InstanceControllerV2Test extends BaseTest {
     
         InstanceMetadataBatchOperationForm form = new InstanceMetadataBatchOperationForm();
         form.setNamespaceId(TEST_NAMESPACE);
-        form.setServiceName(TEST_SERVICE_NAME);
+        form.setGroupName("DEFAULT");
+        form.setServiceName("test-service");
         form.setConsistencyType("ephemeral");
         form.setInstances(TEST_INSTANCE_INFO_LIST);
         form.setMetadata(TEST_METADATA);
@@ -180,7 +186,7 @@ public class InstanceControllerV2Test extends BaseTest {
                 .thenReturn(serviceInfo);
         
         Result<ServiceInfo> result = instanceControllerV2
-                .list(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999, false, "", "", "");
+                .list(TEST_NAMESPACE, "DEFAULT_GROUP", "test-service", TEST_CLUSTER_NAME, TEST_IP, 9999, false, "", "", "");
         
         verify(instanceServiceV2).listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME), eq(false));
     
@@ -190,12 +196,19 @@ public class InstanceControllerV2Test extends BaseTest {
     
     @Test
     public void detail() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
-                .param("namespaceId", TEST_NAMESPACE).param("serviceName", TEST_SERVICE_NAME).param("ip", TEST_IP)
-                .param("clusterName", "clusterName");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertNotNull(actualValue);
+    
+        Instance instance = new Instance();
+        instance.setInstanceId("test-id");
+    
+        when(instanceServiceV2.getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999)).thenReturn(instance);
+        
+        Result<InstanceDetailInfoVo> result = instanceControllerV2
+                .detail(TEST_NAMESPACE, "DEFAULT_GROUP", "test-service", TEST_CLUSTER_NAME, TEST_IP, 9999);
+        
+        verify(instanceServiceV2).getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999);
+    
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(instance.getInstanceId(), result.getData().getInstanceId());
     }
     
     @Test

@@ -110,29 +110,6 @@ public class NamingUtils {
     }
     
     /**
-     * check combineServiceName format. the serviceName can't be blank.
-     * <pre>
-     * serviceName = "@@";                 the length = 0; illegal
-     * serviceName = "group@@";            the length = 1; illegal
-     * serviceName = "@@serviceName";      the length = 2; illegal
-     * serviceName = "group@@serviceName"; the length = 2; legal
-     * </pre>
-     *
-     * @param combineServiceName such as: groupName@@serviceName
-     */
-    public static void checkServiceNameFormatV2(String combineServiceName) throws NacosApiException {
-        String[] split = combineServiceName.split(Constants.SERVICE_INFO_SPLITER);
-        if (split.length <= 1) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NAME_ERROR,
-                    "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
-        }
-        if (split[0].isEmpty()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NAME_ERROR,
-                    "Param 'serviceName' is illegal, groupName can't be empty");
-        }
-    }
-    
-    /**
      * Returns a combined string with serviceName and groupName. Such as 'groupName@@serviceName'
      * <p>This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not
      * verify any parameters.

@@ -99,14 +99,12 @@ public class InstanceControllerV2 {
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        NamingUtils.checkServiceNameFormatV2(instanceForm.getServiceName());
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), instanceForm.getServiceName(), instance);
+        instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
         NotifyCenter.publishEvent(new NamingTraceEvent.RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, instanceForm.getNamespaceId(), NamingUtils.getGroupName(instanceForm.getServiceName()),
-                NamingUtils.getServiceName(instanceForm.getServiceName()),
+                false, instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
                 instance.toInetAddr()));
         return Result.success("ok");
     }
@@ -120,15 +118,13 @@ public class InstanceControllerV2 {
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        NamingUtils.checkServiceNameFormatV2(instanceForm.getServiceName());
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), instanceForm.getServiceName(), instance);
+        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
         NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(),
-                NamingUtils.getGroupName(instanceForm.getServiceName()), NamingUtils.getServiceName(instanceForm.getServiceName()),
-                instance.toInetAddr()));
+                false, DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                instanceForm.getServiceName(), instance.toInetAddr()));
         return Result.success("ok");
     }
     
@@ -141,11 +137,10 @@ public class InstanceControllerV2 {
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
         instanceForm.validate();
-        NamingUtils.checkServiceNameFormatV2(instanceForm.getServiceName());
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), instanceForm.getServiceName(), instance);
+        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
         return Result.success("ok");
     }
     
@@ -161,7 +156,7 @@ public class InstanceControllerV2 {
         
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(form.getServiceName(), form.getConsistencyType(), targetInstances);
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form), form.getConsistencyType(), targetInstances);
     
         List<String> operatedInstances = instanceServiceV2
                 .batchUpdateMetadata(form.getNamespaceId(), instanceOperationInfo, targetMetadata);
@@ -181,7 +176,7 @@ public class InstanceControllerV2 {
         form.validate();
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(form.getServiceName(), form.getConsistencyType(), targetInstances);
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form), form.getConsistencyType(), targetInstances);
         List<String> operatedInstances = instanceServiceV2
                 .batchDeleteMetadata(form.getNamespaceId(), instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
@@ -253,6 +248,7 @@ public class InstanceControllerV2 {
     /**
      * Get all instance of input service.
      * @param namespaceId   namespace id
+     * @param groupName     group name
      * @param serviceName   service name
      * @param clusterName   service clusterName
      * @param ip            ip
@@ -265,6 +261,7 @@ public class InstanceControllerV2 {
     @GetMapping("/list")
     @Secured(action = ActionTypes.READ)
     public Result<ServiceInfo> list(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "clusterName", defaultValue = StringUtils.EMPTY) String clusterName,
             @RequestParam(value = "ip", defaultValue = StringUtils.EMPTY) String ip,
@@ -274,13 +271,13 @@ public class InstanceControllerV2 {
             @RequestHeader(value = HttpHeaderConsts.USER_AGENT_HEADER, required = false) String userAgent,
             @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion)
             throws NacosApiException {
-        NamingUtils.checkServiceNameFormatV2(serviceName);
         if (StringUtils.isEmpty(userAgent)) {
             userAgent = StringUtils.defaultIfEmpty(clientVersion, StringUtils.EMPTY);
         }
-        Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, serviceName,
+        String compositeServiceName = buildCompositeServiceName(groupName, serviceName);
+        Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, compositeServiceName,
                 port, clusterName);
-        return Result.success(instanceServiceV2.listInstance(namespaceId, serviceName, subscriber, clusterName, healthyOnly));
+        return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly));
     }
     
     /**
@@ -297,15 +294,17 @@ public class InstanceControllerV2 {
     @GetMapping
     @Secured(action = ActionTypes.READ)
     public Result<InstanceDetailInfoVo> detail(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+            @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "clusterName", defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
             @RequestParam("ip") String ip, @RequestParam("port") Integer port) throws NacosException {
-        NamingUtils.checkServiceNameFormatV2(serviceName);
-        
-        Instance instance = instanceServiceV2.getInstance(namespaceId, serviceName, clusterName, ip, port);
+    
+        String compositeServiceName = buildCompositeServiceName(groupName, serviceName);
+    
+        Instance instance = instanceServiceV2.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
         
         InstanceDetailInfoVo instanceDetailInfoVo = new InstanceDetailInfoVo();
-        instanceDetailInfoVo.setServiceName(serviceName);
+        instanceDetailInfoVo.setServiceName(compositeServiceName);
         instanceDetailInfoVo.setIp(ip);
         instanceDetailInfoVo.setPort(port);
         instanceDetailInfoVo.setClusterName(clusterName);
@@ -411,7 +410,7 @@ public class InstanceControllerV2 {
     
     private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
         Instance instance = InstanceBuilder.newBuilder()
-                .setServiceName(instanceForm.getServiceName())
+                .setServiceName(buildCompositeServiceName(instanceForm))
                 .setIp(instanceForm.getIp())
                 .setClusterName(instanceForm.getClusterName())
                 .setPort(instanceForm.getPort())
@@ -425,5 +424,17 @@ public class InstanceControllerV2 {
             instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
         }
         return instance;
+    }
+    
+    private String buildCompositeServiceName(InstanceForm instanceForm) {
+        return buildCompositeServiceName(instanceForm.getGroupName(), instanceForm.getServiceName());
+    }
+    
+    private String buildCompositeServiceName(InstanceMetadataBatchOperationForm form) {
+        return buildCompositeServiceName(form.getGroupName(), form.getServiceName());
+    }
+    
+    private String buildCompositeServiceName(String groupName, String serviceName) {
+        return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
     }
 }

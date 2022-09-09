@@ -36,6 +36,8 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
     
     private String namespaceId;
     
+    private String groupName;
+    
     private String serviceName;
     
     private String consistencyType;
@@ -60,7 +62,7 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
         }
         if (StringUtils.isBlank(metadata)) {
             throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
-                    "Required parameter 'metadata' type Integer is not present");
+                    "Required parameter 'metadata' type String is not present");
         }
     }
     
@@ -70,6 +72,9 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
     public void fillDefaultValue() {
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = Constants.DEFAULT_NAMESPACE_ID;
+        }
+        if (StringUtils.isBlank(groupName)) {
+            groupName = Constants.DEFAULT_GROUP;
         }
         if (StringUtils.isBlank(consistencyType)) {
             consistencyType = "";
@@ -85,6 +90,14 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
     
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
+    }
+    
+    public String getGroupName() {
+        return groupName;
+    }
+    
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
     
     public String getServiceName() {
@@ -128,20 +141,20 @@ public class InstanceMetadataBatchOperationForm implements Serializable {
             return false;
         }
         InstanceMetadataBatchOperationForm that = (InstanceMetadataBatchOperationForm) o;
-        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(serviceName, that.serviceName) && Objects
-                .equals(consistencyType, that.consistencyType) && Objects.equals(instances, that.instances) && Objects
-                .equals(metadata, that.metadata);
+        return Objects.equals(namespaceId, that.namespaceId) && Objects.equals(groupName, that.groupName) && Objects
+                .equals(serviceName, that.serviceName) && Objects.equals(consistencyType, that.consistencyType)
+                && Objects.equals(instances, that.instances) && Objects.equals(metadata, that.metadata);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(namespaceId, serviceName, consistencyType, instances, metadata);
+        return Objects.hash(namespaceId, groupName, serviceName, consistencyType, instances, metadata);
     }
     
     @Override
     public String toString() {
-        return "InstanceMetadataBatchOperationForm{" + "namespaceId='" + namespaceId + '\'' + ", serviceName='"
-                + serviceName + '\'' + ", consistencyType='" + consistencyType + '\'' + ", instances='" + instances
-                + '\'' + ", metadata='" + metadata + '\'' + '}';
+        return "InstanceMetadataBatchOperationForm{" + "namespaceId='" + namespaceId + '\'' + ", groupName='"
+                + groupName + '\'' + ", serviceName='" + serviceName + '\'' + ", consistencyType='" + consistencyType
+                + '\'' + ", instances='" + instances + '\'' + ", metadata='" + metadata + '\'' + '}';
     }
 }
