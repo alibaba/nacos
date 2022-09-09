@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.ability.register;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.utils.AbilityTableUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,25 +30,6 @@ import java.util.Map;
 public abstract class AbstractAbilityRegistry {
     
     protected final Map<AbilityKey, Boolean> supportedAbilities = new HashMap<>();
-
-    private byte[] abilityBitFlag;
-    
-    /**.
-     * Return the static ability bit table
-     *
-     * @return ability bit table
-     */
-    public byte[] getAbilityBitFlags() {
-        return abilityBitFlag.clone();
-    }
-    
-    /**.
-     * put the bit offset to {@link AbstractAbilityRegistry#abilityBitFlag}
-     */
-    protected void init() {
-        // init the bits table
-        abilityBitFlag = AbilityTableUtils.getAbilityBiTableBy(AbilityKey.values(), supportedAbilities);
-    }
     
     /**.
      * get static ability current server supports

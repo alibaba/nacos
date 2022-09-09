@@ -47,20 +47,6 @@ public class ClientAbilities extends AbstractAbilityRegistry {
         // put ability here, which you want current client supports
     }
     
-    private ClientAbilities() {
-        // put key to bit offset
-        init();
-    }
-    
-    /**.
-     * get the ability offset for server
-     *
-     * @return  ability offset
-     */
-    public static byte[] getBitFlags() {
-        return INSTANCE.getAbilityBitFlags();
-    }
-    
     /**.
      * get static ability current server supports
      *

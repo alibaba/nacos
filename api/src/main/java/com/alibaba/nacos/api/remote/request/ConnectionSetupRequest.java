@@ -33,7 +33,7 @@ public class ConnectionSetupRequest extends InternalRequest {
     
     private Map<String, String> labels = new HashMap<>();
     
-    private byte[] abilityTable;
+    private Map<String, Boolean> abilityTable;
     
     public ConnectionSetupRequest() {
     }
@@ -62,11 +62,11 @@ public class ConnectionSetupRequest extends InternalRequest {
         this.tenant = tenant;
     }
     
-    public byte[] getAbilityTable() {
+    public Map<String, Boolean> getAbilityTable() {
         return abilityTable;
     }
     
-    public void setAbilityTable(byte[] abilityTable) {
+    public void setAbilityTable(Map<String, Boolean> abilityTable) {
         this.abilityTable = abilityTable;
     }
 }

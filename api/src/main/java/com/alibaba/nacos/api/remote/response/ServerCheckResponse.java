@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.response;
 
+import java.util.Map;
+
 /**
  * response of server check.
  *
@@ -26,13 +28,13 @@ public class ServerCheckResponse extends Response {
     
     private String connectionId;
     
-    private byte[] abilities;
+    private Map<String, Boolean> abilities;
     
     public ServerCheckResponse() {
     
     }
     
-    public ServerCheckResponse(String connectionId, byte[] abilities) {
+    public ServerCheckResponse(String connectionId, Map<String, Boolean> abilities) {
         this.connectionId = connectionId;
         this.abilities = abilities;
     }
@@ -45,11 +47,11 @@ public class ServerCheckResponse extends Response {
         this.connectionId = connectionId;
     }
     
-    public byte[] getAbilities() {
+    public Map<String, Boolean> getAbilities() {
         return abilities;
     }
     
-    public void setAbilities(byte[] abilities) {
+    public void setAbilities(Map<String, Boolean> abilities) {
         this.abilities = abilities;
     }
 }

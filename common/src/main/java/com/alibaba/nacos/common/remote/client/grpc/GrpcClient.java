@@ -31,7 +31,6 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.api.remote.response.SetupAckResponse;
-import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
@@ -354,8 +353,7 @@ public abstract class GrpcClient extends RpcClient {
                 
                 // if not supported, it will be null
                 if (serverCheckResponse.getAbilities() != null) {
-                    Map<AbilityKey, Boolean> abilityTable = AbilityTableUtils
-                            .getAbilityTableBy(serverCheckResponse.getAbilities(), AbilityKey.offset());
+                    Map<AbilityKey, Boolean> abilityTable = AbilityKey.mapEnum(serverCheckResponse.getAbilities());
                     table.setAbility(abilityTable);
                     // mark
                     markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
@@ -379,9 +377,7 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 // set ability table
-                byte[] bitTable = AbilityTableUtils.getAbilityBiTableBy(AbilityKey.values(),
-                        NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility());
-                conSetupRequest.setAbilityTable(bitTable);
+                conSetupRequest.setAbilityTable(AbilityKey.mapStr(NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility()));
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response

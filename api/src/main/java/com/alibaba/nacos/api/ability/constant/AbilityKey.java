@@ -17,6 +17,8 @@
 package com.alibaba.nacos.api.ability.constant;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -31,44 +33,101 @@ public enum AbilityKey {
     /**.
      * just for junit test
      */
-    TEST_1("test_1", 1),
+    TEST_1("test_1"),
     
     /**.
      * just for junit test
      */
-    TEST_2("test_2", 2);
+    TEST_2("test_2");
     
     /**.
      * the name of a certain ability
      */
-    private final String name;
+    private final String keyName;
     
-    /**.
-     * the offset in ability table
-     */
-    private final int offset;
-    
-    AbilityKey(String name, int offset) {
-        this.name = name;
-        this.offset = offset;
+    AbilityKey(String name) {
+        this.keyName = name;
     }
     
     public String getName() {
-        return name;
+        return keyName;
     }
     
-    public int getOffset() {
-        return offset;
+    /**.
+     * All key set
+     */
+    private static final Map<String, AbilityKey> ALL_ABILITIES;
+    
+    /**.
+     * Get all keys
+     *
+     * @return all keys
+     */
+    public static Collection<AbilityKey> getAllValues() {
+        return Collections.unmodifiableCollection(ALL_ABILITIES.values());
     }
     
-    private static final Map<AbilityKey, Integer> OFFSET_MAP;
+    /**.
+     * Get all names
+     *
+     * @return all names
+     */
+    public static Collection<String> getAllNames() {
+        return Collections.unmodifiableCollection(ALL_ABILITIES.keySet());
+    }
     
-    public static Map<AbilityKey, Integer> offset() {
-        return OFFSET_MAP;
+    /**.
+     * Whether contains this name
+     *
+     * @param name key name
+     * @return whether contains
+     */
+    public static boolean isLegalKey(String name) {
+        return ALL_ABILITIES.containsKey(name);
+    }
+    
+    /**.
+     * Map the string key to enum
+     *
+     * @param abilities map
+     * @return enum map
+     */
+    public static Map<AbilityKey, Boolean> mapEnum(Map<String, Boolean> abilities) {
+        if (abilities == null || abilities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return abilities.entrySet()
+                .stream()
+                .filter(entry -> isLegalKey(entry.getKey()))
+                .collect(Collectors.toMap((entry) -> getEnum(entry.getKey()), Map.Entry::getValue));
+    }
+    
+    /**.
+     * Map the string key to enum
+     *
+     * @param abilities map
+     * @return enum map
+     */
+    public static Map<String, Boolean> mapStr(Map<AbilityKey, Boolean> abilities) {
+        if (abilities == null || abilities.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return abilities.entrySet()
+                .stream()
+                .collect(Collectors.toMap((entry) -> entry.getKey().getName(), Map.Entry::getValue));
+    }
+    
+    /**
+     * getter to obtain enum
+     *
+     * @param key string key
+     * @return enum
+     */
+    public static AbilityKey getEnum(String key) {
+        return ALL_ABILITIES.get(key);
     }
     
     static {
-        OFFSET_MAP = Arrays.stream(AbilityKey.values())
-                .collect(Collectors.toMap(Function.identity(), AbilityKey::getOffset));
+        ALL_ABILITIES = Arrays.stream(AbilityKey.values()).collect(Collectors.toMap(AbilityKey::getName, Function.identity()));
     }
 }

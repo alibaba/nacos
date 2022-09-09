@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.SetupAckRequest;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.api.utils.AbilityTableUtils;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -125,8 +124,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     Connection connection = new GrpcConnection(metaInfo, responseObserver, CONTEXT_KEY_CHANNEL.get());
                     // null if supported
                     if (setUpRequest.getAbilityTable() != null) {
-                        connection.setAbilityTable(AbilityTableUtils.getAbilityTableBy(setUpRequest.getAbilityTable(),
-                                AbilityKey.offset()));
+                        // map to table
+                        connection.setAbilityTable(AbilityKey.mapEnum(setUpRequest.getAbilityTable()));
                     }
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
                     

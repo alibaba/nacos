@@ -49,20 +49,6 @@ public class ServerAbilities extends AbstractAbilityRegistry {
         supportedAbilities.put(AbilityKey.TEST_2, true);
     }
     
-    private ServerAbilities() {
-        // put key to bit offset
-        init();
-    }
-    
-    /**.
-     * get bit table
-     *
-     * @return  ability offset
-     */
-    public static byte[] getBitFlags() {
-        return INSTANCE.getAbilityBitFlags();
-    }
-    
     /**.
      * get static ability current server supports
      *
