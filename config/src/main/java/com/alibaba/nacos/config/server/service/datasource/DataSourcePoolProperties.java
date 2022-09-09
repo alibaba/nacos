@@ -33,9 +33,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class DataSourcePoolProperties {
     
-    public static final long DEFAULT_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(30L);
+    public static final long DEFAULT_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(3L);
     
     public static final long DEFAULT_VALIDATION_TIMEOUT = TimeUnit.SECONDS.toMillis(10L);
+
+    public static final long DEFAULT_IDLE_TIMEOUT = TimeUnit.MINUTES.toMillis(10L);
     
     public static final int DEFAULT_MAX_POOL_SIZE = 20;
     
@@ -45,6 +47,7 @@ public class DataSourcePoolProperties {
     
     private DataSourcePoolProperties() {
         dataSource = new HikariDataSource();
+        dataSource.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
         dataSource.setConnectionTimeout(DEFAULT_CONNECTION_TIMEOUT);
         dataSource.setValidationTimeout(DEFAULT_VALIDATION_TIMEOUT);
         dataSource.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
