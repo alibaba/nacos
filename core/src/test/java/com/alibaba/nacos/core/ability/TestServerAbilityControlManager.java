@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
+import java.util.List;
 import java.util.Map;
 
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
@@ -33,6 +34,16 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     @JustForTest
     public int handlerMappingCount() {
         return super.handlerMapping().size();
+    }
+    
+    @JustForTest
+    public List<HandlerWithPriority> getHandlerMapping(AbilityKey abilityKey) {
+        return super.handlerMapping().get(abilityKey);
+    }
+    
+    @JustForTest
+    public void trigger(AbilityKey abilityKey) {
+        triggerHandlerMappingAsyn(abilityKey, true, handlerMapping());
     }
     
 }

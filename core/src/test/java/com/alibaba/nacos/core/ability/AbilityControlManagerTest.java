@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,6 +34,8 @@ public class AbilityControlManagerTest {
     private TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
 
     private volatile int enabled = 0;
+    
+    private volatile LinkedList<String> testPriority = new LinkedList<>();
 
     @Before
     public void inject() {
@@ -98,6 +101,61 @@ public class AbilityControlManagerTest {
         keySet.forEach(key -> {
             Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(key));
         });
+    }
+    
+    @Test
+    public void testPriority() throws InterruptedException {
+        TestServerAbilityControlManager testClientAbilityControlManager = new TestServerAbilityControlManager();
+        AbilityKey key = AbilityKey.TEST_1;
+        TestPriority handlerMapping1 = new TestPriority("1");
+        TestPriority handlerMapping2 = new TestPriority("2");
+        TestPriority handlerMapping3 = new TestPriority("3");
+        // first one, invoke enable()
+        testClientAbilityControlManager.registerComponent(key, handlerMapping2, 128);
+        // last one, invoke enable()
+        testClientAbilityControlManager.registerComponent(key, handlerMapping3);
+        // second one, invoke enable()
+        testClientAbilityControlManager.registerComponent(key, handlerMapping1, 12);
+        // trigger
+        testClientAbilityControlManager.trigger(key);
+        Assert.assertEquals(3, testClientAbilityControlManager.getHandlerMapping(key).size());
+        // wait for invoking
+        Thread.sleep(200L);
+        Assert.assertEquals("2", testPriority.poll());
+        Assert.assertEquals("3", testPriority.poll());
+        Assert.assertEquals("1", testPriority.poll());
+        // here are priority
+        Assert.assertEquals("2", testPriority.poll());
+        Assert.assertEquals("1", testPriority.poll());
+        Assert.assertEquals("3", testPriority.poll());
+        
+        // remove
+        testClientAbilityControlManager.registerComponent(key, new TestHandlerMapping(), -1);
+        Assert.assertEquals(4, testClientAbilityControlManager.getHandlerMapping(key).size());
+        Assert.assertEquals(1, testClientAbilityControlManager.removeComponent(key, TestHandlerMapping.class));
+        Assert.assertEquals(3, testClientAbilityControlManager.getHandlerMapping(key).size());
+        testClientAbilityControlManager.removeAll(key);
+        Assert.assertNull(testClientAbilityControlManager.getHandlerMapping(key));
+    }
+    
+    class TestPriority implements HandlerMapping {
+        
+        String mark;
+        
+        public TestPriority(String mark) {
+            // unique one
+            this.mark = mark.intern();
+        }
+        
+        @Override
+        public void enable() {
+            testPriority.offer(mark);
+        }
+        
+        @Override
+        public void disable() {
+            testPriority.offer(mark);
+        }
     }
     
     class TestHandlerMapping implements HandlerMapping {
