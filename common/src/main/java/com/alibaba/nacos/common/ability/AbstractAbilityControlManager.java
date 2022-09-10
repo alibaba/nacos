@@ -192,7 +192,7 @@ public abstract class AbstractAbilityControlManager {
         LOGGER.warn("[DefaultAbilityControlManager] - Destruction of the end");
     }
     
-    /**
+    /**.
      * Combine with current node abilities, in order to get abilities current node provides
      *
      * @param abilities combined ability table

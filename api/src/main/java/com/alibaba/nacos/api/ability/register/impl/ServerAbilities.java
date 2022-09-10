@@ -45,8 +45,6 @@ public class ServerAbilities extends AbstractAbilityRegistry {
          *
          */
         // put ability here, which you want current server supports
-        supportedAbilities.put(AbilityKey.TEST_1, true);
-        supportedAbilities.put(AbilityKey.TEST_2, true);
     }
     
     /**.
