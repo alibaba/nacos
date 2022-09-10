@@ -99,14 +99,14 @@ public abstract class AbstractAbilityControlManager {
         return currentRunningAbility.getOrDefault(abilityKey, false);
     }
     
-    /**
+    /**.
      * Init current node abilities
      *
      * @return current node abilities
      */
     protected abstract Map<AbilityKey, Boolean> initCurrentNodeAbilities();
     
-    /**
+    /**.
      * Return the abilities current node
      *
      * @return current abilities
@@ -115,8 +115,8 @@ public abstract class AbstractAbilityControlManager {
         return Collections.unmodifiableMap(currentRunningAbility);
     }
     
-    /**
-     * . Turn on/off the ability of current node
+    /**.
+     * Turn on/off the ability of current node
      *
      * @param isOn       is on
      * @param abilityKey ability key from {@link AbilityKey}
@@ -157,7 +157,7 @@ public abstract class AbstractAbilityControlManager {
         doRegisterComponent(abilityKey, handlerMapping, this.handlerMappings, lockForHandlerMappings, priority, currentRunningAbility);
     }
     
-    /**
+    /**.
      * Register component with the lowest priority
      *
      * @param abilityKey ability key
@@ -167,7 +167,7 @@ public abstract class AbstractAbilityControlManager {
         registerComponent(abilityKey, handlerMapping, -1);
     }
     
-    /**
+    /**.
      * Remove the specific type handler for a certain ability
      *
      * @param abilityKey ability key
@@ -178,6 +178,9 @@ public abstract class AbstractAbilityControlManager {
         return doRemove(abilityKey, handlerMappingClazz, lockForHandlerMappings, handlerMappings);
     }
     
+    /**.
+     * Close
+     */
     public final void destroy() {
         LOGGER.warn("[DefaultAbilityControlManager] - Start destroying...");
         ((ThreadPoolExecutor) simpleThreadPool).shutdown();

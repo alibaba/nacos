@@ -284,7 +284,8 @@ public class MemberUtil {
             return true;
         }
     
-        if (!(expected.isSupportRemoteConnection() && actual.isSupportRemoteConnection())) {
+        // if change
+        if (expected.isSupportRemoteConnection() ^ actual.isSupportRemoteConnection()) {
             return true;
         }
         

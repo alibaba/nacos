@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RequestCallBack;
@@ -399,7 +401,7 @@ public abstract class RpcClient implements Closeable {
         registerServerRequestHandler(new ConnectResetRequestHandler());
         
         // register client detection request.
-        registerServerRequestHandler(request -> {
+        registerServerRequestHandler((request, connection) -> {
             if (request instanceof ClientDetectionRequest) {
                 return new ClientDetectionResponse();
             }
@@ -412,7 +414,7 @@ public abstract class RpcClient implements Closeable {
     class ConnectResetRequestHandler implements ServerRequestHandler {
         
         @Override
-        public Response requestReply(Request request) {
+        public Response requestReply(Request request, Connection connection) {
             
             if (request instanceof ConnectResetRequest) {
                 
@@ -831,7 +833,7 @@ public abstract class RpcClient implements Closeable {
         lastActiveTimeStamp = System.currentTimeMillis();
         for (ServerRequestHandler serverRequestHandler : serverRequestHandlers) {
             try {
-                Response response = serverRequestHandler.requestReply(request);
+                Response response = serverRequestHandler.requestReply(request, currentConnection);
                 
                 if (response != null) {
                     LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Ack server push request, request = {}, requestId = {}", name,
@@ -1039,29 +1041,30 @@ public abstract class RpcClient implements Closeable {
         ServerInfo serverInfo;
     }
     
-    protected class RecServerAbilityContext {
-        
-        public RecServerAbilityContext(String connectionId, Map<String, Boolean> abilityTable, String version, String oldConnectionId) {
-            this.connectionId = connectionId;
-            this.abilityTable = abilityTable;
-            this.version = version;
-            this.oldConnectionId = oldConnectionId;
-        }
-        
-        String connectionId;
-        
-        Map<String, Boolean> abilityTable;
-        
-        String version;
-        
-        String oldConnectionId;
-    }
-    
     public String getTenant() {
         return tenant;
     }
     
     public void setTenant(String tenant) {
         this.tenant = tenant;
+    }
+    
+    /**.
+     * Return ability of current connection
+     *
+     * @param abilityKey ability key
+     * @return whether support, return null if connection is not ready
+     */
+    public AbilityStatus getConnectionAbility(AbilityKey abilityKey) {
+        if (currentConnection != null) {
+            Map<AbilityKey, Boolean> abilityTable = currentConnection.getAbilityTable();
+            // if null, the server may not support ability table
+            if (abilityTable == null) {
+                return AbilityStatus.UNKNOWN;
+            }
+            return abilityTable.getOrDefault(abilityKey, false) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+        }
+        // return null if connection is not ready
+        return null;
     }
 }

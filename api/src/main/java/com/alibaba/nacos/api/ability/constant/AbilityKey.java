@@ -117,7 +117,7 @@ public enum AbilityKey {
                 .collect(Collectors.toMap((entry) -> entry.getKey().getName(), Map.Entry::getValue));
     }
     
-    /**
+    /**.
      * getter to obtain enum
      *
      * @param key string key

@@ -593,7 +593,7 @@ public class ClientWorker implements Closeable {
             /*
              * Register Config Change /Config ReSync Handler
              */
-            rpcClientInner.registerServerRequestHandler((request) -> {
+            rpcClientInner.registerServerRequestHandler((request, connection) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
                     ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                     LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
@@ -617,7 +617,7 @@ public class ClientWorker implements Closeable {
                 return null;
             });
             
-            rpcClientInner.registerServerRequestHandler((request) -> {
+            rpcClientInner.registerServerRequestHandler((request, connection) -> {
                 if (request instanceof ClientConfigMetricRequest) {
                     ClientConfigMetricResponse response = new ClientConfigMetricResponse();
                     response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));

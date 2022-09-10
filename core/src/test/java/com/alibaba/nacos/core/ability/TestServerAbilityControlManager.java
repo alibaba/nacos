@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
 import java.util.Map;
-import java.util.Set;
 
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
 

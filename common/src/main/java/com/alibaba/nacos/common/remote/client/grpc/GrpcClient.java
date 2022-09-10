@@ -96,7 +96,7 @@ public abstract class GrpcClient extends RpcClient {
         super(name);
         
         // register to handler setup request
-        registerServerRequestHandler((request) -> {
+        registerServerRequestHandler((request, connection) -> {
             // if finish setup
             if (request instanceof SetupAckRequest) {
                 SetupAckRequest setupAckRequest = (SetupAckRequest) request;

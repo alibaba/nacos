@@ -33,6 +33,6 @@ public interface ServerRequestHandler {
      * @param request request
      * @return response.
      */
-    Response requestReply(Request request);
+    Response requestReply(Request request, Connection connection);
     
 }
