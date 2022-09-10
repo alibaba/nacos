@@ -16,7 +16,10 @@
 
 package com.alibaba.nacos.common.remote.client;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.remote.Requester;
+
+import java.util.Map;
 
 /**
  * connection on client side.
@@ -33,6 +36,8 @@ public abstract class Connection implements Requester {
     
     protected RpcClient.ServerInfo serverInfo;
     
+    protected Map<AbilityKey, Boolean> abilityTable;
+    
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
     }
@@ -43,6 +48,14 @@ public abstract class Connection implements Requester {
     
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
+    }
+    
+    public Map<AbilityKey, Boolean> getAbilityTable() {
+        return abilityTable;
+    }
+    
+    public void setAbilityTable(Map<AbilityKey, Boolean> abilityTable) {
+        this.abilityTable = abilityTable;
     }
     
     /**

@@ -18,268 +18,381 @@ package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
-import com.alibaba.nacos.api.ability.entity.AbilityTable;
-import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
+import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.ability.handler.HandlerMapping;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.MapUtil;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**.
  * @author Daydreamer
- * @description Base class for ability control. It can only be used internally by Nacos.It showld be sington.
+ * @description It is a capability control center, manager current node abilities or other control.
  * @date 2022/7/12 19:18
  **/
-@SuppressWarnings("all")
-public abstract class AbstractAbilityControlManager implements AbilityControlManager {
-
-
+public abstract class AbstractAbilityControlManager {
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAbilityControlManager.class);
-
-    /**
-     * Abilities current supporting
-     * <p>
-     * key: ability key from {@link AbstractAbilityRegistry}
-     * value: whether to turn on
+    
+    /**.
+     * These handlers will be invoked when the flag of ability change key:
+     * ability key from {@link com.alibaba.nacos.api.ability.constant.AbilityKey} value:
+     * components who want to be invoked if its interested ability turn on/off
+     */
+    private final Map<AbilityKey, List<HandlerWithPriority>> handlerMappings = new ConcurrentHashMap<>();
+    
+    /**.
+     * run for HandlerMapping
+     */
+    private final Executor simpleThreadPool = ExecutorFactory.newSingleExecutorService();
+    
+    /**.
+     * ability current node running
      */
     protected final Map<AbilityKey, Boolean> currentRunningAbility = new ConcurrentHashMap<>();
-
-    /**
-     * Ability table collections
-     * <p>
-     * key: connectionId
-     * value: AbilityTable
-     */
-    protected final Map<String, AbilityTable> nodeAbilityTable = new ConcurrentHashMap<>();
     
-    private final ReentrantLock lockForAbilityTable = new ReentrantLock();
+    private final ReentrantLock lockForHandlerMappings = new ReentrantLock();
     
     protected AbstractAbilityControlManager() {
-        // register events
-        registerAbilityEvent();
-        // put abilities
-        currentRunningAbility.putAll(getCurrentNodeSupportAbility());
-        // initialize
-        init();
+        ThreadUtils.addShutdownHook(this::destroy);
+        NotifyCenter.registerToPublisher(AbilityUpdateEvent.class, 16384);
+        currentRunningAbility.putAll(initCurrentNodeAbilities());
     }
     
     /**
-     * This is a hook for subclass to init current node ability
-     *
-     * @return current node ability
-     */
-    protected abstract Map<AbilityKey, Boolean> getCurrentNodeSupportAbility();
-
-
-    private void registerAbilityEvent(){
-        // register events
-        NotifyCenter.registerToPublisher(AbilityComeEvent.class, 16384);
-        NotifyCenter.registerToPublisher(AbilityExpiredEvent.class, 16384);
-    }
-
-    /**
-     * Whether the ability current node supporting is running. Return false if current node doesn't support.
+     * . Turn on the ability whose key is <p>abilityKey</p>
      *
      * @param abilityKey ability key
-     * @return is running
+     * @return if turn success
      */
-    @Override
+    public boolean enableCurrentNodeAbility(AbilityKey abilityKey) {
+        return doTurn(true, abilityKey);
+    }
+    
+    /**
+     * . Turn off the ability whose key is <p>abilityKey</p>
+     *
+     * @param abilityKey ability key
+     * @return if turn success
+     */
+    public boolean disableCurrentNodeAbility(AbilityKey abilityKey) {
+        return doTurn(false, abilityKey);
+    }
+    
     public boolean isCurrentNodeAbilityRunning(AbilityKey abilityKey) {
         return currentRunningAbility.getOrDefault(abilityKey, false);
     }
-
+    
     /**
-     * Register a new ability table.
+     * Init current node abilities
      *
-     * @param table the ability table.
+     * @return current node abilities
      */
-    @Override
-    public final void addNewTable(AbilityTable table) {
-        // id should not be null
-        String connectionId = table.getConnectionId();
-        // if exists
-        if (contains(connectionId) || connectionId == null) {
+    protected abstract Map<AbilityKey, Boolean> initCurrentNodeAbilities();
+    
+    /**
+     * Return the abilities current node
+     *
+     * @return current abilities
+     */
+    public Map<AbilityKey, Boolean> getCurrentNodeAbilities() {
+        return Collections.unmodifiableMap(currentRunningAbility);
+    }
+    
+    /**
+     * . Turn on/off the ability of current node
+     *
+     * @param isOn       is on
+     * @param abilityKey ability key from {@link AbilityKey}
+     * @return if turn success
+     */
+    private boolean doTurn(boolean isOn, AbilityKey abilityKey) {
+        Boolean isEnabled = currentRunningAbility.get(abilityKey);
+        // if not supporting this key
+        if (isEnabled == null) {
+            LOGGER.warn("[AbilityControlManager] Attempt to turn on/off a not existed ability!");
+            return false;
+        } else if (isOn == isEnabled) {
+            // if already turn on/off
+            return true;
+        }
+        // turn on/off
+        currentRunningAbility.put(abilityKey, isOn);
+        // handler mappings
+        triggerHandlerMappingAsyn(abilityKey, isOn, this.handlerMappings);
+        // notify event
+        AbilityUpdateEvent abilityUpdateEvent = new AbilityUpdateEvent();
+        abilityUpdateEvent.setTable(Collections.unmodifiableMap(currentRunningAbility));
+        abilityUpdateEvent.isOn = isOn;
+        abilityUpdateEvent.abilityKey = abilityKey;
+        NotifyCenter.publishEvent(abilityUpdateEvent);
+        return true;
+    }
+    
+    /**
+     * Register the component which is managed by {@link AbstractAbilityControlManager}. if you are hoping that a
+     * component will be invoked when turn on/off the ability whose key is <p>abilityKey</p>.
+     *
+     * @param abilityKey     component key.
+     * @param priority       the higher the priority is, the faster it will be called.
+     * @param handlerMapping component instance.
+     */
+    public void registerComponent(AbilityKey abilityKey, HandlerMapping handlerMapping, int priority) {
+        doRegisterComponent(abilityKey, handlerMapping, this.handlerMappings, lockForHandlerMappings, priority, currentRunningAbility);
+    }
+    
+    /**
+     * Register component with the lowest priority
+     *
+     * @param abilityKey ability key
+     * @param handlerMapping handler
+     */
+    public void registerComponent(AbilityKey abilityKey, HandlerMapping handlerMapping) {
+        registerComponent(abilityKey, handlerMapping, -1);
+    }
+    
+    /**
+     * Remove the specific type handler for a certain ability
+     *
+     * @param abilityKey ability key
+     * @param handlerMappingClazz type
+     * @return the count of handlers are removed
+     */
+    public int removeComponent(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz) {
+        return doRemove(abilityKey, handlerMappingClazz, lockForHandlerMappings, handlerMappings);
+    }
+    
+    public final void destroy() {
+        LOGGER.warn("[DefaultAbilityControlManager] - Start destroying...");
+        ((ThreadPoolExecutor) simpleThreadPool).shutdown();
+        if (MapUtil.isNotEmpty(handlerMappings)) {
+            handlerMappings.keySet().forEach(key -> doTriggerSyn(key, false, handlerMappings));
+        }
+        // hook
+        doDestroy();
+        LOGGER.warn("[DefaultAbilityControlManager] - Destruction of the end");
+    }
+    
+    /**.
+     * hook for subclass
+     */
+    protected void doDestroy() {
+        // for server ability manager
+    }
+    
+    /**
+     * Remove the component instance of <p>handlerMappingClazz</p>.
+     *
+     * @param abilityKey ability key from {@link AbstractAbilityRegistry}
+     * @param handlerMappingClazz implement of {@link HandlerMapping}
+     * @param lock lock for operation
+     * @param handlerMappingsMap handler collection map
+     * @return the count of components have removed
+     */
+    protected int doRemove(AbilityKey abilityKey, Class<? extends HandlerMapping> handlerMappingClazz, Lock lock,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappingsMap) {
+        List<HandlerWithPriority> handlerMappings = handlerMappingsMap.get(abilityKey);
+        if (CollectionUtils.isEmpty(handlerMappings)) {
+            return 0;
+        }
+        lock.lock();
+        try {
+            AtomicInteger count = new AtomicInteger();
+            handlerMappings.removeIf(item -> {
+                if (item.handlerMapping.getClass().equals(handlerMappingClazz)) {
+                    count.getAndIncrement();
+                    return true;
+                }
+                return false;
+            });
+            return count.get();
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    public int removeAll(AbilityKey abilityKey) {
+        List<HandlerWithPriority> remove = this.handlerMappings.remove(abilityKey);
+        return Optional.ofNullable(remove).orElse(Collections.emptyList()).size();
+    }
+    
+    /**.
+     * Register the component into handlerMappings locking by lockForHandlerMappings to ensure concurrency security.
+     *
+     * @param abilityKey             ability key
+     * @param handlerMapping         component instance.
+     * @param handlerMappings        container
+     * @param lockForHandlerMappings lock to ensure concurrency
+     * @param abilityTable           behavioral basis of handler
+     */
+    protected void doRegisterComponent(AbilityKey abilityKey, HandlerMapping handlerMapping,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappings, Lock lockForHandlerMappings,
+            int priority, Map<AbilityKey, Boolean> abilityTable) {
+        if (!currentRunningAbility.containsKey(abilityKey)) {
+            LOGGER.warn("[AbilityHandlePostProcessor] Failed to register processor: {}, because illegal key!",
+                    handlerMapping.getClass().getSimpleName());
+        }
+        
+        // legal key
+        lockForHandlerMappings.lock();
+        try {
+            List<HandlerWithPriority> handlers = handlerMappings.getOrDefault(abilityKey, new CopyOnWriteArrayList<>());
+            HandlerWithPriority handlerWithPriority = new HandlerWithPriority(handlerMapping, priority);
+            handlers.add(handlerWithPriority);
+            handlerMappings.put(abilityKey, handlers);
+            // choose behavior
+            // enable default
+            if (abilityTable.getOrDefault(abilityKey, false)) {
+                handlerMapping.enable();
+            } else {
+                handlerMapping.disable();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.error("[DefaultAbilityControlManager] Fail to register handler: {}", handlerMapping.getClass().getSimpleName());
+        } finally {
+            lockForHandlerMappings.unlock();
+            LOGGER.info("[DefaultAbilityControlManager] Successfully registered processor: {}",
+                    handlerMapping.getClass().getSimpleName());
+        }
+    }
+    
+    /**
+     * Invoke componments which linked to ability key asyn.
+     *
+     * @param key ability key from {@link AbstractAbilityRegistry}
+     * @param isEnabled turn on/off
+     * @param handlerMappingsMap handler collection
+     */
+    protected void triggerHandlerMappingAsyn(AbilityKey key, boolean isEnabled,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappingsMap) {
+        simpleThreadPool.execute(() -> doTriggerSyn(key, isEnabled, handlerMappingsMap));
+    }
+    
+    /**
+     * Invoke componments which linked to ability key syn.
+     *
+     * @param key ability key from {@link AbstractAbilityRegistry}
+     * @param isEnabled turn on/off
+     * @param handlerMappingsMap handler collection
+     */
+    protected void doTriggerSyn(AbilityKey key, boolean isEnabled,
+            Map<AbilityKey, List<HandlerWithPriority>> handlerMappingsMap) {
+        List<HandlerWithPriority> handlerWithPriorities = handlerMappingsMap.get(key);
+        // return if empty
+        if (CollectionUtils.isEmpty(handlerWithPriorities)) {
             return;
         }
-        lockForAbilityTable.lock();
-        try {
-            // check
-            if (contains(connectionId)) {
-                return;
+        Collections.sort(handlerWithPriorities);
+        // invoked all
+        handlerWithPriorities.forEach(handlerMappingWithPriorities -> {
+            // any error from current handler does not affect other handler
+            HandlerMapping handlerMapping = handlerMappingWithPriorities.handlerMapping;
+            try {
+                if (isEnabled) {
+                    handlerMapping.enable();
+                } else {
+                    handlerMapping.disable();
+                }
+            } catch (Throwable t) {
+                LOGGER.warn("[HandlerMapping] Failed to invoke {} :{}", handlerMapping.getClass().getSimpleName(),
+                        t.getLocalizedMessage());
             }
-            // hook method
-            add(table);
-            // null if not support ability table
-            Map<AbilityKey, Boolean> clientAbilities = table.getAbility();
-            if (clientAbilities != null) {
-                // add to nod
-                Set<AbilityKey> abilityKeys = table.getAbility().keySet();
-                abilityKeys.forEach(abilityKey -> {
-                    Boolean res = currentRunningAbility.getOrDefault(abilityKey, false);
-                    Boolean coming = clientAbilities.getOrDefault(abilityKey, false);
-                    clientAbilities.put(abilityKey, res && coming);
-                });
-                nodeAbilityTable.put(connectionId, table);
-            }
-        } finally {
-            lockForAbilityTable.unlock();
-        }
-        // publish event to subscriber
-        AbilityComeEvent updateEvent = new AbilityComeEvent();
-        updateEvent.setConnectionId(table.getConnectionId());
-        updateEvent.setTable(table);
-        NotifyCenter.publishEvent(updateEvent);
-    }
-
-    /**
-     * Remove a ability table
-     *
-     * @param connectionId the ability table which is removing.
-     */
-    @Override
-    public final void removeTable(String connectionId) {
-        AbilityTable removingTable = null;
-        lockForAbilityTable.lock();
-        try {
-            // hook method
-            remove(connectionId);
-            // remove
-            removingTable = nodeAbilityTable.remove(connectionId);
-        } finally {
-            lockForAbilityTable.unlock();
-        }
-        // publish event
-        if (removingTable != null) {
-            AbilityExpiredEvent expiredEvent = new AbilityExpiredEvent();
-            expiredEvent.setTable(removingTable);
-            expiredEvent.setConnectionId(connectionId);
-            NotifyCenter.publishEvent(expiredEvent);
-        }
-    }
-
-    /**
-     * Register a new ability table. This is a ThreadSafe method for {@link AbstractAbilityControlManager#remove(String)}.
-     *
-     * @param table the ability table.
-     */
-    protected abstract void add(AbilityTable table);
-
-
-    /**
-     * Remove a ability table. This is a ThreadSafe method for {@link AbstractAbilityControlManager#add(AbilityTable)}.
-     *
-     * @param connectionId the ability table which is removing.
-     */
-    protected abstract void remove(String connectionId);
-
-
-    /**
-     * wthether contains this ability table
-     *
-     * @return
-     */
-    @Override
-    public boolean contains(String connectionId) {
-        return nodeAbilityTable.containsKey(connectionId);
+        });
     }
     
     /**
-     * Initialize the manager
-     */
-    @Override
-    public void init() {
-        // default init
-        // nothing to do
-    }
-    
-    /**
-     * It should be invoked before destroy
-     */
-    @Override
-    public void destroy() {
-        // default destroy
-        // nothing to do
-    }
-    
-    /**
-     * A Nacos application can only have one {@link AbilityControlManager}.
-     * When multiple control centers exist, it is used to determine which one is preferred
+     * A legal nacos application has a ability control manager.
+     * If there are more than one, the one with higher priority is preferred
      *
      * @return priority
      */
     public abstract int getPriority();
-
-    /**
-     * Return ability table of current node
-     *
-     * @return ability table
-     */
-    @Override
-    public Map<AbilityKey, Boolean> getCurrentRunningAbility() {
-        return new HashMap<>(this.currentRunningAbility);
-    }
-
-    /**
-     * base class for ability
-     */
-    public abstract class AbilityEvent extends Event {
-
-        private static final long serialVersionUID = -123241121302761L;
-
-        protected AbilityEvent(){}
-
-        /**
-         * connection id.
-         */
-        private String connectionId;
-
-        /**
-         * ability table
-         */
-        private AbilityTable table;
-
-
-        public String getConnectionId() {
-            return connectionId;
-        }
-
-        public void setConnectionId(String connectionId) {
-            this.connectionId = connectionId;
-        }
-
-        public AbilityTable getTable() {
-            return table;
-        }
-
-        public void setTable(AbilityTable table) {
-            this.table = table;
-        }
+    
+    @JustForTest
+    protected Map<AbilityKey, List<HandlerWithPriority>> handlerMapping() {
+        return this.handlerMappings;
     }
     
     /**
-     * when a connection connected.
+     * Support priority handler.
      */
-    public class AbilityComeEvent extends AbilityEvent {
+    protected class HandlerWithPriority implements Comparable<HandlerWithPriority> {
         
-        private static final long serialVersionUID = -123241121302761L;
-        
-        private AbilityComeEvent(){}
+        /**.
+         * Decorated
+         */
+        public HandlerMapping handlerMapping;
+    
+        /**.
+         * the higher the priority, the faster it will be called
+         */
+        public int priority;
+    
+        public HandlerWithPriority(HandlerMapping handlerMapping, int priority) {
+            this.handlerMapping = handlerMapping;
+            this.priority = priority;
+        }
+    
+        @Override
+        public int compareTo(HandlerWithPriority o) {
+            return o.priority - this.priority;
+        }
     }
-
-    /**
-     * when a connection disconnected.
+    
+    /**.
+     * notify when current node ability changing
      */
-    public class AbilityExpiredEvent extends AbilityEvent {
-
-        private static final long serialVersionUID = -123241121212127619L;
-
-        private AbilityExpiredEvent(){}
-
+    public class AbilityUpdateEvent extends Event {
+        
+        private static final long serialVersionUID = -1232411212311111L;
+        
+        private AbilityKey abilityKey;
+        
+        private boolean isOn;
+        
+        private Map<AbilityKey, Boolean> table;
+    
+        private AbilityUpdateEvent(){}
+    
+        public Map<AbilityKey, Boolean> getAbilityTable() {
+            return table;
+        }
+    
+        public void setTable(Map<AbilityKey, Boolean> abilityTable) {
+            this.table = abilityTable;
+        }
+        
+        public AbilityKey getAbilityKey() {
+            return abilityKey;
+        }
+    
+        public void setAbilityKey(AbilityKey abilityKey) {
+            this.abilityKey = abilityKey;
+        }
+    
+        public boolean isOn() {
+            return isOn;
+        }
+    
+        public void setOn(boolean on) {
+            isOn = on;
+        }
     }
 }

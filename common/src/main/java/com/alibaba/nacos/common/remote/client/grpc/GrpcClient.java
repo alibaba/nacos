@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -347,23 +346,19 @@ public abstract class GrpcClient extends RpcClient {
                 // ability table will be null if server doesn't support ability table
                 ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
                 connectionId = serverCheckResponse.getConnectionId();
-                AbilityTable table = new AbilityTable();
-                table.setServer(true)
-                        .setConnectionId(connectionId);
-                
-                // if not supported, it will be null
-                if (serverCheckResponse.getAbilities() != null) {
-                    Map<AbilityKey, Boolean> abilityTable = AbilityKey.mapEnum(serverCheckResponse.getAbilities());
-                    table.setAbility(abilityTable);
-                    // mark
-                    markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
-                }
-                NacosAbilityManagerHolder.getInstance().addNewTable(table);
                 
                 BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
                         .newStub(newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 grpcConn.setConnectionId(connectionId);
+                // if not supported, it will be null
+                if (serverCheckResponse.getAbilities() != null) {
+                    Map<AbilityKey, Boolean> abilityTable = AbilityKey.mapEnum(serverCheckResponse.getAbilities());
+                    // mark
+                    markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
+                    // set server abilities to connection
+                    grpcConn.setAbilityTable(abilityTable);
+                }
                 
                 //create stream request and bind connection event to this connection.
                 StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
@@ -377,7 +372,7 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 // set ability table
-                conSetupRequest.setAbilityTable(AbilityKey.mapStr(NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility()));
+                conSetupRequest.setAbilityTable(AbilityKey.mapStr(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities()));
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response

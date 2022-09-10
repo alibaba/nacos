@@ -32,18 +32,8 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
     }
 
     @JustForTest
-    public void setClusterAbility(Map<AbilityKey, Boolean> ability) {
-        super.setClusterAbilityTable(ability);
-    }
-
-    @JustForTest
     public int handlerMappingCount() {
         return super.handlerMapping().size();
-    }
-    
-    @JustForTest
-    public Set<String> getServerNotSupportAbility() {
-        return super.serverNotSupport();
     }
     
 }

@@ -17,8 +17,6 @@
 package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
-import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,35 +39,6 @@ public class AbilityControlManagerTest {
         Map<AbilityKey, Boolean> newTable = new HashMap<>();
         newTable.put(AbilityKey.TEST_1, true);
         clientAbilityControlManager.setCurrentSupportingAbility(newTable);
-    }
-    
-    @Test
-    public void testClientAdd() {
-        Map<AbilityKey, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.TEST_2, true);
-        newTable.put(AbilityKey.TEST_1, true);
-        AbilityTable table = new AbilityTable();
-        table.setConnectionId("test-00001");
-        table.setAbility(newTable);
-        table.setServer(true);
-        clientAbilityControlManager.addNewTable(table);
-        Assert.assertEquals(AbilityStatus.NOT_SUPPORTED, clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_2));
-        Assert.assertEquals(AbilityStatus.SUPPORTED, clientAbilityControlManager.isSupport("test-00001", AbilityKey.TEST_1));
-    }
-    
-    @Test
-    public void testClientRemove() {
-        Map<AbilityKey, Boolean> clientTa = new HashMap<>();
-        clientTa.put(AbilityKey.TEST_2, true);
-        clientTa.put(AbilityKey.TEST_1, false);
-        AbilityTable clientTable = new AbilityTable();
-        clientTable.setConnectionId("test-01111");
-        clientTable.setAbility(clientTa);
-        clientTable.setServer(true);
-        clientAbilityControlManager.addNewTable(clientTable);
-        Assert.assertTrue(clientAbilityControlManager.contains(clientTable.getConnectionId()));
-        clientAbilityControlManager.removeTable("test-01111");
-        Assert.assertFalse(clientAbilityControlManager.contains(clientTable.getConnectionId()));
     }
     
     @Test
@@ -118,16 +87,16 @@ public class AbilityControlManagerTest {
     public void testPriority() throws InterruptedException {
         TestClientAbilityControlManager testClientAbilityControlManager = new TestClientAbilityControlManager();
         AbilityKey key = AbilityKey.TEST_1;
-        TestPriority clusterHandlerMapping1 = new TestPriority("1");
-        TestPriority clusterHandlerMapping2 = new TestPriority("2");
-        TestPriority clusterHandlerMapping3 = new TestPriority("3");
+        TestPriority handlerMapping1 = new TestPriority("1");
+        TestPriority handlerMapping2 = new TestPriority("2");
+        TestPriority handlerMapping3 = new TestPriority("3");
         // first one, invoke enable()
-        testClientAbilityControlManager.registerComponent(key, clusterHandlerMapping2, 128);
+        testClientAbilityControlManager.registerComponent(key, handlerMapping2, 128);
         // last one, invoke enable()
-        testClientAbilityControlManager.registerComponent(key, clusterHandlerMapping3);
+        testClientAbilityControlManager.registerComponent(key, handlerMapping3);
         // second one, invoke enable()
-        testClientAbilityControlManager.registerComponent(key, clusterHandlerMapping1, 12);
-        // trigger cluster
+        testClientAbilityControlManager.registerComponent(key, handlerMapping1, 12);
+        // trigger
         testClientAbilityControlManager.trigger(key);
         Assert.assertEquals(3, testClientAbilityControlManager.getHandlerMapping(key).size());
         // wait for invoking

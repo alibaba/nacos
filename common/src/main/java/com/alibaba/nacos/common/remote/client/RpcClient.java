@@ -28,8 +28,6 @@ import com.alibaba.nacos.api.remote.response.ClientDetectionResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
-import com.alibaba.nacos.common.ability.listener.ClientAbilityEventListener;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
@@ -272,9 +270,6 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         
-        // add listener to remove expired ability table
-        registerConnectionListener(new ClientAbilityEventListener());
-        
         clientEventExecutor = new ScheduledThreadPoolExecutor(2, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.client.remote.worker");
@@ -459,9 +454,6 @@ public abstract class RpcClient implements Closeable {
         LOGGER.info("Shutdown rpc client, set status to shutdown");
         rpcClientStatus.set(RpcClientStatus.SHUTDOWN);
         LOGGER.info("Shutdown client event executor " + clientEventExecutor);
-        if (currentConnection != null) {
-            NacosAbilityManagerHolder.getInstance().removeTable(currentConnection.getConnectionId());
-        }
         if (clientEventExecutor != null) {
             clientEventExecutor.shutdownNow();
         }

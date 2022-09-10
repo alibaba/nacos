@@ -19,8 +19,8 @@ package com.alibaba.nacos.core.ability.config;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.common.JustForTest;
+import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
-import com.alibaba.nacos.common.ability.inter.AbilityHandlerRegistry;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -49,7 +49,7 @@ public class AbilityConfigs extends Subscriber<ServerConfigChangeEvent> {
     
     private final Set<AbilityKey> serverAbilityKeys = new ConcurrentHashSet<>();
     
-    private AbilityHandlerRegistry abilityHandlerRegistry = NacosAbilityManagerHolder.getInstance();
+    private AbstractAbilityControlManager abilityHandlerRegistry = NacosAbilityManagerHolder.getInstance();
     
     public AbilityConfigs() {
         // load ability
@@ -102,7 +102,7 @@ public class AbilityConfigs extends Subscriber<ServerConfigChangeEvent> {
     }
     
     @JustForTest
-    protected void setAbilityHandlerRegistry(AbilityHandlerRegistry abilityHandlerRegistry) {
+    protected void setAbilityHandlerRegistry(AbstractAbilityControlManager abilityHandlerRegistry) {
         this.abilityHandlerRegistry = abilityHandlerRegistry;
     }
     

@@ -92,7 +92,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
             Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(CONTEXT_KEY_CONN_ID.get(),
                     // to str map
-                    AbilityKey.mapStr(NacosAbilityManagerHolder.getInstance().getCurrentRunningAbility())));
+                    AbilityKey.mapStr(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities())));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
             responseObserver.onCompleted();

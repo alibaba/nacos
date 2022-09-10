@@ -17,51 +17,24 @@
 package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import com.alibaba.nacos.api.ability.constant.AbilityStatus;
-import com.alibaba.nacos.api.ability.entity.AbilityTable;
 import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
-import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 /**.
  * @author Daydreamer
  * @description {@link AbstractAbilityControlManager} for nacos-client.
  * @date 2022/7/13 13:38
  **/
-public class ClientAbilityControlManager extends DefaultAbilityControlManager {
+public class ClientAbilityControlManager extends AbstractAbilityControlManager {
     
     public ClientAbilityControlManager() {
     }
     
     @Override
-    protected Map<AbilityKey, Boolean> getCurrentNodeSupportAbility() {
+    protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
         return ClientAbilities.getStaticAbilities();
-    }
-    
-    @Override
-    public AbilityStatus isSupport(String connectionId, AbilityKey abilityKey) {
-        AbilityTable abilityTable = nodeAbilityTable.get(connectionId);
-        if (abilityTable == null) {
-            return AbilityStatus.UNKNOWN;
-        }
-        Boolean isSupport = Optional.ofNullable(abilityTable.getAbility())
-                .orElse(Collections.emptyMap())
-                .getOrDefault(abilityKey, false);
-        return isSupport ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
-    }
-    
-    @Override
-    protected void add(AbilityTable table) {
-        // nothing to do
-    }
-    
-    @Override
-    protected void remove(String connectionId) {
-        // nothing to do
     }
     
     @Override

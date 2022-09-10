@@ -66,8 +66,10 @@ public abstract class Connection implements Requester {
     /**
      * get abilities.
      *
+     * @deprecated it is replaced by abilityTable field
      * @return
      */
+    @Deprecated
     public ClientAbilities getAbilities() {
         return abilities;
     }
@@ -75,8 +77,10 @@ public abstract class Connection implements Requester {
     /**
      * set abilities.
      *
+     * @deprecated it is replaced by abilityTable field
      * @param abilities abilities.
      */
+    @Deprecated
     public void setAbilities(ClientAbilities abilities) {
         this.abilities = abilities;
     }

@@ -17,8 +17,6 @@
 package com.alibaba.nacos.common.ability.discover;
 
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
-import com.alibaba.nacos.common.ability.DefaultAbilityControlManager;
-import com.alibaba.nacos.common.ability.inter.AbilityControlManager;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,19 +47,19 @@ public class NacosAbilityManagerHolder {
     /**.
      * singleton
      */
-    private static DefaultAbilityControlManager abstractAbilityControlManager;
+    private static AbstractAbilityControlManager abstractAbilityControlManager;
     
     static {
         // spi discover implement
-        Collection<DefaultAbilityControlManager> load = null;
+        Collection<AbstractAbilityControlManager> load = null;
         try {
             // if server
-            load = NacosServiceLoader.load(DefaultAbilityControlManager.class);
+            load = NacosServiceLoader.load(AbstractAbilityControlManager.class);
         } catch (ServiceConfigurationError e) {
             throw new RuntimeException("[AbilityControlManager] Cannot find AbilityControlManger");
         }
         // the priority of the server is higher
-        List<DefaultAbilityControlManager> collect = load.stream()
+        List<AbstractAbilityControlManager> collect = load.stream()
                 .sorted(Comparator.comparingInt(AbstractAbilityControlManager::getPriority))
                 .collect(Collectors.toList());
         // get the highest priority one
@@ -76,7 +74,7 @@ public class NacosAbilityManagerHolder {
      *
      * @return BaseAbilityControlManager
      */
-    public static DefaultAbilityControlManager getInstance() {
+    public static AbstractAbilityControlManager getInstance() {
         return abstractAbilityControlManager;
     }
     
@@ -87,7 +85,7 @@ public class NacosAbilityManagerHolder {
      * @param <T> target type
      * @return AbilityControlManager
      */
-    public static <T extends AbilityControlManager> T getInstance(Class<T> clazz) {
+    public static <T extends AbstractAbilityControlManager> T getInstance(Class<T> clazz) {
         return clazz.cast(abstractAbilityControlManager);
     }
 }
