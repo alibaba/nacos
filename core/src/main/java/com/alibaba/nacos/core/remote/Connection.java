@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.remote.Requester;
 
 import java.util.Map;
@@ -55,8 +56,11 @@ public abstract class Connection implements Requester {
         this.traced = traced;
     }
     
-    public Map<AbilityKey, Boolean> getAbilityTable() {
-        return abilityTable;
+    public AbilityStatus getConnectionAbility(AbilityKey abilityKey) {
+        if (abilityTable == null) {
+            return AbilityStatus.UNKNOWN;
+        }
+        return abilityTable.getOrDefault(abilityKey, false) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
     }
     
     public void setAbilityTable(Map<AbilityKey, Boolean> abilityTable) {

@@ -1057,12 +1057,7 @@ public abstract class RpcClient implements Closeable {
      */
     public AbilityStatus getConnectionAbility(AbilityKey abilityKey) {
         if (currentConnection != null) {
-            Map<AbilityKey, Boolean> abilityTable = currentConnection.getAbilityTable();
-            // if null, the server may not support ability table
-            if (abilityTable == null) {
-                return AbilityStatus.UNKNOWN;
-            }
-            return abilityTable.getOrDefault(abilityKey, false) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+            return currentConnection.getConnectionAbility(abilityKey);
         }
         // return null if connection is not ready
         return null;
