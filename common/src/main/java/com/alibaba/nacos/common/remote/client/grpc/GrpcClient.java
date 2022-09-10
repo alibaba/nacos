@@ -356,6 +356,9 @@ public abstract class GrpcClient extends RpcClient {
                     Map<AbilityKey, Boolean> abilityTable = AbilityKey.mapEnum(serverCheckResponse.getAbilities());
                     // mark
                     markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
+                    // combine with current node abilities
+                    // in order to get abilities current node provides
+                    NacosAbilityManagerHolder.getInstance().combine(abilityTable);
                     // set server abilities to connection
                     grpcConn.setAbilityTable(abilityTable);
                 }

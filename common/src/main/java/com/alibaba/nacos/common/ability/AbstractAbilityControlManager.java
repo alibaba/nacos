@@ -192,6 +192,20 @@ public abstract class AbstractAbilityControlManager {
         LOGGER.warn("[DefaultAbilityControlManager] - Destruction of the end");
     }
     
+    /**
+     * Combine with current node abilities, in order to get abilities current node provides
+     *
+     * @param abilities combined ability table
+     */
+    public void combine(Map<AbilityKey, Boolean> abilities) {
+        currentRunningAbility.forEach((k, v) -> {
+            Boolean isCurrentSupport = currentRunningAbility.get(k);
+            if (isCurrentSupport != null) {
+                abilities.put(k, abilities.getOrDefault(k, false) && isCurrentSupport);
+            }
+        });
+    }
+    
     /**.
      * hook for subclass
      */
