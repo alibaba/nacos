@@ -168,6 +168,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             requestMeta.setConnectionId(CONTEXT_KEY_CONN_ID.get());
             requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
             requestMeta.setLabels(connection.getMetaInfo().getLabels());
+            requestMeta.setAbilityTable(connection.getAbilityTable());
             connectionManager.refreshActiveTime(requestMeta.getConnectionId());
             Response response = requestHandler.handleRequest(request, requestMeta);
             Payload payloadResponse = GrpcUtils.convert(response);

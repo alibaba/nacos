@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +37,25 @@ public class RequestMeta {
     private String clientVersion = "";
     
     private Map<String, String> labels = new HashMap<>();
-
+    
+    private Map<AbilityKey, Boolean> abilityTable;
+    
+    public AbilityStatus getConnectionAbility(AbilityKey abilityKey) {
+        if (abilityTable == null) {
+            return AbilityStatus.UNKNOWN;
+        }
+        return abilityTable.getOrDefault(abilityKey, false) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+    }
+    
+    /**
+     * Setter method for property <tt>abilityTable</tt>.
+     *
+     * @param  abilityTable property value of clientVersion
+     */
+    public void setAbilityTable(Map<AbilityKey, Boolean> abilityTable) {
+        this.abilityTable = abilityTable;
+    }
+    
     /**
      * Getter method for property <tt>clientVersion</tt>.
      *
