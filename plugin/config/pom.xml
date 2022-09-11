@@ -19,61 +19,30 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>nacos-all</artifactId>
+        <artifactId>nacos-plugin</artifactId>
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    <artifactId>nacos-plugin-default-impl</artifactId>
-    <packaging>jar</packaging>
-    <name>nacos-plugin-default-impl ${project.version}</name>
+    <artifactId>nacos-config-plugin</artifactId>
+    <name>nacos-config-plugin ${project.version}</name>
     <url>http://nacos.io</url>
-
+    
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-auth-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-config-plugin</artifactId>
-            <version>2.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-common</artifactId>
-        </dependency>
-        
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-sys</artifactId>
             <scope>provided</scope>
         </dependency>
-    
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-config</artifactId>
-            <scope>provided</scope>
-        </dependency>
-    
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.ldap</groupId>
-            <artifactId>spring-ldap-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
     </dependencies>
+
 </project>

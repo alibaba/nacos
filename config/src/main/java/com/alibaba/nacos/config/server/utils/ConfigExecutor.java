@@ -65,6 +65,11 @@ public final class ConfigExecutor {
                     ThreadUtils.getSuitableThreadCount(),
                     new NameThreadFactory("com.alibaba.nacos.config.server.remote.ConfigChangeNotifier"));
     
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    ThreadUtils.getSuitableThreadCount(),
+                    new NameThreadFactory("com.alibaba.nacos.config.server.ConfigChangePluinService"));
+    
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
@@ -75,6 +80,14 @@ public final class ConfigExecutor {
     
     public static void scheduleCorrectUsageTask(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         CAPACITY_MANAGEMENT_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+    }
+    
+    public static void executeAsyncConfigChangePluginTask(Runnable runnable) {
+        ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR.execute(runnable);
+    }
+    
+    public static void scheduleAsyncConfigChangePluginTask(Runnable command, long delay, TimeUnit unit) {
+        ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR.schedule(command, delay, unit);
     }
     
     public static void executeAsyncNotify(Runnable runnable) {
