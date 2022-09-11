@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface TenantCapacityMapper {
+public interface TenantCapacityMapper extends Mapper {
     
     /**
      * Query the tenant capacity.

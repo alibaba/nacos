@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface GroupCapacityMapper {
+public interface GroupCapacityMapper extends Mapper {
     
     /**
      * Get the group capacity.

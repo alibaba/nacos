@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface ConfigInfoAggrMapper {
+public interface ConfigInfoAggrMapper extends Mapper {
     
     /**
      * Query content from config_info_aggr by dataId, groupId, tenantId and datumId.

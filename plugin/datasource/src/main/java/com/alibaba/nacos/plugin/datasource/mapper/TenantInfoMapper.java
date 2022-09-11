@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface TenantInfoMapper {
+public interface TenantInfoMapper extends Mapper {
     
     /**
      * Get the numbers of tenant information by tenant_id.

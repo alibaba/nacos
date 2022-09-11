@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface ConfigInfoTagMapper {
+public interface ConfigInfoTagMapper extends Mapper {
     
     /**
      * Add tag configuration information and publish data change events.

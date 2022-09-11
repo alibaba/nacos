@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface HistoryConfigInfoMapper {
+public interface HistoryConfigInfoMapper extends Mapper {
     
     /**
      * Delete data before startTime.

@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface ConfigInfoBetaMapper {
+public interface ConfigInfoBetaMapper extends Mapper {
     
     /**
      * Add beta configuration information.

@@ -22,7 +22,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  * @author hyx
  **/
 
-public interface ConfigInfoMapper {
+public interface ConfigInfoMapper extends Mapper {
     
     /**
      * Update md5.
