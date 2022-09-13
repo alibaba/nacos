@@ -41,11 +41,18 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.address.common.AddressProperties;
+import com.alibaba.nacos.plugin.address.exception.AddressException;
+import com.alibaba.nacos.plugin.address.spi.AddressPlugin;
+import com.alibaba.nacos.plugin.address.spi.AddressPluginManager;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -58,8 +65,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Cluster node management in Nacos.
@@ -75,7 +85,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * ServerMemberManager#memberLeave(Collection)} When the node leaves, only the interface call can be manually triggered
  * {@link ServerMemberManager#update(Member)} Update the target node information {@link
  * ServerMemberManager#isUnHealth(String)} Whether the target node is healthy {@link
- * ServerMemberManager#initAndStartLookup()} Initializes the addressing mode
+ * ServerMemberManager#initAndStartAddressPlugin()} ()} Initializes the addressing mode
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -95,9 +105,33 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
     
-    private static boolean isUseAddressServer = false;
-    
     private static final long DEFAULT_TASK_DELAY_TIME = 5_000L;
+    
+    private static final String ADDRESS_SERVER_URL = "addressServerUrl";
+    
+    private static final String ENV_ID_URL = "envIdUrl";
+    
+    private static final String ADDRESS_PLUGIN = "address.plugin";
+    
+    private static final String STANDALONE_ADDRESS_PLUGIN_NAME = "standalone";
+    
+    private static final String ADDRESS_PLUGIN_TYPE = "nacos.core.member.lookup.type";
+    
+    private static final String ADDRESS_SERVER_DOMAIN_ENV = "address_server_domain";
+    
+    private static final String ADDRESS_SERVER_DOMAIN_PROPERTY = "address.server.domain";
+    
+    private static final String ADDRESS_SERVER_PORT_ENV = "address_server_port";
+    
+    private static final String ADDRESS_SERVER_PORT_PROPERTY = "address.server.port";
+    
+    private static final String ADDRESS_SERVER_URL_ENV = "address_server_url";
+    
+    private static final String ADDRESS_SERVER_URL_PROPERTY = "address.server.url";
+    
+    private static final String DEFAULT_SERVER_DOMAIN = "jmenv.tbsite.net";
+    
+    private static final String DEFAULT_SERVER_POINT = "8080";
     
     /**
      * Cluster node list.
@@ -119,10 +153,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      */
     private String localAddress;
     
-    /**
-     * Addressing pattern instances.
-     */
-    private MemberLookup lookup;
+    private AddressPlugin addressPlugin;
     
     /**
      * self member obj.
@@ -162,9 +193,11 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         registerClusterEvent();
         
         // Initializes the lookup mode
-        initAndStartLookup();
+        initAndStartAddressPlugin();
+        List<String> serverListTemp = this.addressPlugin.getServerList();
+        memberChange(MemberUtil.readServerConf(serverListTemp));
         
-        if (serverList.isEmpty()) {
+        if (this.serverList.isEmpty()) {
             throw new NacosException(NacosException.SERVER_ERROR, "cannot get serverlist, so exit.");
         }
         
@@ -179,22 +212,108 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return serverAbilities;
     }
     
-    private void initAndStartLookup() throws NacosException {
-        this.lookup = LookupFactory.createLookUp(this);
-        isUseAddressServer = this.lookup.useAddressServer();
-        this.lookup.start();
+    /**
+     * switch address plugin.
+     *
+     * @param pluginName address plugin name.
+     * @throws NacosException exception.
+     */
+    public void switchAddressPlugin(String pluginName) throws NacosException {
+        this.addressPlugin =  AddressPluginManager.getInstance()
+                .findAuthServiceSpiImpl(pluginName).get();
+        registerPluginListener();
+        
+        this.addressPlugin.start();
+        List<String> serverListTemp = this.addressPlugin.getServerList();
+        memberChange(MemberUtil.readServerConf(serverListTemp));
+    }
+    
+    private void initAndStartAddressPlugin() throws NacosException {
+        initAddressProperties();
+        initAddressPlugin();
+        registerPluginListener();
+        addressPlugin.start();
     }
     
     /**
-     * switch look up.
+     * register address plugin listener.
      *
-     * @param name look up name.
-     * @throws NacosException exception.
+     * @throws AddressException exception.
      */
-    public void switchLookup(String name) throws NacosException {
-        this.lookup = LookupFactory.switchLookup(name, this);
-        isUseAddressServer = this.lookup.useAddressServer();
-        this.lookup.start();
+    public void registerPluginListener() throws AddressException {
+        this.addressPlugin.registerListener(serverList -> {
+            Loggers.CORE.info("server list is updated: " + serverList);
+            Collection<Member> members = MemberUtil.readServerConf(serverList);
+            memberChange(members);
+        });
+    }
+    
+    private void initAddressProperties() {
+        initAddressServerUrl();
+        
+        Map<String, String> env = System.getenv();
+        for (String key : env.keySet()) {
+            if (key.startsWith(ADDRESS_PLUGIN)) {
+                AddressProperties.setProperties(key, env.get(key));
+            }
+        }
+        
+        ConfigurableEnvironment environment = EnvUtil.getEnvironment();
+        MutablePropertySources propertySources = environment.getPropertySources();
+        propertySources.forEach(propertySource -> {
+            if (propertySource instanceof MapPropertySource) {
+                MapPropertySource mps = (MapPropertySource) propertySource;
+                Set<String> keys = mps.getSource().keySet();
+                for (String key : keys) {
+                    if (key.startsWith(ADDRESS_PLUGIN)) {
+                        AddressProperties.setProperties(key, environment.getProperty(key));
+                    }
+                }
+            }
+        });
+        
+    }
+    
+    private void initAddressServerUrl() {
+        String domainName = System.getenv(ADDRESS_SERVER_DOMAIN_ENV);
+        if (StringUtils.isBlank(domainName)) {
+            domainName = EnvUtil.getProperty(ADDRESS_SERVER_DOMAIN_PROPERTY, DEFAULT_SERVER_DOMAIN);
+        }
+        String addressPort = System.getenv(ADDRESS_SERVER_PORT_ENV);
+        if (StringUtils.isBlank(addressPort)) {
+            addressPort = EnvUtil.getProperty(ADDRESS_SERVER_PORT_PROPERTY, DEFAULT_SERVER_POINT);
+        }
+        
+        String addressUrl = System.getenv(ADDRESS_SERVER_URL_ENV);
+        if (StringUtils.isBlank(addressUrl)) {
+            addressUrl = EnvUtil.getProperty(ADDRESS_SERVER_URL_PROPERTY, EnvUtil.getContextPath() + "/" + "serverlist");
+        }
+        
+        String addressServerUrl = HTTP_PREFIX + domainName + ":" + addressPort + addressUrl;
+        String envIdUrl = HTTP_PREFIX + domainName + ":" + addressPort + "/env";
+        
+        AddressProperties.setProperties(ADDRESS_SERVER_URL, addressServerUrl);
+        AddressProperties.setProperties(ENV_ID_URL, envIdUrl);
+        Loggers.CORE.info("ServerListService address-server port:" + addressPort);
+        Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
+    }
+    
+    private void initAddressPlugin() throws NacosException {
+        Optional<AddressPlugin> addressPluginTemp;
+        if (EnvUtil.getStandaloneMode()) {
+            addressPluginTemp =  AddressPluginManager.getInstance()
+                    .findAuthServiceSpiImpl(STANDALONE_ADDRESS_PLUGIN_NAME);
+        } else {
+            String addressPluginName = EnvUtil.getProperty(ADDRESS_PLUGIN_TYPE);
+            addressPluginTemp = AddressPluginManager.getInstance()
+                    .findAuthServiceSpiImpl(addressPluginName);
+        }
+        if (addressPluginTemp.isPresent()) {
+            this.addressPlugin = addressPluginTemp.get();
+            Loggers.CLUSTER.info("Current addressing mode selection : {}", addressPlugin.getPluginName());
+        } else {
+            throw new NacosException(NacosException.SERVER_ERROR, "Can not get AddressPlugin");
+        }
     }
     
     private void registerClusterEvent() {
@@ -228,10 +347,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 return InetUtils.IPChangeEvent.class;
             }
         });
-    }
-    
-    public static boolean isUseAddressServer() {
-        return isUseAddressServer;
     }
     
     /**
@@ -303,8 +418,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return unhealthyMembers;
     }
     
-    public MemberLookup getLookup() {
-        return lookup;
+    public AddressPlugin getAddressPlugin() {
+        return addressPlugin;
     }
     
     public Member getSelf() {
