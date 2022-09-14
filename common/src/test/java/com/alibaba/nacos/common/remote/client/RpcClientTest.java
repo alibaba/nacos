@@ -36,9 +36,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.TimeUnit;
+import java.util.Random;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -49,25 +50,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RpcClientTest {
     
     RpcClient rpcClient;
     
-    Field keepAliveTimeField;
-    
     Field serverListFactoryField;
     
     Field reconnectionSignalField;
-    
-    Field retryTimesField;
-    
-    Field timeoutMillsField;
-    
-    Field healthCheckRetryTimes;
-    
-    Field healthCheckTimeOut;
     
     Method resolveServerInfoMethod;
     
@@ -83,9 +75,47 @@ public class RpcClientTest {
     @Mock
     Connection connection;
     
+    RpcClientConfig rpcClientConfig;
+    
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException {
-        rpcClient = spy(new RpcClient("testClient") {
+        rpcClientConfig = spy(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test";
+            }
+            
+            @Override
+            public int retryTimes() {
+                return 1;
+            }
+            
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+            
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+            
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+            
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+            
+            @Override
+            public Map<String, String> labels() {
+                return new HashMap<>();
+            }
+        });
+        rpcClient = spy(new RpcClient(rpcClientConfig) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -102,9 +132,6 @@ public class RpcClientTest {
             }
         });
         
-        keepAliveTimeField = RpcClient.class.getDeclaredField("keepAliveTime");
-        keepAliveTimeField.setAccessible(true);
-        
         serverListFactoryField = RpcClient.class.getDeclaredField("serverListFactory");
         serverListFactoryField.setAccessible(true);
         
@@ -114,29 +141,11 @@ public class RpcClientTest {
         modifiersField1.setAccessible(true);
         modifiersField1.setInt(reconnectionSignalField, reconnectionSignalField.getModifiers() & ~Modifier.FINAL);
         
-        retryTimesField = RpcClient.class.getDeclaredField("RETRY_TIMES");
-        retryTimesField.setAccessible(true);
-        Field modifiersField3 = Field.class.getDeclaredField("modifiers");
-        modifiersField3.setAccessible(true);
-        modifiersField3.setInt(retryTimesField, retryTimesField.getModifiers() & ~Modifier.FINAL);
-        
-        timeoutMillsField = RpcClient.class.getDeclaredField("DEFAULT_TIMEOUT_MILLS");
-        timeoutMillsField.setAccessible(true);
-        Field modifiersField4 = Field.class.getDeclaredField("modifiers");
-        modifiersField4.setAccessible(true);
-        modifiersField4.setInt(timeoutMillsField, timeoutMillsField.getModifiers() & ~Modifier.FINAL);
-        
         resolveServerInfoMethod = RpcClient.class.getDeclaredMethod("resolveServerInfo", String.class);
         resolveServerInfoMethod.setAccessible(true);
         
         healthCheck = RpcClient.class.getDeclaredMethod("healthCheck");
         healthCheck.setAccessible(true);
-        
-        healthCheckRetryTimes = RpcClient.class.getDeclaredField("healthCheckRetryTimes");
-        healthCheckRetryTimes.setAccessible(true);
-        
-        healthCheckTimeOut = RpcClient.class.getDeclaredField("healthCheckTimeOut");
-        healthCheckTimeOut.setAccessible(true);
         
         runAsSync = invocationOnMock -> {
             Runnable runnable = (Runnable) invocationOnMock.getArguments()[0];
@@ -149,7 +158,7 @@ public class RpcClientTest {
     
     @After
     public void tearDown() throws IllegalAccessException {
-        rpcClient.labels.clear();
+        rpcClientConfig.labels().clear();
         rpcClient.rpcClientStatus.set(RpcClientStatus.WAIT_INIT);
         serverListFactoryField.set(rpcClient, null);
         ((Queue<?>) reconnectionSignalField.get(rpcClient)).clear();
@@ -168,7 +177,42 @@ public class RpcClientTest {
         rpcClient.serverListFactory(serverListFactory);
         Assert.assertEquals(RpcClientStatus.INITIALIZED, rpcClient.rpcClientStatus.get());
         
-        RpcClient client1 = new RpcClient("test", serverListFactory) {
+        RpcClient client1 = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test";
+            }
+            
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+            
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+            
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+            
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+            
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+            
+            @Override
+            public Map<String, String> labels() {
+                return new HashMap<>();
+            }
+        }, serverListFactory) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -186,7 +230,7 @@ public class RpcClientTest {
         };
         Assert.assertEquals(RpcClientStatus.INITIALIZED, client1.rpcClientStatus.get());
         
-        RpcClient client2 = new RpcClient(serverListFactory) {
+        RpcClient client2 = new RpcClient(rpcClientConfig, serverListFactory) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -207,25 +251,16 @@ public class RpcClientTest {
     
     @Test
     public void testLabels() {
-        rpcClient.labels(Collections.singletonMap("labelKey1", "labelValue1"));
+        when(rpcClientConfig.labels()).thenReturn(Collections.singletonMap("labelKey1", "labelValue1"));
         Map.Entry<String, String> element = rpcClient.getLabels().entrySet().iterator().next();
         Assert.assertEquals("labelKey1", element.getKey());
         Assert.assertEquals("labelValue1", element.getValue());
         
         // accumulate labels
-        rpcClient.labels(Collections.singletonMap("labelKey2", "labelValue2"));
-        Assert.assertEquals(2, rpcClient.getLabels().size());
-    }
-    
-    @Test
-    public void testKeepAlive() throws IllegalAccessException {
-        rpcClient.keepAlive(1, TimeUnit.SECONDS);
-        long keepAliveTime = (long) keepAliveTimeField.get(rpcClient);
-        Assert.assertEquals(1000L, keepAliveTime);
-        
-        rpcClient.keepAlive(1, TimeUnit.MINUTES);
-        keepAliveTime = (long) keepAliveTimeField.get(rpcClient);
-        Assert.assertEquals(60000L, keepAliveTime);
+        Map<String, String> map = new HashMap<>();
+        map.put("labelKey2", "labelValue2");
+        when(rpcClientConfig.labels()).thenReturn(map);
+        Assert.assertEquals(1, rpcClient.getLabels().size());
     }
     
     @Test
@@ -387,8 +422,8 @@ public class RpcClientTest {
     @Test
     public void testRequestFutureWhenRetryReachMaxRetryTimesThenSwitchServer()
             throws NacosException, IllegalAccessException {
-        timeoutMillsField.set(rpcClient, 5000L);
-        retryTimesField.set(rpcClient, 3);
+        when(rpcClientConfig.timeOutMills()).thenReturn(5000L);
+        when(rpcClientConfig.retryTimes()).thenReturn(3);
         rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
         rpcClient.currentConnection = connection;
         doThrow(NacosException.class).when(connection).requestFuture(any());
@@ -408,7 +443,42 @@ public class RpcClientTest {
     
     @Test
     public void testRpcClientShutdownWhenClientDidntStart() throws NacosException {
-        RpcClient rpcClient = new RpcClient("test-client") {
+        RpcClient rpcClient = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test-client";
+            }
+            
+            @Override
+            public int retryTimes() {
+                return 3;
+            }
+            
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+            
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+            
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+            
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+            
+            @Override
+            public Map<String, String> labels() {
+                return new HashMap<>();
+            }
+        }) {
             @Override
             public ConnectionType getConnectionType() {
                 return null;
@@ -430,8 +500,9 @@ public class RpcClientTest {
     
     @Test
     public void testHealthCheck() throws IllegalAccessException, NacosException {
-        healthCheckRetryTimes.set(rpcClient, 3);
-        healthCheckTimeOut.set(rpcClient, 3000L);
+        Random random = new Random();
+        int retry = random.nextInt(10);
+        when(rpcClientConfig.healthCheckRetryTimes()).thenReturn(retry);
         rpcClient.rpcClientStatus.set(RpcClientStatus.RUNNING);
         rpcClient.currentConnection = connection;
         doThrow(new NacosException()).when(connection).request(any(), anyLong());
@@ -440,6 +511,6 @@ public class RpcClientTest {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        verify(connection, times(3)).request(any(), anyLong());
+        verify(connection, times(retry + 1)).request(any(), anyLong());
     }
 }
