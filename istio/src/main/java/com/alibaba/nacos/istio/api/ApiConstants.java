@@ -31,24 +31,34 @@ public class ApiConstants {
      * TODO Support other Istio crd, such as gateway, vs, dr and so on.
      */
     public static final String SERVICE_ENTRY_PROTO_PACKAGE = "networking.istio.io/v1alpha3/ServiceEntry";
+    
     public static final String MESH_CONFIG_PROTO_PACKAGE = "core/v1alpha1/MeshConfig";
 
     /**
      * Istio crd type url for mcp
      */
     public static final String MCP_PREFIX = "istio/";
+    
     public static final String SERVICE_ENTRY_COLLECTION = MCP_PREFIX + "networking/v1alpha3/serviceentries";
+    
+    public static final String WORKLOAD_ENTRY_COLLECTION = MCP_PREFIX + "networking/v1alpha3/workloadentries";
 
     /**
      * Istio crd type url of api.
      */
     public static final String MCP_RESOURCE_PROTO = API_TYPE_PREFIX + "istio.mcp.v1alpha1.Resource";
+    
     public static final String SERVICE_ENTRY_PROTO = API_TYPE_PREFIX + "istio.networking.v1alpha3.ServiceEntry";
+    
+    public static final String WORKLOAD_ENTRY_PROTO = API_TYPE_PREFIX + "istio.networking.v1alpha3.WorkloadEntry";
 
     /**
      * Standard xds type url
      * TODO Support lds, rds and sds
      */
-    public static final String CLUSTER_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
+    public static final String CLUSTER_V2_TYPE = API_TYPE_PREFIX + "envoy.api.v2.Cluster";
+    
+    public static final String CLUSTER_V3_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
+    
     public static final String ENDPOINT_TYPE = API_TYPE_PREFIX + "envoy.config.endpoint.v3.ClusterLoadAssignment";
 }

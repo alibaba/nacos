@@ -16,12 +16,22 @@
 
 package com.alibaba.nacos.istio.common;
 
+import com.google.protobuf.ProtocolStringList;
+
 /**
  * @author special.fy
  */
 public class WatchedStatus {
 
     private String type;
+    
+    private boolean lastFull;
+    
+    private boolean lastAckOrNack;
+    
+    private ProtocolStringList lastSubscribe;
+    
+    private ProtocolStringList lastUnSubscribe;
 
     private String latestVersion;
 
@@ -69,5 +79,37 @@ public class WatchedStatus {
 
     public void setAckedNonce(String ackedNonce) {
         this.ackedNonce = ackedNonce;
+    }
+    
+    public boolean isLastFull() {
+        return lastFull;
+    }
+    
+    public void setLastFull(boolean lastFull) {
+        this.lastFull = lastFull;
+    }
+    
+    public boolean isLastAckOrNack() {
+        return lastAckOrNack;
+    }
+    
+    public void setLastAckOrNack(boolean lastAckOrNack) {
+        this.lastAckOrNack = lastAckOrNack;
+    }
+    
+    public ProtocolStringList getLastSubscribe() {
+        return lastSubscribe;
+    }
+    
+    public void setLastSubscribe(ProtocolStringList lastSubscribe) {
+        this.lastSubscribe = lastSubscribe;
+    }
+    
+    public ProtocolStringList getLastUnSubscribe() {
+        return lastUnSubscribe;
+    }
+    
+    public void setLastUnSubscribe(ProtocolStringList lastUnSubscribe) {
+        this.lastUnSubscribe = lastUnSubscribe;
     }
 }

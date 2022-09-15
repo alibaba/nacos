@@ -24,6 +24,7 @@ import com.alibaba.nacos.istio.common.NacosResourceManager;
 import com.alibaba.nacos.istio.common.ResourceSnapshot;
 import com.alibaba.nacos.istio.common.WatchedStatus;
 import com.alibaba.nacos.istio.misc.Loggers;
+import com.alibaba.nacos.istio.model.PushContext;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import io.grpc.stub.StreamObserver;
 import istio.mcp.v1alpha1.Mcp;
@@ -105,8 +106,10 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         if (!shouldPush(requestResources, connection)) {
             return;
         }
-
-        Mcp.Resources response = buildMcpResourcesResponse(requestResources.getCollection(), resourceManager.getResourceSnapshot());
+    
+        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
+        
+        Mcp.Resources response = buildMcpResourcesResponse(requestResources.getCollection(), pushContext);
         connection.push(response, connection.getWatchedStatusByType(requestResources.getCollection()));
     }
 
@@ -163,9 +166,10 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     return;
                 }
 
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-
-                Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, resourceSnapshot);
+                Loggers.MAIN.info("mcp: event {} trigger push.", event.getType());
+    
+                PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
+                Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushContext);
 
                 for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
@@ -174,21 +178,23 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     }
                 }
                 break;
+            case Endpoint:
+                break;
             default:
                 Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
         }
     }
 
-    private Mcp.Resources buildMcpResourcesResponse(String type, ResourceSnapshot resourceSnapshot) {
+    private Mcp.Resources buildMcpResourcesResponse(String type, PushContext pushContext) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Resource> serviceEntryGenerator = (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
-        List<Resource> rawResources = serviceEntryGenerator.generate(resourceSnapshot);
+        List<Resource> rawResources = serviceEntryGenerator.generate(pushContext);
 
         String nonce = NonceGenerator.generateNonce();
         return Mcp.Resources.newBuilder()
                 .setCollection(type)
                 .addAllResources(rawResources)
-                .setSystemVersionInfo(resourceSnapshot.getVersion())
+                .setSystemVersionInfo(pushContext.getVersion())
                 .setNonce(nonce).build();
     }
 }

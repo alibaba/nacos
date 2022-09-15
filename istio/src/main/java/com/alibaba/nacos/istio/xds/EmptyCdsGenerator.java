@@ -1,5 +1,6 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.alibaba.nacos.istio.xds;
@@ -25,18 +27,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author special.fy
+/**.
+ * @author RocketEngine26
+ * @date 2022/8/9 18:59
  */
-public class EmptyXdsGenerator implements ApiGenerator<Any> {
-
-    private static volatile EmptyXdsGenerator singleton = null;
-
-    public static EmptyXdsGenerator getInstance() {
+public class EmptyCdsGenerator implements ApiGenerator<Any> {
+    
+    private static volatile EmptyCdsGenerator singleton = null;
+    
+    public static EmptyCdsGenerator getInstance() {
         if (singleton == null) {
-            synchronized (EmptyXdsGenerator.class) {
+            synchronized (EmptyCdsGenerator.class) {
                 if (singleton == null) {
-                    singleton = new EmptyXdsGenerator();
+                    singleton = new EmptyCdsGenerator();
                 }
             }
         }

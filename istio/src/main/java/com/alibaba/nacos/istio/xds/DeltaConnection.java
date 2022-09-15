@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.alibaba.nacos.istio.xds;
@@ -19,37 +20,39 @@ package com.alibaba.nacos.istio.xds;
 import com.alibaba.nacos.istio.common.AbstractConnection;
 import com.alibaba.nacos.istio.common.WatchedStatus;
 import com.alibaba.nacos.istio.misc.Loggers;
-import io.envoyproxy.envoy.service.discovery.v3.DiscoveryResponse;
+import io.envoyproxy.envoy.service.discovery.v3.DeltaDiscoveryResponse;
 import io.grpc.stub.StreamObserver;
 
 /**
- * @author special.fy
+ * @author RocketEngine26
+ * @date 2022/8/20 下午10:46
  */
-public class XdsConnection extends AbstractConnection<DiscoveryResponse> {
-
-    public XdsConnection(StreamObserver<DiscoveryResponse> streamObserver) {
+public class DeltaConnection extends AbstractConnection<DeltaDiscoveryResponse> {
+    
+    public DeltaConnection(StreamObserver<DeltaDiscoveryResponse> streamObserver) {
         super(streamObserver);
     }
-
-    @Override
-    public void push(DiscoveryResponse response, WatchedStatus watchedStatus) {
-        if (Loggers.MAIN.isDebugEnabled()) {
-            Loggers.MAIN.debug("discoveryResponse: {}", response.toString());
-        }
     
-        Loggers.MAIN.info("discoveryResponse: {}", response.toString());
+    @Override
+    public void push(DeltaDiscoveryResponse response, WatchedStatus watchedStatus) {
+        if (Loggers.MAIN.isDebugEnabled()) {
+            Loggers.MAIN.debug("DeltaDiscoveryResponse: {}", response.toString());
+        }
+        
+        Loggers.MAIN.info("DeltaDiscoveryResponse: {}", response.toString());
         
         this.streamObserver.onNext(response);
-
+        
         // Update watched status
-        watchedStatus.setLatestVersion(response.getVersionInfo());
+        watchedStatus.setLatestVersion(response.getSystemVersionInfo());
         watchedStatus.setLatestNonce(response.getNonce());
-
-        Loggers.MAIN.info("xds: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
+        
+        Loggers.MAIN.info("delta: push, type: {}, connection-id {}, version {}, nonce {}, resource size {}.",
                 watchedStatus.getType(),
                 getConnectionId(),
-                response.getVersionInfo(),
+                response.getSystemVersionInfo(),
                 response.getNonce(),
                 response.getResourcesCount());
     }
 }
+

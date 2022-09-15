@@ -22,25 +22,29 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
+/**.
  * @author special.fy
  */
 public class IstioService {
-
-    private String name;
-
-    private String groupName;
-
-    private String namespace;
-
-    private Long revision;
-
-    private List<Instance> hosts;
-
-    private Date createTimeStamp;
-
+    
+    private final String name;
+    
+    private final String groupName;
+    
+    private final String namespace;
+    
+    private final Long revision;
+    
+    private final Map<String, Integer> portsMap = new HashMap<>(16);
+    
+    private final List<IstioEndpoint> hosts;
+    
+    private final Date createTimeStamp;
+    
     public IstioService(Service service, ServiceInfo serviceInfo) {
         this.name = serviceInfo.getName();
         this.groupName = serviceInfo.getGroupName();
@@ -49,10 +53,14 @@ public class IstioService {
         // Record the create time of service to avoid trigger istio pull push.
         // See https://github.com/istio/istio/pull/30684
         createTimeStamp = new Date();
-
-        this.hosts = sanitizeServiceInfo(serviceInfo);
+        
+        this.hosts = sanitizeServiceInfo(this, serviceInfo);
+        
+        for (IstioEndpoint istioEndpoint : this.hosts) {
+            this.portsMap.put(istioEndpoint.getProtocol(), istioEndpoint.getPort());
+        }
     }
-
+    
     public IstioService(Service service, ServiceInfo serviceInfo, IstioService old) {
         this.name = serviceInfo.getName();
         this.groupName = serviceInfo.getGroupName();
@@ -61,47 +69,59 @@ public class IstioService {
         // set the create time of service as old time to avoid trigger istio pull push.
         // See https://github.com/istio/istio/pull/30684
         createTimeStamp = old.getCreateTimeStamp();
-
-        this.hosts = sanitizeServiceInfo(serviceInfo);
+        
+        this.hosts = sanitizeServiceInfo(this, serviceInfo);
+        
+        for (IstioEndpoint istioEndpoint : this.hosts) {
+            this.portsMap.put(istioEndpoint.getProtocol(), istioEndpoint.getPort());
+        }
     }
-
-    private List<Instance> sanitizeServiceInfo(ServiceInfo serviceInfo) {
-        List<Instance> hosts = new ArrayList<>();
-
+    
+    private List<IstioEndpoint> sanitizeServiceInfo(IstioService istioService, ServiceInfo serviceInfo) {
+        List<IstioEndpoint> hosts = new ArrayList<>();
+        
         for (Instance instance : serviceInfo.getHosts()) {
             if (instance.isHealthy() && instance.isEnabled()) {
-                hosts.add(instance);
+                IstioEndpoint istioEndpoint = new IstioEndpoint(instance, istioService);
+                hosts.add(istioEndpoint);
             }
         }
-
+        
         // Panic mode, all instances are invalid, to push all instances to istio.
         if (hosts.isEmpty()) {
-            hosts = serviceInfo.getHosts();
+            for (Instance instance : serviceInfo.getHosts()) {
+                IstioEndpoint istioEndpoint = new IstioEndpoint(instance, istioService);
+                hosts.add(istioEndpoint);
+            }
         }
-
+        
         return hosts;
     }
-
+    
     public String getName() {
         return name;
     }
-
+    
     public String getGroupName() {
         return groupName;
     }
-
+    
     public String getNamespace() {
         return namespace;
     }
-
+    
     public Long getRevision() {
         return revision;
     }
-
-    public List<Instance> getHosts() {
+    
+    public Map<String, Integer> getPortsMap() {
+        return portsMap;
+    }
+    
+    public List<IstioEndpoint> getHosts() {
         return hosts;
     }
-
+    
     public Date getCreateTimeStamp() {
         return createTimeStamp;
     }
