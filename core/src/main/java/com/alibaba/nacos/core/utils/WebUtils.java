@@ -79,9 +79,6 @@ public class WebUtils {
      * @return value
      */
     public static String optional(final HttpServletRequest req, final String key, final String defaultValue) {
-        if (!req.getParameterMap().containsKey(key) || req.getParameterMap().get(key)[0] == null) {
-            return defaultValue;
-        }
         String value = req.getParameter(key);
         if (StringUtils.isBlank(value)) {
             return defaultValue;
