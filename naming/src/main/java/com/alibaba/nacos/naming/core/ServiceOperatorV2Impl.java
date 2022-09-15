@@ -19,9 +19,11 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -90,6 +92,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
+        NotifyCenter.publishEvent(new InfoChangeEvent.ServiceInfoChangeEvent(service));
     }
     
     @Override

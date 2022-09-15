@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -30,6 +31,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
+import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -130,6 +132,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         String metadataId = InstancePublishInfo
                 .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
         metadataOperateService.updateInstanceMetadata(service, metadataId, buildMetadata(instance));
+        NotifyCenter.publishEvent(new InfoChangeEvent.InstanceInfoChangeEvent(service, instance));
     }
     
     private InstanceMetadata buildMetadata(Instance instance) {

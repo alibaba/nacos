@@ -67,10 +67,13 @@ public final class CdsV2Generator implements ApiGenerator<Any> {
         Map<String, IstioService> istioServiceMap = pushContext.getResourceSnapshot().getIstioResources().getIstioServiceMap();
     
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
-            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
+            Object[] ports = entry.getValue().getPortsMap().values().toArray();
+            if (ports.length <= 0) {
+                continue;
+            }
             boolean protocolFlag = entry.getValue().getPortsMap().containsKey("grpc");
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + '.' + istioConfig.getDomainSuffix(), port);
+                    entry.getKey() + '.' + istioConfig.getDomainSuffix(), (int) ports[0]);
     
             Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
                     .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
