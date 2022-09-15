@@ -101,13 +101,6 @@ class NewNameSpace extends React.Component {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
       if (errors) return;
-      const flag = this.state.dataSource.every(
-        val => val.namespaceShowName !== values.namespaceShowName
-      );
-      if (!flag) {
-        Dialog.alert({ content: locale.norepeat });
-        return;
-      }
       this.disabled = true;
       this.setState({
         disabled: true,

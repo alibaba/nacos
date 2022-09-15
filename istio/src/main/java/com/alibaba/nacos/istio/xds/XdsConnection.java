@@ -36,7 +36,9 @@ public class XdsConnection extends AbstractConnection<DiscoveryResponse> {
         if (Loggers.MAIN.isDebugEnabled()) {
             Loggers.MAIN.debug("discoveryResponse: {}", response.toString());
         }
-
+    
+        Loggers.MAIN.info("discoveryResponse: {}", response.toString());
+        
         this.streamObserver.onNext(response);
 
         // Update watched status

@@ -18,6 +18,9 @@ package com.alibaba.nacos.istio.api;
 
 import com.alibaba.nacos.istio.mcp.EmptyMcpGenerator;
 import com.alibaba.nacos.istio.mcp.ServiceEntryMcpGenerator;
+import com.alibaba.nacos.istio.xds.CdsV2Generator;
+import com.alibaba.nacos.istio.xds.CdsV3Generator;
+import com.alibaba.nacos.istio.xds.EdsGenerator;
 import com.alibaba.nacos.istio.xds.EmptyXdsGenerator;
 import com.alibaba.nacos.istio.xds.ServiceEntryXdsGenerator;
 import org.springframework.stereotype.Component;
@@ -27,7 +30,7 @@ import java.util.Map;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.*;
 
-/**
+/**.
  * @author special.fy
  */
 @Component
@@ -41,6 +44,11 @@ public class ApiGeneratorFactory {
         apiGeneratorMap.put(SERVICE_ENTRY_PROTO_PACKAGE, ServiceEntryXdsGenerator.getInstance());
         // TODO Support other api generator
 
+        //xds
+        apiGeneratorMap.put(CLUSTER_V2_TYPE, CdsV2Generator.getInstance());
+        apiGeneratorMap.put(CLUSTER_V3_TYPE, CdsV3Generator.getInstance());
+        apiGeneratorMap.put(ENDPOINT_TYPE, EdsGenerator.getInstance());
+        
         // mcp
         apiGeneratorMap.put(SERVICE_ENTRY_COLLECTION, ServiceEntryMcpGenerator.getInstance());
     }

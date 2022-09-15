@@ -223,7 +223,7 @@ public class ServerListManager implements Closeable {
     }
     
     private String initServerName(Properties properties) {
-        String serverName = "";
+        String serverName;
         //1.user define server name.
         if (properties != null && properties.containsKey(PropertyKeyConst.SERVER_NAME)) {
             serverName = properties.get(PropertyKeyConst.SERVER_NAME).toString();
@@ -231,7 +231,7 @@ public class ServerListManager implements Closeable {
             // if fix url,use fix url join string.
             if (isFixed) {
                 serverName = FIXED_NAME + "-" + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
-                        : "") + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()]));
+                        : "") + getFixedNameSuffix(serverUrls.toArray(new String[0]));
             } else {
                 //if use endpoint ,  use endpoint ,content path ,serverlist name
                 serverName = CUSTOM_NAME + "-" + String
@@ -239,8 +239,8 @@ public class ServerListManager implements Closeable {
                         StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
             }
         }
-        serverName.replaceAll("\\/", "_");
-        serverName.replaceAll("\\:", "_");
+        serverName = serverName.replaceAll("\\/", "_");
+        serverName = serverName.replaceAll("\\:", "_");
         
         return serverName;
     }
@@ -254,8 +254,8 @@ public class ServerListManager implements Closeable {
                         ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName));
         boolean hasQueryString = false;
         if (StringUtils.isNotBlank(namespace)) {
-            addressServerUrlTem.append("?namespace=" + namespace);
-            hasQueryString = false;
+            addressServerUrlTem.append("?namespace=").append(namespace);
+            hasQueryString = true;
         }
         if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
             addressServerUrlTem

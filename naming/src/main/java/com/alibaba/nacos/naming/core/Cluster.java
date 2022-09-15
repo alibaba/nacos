@@ -308,7 +308,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         Map<String, Instance> stringIpAddressMap = new ConcurrentHashMap<>(intersects.size());
         
         for (Instance instance : intersects) {
-            stringIpAddressMap.put(instance.getIp() + ":" + instance.getPort(), instance);
+            stringIpAddressMap.put(instance.toIpAddr(), instance);
         }
         
         Map<String, Integer> intersectMap = new ConcurrentHashMap<>(newInstance.size() + oldInstance.size());
@@ -316,19 +316,14 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         Map<String, Instance> newInstancesMap = new ConcurrentHashMap<>(newInstance.size());
         
         for (Instance instance : oldInstance) {
-            if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+            if (stringIpAddressMap.containsKey(instance.toIpAddr())) {
                 intersectMap.put(instance.toString(), 1);
             }
         }
         
         for (Instance instance : newInstance) {
-            if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
-                
-                if (intersectMap.containsKey(instance.toString())) {
-                    intersectMap.put(instance.toString(), 2);
-                } else {
-                    intersectMap.put(instance.toString(), 1);
-                }
+            if (stringIpAddressMap.containsKey(instance.toIpAddr())) {
+                intersectMap.put(instance.toString(), intersectMap.containsKey(instance.toString()) ? 2 : 1);
             }
             
             newInstancesMap.put(instance.toString(), instance);
@@ -338,11 +333,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         for (Map.Entry<String, Integer> entry : intersectMap.entrySet()) {
             String key = entry.getKey();
             Integer value = entry.getValue();
-            
-            if (value == 1) {
-                if (newInstancesMap.containsKey(key)) {
-                    updatedInstancesMap.put(key, newInstancesMap.get(key));
-                }
+
+            if (value == 1 && newInstancesMap.containsKey(key)) {
+                updatedInstancesMap.put(key, newInstancesMap.get(key));
             }
         }
         

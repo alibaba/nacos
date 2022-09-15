@@ -25,7 +25,8 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
-import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -113,9 +114,9 @@ public class InstanceControllerV2 {
             instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
         }
         instanceServiceV2.registerInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(new NamingTraceEvent.RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
                 false, namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
-                instance.toInetAddr()));
+                instance.getIp(), instance.getPort()));
         return "ok";
     }
     
@@ -154,9 +155,9 @@ public class InstanceControllerV2 {
         }
         
         instanceServiceV2.removeInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
                 false, DeregisterInstanceReason.REQUEST, namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
-                instance.toInetAddr()));
+                instance.getIp(), instance.getPort()));
         return "ok";
     }
     

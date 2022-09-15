@@ -16,8 +16,15 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import org.junit.Assert;
 import org.junit.Test;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * {@link TpsMonitorPoint} unit tests.
@@ -29,14 +36,16 @@ public class TpsMonitorPointTest {
     
     @Test
     public void testStaticMethod() {
-        long current = System.currentTimeMillis();
-        String date = TpsMonitorPoint.getTimeFormatOfSecond(current);
-        Assert.assertNotNull(date);
+        //2022-08-23 14:23:53
+        assertEquals(1661235833000L, TpsMonitorPoint.getTrimMillsOfSecond(1661235833111L));
+        //2022-08-23 14:23:00
+        assertEquals(1661235780000L, TpsMonitorPoint.getTrimMillsOfMinute(1661235833111L));
+        //2022-08-23 14:00:00
+        assertEquals(1661234400000L, TpsMonitorPoint.getTrimMillsOfHour(1661235833111L));
         
-        TpsMonitorPoint.getTrimMillsOfSecond(current);
-    
-        TpsMonitorPoint.getTrimMillsOfMinute(current);
-    
-        TpsMonitorPoint.getTrimMillsOfHour(current);
+        assertEquals(LocalDateTime.of(2022, 8, 23, 14, 23, 53).atZone(ZoneOffset.ofHours(8))
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+                        .withLocale(Locale.getDefault())), TpsMonitorPoint.getTimeFormatOfSecond(1661235833111L));
     }
+    
 }
