@@ -26,6 +26,7 @@ import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.model.PushChange;
 import com.alibaba.nacos.istio.util.IstioCrdUtil;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -86,6 +87,8 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
         //TODO: service data change event, instance event
         result.add(ClientOperationEvent.ClientRegisterServiceEvent.class);
         result.add(ClientOperationEvent.ClientDeregisterServiceEvent.class);
+        result.add(InfoChangeEvent.ServiceInfoChangeEvent.class);
+        result.add(InfoChangeEvent.InstanceInfoChangeEvent.class);
         return result;
     }
     
@@ -114,12 +117,12 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
                 //instance change
                 Loggers.MAIN.info("have old");
                 //instance name is cate + . + instance id + . + service name,e.g
-                pushChange = new PushChange("instance.51247." + serviceName, PushChange.ChangeType.UP);
+                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.UP);
             } else {
                 Loggers.MAIN.info("have new");
                 pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.UP);
                 pushChangeQueue.add(pushChange);
-                pushChange = new PushChange("instance.51247." + serviceName, PushChange.ChangeType.UP);
+                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.UP);
             }
     
             serviceCache.put(serviceName, service);
@@ -134,13 +137,31 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             
             if (serviceStorage.getPushData(service).ipCount() > 0) {
                 Loggers.MAIN.info("remain instance");
-                pushChange = new PushChange("instance.5666." + serviceName, PushChange.ChangeType.DOWN);
+                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DOWN);
             } else {
                 Loggers.MAIN.info("no instance left");
                 pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DOWN);
                 pushChangeQueue.add(pushChange);
-                pushChange = new PushChange("instance.5666." + serviceName, PushChange.ChangeType.DOWN);
+                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DOWN);
             }
+    
+            serviceCache.put(serviceName, service);
+            pushChangeQueue.add(pushChange);
+            
+        } else if (event instanceof InfoChangeEvent.ServiceInfoChangeEvent) {
+            InfoChangeEvent.ServiceInfoChangeEvent serviceInfoChangeEvent = (InfoChangeEvent.ServiceInfoChangeEvent) event;
+            Service service = serviceInfoChangeEvent.getService();
+            String serviceName = IstioCrdUtil.buildServiceName(service);
+            PushChange pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DATA);
+            
+            serviceCache.put(serviceName, service);
+            pushChangeQueue.add(pushChange);
+            
+        } else if (event instanceof InfoChangeEvent.InstanceInfoChangeEvent) {
+            InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent = (InfoChangeEvent.InstanceInfoChangeEvent) event;
+            Service service = instanceInfoChangeEvent.getService();
+            String serviceName = IstioCrdUtil.buildServiceName(service);
+            PushChange pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DATA);
     
             serviceCache.put(serviceName, service);
             pushChangeQueue.add(pushChange);

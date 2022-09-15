@@ -64,18 +64,19 @@ public final class CdsV3Generator implements ApiGenerator<Any> {
         List<Any> result = new ArrayList<>();
         IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
         Map<String, IstioService> istioServiceMap = pushContext.getResourceSnapshot().getIstioResources().getIstioServiceMap();
-        
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
-            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
+            Object[] ports = entry.getValue().getPortsMap().values().toArray();
+            if (ports.length <= 0) {
+                continue;
+            }
             boolean protocolFlag = entry.getValue().getPortsMap().containsKey("grpc");
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + '.' +  istioConfig.getDomainSuffix(), port);
-    
+                    entry.getKey() + '.' +  istioConfig.getDomainSuffix(), (int) ports[0]);
+            
             Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
                     .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
                             ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder())
                                     .setResourceApiVersionValue(V2_VALUE).build()).build());
-            
             if (protocolFlag) {
                 cluster.setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build());
             } else {
