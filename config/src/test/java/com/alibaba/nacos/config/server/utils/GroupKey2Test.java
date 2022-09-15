@@ -100,7 +100,17 @@ public class GroupKey2Test {
         // Assert result
         Assert.assertArrayEquals(new String[] {null, "/", null}, actual);
     }
-    
+
+    @Test
+    public void testParseKeyForNullIllegalArgumentException() {
+
+        // Act
+        thrown.expect(IllegalArgumentException.class);
+        GroupKey2.parseKey(null);
+
+        // Method is not expected to return due to exception thrown
+    }
+
     @Test
     public void testParseKeyForPlusIllegalArgumentException() {
         

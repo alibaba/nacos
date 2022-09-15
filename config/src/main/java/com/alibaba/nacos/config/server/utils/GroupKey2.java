@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
@@ -49,6 +50,8 @@ public class GroupKey2 {
      * Parse the group key.
      */
     public static String[] parseKey(String groupKey) {
+        AbstractAssert.notNull(groupKey, "groupKey must not be null");
+
         StringBuilder sb = new StringBuilder();
         String dataId = null;
         String group = null;

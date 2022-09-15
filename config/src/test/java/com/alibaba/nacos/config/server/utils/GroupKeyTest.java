@@ -35,7 +35,7 @@ public class GroupKeyTest {
     public void testParseInvalidGroupKey() {
         String key = "11111+222+333333+444";
         try {
-            GroupKey2.parseKey(key);
+            GroupKey.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
@@ -43,7 +43,7 @@ public class GroupKeyTest {
         
         key = "11111+";
         try {
-            GroupKey2.parseKey(key);
+            GroupKey.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
@@ -51,7 +51,7 @@ public class GroupKeyTest {
         
         key = "11111%29+222";
         try {
-            GroupKey2.parseKey(key);
+            GroupKey.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
@@ -59,14 +59,14 @@ public class GroupKeyTest {
         
         key = "11111%2b+222";
         try {
-            GroupKey2.parseKey(key);
+            GroupKey.parseKey(key);
             Assert.fail();
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
         
         key = "11111%25+222";
-        String[] pair = GroupKey2.parseKey(key);
+        String[] pair = GroupKey.parseKey(key);
         Assert.assertEquals("11111%", pair[0]);
         Assert.assertEquals("222", pair[1]);
     }
@@ -120,7 +120,17 @@ public class GroupKeyTest {
         // Assert result
         Assert.assertArrayEquals(new String[] {null, "/", null}, actual);
     }
-    
+
+    @Test
+    public void testParseKeyForNullIllegalArgumentException() {
+
+        // Act
+        thrown.expect(IllegalArgumentException.class);
+        GroupKey.parseKey(null);
+
+        // Method is not expected to return due to exception thrown
+    }
+
     @Test
     public void testParseKeyForPlusIllegalArgumentException() {
         
