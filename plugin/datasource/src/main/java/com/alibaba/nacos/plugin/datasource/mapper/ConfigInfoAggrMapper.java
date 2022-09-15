@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import java.util.List;
+
 /**
  * The mapper of config info.
  *
@@ -65,9 +67,10 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * The default sql:
      * DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN (...)
      *
+     * @param datumList datumList
      * @return The sql of deleting aggregated data in bulk.
      */
-    String batchRemoveAggr();
+    String batchRemoveAggr(List<String> datumList);
     
     /**
      * Delete a single piece of data before aggregation.
@@ -93,9 +96,11 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * The default sql:
      * SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?
      *
+     * @param datumIds datum id list
+     * @param isIn     search condition
      * @return The sql of getting count of aggregation config info.
      */
-    String aggrConfigInfoCount();
+    String aggrConfigInfoCount(List<String> datumIds, boolean isIn);
     
     /**
      * Find a single piece of data before aggregation.

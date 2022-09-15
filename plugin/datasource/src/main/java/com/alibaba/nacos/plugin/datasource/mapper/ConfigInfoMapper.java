@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * The mapper of config info.
  *
@@ -214,6 +217,28 @@ public interface ConfigInfoMapper extends Mapper {
     String findChangeConfig();
     
     /**
+     * Get the count of config information.
+     * The default sql:
+     * SELECT count(*) FROM config_info WHERE ...
+     *
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
+     *               the value is the key's value.
+     * @return The sql of getting the count of config information.
+     */
+    String findChangeConfigCountRows(Map<String, String> params);
+    
+    /**
+     * According to the time period and configuration conditions to query the eligible configuration.
+     * The default sql:
+     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ...
+     *
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
+     *               the value is the key's value.
+     * @return The sql of getting config information according to the time period.
+     */
+    String findChangeConfigFetchRows(Map<String, String> params);
+    
+    /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
      * The default sql:
      * INSERT INTO config_info(data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,
@@ -293,4 +318,73 @@ public interface ConfigInfoMapper extends Mapper {
      * @return The sql of querying dataId list by namespace.
      */
     String queryConfigInfoByNamespace();
+    
+    /**
+     * query all configuration information according to group, appName, tenant (for export).
+     * The default sql:
+     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,
+     * src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key
+     * FROM config_info WHERE ...
+     *
+     * @param ids       ids
+     * @param params    The map of params, the key is the parameter name(dataId, group, appName),
+     *                  the value is the key's value.
+     * @return Collection of ConfigInfo objects
+     */
+    String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params);
+    
+    /**
+     * Use select in to realize batch query of db records; subQueryLimit specifies the number of conditions in in, with
+     * an upper limit of 20.
+     * The default sql:
+     * SELECT data_id, group_id, tenant_id, app_name, content FROM config_info WHERE group_id = ? AND tenant_id = ? AND data_id IN (...)
+     *
+     * @param dataIds data id list
+     * @return The sql to get config information by batch.
+     */
+    String findConfigInfoByBatch(List<String> dataIds);
+    
+    /**
+     * Get the count of config information.
+     * The default sql:
+     * SELECT count(*) FROM config_info WHERE ...
+     *
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, appName, content),
+     *               the value is the key's value.
+     * @return The sql of getting the count of config information.
+     */
+    String findConfigInfoLikeCountRows(Map<String, String> params);
+    
+    /**
+     * Get the config information.
+     * The default sql:
+     * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE
+     *
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, appName, content),
+     *               the value is the key's value.
+     * @return The sql of getting the config information.
+     */
+    String findConfigInfoLikeFetchRows(Map<String, String> params);
+    
+    /**
+     * Get the count of config information.
+     * The default sql:
+     * SELECT count(*) FROM config_info WHERE ...
+     *
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, content),
+     *               the value is the arbitrary object.
+     * @return The sql of getting the count of config information.
+     */
+    String findConfigInfoBaseLikeCountRows(Map<String, String> params);
+    
+    /**
+     * Get the config information.
+     * The default sql:
+     * SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ...
+     *
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, content),
+     *               the value is the key's value.
+     * @return The sql of getting the config information.
+     */
+    String findConfigInfoBaseLikeFetchRows(Map<String, String> params);
 }
