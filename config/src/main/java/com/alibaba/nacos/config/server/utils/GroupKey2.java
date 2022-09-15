@@ -89,7 +89,7 @@ public class GroupKey2 {
         } else {
             tenant = sb.toString();
         }
-        if (group.length() == 0) {
+        if (StringUtils.isBlank(group)) {
             throw new IllegalArgumentException("invalid groupkey:" + groupKey);
         }
     
