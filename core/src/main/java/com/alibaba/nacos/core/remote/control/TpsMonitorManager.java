@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.Event;
