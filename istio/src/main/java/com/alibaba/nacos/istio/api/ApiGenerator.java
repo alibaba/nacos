@@ -36,6 +36,12 @@ public interface ApiGenerator<T> {
      * @return data
      */
     List<T> generate(PushContext pushContext);
-    
+    /**
+     * Delta generate data based on resource snapshot.
+     *
+     * @param pushContext Push Context
+     * @param removed Removed Resource
+     * @return data
+     */
     List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed);
 }
