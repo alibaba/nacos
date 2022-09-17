@@ -23,11 +23,9 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

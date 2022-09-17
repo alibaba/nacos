@@ -176,8 +176,6 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
 
     @Override
     public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
-        String sqlCountRows = "SELECT count(*) FROM roles";
-        String sqlFetchRows = "SELECT role, username FROM roles";
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
 
@@ -192,6 +190,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         if (CollectionUtils.isNotEmpty(params)) {
             where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
         }
+        String sqlCountRows = "SELECT count(*) FROM roles";
+        String sqlFetchRows = "SELECT role, username FROM roles";
 
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,

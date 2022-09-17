@@ -87,10 +87,10 @@ public interface RolePersistService {
      */
     String generateLikeArgument(String s);
 
-    /**
+    /**.
      * fuzzy query role information based on roleName and username
+     *
      * @param username username of user
-     * @param rolename role name
      * @param pageNo page number
      * @param pageSize page size
      * @return {@link Page} with {@link RoleInfo} generation
