@@ -22,7 +22,7 @@ import com.alibaba.nacos.istio.model.DeltaResources;
  */
 public class Event {
     private EventType type;
-    
+
     private DeltaResources deltaResources;
     
     public Event(EventType type, DeltaResources deltaResources) {
@@ -33,7 +33,7 @@ public class Event {
     public Event(EventType type) {
         this.type = type;
     }
-    
+
     public DeltaResources getDeltaResources() {
         return deltaResources;
     }

@@ -34,18 +34,18 @@ import java.io.IOException;
  */
 @Service
 public class IstioServer {
-    
+
     private Server server;
     
     @Autowired
     private IstioConfig istioConfig;
-    
+
     @Autowired
     private ServerInterceptor serverInterceptor;
-    
+
     @Autowired
     private NacosMcpService nacosMcpService;
-    
+
     @Autowired
     private NacosXdsService nacosXdsService;
     
@@ -56,7 +56,7 @@ public class IstioServer {
      */
     @PostConstruct
     public void start() throws IOException {
-    
+
         if (!istioConfig.isServerEnabled()) {
             Loggers.MAIN.info("The Nacos Istio server is disabled.");
             return;
@@ -73,14 +73,14 @@ public class IstioServer {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-    
+
                 System.out.println("Stopping Nacos Istio server...");
                 IstioServer.this.stop();
                 System.out.println("Nacos Istio server stopped...");
             }
         });
     }
-    
+
     /**
      * Stop.
      */

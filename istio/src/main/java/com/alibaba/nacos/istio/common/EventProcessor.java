@@ -156,7 +156,6 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
         if (null == nacosXdsService) {
             nacosXdsService = ApplicationUtils.getBean(NacosXdsService.class);
         }
-        
         if (null == nacosMcpService) {
             nacosMcpService = ApplicationUtils.getBean(NacosMcpService.class);
         }

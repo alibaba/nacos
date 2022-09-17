@@ -52,9 +52,9 @@ import static com.alibaba.nacos.istio.util.IstioExecutor.debouncePushChange;
  */
 @org.springframework.stereotype.Service
 public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
-    
+
     private final Map<String, IstioService> serviceInfoMap = new ConcurrentHashMap<>(16);
-    
+
     private final Map<String, Service> serviceCache = new ConcurrentHashMap<>(16);
     
     private final Queue<PushChange> pushChangeQueue = new ConcurrentLinkedQueue<>();

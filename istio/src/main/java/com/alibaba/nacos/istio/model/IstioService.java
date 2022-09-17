@@ -76,10 +76,10 @@ public class IstioService {
             this.portsMap.put(istioEndpoint.getProtocol(), istioEndpoint.getPort());
         }
     }
-    
+
     private List<IstioEndpoint> sanitizeServiceInfo(IstioService istioService, ServiceInfo serviceInfo) {
         List<IstioEndpoint> hosts = new ArrayList<>();
-        
+
         for (Instance instance : serviceInfo.getHosts()) {
             if (instance.isHealthy() && instance.isEnabled()) {
                 IstioEndpoint istioEndpoint = new IstioEndpoint(instance, istioService);

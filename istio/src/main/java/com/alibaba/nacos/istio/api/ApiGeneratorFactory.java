@@ -29,7 +29,7 @@ import java.util.Map;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.*;
 
-/**.
+/**
  * @author special.fy
  */
 @Component

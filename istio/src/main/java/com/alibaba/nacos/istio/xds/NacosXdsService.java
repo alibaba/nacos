@@ -350,33 +350,24 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
             return;
         }
         boolean full = resourceSnapshot.getIstioConfig().isFullEnabled();
-        
-        switch (event.getType()) {
-            case Service:
-                for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
-                    //mcp
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
-                    if (watchedStatus != null && watchedStatus.isLastAckOrNack()) {
-                        PushContext pushContext = new PushContext(resourceSnapshot, full,
-                                watchedStatus.getLastSubscribe(), watchedStatus.getLastUnSubscribe());
-                        DeltaDiscoveryResponse serviceEntryResponse = buildDeltaDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushContext);
-                        connection.push(serviceEntryResponse, watchedStatus);
-                    }
+        for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
+            WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
+            if (watchedStatus != null && watchedStatus.isLastAckOrNack()) {
+                PushContext pushContext = new PushContext(resourceSnapshot, full,
+                        watchedStatus.getLastSubscribe(), watchedStatus.getLastUnSubscribe());
+                DeltaDiscoveryResponse serviceEntryResponse = buildDeltaDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushContext);
+                connection.push(serviceEntryResponse, watchedStatus);
+            }
+            
+            if (event.getType() == EventType.Endpoint) {
+                WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+                if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
+                    PushContext pushContext = new PushContext(resourceSnapshot, full,
+                            edsWatchedStatus.getLastSubscribe(), edsWatchedStatus.getLastUnSubscribe());
+                    DeltaDiscoveryResponse edsResponse = buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushContext);
+                    connection.push(edsResponse, edsWatchedStatus);
                 }
-                break;
-            case Endpoint:
-                for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
-                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
-                    if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
-                        PushContext pushContext = new PushContext(resourceSnapshot, full,
-                                edsWatchedStatus.getLastSubscribe(), edsWatchedStatus.getLastUnSubscribe());
-                        DeltaDiscoveryResponse edsResponse = buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushContext);
-                        connection.push(edsResponse, edsWatchedStatus);
-                    }
-                }
-                break;
-            default:
-                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+            }
         }
     }
     

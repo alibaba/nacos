@@ -36,7 +36,7 @@ public abstract class AbstractConnection<MessageT> {
     protected StreamObserver<MessageT> streamObserver;
 
     private final Map<String, WatchedStatus> watchedResources;
-    
+
     public AbstractConnection(StreamObserver<MessageT> streamObserver) {
         this.streamObserver = streamObserver;
         this.watchedResources = new HashMap<>(1 << 4);
@@ -54,6 +54,7 @@ public abstract class AbstractConnection<MessageT> {
     public void addWatchedResource(String resourceType, WatchedStatus watchedStatus) {
         watchedResources.put(resourceType, watchedStatus);
     }
+
     public WatchedStatus getWatchedStatusByType(String resourceType) {
         return watchedResources.get(resourceType);
     }

@@ -50,6 +50,5 @@ public class ApiConstants {
      * TODO Support lds, rds and sds
      */
     public static final String CLUSTER_TYPE = API_TYPE_PREFIX + "envoy.config.cluster.v3.Cluster";
-    
     public static final String ENDPOINT_TYPE = API_TYPE_PREFIX + "envoy.config.endpoint.v3.ClusterLoadAssignment";
 }

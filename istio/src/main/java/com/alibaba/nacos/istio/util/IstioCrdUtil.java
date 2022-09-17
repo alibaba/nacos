@@ -125,11 +125,11 @@ public class IstioCrdUtil {
         if (istioService.getHosts().isEmpty()) {
             return null;
         }
-        
+
         ServiceEntryOuterClass.ServiceEntry.Builder serviceEntryBuilder = ServiceEntryOuterClass.ServiceEntry
                 .newBuilder().setResolution(ServiceEntryOuterClass.ServiceEntry.Resolution.STATIC)
                 .setLocation(ServiceEntryOuterClass.ServiceEntry.Location.MESH_INTERNAL);
-        
+
         int port = 0;
         String protocol = "http";
         List<WorkloadEntry> endpoints = buildWorkloadEntry(istioService.getHosts());

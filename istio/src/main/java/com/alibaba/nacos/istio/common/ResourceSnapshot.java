@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**.
+/**
  * @author special.fy
  */
 public class ResourceSnapshot {
@@ -45,7 +45,7 @@ public class ResourceSnapshot {
     private IstioConfig istioConfig;
 
     private boolean isCompleted;
-    
+
     private String version;
     
     public ResourceSnapshot(IstioConfig istioConfig) {
@@ -86,7 +86,7 @@ public class ResourceSnapshot {
     private void initIstioResources(NacosResourceManager manager) {
         istioResources.setIstioServiceMap(manager.services());
     }
-    
+
     public Set<String> getUpdateService() {
         return updateService;
     }
