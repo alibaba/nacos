@@ -51,7 +51,7 @@ public final class EdsGenerator implements ApiGenerator<Any> {
     
     public static EdsGenerator getInstance() {
         if (singleton == null) {
-            synchronized (ServiceEntryXdsGenerator.class) {
+            synchronized (EdsGenerator.class) {
                 if (singleton == null) {
                     singleton = new EdsGenerator();
                 }

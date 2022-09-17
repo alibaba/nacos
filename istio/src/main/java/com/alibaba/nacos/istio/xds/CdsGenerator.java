@@ -50,7 +50,7 @@ public final class CdsGenerator implements ApiGenerator<Any> {
     
     public static CdsGenerator getInstance() {
         if (singleton == null) {
-            synchronized (ServiceEntryXdsGenerator.class) {
+            synchronized (CdsGenerator.class) {
                 if (singleton == null) {
                     singleton = new CdsGenerator();
                 }
