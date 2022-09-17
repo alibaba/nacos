@@ -78,9 +78,9 @@ public final class ServiceEntryXdsGenerator implements ApiGenerator<Any> {
         for (ServiceEntryWrapper serviceEntryWrapper : serviceEntries) {
             Metadata metadata = serviceEntryWrapper.getMetadata();
             ServiceEntry serviceEntry = serviceEntryWrapper.getServiceEntry();
-        
+    
             Any any = Any.newBuilder().setValue(serviceEntry.toByteString()).setTypeUrl(SERVICE_ENTRY_PROTO).build();
-        
+    
             resources.add(Resource.newBuilder().setBody(any).setMetadata(metadata).build());
         }
     

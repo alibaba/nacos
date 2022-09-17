@@ -17,8 +17,6 @@
 
 package com.alibaba.nacos.istio.model;
 
-import com.alibaba.nacos.istio.misc.Loggers;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -40,10 +38,8 @@ public class DeltaResources {
     @SuppressWarnings("checkstyle:MissingJavadocMethod")
     public void putChangeType(String cate, String name, PushChange.ChangeType type) {
         if ("service".equals(cate)) {
-            Loggers.MAIN.info("service equal:" + name);
             serviceChangeMap.put(name, type);
         } else if ("instance".equals(cate)) {
-            Loggers.MAIN.info("instance equal:" + name);
             instanceChangeMap.put(name, type);
         }
     }

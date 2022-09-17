@@ -43,7 +43,7 @@ public class ResourceSnapshot {
     private final IstioResources istioResources;
     
     private IstioConfig istioConfig;
-    
+
     private boolean isCompleted;
     
     private String version;
@@ -70,14 +70,14 @@ public class ResourceSnapshot {
         if (isCompleted) {
             return;
         }
-        
+
         initIstioResources(manager);
-        
+
         generateVersion();
-        
+
         isCompleted = true;
     }
-    
+
     private void generateVersion() {
         String time = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX").format(new Date());
         version = time + "/" + versionSuffix.getAndIncrement();
@@ -114,7 +114,7 @@ public class ResourceSnapshot {
     public boolean isCompleted() {
         return isCompleted;
     }
-    
+
     public String getVersion() {
         return version;
     }

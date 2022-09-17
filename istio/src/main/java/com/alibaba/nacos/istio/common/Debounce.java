@@ -18,7 +18,6 @@
 package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.misc.IstioConfig;
-import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.model.DeltaResources;
 import com.alibaba.nacos.istio.model.PushChange;
 
@@ -58,7 +57,6 @@ public class Debounce implements Callable<DeltaResources> {
     public DeltaResources call() throws Exception {
         while (true) {
             if (flag) {
-                Loggers.MAIN.info("flag true return");
                 return deltaResources;
             }
             
@@ -93,8 +91,6 @@ public class Debounce implements Callable<DeltaResources> {
         long eventDelay = System.currentTimeMillis() - startDebounce.getTime();
         long quietTime = System.currentTimeMillis() - lastConfigUpdateTime.getTime();
         
-        Loggers.MAIN.info("{eventDelay:{} quietTime:{} debouncedEvents:{}}", eventDelay, quietTime, debouncedEvents);
-        
         if (eventDelay > istioConfig.getDebounceMax() || quietTime > istioConfig.getDebounceAfter()) {
             if (deltaResources != null) {
                 free = false;
@@ -122,6 +118,5 @@ public class Debounce implements Callable<DeltaResources> {
         PushChange.ChangeType changeType = pushChange.getChangeType();
     
         deltaResources.putChangeType(name[0], name[1], changeType);
-        Loggers.MAIN.info(name[1] + " merge back");
     }
 }

@@ -39,8 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V2_TYPE;
-import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
@@ -188,7 +187,6 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
             //mcp
             WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
             if (watchedStatus != null) {
-                Loggers.MAIN.info("mcp Pushing");
                 DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushContext);
                 connection.push(serviceEntryResponse, watchedStatus);
             }
@@ -196,31 +194,17 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         
         switch (event.getType()) {
             case Service:
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-                
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
                     //CDS
-                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V3_TYPE);
-                    if (cdsWatchedStatus == null) {
-                        Loggers.MAIN.info("V2 Cluster Pushing");
-                        cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_V2_TYPE);
-                        if (cdsWatchedStatus != null) {
-                            DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V2_TYPE, pushContext);
-                            connection.push(cdsResponse, cdsWatchedStatus);
-                        }
-                    } else {
-                        Loggers.MAIN.info("V3 Cluster Pushing");
-                        DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_V3_TYPE, pushContext);
+                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_TYPE);
+                    if (cdsWatchedStatus != null) {
+                        DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_TYPE, pushContext);
                         connection.push(cdsResponse, cdsWatchedStatus);
                     }
                 }
                 break;
             case Endpoint:
-                Loggers.MAIN.info("xds: event {} trigger push.", event.getType());
-    
                 for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    //EDS
-                    Loggers.MAIN.info("Eds Pushing");
                     WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
                     if (edsWatchedStatus != null) {
                         DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
@@ -369,11 +353,8 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         
         switch (event.getType()) {
             case Service:
-                Loggers.MAIN.info("delta xds: event mcp trigger push.");
-                
                 for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
                     //mcp
-                    Loggers.MAIN.info("delta mcp Pushing");
                     WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
                     if (watchedStatus != null && watchedStatus.isLastAckOrNack()) {
                         PushContext pushContext = new PushContext(resourceSnapshot, full,
@@ -384,14 +365,9 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 }
                 break;
             case Endpoint:
-                Loggers.MAIN.info("delta xds: event {} trigger push.", event.getType());
-                
                 for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
-                    //EDS
-                    Loggers.MAIN.info("delta Eds Pushing");
                     WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
                     if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
-                        //TODO:incremental true or false
                         PushContext pushContext = new PushContext(resourceSnapshot, full,
                                 edsWatchedStatus.getLastSubscribe(), edsWatchedStatus.getLastUnSubscribe());
                         DeltaDiscoveryResponse edsResponse = buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushContext);

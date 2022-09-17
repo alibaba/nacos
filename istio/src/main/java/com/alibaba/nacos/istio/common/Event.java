@@ -17,7 +17,6 @@
 package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.model.DeltaResources;
-
 /**
  * @author special.fy
  */

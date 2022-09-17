@@ -36,23 +36,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_V3_TYPE;
+import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
 import static io.envoyproxy.envoy.config.core.v3.ApiVersion.V2_VALUE;
 
 /**
  * @author RocketEngine26
- * @date 2022/8/17 下午8:09
+ * @date 2022/8/17
  */
-public final class CdsV3Generator implements ApiGenerator<Any> {
+public final class CdsGenerator implements ApiGenerator<Any> {
     
-    private static volatile CdsV3Generator singleton = null;
+    private static volatile CdsGenerator singleton = null;
     
-    public static CdsV3Generator getInstance() {
+    public static CdsGenerator getInstance() {
         if (singleton == null) {
             synchronized (ServiceEntryXdsGenerator.class) {
                 if (singleton == null) {
-                    singleton = new CdsV3Generator();
+                    singleton = new CdsGenerator();
                 }
             }
         }
@@ -83,7 +83,7 @@ public final class CdsV3Generator implements ApiGenerator<Any> {
                 cluster.setHttpProtocolOptions(Http1ProtocolOptions.newBuilder().build());
             }
     
-            result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_V3_TYPE).build());
+            result.add(Any.newBuilder().setValue(cluster.build().toByteString()).setTypeUrl(CLUSTER_TYPE).build());
         }
         
         return result;

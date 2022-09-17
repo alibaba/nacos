@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class EmptyMcpGenerator implements ApiGenerator<Resource> {
 
-    private static volatile EmptyMcpGenerator singleton = null;
+    private volatile static EmptyMcpGenerator singleton = null;
 
     public static EmptyMcpGenerator getInstance() {
         if (singleton == null) {

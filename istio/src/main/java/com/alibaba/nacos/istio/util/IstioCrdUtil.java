@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**.
+/**
  * @author special.fy
  */
 public class IstioCrdUtil {
@@ -49,8 +49,7 @@ public class IstioCrdUtil {
 
     public static final String ISTIO_HOSTNAME = "istio.hostname";
 
-    public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?"
-            + "(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
+    public static final String VALID_LABEL_KEY_FORMAT = "^([a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[-a-zA-Z0-9]*[a-zA-Z0-9])?)*/)?((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$";
     
     public static final String VALID_LABEL_VALUE_FORMAT = "^((?:[A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$";
     
@@ -157,12 +156,12 @@ public class IstioCrdUtil {
             if (!istioEndpoint.isHealthy() || !istioEndpoint.isEnabled()) {
                 continue;
             }
-            
+
             Map<String, String> metadata = new HashMap<>(1 << 3);
             if (StringUtils.isNotEmpty(istioEndpoint.getClusterName())) {
                 metadata.put("cluster", istioEndpoint.getClusterName());
             }
-            
+
             for (Map.Entry<String, String> entry : istioEndpoint.getLabels().entrySet()) {
                 if (!Pattern.matches(VALID_LABEL_KEY_FORMAT, entry.getKey())) {
                     continue;
@@ -174,7 +173,7 @@ public class IstioCrdUtil {
             }
             
             WorkloadEntryOuterClass.WorkloadEntry workloadEntry = WorkloadEntryOuterClass.WorkloadEntry.newBuilder()
-                    .setAddress(istioEndpoint.getAdder()).setWeight((int) istioEndpoint.getWeight())
+                    .setAddress(istioEndpoint.getAdder()).setWeight(istioEndpoint.getWeight())
                     .putAllLabels(metadata).putPorts(istioEndpoint.getProtocol(), istioEndpoint.getPort()).build();
             
             result.add(workloadEntry);

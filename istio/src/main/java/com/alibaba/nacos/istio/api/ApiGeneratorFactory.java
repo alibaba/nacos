@@ -18,8 +18,7 @@ package com.alibaba.nacos.istio.api;
 
 import com.alibaba.nacos.istio.mcp.EmptyMcpGenerator;
 import com.alibaba.nacos.istio.mcp.ServiceEntryMcpGenerator;
-import com.alibaba.nacos.istio.xds.CdsV2Generator;
-import com.alibaba.nacos.istio.xds.CdsV3Generator;
+import com.alibaba.nacos.istio.xds.CdsGenerator;
 import com.alibaba.nacos.istio.xds.EdsGenerator;
 import com.alibaba.nacos.istio.xds.EmptyXdsGenerator;
 import com.alibaba.nacos.istio.xds.ServiceEntryXdsGenerator;
@@ -45,8 +44,7 @@ public class ApiGeneratorFactory {
         // TODO Support other api generator
 
         //xds
-        apiGeneratorMap.put(CLUSTER_V2_TYPE, CdsV2Generator.getInstance());
-        apiGeneratorMap.put(CLUSTER_V3_TYPE, CdsV3Generator.getInstance());
+        apiGeneratorMap.put(CLUSTER_TYPE, CdsGenerator.getInstance());
         apiGeneratorMap.put(ENDPOINT_TYPE, EdsGenerator.getInstance());
         
         // mcp

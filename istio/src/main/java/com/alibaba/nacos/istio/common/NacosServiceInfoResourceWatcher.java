@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.istio.misc.IstioConfig;
-import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.model.DeltaResources;
 import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.model.PushChange;
@@ -49,8 +48,6 @@ import static com.alibaba.nacos.istio.util.IstioExecutor.cycleDebounce;
 import static com.alibaba.nacos.istio.util.IstioExecutor.debouncePushChange;
 
 /**
- * NacosServiceInfoResourceWatcher.
- *
  * @author special.fy
  */
 @org.springframework.stereotype.Service
@@ -69,7 +66,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     
     @Autowired
     private ServiceStorage serviceStorage;
-    
+
     @Autowired
     private EventProcessor eventProcessor;
     
@@ -92,18 +89,11 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
         return result;
     }
     
-    /**
-     * description:onEvent.
-     *
-     * @param: event
-     * @return: void
-     */
     public void onEvent(com.alibaba.nacos.common.notify.Event event) {
         if (flagNotify) {
             flagNotify = false;
             cycleDebounce(new ToNotify());
         }
-        //TODO: service or instance data change
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             // If service changed, push to all subscribers.
             ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent = (ClientOperationEvent.ClientRegisterServiceEvent) event;
@@ -114,12 +104,9 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             PushChange pushChange;
             
             if (old != null) {
-                //instance change
-                Loggers.MAIN.info("have old");
                 //instance name is cate + . + instance id + . + service name,e.g
                 pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.UP);
             } else {
-                Loggers.MAIN.info("have new");
                 pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.UP);
                 pushChangeQueue.add(pushChange);
                 pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.UP);
@@ -134,16 +121,12 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             Service service = clientDeregisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
             PushChange pushChange;
-            
-            if (serviceStorage.getPushData(service).ipCount() > 0) {
-                Loggers.MAIN.info("remain instance");
-                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DOWN);
-            } else {
-                Loggers.MAIN.info("no instance left");
+    
+            if (serviceStorage.getPushData(service).ipCount() <= 0) {
                 pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DOWN);
                 pushChangeQueue.add(pushChange);
-                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DOWN);
             }
+            pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DOWN);
     
             serviceCache.put(serviceName, service);
             pushChangeQueue.add(pushChange);
@@ -178,7 +161,6 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     
                     try {
                         updatePush = futureUpdate.get();
-                        Loggers.MAIN.info("updatePush get!");
                     } catch (InterruptedException | ExecutionException e) {
                         throw new RuntimeException(e);
                     }
@@ -190,7 +172,6 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
                         for (Map.Entry<String, PushChange.ChangeType> entry : serviceMap.entrySet()) {
                             String serviceName = entry.getKey();
                             PushChange.ChangeType changeType = entry.getValue();
-                            Loggers.MAIN.info("service map entrySet:{serviceName:{}, changeType:{}}", serviceName, changeType);
                             updateServiceInfoMap(true, serviceName, changeType, updatePush);
                         }
     
@@ -198,14 +179,11 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
                             String serviceName = entry.getKey().split("\\.", 2)[1];
                             PushChange.ChangeType changeType = entry.getValue();
         
-                            Loggers.MAIN.info("instance map entrySet:{serviceName:{}, changeType:{}}", serviceName, changeType);
                             updateServiceInfoMap(false, serviceName, changeType, updatePush);
                         }
     
                         Event event = new Event(serviceMap.size() != 0 ? EventType.Service : EventType.Endpoint, updatePush);
                         eventProcessor.notify(event);
-                    } else {
-                        Loggers.MAIN.info("updatePush is null");
                     }
                 }
             }
@@ -214,11 +192,9 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     
     private void updateServiceInfoMap(boolean flagType, String serviceName, PushChange.ChangeType changeType, DeltaResources updatePush) {
         Service service = serviceCache.get(serviceName);
-        Loggers.MAIN.info("type {} service {}", changeType, service.getGroupedServiceName());
         ServiceInfo serviceInfo = serviceStorage.getPushData(service);
         
         if (!serviceInfo.isValid()) {
-            Loggers.MAIN.info("not valid");
             serviceInfoMap.remove(serviceName);
         }
     
@@ -228,14 +204,11 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             if (serviceInfoMap.containsKey(serviceName)) {
                 if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
                     if (old != null) {
-                        Loggers.MAIN.info("infoMap old put");
                         serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
                     } else {
-                        Loggers.MAIN.info("infoMap put");
                         serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
                     }
                 } else {
-                    Loggers.MAIN.info("infoMap remove !");
                     IstioService istioService = serviceInfoMap.get(serviceName);
             
                     //In fact, only a table can be processed, but in order to have more operations later, separate
@@ -249,20 +222,13 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             
                     serviceInfoMap.remove(serviceName);
                 }
-            } else {
-                Loggers.MAIN.info("new service");
-                if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
-                    serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
-                } else {
-                    Loggers.MAIN.info("no change");
-                }
+            } else if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
+                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
             }
         } else {
             if (old != null) {
-                Loggers.MAIN.info("infoMap old put");
                 serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
             } else {
-                Loggers.MAIN.info("infoMap put");
                 serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
             }
         }

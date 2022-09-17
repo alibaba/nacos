@@ -94,11 +94,6 @@ public class IstioEndpoint {
         buildLocality();
     }
     
-    /**
-     * description:buildLocality.
-     * @param: []
-     * @return: void
-     */
     private void buildLocality() {
         String region = this.labels.getOrDefault("region", "");
         String zone = this.labels.getOrDefault("zone", "");
@@ -107,11 +102,6 @@ public class IstioEndpoint {
         this.locality = Locality.newBuilder().setRegion(region).setZone(zone).setSubZone(subzone).build();
     }
     
-    /**
-     * description:buildLbEndpoint.
-     * @param: []
-     * @return: void
-     */
     private LbEndpoint buildLbEndpoint() {
         Address adder = Address.newBuilder().setSocketAddress(SocketAddress.newBuilder().setAddress(this.adder)
                 .setPortValue(this.port).setProtocol(SocketAddress.Protocol.TCP).build()).build();

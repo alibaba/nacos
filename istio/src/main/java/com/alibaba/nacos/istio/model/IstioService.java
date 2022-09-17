@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**.
+/**
  * @author special.fy
  */
 public class IstioService {
@@ -60,7 +60,7 @@ public class IstioService {
             this.portsMap.put(istioEndpoint.getProtocol(), istioEndpoint.getPort());
         }
     }
-    
+
     public IstioService(Service service, ServiceInfo serviceInfo, IstioService old) {
         this.name = serviceInfo.getName();
         this.groupName = serviceInfo.getGroupName();
@@ -86,7 +86,7 @@ public class IstioService {
                 hosts.add(istioEndpoint);
             }
         }
-        
+
         // Panic mode, all instances are invalid, to push all instances to istio.
         if (hosts.isEmpty()) {
             for (Instance instance : serviceInfo.getHosts()) {
@@ -94,26 +94,26 @@ public class IstioService {
                 hosts.add(istioEndpoint);
             }
         }
-        
+
         return hosts;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public String getGroupName() {
         return groupName;
     }
-    
+
     public String getNamespace() {
         return namespace;
     }
-    
+
     public Long getRevision() {
         return revision;
     }
-    
+
     public Map<String, Integer> getPortsMap() {
         return portsMap;
     }
@@ -121,7 +121,7 @@ public class IstioService {
     public List<IstioEndpoint> getHosts() {
         return hosts;
     }
-    
+
     public Date getCreateTimeStamp() {
         return createTimeStamp;
     }

@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * NacosResourceManager.
- *
  * @author special.fy
  */
 @Component
@@ -64,12 +62,7 @@ public class NacosResourceManager {
         ResourceSnapshot resourceSnapshot = getResourceSnapshot();
         resourceSnapshot.initResourceSnapshot(this);
     }
-
-    /**
-     * description:snapshot.
-     * @param: []
-     * @return: com.alibaba.nacos.istio.common.ResourceSnapshot
-     */
+    
     public ResourceSnapshot createResourceSnapshot(Set<String> removedHostName, Set<String> removedClusterName,
             Set<String> updateService, Set<String> updateInstance) {
         ResourceSnapshot resourceSnapshot = new ResourceSnapshot(removedHostName, removedClusterName, updateService, updateInstance, istioConfig);
