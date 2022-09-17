@@ -73,7 +73,7 @@ public class IstioCrdUtil {
             if (StringUtils.isNotEmpty(instance.getMetadata().get("protocol"))) {
                 protocol = instance.getMetadata().get("protocol");
 
-                if ("triple".equals(protocol)||"tri".equals(protocol)){
+                if ("triple".equals(protocol) || "tri".equals(protocol)){
                     protocol = "grpc";
                 }
             }
