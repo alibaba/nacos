@@ -113,7 +113,7 @@ public class K8sSyncServer {
         
         CoreV1Api coreV1Api = new CoreV1Api();
         OkHttpClient httpClient =
-                apiClient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
+                apiClient.getHttpClient().newBuilder().build();
         apiClient.setHttpClient(httpClient);
     
         SharedInformerFactory factory = new SharedInformerFactory(apiClient);
