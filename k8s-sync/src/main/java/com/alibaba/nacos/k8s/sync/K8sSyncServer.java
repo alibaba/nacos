@@ -361,7 +361,7 @@ public class K8sSyncServer {
         for (V1ServicePort servicePort:servicePorts) {
             int port = servicePort.getPort();
             if (!servicePort.getTargetPort().isInteger()) {
-                break;
+                continue;
             }
             int targetPort = servicePort.getTargetPort().getIntValue();
             for (String ip:addIpSet) {
