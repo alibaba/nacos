@@ -19,7 +19,6 @@ package com.alibaba.nacos.k8s.sync;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.core.listener.StartingApplicationListener;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -42,8 +41,6 @@ import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -53,7 +50,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class K8sSyncServer {
@@ -66,8 +62,6 @@ public class K8sSyncServer {
     
     @Autowired
     private InstanceOperatorClientImpl instanceOperatorClient;
- 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StartingApplicationListener.class);
     
     public static void main(String[] args) throws Exception {
         K8sSyncServer k8sSyncServer = new K8sSyncServer();
@@ -88,7 +82,7 @@ public class K8sSyncServer {
 //            return;
 //        }
         startInformer();
-        LOGGER.info("Starting Nacos k8s-sync ...");
+        Loggers.MAIN.info("Starting Nacos k8s-sync ...");
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -167,9 +161,10 @@ public class K8sSyncServer {
                         List<V1ServicePort> servicePorts = service.getSpec().getPorts();
                         try {
                             registerService(namespace, serviceName, servicePorts, false, endpointInformer);
-                            LOGGER.info("add service, namespace:" + namespace + " serviceName: " + serviceName);
+                            Loggers.MAIN.info("add service, namespace:" + namespace + " serviceName: " + serviceName);
                         } catch (Exception e) {
-                            LOGGER.warn("add service fail, message:" + e.getMessage() + " namespace:" + namespace + " serviceName: " + serviceName);
+                            Loggers.MAIN.warn("add service fail, message:" + e.getMessage() + " namespace:"
+                                    + namespace + " serviceName: " + serviceName);
                         }
                     }
                 
@@ -186,9 +181,9 @@ public class K8sSyncServer {
                         boolean portChanged = compareServicePorts(oldServicePorts, newServicePorts);
                         try {
                             registerService(namespace, serviceName, newServicePorts, portChanged, endpointInformer);
-                            LOGGER.info("update service, namespace: " + namespace + " serviceName: " + serviceName);
+                            Loggers.MAIN.info("update service, namespace: " + namespace + " serviceName: " + serviceName);
                         } catch (Exception e) {
-                            LOGGER.warn("update service fail, message: " + e.getMessage() + " namespace: "
+                            Loggers.MAIN.warn("update service fail, message: " + e.getMessage() + " namespace: "
                                     + namespace + " serviceName: " + serviceName);
                         }
                     }
@@ -202,9 +197,9 @@ public class K8sSyncServer {
                         String namespace = service.getMetadata().getNamespace();
                         try {
                             unregisterService(namespace, serviceName);
-                            LOGGER.info("delete service, namespace:" + namespace + " serviceName:" + serviceName);
+                            Loggers.MAIN.info("delete service, namespace:" + namespace + " serviceName:" + serviceName);
                         } catch (Exception e) {
-                            LOGGER.warn("delete service fail, message: " + e.getMessage()
+                            Loggers.MAIN.warn("delete service fail, message: " + e.getMessage()
                                     + " namespace:" + namespace + " serviceName:" + serviceName);
                         }
                     }
@@ -226,9 +221,9 @@ public class K8sSyncServer {
                 List<V1ServicePort> servicePorts = service.getSpec().getPorts();
                 try {
                     registerInstances(addIpSet, namespace, serviceName, servicePorts);
-                    LOGGER.info("add instances, namespace:" + namespace + " serviceName: " + serviceName);
+                    Loggers.MAIN.info("add instances, namespace:" + namespace + " serviceName: " + serviceName);
                 } catch (NacosException e) {
-                    LOGGER.warn("add instances fail, message:" + e.getMessage() + " namespace:" + namespace + ", serviceName: " + serviceName);
+                    Loggers.MAIN.warn("add instances fail, message:" + e.getMessage() + " namespace:" + namespace + ", serviceName: " + serviceName);
                 }
             }
 
@@ -244,9 +239,10 @@ public class K8sSyncServer {
                 List<V1ServicePort> servicePorts = service.getSpec().getPorts();
                 try {
                     registerService(namespace, serviceName, servicePorts, false, endpointInformer);
-                    LOGGER.info("update instances, namespace:" + namespace + " serviceName: " + serviceName);
+                    Loggers.MAIN.info("update instances, namespace:" + namespace + " serviceName: " + serviceName);
                 } catch (NacosException e) {
-                    LOGGER.warn("update instances fail, message:" + e.getMessage() + " namespace:" + namespace + ", serviceName: " + serviceName);
+                    Loggers.MAIN.warn("update instances fail, message:" + e.getMessage() + " namespace:"
+                            + namespace + ", serviceName: " + serviceName);
                 }
             }
 
@@ -261,9 +257,9 @@ public class K8sSyncServer {
                 try {
                     List<? extends Instance> oldInstanceList = instanceOperatorClient.listAllInstances(namespace, serviceName);
                     unregisterInstances(deleteIpSet, namespace, serviceName, oldInstanceList);
-                    LOGGER.info("delete instances, namespace:" + namespace + ", serviceName: " + serviceName);
+                    Loggers.MAIN.info("delete instances, namespace:" + namespace + ", serviceName: " + serviceName);
                 } catch (NacosException e) {
-                    LOGGER.info("delete instances fail, namespace:" + namespace + ", serviceName: " + serviceName);
+                    Loggers.MAIN.info("delete instances fail, namespace:" + namespace + ", serviceName: " + serviceName);
                 }
             }
         });
