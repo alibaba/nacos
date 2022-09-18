@@ -90,7 +90,7 @@ public interface ConfigInfoTagMapper extends Mapper {
      *
      * @return The sql of querying all tag config info for dump task.
      */
-    String findAllConfigInfoTagForDumpAllFetch();
+    String findAllConfigInfoTagForDumpAllFetchRows();
     
     /**
      * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.
