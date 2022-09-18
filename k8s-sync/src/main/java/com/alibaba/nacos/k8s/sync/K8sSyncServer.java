@@ -154,7 +154,6 @@ public class K8sSyncServer {
                         },
                         V1Endpoints.class,
                         V1EndpointsList.class);
-        factory.startAllRegisteredInformers();
         
         serviceInformer.addEventHandler(
                 new ResourceEventHandler<V1Service>() {
@@ -279,6 +278,7 @@ public class K8sSyncServer {
                 }
             }
         });
+        factory.startAllRegisteredInformers();
     }
     
     /**
