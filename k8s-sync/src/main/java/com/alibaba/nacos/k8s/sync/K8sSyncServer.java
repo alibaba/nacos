@@ -185,11 +185,10 @@ public class K8sSyncServer {
                         String newServiceName = newService.getMetadata().getName();
                         String newNamespace = newService.getMetadata().getNamespace();
                         List<V1ServicePort> newServicePorts = newService.getSpec().getPorts();
-                        boolean portChange = newServicePorts.equals(oldServicePorts);
+                        boolean portChanged = compareServicePorts(oldServicePorts, newServicePorts);
                         try {
                             if (newServiceName != null && newNamespace != null
                                     && newServiceName.equals(oldServiceName) && newNamespace.equals(oldNamespace)) {
-                                registerService(newNamespace, newServiceName, newServicePorts, portChange, endpointInformer);
                             } else {
                                 unregisterService(oldNamespace, oldServiceName);
                                 registerService(newNamespace, newServiceName, newServicePorts, portChange, endpointInformer);
@@ -197,6 +196,7 @@ public class K8sSyncServer {
                             LOGGER.info("update service, oldNamespace:" + oldNamespace + " oldServiceName: "
                                     + oldServiceName + " newNamespace:" + newNamespace + " newServiceName: "
                                     + newServiceName);
+                            registerService(newNamespace, newServiceName, newServicePorts, portChanged, endpointInformer);
                         } catch (Exception e) {
                             LOGGER.warn("update service fail, message: " + e.getMessage() + " oldNamespace:" + oldNamespace
                                     + " oldServiceName: " + oldServiceName + " newNamespace:" + newNamespace
@@ -307,10 +307,10 @@ public class K8sSyncServer {
      * @param namespace service namespace
      * @param serviceName service name
      * @param servicePorts service ports
-     * @param portChange port is changed or not
+     * @param portChanged port is changed or not
      * @throws NacosException nacos exception during registering
      */
-    public void registerService(String namespace, String serviceName, List<V1ServicePort> servicePorts, boolean portChange,
+    public void registerService(String namespace, String serviceName, List<V1ServicePort> servicePorts, boolean portChanged,
             SharedIndexInformer<V1Endpoints> endpointInformer) throws NacosException {
         //TODO defaultnamespace 常量
         
@@ -337,7 +337,7 @@ public class K8sSyncServer {
         //register added instance
         Set<String> addIpSet = new HashSet<>();
         addIpSet.addAll(newIpSet);
-        if (!portChange) {
+        if (!portChanged) {
             addIpSet.removeAll(oldIpSet);
         }
         registerInstances(addIpSet, namespace, serviceName, servicePorts);
@@ -410,5 +410,18 @@ public class K8sSyncServer {
             }
         }
         return ipSet;
+    }
+    
+    /**
+     * compare oldServicePorts and newServicePorts.
+     *
+     * @param oldServicePorts old service ports list
+     * @param newServicePorts new service ports list
+     */
+    public boolean compareServicePorts(List<V1ServicePort> oldServicePorts, List<V1ServicePort> newServicePorts) {
+        if (oldServicePorts.size() != newServicePorts.size()) {
+            return false;
+        }
+        return oldServicePorts.containsAll(newServicePorts) && newServicePorts.containsAll(oldServicePorts);
     }
 }
