@@ -179,28 +179,17 @@ public class K8sSyncServer {
                                 || newService.getMetadata() == null || newService.getSpec() == null) {
                             return;
                         }
-                        String oldServiceName = oldService.getMetadata().getName();
-                        String oldNamespace = oldService.getMetadata().getNamespace();
                         List<V1ServicePort> oldServicePorts = oldService.getSpec().getPorts();
-                        String newServiceName = newService.getMetadata().getName();
-                        String newNamespace = newService.getMetadata().getNamespace();
+                        String serviceName = newService.getMetadata().getName();
+                        String namespace = newService.getMetadata().getNamespace();
                         List<V1ServicePort> newServicePorts = newService.getSpec().getPorts();
                         boolean portChanged = compareServicePorts(oldServicePorts, newServicePorts);
                         try {
-                            if (newServiceName != null && newNamespace != null
-                                    && newServiceName.equals(oldServiceName) && newNamespace.equals(oldNamespace)) {
-                            } else {
-                                unregisterService(oldNamespace, oldServiceName);
-                                registerService(newNamespace, newServiceName, newServicePorts, portChange, endpointInformer);
-                            }
-                            LOGGER.info("update service, oldNamespace:" + oldNamespace + " oldServiceName: "
-                                    + oldServiceName + " newNamespace:" + newNamespace + " newServiceName: "
-                                    + newServiceName);
-                            registerService(newNamespace, newServiceName, newServicePorts, portChanged, endpointInformer);
+                            registerService(namespace, serviceName, newServicePorts, portChanged, endpointInformer);
+                            LOGGER.info("update service, namespace: " + namespace + " serviceName: " + serviceName);
                         } catch (Exception e) {
-                            LOGGER.warn("update service fail, message: " + e.getMessage() + " oldNamespace:" + oldNamespace
-                                    + " oldServiceName: " + oldServiceName + " newNamespace:" + newNamespace
-                                    + " newServiceName: " + newServiceName);
+                            LOGGER.warn("update service fail, message: " + e.getMessage() + " namespace: "
+                                    + namespace + " serviceName: " + serviceName);
                         }
                     }
                 
