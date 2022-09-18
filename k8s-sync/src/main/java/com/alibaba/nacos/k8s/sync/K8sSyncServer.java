@@ -28,7 +28,6 @@ import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1EndpointAddress;
 import io.kubernetes.client.openapi.models.V1EndpointSubset;
@@ -38,14 +37,11 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.CallGeneratorParams;
-import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -54,8 +50,8 @@ import java.util.Set;
 @Component
 public class K8sSyncServer {
     
-    //@Autowired
-    //private K8sSyncConfig k8sSyncConfig;
+    @Autowired
+    private K8sSyncConfig k8sSyncConfig;
     
     @Autowired
     private ServiceOperatorV2Impl serviceOperatorV2;
@@ -63,54 +59,54 @@ public class K8sSyncServer {
     @Autowired
     private InstanceOperatorClientImpl instanceOperatorClient;
     
+    private SharedInformerFactory factory;
+    
+    //if you use the Java API from an application outside a kubernetes cluster,
+    //you should load a kubeconfig to generate apiClient instead of getting it from coreV1api
+    private ApiClient apiClient;
+    
     public static void main(String[] args) throws Exception {
         K8sSyncServer k8sSyncServer = new K8sSyncServer();
         k8sSyncServer.startInformer();
     }
     
     /**
-     * Start.
+     * start.
      *
      * @throws IOException io exception
      */
-    @SuppressWarnings("checkstyle:CommentsIndentation")
     @PostConstruct
-    public void start() throws Exception {
-//        TODO:加上全局开关
-//        if (!k8sSyncConfig.isK8sSyncEnable()) {
-////            Loggers.MAIN.info("The Nacos k8s-sync is disabled.");
-//            return;
-//        }
-        startInformer();
+    public void start() throws IOException {
+        if (!k8sSyncConfig.isEnabled()) {
+            Loggers.MAIN.info("The Nacos k8s-sync is disabled.");
+            return;
+        }
         Loggers.MAIN.info("Starting Nacos k8s-sync ...");
+        startInformer();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                System.out.println("Stopping Nacos k8s-sync...");
-//                K8sSyncServer.this.stop();
-                System.out.println("Nacos k8s-sync stopped...");
+                Loggers.MAIN.info("Stopping Nacos k8s-sync ...");
+                K8sSyncServer.this.stop();
+                Loggers.MAIN.info("Nacos k8s-sync stopped...");
             }
         });
     }
     
-    @SuppressWarnings({"checkstyle:MissingJavadocMethod", "checkstyle:CommentsIndentation"})
-    public void startInformer() throws Exception {
-        // file path to your KubeConfig
-        String kubeConfigPath = System.getenv("HOME") + "/.kube/config";
-    
-        // loading the out-of-cluster config, a kubeconfig from file-system
-        ApiClient apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
-    
-        // set the global default api-client to the in-cluster one from above
-        Configuration.setDefaultApiClient(apiClient);
-        //以上为本地调试
-        
+    /**
+     * start informer.
+     *
+     * @throws IOException io exception
+     */
+    public void startInformer() throws IOException {
         CoreV1Api coreV1Api = new CoreV1Api();
-        OkHttpClient httpClient =
-                apiClient.getHttpClient().newBuilder().build();
+        if (apiClient == null) {
+            apiClient = coreV1Api.getApiClient();
+        }
+        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
         apiClient.setHttpClient(httpClient);
     
-        SharedInformerFactory factory = new SharedInformerFactory(apiClient);
+        factory = new SharedInformerFactory(apiClient);
         SharedIndexInformer<V1Service> serviceInformer =
                 factory.sharedIndexInformerFor(
                         (CallGeneratorParams params) -> {
@@ -408,5 +404,14 @@ public class K8sSyncServer {
             return false;
         }
         return oldServicePorts.containsAll(newServicePorts) && newServicePorts.containsAll(oldServicePorts);
+    }
+    
+    /**
+     * stop.
+     */
+    public void stop() {
+        if (factory != null) {
+            factory.stopAllRegisteredInformers();
+        }
     }
 }
