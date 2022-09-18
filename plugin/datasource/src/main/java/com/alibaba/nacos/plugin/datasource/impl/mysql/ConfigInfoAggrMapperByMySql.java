@@ -46,7 +46,7 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
     
     @Override
     public String removeAggrConfigInfo() {
-        return "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?";
+        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
     }
     
     @Override
@@ -55,13 +55,13 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
         for (String datum : datumList) {
             datumString.append('\'').append(datum).append("',");
         }
-        return "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN ("
+        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
                 + datumString.toString() + ")";
     }
     
     @Override
     public String removeSingleAggrConfigInfo() {
-        return "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?";
+        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
     }
     
     @Override
@@ -77,13 +77,13 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
     @Override
     public String findSingleConfigInfoAggr() {
         return "SELECT id,data_id,group_id,tenant_id,datum_id,app_name,content FROM "
-                + "config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?";
+                + "config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
     }
     
     @Override
     public String findConfigInfoAggr() {
         return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM "
-                + "config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? ORDER BY datum_id";
+                + "config_info_aggr WHERE data_id= ? AND group_id= ? AND tenant_id= ? ORDER BY datum_id";
     }
     
     @Override
@@ -94,8 +94,8 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
     
     @Override
     public String findConfigInfoAggrByPageFetchRows() {
-        return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND "
-                + "group_id=? AND tenant_id=? ORDER BY datum_id LIMIT ?,?";
+        return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id= ? AND "
+                + "group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT ?,?";
     }
     
     @Override
