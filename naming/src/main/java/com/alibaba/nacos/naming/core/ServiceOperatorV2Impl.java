@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
@@ -77,7 +79,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public void create(Service service, ServiceMetadata metadata) throws NacosException {
         if (ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_ALREADY_EXIST,
                     String.format("specified service %s already exists!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
@@ -86,7 +88,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     @Override
     public void update(Service service, ServiceMetadata metadata) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         metadataOperateService.updateServiceMetadata(service, metadata);
@@ -106,12 +108,12 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public void delete(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     String.format("service %s not found!", service.getGroupedServiceName()));
         }
         
         if (!serviceStorage.getPushData(service).getHosts().isEmpty()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "Service " + service.getGroupedServiceName()
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_DELETE_FAILURE, "Service " + service.getGroupedServiceName()
                     + " is not empty, can't be delete. Please unregister instance first");
         }
         metadataOperateService.deleteServiceMetadata(service);
@@ -121,7 +123,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     public ObjectNode queryService(String namespaceId, String serviceName) throws NacosException {
         Service service = getServiceFromGroupedServiceName(namespaceId, serviceName, true);
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     "service not found, namespace: " + namespaceId + ", serviceName: " + serviceName);
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -147,7 +149,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
      */
     public ServiceDetailInfo queryService(Service service) throws NacosException {
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_NOT_EXIST,
                     "service not found, namespace: " + service.getNamespace() + ", serviceName: " + service
                             .getGroupedServiceName());
         }
