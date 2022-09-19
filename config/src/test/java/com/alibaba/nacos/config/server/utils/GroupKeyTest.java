@@ -188,4 +188,5 @@ public class GroupKeyTest {
         
         // Method is not expected to return due to exception thrown
     }
+    
 }
