@@ -31,23 +31,26 @@ public interface ServerListManager {
     /**
      * start to get server address list.
      *
-     * @throws NacosException
+     * @throws NacosException exception
      */
     void start() throws NacosException;
     
     /**
+     * get server address list.
      *
      * @return server address list.
      */
     List<String> getServerList();
     
     /**
+     * get current server address.
      *
      * @return get current server address to connect.
      */
     String getCurrentServer();
     
     /**
+     * get next server address.
      *
      * @return get Next server address to connect
      */
