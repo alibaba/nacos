@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.api.remote.response.SetupAckResponse;
+import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
@@ -48,6 +49,8 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -353,7 +356,7 @@ public abstract class GrpcClient extends RpcClient {
                 grpcConn.setConnectionId(connectionId);
                 // if not supported, it will be null
                 if (serverCheckResponse.getAbilities() != null) {
-                    Map<AbilityKey, Boolean> abilityTable = AbilityKey.mapEnum(serverCheckResponse.getAbilities());
+                    Map<AbilityKey, Boolean> abilityTable = mapAndFilter(serverCheckResponse.getAbilities());
                     // mark
                     markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
                     // combine with current node abilities
@@ -375,7 +378,7 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 // set ability table
-                conSetupRequest.setAbilityTable(AbilityKey.mapStr(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities()));
+                conSetupRequest.setAbilityTable(serverCheckResponse.getAbilities());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response
@@ -399,6 +402,32 @@ public abstract class GrpcClient extends RpcClient {
                     .countDown();
         }
         return null;
+    }
+    
+    /**.
+     * filter the ability current node not support, map to enum
+     *
+     * @param originClientAbilities origin client abilities
+     * @return enum map
+     */
+    private Map<AbilityKey, Boolean> mapAndFilter(Map<String, Boolean> originClientAbilities) {
+        Map<AbilityKey, Boolean> res = new HashMap<>(originClientAbilities.size());
+        Iterator<Map.Entry<String, Boolean>> iterator = originClientAbilities.entrySet().iterator();
+        
+        // filter ability current node not support
+        AbstractAbilityControlManager instance = NacosAbilityManagerHolder.getInstance();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Boolean> next = iterator.next();
+            AbilityKey anEnum = AbilityKey.getEnum(next.getKey());
+            if (anEnum != null) {
+                // whether support
+                boolean isRunning = instance.isCurrentNodeAbilityRunning(anEnum) && next.getValue();
+                res.put(anEnum, isRunning);
+                // if not support
+                originClientAbilities.replace(next.getKey(), isRunning);
+            }
+        }
+        return res;
     }
     
     @Override

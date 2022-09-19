@@ -128,9 +128,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         // map to table
                         Map<AbilityKey, Boolean> clientAbilities = AbilityKey
                                 .mapEnum(setUpRequest.getAbilityTable());
-                        // combine with current node abilities
-                        // in order to get abilities current node provides
-                        NacosAbilityManagerHolder.getInstance().combine(clientAbilities);
                         connection.setAbilityTable(clientAbilities);
                     }
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
