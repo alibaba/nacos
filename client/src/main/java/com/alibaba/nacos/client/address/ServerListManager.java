@@ -28,13 +28,33 @@ import java.util.List;
  */
 public interface ServerListManager {
     
+    /**
+     * start to get server address list.
+     *
+     * @throws NacosException
+     */
     void start() throws NacosException;
     
+    /**
+     *
+     * @return server address list.
+     */
     List<String> getServerList();
     
+    /**
+     *
+     * @return get current server address to connect.
+     */
     String getCurrentServer();
     
+    /**
+     *
+     * @return get Next server address to connect
+     */
     String getNextServer();
     
+    /**
+     * stop to get server address.
+     */
     void shutdown();
 }

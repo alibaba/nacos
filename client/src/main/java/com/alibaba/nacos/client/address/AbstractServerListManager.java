@@ -44,6 +44,8 @@ public abstract class AbstractServerListManager implements ServerListManager {
     
     private final AtomicInteger currentIndex = new AtomicInteger();
     
+    private String currentServer;
+    
     protected AddressPlugin addressPlugin;
     
     private static final String PROPERTY_ADDRESS_PLUGIN = "property-address-plugin";
@@ -59,7 +61,7 @@ public abstract class AbstractServerListManager implements ServerListManager {
     }
     
     @Override
-    public void start() throws NacosException {
+    public synchronized void start() throws NacosException {
         if (addressPlugin == null) {
             throw new NacosException(NacosException.SERVER_ERROR,
                     "Address plugin can not be null");
@@ -77,7 +79,8 @@ public abstract class AbstractServerListManager implements ServerListManager {
     
     @Override
     public String getCurrentServer() {
-        return getServerList().get(currentIndex.get() % getServerList().size());
+        currentServer = getServerList().get(currentIndex.get() % getServerList().size());
+        return currentServer;
     }
     
     @Override
