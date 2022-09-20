@@ -126,9 +126,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     // null if supported
                     if (setUpRequest.getAbilityTable() != null) {
                         // map to table
-                        Map<AbilityKey, Boolean> clientAbilities = AbilityKey
-                                .mapEnum(setUpRequest.getAbilityTable());
-                        connection.setAbilityTable(clientAbilities);
+                        connection.setAbilityTable(setUpRequest.getAbilityTable());
                     }
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
                     

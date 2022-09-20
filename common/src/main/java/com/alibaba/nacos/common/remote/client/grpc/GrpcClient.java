@@ -356,14 +356,10 @@ public abstract class GrpcClient extends RpcClient {
                 grpcConn.setConnectionId(connectionId);
                 // if not supported, it will be null
                 if (serverCheckResponse.getAbilities() != null) {
-                    Map<AbilityKey, Boolean> abilityTable = mapAndFilter(serverCheckResponse.getAbilities());
                     // mark
                     markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
-                    // combine with current node abilities
-                    // in order to get abilities current node provides
-                    NacosAbilityManagerHolder.getInstance().combine(abilityTable);
                     // set server abilities to connection
-                    grpcConn.setAbilityTable(abilityTable);
+                    grpcConn.setAbilityTable(serverCheckResponse.getAbilities());
                 }
                 
                 //create stream request and bind connection event to this connection.
@@ -378,7 +374,7 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 // set ability table
-                conSetupRequest.setAbilityTable(serverCheckResponse.getAbilities());
+                conSetupRequest.setAbilityTable(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities());
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response
@@ -402,32 +398,6 @@ public abstract class GrpcClient extends RpcClient {
                     .countDown();
         }
         return null;
-    }
-    
-    /**.
-     * filter the ability current node not support, map to enum
-     *
-     * @param originClientAbilities origin client abilities
-     * @return enum map
-     */
-    private Map<AbilityKey, Boolean> mapAndFilter(Map<String, Boolean> originClientAbilities) {
-        Map<AbilityKey, Boolean> res = new HashMap<>(originClientAbilities.size());
-        Iterator<Map.Entry<String, Boolean>> iterator = originClientAbilities.entrySet().iterator();
-        
-        // filter ability current node not support
-        AbstractAbilityControlManager instance = NacosAbilityManagerHolder.getInstance();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Boolean> next = iterator.next();
-            AbilityKey anEnum = AbilityKey.getEnum(next.getKey());
-            if (anEnum != null) {
-                // whether support
-                boolean isRunning = instance.isCurrentNodeAbilityRunning(anEnum) && next.getValue();
-                res.put(anEnum, isRunning);
-                // if not support
-                originClientAbilities.replace(next.getKey(), isRunning);
-            }
-        }
-        return res;
     }
     
     @Override

@@ -65,7 +65,7 @@ public abstract class AbstractAbilityControlManager {
     /**.
      * ability current node running
      */
-    protected final Map<AbilityKey, Boolean> currentRunningAbility = new ConcurrentHashMap<>();
+    protected final Map<String, Boolean> currentRunningAbility = new ConcurrentHashMap<>();
     
     private final ReentrantLock lockForHandlerMappings = new ReentrantLock();
     
@@ -75,18 +75,18 @@ public abstract class AbstractAbilityControlManager {
         currentRunningAbility.putAll(initCurrentNodeAbilities());
     }
     
-    /**
-     * . Turn on the ability whose key is <p>abilityKey</p>
+    /**.
+     * Turn on the ability whose key is <p>abilityKey</p>
      *
-     * @param abilityKey ability key
+     * @param abilityKey ability key{@link AbilityKey}
      * @return if turn success
      */
     public boolean enableCurrentNodeAbility(AbilityKey abilityKey) {
         return doTurn(true, abilityKey);
     }
     
-    /**
-     * . Turn off the ability whose key is <p>abilityKey</p>
+    /**.
+     * Turn off the ability whose key is <p>abilityKey</p> {@link AbilityKey}
      *
      * @param abilityKey ability key
      * @return if turn success
@@ -95,8 +95,14 @@ public abstract class AbstractAbilityControlManager {
         return doTurn(false, abilityKey);
     }
     
+    /**.
+     * Whether current node support
+     *
+     * @param abilityKey ability key from {@link AbilityKey}
+     * @return whether support
+     */
     public boolean isCurrentNodeAbilityRunning(AbilityKey abilityKey) {
-        return currentRunningAbility.getOrDefault(abilityKey, false);
+        return currentRunningAbility.getOrDefault(abilityKey.getName(), false);
     }
     
     /**.
@@ -104,14 +110,14 @@ public abstract class AbstractAbilityControlManager {
      *
      * @return current node abilities
      */
-    protected abstract Map<AbilityKey, Boolean> initCurrentNodeAbilities();
+    protected abstract Map<String, Boolean> initCurrentNodeAbilities();
     
     /**.
      * Return the abilities current node
      *
      * @return current abilities
      */
-    public Map<AbilityKey, Boolean> getCurrentNodeAbilities() {
+    public Map<String, Boolean> getCurrentNodeAbilities() {
         return Collections.unmodifiableMap(currentRunningAbility);
     }
     
@@ -123,7 +129,7 @@ public abstract class AbstractAbilityControlManager {
      * @return if turn success
      */
     private boolean doTurn(boolean isOn, AbilityKey abilityKey) {
-        Boolean isEnabled = currentRunningAbility.get(abilityKey);
+        Boolean isEnabled = currentRunningAbility.get(abilityKey.getName());
         // if not supporting this key
         if (isEnabled == null) {
             LOGGER.warn("[AbilityControlManager] Attempt to turn on/off a not existed ability!");
@@ -133,7 +139,7 @@ public abstract class AbstractAbilityControlManager {
             return true;
         }
         // turn on/off
-        currentRunningAbility.put(abilityKey, isOn);
+        currentRunningAbility.put(abilityKey.getName(), isOn);
         // handler mappings
         triggerHandlerMappingAsyn(abilityKey, isOn, this.handlerMappings);
         // notify event
@@ -193,20 +199,6 @@ public abstract class AbstractAbilityControlManager {
     }
     
     /**.
-     * Combine with current node abilities, in order to get abilities current node provides
-     *
-     * @param abilities combined ability table
-     */
-    public void combine(Map<AbilityKey, Boolean> abilities) {
-        currentRunningAbility.forEach((k, v) -> {
-            Boolean isCurrentSupport = currentRunningAbility.get(k);
-            if (isCurrentSupport != null) {
-                abilities.put(k, abilities.getOrDefault(k, false) && isCurrentSupport);
-            }
-        });
-    }
-    
-    /**.
      * hook for subclass
      */
     protected void doDestroy() {
@@ -260,8 +252,8 @@ public abstract class AbstractAbilityControlManager {
      */
     protected void doRegisterComponent(AbilityKey abilityKey, HandlerMapping handlerMapping,
             Map<AbilityKey, List<HandlerWithPriority>> handlerMappings, Lock lockForHandlerMappings,
-            int priority, Map<AbilityKey, Boolean> abilityTable) {
-        if (!currentRunningAbility.containsKey(abilityKey)) {
+            int priority, Map<String, Boolean> abilityTable) {
+        if (!currentRunningAbility.containsKey(abilityKey.getName())) {
             LOGGER.warn("[AbilityHandlePostProcessor] Failed to register processor: {}, because illegal key!",
                     handlerMapping.getClass().getSimpleName());
         }
@@ -275,7 +267,7 @@ public abstract class AbstractAbilityControlManager {
             handlerMappings.put(abilityKey, handlers);
             // choose behavior
             // enable default
-            if (abilityTable.getOrDefault(abilityKey, false)) {
+            if (abilityTable.getOrDefault(abilityKey.getName(), false)) {
                 handlerMapping.enable();
             } else {
                 handlerMapping.disable();
@@ -384,15 +376,15 @@ public abstract class AbstractAbilityControlManager {
         
         private boolean isOn;
         
-        private Map<AbilityKey, Boolean> table;
+        private Map<String, Boolean> table;
     
         private AbilityUpdateEvent(){}
     
-        public Map<AbilityKey, Boolean> getAbilityTable() {
+        public Map<String, Boolean> getAbilityTable() {
             return table;
         }
     
-        public void setTable(Map<AbilityKey, Boolean> abilityTable) {
+        public void setTable(Map<String, Boolean> abilityTable) {
             this.table = abilityTable;
         }
         

@@ -33,8 +33,8 @@ public class ClientAbilityControlManager extends AbstractAbilityControlManager {
     }
     
     @Override
-    protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
-        return ClientAbilities.getStaticAbilities();
+    protected Map<String, Boolean> initCurrentNodeAbilities() {
+        return AbilityKey.mapStr(ClientAbilities.getStaticAbilities());
     }
     
     @Override

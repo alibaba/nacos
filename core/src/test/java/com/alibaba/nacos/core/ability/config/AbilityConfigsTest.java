@@ -60,9 +60,9 @@ public class AbilityConfigsTest {
     
     void inject(AbilityConfigs abilityConfigs) {
         TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
-        Map<AbilityKey, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.TEST_1, true);
-        newTable.put(AbilityKey.TEST_2, true);
+        Map<String, Boolean> newTable = new HashMap<>();
+        newTable.put(AbilityKey.TEST_1.getName(), true);
+        newTable.put(AbilityKey.TEST_2.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
         this.serverAbilityControlManager = serverAbilityControlManager;

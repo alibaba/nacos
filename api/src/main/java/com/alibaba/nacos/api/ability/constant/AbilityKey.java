@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 /**.
  * @author Daydreamer
- * @description Ability key constant.
+ * @description Ability key constant. It is used to constrain the ability key.
  * @date 2022/8/31 12:27
  **/
 public enum AbilityKey {

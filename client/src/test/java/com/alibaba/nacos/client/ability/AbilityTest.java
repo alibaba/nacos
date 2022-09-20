@@ -61,8 +61,8 @@ public class AbilityTest {
                     
                     {
                         super.abilityTable = new HashMap<>();
-                        super.abilityTable.put(AbilityKey.TEST_1, true);
-                        super.abilityTable.put(AbilityKey.TEST_2, false);
+                        super.abilityTable.put(AbilityKey.TEST_1.getName(), true);
+                        super.abilityTable.put(AbilityKey.TEST_2.getName(), false);
                     }
     
                     @Override

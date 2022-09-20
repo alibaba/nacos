@@ -26,7 +26,7 @@ import java.util.Map;
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
 
     @JustForTest
-    public void setCurrentSupportingAbility(Map<AbilityKey, Boolean> ability) {
+    public void setCurrentSupportingAbility(Map<String, Boolean> ability) {
         currentRunningAbility.clear();
         currentRunningAbility.putAll(ability);
     }

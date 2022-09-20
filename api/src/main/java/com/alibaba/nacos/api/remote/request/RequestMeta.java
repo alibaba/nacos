@@ -38,13 +38,13 @@ public class RequestMeta {
     
     private Map<String, String> labels = new HashMap<>();
     
-    private Map<AbilityKey, Boolean> abilityTable;
+    private Map<String, Boolean> abilityTable;
     
     public AbilityStatus getConnectionAbility(AbilityKey abilityKey) {
-        if (abilityTable == null) {
+        if (abilityTable == null || !abilityTable.containsKey(abilityKey.getName())) {
             return AbilityStatus.UNKNOWN;
         }
-        return abilityTable.getOrDefault(abilityKey, false) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+        return abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
     }
     
     /**
@@ -52,7 +52,7 @@ public class RequestMeta {
      *
      * @param  abilityTable property value of clientVersion
      */
-    public void setAbilityTable(Map<AbilityKey, Boolean> abilityTable) {
+    public void setAbilityTable(Map<String, Boolean> abilityTable) {
         this.abilityTable = abilityTable;
     }
     

@@ -39,8 +39,8 @@ public class AbilityControlManagerTest {
 
     @Before
     public void inject() {
-        Map<AbilityKey, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.TEST_1, true);
+        Map<String, Boolean> newTable = new HashMap<>();
+        newTable.put(AbilityKey.TEST_1.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
     }
     
@@ -88,18 +88,18 @@ public class AbilityControlManagerTest {
     
     @Test
     public void testCurrentNodeAbility() {
-        Set<AbilityKey> keySet = serverAbilityControlManager.getCurrentNodeAbilities().keySet();
+        Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities().keySet();
         // diable all
-        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(key));
+        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(key));
+            Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(key)));
         });
         // enable all
-        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(key));
+        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(key));
+            Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(key)));
         });
     }
     
