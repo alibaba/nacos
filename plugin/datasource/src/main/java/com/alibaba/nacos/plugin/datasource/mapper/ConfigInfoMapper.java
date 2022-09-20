@@ -340,9 +340,10 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT data_id, group_id, tenant_id, app_name, content FROM config_info WHERE group_id = ? AND tenant_id = ? AND data_id IN (...)
      *
      * @param dataIds data id list
+     * @param subQueryLimit sub query limit
      * @return The sql to get config information by batch.
      */
-    String findConfigInfoByBatch(List<String> dataIds);
+    String findConfigInfoByBatch(List<String> dataIds, int subQueryLimit);
     
     /**
      * Get the count of config information.
