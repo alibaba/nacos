@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
-import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -149,7 +148,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     } else {
                         try {
                             // finish register, tell client has set up successfully
-                            connection.request(new SetupAckRequest(connectionId, NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities()), 3000L);
+                            connection.request(new SetupAckRequest(connectionId,
+                                    NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities()), 3000L);
                         } catch (Exception e) {
                             // nothing to do
                             
