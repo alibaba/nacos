@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -30,7 +29,6 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.api.remote.response.SetupAckResponse;
-import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
@@ -49,8 +47,6 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,7 +81,7 @@ public abstract class GrpcClient extends RpcClient {
     /**.
      * Block to wait setup success response
      */
-    private final Map<String, CountDownLatch> markForSetup = new ConcurrentHashMap<>();
+    private final Map<String, RecAbilityContext> markForSetup = new ConcurrentHashMap<>();
     
     @Override
     public ConnectionType getConnectionType() {
@@ -104,9 +100,15 @@ public abstract class GrpcClient extends RpcClient {
             if (request instanceof SetupAckRequest) {
                 SetupAckRequest setupAckRequest = (SetupAckRequest) request;
                 // remove and count down
-                Optional.ofNullable(markForSetup.remove((setupAckRequest.getConnectionId())))
+                RecAbilityContext context = markForSetup.remove(setupAckRequest.getConnectionId());
+                if (context != null) {
+                    // set server abilities
+                    context.connection.setAbilityTable(setupAckRequest.getAbilityTable());
+                    // notify
+                    Optional.ofNullable(context.blocker)
                         .orElse(new CountDownLatch(1))
-                        .countDown();
+                            .countDown();
+                }
             }
             return new SetupAckResponse();
         });
@@ -273,9 +275,12 @@ public abstract class GrpcClient extends RpcClient {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Error to process server push response: {}",
                             grpcConn.getConnectionId(), payload.getBody().getValue().toStringUtf8());
                     // remove and notify
-                    Optional.ofNullable(markForSetup.remove(grpcConn.getConnectionId()))
-                            .orElse(new CountDownLatch(1))
-                            .countDown();
+                    RecAbilityContext context = markForSetup.remove(grpcConn.getConnectionId());
+                    if (context != null) {
+                        Optional.ofNullable(context.blocker)
+                                .orElse(new CountDownLatch(1))
+                                .countDown();
+                    }
                 }
             }
             
@@ -354,12 +359,10 @@ public abstract class GrpcClient extends RpcClient {
                         .newStub(newChannelStubTemp.getChannel());
                 GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
                 grpcConn.setConnectionId(connectionId);
-                // if not supported, it will be null
-                if (serverCheckResponse.getAbilities() != null) {
+                // if not supported, it will be false
+                if (serverCheckResponse.isSupportAbilityNegotiation()) {
                     // mark
-                    markForSetup.put(serverCheckResponse.getConnectionId(), new CountDownLatch(1));
-                    // set server abilities to connection
-                    grpcConn.setAbilityTable(serverCheckResponse.getAbilities());
+                    markForSetup.put(serverCheckResponse.getConnectionId(), new RecAbilityContext(grpcConn, new CountDownLatch(1)));
                 }
                 
                 //create stream request and bind connection event to this connection.
@@ -378,11 +381,10 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response
-                CountDownLatch synResponse = markForSetup.get(connectionId);
+                RecAbilityContext synResponse = markForSetup.get(connectionId);
                 if (synResponse != null) {
-                    synResponse.await(2000L, TimeUnit.MICROSECONDS);
-                    // ensure remove, it may being reset
-                    markForSetup.remove(connectionId);
+                    // try to wait for notify response
+                    synResponse.blocker.await(5000L, TimeUnit.MICROSECONDS);
                 }
                 // leave for adapting old version server
                 //wait to register connection setup
@@ -393,21 +395,61 @@ public abstract class GrpcClient extends RpcClient {
         } catch (Exception e) {
             LOGGER.error("[{}]Fail to connect to server!,error={}", GrpcClient.this.getName(), e);
             // remove and notify
-            Optional.ofNullable(markForSetup.remove(connectionId))
-                    .orElse(new CountDownLatch(1))
-                    .countDown();
+            RecAbilityContext context = markForSetup.remove(connectionId);
+            if (context != null) {
+                Optional.ofNullable(context.blocker)
+                        .orElse(new CountDownLatch(1))
+                        .countDown();
+            }
         }
         return null;
     }
     
     @Override
     protected void afterReset(ConnectResetRequest request) {
-        String connectionId = request.getConnectionId();
-        if (connectionId != null) {
+        RecAbilityContext context = markForSetup.remove(request.getConnectionId());
+        if (context != null) {
             // remove and notify
-            Optional.ofNullable(markForSetup.remove(connectionId))
+            Optional.ofNullable(context.blocker)
                     .orElse(new CountDownLatch(1))
                     .countDown();
+        }
+    }
+    
+    /**.
+     * This is for receiving server abilities
+     */
+    class RecAbilityContext {
+        
+        /**.
+         * connection waiting for server abilities
+         */
+        private Connection connection;
+        
+        /**.
+         * way to block client
+         */
+        private CountDownLatch blocker;
+        
+        public RecAbilityContext(Connection connection, CountDownLatch blocker) {
+            this.connection = connection;
+            this.blocker = blocker;
+        }
+        
+        public Connection getConnection() {
+            return connection;
+        }
+        
+        public void setConnection(Connection connection) {
+            this.connection = connection;
+        }
+        
+        public CountDownLatch getBlocker() {
+            return blocker;
+        }
+        
+        public void setBlocker(CountDownLatch blocker) {
+            this.blocker = blocker;
         }
     }
     

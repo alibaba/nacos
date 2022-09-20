@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import java.util.Map;
+
 import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
 
 /**.
@@ -27,11 +29,22 @@ public class SetupAckRequest extends ServerRequest {
     
     private String connectionId;
     
+    private Map<String, Boolean> abilityTable;
+    
     public SetupAckRequest() {
     }
     
-    public SetupAckRequest(String connectionId) {
+    public SetupAckRequest(String connectionId, Map<String, Boolean> abilityTable) {
         this.connectionId = connectionId;
+        this.abilityTable = abilityTable;
+    }
+    
+    public Map<String, Boolean> getAbilityTable() {
+        return abilityTable;
+    }
+    
+    public void setAbilityTable(Map<String, Boolean> abilityTable) {
+        this.abilityTable = abilityTable;
     }
     
     public String getConnectionId() {
