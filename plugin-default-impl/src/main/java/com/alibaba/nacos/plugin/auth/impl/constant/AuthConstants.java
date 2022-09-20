@@ -60,4 +60,6 @@ public class AuthConstants {
     public static final String NACOS_CORE_AUTH_LDAP_USERDN = "nacos.core.auth.ldap.userDn";
     
     public static final String NACOS_CORE_AUTH_LDAP_PASSWORD = "nacos.core.auth.ldap.password";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_FILTER_PREFIX = "nacos.core.auth.ldap.filter.prefix";
 }
