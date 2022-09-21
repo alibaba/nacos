@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -153,13 +154,13 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findChangeConfigCountRows(Map<String, String> params) {
+    public String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime) {
         return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
                 + "gmt_modified >=? AND gmt_modified <= ?";
     }
     
     @Override
-    public String findChangeConfigFetchRows(Map<String, String> params) {
+    public String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime) {
         return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
                 + "gmt_modified >=? AND gmt_modified <= ?";
     }

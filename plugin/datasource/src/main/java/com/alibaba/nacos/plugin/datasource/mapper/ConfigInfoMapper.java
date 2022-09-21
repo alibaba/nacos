@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 
@@ -223,9 +224,11 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
      *               the value is the key's value.
+     * @param startTime start time
+     * @param endTime   end time
      * @return The sql of getting the count of config information.
      */
-    String findChangeConfigCountRows(Map<String, String> params);
+    String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime);
     
     /**
      * According to the time period and configuration conditions to query the eligible configuration.
@@ -234,9 +237,11 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
      *               the value is the key's value.
+     * @param startTime start time
+     * @param endTime   end time
      * @return The sql of getting config information according to the time period.
      */
-    String findChangeConfigFetchRows(Map<String, String> params);
+    String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
