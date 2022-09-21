@@ -27,14 +27,14 @@ import java.util.Properties;
 public interface NacosClientProperties {
     
     /**
-     * all the NacosClientProperties object must be created from PROTOTYPE,
-     * so child NacosClientProperties can be shared properties in the PROTOTYPE.
+     * all the NacosClientProperties object must be created by PROTOTYPE,
+     * so child NacosClientProperties can read properties from the PROTOTYPE.
      * it looks like this:
      *  |-PROTOTYPE----------------> ip=127.0.0.1
      *  |---|-child1---------------> port=6379
      *  if you search key called "port" from child1, certainly you will get 6379
      *  if you search key called "ip" from child1, you will get 127.0.0.1.
-     *  because the "PROTOTYPE" is shared.
+     *  because the child can read properties from parent NacosClientProperties
      */
     NacosClientProperties PROTOTYPE = SearchableProperties.INSTANCE;
     
