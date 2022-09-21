@@ -19,14 +19,24 @@ package com.alibaba.nacos.client.env;
 import java.util.Properties;
 
 /**
- * NProperties interface.
- *
+ * NacosClientProperties interface.
+ * include all the properties from jvm args, system environment, default setting.
+ * more details you can see https://github.com/alibaba/nacos/issues/8622
  * @author onewe
  */
-@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-public interface NProperties {
+public interface NacosClientProperties {
     
-    NProperties PROTOTYPE = SearchableProperties.INSTANCE;
+    /**
+     * all the NacosClientProperties object must be created from PROTOTYPE,
+     * so child NacosClientProperties can be shared properties in the PROTOTYPE.
+     * it looks like this:
+     *  |-PROTOTYPE----------------> ip=127.0.0.1
+     *  |---|-child1---------------> port=6379
+     *  if you search key called "port" from child1, certainly you will get 6379
+     *  if you search key called "ip" from child1, you will get 127.0.0.1.
+     *  because the "PROTOTYPE" is shared.
+     */
+    NacosClientProperties PROTOTYPE = SearchableProperties.INSTANCE;
     
     /**
      * get property, if the value can not be got by the special key, the null will be returned.
@@ -106,28 +116,28 @@ public interface NProperties {
     void addProperties(Properties properties);
     
     /**
-     * Tests if the specified object is a key in this NProperties.
+     * Tests if the specified object is a key in this NacosClientProperties.
      * @param key key – possible key
-     * @return true if and only if the specified object is a key in this NProperties, false otherwise.
+     * @return true if and only if the specified object is a key in this NacosClientProperties, false otherwise.
      */
     boolean containsKey(String key);
     
     /**
-     * get properties from NProperties.
+     * get properties from NacosClientProperties.
      * @return properties
      */
     Properties asProperties();
     
     /**
-     * create a new NProperties which scope is itself.
-     * @return NProperties
+     * create a new NacosClientProperties which scope is itself.
+     * @return NacosClientProperties
      */
-    NProperties derive();
+    NacosClientProperties derive();
     
     /**
-     * create a NProperties and init.
+     * create a new NacosClientProperties from NacosClientProperties#PROTOTYPE and init.
      * @param properties properties
-     * @return NProperties
+     * @return NacosClientProperties
      */
-    NProperties derive(Properties properties);
+    NacosClientProperties derive(Properties properties);
 }

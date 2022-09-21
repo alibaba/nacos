@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import java.util.Properties;
 
-public class NPropertiesTest {
+public class NacosClientPropertiesTest {
     
     @BeforeClass
     public static void init() {
@@ -37,23 +37,23 @@ public class NPropertiesTest {
     
     @Test
     public void testGetProperty() {
-        NProperties.PROTOTYPE.setProperty("nacos.home", "/home/nacos");
-        final String value = NProperties.PROTOTYPE.getProperty("nacos.home");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.home", "/home/nacos");
+        final String value = NacosClientProperties.PROTOTYPE.getProperty("nacos.home");
         Assert.assertEquals("/home/nacos", value);
     }
     
     @Test
     public void testGetPropertyMultiLayer() {
        
-        NProperties.PROTOTYPE.setProperty("top.layer", "top");
+        NacosClientProperties.PROTOTYPE.setProperty("top.layer", "top");
     
-        final NProperties layerAEnv = NProperties.PROTOTYPE.derive();
+        final NacosClientProperties layerAEnv = NacosClientProperties.PROTOTYPE.derive();
         layerAEnv.setProperty("a.layer", "a");
     
-        final NProperties layerBEnv = layerAEnv.derive();
+        final NacosClientProperties layerBEnv = layerAEnv.derive();
         layerBEnv.setProperty("b.layer", "b");
     
-        final NProperties layerCEnv = layerBEnv.derive();
+        final NacosClientProperties layerCEnv = layerBEnv.derive();
         layerCEnv.setProperty("c.layer", "c");
     
         String value = layerCEnv.getProperty("c.layer");
@@ -71,70 +71,70 @@ public class NPropertiesTest {
     
     @Test
     public void testGetPropertyDefaultValue() {
-        final String value = NProperties.PROTOTYPE.getProperty("nacos.home.default", "/home/default_value");
+        final String value = NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default", "/home/default_value");
         Assert.assertEquals("/home/default_value", value);
     }
     
     @Test
     public void testGetBoolean() {
-        NProperties.PROTOTYPE.setProperty("use.cluster", "true");
-        final Boolean value = NProperties.PROTOTYPE.getBoolean("use.cluster");
+        NacosClientProperties.PROTOTYPE.setProperty("use.cluster", "true");
+        final Boolean value = NacosClientProperties.PROTOTYPE.getBoolean("use.cluster");
         Assert.assertTrue(value);
     }
     
     @Test
     public void testGetBooleanDefaultValue() {
-        final Boolean value = NProperties.PROTOTYPE.getBoolean("use.cluster.default", false);
+        final Boolean value = NacosClientProperties.PROTOTYPE.getBoolean("use.cluster.default", false);
         Assert.assertFalse(value);
     }
     
     @Test
     public void testGetInteger() {
-        NProperties.PROTOTYPE.setProperty("max.timeout", "200");
-        final Integer value = NProperties.PROTOTYPE.getInteger("max.timeout");
+        NacosClientProperties.PROTOTYPE.setProperty("max.timeout", "200");
+        final Integer value = NacosClientProperties.PROTOTYPE.getInteger("max.timeout");
         Assert.assertEquals(200, value.intValue());
     }
     
     @Test
     public void testGetIntegerDefaultValue() {
-        final Integer value = NProperties.PROTOTYPE.getInteger("max.timeout.default", 400);
+        final Integer value = NacosClientProperties.PROTOTYPE.getInteger("max.timeout.default", 400);
         Assert.assertEquals(400, value.intValue());
     }
     
     @Test
     public void testGetLong() {
-        NProperties.PROTOTYPE.setProperty("connection.timeout", "200");
-        final Long value = NProperties.PROTOTYPE.getLong("connection.timeout");
+        NacosClientProperties.PROTOTYPE.setProperty("connection.timeout", "200");
+        final Long value = NacosClientProperties.PROTOTYPE.getLong("connection.timeout");
         Assert.assertEquals(200L, value.longValue());
     }
     
     @Test
     public void testGetLongDefault() {
-        final Long value = NProperties.PROTOTYPE.getLong("connection.timeout.default", 400L);
+        final Long value = NacosClientProperties.PROTOTYPE.getLong("connection.timeout.default", 400L);
         Assert.assertEquals(400L, value.longValue());
     }
     
     @Test
     public void testGetPropertyDefaultSetting() {
         
-        final String value = NProperties.PROTOTYPE.getProperty("nacos.home.default.test");
+        final String value = NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default.test");
         Assert.assertEquals("/home/default_setting", value);
     }
     
     @Test
     public void setProperty() {
-        NProperties.PROTOTYPE.setProperty("nacos.set.property", "true");
-        final String ret = NProperties.PROTOTYPE.getProperty("nacos.set.property");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.set.property", "true");
+        final String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.set.property");
         Assert.assertEquals("true", ret);
     }
     
     @Test
     public void setPropertyWithScope() {
     
-        final NProperties properties = NProperties.PROTOTYPE.derive();
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         properties.setProperty("nacos.set.property.scope", "config");
     
-        String ret = NProperties.PROTOTYPE.getProperty("nacos.set.property.scope");
+        String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.set.property.scope");
         Assert.assertNull(ret);
         
         ret = properties.getProperty("nacos.set.property.scope");
@@ -146,9 +146,9 @@ public class NPropertiesTest {
         Properties properties = new Properties();
         properties.setProperty("nacos.add.properties", "true");
     
-        NProperties.PROTOTYPE.addProperties(properties);
+        NacosClientProperties.PROTOTYPE.addProperties(properties);
         
-        final String ret = NProperties.PROTOTYPE.getProperty("nacos.add.properties");
+        final String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.add.properties");
         
         Assert.assertEquals("true", ret);
     }
@@ -159,13 +159,13 @@ public class NPropertiesTest {
         Properties properties = new Properties();
         properties.setProperty("nacos.add.properties.scope", "config");
     
-        final NProperties nProperties = NProperties.PROTOTYPE.derive();
-        nProperties.addProperties(properties);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive();
+        nacosClientProperties.addProperties(properties);
     
-        String ret = NProperties.PROTOTYPE.getProperty("nacos.add.properties.scope");
+        String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.add.properties.scope");
         Assert.assertNull(ret);
         
-        ret = nProperties.getProperty("nacos.add.properties.scope");
+        ret = nacosClientProperties.getProperty("nacos.add.properties.scope");
         Assert.assertEquals("config", ret);
         
     }
@@ -175,9 +175,9 @@ public class NPropertiesTest {
         Properties properties = new Properties();
         properties.setProperty("nacos.derive.properties.scope", "derive");
     
-        final NProperties nProperties = NProperties.PROTOTYPE.derive(properties);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
     
-        final String value = nProperties.getProperty("nacos.derive.properties.scope");
+        final String value = nacosClientProperties.getProperty("nacos.derive.properties.scope");
         
         Assert.assertEquals("derive", value);
     
@@ -185,27 +185,27 @@ public class NPropertiesTest {
     
     @Test
     public void testContainsKey() {
-        NProperties.PROTOTYPE.setProperty("nacos.contains.key", "true");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.contains.key", "true");
         
-        boolean ret = NProperties.PROTOTYPE.containsKey("nacos.contains.key");
+        boolean ret = NacosClientProperties.PROTOTYPE.containsKey("nacos.contains.key");
         Assert.assertTrue(ret);
         
-        ret = NProperties.PROTOTYPE.containsKey("nacos.contains.key.in.sys");
+        ret = NacosClientProperties.PROTOTYPE.containsKey("nacos.contains.key.in.sys");
         Assert.assertFalse(ret);
     }
     
     @Test
     public void testContainsKeyMultiLayers() {
         
-        NProperties.PROTOTYPE.setProperty("top.layer", "top");
+        NacosClientProperties.PROTOTYPE.setProperty("top.layer", "top");
     
-        final NProperties layerAEnv = NProperties.PROTOTYPE.derive();
+        final NacosClientProperties layerAEnv = NacosClientProperties.PROTOTYPE.derive();
         layerAEnv.setProperty("a.layer", "a");
     
-        final NProperties layerBEnv = layerAEnv.derive();
+        final NacosClientProperties layerBEnv = layerAEnv.derive();
         layerBEnv.setProperty("b.layer", "b");
     
-        final NProperties layerCEnv = layerBEnv.derive();
+        final NacosClientProperties layerCEnv = layerBEnv.derive();
         layerCEnv.setProperty("c.layer", "c");
     
         boolean exist = layerCEnv.containsKey("c.layer");
@@ -224,14 +224,14 @@ public class NPropertiesTest {
     
     @Test
     public void testContainsKeyWithScope() {
-        NProperties.PROTOTYPE.setProperty("nacos.contains.global.scope", "global");
-        final NProperties namingProperties = NProperties.PROTOTYPE.derive();
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.contains.global.scope", "global");
+        final NacosClientProperties namingProperties = NacosClientProperties.PROTOTYPE.derive();
         namingProperties.setProperty("nacos.contains.naming.scope", "naming");
     
-        boolean ret = NProperties.PROTOTYPE.containsKey("nacos.contains.global.scope");
+        boolean ret = NacosClientProperties.PROTOTYPE.containsKey("nacos.contains.global.scope");
         Assert.assertTrue(ret);
         
-        ret = NProperties.PROTOTYPE.containsKey("nacos.contains.naming.scope");
+        ret = NacosClientProperties.PROTOTYPE.containsKey("nacos.contains.naming.scope");
         Assert.assertFalse(ret);
         
         ret = namingProperties.containsKey("nacos.contains.naming.scope");
@@ -244,8 +244,8 @@ public class NPropertiesTest {
     
     @Test
     public void testAsProperties() {
-        NProperties.PROTOTYPE.setProperty("nacos.as.properties", "true");
-        final Properties properties = NProperties.PROTOTYPE.asProperties();
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.as.properties", "true");
+        final Properties properties = NacosClientProperties.PROTOTYPE.asProperties();
         Assert.assertNotNull(properties);
         Assert.assertEquals("true", properties.getProperty("nacos.as.properties"));
     }
@@ -253,10 +253,10 @@ public class NPropertiesTest {
     @Test
     public void testAsPropertiesWithScope() {
     
-        NProperties.PROTOTYPE.setProperty("nacos.as.properties.global.scope", "global");
-        NProperties.PROTOTYPE.setProperty("nacos.server.addr.scope", "global");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.as.properties.global.scope", "global");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.server.addr.scope", "global");
     
-        final NProperties configProperties = NProperties.PROTOTYPE.derive();
+        final NacosClientProperties configProperties = NacosClientProperties.PROTOTYPE.derive();
         configProperties.setProperty("nacos.server.addr.scope", "config");
     
         final Properties properties = configProperties.asProperties();
@@ -272,21 +272,21 @@ public class NPropertiesTest {
     @Test
     public void testGetPropertyWithScope() {
     
-        NProperties.PROTOTYPE.setProperty("nacos.global.scope", "global");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.global.scope", "global");
         
-        final NProperties configProperties = NProperties.PROTOTYPE.derive();
+        final NacosClientProperties configProperties = NacosClientProperties.PROTOTYPE.derive();
         configProperties.setProperty("nacos.config.scope", "config");
         
-        final NProperties namingProperties = NProperties.PROTOTYPE.derive();
+        final NacosClientProperties namingProperties = NacosClientProperties.PROTOTYPE.derive();
         namingProperties.setProperty("nacos.naming.scope", "naming");
     
-        String ret = NProperties.PROTOTYPE.getProperty("nacos.global.scope");
+        String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.global.scope");
         Assert.assertEquals("global", ret);
         
-        ret = NProperties.PROTOTYPE.getProperty("nacos.config.scope");
+        ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.config.scope");
         Assert.assertNull(ret);
         
-        ret = NProperties.PROTOTYPE.getProperty("nacos.naming.scope");
+        ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.naming.scope");
         Assert.assertNull(ret);
         
         ret = configProperties.getProperty("nacos.config.scope");

@@ -33,11 +33,12 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
- * Searchable NProperties.
- *
+ * Searchable NacosClientProperties.
+ * the SearchableProperties that it can be specified search order by
+ * nacos.env.first
  * @author onewe
  */
-class SearchableProperties implements NProperties {
+class SearchableProperties implements NacosClientProperties {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SearchableProperties.class);
     
@@ -222,14 +223,14 @@ class SearchableProperties implements NProperties {
     }
     
     @Override
-    public NProperties derive() {
+    public NacosClientProperties derive() {
         return new SearchableProperties(new PropertiesPropertySource(this.propertiesPropertySource));
     }
     
     @Override
-    public NProperties derive(Properties properties) {
-        final NProperties nProperties = this.derive();
-        nProperties.addProperties(properties);
-        return nProperties;
+    public NacosClientProperties derive(Properties properties) {
+        final NacosClientProperties nacosClientProperties = this.derive();
+        nacosClientProperties.addProperties(properties);
+        return nacosClientProperties;
     }
 }
