@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Properties;
 
 class DefaultSettingPropertySource extends AbstractPropertySource {
@@ -33,12 +32,10 @@ class DefaultSettingPropertySource extends AbstractPropertySource {
     private final Properties defaultSetting = new Properties();
     
     DefaultSettingPropertySource() {
-        try {
-            final URL resourceUrl = ResourceUtils.getResourceUrl(DEFAULT_SETTING_PATH);
-            final InputStream inputStream = resourceUrl.openStream();
+        try (final InputStream inputStream = ResourceUtils.getResourceUrl(DEFAULT_SETTING_PATH).openStream()) {
             defaultSetting.load(inputStream);
         } catch (Exception e) {
-            LOGGER.warn("load default setting failed");
+            LOGGER.error("load default setting failed", e);
         }
     }
     
@@ -50,5 +47,17 @@ class DefaultSettingPropertySource extends AbstractPropertySource {
     @Override
     String getProperty(String key) {
         return defaultSetting.getProperty(key);
+    }
+    
+    @Override
+    boolean containsKey(String key) {
+        return defaultSetting.containsKey(key);
+    }
+    
+    @Override
+    Properties asProperties() {
+        Properties properties = new Properties();
+        properties.putAll(defaultSetting);
+        return properties;
     }
 }
