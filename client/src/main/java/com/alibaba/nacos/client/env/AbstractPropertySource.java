@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.env;
 
+import java.util.Properties;
+
 abstract class AbstractPropertySource {
     
     /**
@@ -30,5 +32,18 @@ abstract class AbstractPropertySource {
      * @return value or null
      */
     abstract String getProperty(String key);
+    
+    /**
+     * Tests if the specified object is a key in this propertySource.
+     * @param key key – possible key
+     * @return true if and only if the specified object is a key in this propertySource, false otherwise.
+     */
+    abstract boolean containsKey(String key);
+    
+    /**
+     * to properties.
+     * @return properties
+     */
+    abstract Properties asProperties();
     
 }

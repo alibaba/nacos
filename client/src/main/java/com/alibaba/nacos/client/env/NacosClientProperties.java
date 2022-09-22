@@ -16,12 +16,27 @@
 
 package com.alibaba.nacos.client.env;
 
+import java.util.Properties;
+
 /**
- * nacos env interface.
- *
+ * NacosClientProperties interface.
+ * include all the properties from jvm args, system environment, default setting.
+ * more details you can see https://github.com/alibaba/nacos/issues/8622
  * @author onewe
  */
-public interface NacosEnvironment {
+public interface NacosClientProperties {
+    
+    /**
+     * all the NacosClientProperties object must be created by PROTOTYPE,
+     * so child NacosClientProperties can read properties from the PROTOTYPE.
+     * it looks like this:
+     *  |-PROTOTYPE----------------> ip=127.0.0.1
+     *  |---|-child1---------------> port=6379
+     *  if you search key called "port" from child1, certainly you will get 6379
+     *  if you search key called "ip" from child1, you will get 127.0.0.1.
+     *  because the child can read properties from parent NacosClientProperties
+     */
+    NacosClientProperties PROTOTYPE = SearchableProperties.INSTANCE;
     
     /**
      * get property, if the value can not be got by the special key, the null will be returned.
@@ -87,4 +102,42 @@ public interface NacosEnvironment {
      */
     Long getLong(String key, Long defaultValue);
     
+    /**
+     * set property.
+     * @param key key
+     * @param value value
+     */
+    void setProperty(String key, String value);
+    
+    /**
+     * add properties.
+     * @param properties properties
+     */
+    void addProperties(Properties properties);
+    
+    /**
+     * Tests if the specified object is a key in this NacosClientProperties.
+     * @param key key – possible key
+     * @return true if and only if the specified object is a key in this NacosClientProperties, false otherwise.
+     */
+    boolean containsKey(String key);
+    
+    /**
+     * get properties from NacosClientProperties.
+     * @return properties
+     */
+    Properties asProperties();
+    
+    /**
+     * create a new NacosClientProperties which scope is itself.
+     * @return NacosClientProperties
+     */
+    NacosClientProperties derive();
+    
+    /**
+     * create a new NacosClientProperties from NacosClientProperties#PROTOTYPE and init.
+     * @param properties properties
+     * @return NacosClientProperties
+     */
+    NacosClientProperties derive(Properties properties);
 }
