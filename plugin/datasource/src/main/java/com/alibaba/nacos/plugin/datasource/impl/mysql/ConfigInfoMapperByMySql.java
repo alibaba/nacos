@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,8 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     private static final String APP_NAME = "appName";
     
     private static final String CONTENT = "content";
+    
+    private static final String TENANT = "tenant";
     
     @Override
     public String updateMd5() {
@@ -104,7 +107,7 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     
     @Override
     public String configInfoLikeTenantCount() {
-        return null;
+        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?";
     }
     
     @Override
@@ -151,13 +154,67 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     }
     
     @Override
-    public String findChangeConfigCountRows(Map<String, String> params) {
-        return null;
+    public String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime) {
+        final String tenant = params.get(TENANT);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
+        String where = " 1=1 ";
+        if (!StringUtils.isBlank(dataId)) {
+            where += " AND data_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(group)) {
+            where += " AND group_id LIKE ? ";
+        }
+    
+        if (!StringUtils.isBlank(tenantTmp)) {
+            where += " AND tenant_id = ? ";
+        }
+    
+        if (!StringUtils.isBlank(appName)) {
+            where += " AND app_name = ? ";
+        }
+        if (startTime != null) {
+            where += " AND gmt_modified >=? ";
+        }
+        if (endTime != null) {
+            where += " AND gmt_modified <=? ";
+        }
+        return sqlCountRows + where;
     }
     
     @Override
-    public String findChangeConfigFetchRows(Map<String, String> params) {
-        return null;
+    public String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime) {
+        final String tenant = params.get(TENANT);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ";
+        String where = " 1=1 ";
+        if (!StringUtils.isBlank(dataId)) {
+            where += " AND data_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(group)) {
+            where += " AND group_id LIKE ? ";
+        }
+    
+        if (!StringUtils.isBlank(tenantTmp)) {
+            where += " AND tenant_id = ? ";
+        }
+    
+        if (!StringUtils.isBlank(appName)) {
+            where += " AND app_name = ? ";
+        }
+        if (startTime != null) {
+            where += " AND gmt_modified >=? ";
+        }
+        if (endTime != null) {
+            where += " AND gmt_modified <=? ";
+        }
+        return sqlFetchRows + where;
     }
     
     @Override

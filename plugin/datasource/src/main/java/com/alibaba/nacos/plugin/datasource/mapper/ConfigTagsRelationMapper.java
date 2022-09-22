@@ -63,10 +63,12 @@ public interface ConfigTagsRelationMapper {
      * The default sql:
      * SELECT count(*) FROM config_info WHERE ...
      *
-     * @param tagNameSize The size of tag name.
+     * @param configAdvanceInfo advance info
+     * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
+     *                the value is the key's value.
      * @return The sql of get config info.
      */
-    String findConfigInfo4PageCountRows(int tagNameSize);
+    String findConfigInfo4PageCountRows(final Map<String, Object> configAdvanceInfo, final Map<String, String> params);
     
     /**
      * Find config info.
@@ -75,9 +77,10 @@ public interface ConfigTagsRelationMapper {
      * config_tags_relation b ON a.id=b.i ...
      *
      * @param configAdvanceInfo advance info
+     * @param params The keys and values are dataId and group.
      * @return The sql of finding config info.
      */
-    String findConfigInfo4PageFetchRows(Map<String, Object> configAdvanceInfo);
+    String findConfigInfo4PageFetchRows(Map<String, Object> configAdvanceInfo, final Map<String, String> params);
     
     /**
      * Get the count of config information by group id and tenant id and tag name.
@@ -106,9 +109,10 @@ public interface ConfigTagsRelationMapper {
      * SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id
      *
      * @param configAdvanceInfo advance info
+     * @param params the keys and values are dataId and group.
      * @return The sql of getting the count of config information.
      */
-    String findConfigInfoLike4PageCountRows(Map<String, Object> configAdvanceInfo);
+    String findConfigInfoLike4PageCountRows(Map<String, Object> configAdvanceInfo, final Map<String, String> params);
     
     /**
      * Query config info.
@@ -117,9 +121,10 @@ public interface ConfigTagsRelationMapper {
      * FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id
      *
      * @param configAdvanceInfo advance info
+     * @param params the keys and values are dataId and group.
      * @return The sql of querying config info.
      */
-    String findConfigInfoLike4PageFetchRows(Map<String, Object> configAdvanceInfo);
+    String findConfigInfoLike4PageFetchRows(Map<String, Object> configAdvanceInfo, final Map<String, String> params);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
