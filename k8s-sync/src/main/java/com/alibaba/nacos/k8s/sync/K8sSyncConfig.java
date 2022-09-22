@@ -21,13 +21,29 @@ import org.springframework.stereotype.Component;
 
 /**
  * Configurations for k8s integration.
+ *
+ * @author EmanuelGi
  */
 @Component
 public class K8sSyncConfig {
     @Value("${nacos.k8s.sync.enabled:false}")
     private boolean enabled = false;
     
+    @Value("${nacos.k8s.sync.outsideCluster:false}")
+    private boolean outsideCluster = false;
+    
+    @Value("${nacos.k8s.sync.kubeConfig:}")
+    private String kubeConfig;
+    
     public boolean isEnabled() {
         return enabled;
+    }
+    
+    public boolean isOutsideCluster() {
+        return outsideCluster;
+    }
+    
+    public String getKubeConfig() {
+        return kubeConfig;
     }
 }

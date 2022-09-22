@@ -28,6 +28,7 @@ import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.informer.cache.Lister;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1EndpointAddress;
 import io.kubernetes.client.openapi.models.V1EndpointSubset;
@@ -37,16 +38,24 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.CallGeneratorParams;
+import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Start and stop k8s-sync.
+ *
+ * @author EmanuelGi
+ */
 @Component
 public class K8sSyncServer {
     
@@ -60,15 +69,6 @@ public class K8sSyncServer {
     private InstanceOperatorClientImpl instanceOperatorClient;
     
     private SharedInformerFactory factory;
-    
-    //if you use the Java API from an application outside a kubernetes cluster,
-    //you should load a kubeconfig to generate apiClient instead of getting it from coreV1api
-    private ApiClient apiClient;
-    
-    public static void main(String[] args) throws Exception {
-        K8sSyncServer k8sSyncServer = new K8sSyncServer();
-        k8sSyncServer.startInformer();
-    }
     
     /**
      * start.
@@ -99,10 +99,17 @@ public class K8sSyncServer {
      * @throws IOException io exception
      */
     public void startInformer() throws IOException {
-        CoreV1Api coreV1Api = new CoreV1Api();
-        if (apiClient == null) {
+        ApiClient apiClient;
+        CoreV1Api coreV1Api;
+        
+        if (k8sSyncConfig.isOutsideCluster()) {
+            apiClient = getOutsideApiClient();
+            coreV1Api = new CoreV1Api();
+        } else {
+            coreV1Api = new CoreV1Api();
             apiClient = coreV1Api.getApiClient();
         }
+
         OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
         apiClient.setHttpClient(httpClient);
     
@@ -371,7 +378,6 @@ public class K8sSyncServer {
      * @param namespace service namespace
      * @param serviceName service name
      * @param oldInstanceList old instance list from nacos service
-     * @throws NacosException nacos exception during unregistering instances
      */
     public void unregisterInstances(Set<String> deleteIpSet, String namespace, String serviceName,
             List<? extends Instance> oldInstanceList) {
@@ -404,6 +410,21 @@ public class K8sSyncServer {
             return false;
         }
         return oldServicePorts.containsAll(newServicePorts) && newServicePorts.containsAll(oldServicePorts);
+    }
+    
+    /**
+     * use the Java API from an application outside a kubernetes cluster.
+     * you should load a kubeConfig to generate apiClient instead of getting it from coreV1api.
+     */
+    public ApiClient getOutsideApiClient() throws IOException {
+        String kubeConfigPath = k8sSyncConfig.getKubeConfig();
+    
+        // loading the out-of-cluster config, a kubeconfig from file-system
+        ApiClient apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+        
+        // set the global default api-client to the in-cluster one from above
+        Configuration.setDefaultApiClient(apiClient);
+        return apiClient;
     }
     
     /**

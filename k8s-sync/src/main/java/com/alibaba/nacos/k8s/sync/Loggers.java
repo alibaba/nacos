@@ -19,6 +19,11 @@ package com.alibaba.nacos.k8s.sync;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Loggers Holder.
+ *
+ * @author EmanuelGi
+ */
 public class Loggers {
     
     public static final Logger MAIN = LoggerFactory.getLogger("com.alibaba.nacos.k8s.sync.main");

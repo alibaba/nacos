@@ -182,6 +182,10 @@ nacos.istio.mcp.server.enabled=false
 ### If turn on the K8s sync:
 nacos.k8s.sync.enabled=false
 
+### If use the Java API from an application outside a kubernetes cluster
+#nacos.k8s.sync.outsideCluster=false
+#nacos.k8s.sync.kubeConfig=/.kube/config
+
 #*************** Core Related Configurations ***************#
 
 ### set the WorkerID manually
