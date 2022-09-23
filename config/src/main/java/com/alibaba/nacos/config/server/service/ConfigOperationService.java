@@ -76,7 +76,7 @@ public class ConfigOperationService {
         }
         
         final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(), configForm.getTenant(),
+        ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
                 configForm.getAppName(), configForm.getContent());
         
         configInfo.setType(configForm.getType());
@@ -88,13 +88,13 @@ public class ConfigOperationService {
                         configAdvanceInfo, false);
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
-                                configForm.getTenant(), time.getTime()));
+                                configForm.getNamespaceId(), time.getTime()));
             } else {
                 persistService.insertOrUpdateTag(configInfo, configForm.getTag(), configRequestInfo.getSrcIp(),
                         configForm.getSrcUser(), time, false);
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
-                                configForm.getTenant(), configForm.getTag(), time.getTime()));
+                                configForm.getNamespaceId(), configForm.getTag(), time.getTime()));
             }
         } else {
             // beta publish
@@ -102,10 +102,10 @@ public class ConfigOperationService {
                     .insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(),
                             configForm.getSrcUser(), time, false);
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(), configForm.getTenant(),
+                    new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
                             time.getTime()));
         }
-        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(), configForm.getTenant(),
+        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
                 configRequestInfo.getRequestIpApp(), time.getTime(), InetUtils.getSelfIP(),
                 ConfigTraceService.PERSISTENCE_EVENT_PUB, configForm.getContent());
         
@@ -115,18 +115,18 @@ public class ConfigOperationService {
     /**
      * Synchronously delete all pre-aggregation data under a dataId.
      */
-    public Boolean deleteConfig(String dataId, String group, String tenant, String tag, String clientIp,
+    public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) {
         if (StringUtils.isBlank(tag)) {
-            persistService.removeConfigInfo(dataId, group, tenant, clientIp, srcUser);
+            persistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
         } else {
-            persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, srcUser);
+            persistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
+        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp,
                 ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+                .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, namespaceId, tag, time.getTime()));
         
         return true;
     }

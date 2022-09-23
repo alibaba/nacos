@@ -153,7 +153,7 @@ public class ConfigController {
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(dataId);
         configForm.setGroup(group);
-        configForm.setTenant(tenant);
+        configForm.setNamespaceId(tenant);
         configForm.setContent(content);
         configForm.setTag(tag);
         configForm.setAppName(appName);

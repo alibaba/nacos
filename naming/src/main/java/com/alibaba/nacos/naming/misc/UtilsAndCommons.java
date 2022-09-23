@@ -66,6 +66,8 @@ public class UtilsAndCommons {
     
     public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
     
+    public static final String NACOS_NAMING_CLIENT_CONTEXT = "/client";
+    
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
     
     public static final String NACOS_NAMING_PARTITION_CONTEXT = "/distro";

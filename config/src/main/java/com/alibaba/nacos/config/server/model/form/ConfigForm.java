@@ -38,7 +38,7 @@ public class ConfigForm implements Serializable {
     
     private String group;
     
-    private String tenant;
+    private String namespaceId;
     
     private String content;
     
@@ -63,11 +63,11 @@ public class ConfigForm implements Serializable {
     public ConfigForm() {
     }
     
-    public ConfigForm(String dataId, String group, String tenant, String content, String tag, String appName,
+    public ConfigForm(String dataId, String group, String namespaceId, String content, String tag, String appName,
             String srcUser, String configTags, String desc, String use, String effect, String type, String schema) {
         this.dataId = dataId;
         this.group = group;
-        this.tenant = tenant;
+        this.namespaceId = namespaceId;
         this.content = content;
         this.tag = tag;
         this.appName = appName;
@@ -96,12 +96,12 @@ public class ConfigForm implements Serializable {
         this.group = group;
     }
     
-    public String getTenant() {
-        return tenant;
+    public String getNamespaceId() {
+        return namespaceId;
     }
     
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
     
     public String getContent() {
@@ -193,7 +193,7 @@ public class ConfigForm implements Serializable {
             return false;
         }
         ConfigForm configForm = (ConfigForm) o;
-        return dataId.equals(configForm.dataId) && group.equals(configForm.group) && Objects.equals(tenant, configForm.tenant)
+        return dataId.equals(configForm.dataId) && group.equals(configForm.group) && Objects.equals(namespaceId, configForm.namespaceId)
                 && content.equals(configForm.content) && Objects.equals(tag, configForm.tag) && Objects
                 .equals(appName, configForm.appName) && Objects.equals(srcUser, configForm.srcUser) && Objects
                 .equals(configTags, configForm.configTags) && Objects.equals(desc, configForm.desc) && Objects
@@ -203,13 +203,13 @@ public class ConfigForm implements Serializable {
     
     @Override
     public int hashCode() {
-        return Objects.hash(dataId, group, tenant, content, tag, appName, srcUser, configTags, desc, use, effect, type,
+        return Objects.hash(dataId, group, namespaceId, content, tag, appName, srcUser, configTags, desc, use, effect, type,
                 schema);
     }
     
     @Override
     public String toString() {
-        return "ConfigVo{" + "dataId='" + dataId + '\'' + ", group='" + group + '\'' + ", tenant='" + tenant + '\''
+        return "ConfigVo{" + "dataId='" + dataId + '\'' + ", group='" + group + '\'' + ", namespaceId='" + namespaceId + '\''
                 + ", content='" + content + '\'' + ", tag='" + tag + '\'' + ", appName='" + appName + '\''
                 + ", srcUser='" + srcUser + '\'' + ", configTags='" + configTags + '\'' + ", desc='" + desc + '\''
                 + ", use='" + use + '\'' + ", effect='" + effect + '\'' + ", type='" + type + '\'' + ", schema='"

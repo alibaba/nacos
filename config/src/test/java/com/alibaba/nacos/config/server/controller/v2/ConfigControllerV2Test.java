@@ -58,7 +58,7 @@ public class ConfigControllerV2Test {
     
     private static final String TEST_GROUP = "test";
     
-    private static final String TEST_TENANT = "";
+    private static final String TEST_NAMESPACE_ID = "";
     
     private static final String TEST_TAG = "";
     
@@ -82,12 +82,12 @@ public class ConfigControllerV2Test {
             x.getArgument(1, HttpServletResponse.class).getWriter().print(JacksonUtils.toJson(stringResult));
             return null;
         }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID),
-                eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), eq(null), anyString(), eq(true));
+                eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(true));
         
-        configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_TENANT, TEST_TAG);
+        configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
         verify(inner)
-                .doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG),
+                .doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
                         eq(null), anyString(), eq(true));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
@@ -103,7 +103,7 @@ public class ConfigControllerV2Test {
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(TEST_DATA_ID);
         configForm.setGroup(TEST_GROUP);
-        configForm.setTenant(TEST_TENANT);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
@@ -125,12 +125,12 @@ public class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService
-                .deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), any(), any())).thenReturn(true);
+                .deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any())).thenReturn(true);
     
         Result<Boolean> booleanResult = configControllerV2
-                .deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_TENANT, TEST_TAG);
+                .deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
     
-        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_TENANT), eq(TEST_TAG), any(), any());
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any());
     
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());

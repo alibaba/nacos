@@ -79,18 +79,18 @@ public class ConfigControllerV2 {
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "tag", required = false) String tag)
             throws NacosException, IOException, ServletException {
-        // check tenant
-        ParamUtils.checkTenantV2(tenant);
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+        // check namespaceId
+        ParamUtils.checkTenantV2(namespaceId);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParamV2(tag);
         final String clientIp = RequestUtil.getRemoteIp(request);
         String isNotify = request.getHeader("notify");
-        inner.doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp, true);
+        inner.doGetConfig(request, response, dataId, group, namespaceId, tag, isNotify, clientIp, true);
     }
     
     /**
@@ -107,7 +107,7 @@ public class ConfigControllerV2 {
         Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
         configForm.setContent(pair.getSecond());
         // check param
-        ParamUtils.checkTenantV2(configForm.getTenant());
+        ParamUtils.checkTenantV2(configForm.getNamespaceId());
         ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId", configForm.getContent());
         ParamUtils.checkParamV2(configForm.getTag());
     
@@ -137,15 +137,15 @@ public class ConfigControllerV2 {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public Result<Boolean> deleteConfig(HttpServletRequest request, @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
-        // check tenant
-        ParamUtils.checkTenantV2(tenant);
+        // check namespaceId
+        ParamUtils.checkTenantV2(namespaceId);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParamV2(tag);
         
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
-        return Result.success(configOperationService.deleteConfig(dataId, group, tenant, tag, clientIp, srcUser));
+        return Result.success(configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser));
     }
 }
