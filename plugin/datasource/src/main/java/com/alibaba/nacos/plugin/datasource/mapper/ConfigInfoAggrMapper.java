@@ -103,6 +103,15 @@ public interface ConfigInfoAggrMapper extends Mapper {
     String aggrConfigInfoCount(List<String> datumIds, boolean isIn);
     
     /**
+     * Get count of aggregation config info.
+     * The default sql:
+     * SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?
+     *
+     * @return The count of getting count of aggregation config info.
+     */
+    String aggrConfigInfoCount();
+    
+    /**
      * Find a single piece of data before aggregation.
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,datum_id,app_name,content
