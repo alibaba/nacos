@@ -17,6 +17,7 @@
 package com.alibaba.nacos.console.exception;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
@@ -68,6 +69,12 @@ public class NacosApiExceptionHandler {
     public ResponseEntity<Result<String>> handleNacosApiException(NacosApiException e) {
         LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
         return ResponseEntity.status(e.getErrCode()).body(new Result<>(e.getDetailErrCode(), e.getErrAbstract(), e.getErrMsg()));
+    }
+    
+    @ExceptionHandler(NacosException.class)
+    public ResponseEntity<Result<String>> handleNacosException(NacosException e) {
+        LOGGER.error("got exception. {}", e.getErrMsg());
+        return ResponseEntity.status(e.getErrCode()).body(Result.failure(ErrorCode.SERVER_ERROR, e.getErrMsg()));
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)

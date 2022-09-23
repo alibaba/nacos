@@ -203,17 +203,17 @@ public class ParamUtils {
     }
     
     /**
-     * Check the tenant for [v2].
+     * Check the namespaceId for [v2].
      */
-    public static void checkTenantV2(String tenant) throws NacosApiException {
-        if (StringUtils.isNotBlank(tenant)) {
-            if (!isValid(tenant.trim())) {
+    public static void checkTenantV2(String namespaceId) throws NacosApiException {
+        if (StringUtils.isNotBlank(namespaceId)) {
+            if (!isValid(namespaceId.trim())) {
                 throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                        "invalid tenant");
+                        "invalid namespaceId");
             }
-            if (tenant.length() > TENANT_MAX_LEN) {
+            if (namespaceId.length() > TENANT_MAX_LEN) {
                 throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
-                        "too long tenant, over 128");
+                        "too long namespaceId, over 128");
             }
         }
     }

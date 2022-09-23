@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller.v2;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
@@ -31,6 +32,8 @@ import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -60,7 +63,7 @@ public class HistoryControllerV2 {
      *
      * @param dataId   dataId string value [required].
      * @param group    group string value [required].
-     * @param tenant   tenant string value.
+     * @param namespaceId   namespaceId.
      * @param pageNo   pageNo integer value.
      * @param pageSize pageSize integer value.
      * @return the page of history config.
@@ -71,13 +74,13 @@ public class HistoryControllerV2 {
     public Result<Page<ConfigHistoryInfo>> listConfigHistory(
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
             @RequestParam(value = "pageSize", required = false) Integer pageSize) throws NacosApiException {
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
-        return Result.success(historyService.listConfigHistory(dataId, group, tenant, pageNo, pageSize));
+        return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
     }
     
     /**
@@ -86,7 +89,7 @@ public class HistoryControllerV2 {
      * @param nid    history_config_info nid
      * @param dataId dataId  @since 2.0.3
      * @param group  groupId  @since 2.0.3
-     * @param tenant tenantId  @since 2.0.3
+     * @param namespaceId namespaceId  @since 2.0.3
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      */
@@ -95,9 +98,16 @@ public class HistoryControllerV2 {
     public Result<ConfigHistoryInfo> getConfigHistoryInfo(
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam("nid") Long nid) throws AccessException {
-        return Result.success(historyService.getConfigHistoryInfo(dataId, group, tenant, nid));
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
+            @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
+        ConfigHistoryInfo configHistoryInfo;
+        try {
+            configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
+        } catch (DataAccessException e) {
+            throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
+                    "certain config history for nid = " + nid + " not exist");
+        }
+        return Result.success(configHistoryInfo);
     }
     
     /**
@@ -106,7 +116,7 @@ public class HistoryControllerV2 {
      * @param id     config_info id
      * @param dataId dataId  @since 2.0.3
      * @param group  groupId  @since 2.0.3
-     * @param tenant tenantId  @since 2.0.3
+     * @param namespaceId namespaceId  @since 2.0.3
      * @return history config info
      * @since 2.0.3 add {@link Secured}, dataId, groupId and tenant for history config permission check.
      */
@@ -115,25 +125,32 @@ public class HistoryControllerV2 {
     public Result<ConfigHistoryInfo> getPreviousConfigHistoryInfo(
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam("id") Long id) throws AccessException {
-        return Result.success(historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id));
+            @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
+            @RequestParam("id") Long id) throws AccessException, NacosApiException {
+        ConfigHistoryInfo configHistoryInfo;
+        try {
+            configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
+        } catch (DataAccessException e) {
+            throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
+                    "previous config history for id = " + id + " not exist");
+        }
+        return Result.success(configHistoryInfo);
     }
     
     /**
      * Query configs list by namespace.
      *
-     * @param tenant config_info namespace
+     * @param namespaceId config_info namespace
      * @return list
      * @since 2.1.1
      */
     @GetMapping(value = "/configs")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("tenant") String tenant)
+    public Result<List<ConfigInfoWrapper>> getConfigsByTenant(@RequestParam("namespaceId") String namespaceId)
             throws NacosApiException {
-        // check tenant
-        ParamUtils.checkTenantV2(tenant);
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
-        return Result.success(historyService.getConfigListByNamespace(tenant));
+        // check namespaceId
+        ParamUtils.checkTenantV2(namespaceId);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
+        return Result.success(historyService.getConfigListByNamespace(namespaceId));
     }
 }

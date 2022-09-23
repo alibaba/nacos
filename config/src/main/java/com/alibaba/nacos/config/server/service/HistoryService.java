@@ -46,22 +46,22 @@ public class HistoryService {
     /**
      * Query the list history config.
      */
-    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String tenant, Integer pageNo,
+    public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
             Integer pageSize) {
-        return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
+        return persistService.findConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
     }
     
     /**
      * Query the detailed configuration history information.
      */
-    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String tenant, Long nid)
+    public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws AccessException {
         ConfigHistoryInfo configHistoryInfo = persistService.detailConfigHistory(nid);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
         // check if history config match the input
-        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
+        checkHistoryInfoPermission(configHistoryInfo, dataId, group, namespaceId);
         
         String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
         Pair<String, String> pair = EncryptionHandler
@@ -74,33 +74,33 @@ public class HistoryService {
     /**
      * Query previous config history information.
      */
-    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String tenant, Long id)
+    public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
             throws AccessException {
         ConfigHistoryInfo configHistoryInfo = persistService.detailPreviousConfigHistory(id);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
         // check if history config match the input
-        checkHistoryInfoPermission(configHistoryInfo, dataId, group, tenant);
+        checkHistoryInfoPermission(configHistoryInfo, dataId, group, namespaceId);
         return configHistoryInfo;
     }
     
     /**
      * Query configs list by namespace.
      */
-    public List<ConfigInfoWrapper> getConfigListByNamespace(String tenant) {
-        return persistService.queryConfigInfoByNamespace(tenant);
+    public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) {
+        return persistService.queryConfigInfoByNamespace(namespaceId);
     }
     
     /**
-     * Check if the input dataId,group and tenant match the history config.
+     * Check if the input dataId,group and namespaceId match the history config.
      */
     private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
-            String tenant) throws AccessException {
+            String namespaceId) throws AccessException {
         if (!Objects.equals(configHistoryInfo.getDataId(), dataId) || !Objects
                 .equals(configHistoryInfo.getGroup(), group) || !Objects
-                .equals(configHistoryInfo.getTenant(), tenant)) {
-            throw new AccessException("Please check dataId, group or tenant.");
+                .equals(configHistoryInfo.getTenant(), namespaceId)) {
+            throw new AccessException("Please check dataId, group or namespaceId.");
         }
     }
 }
