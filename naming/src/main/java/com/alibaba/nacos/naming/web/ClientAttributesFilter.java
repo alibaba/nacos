@@ -45,8 +45,6 @@ import java.io.IOException;
  */
 public class ClientAttributesFilter implements Filter {
     
-    private static final String BASE_URI = "/v1/ns";
-    
     private static final String BEAT_URI = "/beat";
     
     private static final String IP = "ip";
