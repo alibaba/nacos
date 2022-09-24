@@ -96,6 +96,12 @@ public abstract class AbstractServerListManager implements ServerListManager {
         }
     }
     
+    /**
+     * get endpoint url from properties.
+     *
+     * @param properties properties passed in by the user.
+     * @return endpoint url
+     */
     private String getAddressServerUrl(Properties properties) {
     
         String endpoint = properties.getProperty(PropertyKeyConst.ENDPOINT);
@@ -113,17 +119,21 @@ public abstract class AbstractServerListManager implements ServerListManager {
         
         String contentPath = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         String serverListName = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
-        
+        // default contentPath is /nacos
         contentPath = StringUtils.isBlank(contentPath) ? ParamUtil.getDefaultContextPath() : contentPath;
+        // default serverListName is /serverlist
         serverListName = StringUtils.isBlank(serverListName) ? ParamUtil.getDefaultNodesPath() : serverListName;
     
         String endpointPort = TemplateUtils
                 .stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
                         () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
+        
+        // get endpoint url by splicing endpoint, port, contentPath, serverListName
         StringBuilder addressServerUrl = new StringBuilder(
                 String.format("http://%s:%s%s/%s", endpoint, endpointPort,
                         ContextPathUtil.normalizeContextPath(contentPath), serverListName));
         
+        // append params to endpoint url
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         boolean hasQueryString = false;
         if (StringUtils.isNotBlank(namespace)) {
@@ -138,17 +148,25 @@ public abstract class AbstractServerListManager implements ServerListManager {
         return addressServerUrl.toString();
     }
     
+    /**
+     * get params about addressPlugin from properties and put them into AddressProperties for plugin using.
+     *
+     * @param properties properties passed in by the user.
+     */
     private void initAddressPluginProperties(Properties properties) {
+        
+        // if endpoint url is not empty, put url to AddressProperties for plugin using
         String addressServerUrl = getAddressServerUrl(properties);
         if (!StringUtils.isBlank(addressServerUrl)) {
             AddressProperties.setProperties("addressServerUrl", addressServerUrl);
         }
-    
+        
         String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         if (!StringUtils.isBlank(serverAddrsStr)) {
             AddressProperties.setProperties("serverAddressStr", serverAddrsStr);
         }
         
+        // put key and value that starting with addressPlugin to AddressProperties for plugin using
         for (String key : properties.stringPropertyNames()) {
             if (key.startsWith("addressPlugin")) {
                 AddressProperties.setProperties(key, properties.getProperty(key));
