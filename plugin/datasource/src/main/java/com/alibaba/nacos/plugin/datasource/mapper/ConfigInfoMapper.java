@@ -80,7 +80,7 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return The sql to select configInfo by ID.
      */
-    String findConfigInfo();
+    String findConfigInfoById();
     
     /**
      * Query configuration information based on dataId.
@@ -604,4 +604,22 @@ public interface ConfigInfoMapper extends Mapper {
      * @return find ConfigInfo by ids.
      */
     String findConfigInfosByIds(int idSize);
+    
+    /**
+     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
+     * The default sql:
+     * SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key
+     * FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?
+     *
+     * @return The sql of querying configuration information.
+     */
+    String findConfigInfoByDataId2Group2Tenant();
+    
+    /**
+     * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     *
+     * @param size The size of ids.
+     * @return The sql of removing configuration.
+     */
+    String removeConfigInfoByIdsAtomic(int size);
 }

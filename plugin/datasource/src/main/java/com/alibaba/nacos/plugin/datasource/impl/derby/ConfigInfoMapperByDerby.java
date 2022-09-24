@@ -68,7 +68,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfo() {
+    public String findConfigInfoById() {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id = ?";
     }
     
@@ -559,6 +559,25 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
         sql.append("id IN (");
         for (int i = 0; i < idSize; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append('?');
+        }
+        sql.append(") ");
+        return sql.toString();
+    }
+    
+    @Override
+    public String findConfigInfoByDataId2Group2Tenant() {
+        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id=?";
+    }
+    
+    @Override
+    public String removeConfigInfoByIdsAtomic(int size) {
+        StringBuilder sql = new StringBuilder("DELETE FROM config_info WHERE ");
+        sql.append("id IN (");
+        for (int i = 0; i < size; i++) {
             if (i != 0) {
                 sql.append(", ");
             }
