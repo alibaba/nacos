@@ -71,13 +71,13 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfo() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id= ?";
+    public String findConfigInfoById() {
+        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id = ?";
     }
     
     @Override
     public String findConfigInfoByDataIdFetchRows() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id= ? AND tenant_id= ?";
+        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id = ? AND tenant_id = ?";
     }
     
     @Override
@@ -154,7 +154,8 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     }
     
     @Override
-    public String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime) {
+    public String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime,
+            final Timestamp endTime) {
         final String tenant = params.get(TENANT);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
@@ -168,11 +169,11 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
         if (!StringUtils.isBlank(group)) {
             where += " AND group_id LIKE ? ";
         }
-    
+        
         if (!StringUtils.isBlank(tenantTmp)) {
             where += " AND tenant_id = ? ";
         }
-    
+        
         if (!StringUtils.isBlank(appName)) {
             where += " AND app_name = ? ";
         }
@@ -186,7 +187,8 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     }
     
     @Override
-    public String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime) {
+    public String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime,
+            final Timestamp endTime) {
         final String tenant = params.get(TENANT);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
@@ -200,11 +202,11 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
         if (!StringUtils.isBlank(group)) {
             where += " AND group_id LIKE ? ";
         }
-    
+        
         if (!StringUtils.isBlank(tenantTmp)) {
             where += " AND tenant_id = ? ";
         }
-    
+        
         if (!StringUtils.isBlank(appName)) {
             where += " AND app_name = ? ";
         }
@@ -250,7 +252,7 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     
     @Override
     public String listGroupKeyMd5ByPageFetchRows() {
-        return  " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
+        return " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
                 + "( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
     }
     
@@ -269,6 +271,9 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     public String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
         String tenant = params.get("tenant");
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        String sql =
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,"
+                        + "c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         List<Object> paramList = new ArrayList<>();
         if (!CollectionUtils.isEmpty(ids)) {
@@ -294,26 +299,20 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
                 where.append(" AND app_name= ? ");
             }
         }
-        return null;
+        return sql + where;
     }
     
     @Override
-    public String findConfigInfoByBatch(List<String> dataIds, int subQueryLimit) {
+    public String findConfigInfoByBatch(int paramSize) {
         String sqlStart = "SELECT data_id, group_id, tenant_id, app_name, content "
                 + "FROM config_info WHERE group_id = ? AND tenant_id = ? AND data_id IN (";
         String sqlEnd = ")";
         StringBuilder subQuerySql = new StringBuilder();
-    
-        for (int i = 0; i < dataIds.size(); i += subQueryLimit) {
-            // dataids
-            List<String> params = new ArrayList<>(
-                    dataIds.subList(i, i + subQueryLimit < dataIds.size() ? i + subQueryLimit : dataIds.size()));
         
-            for (int j = 0; j < params.size(); j++) {
-                subQuerySql.append('?');
-                if (j != params.size() - 1) {
-                    subQuerySql.append(',');
-                }
+        for (int i = 0; i < paramSize; i++) {
+            subQuerySql.append('?');
+            if (i != paramSize - 1) {
+                subQuerySql.append(',');
             }
         }
         return sqlStart + subQuerySql.toString() + sqlEnd;
@@ -336,7 +335,7 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
         if (!StringUtils.isBlank(params.get(CONTENT))) {
             where += " AND content LIKE ? ";
         }
-    
+        
         return sqlCountRows + where;
     }
     
@@ -357,7 +356,7 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
         if (!StringUtils.isBlank(params.get(CONTENT))) {
             where += " AND content LIKE ? ";
         }
-    
+        
         return sqlFetchRows + where;
     }
     
@@ -365,7 +364,7 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     public String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
         String where = " 1=1 AND tenant_id='' ";
-    
+        
         if (!StringUtils.isBlank(params.get(DATA_ID))) {
             where += " AND data_id LIKE ? ";
         }
@@ -392,6 +391,258 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
             where += " AND content LIKE ? ";
         }
         return sqlFetchRows + where;
+    }
+    
+    @Override
+    public String findConfigInfoByDataIdCountRows() {
+        return "SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoByDataIdAndAdvanceCountRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sqlCount.append(" AND app_name=? ");
+        }
+        return sqlCount.toString();
+    }
+    
+    @Override
+    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        StringBuilder sql = new StringBuilder(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND tenant_id=? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sql.append(" AND app_name=? ");
+        }
+        return sql.toString();
+    }
+    
+    @Override
+    public String findConfigInfo4PageCountRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String sqlCount = "SELECT count(*) FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        where.append(" tenant_id=? ");
+        if (StringUtils.isNotBlank(dataId)) {
+            where.append(" AND data_id=? ");
+        }
+        if (StringUtils.isNotBlank(group)) {
+            where.append(" AND group_id=? ");
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            where.append(" AND app_name=? ");
+        }
+        return sqlCount + where;
+    }
+    
+    @Override
+    public String findConfigInfo4PageFetchRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        where.append(" tenant_id=? ");
+        if (StringUtils.isNotBlank(dataId)) {
+            where.append(" AND data_id=? ");
+        }
+        if (StringUtils.isNotBlank(group)) {
+            where.append(" AND group_id=? ");
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            where.append(" AND app_name=? ");
+        }
+        return sql + where;
+    }
+    
+    @Override
+    public String findConfigInfoBaseByDataIdCountRows() {
+        return "SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoBaseByDataIdFetchRows() {
+        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoByGroupCountRows() {
+        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoByGroupFetchRows() {
+        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoByGroupAndAppCountRows() {
+        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=? AND app_name =?";
+    }
+    
+    @Override
+    public String findConfigInfoByGroupAndAppFetchRows() {
+        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=? AND app_name =?";
+    }
+    
+    @Override
+    public String findConfigInfoByAdvanceCountRows(Map<String, String> params) {
+        final String appName = params.get("appName");
+        StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sqlCount.append(" AND app_name=? ");
+        }
+        return sqlCount.toString();
+    }
+    
+    @Override
+    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params) {
+        final String appName = params.get("appName");
+        StringBuilder sql = new StringBuilder(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sql.append(" AND app_name=? ");
+        }
+        return sql.toString();
+    }
+    
+    @Override
+    public String findConfigInfoBaseByGroupCountRows() {
+        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoBaseByGroupFetchRows() {
+        return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String findConfigInfoLike4PageCountRows(Map<String, String> params) {
+        String dataId = params.get(DATA_ID);
+        String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String content = params.get(CONTENT);
+        final String sqlCountRows = "SELECT count(*) FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        where.append(" tenant_id LIKE ? ");
+        if (!StringUtils.isBlank(dataId)) {
+            where.append(" AND data_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(group)) {
+            where.append(" AND group_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(appName)) {
+            where.append(" AND app_name = ? ");
+        }
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND content LIKE ? ");
+        }
+        return sqlCountRows + where;
+    }
+    
+    @Override
+    public String findConfigInfoLike4PageFetchRows(Map<String, String> params) {
+        String dataId = params.get(DATA_ID);
+        String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String content = params.get(CONTENT);
+        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        where.append(" tenant_id LIKE ? ");
+        if (!StringUtils.isBlank(dataId)) {
+            where.append(" AND data_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(group)) {
+            where.append(" AND group_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(appName)) {
+            where.append(" AND app_name = ? ");
+        }
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND content LIKE ? ");
+        }
+        return sqlFetchRows + where;
+    }
+    
+    @Override
+    public String findAllConfigInfoFetchRows() {
+        return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
+                + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
+                + " g, config_info t  WHERE g.id = t.id ";
+    }
+    
+    @Override
+    public String findConfigInfoAdvanceInfo(Map<String, String> params) {
+        final String appName = params.get("appName");
+        
+        StringBuilder sql = new StringBuilder(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sql.append(" AND app_name=? ");
+        }
+        
+        return sql.toString();
+    }
+    
+    @Override
+    public String findConfigInfoByGroupAndAdvanceCountRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        StringBuilder sqlCount = new StringBuilder(
+                "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sqlCount.append(" AND app_name=? ");
+        }
+        return sqlCount.toString();
+    }
+    
+    @Override
+    public String findConfigInfoByGroupAndAdvanceFetchRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        StringBuilder sql = new StringBuilder(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=? ");
+        if (StringUtils.isNotBlank(appName)) {
+            sql.append(" AND app_name=? ");
+        }
+        return sql.toString();
+    }
+    
+    @Override
+    public String findConfigInfosByIds(int idSize) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
+        sql.append("id IN (");
+        for (int i = 0; i < idSize; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append('?');
+        }
+        sql.append(") ");
+        return sql.toString();
+    }
+    
+    @Override
+    public String findConfigInfoByDataId2Group2Tenant() {
+        return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key"
+                + " FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
+    }
+    
+    @Override
+    public String removeConfigInfoByIdsAtomic(int size) {
+        StringBuilder sql = new StringBuilder("DELETE FROM config_info WHERE ");
+        sql.append("id IN (");
+        for (int i = 0; i < size; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append('?');
+        }
+        sql.append(") ");
+        return sql.toString();
     }
     
     @Override
