@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -96,6 +97,11 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      * Standalone mode uses DB.
      */
     private static boolean useExternalDB = false;
+    
+    /**
+     * The spring datasource platform.
+     */
+    private static String dataSourcePlatform = "";
     
     /**
      * Inline storage value = ${nacos.standalone}.
@@ -234,6 +240,14 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         PropertyUtil.useExternalDB = useExternalDB;
     }
     
+    public static void setSpringDataSourcePlatform(String dataSourcePlatform) {
+        PropertyUtil.dataSourcePlatform = dataSourcePlatform;
+    }
+    
+    public static String getSpringDataSourcePlatform() {
+        return dataSourcePlatform;
+    }
+    
     public static boolean isEmbeddedStorage() {
         return embeddedStorage;
     }
@@ -282,7 +296,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             // External data sources are used by default in cluster mode
             setUseExternalDB(PropertiesConstant.MYSQL
                     .equalsIgnoreCase(getString(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "")));
-            
+            setSpringDataSourcePlatform(getString(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, ""));
+            setUseExternalDB(!StringUtils.isBlank(getSpringDataSourcePlatform()));
             // must initialize after setUseExternalDB
             // This value is true in stand-alone mode and false in cluster mode
             // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on

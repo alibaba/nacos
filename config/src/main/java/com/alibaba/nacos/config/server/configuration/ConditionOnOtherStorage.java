@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,15 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Judge whether to user ExternalStorage by condition.
+ * Other data source.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
-public class ConditionOnExternalStorage implements Condition {
+ * @author hyx
+ **/
+
+public class ConditionOnOtherStorage implements Condition {
     
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        return "mysql".equals(PropertyUtil.getSpringDataSourcePlatform()) && !PropertyUtil.isEmbeddedStorage();
+        return !"mysql".equals(PropertyUtil.getSpringDataSourcePlatform()) && !PropertyUtil.isEmbeddedStorage();
     }
-    
 }
