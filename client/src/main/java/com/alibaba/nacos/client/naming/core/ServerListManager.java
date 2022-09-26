@@ -16,184 +16,50 @@
 
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
-import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.InitUtils;
-import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.plugin.address.common.AddressProperties;
+import com.alibaba.nacos.plugin.address.exception.AddressException;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
-
-/**
- * Server list manager.
- *
- * @author xiweng.yy
- */
-public class ServerListManager implements ServerListFactory, Closeable {
-    
-    private final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
-    
-    private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
+public class ServerListManager extends AbstractServerListManager implements ServerListFactory, Closeable {
     
     private final String namespace;
     
-    private final AtomicInteger currentIndex = new AtomicInteger();
+    private static final String PROPERTY_ADDRESS_PLUGIN = "PropertyAddressPlugin";
     
-    private final List<String> serverList = new ArrayList<>();
-    
-    private volatile List<String> serversFromEndpoint = new ArrayList<>();
-    
-    private ScheduledExecutorService refreshServerListExecutor;
-    
-    private String endpoint;
-    
-    private String nacosDomain;
-    
-    private long lastServerListRefreshTime = 0L;
-    
-    public ServerListManager(Properties properties) {
+    public ServerListManager(Properties properties) throws NacosException {
         this(properties, null);
     }
     
-    public ServerListManager(Properties properties, String namespace) {
+    public ServerListManager(Properties properties, String namespace) throws NacosException {
+        super(properties);
         this.namespace = namespace;
-        initServerAddr(properties);
-        if (!serverList.isEmpty()) {
-            currentIndex.set(new Random().nextInt(serverList.size()));
-        } else {
-            throw new NacosLoadException("serverList is empty,please check configuration");
-        }
-    }
-    
-    private void initServerAddr(Properties properties) {
-        this.endpoint = InitUtils.initEndpoint(properties);
-        if (StringUtils.isNotEmpty(endpoint)) {
-            this.serversFromEndpoint = getServerListFromEndpoint();
-            refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
-                    new NameThreadFactory("com.alibaba.nacos.client.naming.server.list.refresher"));
-            refreshServerListExecutor
-                    .scheduleWithFixedDelay(this::refreshServerListIfNeed, 0, refreshServerListInternal,
-                            TimeUnit.MILLISECONDS);
-        } else {
-            String serverListFromProps = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-            if (StringUtils.isNotEmpty(serverListFromProps)) {
-                this.serverList.addAll(Arrays.asList(serverListFromProps.split(",")));
-                if (this.serverList.size() == 1) {
-                    this.nacosDomain = serverListFromProps;
-                }
-            }
-        }
-    }
-    
-    private List<String> getServerListFromEndpoint() {
-        try {
-            String urlString = HTTP_PREFIX + endpoint + "/nacos/serverlist";
-            Header header = NamingHttpUtil.builderHeader();
-            Query query = StringUtils.isNotBlank(namespace)
-                    ? Query.newInstance().addParam("namespace", namespace)
-                    : Query.EMPTY;
-            HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, query, String.class);
-            if (!restResult.ok()) {
-                throw new IOException(
-                        "Error while requesting: " + urlString + "'. Server returned: " + restResult.getCode());
-            }
-            String content = restResult.getData();
-            List<String> list = new ArrayList<>();
-            for (String line : IoUtils.readLines(new StringReader(content))) {
-                if (!line.trim().isEmpty()) {
-                    list.add(line.trim());
-                }
-            }
-            return list;
-        } catch (Exception e) {
-            NAMING_LOGGER.error("[SERVER-LIST] failed to update server list.", e);
-        }
-        return null;
-    }
-    
-    private void refreshServerListIfNeed() {
-        try {
-            if (!CollectionUtils.isEmpty(serverList)) {
-                NAMING_LOGGER.debug("server list provided by user: " + serverList);
-                return;
-            }
-            if (System.currentTimeMillis() - lastServerListRefreshTime < refreshServerListInternal) {
-                return;
-            }
-            List<String> list = getServerListFromEndpoint();
-            if (CollectionUtils.isEmpty(list)) {
-                throw new Exception("Can not acquire Nacos list");
-            }
-            if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
-                NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
-                serversFromEndpoint = list;
-                lastServerListRefreshTime = System.currentTimeMillis();
-                NotifyCenter.publishEvent(new ServerListChangedEvent());
-            }
-        } catch (Throwable e) {
-            NAMING_LOGGER.warn("failed to update server list", e);
+        if (namespace != null) {
+            AddressProperties.setProperties("namespace", namespace);
         }
     }
     
     public boolean isDomain() {
-        return StringUtils.isNotBlank(nacosDomain);
+        return this.addressPlugin.getPluginName().equals(PROPERTY_ADDRESS_PLUGIN) && this.getServerList().size() == 1;
     }
     
     public String getNacosDomain() {
-        return nacosDomain;
-    }
-    
-    @Override
-    public List<String> getServerList() {
-        return serverList.isEmpty() ? serversFromEndpoint : serverList;
-    }
-    
-    @Override
-    public String genNextServer() {
-        int index = currentIndex.incrementAndGet() % getServerList().size();
-        return getServerList().get(index);
-    }
-    
-    @Override
-    public String getCurrentServer() {
-        return getServerList().get(currentIndex.get() % getServerList().size());
-    }
-    
-    @Override
-    public void shutdown() throws NacosException {
-        String className = this.getClass().getName();
-        NAMING_LOGGER.info("{} do shutdown begin", className);
-        if (null != refreshServerListExecutor) {
-            ThreadUtils.shutdownThreadPool(refreshServerListExecutor, NAMING_LOGGER);
+        if (isDomain()) {
+            return this.addressPlugin.getServerList().get(0);
         }
-        NamingHttpClientManager.getInstance().shutdown();
-        NAMING_LOGGER.info("{} do shutdown stop", className);
+        return null;
+    }
+    
+    @Override
+    protected void initAddressPluginListener() throws AddressException {
+        addressPlugin.registerListener(serverLists -> {
+            NotifyCenter.publishEvent(new ServerListChangedEvent());
+        });
     }
 }

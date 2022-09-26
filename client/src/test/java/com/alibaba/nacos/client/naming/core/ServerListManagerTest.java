@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.Assert;
@@ -35,7 +36,7 @@ import static org.mockito.ArgumentMatchers.any;
 public class ServerListManagerTest {
     
     @Test
-    public void testConstructWithAddr() {
+    public void testConstructWithAddr() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
         final ServerListManager serverListManager = new ServerListManager(properties);
@@ -68,7 +69,7 @@ public class ServerListManagerTest {
     }
     
     @Test
-    public void testIsDomain() throws IOException {
+    public void testIsDomain() throws IOException, NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
@@ -77,16 +78,16 @@ public class ServerListManagerTest {
     }
     
     @Test
-    public void testGetCurrentServer() {
+    public void testGetCurrentServer() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
         Assert.assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
-        Assert.assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
+        Assert.assertEquals("127.0.0.1:8848", serverListManager.getNextServer());
     }
     
     @Test
-    public void testShutdown() {
+    public void testShutdown() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);

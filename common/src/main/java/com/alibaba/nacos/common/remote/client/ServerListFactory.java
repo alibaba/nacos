@@ -30,7 +30,7 @@ public interface ServerListFactory {
      *
      * @return server " ip:port".
      */
-    String genNextServer();
+    String getNextServer();
     
     /**
      * get current server.

@@ -897,7 +897,7 @@ public abstract class RpcClient implements Closeable {
     }
     
     protected ServerInfo nextRpcServer() {
-        String serverAddress = getServerListFactory().genNextServer();
+        String serverAddress = getServerListFactory().getNextServer();
         return resolveServerInfo(serverAddress);
     }
     
