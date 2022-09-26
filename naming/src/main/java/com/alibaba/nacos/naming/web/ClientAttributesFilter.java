@@ -86,12 +86,14 @@ public class ClientAttributesFilter implements Filter {
                 }
             }
             filterChain.doFilter(request, servletResponse);
-            if (threadLocalClientAttributes.get() != null) {
-                threadLocalClientAttributes.remove();
-            }
+   
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "clientAttributes filter error," + ExceptionUtil.getAllExceptionMsg(e));
+        } finally {
+            if (threadLocalClientAttributes.get() != null) {
+                threadLocalClientAttributes.remove();
+            }
         }
     }
     
