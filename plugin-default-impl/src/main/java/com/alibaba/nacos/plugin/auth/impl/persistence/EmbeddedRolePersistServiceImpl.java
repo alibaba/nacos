@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.model.Page;
@@ -23,13 +27,10 @@ import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.ROLE_INFO_ROW_MAPPER;
 
@@ -47,6 +48,10 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
+
+    private static final String PATTERN_STR = "*";
+
+    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
@@ -72,20 +77,23 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
-    public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
+    public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
         
         PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
         
-        String sqlCountRows = "SELECT count(*) FROM roles WHERE ";
+        String sqlCountRows = "SELECT count(*) FROM roles ";
         
-        String sqlFetchRows = "SELECT role,username FROM roles WHERE ";
-        
-        String where = " username= ? ";
+        String sqlFetchRows = "SELECT role,username FROM roles ";
+
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
-            params = Collections.singletonList(username);
-        } else {
-            where = " 1=1 ";
+            where.append(" AND username = ? ");
+            params.add(username);
+        }
+        if (StringUtils.isNotBlank(role)) {
+            where.append(" AND role = ? ");
+            params.add(role);
         }
         
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
@@ -147,8 +155,47 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public List<String> findRolesLikeRoleName(String role) {
-        String sql = "SELECT role FROM roles WHERE role LIKE ? ";
+        String sql = "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
     }
-    
+
+    @Override
+    public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
+    }
+
+    @Override
+    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username LIKE ? ");
+            params.add(generateLikeArgument(username));
+        }
+        if (StringUtils.isNotBlank(role)) {
+            where.append(" AND role LIKE ? ");
+            params.add(generateLikeArgument(role));
+        }
+        if (CollectionUtils.isNotEmpty(params)) {
+            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
+        }
+        String sqlCountRows = "SELECT count(*) FROM roles";
+        String sqlFetchRows = "SELECT role, username FROM roles";
+
+        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                ROLE_INFO_ROW_MAPPER);
+    }
+
 }

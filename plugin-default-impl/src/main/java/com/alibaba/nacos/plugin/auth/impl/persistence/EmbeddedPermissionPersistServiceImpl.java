@@ -47,6 +47,10 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     
     @Autowired
     private EmbeddedStoragePersistServiceImpl persistService;
+
+    private static final String PATTERN_STR = "*";
+
+    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
@@ -103,5 +107,48 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
         EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
         databaseOperate.blockUpdate();
     }
-    
+
+    @Override
+    public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
+        PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
+
+        String sqlCountRows = "SELECT count(*) FROM permissions ";
+
+        String sqlFetchRows = "SELECT role,resource,action FROM permissions ";
+
+        StringBuilder where = new StringBuilder(" WHERE 1=1");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(role)) {
+            where.append(" AND role LIKE ?");
+            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
+            params.add(generateLikeArgument(role));
+        }
+
+        Page<PermissionInfo> pageInfo = helper
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                        PERMISSION_ROW_MAPPER);
+
+        if (pageInfo == null) {
+            pageInfo = new Page<>();
+            pageInfo.setTotalCount(0);
+            pageInfo.setPageItems(new ArrayList<>());
+        }
+        return pageInfo;
+    }
+
+    @Override
+    public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
+    }
+
 }
