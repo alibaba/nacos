@@ -86,12 +86,14 @@ public class IpPortBasedClientTest {
     
     @Test
     public void testRecalculateRevision() {
-        assertEquals(123L, ipPortBasedClient.recalculateRevision());
+        assertEquals(123L, ipPortBasedClient.getRevision());
+        assertEquals(-1531701243L, ipPortBasedClient.recalculateRevision());
     }
     
     @Test
-    public void testGetRevision() {
-        assertEquals(123L, ipPortBasedClient.getRevision());
+    public void testConstructor0() {
+        IpPortBasedClient client = new IpPortBasedClient(clientId, true);
+        assertEquals(0, client.getRevision());
     }
     
     @After
