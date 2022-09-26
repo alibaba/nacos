@@ -27,7 +27,7 @@ public class DistroUtilsTest {
     
     private static final String SERVICE = "testName-";
     
-    private static final int n = 100000;
+    private static final int N = 100000;
     
     private IpPortBasedClient client0;
     
@@ -130,28 +130,28 @@ public class DistroUtilsTest {
     @Test
     public void performanceTestOfChecksum() {
         long start = System.nanoTime();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < N; i++) {
             DistroUtils.checksum(client1);
         }
-        System.out.printf("Distro Verify Checksum Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / n);
+        System.out.printf("Distro Verify Checksum Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / N);
     }
     
     @Test
     public void performanceTestOfStringHash() {
         long start = System.nanoTime();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < N; i++) {
             DistroUtils.stringHash(client1);
         }
-        System.out.printf("Distro Verify Revision Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / n);
+        System.out.printf("Distro Verify Revision Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / N);
     }
     
     @Test
     public void performanceTestOfHash() {
         long start = System.nanoTime();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < N; i++) {
             DistroUtils.hash(client1);
         }
-        System.out.printf("Distro Verify Hash Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / n);
+        System.out.printf("Distro Verify Hash Performance: %.2f ivk/ns\n", ((double) System.nanoTime() - start) / N);
     }
     
 }
