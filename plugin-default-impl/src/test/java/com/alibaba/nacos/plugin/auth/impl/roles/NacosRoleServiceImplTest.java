@@ -118,7 +118,7 @@ public class NacosRoleServiceImplTest {
     
     @Test
     public void getRolesFromDatabase() {
-        Page<RoleInfo> roleInfoPage = nacosRoleService.getRolesFromDatabase("nacos", 1, Integer.MAX_VALUE);
+        Page<RoleInfo> roleInfoPage = nacosRoleService.getRolesFromDatabase("nacos", "ROLE_ADMIN", 1, Integer.MAX_VALUE);
         Assert.assertEquals(roleInfoPage.getTotalCount(), 0);
     }
     
