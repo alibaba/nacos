@@ -87,7 +87,9 @@ public interface ConfigInfoBetaMapper extends Mapper {
      * SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key
      * FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT ?,?  ) g, config_info_beta t WHERE g.id = t.id
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying all beta config info for dump task.
      */
-    String findAllConfigInfoBetaForDumpAllFetchRows();
+    String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize);
 }

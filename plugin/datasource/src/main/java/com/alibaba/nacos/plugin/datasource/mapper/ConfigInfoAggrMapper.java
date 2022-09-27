@@ -147,9 +147,11 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND
      * group_id=? AND tenant_id=? ORDER BY datum_id LIMIT ?,?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying aggregation config info.
      */
-    String findConfigInfoAggrByPageFetchRows();
+    String findConfigInfoAggrByPageFetchRows(int startRow, int pageSize);
     
     /**
      * Find all aggregated data sets.

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.manager;
+package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
@@ -33,13 +33,17 @@ import java.util.Optional;
  * @author hyx
  **/
 
-public class MapperManager implements InitAndClosable {
+public class MapperManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(MapperManager.class);
     
+    public static final Map<String, Map<String, Mapper>> MAPPER_SPI_MAP = new HashMap<>();
+    
     private static final MapperManager INSTANCE = new MapperManager();
     
-    private MapperManager() {}
+    private MapperManager() {
+        loadInitial();
+    }
     
     /**
      * Get the instance of MapperManager.
@@ -49,15 +53,17 @@ public class MapperManager implements InitAndClosable {
         return INSTANCE;
     }
     
-    private static final Map<String, Mapper> MAPPER_SPI_MAP = new HashMap<>();
-    
-    @Override
+    /**
+     * The init method.
+     */
     public void loadInitial() {
         Collection<Mapper> mappers = NacosServiceLoader.load(Mapper.class);
         for (Mapper mapper : mappers) {
-            MAPPER_SPI_MAP.put(mapper.getTableName(), mapper);
-            LOGGER.info("[MapperManager] Load Mapper({}) tableName({}) successfully.",
-                    mapper.getClass(), mapper.getTableName());
+            Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.getOrDefault(mapper.getDataSource(), new HashMap<>(16));
+            mapperMap.put(mapper.getTableName(), mapper);
+            MAPPER_SPI_MAP.put(mapper.getDataSource(), mapperMap);
+            LOGGER.info("[MapperManager] Load Mapper({}) datasource({}) tableName({}) successfully.",
+                    mapper.getClass(), mapper.getDataSource(), mapper.getTableName());
         }
     }
     
@@ -69,21 +75,20 @@ public class MapperManager implements InitAndClosable {
         if (Objects.isNull(mapper)) {
             return;
         }
-        MAPPER_SPI_MAP.put(mapper.getTableName(), mapper);
+        Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.getOrDefault(mapper.getDataSource(), new HashMap<>(16));
+        mapperMap.put(mapper.getTableName(), mapper);
+        MAPPER_SPI_MAP.put(mapper.getDataSource(), mapperMap);
         LOGGER.warn("[MapperManager] join successfully.");
-    }
-    
-    @Override
-    public boolean close() {
-        return false;
     }
     
     /**
      * Get the mapper by table name.
      * @param tableName table name.
+     * @param dataSource the datasource.
      * @return mapper.
      */
-    public Optional<Mapper> findMapper(String tableName) {
-        return Optional.ofNullable(MAPPER_SPI_MAP.get(tableName));
+    public Optional<Mapper> findMapper(String dataSource, String tableName) {
+        LOGGER.info("[findMapper] dataSource: {}, tableName: {}", dataSource, tableName);
+        return Optional.ofNullable(MAPPER_SPI_MAP.get(dataSource).get(tableName));
     }
 }

@@ -87,9 +87,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND tenant_id=?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql to
      */
-    String findConfigInfoByDataIdFetchRows();
+    String findConfigInfoByDataIdFetchRows(int startRow, int pageSize);
     
     /**
      * Query the count of the configInfo by dataId.
@@ -105,9 +107,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND tenant_id=? AND app_name=?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of query configuration information based on dataId.
      */
-    String findConfigInfoByDataIdAndAppFetchRows();
+    String findConfigInfoByDataIdAndAppFetchRows(int startRow, int pageSize);
     
     /**
      * The count of config_info table sql.
@@ -133,9 +137,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying configration information based on group.
      */
-    String findConfigInfoByAppFetchRows();
+    String findConfigInfoByAppFetchRows(int startRow, int pageSize);
     
     /**
      * Returns the number of configuration items.
@@ -182,9 +188,11 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT id FROM config_info ORDER BY id LIMIT ?,?) g,
      * config_info t  WHERE g.id = t.id
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying all configuration information by page.
      */
-    String findAllConfigInfoBaseFetchRows();
+    String findAllConfigInfoBaseFetchRows(int startRow, int pageSize);
     
     /**
      * Query all configuration information by page for dump task.
@@ -193,9 +201,11 @@ public interface ConfigInfoMapper extends Mapper {
      * FROM ( SELECT id FROM config_info   ORDER BY id LIMIT ?,?  ) g, config_info t
      * WHERE g.id = t.id
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying all configuration information by page for dump task.
      */
-    String findAllConfigInfoForDumpAllFetchRows();
+    String findAllConfigInfoForDumpAllFetchRows(int startRow, int pageSize);
     
     /**
      * Query all config info.
@@ -239,9 +249,13 @@ public interface ConfigInfoMapper extends Mapper {
      *               the value is the key's value.
      * @param startTime start time
      * @param endTime   end time
+     * @param startRow The start index.
+     * @param pageSize The size of page.
+     * @param lastMaxId The max id.
      * @return The sql of getting config information according to the time period.
      */
-    String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime);
+    String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime,
+            int startRow, int pageSize, long lastMaxId);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -367,9 +381,11 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, appName, content),
      *               the value is the key's value.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of getting the config information.
      */
-    String findConfigInfoLikeFetchRows(Map<String, String> params);
+    String findConfigInfoLikeFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * Get the count of config information.
@@ -389,9 +405,11 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, content),
      *               the value is the key's value.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of getting the config information.
      */
-    String findConfigInfoBaseLikeFetchRows(Map<String, String> params);
+    String findConfigInfoBaseLikeFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * To get number of config information by dataId and tenantId.
@@ -418,9 +436,11 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND tenant_id=? ...
      *
      * @param params The map of app name.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of finding config info.
      */
-    String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params);
+    String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * find the count of config info.
@@ -438,9 +458,11 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info ...
      *
      * @param params The mpa of dataId, groupId and appName.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of finding config info.
      */
-    String findConfigInfo4PageFetchRows(Map<String, String> params);
+    String findConfigInfo4PageFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * The count of querying configuration information based on dataId.
@@ -456,9 +478,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of query configuration information based on dataId.
      */
-    String findConfigInfoBaseByDataIdFetchRows();
+    String findConfigInfoBaseByDataIdFetchRows(int startRow, int pageSize);
     
     /**
      * Get the count of querying configuration information based on group.
@@ -474,9 +498,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return Get the config info by groupId and tenantId.
      */
-    String findConfigInfoByGroupFetchRows();
+    String findConfigInfoByGroupFetchRows(int startRow, int pageSize);
     
     /**
      * The count of querying configuration information based on group.
@@ -492,9 +518,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=? AND app_name =?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying configuration information based on group.
      */
-    String findConfigInfoByGroupAndAppFetchRows();
+    String findConfigInfoByGroupAndAppFetchRows(int startRow, int pageSize);
     
     /**
      * Query configuration information count.
@@ -511,10 +539,12 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? ...
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @param params The map of appName.
      * @return Query configuration information.
      */
-    String findConfigInfoByAdvanceFetchRows(Map<String, String> params);
+    String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * Query configuration information count based on group.
@@ -530,9 +560,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return Query configuration information based on group.
      */
-    String findConfigInfoBaseByGroupFetchRows();
+    String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize);
     
     /**
      * Query config info count.
@@ -550,9 +582,11 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info ...
      *
      * @param params The map of dataId, group, appName, content
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying config info
      */
-    String findConfigInfoLike4PageFetchRows(Map<String, String> params);
+    String findConfigInfoLike4PageFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * Query all configuration information by page.
@@ -561,9 +595,11 @@ public interface ConfigInfoMapper extends Mapper {
      *                 + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
      *                 + " g, config_info t  WHERE g.id = t.id
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return Query all configuration information by page.
      */
-    String findAllConfigInfoFetchRows();
+    String findAllConfigInfoFetchRows(int startRow, int pageSize);
     
     /**
      * Query configuration information based on dataId and group.
@@ -591,9 +627,11 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=? ...
      *
      * @param params The map of appName.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying configuration information
      */
-    String findConfigInfoByGroupAndAdvanceFetchRows(Map<String, String> params);
+    String findConfigInfoByGroupAndAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
      * find ConfigInfo by ids.

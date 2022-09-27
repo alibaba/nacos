@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 
@@ -54,9 +55,9 @@ public class HistoryConfigInfoMapperByMySql implements HistoryConfigInfoMapper {
     }
     
     @Override
-    public String findConfigHistoryFetchRows() {
+    public String findConfigHistoryFetchRows(int startRow, int pageSize) {
         return "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
-                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC" + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -74,5 +75,10 @@ public class HistoryConfigInfoMapperByMySql implements HistoryConfigInfoMapper {
     @Override
     public String getTableName() {
         return TableConstant.HIS_CONFIG_INFO;
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.MYSQL;
     }
 }

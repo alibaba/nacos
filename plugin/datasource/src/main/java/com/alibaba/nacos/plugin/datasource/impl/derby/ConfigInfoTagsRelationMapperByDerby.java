@@ -17,6 +17,8 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 
 import java.util.Map;
@@ -71,7 +73,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
     }
     
     @Override
-    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize) {
+    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
@@ -89,7 +91,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -124,7 +126,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
     }
     
     @Override
-    public String findConfigInfo4PageFetchRows(final Map<String, String> params, int tagSize) {
+    public String findConfigInfo4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         final String dataId = params.get("dataId");
         final String group = params.get("group");
@@ -152,7 +154,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
             where.append('?');
         }
         where.append(") ");
-        return sql + where;
+        return sql + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -175,7 +177,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
     }
     
     @Override
-    public String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize) {
+    public String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
@@ -193,7 +195,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -230,7 +232,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
     }
     
     @Override
-    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize) {
+    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         final String content = params.get("content");
         final String dataId = params.get("dataId");
@@ -262,7 +264,7 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
             where.append('?');
         }
         where.append(") ");
-        return sqlFetchRows + where;
+        return sqlFetchRows + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -308,12 +310,11 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
     }
     
     @Override
-    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize) {
+    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
                         + "config_tags_relation b ON a.id=b.id WHERE a.tenant_id=? ");
-        
         sql.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagSize; i++) {
             if (i != 0) {
@@ -326,6 +327,16 @@ public class ConfigInfoTagsRelationMapperByDerby implements ConfigTagsRelationMa
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+    }
+    
+    @Override
+    public String getTableName() {
+        return TableConstant.CONFIG_TAGS_RELATION;
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.DERBY;
     }
 }

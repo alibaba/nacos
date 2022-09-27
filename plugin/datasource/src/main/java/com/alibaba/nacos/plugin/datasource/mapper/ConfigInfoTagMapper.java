@@ -88,9 +88,11 @@ public interface ConfigInfoTagMapper extends Mapper {
      * FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,? ) g,
      * config_info_tag t  WHERE g.id = t.id
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying all tag config info for dump task.
      */
-    String findAllConfigInfoTagForDumpAllFetchRows();
+    String findAllConfigInfoTagForDumpAllFetchRows(int startRow, int pageSize);
     
     /**
      * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.

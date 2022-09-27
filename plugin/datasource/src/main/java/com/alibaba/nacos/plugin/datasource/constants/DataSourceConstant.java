@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.manager;
+package com.alibaba.nacos.plugin.datasource.constants;
 
 /**
- * init and close interface.
+ * The data source name.
  *
  * @author hyx
  **/
 
-public interface InitAndClosable {
+public class DataSourceConstant {
+    public static final String MYSQL = "mysql";
     
-    /**
-     * load and initial.
-     */
-    void loadInitial();
-    
-    /**
-     * close all resource.
-     * @return result.
-     */
-    boolean close();
+    public static final String DERBY = "derby";
 }
