@@ -143,7 +143,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
         EnvUtil.setContextPath(servletContext.getContextPath());
-        
         init();
     }
     
@@ -180,24 +179,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return serverAbilities;
     }
     
-    private void initAndStartLookup() throws NacosException {
-        this.lookup = LookupFactory.createLookUp(this);
-        isUseAddressServer = this.lookup.useAddressServer();
-        this.lookup.start();
-    }
-    
-    /**
-     * switch look up.
-     *
-     * @param name look up name.
-     * @throws NacosException exception.
-     */
-    public void switchLookup(String name) throws NacosException {
-        this.lookup = LookupFactory.switchLookup(name, this);
-        isUseAddressServer = this.lookup.useAddressServer();
-        this.lookup.start();
-    }
-    
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
@@ -229,6 +210,24 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 return InetUtils.IPChangeEvent.class;
             }
         });
+    }
+    
+    private void initAndStartLookup() throws NacosException {
+        this.lookup = LookupFactory.createLookUp(this);
+        isUseAddressServer = this.lookup.useAddressServer();
+        this.lookup.start();
+    }
+    
+    /**
+     * switch look up.
+     *
+     * @param name look up name.
+     * @throws NacosException exception.
+     */
+    public void switchLookup(String name) throws NacosException {
+        this.lookup = LookupFactory.switchLookup(name, this);
+        isUseAddressServer = this.lookup.useAddressServer();
+        this.lookup.start();
     }
     
     public static boolean isUseAddressServer() {
