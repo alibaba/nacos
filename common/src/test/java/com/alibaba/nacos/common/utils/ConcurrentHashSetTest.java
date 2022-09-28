@@ -32,8 +32,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class ConcurrentHashSetTest {
     
-    private static final int MAX_LOOP = 100000;
-    
     @Test
     public void testBasicOps() {
         Set<Integer> set = new ConcurrentHashSet<>();
@@ -131,7 +129,7 @@ public class ConcurrentHashSetTest {
         
     }
     
-    static abstract class ConcurrentCheckThread implements Runnable {
+    abstract static class ConcurrentCheckThread implements Runnable {
     
         protected final Set<Integer> hashSet;
     
