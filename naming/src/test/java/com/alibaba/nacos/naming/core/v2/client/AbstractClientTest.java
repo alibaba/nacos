@@ -47,7 +47,7 @@ public class AbstractClientTest {
     
     @Before
     public void setUp() {
-        abstractClient = new MockAbstractClient();
+        abstractClient = new MockAbstractClient(0L);
         service = Service.newService("ns1", "group1", "serviceName001");
         instancePublishInfo = new InstancePublishInfo("127.0.0.1", 8890);
         subscriber = new Subscriber("127.0.0.1:8848", "agent1", "appName", "127.0.0.1",
