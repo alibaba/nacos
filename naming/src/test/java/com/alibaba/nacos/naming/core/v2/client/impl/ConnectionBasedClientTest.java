@@ -32,7 +32,7 @@ public class ConnectionBasedClientTest {
     
     @Before
     public void setUp() throws Exception {
-        connectionBasedClient = new ConnectionBasedClient(connectionId, isNative);
+        connectionBasedClient = new ConnectionBasedClient(connectionId, isNative, null);
     }
     
     @Test

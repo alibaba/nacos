@@ -25,6 +25,10 @@ package com.alibaba.nacos.naming.core.v2.client;
  */
 public class MockAbstractClient extends AbstractClient {
     
+    public MockAbstractClient(Long revision) {
+        super(revision);
+    }
+    
     @Override
     public String getClientId() {
         return "-1";
