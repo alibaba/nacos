@@ -191,7 +191,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         
         private int channelKeepAlive = 6 * 60 * 1000;
         
-        private int healthCheckRetryTimes = 1;
+        private int healthCheckRetryTimes = 3;
         
         private long healthCheckTimeOut = 3000L;
         
