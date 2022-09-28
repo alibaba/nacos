@@ -17,9 +17,9 @@
 package com.alibaba.nacos.naming.controllers.v2;
 
 import com.alibaba.nacos.api.annotation.NacosApi;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -62,10 +62,6 @@ public class HealthControllerV2 {
     }
     
     private String buildCompositeServiceName(UpdateHealthForm updateHealthForm) {
-        return buildCompositeServiceName(updateHealthForm.getGroupName(), updateHealthForm.getServiceName());
-    }
-    
-    private String buildCompositeServiceName(String groupName, String serviceName) {
-        return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        return NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName());
     }
 }
