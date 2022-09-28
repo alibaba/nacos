@@ -17,6 +17,8 @@
 package com.alibaba.nacos.core.ability.config;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
+import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.core.ability.TestServerAbilityControlManager;
@@ -27,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,6 +47,8 @@ public class AbilityConfigsTest {
     private int tmp;
     
     private ServerAbilityControlManager serverAbilityControlManager;
+    
+    private Map<AbilityKey, Boolean> currentAbilities;
     
     @Before
     public void setUp() throws Exception {
@@ -66,6 +71,32 @@ public class AbilityConfigsTest {
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
         this.serverAbilityControlManager = serverAbilityControlManager;
+    }
+    
+    
+    public void fill() throws NoSuchFieldException, IllegalAccessException {
+        Field instanceField = ServerAbilities.class.getDeclaredField("INSTANCE");
+        Field abilitiesField = AbstractAbilityRegistry.class.getDeclaredField("supportedAbilities");
+        abilitiesField.setAccessible(true);
+        instanceField.setAccessible(true);
+        ServerAbilities serverAbilities = (ServerAbilities) instanceField.get(ServerAbilities.class);
+        currentAbilities = (Map<AbilityKey, Boolean>) abilitiesField.get(serverAbilities);
+        currentAbilities.put(AbilityKey.TEST_1, true);
+        currentAbilities.put(AbilityKey.TEST_2, true);
+    }
+    
+    @Test
+    public void testLoadAbilities() throws NoSuchFieldException, IllegalAccessException, InterruptedException {
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.FALSE.toString());
+        // test load
+        fill();
+        ServerAbilityControlManager manager = new ServerAbilityControlManager();
+        // config has higher priority
+        Assert.assertTrue(manager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertFalse(manager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        // clear
+        currentAbilities.clear();
     }
     
     @Test
