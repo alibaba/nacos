@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.controllers.v2;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -113,12 +112,19 @@ public class ServiceControllerV2Test {
     
     @Test
     public void testUpdate() throws Exception {
-        RestResult<String> actual = serviceController
-                .update(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP, 0.0f, "", "");
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setServiceName("service");
+        serviceForm.setProtectThreshold(0.0f);
+        serviceForm.setMetadata("");
+        serviceForm.setSelector("");
+        Result<String> actual = serviceController
+                .update(serviceForm);
         verify(serviceOperatorV2)
                 .update(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                         any(ServiceMetadata.class));
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
-        assertEquals(200, actual.getCode());
     }
 }

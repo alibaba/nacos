@@ -24,8 +24,6 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -44,7 +42,6 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -133,40 +130,14 @@ public class ServiceControllerV2 {
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(value = "selector", required = false, defaultValue = StringUtils.EMPTY) String selector,
-            @RequestParam(value = "pageNo") Integer pageNo, @RequestParam(value = "pageSize") Integer pageSize) throws Exception {
-        
+            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "20") Integer pageSize) throws Exception {
+        pageSize = Math.min(500, pageSize);
         ServiceNameView result = new ServiceNameView();
         Collection<String> serviceNameList = serviceOperatorV2.listService(namespaceId, groupName, selector);
         result.setCount(serviceNameList.size());
         result.setServices(ServiceUtil.pageServiceName(pageNo, pageSize, serviceNameList));
         return Result.success(result);
-    }
-    
-    /**
-     * Update service.
-     *
-     * @param namespaceId      namespace id
-     * @param serviceName      service name
-     * @param protectThreshold protect threshold
-     * @param metadata         service metadata
-     * @param selector         selector
-     * @return 'ok' if success
-     * @throws Exception exception
-     */
-    @PutMapping(value = "/{serviceName}")
-    @Secured(action = ActionTypes.WRITE)
-    public RestResult<String> update(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @PathVariable String serviceName, @RequestParam(defaultValue = Constants.DEFAULT_GROUP) String groupName,
-            @RequestParam(required = false, defaultValue = "0.0F") float protectThreshold,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
-        ServiceMetadata serviceMetadata = new ServiceMetadata();
-        serviceMetadata.setProtectThreshold(protectThreshold);
-        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
-        serviceMetadata.setSelector(parseSelector(selector));
-        Service service = Service.newService(namespaceId, groupName, serviceName);
-        serviceOperatorV2.update(service, serviceMetadata);
-        return RestResultUtils.success("ok");
     }
     
     /**
