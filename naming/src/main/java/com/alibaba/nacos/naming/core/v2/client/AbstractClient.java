@@ -49,7 +49,7 @@ public abstract class AbstractClient implements Client {
     
     protected volatile long lastUpdatedTime;
     
-    private final AtomicLong revision;
+    protected final AtomicLong revision;
     
     public AbstractClient(Long revision) {
         lastUpdatedTime = System.currentTimeMillis();

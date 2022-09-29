@@ -288,7 +288,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             }
             if (clientManager.isResponsibleClient(client)) {
                 DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(),
-                        client.recalculateRevision());
+                        client.getRevision());
                 DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
                 DistroData data = new DistroData(distroKey,
                         ApplicationUtils.getBean(Serializer.class).serialize(verifyData));

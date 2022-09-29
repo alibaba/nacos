@@ -16,13 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.client;
 
-/**
- * Mock AbstractClient.
- * @ClassName: MockAbstractClient
- * @Author: ChenHao26
- * @Date: 2022/8/3 16:25
- * @Description: TODO
- */
 public class MockAbstractClient extends AbstractClient {
     
     public MockAbstractClient(Long revision) {
