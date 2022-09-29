@@ -27,13 +27,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 
-/**
- * AbstractClient test.
- * @ClassName: AbstractClientTest
- * @Author: ChenHao26
- * @Date: 2022/8/3 16:22
- * @Description: TODO
- */
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractClientTest {
     
