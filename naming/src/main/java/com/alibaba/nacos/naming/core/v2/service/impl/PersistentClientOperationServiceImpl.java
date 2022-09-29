@@ -34,6 +34,7 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOperation;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
@@ -113,6 +114,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         try {
             protocol.write(writeRequest);
+            Loggers.RAFT.info("Client registered. service={}, clientId={}, instance={}", service, instance, clientId);
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
@@ -160,6 +162,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         try {
             protocol.write(writeRequest);
+            Loggers.RAFT.info("Client unregistered. service={}, clientId={}, instance={}", service, instance, clientId);
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
@@ -313,6 +316,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         @Override
         protected boolean readSnapshot(Reader reader) throws Exception {
             final String readerPath = reader.getPath();
+            Loggers.RAFT.info("snapshot start to load from : {}", readerPath);
             final String sourceFile = Paths.get(readerPath, SNAPSHOT_ARCHIVE).toString();
             final Checksum checksum = new CRC64();
             byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
@@ -323,6 +327,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                 }
             }
             loadSnapshot(snapshotBytes);
+            Loggers.RAFT.info("snapshot success to load from : {}", readerPath);
             return true;
         }
         
@@ -357,6 +362,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                 Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
                 Service singleton = ServiceManager.getInstance().getSingleton(service);
                 client.putServiceInstance(singleton, instances.get(i));
+                Loggers.RAFT.info("[SNAPSHOT-LOAD] service={}, instance={}", service, instances.get(i));
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
