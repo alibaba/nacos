@@ -74,4 +74,9 @@ public class ConnectionBasedClient extends AbstractClient {
     public boolean isExpire(long currentTime) {
         return !isNative() && currentTime - getLastRenewTime() > ClientConfig.getInstance().getClientExpiredTime();
     }
+    
+    @Override
+    public long recalculateRevision() {
+        return revision.addAndGet(1);
+    }
 }
