@@ -207,7 +207,6 @@ public abstract class AbstractClient implements Client {
         this.revision.set(revision);
     }
     
-    
     /**
      * get client attributes.
      */
