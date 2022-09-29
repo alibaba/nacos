@@ -54,17 +54,6 @@ public class NacosApiExceptionHandler {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosApiExceptionHandler.class);
     
-    private static String normErrMsg(String msg) {
-        if (msg == null) {
-            return null;
-        }
-        int idx = msg.indexOf(':');
-        if (idx == -1) {
-            return msg;
-        }
-        return msg.substring(0, idx);
-    }
-    
     @ExceptionHandler(NacosApiException.class)
     public ResponseEntity<Result<String>> handleNacosApiException(NacosApiException e) {
         LOGGER.error("got exception. {} {}", e.getErrAbstract(), e.getErrMsg());
@@ -81,62 +70,62 @@ public class NacosApiExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.PARAMETER_MISSING, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.PARAMETER_MISSING, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageConversionException.class)
     public Result<String> handleHttpMessageConversionException(HttpMessageConversionException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(NumberFormatException.class)
     public Result<String> handleNumberFormatException(NumberFormatException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<String> handleIllegalArgumentException(IllegalArgumentException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.PARAMETER_VALIDATE_ERROR, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Result<String> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.PARAMETER_MISSING, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.PARAMETER_MISSING, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMediaTypeException.class)
     public Result<String> handleHttpMediaTypeException(HttpMediaTypeException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.MEDIA_TYPE_ERROR, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.MEDIA_TYPE_ERROR, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ExceptionHandler(AccessException.class)
     public Result<String> handleAccessException(AccessException e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.ACCESS_DENIED, normErrMsg(e.getErrMsg()));
+        return Result.failure(ErrorCode.ACCESS_DENIED, e.getErrMsg());
     }
     
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(value = {DataAccessException.class, ServletException.class, IOException.class})
     public Result<String> handleDataAccessException(Exception e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(ErrorCode.DATA_ACCESS_ERROR, normErrMsg(e.getMessage()));
+        return Result.failure(ErrorCode.DATA_ACCESS_ERROR, e.getMessage());
     }
     
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public Result<String> handleOtherException(Exception e) {
         LOGGER.error("got exception. {} {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
-        return Result.failure(normErrMsg(e.getMessage()));
+        return Result.failure(e.getMessage());
     }
 }

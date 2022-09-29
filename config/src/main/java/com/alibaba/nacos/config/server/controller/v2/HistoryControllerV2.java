@@ -75,10 +75,8 @@ public class HistoryControllerV2 {
             @RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(value = "pageNo", required = false) Integer pageNo,
-            @RequestParam(value = "pageSize", required = false) Integer pageSize) throws NacosApiException {
-        pageNo = null == pageNo ? 1 : pageNo;
-        pageSize = null == pageSize ? 100 : pageSize;
+            @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
         pageSize = Math.min(500, pageSize);
         return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
     }

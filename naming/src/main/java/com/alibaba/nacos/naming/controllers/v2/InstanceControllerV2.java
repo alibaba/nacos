@@ -274,7 +274,7 @@ public class InstanceControllerV2 {
         if (StringUtils.isEmpty(userAgent)) {
             userAgent = StringUtils.defaultIfEmpty(clientVersion, StringUtils.EMPTY);
         }
-        String compositeServiceName = buildCompositeServiceName(groupName, serviceName);
+        String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, compositeServiceName,
                 port, clusterName);
         return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly));
@@ -299,7 +299,7 @@ public class InstanceControllerV2 {
             @RequestParam(value = "clusterName", defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
             @RequestParam("ip") String ip, @RequestParam("port") Integer port) throws NacosException {
     
-        String compositeServiceName = buildCompositeServiceName(groupName, serviceName);
+        String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
     
         Instance instance = instanceServiceV2.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
         
@@ -427,14 +427,10 @@ public class InstanceControllerV2 {
     }
     
     private String buildCompositeServiceName(InstanceForm instanceForm) {
-        return buildCompositeServiceName(instanceForm.getGroupName(), instanceForm.getServiceName());
+        return NamingUtils.getGroupedName(instanceForm.getServiceName(), instanceForm.getGroupName());
     }
     
     private String buildCompositeServiceName(InstanceMetadataBatchOperationForm form) {
-        return buildCompositeServiceName(form.getGroupName(), form.getServiceName());
-    }
-    
-    private String buildCompositeServiceName(String groupName, String serviceName) {
-        return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+        return NamingUtils.getGroupedName(form.getServiceName(), form.getGroupName());
     }
 }
