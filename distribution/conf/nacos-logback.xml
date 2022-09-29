@@ -582,6 +582,23 @@
         </encoder>
     </appender>
     
+    <appender name="k8s-sync-main"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/k8s-sync-main.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/k8s-sync-main.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
     
     <logger name="com.alibaba.nacos.address.main" additivity="false">
         <level value="INFO"/>
@@ -701,6 +718,11 @@
     <logger name="com.alibaba.nacos.core.auth" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="core-auth"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.k8s.sync.main" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="k8s-sync-main"/>
     </logger>
 
     <logger name="com.alibaba.nacos.core.protocol.raft" additivity="false">
