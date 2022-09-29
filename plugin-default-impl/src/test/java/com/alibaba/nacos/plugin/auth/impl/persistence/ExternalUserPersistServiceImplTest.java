@@ -92,7 +92,7 @@ public class ExternalUserPersistServiceImplTest {
     
     @Test
     public void testGetUsers() {
-        Page<User> users = externalUserPersistService.getUsers(1, 10);
+        Page<User> users = externalUserPersistService.getUsers(1, 10, "nacos");
         
         Assert.assertNotNull(users);
     }

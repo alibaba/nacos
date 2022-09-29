@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
@@ -179,7 +180,7 @@ public class UserController {
         // same user
         return user.getUserName().equals(username);
     }
-    
+
     /**
      * Get paged users.
      *
@@ -188,10 +189,18 @@ public class UserController {
      * @return A collection of users, empty set if no user is found
      * @since 1.2.0
      */
-    @GetMapping
+    @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
-    public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize) {
-        return userDetailsService.getUsersFromDatabase(pageNo, pageSize);
+    public Page<User> getUsers(@RequestParam int pageNo, @RequestParam int pageSize,
+            @RequestParam(name = "username", required = false, defaultValue = "") String username) {
+        return userDetailsService.getUsersFromDatabase(pageNo, pageSize, username);
+    }
+
+    @GetMapping(params = "search=blur")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
+    public Page<User> fuzzySearchUser(@RequestParam int pageNo, @RequestParam int pageSize,
+            @RequestParam(name = "username", required = false, defaultValue = "") String username) {
+        return userDetailsService.findUsersLike4Page(username, pageNo, pageSize);
     }
     
     /**
