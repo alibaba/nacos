@@ -27,7 +27,7 @@
     
     <name>Alibaba NACOS ${project.version}</name>
     <description>Top Nacos project pom.xml file</description>
-    <url>https://nacos.io</url>
+    <url>http://nacos.io</url>
     <prerequisites>
         <maven>3.2.5</maven>
     </prerequisites>
@@ -64,7 +64,7 @@
         <developer>
             <id>Alibaba Nacos</id>
             <name>Nacos</name>
-            <url>https://nacos.io</url>
+            <url>http://nacos.io</url>
             <email>nacos_dev@linux.alibaba.com</email>
         </developer>
     </developers>
@@ -88,13 +88,12 @@
     </issueManagement>
     
     <properties>
-        <revision>2.3.0-SNAPSHOT</revision>
+        <revision>2.1.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
-        <java.version>1.8</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <!-- Maven properties -->
         <maven.test.skip>false</maven.test.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -108,7 +107,6 @@
         <maven-enforcer-plugin.version>1.4.1</maven-enforcer-plugin.version>
         <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
-        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <maven-pmd-plugin.version>3.8</maven-pmd-plugin.version>
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
@@ -121,13 +119,13 @@
         <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
-        <maven-easyj-version>1.1.5</maven-easyj-version>
+        <maven-flatten-version>1.1.0</maven-flatten-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
         
         <!-- dependency version -->
-        <spring-boot-dependencies.version>2.6.14</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>2.6.8</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
         <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -135,26 +133,26 @@
         <logback.version>1.2.9</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
+        <httpasyncclient.version>4.1.3</httpasyncclient.version>
         <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jackson-core.version>2.12.6</jackson-core.version>
-        <jackson-databind.version>2.12.7.1</jackson-databind.version>
+        <jackson-databind.version>2.12.6.1</jackson-databind.version>
         <jackson.annotations.version>2.12.6</jackson.annotations.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
         <guava.version>30.1-jre</guava.version>
         <javatuples.version>1.2</javatuples.version>
-        <grpc-java.version>1.50.2</grpc-java.version>
-        <proto-google-common-protos.version>2.7.1</proto-google-common-protos.version>
-        <protobuf-java.version>3.21.11</protobuf-java.version>
+        <grpc-java.version>1.30.2</grpc-java.version>
+        <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
+        <protobuf-java.version>3.16.1</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <mockito-all.version>1.10.19</mockito-all.version>
         <mockito-core.version>3.8.0</mockito-core.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.12</jraft-core.version>
-        <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
-        <SnakeYaml.version>2.0</SnakeYaml.version>
+        <jraft-core.version>1.3.8</jraft-core.version>
+        <rpc-grpc-impl.version>1.3.8</rpc-grpc-impl.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -163,16 +161,9 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>${maven-jar-plugin.version}</version>
-                </plugin>
-                <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot-dependencies.version}</version>
-                    <configuration>
-                        <attach>false</attach>
-                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -352,8 +343,6 @@
                         <exclude>**/gogo.proto</exclude>
                         <exclude>**/any.proto</exclude>
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
-                        <exclude>.flattened-pom.xml</exclude>
-                        <exclude>**/announcement.conf</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -383,9 +372,6 @@
                     <dataFile>${project.build.directory}/coverage-reports/jacoco-unit.exec</dataFile>
                     <output>file</output>
                     <append>true</append>
-                    <excludes>
-                        <exclude>**/grpc/auto/**</exclude>
-                    </excludes>
                 </configuration>
                 <executions>
                     <execution>
@@ -423,24 +409,29 @@
                 <version>${maven-assembly-plugin.version}</version>
             </plugin>
             <plugin>
-                <groupId>icu.easyj.maven.plugins</groupId>
-                <artifactId>easyj-maven-plugin</artifactId>
-                <version>${maven-easyj-version}</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${maven-flatten-version}</version>
                 <configuration>
-                    <simplifiedPomFileName>.flattened-pom.xml</simplifiedPomFileName>
-                    <useTabIndent>true</useTabIndent>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                    <pomElements>
+                        <dependencies>expand</dependencies>
+                    </pomElements>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>flatten-pom</id>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
                         <goals>
-                            <goal>simplify-pom</goal>
+                            <goal>flatten</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>clean-flattened-pom</id>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
                         <goals>
-                            <goal>clean-simplify-pom</goal>
+                            <goal>clean</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -604,8 +595,7 @@
         <module>sys</module>
         <module>plugin</module>
         <module>plugin-default-impl</module>
-        <module>prometheus</module>
-        <module>persistence</module>
+        <module>k8s-sync</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -651,11 +641,6 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.nacos</groupId>
-                <artifactId>nacos-persistence</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -716,7 +701,7 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>nacos-prometheus</artifactId>
+                <artifactId>nacos-k8s-sync</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -732,26 +717,6 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-encryption-plugin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>nacos-control-plugin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.nacos</groupId>
-                <artifactId>nacos-trace-plugin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.nacos</groupId>
-                <artifactId>nacos-datasource-plugin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>${project.groupId}</groupId>
-                <artifactId>nacos-custom-environment-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -835,6 +800,13 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j-impl</artifactId>
                 <version>${log4j.version}</version>
+            </dependency>
+            
+            <!-- HTTP client libs -->
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpasyncclient</artifactId>
+                <version>${httpasyncclient.version}</version>
             </dependency>
             
             <!-- JDBC libs -->
@@ -962,6 +934,12 @@
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
+                <artifactId>protoc-gen-grpc-java</artifactId>
+                <version>${grpc-java.version}</version>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
                 <artifactId>grpc-testing</artifactId>
                 <version>${grpc-java.version}</version>
                 <scope>test</scope>
@@ -1003,11 +981,17 @@
                 <version>2.9.0</version>
                 <scope>compile</scope>
             </dependency>
-    
+            
             <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${SnakeYaml.version}</version>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java-api</artifactId>
+                <version>14.0.0</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>io.kubernetes</groupId>
+                <artifactId>client-java</artifactId>
+                <version>14.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1024,6 +1008,7 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
+
 
 </project>
 
