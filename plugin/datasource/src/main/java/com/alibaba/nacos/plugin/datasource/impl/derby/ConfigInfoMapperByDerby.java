@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 
@@ -40,6 +41,8 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     private static final String APP_NAME = "app_name";
     
     private static final String CONTENT = "content";
+    
+    private static final String TENANT = "tenant";
     
     @Override
     public String updateMd5() {
@@ -73,9 +76,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByDataIdFetchRows() {
+    public String findConfigInfoByDataIdFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id = ? AND "
-                + "tenant_id = ?";
+                + "tenant_id = ?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -84,9 +87,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByDataIdAndAppFetchRows() {
+    public String findConfigInfoByDataIdAndAppFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id = ? AND "
-                + "tenant_id = ? AND app_name = ?";
+                + "tenant_id = ? AND app_name = ?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -100,9 +103,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByAppFetchRows() {
+    public String findConfigInfoByAppFetchRows(int startRow, int pageSize) {
         return "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND "
-                + "app_name = ?";
+                + "app_name = ?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -112,39 +115,39 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     
     @Override
     public String getTenantIdList() {
-        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?,?";
+        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
     }
     
     @Override
     public String getGroupIdList() {
-        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?,?";
+        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
     }
     
     @Override
     public String findAllConfigKey() {
         return " SELECT data_id,group_id,app_name FROM "
-                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ? ) "
+                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ) "
                 + "g, config_info t  WHERE g.id = t.id ";
     }
     
     @Override
-    public String findAllConfigInfoBaseFetchRows() {
+    public String findAllConfigInfoBaseFetchRows(int startRow, int pageSize) {
         return "SELECT t.id,data_id,group_id,content,md5 "
-                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,? )  "
+                + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )  "
                 + " g, config_info t WHERE g.id = t.id ";
     }
     
     @Override
-    public String findAllConfigInfoForDumpAllFetchRows() {
+    public String findAllConfigInfoForDumpAllFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified "
-                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,? )"
+                + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY)"
                 + " g, config_info t  WHERE g.id = t.id ";
     }
     
     @Override
     public String findAllConfigInfoFragment() {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info WHERE id > ? "
-                + "ORDER BY id ASC LIMIT ?,?";
+                + "ORDER BY id ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
     }
     
     @Override
@@ -156,15 +159,69 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     @Override
     public String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime,
             final Timestamp endTime) {
-        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
-                + "gmt_modified > = ? AND gmt_modified <= ?";
+        final String tenant = params.get(TENANT);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
+        String where = " 1=1 ";
+    
+        if (!StringUtils.isBlank(dataId)) {
+            where += " AND data_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(group)) {
+            where += " AND group_id LIKE ? ";
+        }
+    
+        if (!StringUtils.isBlank(tenant)) {
+            where += " AND tenant_id = ? ";
+        }
+    
+        if (!StringUtils.isBlank(appName)) {
+            where += " AND app_name = ? ";
+        }
+        if (startTime != null) {
+            where += " AND gmt_modified >=? ";
+        }
+        if (endTime != null) {
+            where += " AND gmt_modified <=? ";
+        }
+        return sqlCountRows + where;
     }
     
     @Override
-    public String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime,
-            final Timestamp endTime) {
-        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
-                + "gmt_modified > = ? AND gmt_modified <= ?";
+    public String findChangeConfigFetchRows(
+            Map<String, String> params, final Timestamp startTime, final Timestamp endTime,
+            int startRow, int pageSize, long lastMaxId) {
+        final String tenant = params.get(TENANT);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM"
+                + " config_info WHERE ";
+        String where = " 1=1 ";
+    
+        if (!StringUtils.isBlank(dataId)) {
+            where += " AND data_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(group)) {
+            where += " AND group_id LIKE ? ";
+        }
+    
+        if (!StringUtils.isBlank(tenant)) {
+            where += " AND tenant_id = ? ";
+        }
+    
+        if (!StringUtils.isBlank(appName)) {
+            where += " AND app_name = ? ";
+        }
+        if (startTime != null) {
+            where += " AND gmt_modified >=? ";
+        }
+        if (endTime != null) {
+            where += " AND gmt_modified <=? ";
+        }
+        return sqlFetchRows + where  + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -200,7 +257,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     @Override
     public String listGroupKeyMd5ByPageFetchRows() {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified "
-                + "FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+                + "FROM ( SELECT id FROM config_info ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ) g, config_info t WHERE g.id = t.id";
     }
     
     @Override
@@ -281,7 +338,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoLikeFetchRows(Map<String, String> params) {
+    public String findConfigInfoLikeFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE ";
         String where = " 1=1 ";
         if (!StringUtils.isEmpty(params.get(DATA_ID))) {
@@ -297,7 +354,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
         if (!StringUtils.isBlank(params.get(CONTENT))) {
             where += " AND content LIKE ? ";
         }
-        return sqlFetchRows + where;
+        return sqlFetchRows + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -317,7 +374,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoBaseLikeFetchRows(Map<String, String> params) {
+    public String findConfigInfoBaseLikeFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
         String where = " 1=1 AND tenant_id='' ";
         if (!StringUtils.isBlank(params.get(DATA_ID))) {
@@ -329,7 +386,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
         if (!StringUtils.isBlank(params.get(CONTENT))) {
             where += " AND content LIKE ? ";
         }
-        return sqlFetchRows + where;
+        return sqlFetchRows + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -349,7 +406,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params) {
+    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND tenant_id=? ");
@@ -357,7 +414,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
             sql.append(" AND app_name=? ");
         }
         
-        return sql.toString();
+        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -381,7 +438,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfo4PageFetchRows(Map<String, String> params) {
+    public String findConfigInfo4PageFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get(APP_NAME);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
@@ -397,7 +454,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
         }
-        return sql + where;
+        return sql + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -406,8 +463,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoBaseByDataIdFetchRows() {
-        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?";
+    public String findConfigInfoBaseByDataIdFetchRows(int startRow, int pageSize) {
+        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? "
+                + "AND tenant_id=?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -416,9 +474,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByGroupFetchRows() {
+    public String findConfigInfoByGroupFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND "
-                + "tenant_id=?";
+                + "tenant_id=?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -427,9 +485,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByGroupAndAppFetchRows() {
+    public String findConfigInfoByGroupAndAppFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND "
-                + "tenant_id=? AND app_name =?";
+                + "tenant_id=? AND app_name =?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -443,14 +501,14 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params) {
+    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info where tenant_id LIKE ? ");
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -459,8 +517,9 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoBaseByGroupFetchRows() {
-        return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?";
+    public String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize) {
+        return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? "
+                + "AND tenant_id=?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -488,7 +547,7 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoLike4PageFetchRows(Map<String, String> params) {
+    public String findConfigInfoLike4PageFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get("appName");
         final String content = params.get("content");
         final String dataId = params.get(DATA_ID);
@@ -508,13 +567,13 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
         }
-        return sqlFetchRows + where;
+        return sqlFetchRows + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
-    public String findAllConfigInfoFetchRows() {
+    public String findAllConfigInfoFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
+                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )"
                 + " g, config_info t  WHERE g.id = t.id ";
     }
     
@@ -543,14 +602,14 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     }
     
     @Override
-    public String findConfigInfoByGroupAndAdvanceFetchRows(Map<String, String> params) {
+    public String findConfigInfoByGroupAndAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=? ");
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -590,5 +649,10 @@ public class ConfigInfoMapperByDerby implements ConfigInfoMapper {
     @Override
     public String getTableName() {
         return TableConstant.CONFIG_INFO;
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.DERBY;
     }
 }
