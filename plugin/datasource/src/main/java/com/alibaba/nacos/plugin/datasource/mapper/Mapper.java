@@ -29,4 +29,10 @@ public interface Mapper {
      * @return The name of table.
      */
     String getTableName();
+    
+    /**
+     * Get the datasource name.
+     * @return The name of datasource.
+     */
+    String getDataSource();
 }

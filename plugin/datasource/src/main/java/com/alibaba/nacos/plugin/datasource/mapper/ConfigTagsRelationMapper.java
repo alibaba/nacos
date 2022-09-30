@@ -24,7 +24,7 @@ import java.util.Map;
  * @author hyx
  **/
 
-public interface ConfigTagsRelationMapper {
+public interface ConfigTagsRelationMapper extends Mapper {
     
     
     /**
@@ -46,9 +46,11 @@ public interface ConfigTagsRelationMapper {
      *
      * @param params The map of appName.
      * @param tagSize the tags name size.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of finding config info.
      */
-    String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize);
+    String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize);
     
     /**
      * Get the count of config info.
@@ -70,9 +72,11 @@ public interface ConfigTagsRelationMapper {
      *
      * @param params The keys and values are dataId and group.
      * @param tagSize the tags name size.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of finding config info.
      */
-    String findConfigInfo4PageFetchRows(final Map<String, String> params, int tagSize);
+    String findConfigInfo4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
     
     /**
      * Get the count of config information by group id and tenant id and tag name.
@@ -93,9 +97,11 @@ public interface ConfigTagsRelationMapper {
      *
      * @param params the keys and values are dataId and group.
      * @param tagSize the tags name size.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying configuration information.
      */
-    String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize);
+    String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
     
     /**
      * Get the count of config information by config tags relation.
@@ -116,9 +122,11 @@ public interface ConfigTagsRelationMapper {
      *
      * @param params the keys and values are dataId and group.
      * @param tagSize the tags name size.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying config info.
      */
-    String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize);
+    String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -174,9 +182,11 @@ public interface ConfigTagsRelationMapper {
      *
      * @param params The map of appName.
      * @param tagSize The size of tags.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying configuration information.
      */
-    String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize);
+    String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize);
     
     /**
      * The default sql:

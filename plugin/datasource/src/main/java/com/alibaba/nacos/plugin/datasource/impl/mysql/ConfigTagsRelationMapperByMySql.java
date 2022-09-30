@@ -17,6 +17,8 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 
 import java.util.Map;
@@ -69,7 +71,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
     }
     
     @Override
-    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize) {
+    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
@@ -85,7 +87,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -117,7 +119,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
     }
     
     @Override
-    public String findConfigInfo4PageFetchRows(Map<String, String> params, int tagSize) {
+    public String findConfigInfo4PageFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         final String dataId = params.get("dataId");
         final String group = params.get("group");
@@ -145,7 +147,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
             where.append('?');
         }
         where.append(") ");
-        return sql + where;
+        return sql + where + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -168,7 +170,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
     }
     
     @Override
-    public String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize) {
+    public String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
@@ -186,7 +188,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -224,7 +226,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
     }
     
     @Override
-    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize) {
+    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         final String content = params.get("content");
         final String dataId = params.get("dataId");
@@ -255,7 +257,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
             where.append('?');
         }
         where.append(") ");
-        return sqlFetchRows + where;
+        return sqlFetchRows + where + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -300,7 +302,7 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
     }
     
     @Override
-    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize) {
+    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get("appName");
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
@@ -316,6 +318,16 @@ public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString();
+        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
+    }
+    
+    @Override
+    public String getTableName() {
+        return TableConstant.CONFIG_TAGS_RELATION;
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.MYSQL;
     }
 }

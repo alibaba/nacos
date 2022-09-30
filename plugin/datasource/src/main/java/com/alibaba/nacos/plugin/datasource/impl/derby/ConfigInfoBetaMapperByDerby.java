@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
 
@@ -62,14 +63,19 @@ public class ConfigInfoBetaMapperByDerby implements ConfigInfoBetaMapper {
     }
     
     @Override
-    public String findAllConfigInfoBetaForDumpAllFetchRows() {
+    public String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
-                + " FROM (  SELECT id FROM config_info_beta ORDER BY id LIMIT ?,?  )"
+                + " FROM (  SELECT id FROM config_info_beta ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY  )"
                 + " g, config_info_beta t WHERE g.id = t.id  ";
     }
     
     @Override
     public String getTableName() {
         return TableConstant.CONFIG_INFO_BETA;
+    }
+    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.DERBY;
     }
 }
