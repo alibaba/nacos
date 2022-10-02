@@ -61,10 +61,12 @@ public class HttpLoginProcessor implements LoginProcessor {
         String contextPath = ContextPathUtil
                 .normalizeContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
         String server = properties.getProperty(NacosAuthLoginConstant.SERVER, StringUtils.EMPTY);
-        String url = HTTP_PREFIX + server + contextPath + LOGIN_URL;
         
+        final String url;
         if (server.contains(Constants.HTTP_PREFIX)) {
             url = server + contextPath + LOGIN_URL;
+        } else {
+            url = HTTP_PREFIX + server + contextPath + LOGIN_URL;
         }
         
         Map<String, String> params = new HashMap<>(2);
