@@ -75,7 +75,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     private void getIdentityFromHeader(HttpServletRequest request, IdentityContext result,
             Map<String, String> identityNames) {
         Enumeration<String> headerEnu = request.getHeaderNames();
-        while (headerEnu.hasMoreElements()) {
+        while (null != headerEnu && headerEnu.hasMoreElements()) {
             String paraName = headerEnu.nextElement();
             if (identityNames.containsKey(paraName)) {
                 result.setParameter(identityNames.get(paraName), request.getHeader(paraName));
@@ -86,7 +86,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     private void getIdentityFromParameter(HttpServletRequest request, IdentityContext result,
             Map<String, String> identityNames) {
         Enumeration<String> paramEnu = request.getParameterNames();
-        while (paramEnu.hasMoreElements()) {
+        while (null != paramEnu && paramEnu.hasMoreElements()) {
             String paraName = paramEnu.nextElement();
             if (identityNames.containsKey(paraName)) {
                 result.setParameter(identityNames.get(paraName), request.getParameter(paraName));

@@ -50,14 +50,22 @@ public class HttpProtocolAuthServiceTest {
     private AuthConfigs authConfigs;
     
     @Mock
+    private AuthConfigs authConfigsWithOutPlugin;
+    
+    @Mock
     private HttpServletRequest request;
     
     private HttpProtocolAuthService httpProtocolAuthService;
     
+    private HttpProtocolAuthService httpProtocolAuthServiceWithOutPlugin;
+    
     @Before
     public void setUp() throws Exception {
+        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         httpProtocolAuthService = new HttpProtocolAuthService(authConfigs);
         httpProtocolAuthService.initialize();
+        httpProtocolAuthServiceWithOutPlugin = new HttpProtocolAuthService(authConfigsWithOutPlugin);
+        httpProtocolAuthServiceWithOutPlugin.initialize();
         Mockito.when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNNs");
         Mockito.when(request.getParameter(eq(CommonParams.GROUP_NAME))).thenReturn("testNG");
         Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testS");
@@ -119,25 +127,23 @@ public class HttpProtocolAuthServiceTest {
     @Test
     public void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
-        assertTrue(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
+        assertTrue(httpProtocolAuthServiceWithOutPlugin.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     public void testValidateIdentityWithPlugin() throws AccessException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
         assertFalse(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
     public void testValidateAuthorityWithoutPlugin() throws AccessException {
-        assertTrue(httpProtocolAuthService
+        assertTrue(httpProtocolAuthServiceWithOutPlugin
                 .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
     }
     
     @Test
     public void testValidateAuthorityWithPlugin() throws AccessException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         assertFalse(httpProtocolAuthService
                 .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
     }

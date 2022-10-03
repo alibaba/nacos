@@ -63,7 +63,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     @Override
     public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         return authPluginService.isPresent() ? authPluginService.get().validateIdentity(identityContext, resource)
-                : false;
+                : true;
         
     }
     
