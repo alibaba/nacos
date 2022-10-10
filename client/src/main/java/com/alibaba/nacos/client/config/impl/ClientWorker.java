@@ -425,8 +425,8 @@ public class ClientWorker implements Closeable {
     }
     
     private void refreshContentAndCheck(String groupKey, boolean notify) {
-        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
-            CacheData cache = cacheMap.get().get(groupKey);
+        CacheData cache = cacheMap.get().get(groupKey);
+        if (cache != null) {
             refreshContentAndCheck(cache, notify);
         }
     }
@@ -779,7 +779,7 @@ public class ClientWorker implements Closeable {
                         RpcClient rpcClient = ensureRpcClient(taskId);
                         ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
                                 rpcClient, configChangeListenRequest);
-                        if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
+                        if (configChangeBatchListenResponse.isSuccess()) {
                             
                             Set<String> changeKeys = new HashSet<>();
                             //handle changed keys,notify listener
