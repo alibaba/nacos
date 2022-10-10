@@ -145,7 +145,7 @@
         <javatuples.version>1.2</javatuples.version>
         <grpc-java.version>1.30.2</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
-        <protobuf-java.version>3.16.1</protobuf-java.version>
+        <protobuf-java.version>3.16.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <mockito-all.version>1.10.19</mockito-all.version>
