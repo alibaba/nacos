@@ -234,6 +234,10 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     private void onInstanceDeregister(Service service, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
+        if (client == null) {
+            Loggers.RAFT.warn("client not exist onInstanceDeregister, clientId : {} ", clientId);
+            return;
+        }
         client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
         if (client.getAllPublishedService().isEmpty()) {
