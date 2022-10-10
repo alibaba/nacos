@@ -57,7 +57,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private final String password = "nacos";
     
-    private final String derbyBaseDir = "data" + File.separator + "derby-data";
+    private final String derbyBaseDir = "data" + File.separator + Constants.DERBY_BASE_DIR;
     
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
     
