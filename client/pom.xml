@@ -122,10 +122,12 @@
         <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
     
@@ -288,6 +290,15 @@
                                                 </exclude>
                                             </excludes>
                                         </filter>
+                                        <filter>
+                                            <artifact>com.alibaba.nacos:nacos-api</artifact>
+                                            <includes>
+                                                <include>
+                                                    com/alibaba/nacos/api/**/**
+                                                </include>
+                                            </includes>
+                                        </filter>
+                                       
                                     </filters>
                                     <createSourcesJar>true</createSourcesJar>
                                     <shadeSourcesContent>true</shadeSourcesContent>
@@ -302,7 +313,6 @@
                                             <include>org.reflections:reflections</include>
                                             <include>com.google.guava:guava</include>
                                             <include>io.prometheus:simpleclient</include>
-                                            <include>com.fasterxml.jackson.core:*</include>
                                             <include>io.grpc:*</include>
                                             <include>io.opencensus:*</include>
                                             <include>org.javassist:*</include>
@@ -311,7 +321,6 @@
                                             <include>com.google.*:*</include>
                                             <include>javax.annotation:javax.annotation-api</include>
                                             <include>org.checkerframework:*</include>
-                                            <include>org.apache.httpcomponents:*</include>
                                             <include>org.codehaus.mojo:*</include>
                                         </includes>
                                         
@@ -344,11 +353,6 @@
                                             <pattern>javax.annotation</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
                                         </relocation>
-                                        <relocation>
-                                            <pattern>org.apache.http</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.apache.http</shadedPattern>
-                                        </relocation>
-    
                                         <relocation>
                                             <pattern>org.yaml.snakeyaml</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.org.yaml.snakeyaml</shadedPattern>
