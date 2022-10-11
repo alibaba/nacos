@@ -24,7 +24,7 @@ package com.alibaba.nacos.config.server.model;
  */
 public class ConfigInfo extends ConfigInfoBase {
     
-    static final long serialVersionUID = -1L;
+    static final long serialVersionUID = 3115358782431229202L;
     
     private String tenant;
     
