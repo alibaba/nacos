@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.auth.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.spi.annotation.SpiCondition;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.impl.process.HttpLoginProcessor;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  * @author wuyfee
  */
 
+@SpiCondition
 public class NacosClientAuthServiceImpl extends AbstractClientAuthService {
     
     private static final Logger SECURITY_LOGGER = LoggerFactory.getLogger(NacosClientAuthServiceImpl.class);

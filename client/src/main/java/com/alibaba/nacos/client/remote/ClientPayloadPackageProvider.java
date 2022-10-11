@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.remote;
 
 import com.alibaba.nacos.common.remote.PayloadPackageProvider;
+import com.alibaba.nacos.common.spi.annotation.SpiCondition;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +27,8 @@ import java.util.Set;
  *
  * @author hujun
  */
+
+@SpiCondition
 public class ClientPayloadPackageProvider implements PayloadPackageProvider {
     
     private final Set<String> scanPackage = new HashSet<>();

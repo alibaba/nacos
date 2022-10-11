@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.ConfigResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.NamingResourceInjector;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
+import com.alibaba.nacos.common.spi.annotation.SpiCondition;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
@@ -40,6 +41,8 @@ import java.util.Properties;
  *
  * @author xiweng.yy
  */
+
+@SpiCondition
 public class RamClientAuthServiceImpl extends AbstractClientAuthService {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(RamClientAuthServiceImpl.class);

@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.spi.annotation.SpiCondition;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 
@@ -32,6 +33,8 @@ import java.util.Properties;
  *
  * @author lixiaoshuang
  */
+
+@SpiCondition
 public class ConfigEncryptionFilter extends AbstractConfigFilter {
     
     private static final String DEFAULT_NAME = ConfigEncryptionFilter.class.getName();

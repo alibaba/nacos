@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.common.spi;
 
+import com.alibaba.nacos.common.spi.annotation.SpiCondition;
+import com.alibaba.nacos.common.spi.validator.SpiValidator;
+
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -32,6 +36,8 @@ public class NacosServiceLoader {
     
     private static final Map<Class<?>, Collection<Class<?>>> SERVICES = new ConcurrentHashMap<>();
     
+    private static final Map<Class<? extends SpiValidator>, SpiValidator> VALIDATORS = new ConcurrentHashMap<>();
+    
     /**
      * Load service.
      *
@@ -47,8 +53,34 @@ public class NacosServiceLoader {
         }
         Collection<T> result = new LinkedHashSet<>();
         for (T each : ServiceLoader.load(service)) {
-            result.add(each);
-            cacheServiceClass(service, each);
+            Class<?> eachClass = each.getClass();
+            if (eachClass.isAnnotationPresent(SpiCondition.class)) {
+                SpiCondition annotation = eachClass.getAnnotation(SpiCondition.class);
+                Class<? extends SpiValidator>[] validators = annotation.loadEnabled();
+                boolean shouldLoad = true;
+                for (Class<? extends SpiValidator> validator : validators) {
+                    SpiValidator spiValidator = VALIDATORS.computeIfAbsent(validator, (validatorInner) -> {
+                        try {
+                            Constructor<? extends SpiValidator> constructor = validatorInner.getConstructor(null);
+                            return constructor.newInstance();
+                        } catch (Exception e) {
+                            throw new ServiceLoaderException(validatorInner, e);
+                        }
+                    });
+                    boolean matches = null != spiValidator ? spiValidator.matches(eachClass, annotation) : true;
+                    if (!matches) {
+                        shouldLoad = false;
+                        break;
+                    }
+                }
+                if (shouldLoad) {
+                    result.add(each);
+                    cacheServiceClass(service, each);
+                }
+            } else {
+                result.add(each);
+                cacheServiceClass(service, each);
+            }
         }
         return result;
     }
