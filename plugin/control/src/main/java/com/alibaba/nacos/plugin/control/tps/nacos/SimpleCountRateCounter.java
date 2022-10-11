@@ -84,7 +84,6 @@ public class SimpleCountRateCounter extends RateCounter {
         return slotList.get(index);
     }
     
-    
     static class TpsSlot {
         
         long time = 0L;

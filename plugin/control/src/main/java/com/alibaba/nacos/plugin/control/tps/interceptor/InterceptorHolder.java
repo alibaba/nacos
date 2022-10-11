@@ -5,8 +5,6 @@ import java.util.List;
 
 public class InterceptorHolder {
     
-    
-    
     public static List<TpsInterceptor> getInterceptors() {
         return new ArrayList<>();
     }

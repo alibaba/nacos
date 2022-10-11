@@ -5,17 +5,17 @@ import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyMatcher;
-import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRuleBarrier;
+import com.alibaba.nacos.plugin.control.tps.mse.FlowedCountRuleBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRuleBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,12 +38,12 @@ public class TpsBarrier {
     
     public TpsBarrier(String pointName) {
         this.pointName = pointName;
-        ruleBarrier = getRuleBarrierCreator().createRateCount(pointName, "", TimeUnit.SECONDS);
+        ruleBarrier = getRuleBarrierCreator().createRuleBarrier(pointName, "", TimeUnit.SECONDS);
     }
     
     public RuleBarrierCreator getRuleBarrierCreator() {
         //SPI TODO
-        return SimpleCountRuleBarrierCreator.getInstance();
+        return FlowedCountRuleBarrierCreator.getInstance();
     }
     
     /**
@@ -66,8 +66,8 @@ public class TpsBarrier {
             
             for (MonitorKey monitorKey : tpsCheckRequest.getMonitorKeys()) {
                 if (MonitorKeyMatcher.match(patternRuleBarrier.getPattern(), monitorKey.build())) {
-                    boolean success = patternRuleBarrier.applyTps(tpsCheckRequest);
-                    if (success) {
+                    TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(tpsCheckRequest);
+                    if (patternCheckResponse.isSuccess()) {
                         if (appliedBarriers == null) {
                             appliedBarriers = new ArrayList<>();
                         }
@@ -89,19 +89,19 @@ public class TpsBarrier {
         //2.when pattern fail,rollback applied count of patterns.
         if (!patternSuccess) {
             rollbackTps(appliedBarriers, tpsCheckRequest);
+            return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
+                    (denyPatternRate == null) ? "unknown" : ("denied by " + denyPatternRate.getLimitMsg()));
         }
         
-        if (!patternSuccess) {
-            return new TpsCheckResponse(false, (denyPatternRate == null) ? "unknown" : (denyPatternRate.getName()));
-        }
-        
-        long maxCount = ruleBarrier.getMaxCount();
-        boolean pointCheckSuccess = ruleBarrier.applyTps(tpsCheckRequest);
-        if (pointCheckSuccess) {
-            return new TpsCheckResponse(true, "success");
+        //3. check point rule
+        TpsCheckResponse pointCheckSuccess = ruleBarrier.applyTps(tpsCheckRequest);
+        if (pointCheckSuccess.isSuccess()) {
+            return pointCheckSuccess;
         } else {
+            //3.1 when point rule fail,rollback applied count of patterns.
             rollbackTps(appliedBarriers, tpsCheckRequest);
-            return new TpsCheckResponse(false, "deny by point rule,maxTps=" + maxCount);
+            return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
+                    "deny by point rule," + ruleBarrier.getLimitMsg());
         }
         
     }
@@ -203,10 +203,10 @@ public class TpsBarrier {
                             this.getPointName(), newMonitorRule.getKey(), newMonitorRule.getValue().getMaxCount(),
                             newMonitorRule.getValue().getMonitorType());
                     // add rule
-                    RuleBarrier rateCounterWrapper = new SimpleCountRuleBarrier(newMonitorRule.getKey(),
-                            newRuleDetail.getPattern(), newRuleDetail.getPeriod());
-                    rateCounterWrapper.setMaxCount(newRuleDetail.getMaxCount());
-                    rateCounterWrapper.setMonitorType(newRuleDetail.getMonitorType());
+                    RuleBarrier rateCounterWrapper = getRuleBarrierCreator()
+                            .createRuleBarrier(newMonitorRule.getKey(), newRuleDetail.getPattern(),
+                                    newRuleDetail.getPeriod());
+                    rateCounterWrapper.applyRuleDetail(newRuleDetail);
                     patternRateCounterMap.put(newMonitorRule.getKey(), rateCounterWrapper);
                 }
             }

@@ -17,7 +17,7 @@ public class SimpleCountRuleBarrierCreator implements RuleBarrierCreator {
     }
     
     @Override
-    public RuleBarrier createRateCount(String name, String pattern, TimeUnit period) {
+    public RuleBarrier createRuleBarrier(String name, String pattern, TimeUnit period) {
         return new SimpleCountRuleBarrier(name, pattern, period);
     }
     

@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
 import java.util.Map;
@@ -18,7 +19,7 @@ public class TpsControlManager {
     public final Map<String, TpsBarrier> points = new ConcurrentHashMap<>(16);
     
     /**
-     * point name -> tps barrier
+     * point name -> tps control rule
      */
     public final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
     
@@ -33,7 +34,6 @@ public class TpsControlManager {
             points.put(pointName, new TpsBarrier(pointName));
             if (rules.containsKey(pointName)) {
                 points.get(pointName).applyRule(rules.get(pointName));
-                
             }
         }
     }
@@ -67,7 +67,7 @@ public class TpsControlManager {
         if (points.containsKey(pointName)) {
             return points.get(pointName).applyTps(tpsRequest);
         }
-        return new TpsCheckResponse(true, "success");
+        return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "skip");
         
     }
 }

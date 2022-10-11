@@ -2,6 +2,8 @@ package com.alibaba.nacos.plugin.control.tps.nacos;
 
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 
 import java.util.Objects;
@@ -19,21 +21,21 @@ public class SimpleCountRuleBarrier extends RuleBarrier {
     }
     
     @Override
-    public boolean applyTps(TpsCheckRequest tpsCheckRequest) {
+    public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
         if (isMonitorType()) {
+            boolean overLimit = false;
             if (rateCounter.getCount(tpsCheckRequest.getTimestamp()) + tpsCheckRequest.getCount() > this
                     .getMaxCount()) {
-                //TODO log
+                overLimit = true;
             }
             rateCounter.add(tpsCheckRequest.getTimestamp(), tpsCheckRequest.getCount());
-            return true;
+            return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.CHECK_PASS,
+                    "success");
         } else {
             boolean success = rateCounter
                     .tryAdd(tpsCheckRequest.getTimestamp(), tpsCheckRequest.getCount(), this.getMaxCount());
-            if (!success) {
-                //TODO log
-            }
-            return success;
+            return new TpsCheckResponse(success, success ? TpsResultCode.CHECK_PASS : TpsResultCode.CHECK_DENY,
+                    "success");
         }
         
     }

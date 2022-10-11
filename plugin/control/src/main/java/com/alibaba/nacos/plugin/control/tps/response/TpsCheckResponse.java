@@ -7,12 +7,22 @@ public class TpsCheckResponse {
     
     private boolean success;
     
+    private TpsResultCode code;
+    
     private String message;
     
-    
-    public TpsCheckResponse(boolean success, String message) {
+    public TpsCheckResponse(boolean success, TpsResultCode code, String message) {
         this.success = success;
+        this.code = code;
         this.message = message;
+    }
+    
+    public TpsResultCode getCode() {
+        return code;
+    }
+    
+    public void setCode(TpsResultCode code) {
+        this.code = code;
     }
     
     public void setSuccess(boolean success) {

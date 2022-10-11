@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 
 import java.util.concurrent.TimeUnit;
@@ -75,13 +76,17 @@ public abstract class RuleBarrier {
         this.model = model;
     }
     
+    public String getLimitMsg() {
+        return String.format("[Name:%s,Pattern:%s,Period:%s,MaxCount:%s]", name, pattern, period, maxCount);
+    }
+    
     /**
      * apply tps.
      *
      * @param tpsCheckRequest
      * @return
      */
-    abstract public boolean applyTps(TpsCheckRequest tpsCheckRequest);
+    abstract public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest);
     
     /**
      * rollback tps.

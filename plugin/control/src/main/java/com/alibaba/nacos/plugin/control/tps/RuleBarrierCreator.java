@@ -10,7 +10,7 @@ public interface RuleBarrierCreator {
      * @param period
      * @return
      */
-    RuleBarrier createRateCount(String name, String pattern, TimeUnit period);
+    RuleBarrier createRuleBarrier(String name, String pattern, TimeUnit period);
     
     /**
      * rate count creator name.

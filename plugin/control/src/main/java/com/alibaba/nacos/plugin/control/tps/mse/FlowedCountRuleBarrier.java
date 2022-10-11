@@ -1,6 +1,8 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.nacos.RateCounter;
 import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRateCounter;
@@ -23,25 +25,52 @@ public class FlowedCountRuleBarrier extends SimpleCountRuleBarrier {
     }
     
     @Override
-    public boolean applyTps(TpsCheckRequest tpsCheckRequest) {
-        boolean rateCheck = getRateCounter()
-                .tryAdd(tpsCheckRequest.getTimestamp(), tpsCheckRequest.getCount(), this.getMaxCount());
-        if (rateCheck && tpsCheckRequest instanceof FlowedTpsCheckRequest) {
-            flowCounter.tryAdd(tpsCheckRequest.getTimestamp(), ((FlowedTpsCheckRequest) tpsCheckRequest).getFlow(),
-                    maxFlow);
+    public String getLimitMsg() {
+        return String.format("[pattern:%s,period:%s,maxCount:%s,maxFlow:%s]", getPattern(), getPeriod(), getMaxCount(),
+                maxFlow);
+    }
+    
+    @Override
+    public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
+        TpsCheckResponse rateCheck = super.applyTps(tpsCheckRequest);
+        if (rateCheck.isSuccess() && tpsCheckRequest instanceof FlowedTpsCheckRequest) {
+            if (isMonitorType()) {
+                boolean overLimit = false;
+                if (maxFlow > 0 &&
+                        flowCounter.getCount(tpsCheckRequest.getTimestamp()) + ((FlowedTpsCheckRequest) tpsCheckRequest)
+                                .getFlow() > maxFlow) {
+                    overLimit = true;
+                }
+                
+                flowCounter.add(tpsCheckRequest.getTimestamp(), ((FlowedTpsCheckRequest) tpsCheckRequest).getFlow());
+                return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.CHECK_PASS,
+                        "success");
+            } else {
+                boolean flowedSuccess = flowCounter
+                        .tryAdd(tpsCheckRequest.getTimestamp(), ((FlowedTpsCheckRequest) tpsCheckRequest).getFlow(),
+                                maxFlow);
+                TpsResultCode tpsResultCode = TpsResultCode.CHECK_PASS;
+                
+                if (!flowedSuccess) {
+                    super.rollbackTps(tpsCheckRequest);
+                    tpsResultCode = TpsResultCode.CHECK_DENY;
+                }
+                return new TpsCheckResponse(flowedSuccess, tpsResultCode,
+                        flowedSuccess ? "success" : "deny by flowed limit");
+            }
+            
         } else {
             return rateCheck;
         }
-        return false;
+        
     }
     
     @Override
     public void rollbackTps(TpsCheckRequest tpsCheckRequest) {
-        getRateCounter().minus(tpsCheckRequest.getTimestamp(), tpsCheckRequest.getCount());
+        super.rollbackTps(tpsCheckRequest);
         if (tpsCheckRequest instanceof FlowedTpsCheckRequest) {
             flowCounter.minus(tpsCheckRequest.getTimestamp(), ((FlowedTpsCheckRequest) tpsCheckRequest).getFlow());
         }
-        
     }
     
     

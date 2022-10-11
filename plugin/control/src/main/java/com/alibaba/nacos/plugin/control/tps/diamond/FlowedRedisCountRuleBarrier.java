@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.tps.diamond;
 
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedTpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.nacos.RateCounter;
 import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRateCounter;
@@ -23,27 +24,8 @@ public class FlowedRedisCountRuleBarrier extends SimpleCountRuleBarrier {
     }
     
     @Override
-    public boolean applyTps(TpsCheckRequest tpsCheckRequest) {
-        boolean rateCheckSuccess = getRateCounter()
-                .tryAdd(tpsCheckRequest.getTimestamp(), tpsCheckRequest.getCount(), this.getMaxCount());
-        if (rateCheckSuccess) {
-            if (tpsCheckRequest instanceof FlowedTpsCheckRequest) {
-                boolean flowCheck = flowCounter
-                        .tryAdd(tpsCheckRequest.getTimestamp(), ((FlowedTpsCheckRequest) tpsCheckRequest).getFlow(),
-                                maxFlow);
-                if (!flowCheck) {
-                    getRateCounter().minus(tpsCheckRequest.getTimestamp(), tpsCheckRequest.getCount());
-                    return false;
-                } else {
-                    return true;
-                }
-            } else {
-                return true;
-            }
-            
-        } else {
-            return false;
-        }
+    public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
+        return super.applyTps(tpsCheckRequest);
     }
     
     @Override

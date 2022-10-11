@@ -1,6 +1,8 @@
 package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.FlowedRuleDetail;
+import com.alibaba.nacos.plugin.control.tps.mse.FlowedTpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
@@ -41,7 +43,7 @@ public class TpsControlManagerTest {
         tpsControlManager.applyTpsRule(pointName, null);
         //1.register rule
         TpsControlRule tpsControlRule = new TpsControlRule();
-        RuleDetail ruleDetail = new RuleDetail();
+        RuleDetail ruleDetail = new FlowedRuleDetail();
         ruleDetail.setMaxCount(10000);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
@@ -49,9 +51,10 @@ public class TpsControlManagerTest {
         ruleDetail.setPattern("test:prefix*");
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
-        
-        RuleDetail ruleDetailMonitor = new RuleDetail();
-        ruleDetailMonitor.setMaxCount(0);
+    
+        FlowedRuleDetail ruleDetailMonitor = new FlowedRuleDetail();
+        ruleDetailMonitor.setMaxCount(5);
+        ruleDetailMonitor.setMaxFlow(11);
         ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
         ruleDetailMonitor.setMonitorType(MonitorType.MONITOR.getType());
         ruleDetailMonitor.setModel(MODEL_PROTO);
@@ -62,8 +65,9 @@ public class TpsControlManagerTest {
         Assert.assertTrue(tpsControlManager.rules.containsKey(pointName));
         
         //3.apply tps
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
         tpsCheckRequest.setCount(2);
+        tpsCheckRequest.setFlow(15);
         List<MonitorKey> monitorKeyList = new ArrayList<>();
         monitorKeyList.add(new MonitorKey("prefixmonitor123") {
             @Override
@@ -74,7 +78,8 @@ public class TpsControlManagerTest {
         tpsCheckRequest.setMonitorKeys(monitorKeyList);
         
         TpsCheckResponse check = tpsControlManager.check(pointName, tpsCheckRequest);
-        System.out.println(check.isSuccess());
+        System.out.println(check.isSuccess()+","+check.getMessage());
+        
         
     }
 }
