@@ -207,6 +207,7 @@
                                             <pattern>com.google</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
                                         </relocation>
+                                        
                                         <relocation>
                                             <pattern>io.perfmark</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
@@ -290,9 +291,7 @@
                                     </filters>
                                     <createSourcesJar>true</createSourcesJar>
                                     <shadeSourcesContent>true</shadeSourcesContent>
-                                    <createSourcesJar>true</createSourcesJar>
-                                    <shadeSourcesContent>true</shadeSourcesContent>
-    
+                                  
                                     <artifactSet>
                                         <includes>
                                             <include>com.alibaba.nacos:nacos-api</include>
@@ -300,7 +299,6 @@
                                             <include>org.conscrypt:conscrypt-openjdk</include>
                                             <include>org.mortbay.jetty.alpn:alpn-boot</include>
                                             <include>org.eclipse.jetty.npn:npn-api</include>
-                                            <include>com.google.guava:guava</include>
                                             <include>org.reflections:reflections</include>
                                             <include>com.google.guava:guava</include>
                                             <include>io.prometheus:simpleclient</include>
@@ -316,6 +314,7 @@
                                             <include>org.apache.httpcomponents:*</include>
                                             <include>org.codehaus.mojo:*</include>
                                         </includes>
+                                        
                                     </artifactSet>
     
                                     <relocations>
@@ -335,6 +334,31 @@
                                                 <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
                                             </includes>
                                         </relocation>
+    
+                                        <relocation>
+                                            <pattern>com.google</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
+                                        </relocation>
+    
+                                        <relocation>
+                                            <pattern>javax.annotation</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
+                                        </relocation>
+                                        <relocation>
+                                            <pattern>org.apache.http</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.apache.http</shadedPattern>
+                                        </relocation>
+    
+                                        <relocation>
+                                            <pattern>org.yaml.snakeyaml</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.yaml.snakeyaml</shadedPattern>
+                                        </relocation>
+    
+                                        <relocation>
+                                            <pattern>io.prometheus.client</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.io.prometheus.client</shadedPattern>
+                                        </relocation>
+    
                                         <relocation>
                                             <pattern>io.perfmark</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
@@ -343,7 +367,10 @@
                                             <pattern>io.opencensus</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
                                         </relocation>
-        
+                                        <relocation>
+                                            <pattern>org.codehaus</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
+                                        </relocation>
                                         <relocation>
                                             <pattern>org.checkerframework</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
