@@ -31,9 +31,9 @@ import java.io.Serializable;
  * @author Nacos
  */
 public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> {
-    
-    static final long serialVersionUID = -1L;
-    
+
+    static final long serialVersionUID = 265316491795790798L;
+
     @JsonSerialize(using = ToStringSerializer.class)
     private long id;
     
