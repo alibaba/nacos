@@ -140,12 +140,9 @@ public class ClientWorker implements Closeable {
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
-        String tenant = TenantUtil.getUserTenantForAcm();
-        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
-            if (getCache(dataId, group, tenant) == null) {
-                cache = addCacheDataIfAbsent(dataId, group, tenant);
-            }
+            
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
@@ -170,16 +167,12 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
-            if (getCache(dataId, group, tenant) == null) {
-                cache = addCacheDataIfAbsent(dataId, group, tenant);
-            }
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setDiscard(false);
             cache.setSyncWithServer(false);
             agent.notifyListenConfig();
-            
         }
         
     }
@@ -200,9 +193,6 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         synchronized (cache) {
-            if (getCache(dataId, group, tenant) == null) {
-                cache = addCacheDataIfAbsent(dataId, group, tenant);
-            }
             cache.setEncryptedDataKey(encryptedDataKey);
             cache.setContent(content);
             for (Listener listener : listeners) {
@@ -211,7 +201,6 @@ public class ClientWorker implements Closeable {
             cache.setDiscard(false);
             cache.setSyncWithServer(false);
             agent.notifyListenConfig();
-            
         }
         
     }
