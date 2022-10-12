@@ -1012,20 +1012,20 @@ public class ClientWorker implements Closeable {
             if (request instanceof ConfigQueryRequest) {
                 String tenant = ((ConfigQueryRequest) request).getTenant();
                 String group = ((ConfigQueryRequest) request).getGroup();
-                String dataId = ((ConfigQueryRequest) request).getGroup();
+                String dataId = ((ConfigQueryRequest) request).getDataId();
                 return buildResource(tenant, group, dataId);
             }
             if (request instanceof ConfigPublishRequest) {
                 String tenant = ((ConfigPublishRequest) request).getTenant();
                 String group = ((ConfigPublishRequest) request).getGroup();
-                String dataId = ((ConfigPublishRequest) request).getGroup();
+                String dataId = ((ConfigPublishRequest) request).getDataId();
                 return buildResource(tenant, group, dataId);
             }
             
             if (request instanceof ConfigRemoveRequest) {
                 String tenant = ((ConfigRemoveRequest) request).getTenant();
                 String group = ((ConfigRemoveRequest) request).getGroup();
-                String dataId = ((ConfigRemoveRequest) request).getGroup();
+                String dataId = ((ConfigRemoveRequest) request).getDataId();
                 return buildResource(tenant, group, dataId);
             }
             return RequestResource.configBuilder().build();
@@ -1059,7 +1059,7 @@ public class ClientWorker implements Closeable {
                 }
             } catch (Exception e) {
                 LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
-                        this.getName(), dataId, group, tenant, "unkonw", e.getMessage());
+                        this.getName(), dataId, group, tenant, "unknown", e.getMessage());
                 return false;
             }
         }
