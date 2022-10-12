@@ -47,6 +47,9 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         buildConfigFilterChain();
     }
     
+    /**
+     * Build ConfigFilterChain.
+     */
     public void buildConfigFilterChain() {
         filterChain = new EmptyFilterChainNode();
         for (int i = filters.size() - 1; i >= 0; i--) {
@@ -104,7 +107,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
             filter.doFilter(request, response, next);
         }
-    }
+}
     
     
     private static class EmptyFilterChainNode implements IConfigFilterChain {
