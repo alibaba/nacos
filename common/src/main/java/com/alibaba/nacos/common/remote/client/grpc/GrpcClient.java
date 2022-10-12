@@ -122,6 +122,8 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
+        // Thread name will use String.format, ipv6 maybe contain special word %, so handle it first.
+        serverIp = serverIp.replaceAll("%", "-");
         ThreadPoolExecutor grpcExecutor = new ThreadPoolExecutor(clientConfig.threadPoolCoreSize(),
                 clientConfig.threadPoolMaxSize(), clientConfig.threadPoolKeepAlive(), TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(clientConfig.threadPoolQueueSize()),
