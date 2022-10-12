@@ -107,8 +107,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
             filter.doFilter(request, response, next);
         }
-}
-    
+    }
     
     private static class EmptyFilterChainNode implements IConfigFilterChain {
         
