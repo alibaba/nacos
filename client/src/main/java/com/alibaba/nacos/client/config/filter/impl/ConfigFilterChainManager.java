@@ -33,11 +33,11 @@ import java.util.ServiceLoader;
  * @author Nacos
  */
 public class ConfigFilterChainManager implements IConfigFilterChain {
-
+    
     private final List<IConfigFilter> filters = new ArrayList<>();
-
+    
     private IConfigFilterChain filterChain;
-
+    
     public ConfigFilterChainManager(Properties properties) {
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
         for (IConfigFilter configFilter : configFilters) {
@@ -46,7 +46,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         }
         buildConfigFilterChain();
     }
-
+    
     public void buildConfigFilterChain() {
         filterChain = new EmptyFilterChainNode();
         for (int i = filters.size() - 1; i >= 0; i--) {
@@ -55,7 +55,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
             filterChain = new FilterChainNode(filter, next);
         }
     }
-
+    
     /**
      * Add filter.
      *
@@ -77,41 +77,42 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
                 break;
             }
         }
-
+        
         if (i == this.filters.size()) {
             this.filters.add(i, filter);
         }
         return this;
     }
-
+    
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
         filterChain.doFilter(request, response);
     }
-
+    
     private static class FilterChainNode implements IConfigFilterChain {
-
+        
         private final IConfigFilter filter;
-
+        
         private final IConfigFilterChain next;
-
+        
         public FilterChainNode(IConfigFilter filter, IConfigFilterChain next) {
             this.filter = filter;
             this.next = next;
         }
-
+        
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
             filter.doFilter(request, response, next);
         }
     }
-
-
+    
+    
     private static class EmptyFilterChainNode implements IConfigFilterChain {
+        
         @Override
         public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
-
+        
         }
     }
-
+    
 }
