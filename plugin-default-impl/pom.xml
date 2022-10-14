@@ -33,6 +33,14 @@
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-discovery-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-naming</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-auth-plugin</artifactId>
         </dependency>
         <dependency>
