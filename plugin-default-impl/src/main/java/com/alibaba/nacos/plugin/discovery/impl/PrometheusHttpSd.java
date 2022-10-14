@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.plugin.discovery.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -6,7 +22,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.plugin.discovery.spi.HttpService;
+import com.alibaba.nacos.plugin.discovery.spi.HttpPluginService;
 import com.alibaba.nacos.plugin.discovery.wapper.HttpServletWapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -25,7 +41,7 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.groupingBy;
 
-public class PrometheusHttpSd implements HttpService {
+public class PrometheusHttpSd implements HttpPluginService {
     
     private static final String ENABLE = "nacos.plugin.http.prometheus.enable";
     
@@ -50,7 +66,7 @@ public class PrometheusHttpSd implements HttpService {
     
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        PrintWriter out = resp.getWriter();
+        final PrintWriter out = resp.getWriter();
         ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
         Set<Instance> targetSet = new HashSet<>();
         Set<String> allNamespaces = serviceManager.getAllNamespaces();
