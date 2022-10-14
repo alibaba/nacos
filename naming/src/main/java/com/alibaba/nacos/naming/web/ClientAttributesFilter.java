@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,15 +24,16 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -62,34 +62,38 @@ public class ClientAttributesFilter implements Filter {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-        HttpServletResponse resp = (HttpServletResponse) servletResponse;
         try {
-            if ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                    + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(request.getRequestURI())
-                    && request.getMethod().equals(HttpMethod.POST)) {
-                //register
-                ClientAttributes requestClientAttributes = getClientAttributes(request);
-                threadLocalClientAttributes.set(requestClientAttributes);
-            } else if ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                    + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(request.getRequestURI())) {
-                //beat
-                String ip = WebUtils.optional(request, IP, StringUtils.EMPTY);
-                int port = Integer.parseInt(WebUtils.optional(request, PORT, ZERO));
-                String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
-                IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
-                if (client != null) {
+            try {
+                if ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(request.getRequestURI())
+                        && request.getMethod().equals(HttpMethod.POST)) {
+                    //register
                     ClientAttributes requestClientAttributes = getClientAttributes(request);
-                    //update clientAttributes,when client version attributes is null,then update.
-                    if (canUpdateClientAttributes(client, requestClientAttributes)) {
-                        client.setAttributes(requestClientAttributes);
+                    threadLocalClientAttributes.set(requestClientAttributes);
+                } else if ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(request.getRequestURI())) {
+                    //beat
+                    String ip = WebUtils.optional(request, IP, StringUtils.EMPTY);
+                    int port = Integer.parseInt(WebUtils.optional(request, PORT, ZERO));
+                    String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port,
+                            true);
+                    IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
+                    if (client != null) {
+                        ClientAttributes requestClientAttributes = getClientAttributes(request);
+                        //update clientAttributes,when client version attributes is null,then update.
+                        if (canUpdateClientAttributes(client, requestClientAttributes)) {
+                            client.setAttributes(requestClientAttributes);
+                        }
                     }
                 }
+            } catch (Exception e) {
+                Loggers.SRV_LOG.error("handler client attributes error", e);
             }
-            filterChain.doFilter(request, servletResponse);
-   
-        } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "clientAttributes filter error," + ExceptionUtil.getAllExceptionMsg(e));
+            try {
+                filterChain.doFilter(request, servletResponse);
+            } catch (ServletException e) {
+                throw new RuntimeException(e);
+            }
         } finally {
             if (threadLocalClientAttributes.get() != null) {
                 threadLocalClientAttributes.remove();
