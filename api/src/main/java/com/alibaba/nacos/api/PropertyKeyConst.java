@@ -75,6 +75,8 @@ public class PropertyKeyConst {
     
     public static final String NAMING_PUSH_EMPTY_PROTECTION = "namingPushEmptyProtection";
     
+    public static final String NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE = "namingAsyncQuerySubscribeService";
+    
     public static final String PUSH_RECEIVER_UDP_PORT = "push.receiver.udp.port";
     
     /**
