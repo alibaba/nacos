@@ -19,12 +19,10 @@ package com.alibaba.nacos.istio.mcp;
 import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.AbstractConnection;
-import com.alibaba.nacos.istio.common.Event;
 import com.alibaba.nacos.istio.common.NacosResourceManager;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
 import com.alibaba.nacos.istio.common.WatchedStatus;
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import io.grpc.stub.StreamObserver;
 import istio.mcp.v1alpha1.Mcp;
@@ -107,9 +105,9 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             return;
         }
     
-        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
+        PushRequest pushRequest = new PushRequest(resourceManager.getResourceSnapshot(), true);
         
-        Mcp.Resources response = buildMcpResourcesResponse(requestResources.getCollection(), pushContext);
+        Mcp.Resources response = buildMcpResourcesResponse(requestResources.getCollection(), pushRequest);
         connection.push(response, connection.getWatchedStatusByType(requestResources.getCollection()));
     }
 
@@ -159,42 +157,33 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         return false;
     }
 
-    public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
-        switch (event.getType()) {
-            case Service:
-                if (connections.size() == 0) {
-                    return;
-                }
-
-                Loggers.MAIN.info("mcp: event {} trigger push.", event.getType());
+    public void handleEvent(PushRequest pushRequest) {
+        if (connections.size() == 0) {
+            return;
+        }
     
-                PushContext pushContext = new PushContext(resourceSnapshot, true, null, null);
-                Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushContext);
-
-                for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
-                    WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
-                    if (watchedStatus != null) {
-                        connection.push(serviceEntryMcpResponse, watchedStatus);
-                    }
-                }
-                break;
-            case Endpoint:
-                break;
-            default:
-                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+        Loggers.MAIN.info("mcp: event {} trigger push.", pushRequest.getReason());
+        
+        Mcp.Resources serviceEntryMcpResponse = buildMcpResourcesResponse(SERVICE_ENTRY_COLLECTION, pushRequest);
+    
+        for (AbstractConnection<Mcp.Resources> connection : connections.values()) {
+            WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_COLLECTION);
+            if (watchedStatus != null) {
+                connection.push(serviceEntryMcpResponse, watchedStatus);
+            }
         }
     }
 
-    private Mcp.Resources buildMcpResourcesResponse(String type, PushContext pushContext) {
+    private Mcp.Resources buildMcpResourcesResponse(String type, PushRequest pushRequest) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Resource> serviceEntryGenerator = (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
-        List<Resource> rawResources = serviceEntryGenerator.generate(pushContext);
+        List<Resource> rawResources = serviceEntryGenerator.generate(pushRequest);
 
         String nonce = NonceGenerator.generateNonce();
         return Mcp.Resources.newBuilder()
                 .setCollection(type)
                 .addAllResources(rawResources)
-                .setSystemVersionInfo(pushContext.getVersion())
+                .setSystemVersionInfo(pushRequest.getResourceSnapshot().getVersion())
                 .setNonce(nonce).build();
     }
 }

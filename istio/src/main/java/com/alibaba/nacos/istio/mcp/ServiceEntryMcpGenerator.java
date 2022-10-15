@@ -20,7 +20,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.common.ResourceSnapshot;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
 import com.google.protobuf.Any;
 import istio.mcp.v1alpha1.MetadataOuterClass;
@@ -30,11 +30,9 @@ import istio.networking.v1alpha3.ServiceEntryOuterClass;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntry;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryName;
 
 /**
  * @author special.fy
@@ -57,19 +55,18 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     }
 
     @Override
-    public List<Resource> generate(PushContext pushContext) {
+    public List<Resource> generate(PushRequest pushRequest) {
         List<Resource> result = new ArrayList<>();
         serviceEntries = new ArrayList<>(16);
-        ResourceSnapshot resourceSnapshot = pushContext.getResourceSnapshot();
+        ResourceSnapshot resourceSnapshot = pushRequest.getResourceSnapshot();
     
         IstioConfig istioConfig = resourceSnapshot.getIstioConfig();
         Map<String, IstioService> serviceInfoMap = resourceSnapshot.getIstioResources().getIstioServiceMap();
     
         for (Map.Entry<String, IstioService> entry : serviceInfoMap.entrySet()) {
             String serviceName = entry.getKey();
-            String name = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), entry.getValue());
             
-            ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName, name, serviceInfoMap.get(serviceName));
+            ServiceEntryWrapper serviceEntryWrapper = buildServiceEntry(serviceName, serviceName + istioConfig.getDomainSuffix(), serviceInfoMap.get(serviceName));
             if (serviceEntryWrapper != null) {
                 serviceEntries.add(serviceEntryWrapper);
             }
@@ -88,7 +85,7 @@ public class ServiceEntryMcpGenerator implements ApiGenerator<Resource> {
     }
     
     @Override
-    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

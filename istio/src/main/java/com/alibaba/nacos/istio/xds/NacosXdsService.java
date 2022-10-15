@@ -19,8 +19,9 @@ package com.alibaba.nacos.istio.xds;
 import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.api.ApiGeneratorFactory;
 import com.alibaba.nacos.istio.common.*;
+import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.util.NonceGenerator;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.AggregatedDiscoveryServiceGrpc;
@@ -43,6 +44,7 @@ import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.api.ApiConstants.MESH_CONFIG_PROTO_PACKAGE;
 import static com.alibaba.nacos.istio.api.ApiConstants.SERVICE_ENTRY_PROTO_PACKAGE;
+import static com.alibaba.nacos.istio.util.IstioCrdUtil.parseClusterNameToServiceName;
 
 /**
  * @author special.fy
@@ -55,13 +57,9 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
     private final Map<String, AbstractConnection<DeltaDiscoveryResponse>> deltaConnections = new ConcurrentHashMap<>(16);
 
     public boolean hasClientConnection() {
-        return connections.size() != 0;
+        return connections.size() != 0 || deltaConnections.size() != 0;
     }
     
-    public boolean hasDeltaClientConnection() {
-        return deltaConnections.size() != 0;
-    }
-
     @Autowired
     ApiGeneratorFactory apiGeneratorFactory;
 
@@ -115,9 +113,16 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
             return;
         }
     
-        PushContext pushContext = new PushContext(resourceManager.getResourceSnapshot(), true, null, null);
+        Set<String> resourceNames = new HashSet<>(discoveryRequest.getResourceNamesList());
+        PushRequest pushRequest = new PushRequest(resourceManager.getResourceSnapshot(), true);
+        IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
+    
+        for (String resourceName : resourceNames) {
+            String reason = parseClusterNameToServiceName(resourceName, istioConfig.getDomainSuffix());
+            pushRequest.addReason(reason);
+        }
         
-        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushContext);
+        DiscoveryResponse response = buildDiscoveryResponse(discoveryRequest.getTypeUrl(), pushRequest);
         connection.push(response, connection.getWatchedStatusByType(discoveryRequest.getTypeUrl()));
     }
 
@@ -177,56 +182,48 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         return false;
     }
 
-    public void handleEvent(ResourceSnapshot resourceSnapshot, Event event) {
+    public void handleEvent(PushRequest pushRequest) {
         if (connections.size() == 0) {
             return;
         }
-        PushContext pushContext = new PushContext(resourceSnapshot, false, null, null);
         
         for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
             //mcp
             WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
             if (watchedStatus != null) {
-                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushContext);
+                DiscoveryResponse serviceEntryResponse = buildDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushRequest);
                 connection.push(serviceEntryResponse, watchedStatus);
             }
-        }
-        
-        switch (event.getType()) {
-            case Service:
-                for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    //CDS
-                    WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_TYPE);
-                    if (cdsWatchedStatus != null) {
-                        DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_TYPE, pushContext);
-                        connection.push(cdsResponse, cdsWatchedStatus);
-                    }
+            //CDS
+            WatchedStatus cdsWatchedStatus = connection.getWatchedStatusByType(CLUSTER_TYPE);
+            if (cdsWatchedStatus != null) {
+                DiscoveryResponse cdsResponse = buildDiscoveryResponse(CLUSTER_TYPE, pushRequest);
+                if (cdsResponse != null) {
+                    connection.push(cdsResponse, cdsWatchedStatus);
                 }
-                break;
-            case Endpoint:
-                for (AbstractConnection<DiscoveryResponse> connection : connections.values()) {
-                    WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
-                    if (edsWatchedStatus != null) {
-                        DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushContext);
-                        connection.push(edsResponse, edsWatchedStatus);
-                    }
-                }
-                break;
-            default:
-                Loggers.MAIN.warn("Invalid event {}, ignore it.", event.getType());
+            }
+            //EDS
+            WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+            if (edsWatchedStatus != null) {
+                DiscoveryResponse edsResponse = buildDiscoveryResponse(ENDPOINT_TYPE, pushRequest);
+                connection.push(edsResponse, edsWatchedStatus);
+            }
         }
     }
 
-    private DiscoveryResponse buildDiscoveryResponse(String type, PushContext pushContext) {
+    private DiscoveryResponse buildDiscoveryResponse(String type, PushRequest pushRequest) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Any> generator = (ApiGenerator<Any>) apiGeneratorFactory.getApiGenerator(type);
-        List<Any> rawResources = generator.generate(pushContext);
-
+        List<Any> rawResources = generator.generate(pushRequest);
+        if (rawResources == null) {
+            return null;
+        }
+        
         String nonce = NonceGenerator.generateNonce();
         return DiscoveryResponse.newBuilder()
                 .setTypeUrl(type)
                 .addAllResources(rawResources)
-                .setVersionInfo(pushContext.getVersion())
+                .setVersionInfo(pushRequest.getResourceSnapshot().getVersion())
                 .setNonce(nonce).build();
     }
     
@@ -274,18 +271,14 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (!deltaShouldPush(deltaDiscoveryRequest, connection)) {
             return;
         }
-        
         ResourceSnapshot resourceSnapshot = resourceManager.getResourceSnapshot();
-        PushContext pushContext = new PushContext(resourceSnapshot, true,
-                deltaDiscoveryRequest.getResourceNamesSubscribeList(),
-                deltaDiscoveryRequest.getResourceNamesUnsubscribeList());
+        PushRequest pushRequest = new PushRequest(resourceSnapshot, true);
         
-        connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl())
-                .setLastSubscribe(deltaDiscoveryRequest.getResourceNamesSubscribeList());
-        connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl())
-                .setLastUnSubscribe(deltaDiscoveryRequest.getResourceNamesUnsubscribeList());
+        Set<String> subscribe = new HashSet<>(deltaDiscoveryRequest.getResourceNamesSubscribeList());
+        pushRequest.setSubscribe(subscribe);
+        connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl()).setLastSubscribe(subscribe);
         
-        DeltaDiscoveryResponse response = buildDeltaDiscoveryResponse(deltaDiscoveryRequest.getTypeUrl(), pushContext);
+        DeltaDiscoveryResponse response = buildDeltaDiscoveryResponse(deltaDiscoveryRequest.getTypeUrl(), pushRequest);
         connection.push(response, connection.getWatchedStatusByType(deltaDiscoveryRequest.getTypeUrl()));
     }
     
@@ -341,48 +334,51 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         // This request is ack, we should record version and nonce.
         //TODO: setAckedVersion
         watchedStatus.setAckedNonce(deltaDiscoveryRequest.getResponseNonce());
+        watchedStatus.setLastSubscribe(new HashSet<>(deltaDiscoveryRequest.getResourceNamesSubscribeList()));
         Loggers.MAIN.info("delta xds: ack, type {}, connection-id {}, nonce {}", type, connectionId, deltaDiscoveryRequest.getResponseNonce());
         return false;
     }
     
-    public void handleDeltaEvent(ResourceSnapshot resourceSnapshot, Event event) {
+    public void handleDeltaEvent(PushRequest pushRequest) {
         if (deltaConnections.size() == 0) {
             return;
         }
-        boolean full = resourceSnapshot.getIstioConfig().isFullEnabled();
+        pushRequest.setFull(pushRequest.getResourceSnapshot().getIstioConfig().isFullEnabled());
         for (AbstractConnection<DeltaDiscoveryResponse> connection : deltaConnections.values()) {
             WatchedStatus watchedStatus = connection.getWatchedStatusByType(SERVICE_ENTRY_PROTO_PACKAGE);
             if (watchedStatus != null && watchedStatus.isLastAckOrNack()) {
-                PushContext pushContext = new PushContext(resourceSnapshot, full,
-                        watchedStatus.getLastSubscribe(), watchedStatus.getLastUnSubscribe());
-                DeltaDiscoveryResponse serviceEntryResponse = buildDeltaDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushContext);
-                connection.push(serviceEntryResponse, watchedStatus);
+                pushRequest.setSubscribe(watchedStatus.getLastSubscribe());
+                DeltaDiscoveryResponse serviceEntryResponse = buildDeltaDiscoveryResponse(SERVICE_ENTRY_PROTO_PACKAGE, pushRequest);
+                if (serviceEntryResponse != null) {
+                    connection.push(serviceEntryResponse, watchedStatus);
+                }
             }
             
-            if (event.getType() == EventType.Endpoint) {
-                WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
-                if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
-                    PushContext pushContext = new PushContext(resourceSnapshot, full,
-                            edsWatchedStatus.getLastSubscribe(), edsWatchedStatus.getLastUnSubscribe());
-                    DeltaDiscoveryResponse edsResponse = buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushContext);
+            WatchedStatus edsWatchedStatus = connection.getWatchedStatusByType(ENDPOINT_TYPE);
+            if (edsWatchedStatus != null && edsWatchedStatus.isLastAckOrNack()) {
+                pushRequest.setSubscribe(edsWatchedStatus.getLastSubscribe());
+                DeltaDiscoveryResponse edsResponse = buildDeltaDiscoveryResponse(ENDPOINT_TYPE, pushRequest);
+                if (edsResponse != null) {
                     connection.push(edsResponse, edsWatchedStatus);
                 }
             }
         }
     }
     
-    private DeltaDiscoveryResponse buildDeltaDiscoveryResponse(String type, PushContext pushContext) {
+    private DeltaDiscoveryResponse buildDeltaDiscoveryResponse(String type, PushRequest pushRequest) {
         @SuppressWarnings("unchecked")
         ApiGenerator<Resource> generator = (ApiGenerator<Resource>) apiGeneratorFactory.getApiGenerator(type);
-        Set<String> removed = new HashSet<>();
-        List<Resource> rawResources = generator.deltaGenerate(pushContext, removed);
+        List<Resource> rawResources = generator.deltaGenerate(pushRequest);
+        if (rawResources == null) {
+            return null;
+        }
         
         String nonce = NonceGenerator.generateNonce();
         return DeltaDiscoveryResponse.newBuilder()
                 .setTypeUrl(type)
                 .addAllResources(rawResources)
-                .addAllRemovedResources(removed)
-                .setSystemVersionInfo(pushContext.getVersion())
+                .addAllRemovedResources(pushRequest.getRemoved())
+                .setSystemVersionInfo(pushRequest.getResourceSnapshot().getVersion())
                 .setNonce(nonce).build();
     }
 }

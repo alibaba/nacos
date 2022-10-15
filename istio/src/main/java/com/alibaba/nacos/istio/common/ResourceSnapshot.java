@@ -22,7 +22,6 @@ import com.alibaba.nacos.istio.model.IstioService;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,14 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ResourceSnapshot {
     private static AtomicLong versionSuffix = new AtomicLong(0);
-    
-    private Set<String> updateService;
-    
-    private Set<String> updateInstance;
-    
-    private Set<String> removedServiceEntryName;
-    
-    private Set<String> removedClusterName;
     
     private final IstioResources istioResources;
     
@@ -52,18 +43,6 @@ public class ResourceSnapshot {
         isCompleted = false;
         istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
         this.istioConfig = istioConfig;
-    }
-    
-    public ResourceSnapshot(Set<String> removedServiceEntryName, Set<String> removedClusterName,
-            Set<String> updateService, Set<String> updateInstance, IstioConfig istioConfig) {
-        this.updateService = updateService;
-        this.updateInstance = updateInstance;
-        this.removedServiceEntryName = removedServiceEntryName;
-        this.removedClusterName = removedClusterName;
-        this.istioConfig = istioConfig;
-        istioResources = new IstioResources(new ConcurrentHashMap<String, IstioService>(16));
-    
-        isCompleted = false;
     }
 
     public synchronized void initResourceSnapshot(NacosResourceManager manager) {
@@ -85,22 +64,6 @@ public class ResourceSnapshot {
     
     private void initIstioResources(NacosResourceManager manager) {
         istioResources.setIstioServiceMap(manager.services());
-    }
-
-    public Set<String> getUpdateService() {
-        return updateService;
-    }
-    
-    public Set<String> getUpdateInstance() {
-        return updateInstance;
-    }
-    
-    public Set<String> getRemovedServiceEntryName() {
-        return removedServiceEntryName;
-    }
-    
-    public Set<String> getRemovedClusterName() {
-        return removedClusterName;
     }
     
     public IstioResources getIstioResources() {

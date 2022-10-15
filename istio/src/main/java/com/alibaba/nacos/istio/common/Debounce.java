@@ -18,8 +18,7 @@
 package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.misc.IstioConfig;
-import com.alibaba.nacos.istio.model.DeltaResources;
-import com.alibaba.nacos.istio.model.PushChange;
+import com.alibaba.nacos.istio.model.PushRequest;
 
 import java.util.Date;
 import java.util.Queue;
@@ -31,16 +30,16 @@ import java.util.concurrent.Callable;
  * @author RocketEngine26
  * @date 2022/8/20 9:05
  */
-public class Debounce implements Callable<DeltaResources> {
+public class Debounce implements Callable<PushRequest> {
     private Date startDebounce;
     
     private Date lastConfigUpdateTime;
     
     private final IstioConfig istioConfig;
     
-    private final Queue<PushChange> pushChangeQueue;
+    private final Queue<PushRequest> pushRequestQueue;
     
-    private final DeltaResources deltaResources = new DeltaResources();
+    private PushRequest pushRequest;
     
     private int debouncedEvents = 0;
     
@@ -48,24 +47,25 @@ public class Debounce implements Callable<DeltaResources> {
     
     private boolean flag = false;
     
-    public Debounce(Queue<PushChange> pushChangeQueue, IstioConfig istioConfig) {
-        this.pushChangeQueue = pushChangeQueue;
+    public Debounce(Queue<PushRequest> pushRequestQueue, IstioConfig istioConfig) {
+        this.pushRequestQueue = pushRequestQueue;
         this.istioConfig = istioConfig;
     }
     
     @Override
-    public DeltaResources call() throws Exception {
+    public PushRequest call() throws Exception {
         while (true) {
             if (flag) {
-                return deltaResources;
+                return pushRequest;
             }
             
-            PushChange pushChange = pushChangeQueue.poll();
+            PushRequest otherRequest = pushRequestQueue.poll();
             
-            if (pushChange != null) {
+            if (otherRequest != null) {
                 lastConfigUpdateTime = new Date();
                 if (debouncedEvents == 0) {
                     startDebounce = lastConfigUpdateTime;
+                    pushRequest = otherRequest;
                     new Timer().schedule(new TimerTask() {
                         @Override
                         public void run() {
@@ -78,11 +78,10 @@ public class Debounce implements Callable<DeltaResources> {
                             }
                         }
                     }, istioConfig.getDebounceAfter());
+                } else {
+                    merge(otherRequest);
                 }
-    
                 debouncedEvents++;
-    
-                merge(pushChange);
             }
         }
     }
@@ -92,7 +91,7 @@ public class Debounce implements Callable<DeltaResources> {
         long quietTime = System.currentTimeMillis() - lastConfigUpdateTime.getTime();
         
         if (eventDelay > istioConfig.getDebounceMax() || quietTime > istioConfig.getDebounceAfter()) {
-            if (deltaResources != null) {
+            if (pushRequest != null) {
                 free = false;
                 flag = true;
                 debouncedEvents = 0;
@@ -113,10 +112,8 @@ public class Debounce implements Callable<DeltaResources> {
         }
     }
     
-    private void merge(PushChange pushChange) {
-        String[] name = pushChange.getName().split("\\.", 2);
-        PushChange.ChangeType changeType = pushChange.getChangeType();
-    
-        deltaResources.putChangeType(name[0], name[1], changeType);
+    private void merge(PushRequest otherRequest) {
+        pushRequest.getReason().addAll(otherRequest.getReason());
+        pushRequest.setFull(pushRequest.isFull() || otherRequest.isFull());
     }
 }

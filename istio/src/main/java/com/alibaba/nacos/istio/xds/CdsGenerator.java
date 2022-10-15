@@ -21,7 +21,7 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.config.cluster.v3.Cluster;
 import io.envoyproxy.envoy.config.core.v3.AggregatedConfigSource;
@@ -34,7 +34,6 @@ import io.envoyproxy.envoy.service.discovery.v3.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.CLUSTER_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
@@ -60,24 +59,22 @@ public final class CdsGenerator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Any> generate(PushContext pushContext) {
+    public List<Any> generate(PushRequest pushRequest) {
+        if (!pushRequest.isFull()) {
+            return null;
+        }
         List<Any> result = new ArrayList<>();
-        IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
-        Map<String, IstioService> istioServiceMap = pushContext.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+        IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
+        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
-            Object[] ports = entry.getValue().getPortsMap().values().toArray();
-            if (ports.length <= 0) {
-                continue;
-            }
-            boolean protocolFlag = entry.getValue().getPortsMap().containsKey("grpc");
             String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + '.' +  istioConfig.getDomainSuffix(), (int) ports[0]);
+                    entry.getKey() + '.' +  istioConfig.getDomainSuffix(), entry.getValue().getPort());
             
             Cluster.Builder cluster = Cluster.newBuilder().setName(name).setType(Cluster.DiscoveryType.EDS)
                     .setEdsClusterConfig(Cluster.EdsClusterConfig.newBuilder().setServiceName(name).setEdsConfig(
                             ConfigSource.newBuilder().setAds(AggregatedConfigSource.newBuilder())
                                     .setResourceApiVersionValue(V2_VALUE).build()).build());
-            if (protocolFlag) {
+            if ("grpc".equals(entry.getValue().getProtocol())) {
                 cluster.setHttp2ProtocolOptions(Http2ProtocolOptions.newBuilder().build());
             } else {
                 cluster.setHttpProtocolOptions(Http1ProtocolOptions.newBuilder().build());
@@ -90,7 +87,7 @@ public final class CdsGenerator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+    public List<Resource> deltaGenerate(PushRequest pushRequest) {
         Loggers.MAIN.info("Delta Cds Not supported");
         return null;
     }

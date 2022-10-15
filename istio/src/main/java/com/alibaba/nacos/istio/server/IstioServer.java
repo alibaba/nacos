@@ -62,10 +62,9 @@ public class IstioServer {
         }
         
         Loggers.MAIN.info("Nacos Istio server, starting Nacos Istio server...");
-        server = ServerBuilder.forPort(istioConfig.getServerPort())
-                .addService(ServerInterceptors.intercept(nacosMcpService, serverInterceptor))
-                .addService(ServerInterceptors.intercept(nacosXdsService, serverInterceptor))
-                .build();
+        
+        server = ServerBuilder.forPort(istioConfig.getServerPort()).addService(ServerInterceptors.intercept(nacosMcpService, serverInterceptor))
+                .addService(ServerInterceptors.intercept(nacosXdsService, serverInterceptor)).build();
         server.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {

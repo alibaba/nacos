@@ -18,7 +18,7 @@ package com.alibaba.nacos.istio.common;
 
 import com.alibaba.nacos.istio.mcp.NacosMcpService;
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.DeltaResources;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.util.IstioExecutor;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -49,22 +49,22 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
 
     private NacosResourceManager resourceManager;
 
-    private final BlockingQueue<Event> events;
+    private final BlockingQueue<PushRequest> requests;
 
     public EventProcessor() {
-        events = new ArrayBlockingQueue<>(20);
+        requests = new ArrayBlockingQueue<>(20);
     }
     
     /**
      * notify.
      *
-     * @param event event
+     * @param pushRequest push request
      */
-    public void notify(Event event) {
+    public void notify(PushRequest pushRequest) {
         try {
-            events.put(event);
+            requests.put(pushRequest);
         } catch (InterruptedException e) {
-            Loggers.MAIN.warn("There are too many events, this event {} will be ignored.", event.getType());
+            Loggers.MAIN.warn("There are too many events, this event {} will be ignored.", pushRequest.getReason());
             // set the interrupted flag
             Thread.currentThread().interrupt();
         }
@@ -93,15 +93,15 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
         public void run() {
             Future<Void> task = null;
             boolean hasNewEvent = false;
-            Event lastEvent = null;
+            PushRequest lastEvent = null;
             while (true) {
                 try {
                     // Today we only care about service event,
                     // so we simply ignore event until the last task has been completed.
-                    Event event = events.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);
-                    if (event != null) {
+                    PushRequest pushRequest = requests.poll(MAX_WAIT_EVENT_TIME, TimeUnit.MILLISECONDS);
+                    if (pushRequest != null) {
                         hasNewEvent = true;
-                        lastEvent = event;
+                        lastEvent = pushRequest;
                     }
                     if (hasClientConnection() && needNewTask(hasNewEvent, task)) {
                         task = IstioExecutor.asyncHandleEvent(new EventHandleTask(lastEvent));
@@ -118,7 +118,7 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
     }
 
     private boolean hasClientConnection() {
-        return nacosMcpService.hasClientConnection() || nacosXdsService.hasClientConnection() || nacosXdsService.hasDeltaClientConnection();
+        return nacosMcpService.hasClientConnection() || nacosXdsService.hasClientConnection();
     }
 
     private boolean needNewTask(boolean hasNewEvent, Future<Void> task) {
@@ -127,24 +127,19 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
 
     private class EventHandleTask implements Callable<Void> {
 
-        private final Event event;
+        private final PushRequest pushRequest;
 
-        EventHandleTask(Event event) {
-            this.event = event;
+        EventHandleTask(PushRequest pushRequest) {
+            this.pushRequest = pushRequest;
         }
 
         @Override
         public Void call() throws Exception {
-            DeltaResources deltaResources = event.getDeltaResources();
-            ResourceSnapshot snapshot = resourceManager.createResourceSnapshot(
-                    deltaResources.getRemovedServiceEntryName(),
-                    deltaResources.getRemovedClusterName(),
-                    deltaResources.getServiceChangeMap().keySet(),
-                    deltaResources.getInstanceChangeMap().keySet());
-            
-            nacosXdsService.handleEvent(snapshot, event);
-            nacosXdsService.handleDeltaEvent(snapshot, event);
-            nacosMcpService.handleEvent(snapshot, event);
+            ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
+            pushRequest.setResourceSnapshot(snapshot);
+            nacosXdsService.handleEvent(pushRequest);
+            nacosXdsService.handleDeltaEvent(pushRequest);
+            nacosMcpService.handleEvent(pushRequest);
             return null;
         }
     }

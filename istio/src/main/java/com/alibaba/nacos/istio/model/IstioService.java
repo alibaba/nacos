@@ -22,9 +22,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author special.fy
@@ -39,7 +37,9 @@ public class IstioService {
     
     private final Long revision;
     
-    private final Map<String, Integer> portsMap = new HashMap<>(16);
+    private int port = 0;
+    
+    private String protocol;
     
     private final List<IstioEndpoint> hosts;
     
@@ -54,11 +54,7 @@ public class IstioService {
         // See https://github.com/istio/istio/pull/30684
         createTimeStamp = new Date();
         
-        this.hosts = sanitizeServiceInfo(this, serviceInfo);
-        
-        for (IstioEndpoint istioEndpoint : this.hosts) {
-            this.portsMap.put(istioEndpoint.getProtocol(), istioEndpoint.getPort());
-        }
+        this.hosts = sanitizeServiceInfo(serviceInfo);
     }
 
     public IstioService(Service service, ServiceInfo serviceInfo, IstioService old) {
@@ -70,19 +66,19 @@ public class IstioService {
         // See https://github.com/istio/istio/pull/30684
         createTimeStamp = old.getCreateTimeStamp();
         
-        this.hosts = sanitizeServiceInfo(this, serviceInfo);
-        
-        for (IstioEndpoint istioEndpoint : this.hosts) {
-            this.portsMap.put(istioEndpoint.getProtocol(), istioEndpoint.getPort());
-        }
+        this.hosts = sanitizeServiceInfo(serviceInfo);
     }
 
-    private List<IstioEndpoint> sanitizeServiceInfo(IstioService istioService, ServiceInfo serviceInfo) {
+    private List<IstioEndpoint> sanitizeServiceInfo(ServiceInfo serviceInfo) {
         List<IstioEndpoint> hosts = new ArrayList<>();
 
         for (Instance instance : serviceInfo.getHosts()) {
             if (instance.isHealthy() && instance.isEnabled()) {
-                IstioEndpoint istioEndpoint = new IstioEndpoint(instance, istioService);
+                IstioEndpoint istioEndpoint = new IstioEndpoint(instance);
+                if (port == 0) {
+                    port = istioEndpoint.getPort();
+                    protocol = istioEndpoint.getProtocol();
+                }
                 hosts.add(istioEndpoint);
             }
         }
@@ -90,22 +86,14 @@ public class IstioService {
         // Panic mode, all instances are invalid, to push all instances to istio.
         if (hosts.isEmpty()) {
             for (Instance instance : serviceInfo.getHosts()) {
-                IstioEndpoint istioEndpoint = new IstioEndpoint(instance, istioService);
+                IstioEndpoint istioEndpoint = new IstioEndpoint(instance);
                 hosts.add(istioEndpoint);
             }
         }
 
         return hosts;
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getGroupName() {
-        return groupName;
-    }
-
+    
     public String getNamespace() {
         return namespace;
     }
@@ -113,9 +101,13 @@ public class IstioService {
     public Long getRevision() {
         return revision;
     }
-
-    public Map<String, Integer> getPortsMap() {
-        return portsMap;
+    
+    public int getPort() {
+        return port;
+    }
+    
+    public String getProtocol() {
+        return protocol;
     }
     
     public List<IstioEndpoint> getHosts() {

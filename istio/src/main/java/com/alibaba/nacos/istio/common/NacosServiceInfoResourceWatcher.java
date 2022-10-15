@@ -20,16 +20,15 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.istio.misc.IstioConfig;
-import com.alibaba.nacos.istio.model.DeltaResources;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.model.PushChange;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.util.IstioCrdUtil;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
@@ -37,13 +36,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildServiceEntryName;
 import static com.alibaba.nacos.istio.util.IstioExecutor.cycleDebounce;
 import static com.alibaba.nacos.istio.util.IstioExecutor.debouncePushChange;
 
@@ -54,12 +52,10 @@ import static com.alibaba.nacos.istio.util.IstioExecutor.debouncePushChange;
 public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
 
     private final Map<String, IstioService> serviceInfoMap = new ConcurrentHashMap<>(16);
-
-    private final Map<String, Service> serviceCache = new ConcurrentHashMap<>(16);
     
-    private final Queue<PushChange> pushChangeQueue = new ConcurrentLinkedQueue<>();
+    private final Queue<PushRequest> pushRequestQueue = new ConcurrentLinkedQueue<>();
     
-    private boolean flagNotify = true;
+    private boolean isInitial = true;
     
     @Autowired
     private IstioConfig istioConfig;
@@ -81,7 +77,6 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     @Override
     public List<Class<? extends com.alibaba.nacos.common.notify.Event>> subscribeTypes() {
         List<Class<? extends com.alibaba.nacos.common.notify.Event>> result = new LinkedList<>();
-        //TODO: service data change event, instance event
         result.add(ClientOperationEvent.ClientRegisterServiceEvent.class);
         result.add(ClientOperationEvent.ClientDeregisterServiceEvent.class);
         result.add(InfoChangeEvent.ServiceInfoChangeEvent.class);
@@ -90,146 +85,114 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     }
     
     public void onEvent(com.alibaba.nacos.common.notify.Event event) {
-        if (flagNotify) {
-            flagNotify = false;
+        if (isInitial) {
+            isInitial = false;
             cycleDebounce(new ToNotify());
         }
+        
         if (event instanceof ClientOperationEvent.ClientRegisterServiceEvent) {
             // If service changed, push to all subscribers.
             ClientOperationEvent.ClientRegisterServiceEvent clientRegisterServiceEvent = (ClientOperationEvent.ClientRegisterServiceEvent) event;
             Service service = clientRegisterServiceEvent.getService();
-            
             String serviceName = IstioCrdUtil.buildServiceName(service);
+            
             IstioService old = serviceInfoMap.get(serviceName);
-            PushChange pushChange;
+            PushRequest pushRequest;
             
+            boolean full = update(serviceName, service);
             if (old != null) {
-                //instance name is cate + . + instance id + . + service name,e.g
-                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.UP);
+                pushRequest = new PushRequest(serviceName, full);
             } else {
-                pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.UP);
-                pushChangeQueue.add(pushChange);
-                pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.UP);
+                pushRequest = new PushRequest(serviceName, true);
             }
-    
-            serviceCache.put(serviceName, service);
-            pushChangeQueue.add(pushChange);
-            
+            pushRequestQueue.add(pushRequest);
         } else if (event instanceof ClientOperationEvent.ClientDeregisterServiceEvent) {
             ClientOperationEvent.ClientDeregisterServiceEvent clientDeregisterServiceEvent = (ClientOperationEvent
                     .ClientDeregisterServiceEvent) event;
             Service service = clientDeregisterServiceEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-            PushChange pushChange;
+            PushRequest pushRequest;
     
+            boolean full = update(serviceName, service);
             if (serviceStorage.getPushData(service).ipCount() <= 0) {
-                pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DOWN);
-                pushChangeQueue.add(pushChange);
+                pushRequest = new PushRequest(serviceName, true);
+                serviceInfoMap.remove(serviceName);
+            } else {
+                pushRequest = new PushRequest(serviceName, full);
             }
-            pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DOWN);
-    
-            serviceCache.put(serviceName, service);
-            pushChangeQueue.add(pushChange);
-            
+            pushRequestQueue.add(pushRequest);
         } else if (event instanceof InfoChangeEvent.ServiceInfoChangeEvent) {
             InfoChangeEvent.ServiceInfoChangeEvent serviceInfoChangeEvent = (InfoChangeEvent.ServiceInfoChangeEvent) event;
             Service service = serviceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-            PushChange pushChange = new PushChange("service." + serviceName, PushChange.ChangeType.DATA);
+            PushRequest pushRequest = new PushRequest(serviceName, true);
             
-            serviceCache.put(serviceName, service);
-            pushChangeQueue.add(pushChange);
+            update(serviceName, service);
+            pushRequestQueue.add(pushRequest);
             
         } else if (event instanceof InfoChangeEvent.InstanceInfoChangeEvent) {
             InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent = (InfoChangeEvent.InstanceInfoChangeEvent) event;
             Service service = instanceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-            PushChange pushChange = new PushChange("instance.." + serviceName, PushChange.ChangeType.DATA);
-    
-            serviceCache.put(serviceName, service);
-            pushChangeQueue.add(pushChange);
+            
+            boolean full = update(serviceName, service);
+            PushRequest pushRequest = new PushRequest(serviceName, full);
+            pushRequestQueue.add(pushRequest);
         }
+    }
+    
+    private void init() {
+        Set<String> namespaces =  ServiceManager.getInstance().getAllNamespaces();
+        for (String namespace : namespaces) {
+            Set<Service> services = ServiceManager.getInstance().getSingletons(namespace);
+            if (services.isEmpty()) {
+                continue;
+            }
+        
+            for (Service service : services) {
+                String serviceName = IstioCrdUtil.buildServiceName(service);
+                ServiceInfo serviceInfo = serviceStorage.getPushData(service);
+                if (!serviceInfo.isValid()) {
+                    continue;
+                }
+                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+            }
+        }
+    }
+    
+    private boolean update(String serviceName, Service service) {
+        ServiceInfo serviceInfo = serviceStorage.getPushData(service);
+        if (!serviceInfo.isValid()) {
+            serviceInfoMap.remove(serviceName);
+            return true;
+        }
+        
+        IstioService old = serviceInfoMap.get(serviceName);
+        if (old != null) {
+            serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
+        } else {
+            serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+        }
+        return false;
     }
     
     private class ToNotify implements Runnable {
         @Override
         public void run() {
             while (true) {
-                if (pushChangeQueue.size() > 0) {
-                    DeltaResources updatePush;
-                    Future<DeltaResources> futureUpdate = debouncePushChange(new Debounce(pushChangeQueue, istioConfig));
+                if (pushRequestQueue.size() > 0) {
+                    PushRequest updatePush;
+                    Future<PushRequest> futureUpdate = debouncePushChange(new Debounce(pushRequestQueue, istioConfig));
     
                     try {
                         updatePush = futureUpdate.get();
+                        if (updatePush != null) {
+                            eventProcessor.notify(updatePush);
+                        }
                     } catch (InterruptedException | ExecutionException e) {
                         throw new RuntimeException(e);
                     }
-    
-                    if (updatePush != null) {
-                        Map<String, PushChange.ChangeType> serviceMap = updatePush.getServiceChangeMap();
-                        Map<String, PushChange.ChangeType> instanceMap = updatePush.getInstanceChangeMap();
-    
-                        for (Map.Entry<String, PushChange.ChangeType> entry : serviceMap.entrySet()) {
-                            String serviceName = entry.getKey();
-                            PushChange.ChangeType changeType = entry.getValue();
-                            updateServiceInfoMap(true, serviceName, changeType, updatePush);
-                        }
-    
-                        for (Map.Entry<String, PushChange.ChangeType> entry : instanceMap.entrySet()) {
-                            String serviceName = entry.getKey().split("\\.", 2)[1];
-                            PushChange.ChangeType changeType = entry.getValue();
-        
-                            updateServiceInfoMap(false, serviceName, changeType, updatePush);
-                        }
-    
-                        Event event = new Event(serviceMap.size() != 0 ? EventType.Service : EventType.Endpoint, updatePush);
-                        eventProcessor.notify(event);
-                    }
                 }
-            }
-        }
-    }
-    
-    private void updateServiceInfoMap(boolean flagType, String serviceName, PushChange.ChangeType changeType, DeltaResources updatePush) {
-        Service service = serviceCache.get(serviceName);
-        ServiceInfo serviceInfo = serviceStorage.getPushData(service);
-        
-        if (!serviceInfo.isValid()) {
-            serviceInfoMap.remove(serviceName);
-        }
-    
-        IstioService old = serviceInfoMap.get(serviceName);
-        
-        if (flagType) {
-            if (serviceInfoMap.containsKey(serviceName)) {
-                if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
-                    if (old != null) {
-                        serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
-                    } else {
-                        serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
-                    }
-                } else {
-                    IstioService istioService = serviceInfoMap.get(serviceName);
-            
-                    //In fact, only a table can be processed, but in order to have more operations later, separate
-                    String serviceEntryName = buildServiceEntryName(serviceName, istioConfig.getDomainSuffix(), istioService);
-                    int port = (int) istioService.getPortsMap().values().toArray()[0];
-                    String clusterName = buildClusterName(TrafficDirection.OUTBOUND, "",
-                            serviceName + istioConfig.getDomainSuffix(), port);
-            
-                    updatePush.addRemovedClusterName(clusterName);
-                    updatePush.addRemovedServiceEntryName(serviceName + "." + istioConfig.getDomainSuffix());
-            
-                    serviceInfoMap.remove(serviceName);
-                }
-            } else if (changeType == PushChange.ChangeType.UP || changeType == PushChange.ChangeType.DATA) {
-                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
-            }
-        } else {
-            if (old != null) {
-                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo, old));
-            } else {
-                serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
             }
         }
     }

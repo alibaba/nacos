@@ -17,13 +17,12 @@
 package com.alibaba.nacos.istio.xds;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.google.protobuf.Any;
 import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author special.fy
@@ -44,12 +43,12 @@ public class EmptyXdsGenerator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Any> generate(PushContext pushContext) {
+    public List<Any> generate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
     
     @Override
-    public List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+    public List<Resource> deltaGenerate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

@@ -18,10 +18,8 @@ package com.alibaba.nacos.istio.util;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
 import com.alibaba.nacos.istio.model.IstioEndpoint;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.model.PushContext;
 import com.alibaba.nacos.istio.model.ServiceEntryWrapper;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.google.protobuf.Timestamp;
@@ -37,7 +35,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -57,16 +54,6 @@ public class IstioCrdUtil {
         return direction.toString().toLowerCase() + "|" + port + "|" + subset + "|" + hostName;
     }
     
-    public static String buildServiceEntryName(String serviceName, String domain, IstioService istioService) {
-        String serviceEntryName = serviceName;
-        for (IstioEndpoint istioEndpoint : istioService.getHosts()) {
-            if (com.alibaba.nacos.common.utils.StringUtils.isNotEmpty(istioEndpoint.getHostName())) {
-                serviceEntryName = istioEndpoint.getHostName();
-            }
-        }
-        return serviceEntryName + "." + domain;
-    }
-    
     public static String buildServiceName(Service service) {
         String group = !Constants.DEFAULT_GROUP.equals(service.getGroup()) ? service.getGroup() : VALID_DEFAULT_GROUP_NAME;
 
@@ -74,51 +61,13 @@ public class IstioCrdUtil {
         return service.getName() + "." + group + "." + service.getNamespace();
     }
     
-    public static Map<String, IstioService> buildIstioServiceMapByService(PushContext pushContext) {
-        Map<String, IstioService> istioServiceMap;
-        ResourceSnapshot resourceSnapshot = pushContext.getResourceSnapshot();
-        boolean bool = !pushContext.isFull() && resourceSnapshot.getUpdateService() != null;
-        
-        if (bool) {
-            Set<String> updateService = resourceSnapshot.getUpdateService();
-            Map<String, IstioService> allMap = resourceSnapshot.getIstioResources().getIstioServiceMap();
-            istioServiceMap = new HashMap<>(16);
-            
-            for (String serviceName : updateService) {
-                IstioService istioService = allMap.get(serviceName);
-                if (istioService != null) {
-                    istioServiceMap.put(serviceName, allMap.get(serviceName));
-                }
-            }
-        } else {
-            istioServiceMap = resourceSnapshot.getIstioResources().getIstioServiceMap();
-        }
-        
-        return istioServiceMap;
+    public static String parseServiceEntryNameToServiceName(String serviceEntryName, String domain) {
+        return serviceEntryName.substring(0, serviceEntryName.length() - domain.length() - 1);
     }
     
-    public static Map<String, IstioService> buildIstioServiceMapByInstance(PushContext pushContext) {
-        Map<String, IstioService> istioServiceMap;
-        ResourceSnapshot resourceSnapshot = pushContext.getResourceSnapshot();
-        boolean bool = !pushContext.isFull() && resourceSnapshot.getUpdateInstance() != null;
-        
-        if (bool) {
-            Set<String> updateInstance = resourceSnapshot.getUpdateInstance();
-            istioServiceMap = new HashMap<>(16);
-            Map<String, IstioService> allMap = resourceSnapshot.getIstioResources().getIstioServiceMap();
-        
-            for (String name : updateInstance) {
-                String serviceName = name.split("\\.", 2)[1];
-                IstioService istioService = allMap.get(serviceName);
-                if (istioService != null) {
-                    istioServiceMap.put(serviceName, allMap.get(serviceName));
-                }
-            }
-        } else {
-            istioServiceMap = resourceSnapshot.getIstioResources().getIstioServiceMap();
-        }
-        
-        return istioServiceMap;
+    public static String parseClusterNameToServiceName(String clusterName, String domain) {
+        String str = clusterName.split("\\|", 4)[3];
+        return str.substring(0, str.length() - domain.length() - 1);
     }
     
     public static ServiceEntryWrapper buildServiceEntry(String serviceName, String hostName, IstioService istioService) {

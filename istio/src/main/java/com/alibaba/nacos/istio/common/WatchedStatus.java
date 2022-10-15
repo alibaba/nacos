@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.istio.common;
 
-import com.google.protobuf.ProtocolStringList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author special.fy
@@ -25,13 +26,9 @@ public class WatchedStatus {
 
     private String type;
     
-    private boolean lastFull;
-    
     private boolean lastAckOrNack;
     
-    private ProtocolStringList lastSubscribe;
-    
-    private ProtocolStringList lastUnSubscribe;
+    private Set<String> lastSubscribe;
 
     private String latestVersion;
 
@@ -81,14 +78,6 @@ public class WatchedStatus {
         this.ackedNonce = ackedNonce;
     }
     
-    public boolean isLastFull() {
-        return lastFull;
-    }
-    
-    public void setLastFull(boolean lastFull) {
-        this.lastFull = lastFull;
-    }
-    
     public boolean isLastAckOrNack() {
         return lastAckOrNack;
     }
@@ -97,19 +86,11 @@ public class WatchedStatus {
         this.lastAckOrNack = lastAckOrNack;
     }
     
-    public ProtocolStringList getLastSubscribe() {
+    public Set<String> getLastSubscribe() {
         return lastSubscribe;
     }
     
-    public void setLastSubscribe(ProtocolStringList lastSubscribe) {
-        this.lastSubscribe = lastSubscribe;
-    }
-    
-    public ProtocolStringList getLastUnSubscribe() {
-        return lastUnSubscribe;
-    }
-    
-    public void setLastUnSubscribe(ProtocolStringList lastUnSubscribe) {
-        this.lastUnSubscribe = lastUnSubscribe;
+    public void setLastSubscribe(Set<String> lastSubscribe) {
+        this.lastSubscribe = new HashSet<>(lastSubscribe);
     }
 }

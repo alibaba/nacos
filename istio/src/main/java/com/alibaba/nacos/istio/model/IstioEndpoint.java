@@ -36,51 +36,23 @@ import static com.alibaba.nacos.istio.util.IstioCrdUtil.ISTIO_HOSTNAME;
  * @date 2022/8/9 10:29
  */
 public class IstioEndpoint {
-    private Map<String, String> labels;
-    
-    private String adder;
-    
     private LbEndpoint lbEndpoint;
+    
+    private Instance instance;
     
     private Locality locality;
     
-    private int port;
-    
-    private int weight;
-    
     private String protocol;
-    
-    private String namespace;
-    
-    private String groupName;
     
     private String hostName;
     
-    private String serviceName;
-    
     private String clusterName;
     
-    private boolean healthy;
-    
-    private boolean ephemeral;
-    
-    private boolean enabled;
-    
-    public IstioEndpoint(Instance instance, IstioService istioService) {
-        this.labels = instance.getMetadata();
-        this.adder = instance.getIp();
-        //instance.serviceName:group@@serviceName
-        this.port = instance.getPort();
-        this.weight = (int) instance.getWeight();
-        this.namespace = istioService.getNamespace();
-        this.groupName = istioService.getGroupName();
+    public IstioEndpoint(Instance instance) {
+        this.instance = instance;
         this.hostName = StringUtils.isNotEmpty(instance.getMetadata().get(ISTIO_HOSTNAME)) ? instance.getMetadata().get(ISTIO_HOSTNAME) : "";
-        this.serviceName = istioService.getName();
         this.clusterName = StringUtils.isNotEmpty(instance.getClusterName()) ? instance.getClusterName() : "";
-        this.healthy = instance.isHealthy();
-        this.ephemeral = instance.isEphemeral();
-        this.enabled = instance.isEnabled();
-    
+        
         if (StringUtils.isNotEmpty(instance.getMetadata().get("protocol"))) {
             this.protocol = instance.getMetadata().get("protocol");
         
@@ -95,28 +67,28 @@ public class IstioEndpoint {
     }
     
     private void buildLocality() {
-        String region = this.labels.getOrDefault("region", "");
-        String zone = this.labels.getOrDefault("zone", "");
-        String subzone = this.labels.getOrDefault("subzone", "");
+        String region = instance.getMetadata().getOrDefault("region", "");
+        String zone = instance.getMetadata().getOrDefault("zone", "");
+        String subzone = instance.getMetadata().getOrDefault("subzone", "");
         
         this.locality = Locality.newBuilder().setRegion(region).setZone(zone).setSubZone(subzone).build();
     }
     
     private LbEndpoint buildLbEndpoint() {
-        Address adder = Address.newBuilder().setSocketAddress(SocketAddress.newBuilder().setAddress(this.adder)
-                .setPortValue(this.port).setProtocol(SocketAddress.Protocol.TCP).build()).build();
+        Address adder = Address.newBuilder().setSocketAddress(SocketAddress.newBuilder().setAddress(instance.getIp())
+                .setPortValue(this.instance.getPort()).setProtocol(SocketAddress.Protocol.TCP).build()).build();
         this.lbEndpoint = LbEndpoint.newBuilder().setLoadBalancingWeight(UInt32Value.newBuilder().setValue(
-                this.weight)).setEndpoint(Endpoint.newBuilder().setAddress(adder).build()).build();
+                (int) this.instance.getWeight())).setEndpoint(Endpoint.newBuilder().setAddress(adder).build()).build();
         
         return this.lbEndpoint;
     }
     
     public Map<String, String> getLabels() {
-        return labels;
+        return instance.getMetadata();
     }
     
     public String getAdder() {
-        return adder;
+        return instance.getIp();
     }
     
     public LbEndpoint getLbEndpoint() {
@@ -132,7 +104,7 @@ public class IstioEndpoint {
     }
     
     public int getPort() {
-        return port;
+        return instance.getPort();
     }
     
     public String getProtocol() {
@@ -140,23 +112,11 @@ public class IstioEndpoint {
     }
     
     public int getWeight() {
-        return weight;
-    }
-    
-    public String getNamespace() {
-        return namespace;
-    }
-    
-    public String getGroupName() {
-        return groupName;
+        return (int) instance.getWeight();
     }
     
     public String getHostName() {
         return hostName;
-    }
-    
-    public String getServiceName() {
-        return serviceName;
     }
     
     public String getClusterName() {
@@ -164,14 +124,10 @@ public class IstioEndpoint {
     }
     
     public boolean isHealthy() {
-        return healthy;
-    }
-    
-    public boolean isEphemeral() {
-        return ephemeral;
+        return instance.isHealthy();
     }
     
     public boolean isEnabled() {
-        return enabled;
+        return instance.isEnabled();
     }
 }

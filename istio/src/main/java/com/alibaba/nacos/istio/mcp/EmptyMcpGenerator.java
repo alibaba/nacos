@@ -17,12 +17,11 @@
 package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import istio.mcp.v1alpha1.ResourceOuterClass.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author special.fy
@@ -43,12 +42,12 @@ public class EmptyMcpGenerator implements ApiGenerator<Resource> {
     }
 
     @Override
-    public List<Resource> generate(PushContext pushContext) {
+    public List<Resource> generate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
     
     @Override
-    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+    public List<io.envoyproxy.envoy.service.discovery.v3.Resource> deltaGenerate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }

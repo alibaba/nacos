@@ -21,9 +21,8 @@ import com.alibaba.nacos.istio.api.ApiGenerator;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioEndpoint;
 import com.alibaba.nacos.istio.model.IstioService;
-import com.alibaba.nacos.istio.model.PushContext;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.google.protobuf.Any;
-import com.google.protobuf.ProtocolStringList;
 import com.google.protobuf.UInt32Value;
 import io.envoyproxy.envoy.config.core.v3.TrafficDirection;
 import io.envoyproxy.envoy.config.endpoint.v3.ClusterLoadAssignment;
@@ -39,7 +38,7 @@ import java.util.Set;
 
 import static com.alibaba.nacos.istio.api.ApiConstants.ENDPOINT_TYPE;
 import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildClusterName;
-import static com.alibaba.nacos.istio.util.IstioCrdUtil.buildIstioServiceMapByInstance;
+import static com.alibaba.nacos.istio.util.IstioCrdUtil.parseClusterNameToServiceName;
 
 /**.
  * @author RocketEngine26
@@ -61,90 +60,112 @@ public final class EdsGenerator implements ApiGenerator<Any> {
     }
     
     @Override
-    public List<Any> generate(PushContext pushContext) {
-        IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
-        Map<String, IstioService> istioServiceMap = buildIstioServiceMapByInstance(pushContext);
-        
-        return buildEndpoints(istioServiceMap, istioConfig.getDomainSuffix(), null);
+    public List<Any> generate(PushRequest pushRequest) {
+        List<Any> result = new ArrayList<>();
+        IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
+        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
+        if (pushRequest.getReason().size() != 0) {
+            for (String reason : pushRequest.getReason()) {
+                IstioService istioService = istioServiceMap.get(reason);
+                String name = buildClusterName(TrafficDirection.OUTBOUND, "",
+                        reason + '.' + istioConfig.getDomainSuffix(), istioService.getPort());
+                Any any = buildEndpoint(name, istioService);
+                if (any != null) {
+                    result.add(any);
+                }
+            }
+        } else {
+            for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
+                String name = buildClusterName(TrafficDirection.OUTBOUND, "",
+                        entry.getKey() + '.' + istioConfig.getDomainSuffix(), entry.getValue().getPort());
+                Any any = buildEndpoint(name, entry.getValue());
+                if (any != null) {
+                    result.add(any);
+                }
+            }
+        }
+        return result;
     }
     
     @Override
-    public List<Resource> deltaGenerate(PushContext pushContext, Set<String> removed) {
+    public List<Resource> deltaGenerate(PushRequest pushRequest) {
+        if (pushRequest.isFull()) {
+            return null;
+        }
+        
         List<Resource> result = new ArrayList<>();
-        IstioConfig istioConfig = pushContext.getResourceSnapshot().getIstioConfig();
-        Set<String> removedClusterName = pushContext.getResourceSnapshot().getRemovedClusterName();
-        Map<String, IstioService> istioServiceMap = buildIstioServiceMapByInstance(pushContext);
-        ProtocolStringList subscribe = pushContext.getResourceNamesSubscribe();
+        Set<String> reason = pushRequest.getReason();
+        IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
+        Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
         
-        for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
-            String serviceName = entry.getKey();
-            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
-            String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    serviceName + '.' + istioConfig.getDomainSuffix(), port);
-            if (!subscribe.contains(name)) {
-                istioServiceMap.remove(serviceName);
+        if (pushRequest.getSubscribe().size() != 0) {
+            for (String subscribe : pushRequest.getSubscribe()) {
+                String serviceName = parseClusterNameToServiceName(subscribe, istioConfig.getDomainSuffix());
+                if (reason.contains(serviceName)) {
+                    if (istioServiceMap.containsKey(serviceName)) {
+                        Any any = buildEndpoint(subscribe, istioServiceMap.get(serviceName));
+                        if (any != null) {
+                            result.add(Resource.newBuilder().setResource(any).setVersion(pushRequest.getResourceSnapshot().getVersion()).build());
+                        } else {
+                            pushRequest.addRemoved(subscribe);
+                        }
+                    } else {
+                        pushRequest.addRemoved(subscribe);
+                    }
+                }
+            }
+        } else {
+            for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
+                String name = buildClusterName(TrafficDirection.OUTBOUND, "",
+                        entry.getKey() + '.' + istioConfig.getDomainSuffix(), entry.getValue().getPort());
+                Any any = buildEndpoint(name, entry.getValue());
+                if (any != null) {
+                    result.add(Resource.newBuilder().setResource(any).setVersion(pushRequest.getResourceSnapshot().getVersion()).build());
+                } else {
+                    pushRequest.addRemoved(name);
+                }
             }
         }
         
-        for (String removedName : subscribe) {
-            if (removedClusterName.contains(removedName)) {
-                removed.add(removedName);
-            }
-        }
-        
-        List<Any> temp = buildEndpoints(istioServiceMap, istioConfig.getDomainSuffix(), removed);
-        
-        for (Any any : temp) {
-            result.add(Resource.newBuilder().setResource(any).setVersion(pushContext.getVersion()).build());
-        }
-    
         return result;
     }
     
-    private static List<Any> buildEndpoints(Map<String, IstioService> istioServiceMap, String domain, Set<String> removed) {
-        List<Any> result = new ArrayList<>();
-        
-        for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
-            List<IstioEndpoint> istioEndpoints = entry.getValue().getHosts();
-            Map<String, LocalityLbEndpoints.Builder> llbEndpointsBuilder = new HashMap<>(istioEndpoints.size());
-        
-            int port = (int) entry.getValue().getPortsMap().values().toArray()[0];
-            String name = buildClusterName(TrafficDirection.OUTBOUND, "",
-                    entry.getKey() + '.' + domain, port);
-        
-            for (IstioEndpoint istioEndpoint : istioEndpoints) {
-                String label = istioEndpoint.getStringLocality();
-                LbEndpoint lbEndpoint = istioEndpoint.getLbEndpoint();
-            
-                if (!llbEndpointsBuilder.containsKey(label)) {
-                    LocalityLbEndpoints.Builder llbEndpointBuilder = LocalityLbEndpoints.newBuilder()
-                            .setLocality(istioEndpoint.getLocality()).addLbEndpoints(lbEndpoint);
-                    llbEndpointsBuilder.put(label, llbEndpointBuilder);
-                } else {
-                    llbEndpointsBuilder.get(label).addLbEndpoints(lbEndpoint);
-                }
-            }
-        
-            List<LocalityLbEndpoints> listlle = new ArrayList<>();
-            for (LocalityLbEndpoints.Builder builder : llbEndpointsBuilder.values()) {
-                int weight = 0;
-                for (LbEndpoint lbEndpoint : builder.getLbEndpointsList()) {
-                    weight += lbEndpoint.getLoadBalancingWeight().getValue();
-                }
-                LocalityLbEndpoints lle = builder.setLoadBalancingWeight(UInt32Value.newBuilder().setValue(weight)).build();
-                listlle.add(lle);
-            }
-            
-            if (listlle.size() == 0 && removed != null) {
-                removed.add(name);
-                continue;
-            }
-            
-            ClusterLoadAssignment cla = ClusterLoadAssignment.newBuilder().setClusterName(name).addAllEndpoints(listlle).build();
-            Any any = Any.newBuilder().setValue(cla.toByteString()).setTypeUrl(ENDPOINT_TYPE).build();
-            result.add(any);
+    private static Any buildEndpoint(String name, IstioService istioService) {
+        if (istioService.getHosts().isEmpty()) {
+            return null;
         }
         
-        return result;
+        List<IstioEndpoint> istioEndpoints = istioService.getHosts();
+        Map<String, LocalityLbEndpoints.Builder> llbEndpointsBuilder = new HashMap<>(istioEndpoints.size());
+    
+        for (IstioEndpoint istioEndpoint : istioEndpoints) {
+            String label = istioEndpoint.getStringLocality();
+            LbEndpoint lbEndpoint = istioEndpoint.getLbEndpoint();
+        
+            if (!llbEndpointsBuilder.containsKey(label)) {
+                LocalityLbEndpoints.Builder llbEndpointBuilder = LocalityLbEndpoints.newBuilder()
+                        .setLocality(istioEndpoint.getLocality()).addLbEndpoints(lbEndpoint);
+                llbEndpointsBuilder.put(label, llbEndpointBuilder);
+            } else {
+                llbEndpointsBuilder.get(label).addLbEndpoints(lbEndpoint);
+            }
+        }
+    
+        List<LocalityLbEndpoints> listlle = new ArrayList<>();
+        for (LocalityLbEndpoints.Builder builder : llbEndpointsBuilder.values()) {
+            int weight = 0;
+            for (LbEndpoint lbEndpoint : builder.getLbEndpointsList()) {
+                weight += lbEndpoint.getLoadBalancingWeight().getValue();
+            }
+            LocalityLbEndpoints lle = builder.setLoadBalancingWeight(UInt32Value.newBuilder().setValue(weight)).build();
+            listlle.add(lle);
+        }
+        
+        if (listlle.size() == 0) {
+            return null;
+        }
+        
+        ClusterLoadAssignment cla = ClusterLoadAssignment.newBuilder().setClusterName(name).addAllEndpoints(listlle).build();
+        return Any.newBuilder().setValue(cla.toByteString()).setTypeUrl(ENDPOINT_TYPE).build();
     }
 }
