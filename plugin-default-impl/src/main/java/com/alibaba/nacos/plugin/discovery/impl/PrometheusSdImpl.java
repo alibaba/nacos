@@ -41,7 +41,12 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.groupingBy;
 
-public class PrometheusHttpSd implements HttpPluginService {
+/**
+ * Prometheus http service discovery implementation.
+ *
+ * @author karsonto
+ */
+public class PrometheusSdImpl implements HttpPluginService {
     
     private static final String ENABLE = "nacos.plugin.http.prometheus.enable";
     

@@ -16,16 +16,21 @@
 
 package com.alibaba.nacos.plugin.discovery.configuration;
 
-import com.alibaba.nacos.plugin.discovery.HttpServiceManager;
+import com.alibaba.nacos.plugin.discovery.HttpPluginServiceManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Http plugin configuration.
+ *
+ * @author karsonto
+ */
 @Configuration
-public class HttpAdapterConfiguration {
+public class HttpPluginConfiguration {
     
     @Bean
-    HttpServiceManager httpServiceManager() {
-        return new HttpServiceManager();
+    HttpPluginServiceManager httpServiceManager() {
+        return new HttpPluginServiceManager();
     }
     
 }

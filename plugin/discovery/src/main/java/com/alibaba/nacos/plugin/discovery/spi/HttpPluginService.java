@@ -31,20 +31,70 @@ import java.io.IOException;
  */
 public interface HttpPluginService {
     
+    /**
+     * Request Url interface.
+     *
+     * @return request uri
+     */
     String getRequestUri();
     
+    /**
+     * Initialize HttpPluginService plugin.
+     *
+     * @param  applicationContext Spring container.
+     */
     void init(ApplicationContext applicationContext);
     
+    /**
+     * Execute http get request.
+     *
+     * @param  req HttpServletRequest.
+     * @param  resp HttpServletResponse.
+     * @throws ServletException if the request for the GET cannot be handled
+     * @throws IOException if an input or output error occurs while handling the GET request
+     */
     void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException;
     
+    /**
+     * Execute http post request.
+     *
+     * @param  req HttpServletRequest.
+     * @param  resp HttpServletResponse.
+     * @throws ServletException if the request for the POST cannot be handled
+     * @throws IOException if an input or output error occurs while handling the POST request
+     */
     void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException;
     
+    /**
+     * Execute http put request.
+     *
+     * @param  req HttpServletRequest.
+     * @param  resp HttpServletResponse.
+     * @throws ServletException if the request for the PUT cannot be handled
+     * @throws IOException if an input or output error occurs while handling the PUT request
+     */
     void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException;
     
+    /**
+     * Execute http delete request.
+     *
+     * @param  req HttpServletRequest.
+     * @param  resp HttpServletResponse.
+     * @throws ServletException if the request for the DELETE cannot be handled
+     * @throws IOException if an input or output error occurs while handling the DELETE request
+     */
     void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException;
     
+    /**
+     * Plugin switch.
+     * @return Is enable plugin
+     */
     boolean enable();
     
+    /**
+     * Bind httpServlet wapper.
+     * @param  servletWapper HttpServletWapper.
+     */
     void bind(HttpServletWapper servletWapper);
     
 }

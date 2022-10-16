@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.discovery.impl.PrometheusHttpSd
+com.alibaba.nacos.plugin.discovery.impl.PrometheusSdImpl
