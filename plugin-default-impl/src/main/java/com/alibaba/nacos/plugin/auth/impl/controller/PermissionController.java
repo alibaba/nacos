@@ -19,8 +19,10 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -51,11 +53,26 @@ public class PermissionController {
      * @param pageSize page size
      * @return permission of a role
      */
-    @GetMapping
+    @GetMapping(params = "search=accurate")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
     public Object getPermissions(@RequestParam int pageNo, @RequestParam int pageSize,
             @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.getPermissionsFromDatabase(role, pageNo, pageSize);
+    }
+
+    /**
+     * Fuzzy Query permissions of a role.
+     *
+     * @param role     the role
+     * @param pageNo   page index
+     * @param pageSize page size
+     * @return permission of a role
+     */
+    @GetMapping(params = "search=blur")
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    public Page<PermissionInfo> fuzzySearchPermission(@RequestParam int pageNo, @RequestParam int pageSize,
+            @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
+        return nacosRoleService.findPermissionsLike4Page(role, pageNo, pageSize);
     }
     
     /**

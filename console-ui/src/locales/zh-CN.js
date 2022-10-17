@@ -567,6 +567,9 @@ const I18N_CONF = {
     password: '密码',
     operation: '操作',
     refresh: '刷新',
+    query: '查询',
+    defaultFuzzyd: '已开启默认模糊查询',
+    fuzzyd: "添加通配符'*'进行模糊查询",
   },
   NewUser: {
     createUser: '创建用户',
@@ -601,6 +604,9 @@ const I18N_CONF = {
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
     refresh: '刷新',
+    defaultFuzzyd: '已开启默认模糊查询',
+    fuzzyd: "添加通配符'*'进行模糊查询",
+    query: '查询',
   },
   NewRole: {
     bindingRoles: '绑定角色',
@@ -624,6 +630,9 @@ const I18N_CONF = {
     writeOnly: '只写',
     readWrite: '读写',
     refresh: '刷新',
+    defaultFuzzyd: '已开启默认模糊查询',
+    fuzzyd: "添加通配符'*'进行模糊查询",
+    query: '查询',
   },
   NewPermissions: {
     addPermission: '添加权限',

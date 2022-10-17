@@ -16,7 +16,16 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
+import {
+  Button,
+  Dialog,
+  Pagination,
+  Table,
+  ConfigProvider,
+  Form,
+  Input,
+  Switch,
+} from '@alifd/next';
 import { connect } from 'react-redux';
 import { getUsers, createUser, deleteUser, passwordReset } from '../../../reducers/authority';
 import RegionGroup from '../../../components/RegionGroup';
@@ -24,6 +33,7 @@ import NewUser from './NewUser';
 import PasswordReset from './PasswordReset';
 
 import './UserManagement.scss';
+import { getParams } from '../../../globalLib';
 
 @connect(state => ({ users: state.authority.users }), { getUsers })
 @ConfigProvider.config
@@ -39,11 +49,15 @@ class UserManagement extends React.Component {
 
   constructor(props) {
     super(props);
+    this.username = getParams('username');
     this.state = {
       loading: true,
       pageNo: 1,
       pageSize: 9,
+      username: this.username,
+      defaultFuzzySearch: true,
     };
+    this.handleDefaultFuzzySwitchChange = this.handleDefaultFuzzySwitchChange.bind(this);
   }
 
   componentDidMount() {
@@ -52,9 +66,29 @@ class UserManagement extends React.Component {
 
   getUsers() {
     this.setState({ loading: true });
-    const { pageNo, pageSize } = this.state;
+    const params = {
+      pageNo: this.state.pageNo,
+      pageSize: this.state.pageSize,
+      username: this.username,
+      search: 'blur',
+    };
+    if (this.state.defaultFuzzySearch) {
+      if (params.username && params.username !== '') {
+        params.username = '*' + params.username + '*';
+      }
+    }
+    if (params.username && params.username.indexOf('*') !== -1) {
+      params.search = 'blur';
+    } else {
+      params.search = 'accurate';
+    }
     this.props
-      .getUsers({ pageNo, pageSize })
+      .getUsers({
+        pageNo: params.pageNo,
+        pageSize: params.pageSize,
+        username: params.username,
+        search: params.search,
+      })
       .then(() => {
         if (this.state.loading) {
           this.setState({ loading: false });
@@ -65,6 +99,12 @@ class UserManagement extends React.Component {
 
   colseCreateUser() {
     this.setState({ createUserVisible: false });
+  }
+
+  handleDefaultFuzzySwitchChange() {
+    this.setState({
+      defaultFuzzySearch: !this.state.defaultFuzzySearch,
+    });
   }
 
   render() {
@@ -80,18 +120,49 @@ class UserManagement extends React.Component {
     return (
       <>
         <RegionGroup left={locale.userManagement} />
-        <div className="filter-panel">
-          <Button
-            type="primary"
-            onClick={() => this.setState({ createUserVisible: true })}
-            style={{ marginRight: 20 }}
-          >
-            {locale.createUser}
-          </Button>
-          <Button type="secondary" onClick={() => this.getUsers()}>
-            {locale.refresh}
-          </Button>
-        </div>
+        <Form inline>
+          <Form.Item label="用户名">
+            <Input
+              value={this.username}
+              htmlType="text"
+              placeholder={this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd}
+              style={{ width: 200 }}
+              onChange={username => {
+                this.username = username;
+                this.setState({ username });
+              }}
+            />
+          </Form.Item>
+          <Form.Item label="默认模糊匹配">
+            <Switch
+              checkedChildren=""
+              unCheckedChildren=""
+              defaultChecked={this.state.defaultFuzzySearch}
+              onChange={this.handleDefaultFuzzySwitchChange}
+              title={'自动在搜索参数前后加上*'}
+            />
+          </Form.Item>
+          <Form.Item label={''}>
+            <Button
+              type={'primary'}
+              style={{ marginRight: 10 }}
+              onClick={() => this.getUsers()}
+              data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
+            >
+              {locale.query}
+            </Button>
+          </Form.Item>
+          <Form.Item style={{ float: 'right' }}>
+            <Button
+              type="primary"
+              onClick={() => this.setState({ createUserVisible: true })}
+              style={{ marginRight: 20 }}
+            >
+              {locale.createUser}
+            </Button>
+          </Form.Item>
+        </Form>
+
         <Table dataSource={users.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
           <Table.Column title={locale.username} dataIndex="username" />
           <Table.Column

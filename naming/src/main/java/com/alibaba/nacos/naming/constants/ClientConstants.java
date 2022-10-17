@@ -35,6 +35,8 @@ public class ClientConstants {
     
     public static final String PERSISTENT_IP_PORT = "persistentIpPort";
     
+    public static final String REVISION = "revision";
+    
     public static final String PERSISTENT_SUFFIX = "false";
     
     public static final String CLIENT_EXPIRED_TIME_CONFIG_KEY = "nacos.naming.client.expired.time";
