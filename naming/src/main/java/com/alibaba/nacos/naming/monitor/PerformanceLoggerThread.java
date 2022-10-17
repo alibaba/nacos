@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -115,8 +114,7 @@ public class PerformanceLoggerThread {
                 v2SyncFail = v2Record.get().getFailedSyncCount();
                 v2VerifyFail = v2Record.get().getFailedVerifyCount();
             }
-            Loggers.PERFORMANCE_LOG
-                    .info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
+            Loggers.PERFORMANCE_LOG.info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
     
