@@ -151,9 +151,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {
-        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}, revision={}",
-                clientSyncData.getClientId(),
-                clientSyncData.getAttributes().getClientAttribute(ClientConstants.REVISION, 0L));
+        Loggers.DISTRO
+                .info("[Client-Add] Received distro client sync data {}, revision={}", clientSyncData.getClientId(),
+                        clientSyncData.getAttributes().getClientAttribute(ClientConstants.REVISION, 0L));
         clientManager.syncClientConnected(clientSyncData.getClientId(), clientSyncData.getAttributes());
         Client client = clientManager.getClient(clientSyncData.getClientId());
         upgradeClient(client, clientSyncData);
@@ -218,18 +218,13 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
-        client.setRevision(
-                clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
+        client.setRevision(clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
     }
     
     @Override
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroClientVerifyInfo verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), DistroClientVerifyInfo.class);
-        // If not upgraded to 2.0.X, just renew client and return.
-        if (!upgradeJudgement.isUseGrpcFeatures()) {
-            verifyData.setRevision(0L);
-        }
         if (clientManager.verifyClient(verifyData)) {
             return true;
         }

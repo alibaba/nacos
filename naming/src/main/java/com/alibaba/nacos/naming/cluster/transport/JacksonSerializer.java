@@ -16,16 +16,8 @@
 
 package com.alibaba.nacos.naming.cluster.transport;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.stereotype.Component;
-
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.pojo.Record;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.stereotype.Component;
 
 /**
  * Use Jackson to serialize data.

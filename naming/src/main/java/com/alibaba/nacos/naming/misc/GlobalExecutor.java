@@ -83,7 +83,6 @@ public class GlobalExecutor {
     private static final ExecutorService PUSH_CALLBACK_EXECUTOR = ExecutorFactory.Managed
             .newSingleExecutorService("Push", new NameThreadFactory("com.alibaba.nacos.naming.push.callback"));
     
-    
     public static void registerServerStatusUpdater(Runnable runnable) {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
     }
