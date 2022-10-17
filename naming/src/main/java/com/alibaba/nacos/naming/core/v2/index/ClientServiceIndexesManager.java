@@ -135,11 +135,11 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
-        if (!publisherIndexes.containsKey(service)) {
-            return;
-        }
-        publisherIndexes.get(service).remove(clientId);
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+        publisherIndexes.computeIfPresent(service, (s, ids) -> {
+            ids.remove(clientId);
+            NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+            return ids.isEmpty() ? null : ids;
+        });
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {

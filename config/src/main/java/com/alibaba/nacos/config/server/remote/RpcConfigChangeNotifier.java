@@ -203,11 +203,11 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                     retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);
         } else if (connectionManager.getConnection(retryTask.connectionId) != null) {
-            // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
+            // first time:delay 0s; second time:delay 2s; third time:delay 4s
             ConfigExecutor.getClientConfigNotifierServiceExecutor()
                     .schedule(retryTask, retryTask.tryTimes * 2, TimeUnit.SECONDS);
         } else {
-            // client is already offline,ingnore task.
+            // client is already offline, ignore task.
         }
         
     }

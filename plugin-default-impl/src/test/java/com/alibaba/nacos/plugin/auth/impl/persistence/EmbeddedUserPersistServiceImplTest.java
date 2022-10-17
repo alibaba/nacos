@@ -91,7 +91,7 @@ public class EmbeddedUserPersistServiceImplTest {
     
     @Test
     public void testGetUsers() {
-        Page<User> users = embeddedUserPersistService.getUsers(1, 10);
+        Page<User> users = embeddedUserPersistService.getUsers(1, 10, "nacos");
         
         Assert.assertNotNull(users);
     }

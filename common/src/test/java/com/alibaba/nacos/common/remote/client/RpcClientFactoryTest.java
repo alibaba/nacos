@@ -104,7 +104,7 @@ public class RpcClientFactoryTest {
         RpcClient client = RpcClientFactory
                 .createClient("testClient", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"));
         
-        Assert.assertEquals(Collections.singletonMap("labelKey", "labelValue"), client.labels);
+        Assert.assertEquals(Collections.singletonMap("labelKey", "labelValue"), client.rpcClientConfig.labels());
         Assert.assertEquals(ConnectionType.GRPC, client.getConnectionType());
         Assert.assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
@@ -134,7 +134,7 @@ public class RpcClientFactoryTest {
                 Collections.singletonMap("labelKey", "labelValue")
         );
         
-        Assert.assertEquals(Collections.singletonMap("labelKey", "labelValue"), client.labels);
+        Assert.assertEquals(Collections.singletonMap("labelKey", "labelValue"), client.rpcClientConfig.labels());
         Assert.assertEquals(ConnectionType.GRPC, client.getConnectionType());
         Assert.assertEquals("testClient", CollectionUtils.getOnlyElement(RpcClientFactory.getAllClientEntries()).getKey());
     }
