@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote.control;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.Event;
@@ -36,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -153,31 +153,30 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> imp
     
     @Override
     public void onEvent(TpsControlRuleChangeEvent event) {
-        
-        Loggers.TPS_CONTROL
-                .info("Tps control rule change event receive,pointName={}, ruleContent={} ", event.getPointName(),
-                        event.ruleContent);
-        if (event == null || event.getPointName() == null) {
+        if (event == null) {
+            Loggers.TPS_CONTROL.info("Tps control rule change event receive, but event is null");
             return;
         }
+
+        Loggers.TPS_CONTROL
+                .info("Tps control rule change event receive, pointName={}, ruleContent={} ", event.getPointName(),
+                        event.ruleContent);
+        if (event.getPointName() == null) {
+            return;
+        }
+
         try {
             TpsControlRule tpsControlRule = StringUtils.isBlank(event.ruleContent) ? new TpsControlRule()
                     : JacksonUtils.toObj(event.ruleContent, TpsControlRule.class);
             if (!points.containsKey(event.getPointName())) {
-                Loggers.TPS_CONTROL.info("Tps control rule change event ignore,pointName={} ", event.getPointName());
+                Loggers.TPS_CONTROL.info("Tps control rule change event ignore, pointName={} ", event.getPointName());
                 return;
             }
-            try {
-                saveRuleToLocal(event.getPointName(), tpsControlRule);
-            } catch (Throwable throwable) {
-                Loggers.TPS_CONTROL
-                        .warn("Tps control rule persist fail,pointName={},error={} ", event.getPointName(), throwable);
-                
-            }
+
+            saveRuleToLocal(event.getPointName(), tpsControlRule);
         } catch (Exception e) {
-            Loggers.TPS_CONTROL.warn("Tps control rule apply error ,error= ", e);
+            Loggers.TPS_CONTROL.warn("Tps control rule apply error, error= ", e);
         }
-        
     }
     
     @Override
@@ -300,14 +299,18 @@ public class TpsMonitorManager extends Subscriber<TpsControlRuleChangeEvent> imp
     }
     
     private synchronized void saveRuleToLocal(String pointName, TpsControlRule tpsControlRule) throws IOException {
-        
-        File pointFile = getRuleFile(pointName);
-        if (!pointFile.exists()) {
-            pointFile.createNewFile();
+        try {
+            File pointFile = getRuleFile(pointName);
+            if (!pointFile.exists()) {
+                pointFile.createNewFile();
+            }
+            String content = JacksonUtils.toJson(tpsControlRule);
+            DiskUtils.writeFile(pointFile, content.getBytes(StandardCharsets.UTF_8), false);
+            Loggers.TPS_CONTROL.info("Save rule to local,pointName={}, ruleContent ={} ", pointName, content);
+        } catch (IOException e) {
+            Loggers.TPS_CONTROL
+                    .warn("Tps control rule persist fail, pointName={},error={} ", pointName, e);
         }
-        String content = JacksonUtils.toJson(tpsControlRule);
-        DiskUtils.writeFile(pointFile, content.getBytes(Constants.ENCODE), false);
-        Loggers.TPS_CONTROL.info("Save rule to local,pointName={}, ruleContent ={} ", pointName, content);
     }
     
     private File getRuleFile(String pointName) {

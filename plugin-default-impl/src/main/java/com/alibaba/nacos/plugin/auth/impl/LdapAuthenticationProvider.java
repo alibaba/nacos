@@ -52,11 +52,14 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
 
     private final LdapTemplate ldapTemplate;
     
+    private final String filterPrefix;
+    
     public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            NacosRoleServiceImpl nacosRoleService) {
+            NacosRoleServiceImpl nacosRoleService, String filterPrefix) {
         this.ldapTemplate = ldapTemplate;
         this.nacosRoleService = nacosRoleService;
         this.userDetailsService = userDetailsService;
+        this.filterPrefix = filterPrefix;
     }
     
     @Override
@@ -110,7 +113,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     }
     
     private boolean ldapLogin(String username, String password) throws AuthenticationException {
-        return ldapTemplate.authenticate("", "(uid=" + username + ")", password);
+        return ldapTemplate.authenticate("", "(" + filterPrefix + "=" + username + ")", password);
     }
     
     @Override

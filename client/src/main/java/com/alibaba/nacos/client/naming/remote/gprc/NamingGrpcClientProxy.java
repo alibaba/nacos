@@ -280,7 +280,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * @throws NacosException nacos exception
      */
     public void doUnsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, serviceName, groupName, clusters,
+        SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, groupName, serviceName, clusters,
                 false);
         requestToServer(request, SubscribeServiceResponse.class);
         redoService.removeSubscriberForRedo(serviceName, groupName, clusters);

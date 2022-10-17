@@ -68,7 +68,8 @@ public class ExternalRolePersistServiceImplTest {
     
     @Test
     public void testGetRolesByUserName() {
-        Page<RoleInfo> userName = externalRolePersistService.getRolesByUserName("userName", 1, 10);
+        Page<RoleInfo> userName = externalRolePersistService.getRolesByUserNameAndRoleName(
+                "userName", "roleName", 1, 10);
         Assert.assertNull(userName);
     }
     

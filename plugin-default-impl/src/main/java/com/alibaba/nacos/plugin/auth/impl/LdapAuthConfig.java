@@ -55,6 +55,9 @@ public class LdapAuthConfig {
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
     private String password;
     
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_FILTER_PREFIX + ":uid}"))
+    private String filterPrefix;
+    
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate() {
@@ -76,8 +79,8 @@ public class LdapAuthConfig {
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
-            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService) {
-        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService);
+            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService, String filterPrefix) {
+        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix);
     }
     
 }

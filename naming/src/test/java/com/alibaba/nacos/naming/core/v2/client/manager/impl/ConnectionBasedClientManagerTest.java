@@ -19,14 +19,19 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 
@@ -54,6 +59,11 @@ public class ConnectionBasedClientManagerTest {
     @Mock
     private ClientAttributes clientAttributes;
     
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
+    
     @Before
     public void setUp() throws Exception {
         connectionBasedClientManager = new ConnectionBasedClientManager();
@@ -62,8 +72,9 @@ public class ConnectionBasedClientManagerTest {
         when(connection.getMetaInfo()).thenReturn(connectionMeta);
         when(connectionMeta.getLabel(RemoteConstants.LABEL_MODULE)).thenReturn(RemoteConstants.LABEL_MODULE_NAMING);
         
+        when(clientAttributes.getClientAttribute(ClientConstants.REVISION, 0)).thenReturn(0);
         assertTrue(connectionBasedClientManager.syncClientConnected(connectionId, clientAttributes));
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         connectionBasedClientManager.clientConnected(connection);
         
     }
@@ -72,16 +83,16 @@ public class ConnectionBasedClientManagerTest {
     public void testAllClientId() {
         Collection<String> allClientIds = connectionBasedClientManager.allClientId();
         assertEquals(1, allClientIds.size());
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(allClientIds.contains(connectionId));
     }
     
     @Test
     public void testContainsConnectionId() {
-        assertTrue(connectionBasedClientManager.verifyClient(connectionId));
+        assertTrue(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(connectionId, 0)));
         assertTrue(connectionBasedClientManager.contains(connectionId));
         String unUsedClientId = "127.0.0.1:8888#true";
-        assertFalse(connectionBasedClientManager.verifyClient(unUsedClientId));
+        assertFalse(connectionBasedClientManager.verifyClient(new DistroClientVerifyInfo(unUsedClientId, 0)));
         assertFalse(connectionBasedClientManager.contains(unUsedClientId));
     }
     

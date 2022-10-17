@@ -26,6 +26,7 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroDataStorage;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
@@ -158,7 +159,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {
-        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}", clientSyncData.getClientId());
+        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}, revision={}",
+                clientSyncData.getClientId(),
+                clientSyncData.getAttributes().getClientAttribute(ClientConstants.REVISION, 0L));
         clientManager.syncClientConnected(clientSyncData.getClientId(), clientSyncData.getAttributes());
         Client client = clientManager.getClient(clientSyncData.getClientId());
         upgradeClient(client, clientSyncData);
@@ -220,13 +223,19 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
+        client.setRevision(
+                clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
     }
     
     @Override
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroClientVerifyInfo verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), DistroClientVerifyInfo.class);
-        if (clientManager.verifyClient(verifyData.getClientId())) {
+        // If not upgraded to 2.0.X, just renew client and return.
+        if (!upgradeJudgement.isUseGrpcFeatures()) {
+            verifyData.setRevision(0L);
+        }
+        if (clientManager.verifyClient(verifyData)) {
             return true;
         }
         Loggers.DISTRO.info("client {} is invalid, get new client from {}", verifyData.getClientId(), sourceAddress);
@@ -271,19 +280,22 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     @Override
     public List<DistroData> getVerifyData() {
-        List<DistroData> result = new LinkedList<>();
+        List<DistroData> result = null;
         for (String each : clientManager.allClientId()) {
             Client client = clientManager.getClient(each);
             if (null == client || !client.isEphemeral()) {
                 continue;
             }
             if (clientManager.isResponsibleClient(client)) {
-                // TODO add revision for client.
-                DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(), 0);
+                DistroClientVerifyInfo verifyData = new DistroClientVerifyInfo(client.getClientId(),
+                        client.getRevision());
                 DistroKey distroKey = new DistroKey(client.getClientId(), TYPE);
                 DistroData data = new DistroData(distroKey,
                         ApplicationUtils.getBean(Serializer.class).serialize(verifyData));
                 data.setType(DataOperation.VERIFY);
+                if (result == null) {
+                    result = new LinkedList<>();
+                }
                 result.add(data);
             }
         }

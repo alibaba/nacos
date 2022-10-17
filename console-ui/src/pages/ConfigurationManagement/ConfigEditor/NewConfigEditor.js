@@ -493,7 +493,7 @@ class ConfigEditor extends React.Component {
             </Tab>
           )}
           <Form className="new-config-form" {...formItemLayout}>
-            <Form.Item label="Data ID:" required {...dataIdError}>
+            <Form.Item label="Data ID" required {...dataIdError}>
               <Input
                 value={form.dataId}
                 onChange={dataId =>
@@ -502,7 +502,7 @@ class ConfigEditor extends React.Component {
                 disabled={!isNewConfig}
               />
             </Form.Item>
-            <Form.Item label="Group:" required {...groupError}>
+            <Form.Item label="Group" required {...groupError}>
               <Input
                 value={form.group}
                 onChange={group =>

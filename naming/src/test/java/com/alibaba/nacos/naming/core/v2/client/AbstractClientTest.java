@@ -27,13 +27,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 
-/**
- * AbstractClient test.
- * @ClassName: AbstractClientTest
- * @Author: ChenHao26
- * @Date: 2022/8/3 16:22
- * @Description: TODO
- */
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractClientTest {
     
@@ -47,7 +40,7 @@ public class AbstractClientTest {
     
     @Before
     public void setUp() {
-        abstractClient = new MockAbstractClient();
+        abstractClient = new MockAbstractClient(0L);
         service = Service.newService("ns1", "group1", "serviceName001");
         instancePublishInfo = new InstancePublishInfo("127.0.0.1", 8890);
         subscriber = new Subscriber("127.0.0.1:8848", "agent1", "appName", "127.0.0.1",

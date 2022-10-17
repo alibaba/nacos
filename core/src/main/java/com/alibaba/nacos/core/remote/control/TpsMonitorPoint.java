@@ -18,12 +18,14 @@ package com.alibaba.nacos.core.remote.control;
 
 import com.alibaba.nacos.core.utils.Loggers;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +41,9 @@ public class TpsMonitorPoint {
     public static final int DEFAULT_RECORD_SIZE = 10;
     
     private static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern(DATETIME_PATTERN)
+            .withZone(ZoneId.systemDefault()).withLocale(Locale.getDefault());
     
     private long startTime;
     
@@ -69,9 +74,7 @@ public class TpsMonitorPoint {
      * @return mills of second.
      */
     public static long getTrimMillsOfSecond(long timeStamp) {
-        String millString = String.valueOf(timeStamp);
-        String substring = millString.substring(0, millString.length() - 3);
-        return Long.parseLong(substring + "000");
+        return timeStamp - timeStamp % 1_000L;
         
     }
     
@@ -82,9 +85,7 @@ public class TpsMonitorPoint {
      * @return minis of minute.
      */
     public static long getTrimMillsOfMinute(long timeStamp) {
-        String millString = String.valueOf(timeStamp);
-        String substring = millString.substring(0, millString.length() - 3);
-        return Long.parseLong(Long.parseLong(substring) / 60 * 60 + "000");
+        return timeStamp - timeStamp % 60_000L;
     }
     
     /**
@@ -94,19 +95,17 @@ public class TpsMonitorPoint {
      * @return mills of hour.
      */
     public static long getTrimMillsOfHour(long timeStamp) {
-        String millString = String.valueOf(timeStamp);
-        String substring = millString.substring(0, millString.length() - 3);
-        return Long.parseLong(Long.parseLong(substring) / (60 * 60) * (60 * 60) + "000");
+        return timeStamp - timeStamp % 3_600_000L;
     }
     
     /**
-     * get format string "2021-01-16 17:20:21" of timestamp.
+     * get format string for "yyyy-MM-dd HH:mm:ss".
      *
      * @param timeStamp timestamp milliseconds.
      * @return datetime string.
      */
     public static String getTimeFormatOfSecond(long timeStamp) {
-        return new SimpleDateFormat(DATETIME_PATTERN).format(new Date(timeStamp));
+        return DATETIME_FORMATTER.format(Instant.ofEpochMilli(timeStamp));
     }
     
     private void stopAllMonitorClient() {
