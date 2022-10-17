@@ -17,13 +17,9 @@
 package com.alibaba.nacos.naming.cluster.transport;
 
 import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -32,50 +28,32 @@ public class JacksonSerializerTest {
     
     private Serializer serializer;
     
-    private Instances instances;
+    private SwitchDomain switchDomain;
     
     @Before
     public void setUp() throws Exception {
         serializer = new JacksonSerializer();
-        instances = new Instances();
-        instances.getInstanceList().add(new Instance("1.1.1.1", 1234, "cluster"));
+        switchDomain = new SwitchDomain();
     }
     
     @Test
     public void testSerialize() {
-        String actual = new String(serializer.serialize(instances));
-        assertTrue(actual.contains("\"instanceList\":["));
-        assertTrue(actual.contains("\"clusterName\":\"cluster\""));
-        assertTrue(actual.contains("\"ip\":\"1.1.1.1\""));
-        assertTrue(actual.contains("\"port\":1234"));
+        String actual = new String(serializer.serialize(switchDomain));
+        System.out.println(actual);
+        assertTrue(actual.contains("\"defaultPushCacheMillis\":10000"));
+        assertTrue(actual.contains("\"clientBeatInterval\":5000"));
+        assertTrue(actual.contains("\"defaultCacheMillis\":3000"));
+        assertTrue(actual.contains("\"distroEnabled\":true"));
     }
     
     @Test
     @SuppressWarnings("checkstyle:linelength")
     public void testDeserialize() {
-        String example = "{\"instanceList\":[{\"ip\":\"1.1.1.1\",\"port\":1234,\"weight\":1.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true,\"clusterName\":\"cluster\",\"metadata\":{},\"lastBeat\":1590563397264,\"marked\":false,\"instanceIdGenerator\":\"simple\",\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}]}";
-        Instances actual = serializer.deserialize(ByteUtils.toBytes(example), Instances.class);
-        assertEquals(1, actual.getInstanceList().size());
-        Instance actualInstance = actual.getInstanceList().get(0);
-        assertEquals("1.1.1.1", actualInstance.getIp());
-        assertEquals("cluster", actualInstance.getClusterName());
-        assertEquals(1234, actualInstance.getPort());
-    }
-    
-    @Test
-    @SuppressWarnings("checkstyle:linelength")
-    public void testDeserializeMap() {
-        String example = "{\"datum\":{\"key\":\"instances\",\"value\":{\"instanceList\":[{\"ip\":\"1.1.1.1\",\"port\":1234,\"weight\":1.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true,\"clusterName\":\"cluster\",\"metadata\":{},\"lastBeat\":1590563397533,\"marked\":false,\"instanceIdGenerator\":\"simple\",\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}]},\"timestamp\":100000}}";
-        Map<String, Datum<Instances>> actual = serializer.deserializeMap(ByteUtils.toBytes(example), Instances.class);
-        assertEquals(actual.size(), 1);
-        assertTrue(actual.containsKey("datum"));
-        Datum<Instances> actualDatum = actual.get("datum");
-        assertEquals("instances", actualDatum.key);
-        assertEquals(100000L, actualDatum.timestamp.get());
-        assertEquals(1, actualDatum.value.getInstanceList().size());
-        Instance actualInstance = actualDatum.value.getInstanceList().get(0);
-        assertEquals("1.1.1.1", actualInstance.getIp());
-        assertEquals("cluster", actualInstance.getClusterName());
-        assertEquals(1234, actualInstance.getPort());
+        String example = "{\"adWeightMap\":{},\"defaultPushCacheMillis\":10000,\"clientBeatInterval\":5000,\"defaultCacheMillis\":3000,\"distroThreshold\":0.7,\"healthCheckEnabled\":true,\"autoChangeHealthCheckEnabled\":true,\"distroEnabled\":true,\"enableStandalone\":true,\"pushEnabled\":true,\"checkTimes\":3,\"httpHealthParams\":{\"max\":5000,\"min\":500,\"factor\":0.85},\"tcpHealthParams\":{\"max\":5000,\"min\":1000,\"factor\":0.75},\"mysqlHealthParams\":{\"max\":3000,\"min\":2000,\"factor\":0.65},\"incrementalList\":[],\"serverStatusSynchronizationPeriodMillis\":2000,\"serviceStatusSynchronizationPeriodMillis\":5000,\"disableAddIP\":false,\"sendBeatOnly\":false,\"lightBeatEnabled\":true,\"doubleWriteEnabled\":true,\"limitedUrlMap\":{},\"distroServerExpiredMillis\":10000,\"pushGoVersion\":\"0.1.0\",\"pushJavaVersion\":\"0.1.0\",\"pushPythonVersion\":\"0.4.3\",\"pushCVersion\":\"1.0.12\",\"pushCSharpVersion\":\"0.9.0\",\"enableAuthentication\":false,\"defaultInstanceEphemeral\":true,\"healthCheckWhiteList\":[],\"name\":\"00-00---000-NACOS_SWITCH_DOMAIN-000---00-00\"}";
+        SwitchDomain actual = serializer.deserialize(ByteUtils.toBytes(example), SwitchDomain.class);
+        assertEquals(10000, actual.getDefaultPushCacheMillis());
+        assertEquals(5000, actual.getClientBeatInterval());
+        assertEquals(3000, actual.getDefaultCacheMillis());
+        assertTrue(actual.isDistroEnabled());
     }
 }

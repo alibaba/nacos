@@ -17,59 +17,11 @@
 package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.naming.core.Service;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ServiceUtilTest {
-    
-    @Test
-    public void testPageServiceName() {
-        Map<String, Service> input = new HashMap<>();
-        input.put("Group@@Service", new Service());
-        input.put("Service", new Service());
-        List<String> actual = ServiceUtil.pageServiceName(1, 20, input);
-        assertEquals(2, actual.size());
-        assertEquals("Service", actual.get(0));
-        assertEquals("Service", actual.get(1));
-    }
-    
-    @Test
-    public void testSelectServiceWithGroupName() {
-        Service service1 = new Service();
-        service1.setEnabled(true);
-        service1.setName("serviceName");
-        service1.setGroupName("groupName");
-        service1.setAppName("appName");
-        service1.setNamespaceId("namespaceId");
-        service1.setResetWeight(true);
-        Map<String, Service> services = new HashMap<>();
-        services.put("service1", service1);
-        Map<String, Service> resultMap = ServiceUtil.selectServiceWithGroupName(services, "groupName");
-        assertNotNull(resultMap);
-    }
-    
-    @Test
-    public void testSelectServiceBySelector() {
-        Service service1 = new Service();
-        service1.setEnabled(true);
-        service1.setName("serviceName");
-        service1.setGroupName("groupName");
-        service1.setAppName("appName");
-        service1.setNamespaceId("namespaceId");
-        service1.setResetWeight(true);
-        Map<String, Service> serviceMap = new HashMap<>();
-        serviceMap.put("service1", service1);
-        Map<String, Service> resultMap = ServiceUtil.selectServiceBySelector(serviceMap,
-                "{\"type\":\"label\",\"expression\":\"msg\"}");
-        assertNotNull(resultMap);
-    }
     
     @Test
     public void testSelectInstances() {
