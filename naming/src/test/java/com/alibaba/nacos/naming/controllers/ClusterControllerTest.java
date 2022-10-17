@@ -27,8 +27,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,16 +43,12 @@ public class ClusterControllerTest extends BaseTest {
     @Mock
     private HttpServletRequest request;
     
-    private Map<String, String[]> parameters;
-    
     private ClusterController clusterController;
     
     @Before
     public void before() {
         super.before();
         clusterController = new ClusterController(clusterOperatorV2);
-        parameters = new HashMap<>();
-        when(request.getParameterMap()).thenReturn(parameters);
     }
     
     @Test
@@ -73,6 +67,5 @@ public class ClusterControllerTest extends BaseTest {
     
     private void mockRequestParameter(String paramKey, String value) {
         when(request.getParameter(paramKey)).thenReturn(value);
-        parameters.put(paramKey, new String[] {value});
     }
 }
