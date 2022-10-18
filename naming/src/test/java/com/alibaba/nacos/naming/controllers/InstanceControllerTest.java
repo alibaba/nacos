@@ -43,10 +43,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -66,8 +64,6 @@ public class InstanceControllerTest extends BaseTest {
     @Mock
     private HttpServletRequest request;
     
-    private Map<String, String[]> parameters;
-    
     private SmartSubscriber subscriber;
     
     private volatile boolean eventReceived = false;
@@ -79,8 +75,6 @@ public class InstanceControllerTest extends BaseTest {
     public void before() {
         super.before();
         when(switchDomain.isDefaultInstanceEphemeral()).thenReturn(true);
-        parameters = new HashMap<>();
-        when(request.getParameterMap()).thenReturn(parameters);
         subscriber = new SmartSubscriber() {
             @Override
             public List<Class<? extends Event>> subscribeTypes() {
@@ -111,7 +105,6 @@ public class InstanceControllerTest extends BaseTest {
     
     private void mockRequestParameter(String key, String value) {
         when(request.getParameter(key)).thenReturn(value);
-        parameters.put(key, new String[] {value});
     }
     
     @Test
