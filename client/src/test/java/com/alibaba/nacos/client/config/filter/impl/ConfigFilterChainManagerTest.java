@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.config.filter.IFilterConfig;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -91,7 +92,8 @@ public class ConfigFilterChainManagerTest {
     
     @Test
     public void testAddFilterOrder() throws NacosException {
-        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(properties);
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
         MyIConfigFilter filter3 = new MyIConfigFilter("filter3", 3);
@@ -119,7 +121,8 @@ public class ConfigFilterChainManagerTest {
     
     @Test
     public void testAddFilterNotRepeat() throws NacosException {
-        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(properties);
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
         MyIConfigFilter repeatFilter = new MyIConfigFilter("filter1", 1);

@@ -123,7 +123,8 @@ public interface NacosClientProperties {
     boolean containsKey(String key);
     
     /**
-     * get properties from NacosClientProperties.
+     * convert the current NacosClientProperties object into Properties object.
+     * note: you can change the NacosClientProperties own k-v by returned properties.
      * @return properties
      */
     Properties asProperties();

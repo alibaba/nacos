@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -35,9 +36,9 @@ public class ServerHttpAgentTest {
         
         final ServerHttpAgent serverHttpAgent2 = new ServerHttpAgent(server, new Properties());
         Assert.assertNotNull(serverHttpAgent2);
-        
-        final Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "1.1.1.1");
+    
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "1.1.1.1");
         final ServerHttpAgent serverHttpAgent3 = new ServerHttpAgent(properties);
         Assert.assertNotNull(serverHttpAgent3);
         

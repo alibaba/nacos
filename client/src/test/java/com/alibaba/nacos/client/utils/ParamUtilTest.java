@@ -19,13 +19,13 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Properties;
 
 public class ParamUtilTest {
     
@@ -145,7 +145,7 @@ public class ParamUtilTest {
     @Test
     public void testParseNamespace() {
         String expect = "test";
-        Properties properties = new Properties();
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         properties.setProperty(PropertyKeyConst.NAMESPACE, expect);
         String actual = ParamUtil.parseNamespace(properties);
         Assert.assertEquals(expect, actual);

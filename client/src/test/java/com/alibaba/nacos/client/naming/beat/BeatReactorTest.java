@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,7 +36,6 @@ import org.mockito.Mockito;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -44,9 +44,9 @@ public class BeatReactorTest {
     
     @Test
     public void testConstruct() throws NoSuchFieldException, IllegalAccessException {
-        Properties properties = new Properties();
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         String threadSize = "10";
-        properties.put(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT, threadSize);
+        properties.setProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT, threadSize);
         
         NamingHttpClientProxy proxy = Mockito.mock(NamingHttpClientProxy.class);
         BeatReactor beatReactor = new BeatReactor(proxy, properties);

@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.cache;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -80,7 +81,7 @@ public class DiskCache {
     }
     
     public static String getLineSeparator() {
-        return System.getProperty("line.separator");
+        return NacosClientProperties.PROTOTYPE.getProperty("line.separator");
     }
     
     /**

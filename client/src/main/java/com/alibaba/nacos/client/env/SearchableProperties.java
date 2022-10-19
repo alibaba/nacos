@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -121,14 +120,7 @@ class SearchableProperties implements NacosClientProperties {
     
     @Override
     public Properties asProperties() {
-        Properties properties = new Properties();
-        final ListIterator<AbstractPropertySource> iterator = propertySources.listIterator(
-                propertySources.size());
-        while (iterator.hasPrevious()) {
-            final AbstractPropertySource previous = iterator.previous();
-            properties.putAll(previous.asProperties());
-        }
-        return properties;
+        return new SearchablePropertiesWrapper(this);
     }
     
     @Override

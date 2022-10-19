@@ -40,6 +40,7 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
@@ -67,7 +68,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -106,7 +106,7 @@ public class NamingGrpcClientProxyTest {
     @Mock
     private RpcClient rpcClient;
     
-    private Properties prop;
+    private NacosClientProperties prop;
     
     private NamingGrpcClientProxy client;
     
@@ -123,7 +123,7 @@ public class NamingGrpcClientProxyTest {
         when(factory.getServerList()).thenReturn(serverList);
         when(factory.genNextServer()).thenReturn(ORIGIN_SERVER);
         
-        prop = new Properties();
+        prop = NacosClientProperties.PROTOTYPE.derive();
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, prop, holder);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
@@ -391,7 +391,7 @@ public class NamingGrpcClientProxyTest {
                     
                     @Override
                     public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
-                        
+                    
                     }
                     
                     @Override

@@ -18,13 +18,13 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class ServiceInfoUpdateServiceTest {
@@ -45,8 +45,8 @@ public class ServiceInfoUpdateServiceTest {
         Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, 0, false)).thenReturn(info);
         
         InstancesChangeNotifier notifyer = Mockito.mock(InstancesChangeNotifier.class);
-        Properties prop = new Properties();
-        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(prop, holder, proxy,
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(properties, holder, proxy,
                 notifyer);
         
         serviceInfoUpdateService.scheduleUpdateIfAbsent("aa", "bb", "cc");
@@ -68,10 +68,10 @@ public class ServiceInfoUpdateServiceTest {
         Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, 0, false)).thenReturn(info);
         
         InstancesChangeNotifier notifyer = Mockito.mock(InstancesChangeNotifier.class);
-        Properties prop = new Properties();
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
     
-        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(prop, holder, proxy,
+        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(properties, holder, proxy,
                 notifyer);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, group, clusters);
     

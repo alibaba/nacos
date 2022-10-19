@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
@@ -36,7 +37,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -68,7 +68,7 @@ public class ServiceInfoHolder implements Closeable {
     
     private String notifierEventScope;
     
-    public ServiceInfoHolder(String namespace, String notifierEventScope, Properties properties) {
+    public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
         initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
             this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
@@ -80,8 +80,8 @@ public class ServiceInfoHolder implements Closeable {
         this.notifierEventScope = notifierEventScope;
     }
     
-    private void initCacheDir(String namespace, Properties properties) {
-        String jmSnapshotPath = System.getProperty(JM_SNAPSHOT_PATH_PROPERTY);
+    private void initCacheDir(String namespace, NacosClientProperties properties) {
+        String jmSnapshotPath = properties.getProperty(JM_SNAPSHOT_PATH_PROPERTY);
     
         String namingCacheRegistryDir = "";
         if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
@@ -92,12 +92,12 @@ public class ServiceInfoHolder implements Closeable {
             cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
                     + File.separator + FILE_PATH_NAMING + File.separator + namespace;
         } else {
-            cacheDir = System.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
+            cacheDir = properties.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
                     + File.separator + FILE_PATH_NAMING + File.separator + namespace;
         }
     }
     
-    private boolean isLoadCacheAtStart(Properties properties) {
+    private boolean isLoadCacheAtStart(NacosClientProperties properties) {
         boolean loadCacheAtStart = false;
         if (properties != null && StringUtils
                 .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
@@ -107,7 +107,7 @@ public class ServiceInfoHolder implements Closeable {
         return loadCacheAtStart;
     }
     
-    private boolean isPushEmptyProtect(Properties properties) {
+    private boolean isPushEmptyProtect(NacosClientProperties properties) {
         boolean pushEmptyProtection = false;
         if (properties != null && StringUtils
                 .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {

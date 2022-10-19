@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,14 +30,13 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class ServiceInfoHolderTest {
     
     @Test
     public void testGetServiceInfoMap() throws NoSuchFieldException, IllegalAccessException {
-        Properties prop = new Properties();
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", prop);
         Assert.assertEquals(0, holder.getServiceInfoMap().size());
         Field fieldNotifierEventScope = ServiceInfoHolder.class.getDeclaredField("notifierEventScope");
@@ -53,8 +53,8 @@ public class ServiceInfoHolderTest {
         hosts.add(instance1);
         hosts.add(instance2);
         info.setHosts(hosts);
-        
-        Properties prop = new Properties();
+    
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", prop);
         
         ServiceInfo actual1 = holder.processServiceInfo(info);
@@ -82,7 +82,7 @@ public class ServiceInfoHolderTest {
     
     @Test
     public void testProcessServiceInfo2() {
-        Properties prop = new Properties();
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", prop);
         String json = "{\"groupName\":\"a\",\"name\":\"b\",\"clusters\":\"c\"}";
         
@@ -101,8 +101,8 @@ public class ServiceInfoHolderTest {
         hosts.add(instance1);
         hosts.add(instance2);
         oldInfo.setHosts(hosts);
-        
-        Properties prop = new Properties();
+    
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
         prop.setProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION, "true");
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", prop);
         holder.processServiceInfo(oldInfo);
@@ -122,8 +122,8 @@ public class ServiceInfoHolderTest {
         List<Instance> hosts = new ArrayList<>();
         hosts.add(instance1);
         info.setHosts(hosts);
-        
-        Properties prop = new Properties();
+    
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", prop);
         
         ServiceInfo expect = holder.processServiceInfo(info);
@@ -138,7 +138,7 @@ public class ServiceInfoHolderTest {
     
     @Test
     public void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        Properties prop = new Properties();
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", prop);
         Field field = ServiceInfoHolder.class.getDeclaredField("failoverReactor");
         field.setAccessible(true);

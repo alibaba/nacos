@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import org.junit.Assert;
@@ -27,7 +28,6 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -36,8 +36,8 @@ public class ServerListManagerTest {
     
     @Test
     public void testConstructWithAddr() {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
         final ServerListManager serverListManager = new ServerListManager(properties);
         final List<String> serverList = serverListManager.getServerList();
         Assert.assertEquals(2, serverList.size());
@@ -48,8 +48,8 @@ public class ServerListManagerTest {
     @Ignore
     @Test
     public void testConstructWithEndpoint() throws Exception {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         final ServerListManager serverListManager = new ServerListManager(properties);
         NacosRestTemplate mock = Mockito.mock(NacosRestTemplate.class);
         
@@ -69,8 +69,8 @@ public class ServerListManagerTest {
     
     @Test
     public void testIsDomain() throws IOException {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
         Assert.assertTrue(serverListManager.isDomain());
         Assert.assertEquals("127.0.0.1:8848", serverListManager.getNacosDomain());
@@ -78,8 +78,8 @@ public class ServerListManagerTest {
     
     @Test
     public void testGetCurrentServer() {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
         Assert.assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
         Assert.assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
@@ -87,8 +87,8 @@ public class ServerListManagerTest {
     
     @Test
     public void testShutdown() {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
         try {
             serverListManager.shutdown();

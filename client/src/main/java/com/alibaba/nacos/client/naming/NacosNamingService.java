@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
@@ -75,16 +76,17 @@ public class NacosNamingService implements NamingService {
     private String notifierEventScope;
     
     public NacosNamingService(String serverList) throws NacosException {
-        Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
-        init(properties);
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive();
+        clientProperties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
+        init(clientProperties);
     }
     
     public NacosNamingService(Properties properties) throws NacosException {
-        init(properties);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        init(clientProperties);
     }
     
-    private void init(Properties properties) throws NacosException {
+    private void init(NacosClientProperties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
         this.namespace = InitUtils.initNamespaceForNaming(properties);
         InitUtils.initSerialization();
@@ -99,12 +101,11 @@ public class NacosNamingService implements NamingService {
         this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, properties, changeNotifier);
     }
     
-    private void initLogName(Properties properties) {
-        logName = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
+    private void initLogName(NacosClientProperties properties) {
+        logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
         if (StringUtils.isEmpty(logName)) {
             
-            if (properties != null && StringUtils
-                    .isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
+            if (StringUtils.isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
                 logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
             } else {
                 logName = DEFAULT_NAMING_LOG_FILE_PATH;

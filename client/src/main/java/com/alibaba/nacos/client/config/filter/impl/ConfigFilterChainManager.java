@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +37,14 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     
     private final List<IConfigFilter> filters = new ArrayList<>();
     
-    public ConfigFilterChainManager(Properties properties) {
+    public ConfigFilterChainManager(NacosClientProperties properties) {
+        Properties compatibleProperties = null;
+        if (properties != null) {
+            compatibleProperties = properties.asProperties();
+        }
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
         for (IConfigFilter configFilter : configFilters) {
-            configFilter.init(properties);
+            configFilter.init(compatibleProperties);
             addFilter(configFilter);
         }
     }

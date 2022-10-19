@@ -38,6 +38,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -54,7 +55,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 
@@ -78,7 +78,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private final NamingGrpcRedoService redoService;
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
-            Properties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
+            NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         super(securityProxy);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();

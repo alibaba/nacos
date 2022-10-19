@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -61,7 +62,7 @@ public class PushReceiver implements Runnable, Closeable {
     private volatile boolean closed = false;
     
     public static String getPushReceiverUdpPort() {
-        return System.getenv(PropertyKeyConst.PUSH_RECEIVER_UDP_PORT);
+        return NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.PUSH_RECEIVER_UDP_PORT);
     }
     
     public PushReceiver(ServiceInfoHolder serviceInfoHolder) {

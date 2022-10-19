@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -54,7 +55,7 @@ public abstract class ConfigTransportClient {
     
     final ServerListManager serverListManager;
     
-    final Properties properties;
+    final NacosClientProperties properties;
     
     private int maxRetry = 3;
     
@@ -66,7 +67,7 @@ public abstract class ConfigTransportClient {
         securityProxy.shutdown();
     }
     
-    public ConfigTransportClient(Properties properties, ServerListManager serverListManager) {
+    public ConfigTransportClient(NacosClientProperties properties, ServerListManager serverListManager) {
         
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
@@ -129,7 +130,8 @@ public abstract class ConfigTransportClient {
      * base start client.
      */
     public void start() throws NacosException {
-        securityProxy.login(this.properties);
+        final Properties properties = this.properties.asProperties();
+        securityProxy.login(properties);
         this.executor.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
                 this.securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
         startInternal();

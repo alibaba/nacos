@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -27,14 +28,13 @@ import org.mockito.Mockito;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 public class ClientWorkerTest {
     
     @Test
     public void testConstruct() throws NacosException {
-        Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(NacosClientProperties.PROTOTYPE.derive());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         Assert.assertNotNull(clientWorker);
@@ -42,8 +42,8 @@ public class ClientWorkerTest {
     
     @Test
     public void testAddListenerWithoutTenant() throws NacosException {
-        Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(NacosClientProperties.PROTOTYPE.derive());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         String dataId = "a";
@@ -70,8 +70,8 @@ public class ClientWorkerTest {
     
     @Test
     public void testListenerWithTenant() throws NacosException {
-        Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(NacosClientProperties.PROTOTYPE.derive());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         
@@ -114,8 +114,8 @@ public class ClientWorkerTest {
     
     @Test
     public void testPublishConfig() throws NacosException {
-        Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(NacosClientProperties.PROTOTYPE.derive());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         ClientWorker.ConfigRpcTransportClient mockClient = Mockito.mock(ClientWorker.ConfigRpcTransportClient.class);
@@ -155,8 +155,8 @@ public class ClientWorkerTest {
     
     @Test
     public void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        Properties prop = new Properties();
-        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        final NacosClientProperties prop = NacosClientProperties.PROTOTYPE.derive();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(NacosClientProperties.PROTOTYPE.derive());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         ClientWorker clientWorker = new ClientWorker(filter, agent, prop);
         String dataId = "a";

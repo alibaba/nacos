@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
@@ -44,7 +45,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -73,7 +73,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -103,7 +103,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
     
@@ -138,7 +138,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -172,7 +172,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -201,7 +201,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -230,7 +230,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -261,7 +261,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -293,7 +293,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -320,7 +320,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -349,7 +349,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -379,7 +379,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -408,7 +408,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -438,7 +438,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -469,7 +469,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -502,7 +502,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -531,7 +531,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props, holder);
         
@@ -572,7 +572,8 @@ public class NamingHttpClientProxyTest {
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, new Properties(),
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props,
                 holder);
         
         final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
@@ -605,7 +606,8 @@ public class NamingHttpClientProxyTest {
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, new Properties(),
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props,
                 holder);
         
         final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
@@ -638,7 +640,8 @@ public class NamingHttpClientProxyTest {
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, new Properties(),
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props,
                 holder);
         
         final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
@@ -675,7 +678,8 @@ public class NamingHttpClientProxyTest {
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, new Properties(),
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props,
                 holder);
         
         final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
@@ -708,7 +712,8 @@ public class NamingHttpClientProxyTest {
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, new Properties(),
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props,
                 holder);
         
         final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
@@ -737,7 +742,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         String namespaceId = "aaa";
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, props, holder);
@@ -756,7 +761,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         String namespaceId = "aaa";
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, props, holder);
@@ -770,7 +775,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         String namespaceId = "aaa";
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, props, holder);
@@ -791,7 +796,7 @@ public class NamingHttpClientProxyTest {
         SecurityProxy proxy = mock(SecurityProxy.class);
         ServerListManager mgr = mock(ServerListManager.class);
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
-        Properties props = new Properties();
+        final NacosClientProperties props = NacosClientProperties.PROTOTYPE.derive();
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         String namespaceId = "aaa";
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, props, holder);

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -62,7 +63,7 @@ public class BeatReactor implements Closeable {
         this(serverProxy, null);
     }
     
-    public BeatReactor(NamingHttpClientProxy serverProxy, Properties properties) {
+    public BeatReactor(NamingHttpClientProxy serverProxy, NacosClientProperties properties) {
         this.serverProxy = serverProxy;
         int threadCount = initClientBeatThreadCount(properties);
         this.executorService = new ScheduledThreadPoolExecutor(threadCount, r -> {
@@ -73,7 +74,7 @@ public class BeatReactor implements Closeable {
         });
     }
     
-    private int initClientBeatThreadCount(Properties properties) {
+    private int initClientBeatThreadCount(NacosClientProperties properties) {
         if (properties == null) {
             return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
         }
