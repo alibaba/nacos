@@ -18,7 +18,7 @@
 ### Default web context path:
 server.servlet.contextPath=/nacos
 ### Include message field
-server.error.include-message=ON_PARAM
+server.error.include-message=ALWAYS
 ### Default web server port:
 server.port=8848
 
@@ -146,6 +146,7 @@ nacos.core.auth.enabled=false
 #nacos.core.auth.ldap.userDn=cn=admin,${nacos.core.auth.ldap.basedc}
 #nacos.core.auth.ldap.password=admin
 #nacos.core.auth.ldap.userdn=cn={0},dc=example,dc=org
+#nacos.core.auth.ldap.filter.prefix=uid
 
 
 ### The token expiration in seconds:

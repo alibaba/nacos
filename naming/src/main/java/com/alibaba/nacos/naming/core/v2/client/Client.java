@@ -141,4 +141,23 @@ public interface Client {
      * Release current client and release resources if neccessary.
      */
     void release();
+    
+    /**
+     * Recalculate client revision and get its value.
+     * @return recalculated revision value
+     */
+    long recalculateRevision();
+    
+    /**
+     * Get client revision.
+     * @return current revision without recalculation
+     */
+    long getRevision();
+    
+    /**
+     * Set client revision.
+     * @param revision revision of this client to update
+     */
+    void setRevision(long revision);
+    
 }

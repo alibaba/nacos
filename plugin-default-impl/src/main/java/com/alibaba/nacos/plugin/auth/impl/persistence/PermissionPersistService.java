@@ -54,4 +54,8 @@ public interface PermissionPersistService {
      * @param action action
      */
     void deletePermission(String role, String resource, String action);
+
+    Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize);
+
+    String generateLikeArgument(String s);
 }

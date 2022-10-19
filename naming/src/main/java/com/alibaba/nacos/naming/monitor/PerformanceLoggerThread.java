@@ -114,8 +114,7 @@ public class PerformanceLoggerThread {
                 v2SyncFail = v2Record.get().getFailedSyncCount();
                 v2VerifyFail = v2Record.get().getFailedVerifyCount();
             }
-            Loggers.PERFORMANCE_LOG
-                    .info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
+            Loggers.PERFORMANCE_LOG.info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
     

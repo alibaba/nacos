@@ -24,7 +24,7 @@ package com.alibaba.nacos.config.server.model;
  */
 public class ConfigInfoBaseEx extends ConfigInfoBase {
     
-    private static final long serialVersionUID = -1L;
+    private static final long serialVersionUID = 5802322506486922169L;
     
     /**
      * Single message status code, when querying for batch.

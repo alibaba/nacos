@@ -94,7 +94,7 @@ import java.util.stream.Collectors;
  *               │              │           │                 │
  *               │              │           │                 ▼
  *               │              │           │    ┌────────────────────────┐
- *               │              │           │    │  acquireSnakeflowerId  │
+ *               │              │           │    │  acquireSnowFlowerId   │
  *               │              │           │    └────────────────────────┘
  *               │              │           │                 │
  *               │              │           │                 │

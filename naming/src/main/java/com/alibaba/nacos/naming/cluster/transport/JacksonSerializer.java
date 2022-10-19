@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.naming.cluster.transport;
 
-import org.springframework.stereotype.Component;
-
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import org.springframework.stereotype.Component;
 
 /**
  * Use Jackson to serialize data.

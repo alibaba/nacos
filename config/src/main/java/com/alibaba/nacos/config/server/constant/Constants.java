@@ -38,6 +38,11 @@ public class Constants {
     public static final String BASE_DIR = "config-data";
     
     /**
+     * The derby base dir.
+     */
+    public static final String DERBY_BASE_DIR = "derby-data";
+    
+    /**
      * Back up file directory in server side.
      *
      */

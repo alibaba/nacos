@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
@@ -52,7 +53,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
-            Page<User> users = getUsersFromDatabase(1, Integer.MAX_VALUE);
+            Page<User> users = getUsersFromDatabase(1, Integer.MAX_VALUE, StringUtils.EMPTY);
             if (users == null) {
                 return;
             }
@@ -85,8 +86,8 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
         userPersistService.updateUserPassword(username, password);
     }
     
-    public Page<User> getUsersFromDatabase(int pageNo, int pageSize) {
-        return userPersistService.getUsers(pageNo, pageSize);
+    public Page<User> getUsersFromDatabase(int pageNo, int pageSize, String username) {
+        return userPersistService.getUsers(pageNo, pageSize, username);
     }
     
     public User getUser(String username) {
@@ -114,5 +115,9 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     public void deleteUser(String username) {
         userPersistService.deleteUser(username);
+    }
+
+    public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
+        return userPersistService.findUsersLike4Page(username, pageNo, pageSize);
     }
 }

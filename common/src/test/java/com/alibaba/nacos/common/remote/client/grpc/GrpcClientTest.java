@@ -28,7 +28,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Properties;
 
 import static org.mockito.Mockito.spy;
 
@@ -47,10 +46,8 @@ public class GrpcClientTest {
     
     @Before
     public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Properties clientConfig = new Properties();
-        clientConfig.put("nacos.remote.client.grpc.pool.alive", String.valueOf(20));
-        clientConfig.put("nacos.remote.client.grpc.timeout", String.valueOf(5000));
-        grpcClient = spy(new GrpcClient("testClient", clientConfig) {
+        GrpcClientConfig clientConfig = DefaultGrpcClientConfig.newBuilder().setName("testClient").build();
+        grpcClient = spy(new GrpcClient(clientConfig) {
             @Override
             public int rpcPortOffset() {
                 return 1000;
