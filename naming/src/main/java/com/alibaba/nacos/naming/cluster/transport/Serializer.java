@@ -16,11 +16,6 @@
 
 package com.alibaba.nacos.naming.cluster.transport;
 
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.pojo.Record;
-
-import java.util.Map;
-
 /**
  * Serializer specially for large map of data.
  *
