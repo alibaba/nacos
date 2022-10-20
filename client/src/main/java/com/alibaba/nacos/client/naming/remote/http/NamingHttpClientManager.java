@@ -44,7 +44,7 @@ public class NamingHttpClientManager implements Closeable {
     
     private static final int CON_TIME_OUT_MILLIS = NacosClientProperties.PROTOTYPE.getInteger("com.alibaba.nacos.client.naming.ctimeout");
     
-    private static final boolean ENABLE_HTTPS = NacosClientProperties.PROTOTYPE.getBoolean(TlsSystemConfig.TLS_ENABLE);
+    private static final boolean ENABLE_HTTPS = NacosClientProperties.PROTOTYPE.getBoolean(TlsSystemConfig.TLS_ENABLE, false);
     
     private static final int MAX_REDIRECTS = 5;
     
