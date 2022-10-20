@@ -86,6 +86,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
     
     public void onEvent(com.alibaba.nacos.common.notify.Event event) {
         if (isInitial) {
+            init();
             isInitial = false;
             cycleDebounce(new ToNotify());
         }
@@ -156,6 +157,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
                     continue;
                 }
                 serviceInfoMap.put(serviceName, new IstioService(service, serviceInfo));
+                pushRequestQueue.add(new PushRequest(serviceName, true));
             }
         }
     }
