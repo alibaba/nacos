@@ -79,7 +79,7 @@ public class LdapAuthConfig {
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
-            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService, String filterPrefix) {
+            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService) {
         return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix);
     }
     
