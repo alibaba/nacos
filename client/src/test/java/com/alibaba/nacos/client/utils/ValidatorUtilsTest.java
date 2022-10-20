@@ -22,7 +22,6 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class ValidatorUtilsTest {
     
     @Test

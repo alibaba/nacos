@@ -31,8 +31,6 @@ import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.util.Properties;
-
 /**
  * Init utils.
  *

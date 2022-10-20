@@ -22,6 +22,7 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.handler.AbstractResponseHandler;
@@ -66,7 +67,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * CITCase for ConfigExportAndImportAPI.
@@ -114,9 +114,9 @@ public class ConfigExportAndImportAPI_CITCase {
         });
         
         serverAddr = "http://127.0.0.1" + ":" + port + "/nacos";
-        
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
+    
+        NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
         

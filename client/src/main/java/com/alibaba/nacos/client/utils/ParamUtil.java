@@ -24,7 +24,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import org.slf4j.Logger;
 
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
@@ -224,7 +223,8 @@ public class ParamUtil {
         }
         
         String endpointUrlSource = TemplateUtils
-                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl, NacosClientProperties.PROTOTYPE.getProperty(endpointUrl)),
+                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl,
+                                NacosClientProperties.PROTOTYPE.getProperty(endpointUrl)),
                         () -> NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {

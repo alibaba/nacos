@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -67,11 +68,12 @@ public abstract class AbstractConfigAPI_CITCase {
     
     @Before
     public void setUp() throws Exception {
-        Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
-        properties.put(PropertyKeyConst.CONTEXT_PATH, contextPath);
+       
+        NacosClientProperties properties =  NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, contextPath);
         if (null == iconfig) {
-            iconfig = NacosFactory.createConfigService(properties);
+            iconfig = NacosFactory.createConfigService(properties.asProperties());
         }
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();

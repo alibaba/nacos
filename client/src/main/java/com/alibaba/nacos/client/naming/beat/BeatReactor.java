@@ -34,7 +34,6 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

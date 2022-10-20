@@ -60,10 +60,12 @@ public class LocalConfigInfoProcessor {
     
     static {
         LOCAL_FILEROOT_PATH =
-                NacosClientProperties.PROTOTYPE.getProperty("JM.LOG.PATH", NacosClientProperties.PROTOTYPE.getProperty("user.home")) + File.separator + "nacos"
+                NacosClientProperties.PROTOTYPE.getProperty("JM.LOG.PATH",
+                        NacosClientProperties.PROTOTYPE.getProperty("user.home")) + File.separator + "nacos"
                         + File.separator + "config";
         LOCAL_SNAPSHOT_PATH =
-                NacosClientProperties.PROTOTYPE.getProperty("JM.SNAPSHOT.PATH", NacosClientProperties.PROTOTYPE.getProperty("user.home")) + File.separator + "nacos"
+                NacosClientProperties.PROTOTYPE.getProperty("JM.SNAPSHOT.PATH",
+                        NacosClientProperties.PROTOTYPE.getProperty("user.home")) + File.separator + "nacos"
                         + File.separator + "config";
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
