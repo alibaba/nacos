@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.junit.Assert;
 import org.junit.Before;
@@ -107,11 +108,13 @@ public class AbstractClientTest {
     
     @Test
     public void release() {
-        try {
-            abstractClient.release();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.assertNotNull(e);
-        }
+        abstractClient.addServiceInstance(service, instancePublishInfo);
+        Assert.assertEquals(MetricsMonitor.getIpCountMonitor().get(), 1);
+        abstractClient.addServiceSubscriber(service, subscriber);
+        Assert.assertEquals(MetricsMonitor.getSubscriberCount().get(), 1);
+        
+        abstractClient.release();
+        Assert.assertEquals(MetricsMonitor.getSubscriberCount().get(), 0);
+        Assert.assertEquals(MetricsMonitor.getIpCountMonitor().get(), 0);
     }
 }
