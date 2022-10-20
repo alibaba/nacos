@@ -37,6 +37,9 @@ class SearchablePropertiesWrapper extends Properties {
     private final SearchableProperties properties;
     
     public SearchablePropertiesWrapper(SearchableProperties searchableProperties) {
+        if (searchableProperties == null) {
+            throw new IllegalArgumentException("can't create an SearchablePropertiesWrapper, SearchableProperties must not be null!");
+        }
         this.properties = searchableProperties;
     }
     
@@ -121,5 +124,9 @@ class SearchablePropertiesWrapper extends Properties {
     @Override
     public Set<String> stringPropertyNames() {
         throw new UnsupportedOperationException();
+    }
+    
+    public SearchableProperties unwrap() {
+        return this.properties;
     }
 }

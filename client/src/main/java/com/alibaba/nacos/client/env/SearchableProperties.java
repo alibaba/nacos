@@ -221,6 +221,12 @@ class SearchableProperties implements NacosClientProperties {
     
     @Override
     public NacosClientProperties derive(Properties properties) {
+        if (properties instanceof SearchablePropertiesWrapper) {
+            final SearchableProperties searchableProperties = ((SearchablePropertiesWrapper) properties).unwrap();
+            if (searchableProperties != null) {
+                return searchableProperties;
+            }
+        }
         final NacosClientProperties nacosClientProperties = this.derive();
         nacosClientProperties.addProperties(properties);
         return nacosClientProperties;
