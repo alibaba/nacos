@@ -114,9 +114,9 @@ public interface NamingService {
      * @param groupName   group of service
      * @param instances   instances to deRegister
      * @throws NacosException nacos exception
-     * @since 2.1.1
+     * @since 2.2.0
      */
-    void batchDeRegisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
+    void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException;
     
     /**
      * deregister instance from a service.

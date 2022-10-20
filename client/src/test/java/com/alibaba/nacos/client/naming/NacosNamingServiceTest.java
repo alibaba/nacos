@@ -130,7 +130,7 @@ public class NacosNamingServiceTest {
         instanceList.add(instance);
         //when
         try {
-            client.batchDeRegisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
+            client.batchDeregisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof NacosException);
             Assert.assertTrue(e.getMessage().contains("not found"));

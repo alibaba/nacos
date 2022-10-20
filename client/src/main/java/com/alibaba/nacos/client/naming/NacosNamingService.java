@@ -42,11 +42,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Nacos Naming Service.
@@ -160,42 +157,10 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
-    public void batchDeRegisterInstance(String serviceName, String groupName, List<Instance> instances)
+    public void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
-        // Filter the instances that need to be de registered
-        instances = getRetainInstance(serviceName, groupName, instances);
-        clientProxy.batchRegisterService(serviceName, groupName, instances);
-    }
-    
-    /**
-     * Get instance list that need to be deregistered.
-     * @param serviceName   service name
-     * @param groupName    group name
-     * @param instances   instance list
-     * @return  instance list that need to be deregistered.
-     */
-    private List<Instance> getRetainInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException {
-        if (CollectionUtils.isEmpty(instances)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("[Batch deRegistration] need deRegister instance is empty, instances: %s,", instances));
-        }
-        
-        instances.forEach(instance -> instance.setServiceName(NamingUtils.getGroupedName(serviceName, groupName)));
-        List<Instance> allInstances = getAllInstances(serviceName, groupName);
-        if (CollectionUtils.isEmpty(allInstances)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("[Batch deRegistration] not found all registerInstance , serviceName：%s , groupName: %s", serviceName, groupName));
-        }
-        Map<Instance, Instance> instanceMap = instances
-                .stream().collect(Collectors.toMap(Function.identity(), Function.identity()));
-        List<Instance> retainInstances = new ArrayList<>();
-        for (Instance instance : allInstances) {
-            if (!instanceMap.containsKey(instance)) {
-                retainInstances.add(instance);
-            }
-        }
-        return retainInstances;
+        clientProxy.batchDeregisterService(serviceName, groupName, instances);
     }
     
     @Override
