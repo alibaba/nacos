@@ -135,7 +135,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         List<Instance> retainInstance = getRetainInstance(serviceName, groupName, instances);
-        doBatchRegisterService(serviceName, groupName, retainInstance);
+        batchRegisterService(serviceName, groupName, retainInstance);
     }
     
     /**
