@@ -46,16 +46,18 @@ public class AbstractClientTest {
         instancePublishInfo = new InstancePublishInfo("127.0.0.1", 8890);
         subscriber = new Subscriber("127.0.0.1:8848", "agent1", "appName", "127.0.0.1",
                 "ns1", "serviceName001", 9090);
-        addServiceInstance();
-        addServiceSubscriber();
+        MetricsMonitor.getIpCountMonitor().set(0);
+        MetricsMonitor.getSubscriberCount().set(0);
     }
     
-    private void addServiceInstance() {
+    @Test
+    public void addServiceInstance() {
         boolean result = abstractClient.addServiceInstance(service, instancePublishInfo);
         Assert.assertTrue(result);
     }
     
-    private void  addServiceSubscriber() {
+    @Test
+    public void addServiceSubscriber() {
         Assert.assertTrue(abstractClient.addServiceSubscriber(service, subscriber));
     }
     
@@ -66,12 +68,14 @@ public class AbstractClientTest {
     
     @Test
     public void removeServiceInstanceSuccess() {
+        addServiceInstance();
         InstancePublishInfo publishInfo = abstractClient.removeServiceInstance(service);
         Assert.assertNotNull(publishInfo);
     }
     
     @Test
     public void getInstancePublishInfo() {
+        addServiceInstance();
         InstancePublishInfo publishInfo = abstractClient.getInstancePublishInfo(service);
         Assert.assertNotNull(publishInfo);
     }
@@ -90,6 +94,7 @@ public class AbstractClientTest {
     
     @Test
     public void getSubscriber() {
+        addServiceSubscriber();
         Subscriber subscriber1 = abstractClient.getSubscriber(service);
         Assert.assertNotNull(subscriber1);
     }
@@ -108,12 +113,14 @@ public class AbstractClientTest {
     
     @Test
     public void release() {
+        
         abstractClient.addServiceInstance(service, instancePublishInfo);
         Assert.assertEquals(MetricsMonitor.getIpCountMonitor().get(), 1);
         abstractClient.addServiceSubscriber(service, subscriber);
         Assert.assertEquals(MetricsMonitor.getSubscriberCount().get(), 1);
         
         abstractClient.release();
+        
         Assert.assertEquals(MetricsMonitor.getSubscriberCount().get(), 0);
         Assert.assertEquals(MetricsMonitor.getIpCountMonitor().get(), 0);
     }
