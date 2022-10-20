@@ -186,7 +186,7 @@ class SearchableProperties implements NacosClientProperties {
                 .collect(Collectors.toMap(AbstractPropertySource::getType, propertySource -> propertySource));
         final List<AbstractPropertySource> collect = DEFAULT_ORDER.stream().map(sourceMap::get)
                 .collect(Collectors.toList());
-        LOGGER.info("properties search order:PROPERTIES->JVM->ENV->DEFAULT_SETTING");
+        LOGGER.debug("properties search order:PROPERTIES->JVM->ENV->DEFAULT_SETTING");
         return collect;
     }
     
@@ -209,7 +209,7 @@ class SearchableProperties implements NacosClientProperties {
                 orderInfo.append("->");
             }
         }
-        LOGGER.info(orderInfo.toString());
+        LOGGER.debug(orderInfo.toString());
         
         return collect;
     }
