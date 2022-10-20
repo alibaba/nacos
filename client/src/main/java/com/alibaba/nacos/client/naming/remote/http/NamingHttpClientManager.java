@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -38,12 +39,12 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
  */
 public class NamingHttpClientManager implements Closeable {
     
-    private static final int READ_TIME_OUT_MILLIS = Integer
-            .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
+    private static final int READ_TIME_OUT_MILLIS = NacosClientProperties.PROTOTYPE
+            .getInteger("com.alibaba.nacos.client.naming.rtimeout");
     
-    private static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    private static final int CON_TIME_OUT_MILLIS = NacosClientProperties.PROTOTYPE.getInteger("com.alibaba.nacos.client.naming.ctimeout");
     
-    private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
+    private static final boolean ENABLE_HTTPS = NacosClientProperties.PROTOTYPE.getBoolean(TlsSystemConfig.TLS_ENABLE);
     
     private static final int MAX_REDIRECTS = 5;
     

@@ -72,19 +72,20 @@ public class NacosConfigService implements ConfigService {
     private final ConfigFilterChainManager configFilterChainManager;
     
     public NacosConfigService(Properties properties) throws NacosException {
-        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        
+        this(NacosClientProperties.PROTOTYPE.derive(properties));
+    }
+    
+    public  NacosConfigService(NacosClientProperties clientProperties) throws NacosException  {
         ValidatorUtils.checkInitParam(clientProperties);
-        
+    
         initNamespace(clientProperties);
         this.configFilterChainManager = new ConfigFilterChainManager(clientProperties);
         ServerListManager serverListManager = new ServerListManager(clientProperties);
         serverListManager.start();
-        
+    
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
         // will be deleted in 2.0 later versions
         agent = new ServerHttpAgent(serverListManager);
-        
     }
     
     private void initNamespace(NacosClientProperties properties) {

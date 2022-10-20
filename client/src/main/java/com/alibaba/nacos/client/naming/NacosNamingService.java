@@ -82,8 +82,11 @@ public class NacosNamingService implements NamingService {
     }
     
     public NacosNamingService(Properties properties) throws NacosException {
-        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        init(clientProperties);
+        this(NacosClientProperties.PROTOTYPE.derive(properties));
+    }
+    
+    public NacosNamingService(NacosClientProperties properties) throws NacosException {
+        init(properties);
     }
     
     private void init(NacosClientProperties properties) throws NacosException {
