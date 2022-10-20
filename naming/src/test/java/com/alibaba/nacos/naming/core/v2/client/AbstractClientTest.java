@@ -115,13 +115,13 @@ public class AbstractClientTest {
     public void release() {
         
         abstractClient.addServiceInstance(service, instancePublishInfo);
-        Assert.assertEquals(MetricsMonitor.getIpCountMonitor().get(), 1);
+        Assert.assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
         abstractClient.addServiceSubscriber(service, subscriber);
-        Assert.assertEquals(MetricsMonitor.getSubscriberCount().get(), 1);
+        Assert.assertEquals(1, MetricsMonitor.getSubscriberCount().get());
         
         abstractClient.release();
         
-        Assert.assertEquals(MetricsMonitor.getSubscriberCount().get(), 0);
-        Assert.assertEquals(MetricsMonitor.getIpCountMonitor().get(), 0);
+        Assert.assertEquals(0, MetricsMonitor.getSubscriberCount().get());
+        Assert.assertEquals(0, MetricsMonitor.getIpCountMonitor().get());
     }
 }
