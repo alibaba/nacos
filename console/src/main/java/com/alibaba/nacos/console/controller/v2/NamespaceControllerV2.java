@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.controller;
+package com.alibaba.nacos.console.controller.v2;
 
+import com.alibaba.nacos.api.annotation.NacosApi;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import com.alibaba.nacos.console.model.form.NamespaceForm;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,19 +43,20 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
- * namespace service.
- *
- * @author Nacos
+ * NamespaceControllerV2.
+ * @author dongyafei
+ * @date 2022/8/16
  */
+@NacosApi
 @RestController
-@RequestMapping("/v1/console/namespaces")
-public class NamespaceController {
+@RequestMapping(path = "/v2/console/namespace")
+public class NamespaceControllerV2 {
+
+    private final NamespaceOperationService namespaceOperationService;
     
-    @Autowired
-    private PersistService persistService;
-    
-    @Autowired
-    private NamespaceOperationService namespaceOperationService;
+    public NamespaceControllerV2(NamespaceOperationService namespaceOperationService) {
+        this.namespaceOperationService = namespaceOperationService;
+    }
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
     
@@ -64,9 +67,9 @@ public class NamespaceController {
      *
      * @return namespace list
      */
-    @GetMapping
-    public RestResult<List<Namespace>> getNamespaces() {
-        return RestResultUtils.success(namespaceOperationService.getNamespaceList());
+    @GetMapping("/list")
+    public Result<List<Namespace>> getNamespaceList() {
+        return Result.success(namespaceOperationService.getNamespaceList());
     }
     
     /**
@@ -75,81 +78,67 @@ public class NamespaceController {
      * @param namespaceId namespaceId
      * @return namespace all info
      */
-    @GetMapping(params = "show=all")
-    public NamespaceAllInfo getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
-        return namespaceOperationService.getNamespace(namespaceId);
+    @GetMapping()
+    public Result<NamespaceAllInfo> getNamespace(@RequestParam("namespaceId") String namespaceId)
+            throws NacosException {
+        return Result.success(namespaceOperationService.getNamespace(namespaceId));
     }
     
     /**
      * create namespace.
      *
-     * @param namespaceName namespace Name
-     * @param namespaceDesc namespace Desc
+     * @param namespaceForm namespaceForm.
      * @return whether create ok
      */
     @PostMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Boolean createNamespace(@RequestParam("customNamespaceId") String namespaceId,
-            @RequestParam("namespaceName") String namespaceName,
-            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
+    public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws NacosException {
+        
+        namespaceForm.validate();
+        
+        String namespaceId = namespaceForm.getNamespaceId();
+        String namespaceName = namespaceForm.getNamespaceName();
+        String namespaceDesc = namespaceForm.getNamespaceDesc();
+        
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = UUID.randomUUID().toString();
         } else {
             namespaceId = namespaceId.trim();
             if (!namespaceIdCheckPattern.matcher(namespaceId).matches()) {
-                return false;
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
+                        "namespaceId [" + namespaceId + "] mismatch the pattern");
             }
             if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
-                return false;
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
+                        "too long namespaceId, over " + NAMESPACE_ID_MAX_LENGTH);
             }
         }
-        try {
-            return namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc);
-        } catch (NacosException e) {
-            return false;
-        }
-    }
-    
-    /**
-     * check namespaceId exist.
-     *
-     * @param namespaceId namespace id
-     * @return true if exist, otherwise false
-     */
-    @GetMapping(params = "checkNamespaceIdExist=true")
-    public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId) {
-        if (StringUtils.isBlank(namespaceId)) {
-            return false;
-        }
-        return (persistService.tenantInfoCountByTenantId(namespaceId) > 0);
+        return Result.success(namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc));
     }
     
     /**
      * edit namespace.
      *
-     * @param namespace         namespace
-     * @param namespaceShowName namespace ShowName
-     * @param namespaceDesc     namespace Desc
+     * @param namespaceForm       namespace params
      * @return whether edit ok
      */
     @PutMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Boolean editNamespace(@RequestParam("namespace") String namespace,
-            @RequestParam("namespaceShowName") String namespaceShowName,
-            @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
-        return namespaceOperationService.editNamespace(namespace, namespaceShowName, namespaceDesc);
+    public Result<Boolean> editNamespace(NamespaceForm namespaceForm) throws NacosException {
+        namespaceForm.validate();
+        return Result.success(namespaceOperationService.editNamespace(namespaceForm.getNamespaceId(),
+                namespaceForm.getNamespaceName(), namespaceForm.getNamespaceDesc()));
     }
     
     /**
-     * del namespace by id.
+     * delete namespace by id.
      *
-     * @param namespaceId namespace Id
-     * @return whether del ok
+     * @param namespaceId   namespace ID
+     * @return whether delete ok
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Boolean deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
-        return namespaceOperationService.removeNamespace(namespaceId);
+    public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
+        return Result.success(namespaceOperationService.removeNamespace(namespaceId));
     }
-    
 }

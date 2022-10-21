@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,6 +27,7 @@ import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.http.HttpStatus;
 
 import java.io.File;
 import java.util.HashMap;
@@ -62,6 +65,8 @@ public class UtilsAndCommons {
     public static final String NACOS_NAMING_CLUSTER_CONTEXT = "/cluster";
     
     public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
+    
+    public static final String NACOS_NAMING_CLIENT_CONTEXT = "/client";
     
     public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
     
@@ -166,7 +171,8 @@ public class UtilsAndCommons {
                 for (String data : datas) {
                     String[] kv = data.split("=");
                     if (kv.length != 2) {
-                        throw new NacosException(NacosException.INVALID_PARAM, "metadata format incorrect:" + metadata);
+                        throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.INSTANCE_METADATA_ERROR,
+                                "metadata format incorrect:" + metadata);
                     }
                     metadataMap.put(kv[0], kv[1]);
                 }
