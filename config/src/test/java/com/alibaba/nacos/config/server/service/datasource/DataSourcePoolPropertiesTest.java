@@ -62,6 +62,7 @@ public class DataSourcePoolPropertiesTest {
         assertEquals(PASSWORD, actual.getPassword());
         assertEquals(CONNECTION_TIMEOUT.longValue(), actual.getConnectionTimeout());
         assertEquals(DataSourcePoolProperties.DEFAULT_VALIDATION_TIMEOUT, actual.getValidationTimeout());
+        assertEquals(DataSourcePoolProperties.DEFAULT_IDLE_TIMEOUT, actual.getIdleTimeout());
         assertEquals(MAX_POOL_SIZE.intValue(), actual.getMaximumPoolSize());
         assertEquals(DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE, actual.getMinimumIdle());
     }

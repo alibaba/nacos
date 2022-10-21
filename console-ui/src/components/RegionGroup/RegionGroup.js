@@ -20,6 +20,7 @@ import $ from 'jquery';
 import { Button } from '@alifd/next';
 import NameSpaceList from '../NameSpaceList';
 import { setParams, request } from '../../globalLib';
+import PageTitle from '../PageTitle';
 
 import './index.scss';
 
@@ -261,7 +262,7 @@ class RegionGroup extends React.Component {
 
   render() {
     return (
-      <div>
+      <div style={{ marginTop: this.state.left ? 0 : -30 }}>
         <div ref={ref => (this.mainRef = ref)} className="clearfix">
           <div style={{ overflow: 'hidden' }}>
             <div id="left" style={{ float: 'left', display: 'inline-block', marginRight: 20 }}>
@@ -270,7 +271,7 @@ class RegionGroup extends React.Component {
                 style={{ display: 'inline-block', verticalAlign: 'top' }}
               >
                 {typeof this.state.left === 'string' ? (
-                  <h5 style={this.styles.title}>{this.state.left}</h5>
+                  <PageTitle title={this.state.left} />
                 ) : (
                   this.state.left
                 )}
@@ -314,13 +315,11 @@ class RegionGroup extends React.Component {
             </div>
           </div>
           {this.props.namespaceCallBack && (
-            <div>
-              <NameSpaceList
-                ref={this.nameSpaceList}
-                namespaceCallBack={this.props.namespaceCallBack}
-                setNowNameSpace={this.props.setNowNameSpace}
-              />
-            </div>
+            <NameSpaceList
+              ref={this.nameSpaceList}
+              namespaceCallBack={this.props.namespaceCallBack}
+              setNowNameSpace={this.props.setNowNameSpace}
+            />
           )}
         </div>
       </div>

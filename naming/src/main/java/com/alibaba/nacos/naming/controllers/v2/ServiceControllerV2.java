@@ -25,7 +25,8 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
@@ -101,7 +102,7 @@ public class ServiceControllerV2 {
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
-        NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterServiceTraceEvent(System.currentTimeMillis(),
+        NotifyCenter.publishEvent(new DeregisterServiceTraceEvent(System.currentTimeMillis(),
                 namespaceId, groupName, serviceName));
         return Result.success("ok");
     }

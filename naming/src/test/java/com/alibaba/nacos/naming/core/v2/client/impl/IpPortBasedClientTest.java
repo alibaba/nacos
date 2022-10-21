@@ -53,7 +53,7 @@ public class IpPortBasedClientTest {
     
     @Before
     public void setUp() throws Exception {
-        ipPortBasedClient = new IpPortBasedClient(clientId, true);
+        ipPortBasedClient = new IpPortBasedClient(clientId, true, 123L);
         ipPortBasedClient.init();
         instancePublishInfo = new InstancePublishInfo();
     }
@@ -82,6 +82,18 @@ public class IpPortBasedClientTest {
         Collection<InstancePublishInfo> allInstancePublishInfo = ipPortBasedClient.getAllInstancePublishInfo();
         assertEquals(allInstancePublishInfo.size(), 1);
         assertEquals(allInstancePublishInfo.iterator().next(), instancePublishInfo);
+    }
+    
+    @Test
+    public void testRecalculateRevision() {
+        assertEquals(123L, ipPortBasedClient.getRevision());
+        assertEquals(-1531701243L, ipPortBasedClient.recalculateRevision());
+    }
+    
+    @Test
+    public void testConstructor0() {
+        IpPortBasedClient client = new IpPortBasedClient(clientId, true);
+        assertEquals(0, client.getRevision());
     }
     
     @After

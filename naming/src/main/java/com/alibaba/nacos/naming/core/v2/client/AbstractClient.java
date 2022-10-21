@@ -25,12 +25,16 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.utils.DistroUtils;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.alibaba.nacos.naming.constants.ClientConstants.REVISION;
 
 /**
  * Abstract implementation of {@code Client}.
@@ -45,8 +49,11 @@ public abstract class AbstractClient implements Client {
     
     protected volatile long lastUpdatedTime;
     
-    public AbstractClient() {
+    protected final AtomicLong revision;
+    
+    public AbstractClient(Long revision) {
         lastUpdatedTime = System.currentTimeMillis();
+        this.revision = new AtomicLong(revision == null ? 0 : revision);
     }
     
     @Override
@@ -62,7 +69,11 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
-            MetricsMonitor.incrementInstanceCount();
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.incrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.incrementInstanceCount();
+            }
         }
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         Loggers.SRV_LOG.info("Client change for service {}, {}", service, getClientId());
@@ -73,7 +84,11 @@ public abstract class AbstractClient implements Client {
     public InstancePublishInfo removeServiceInstance(Service service) {
         InstancePublishInfo result = publishers.remove(service);
         if (null != result) {
-            MetricsMonitor.decrementInstanceCount();
+            if (result instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.decrementIpCountWithBatchRegister(result);
+            } else {
+                MetricsMonitor.decrementInstanceCount();
+            }
             NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(this));
         }
         Loggers.SRV_LOG.info("Client remove for service {}, {}", service, getClientId());
@@ -143,7 +158,9 @@ public abstract class AbstractClient implements Client {
                 instances.add(entry.getValue());
             }
         }
-        return new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
+        ClientSyncData data = new ClientSyncData(getClientId(), namespaces, groupNames, serviceNames, instances, batchInstanceData);
+        data.getAttributes().addClientAttribute(REVISION, getRevision());
+        return data;
     }
     
     private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
@@ -160,7 +177,32 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public void release() {
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * publishers.size());
-        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
+        Collection<InstancePublishInfo> instancePublishInfos = publishers.values();
+        for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                MetricsMonitor.decrementIpCountWithBatchRegister(instancePublishInfo);
+            } else {
+                MetricsMonitor.getIpCountMonitor().decrementAndGet();
+            }
+        }
+        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
     }
+    
+    @Override
+    public long recalculateRevision() {
+        int hash = DistroUtils.hash(this);
+        revision.set(hash);
+        return hash;
+    }
+    
+    @Override
+    public long getRevision() {
+        return revision.get();
+    }
+    
+    @Override
+    public void setRevision(long revision) {
+        this.revision.set(revision);
+    }
+    
 }

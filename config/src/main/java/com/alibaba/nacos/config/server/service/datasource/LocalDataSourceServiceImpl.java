@@ -57,7 +57,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private final String password = "nacos";
     
-    private final String derbyBaseDir = "data" + File.separator + "derby-data";
+    private final String derbyBaseDir = "data" + File.separator + Constants.DERBY_BASE_DIR;
     
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
     
@@ -94,12 +94,12 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             throw new RuntimeException("datasource is null");
         }
         try {
-            execute(ds.getConnection(), "META-INF/schema.sql");
+            execute(ds.getConnection(), "META-INF/derby-schema.sql");
         } catch (Exception e) {
             if (LogUtil.DEFAULT_LOG.isErrorEnabled()) {
                 LogUtil.DEFAULT_LOG.error(e.getMessage(), e);
             }
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load schema.sql error.", e);
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load derby-schema.sql error.", e);
         }
     }
     
@@ -210,7 +210,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         InputStream sqlFileIn = null;
         try {
             File file = new File(
-                    EnvUtil.getNacosHome() + File.separator + "conf" + File.separator + "schema.sql");
+                    EnvUtil.getNacosHome() + File.separator + "conf" + File.separator + "derby-schema.sql");
             if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
