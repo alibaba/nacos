@@ -17,8 +17,9 @@
 package com.alibaba.nacos.istio.xds;
 
 import com.alibaba.nacos.istio.api.ApiGenerator;
-import com.alibaba.nacos.istio.common.ResourceSnapshot;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.google.protobuf.Any;
+import io.envoyproxy.envoy.service.discovery.v3.Resource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.List;
  */
 public class EmptyXdsGenerator implements ApiGenerator<Any> {
 
-    private volatile static EmptyXdsGenerator singleton = null;
+    private static volatile EmptyXdsGenerator singleton = null;
 
     public static EmptyXdsGenerator getInstance() {
         if (singleton == null) {
@@ -40,9 +41,14 @@ public class EmptyXdsGenerator implements ApiGenerator<Any> {
         }
         return singleton;
     }
-
+    
     @Override
-    public List<Any> generate(ResourceSnapshot resourceSnapshot) {
+    public List<Any> generate(PushRequest pushRequest) {
+        return new ArrayList<>();
+    }
+    
+    @Override
+    public List<Resource> deltaGenerate(PushRequest pushRequest) {
         return new ArrayList<>();
     }
 }
