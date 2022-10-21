@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.istio.server;
 
-import com.alibaba.nacos.istio.common.NacosResourceManager;
 import com.alibaba.nacos.istio.mcp.NacosMcpService;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
@@ -49,10 +48,6 @@ public class IstioServer {
 
     @Autowired
     private NacosXdsService nacosXdsService;
-
-    @Autowired
-    private NacosResourceManager nacosResourceManager;
-
     /**
      * Start.
      *
@@ -65,10 +60,9 @@ public class IstioServer {
             Loggers.MAIN.info("The Nacos Istio server is disabled.");
             return;
         }
-        nacosResourceManager.start();
-
+        
         Loggers.MAIN.info("Nacos Istio server, starting Nacos Istio server...");
-
+        
         server = ServerBuilder.forPort(istioConfig.getServerPort()).addService(ServerInterceptors.intercept(nacosMcpService, serverInterceptor))
                 .addService(ServerInterceptors.intercept(nacosXdsService, serverInterceptor)).build();
         server.start();
