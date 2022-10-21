@@ -19,8 +19,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
@@ -45,9 +43,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Operation for operators.
@@ -123,13 +119,7 @@ public class OperatorController {
      */
     @GetMapping("/switches")
     public SwitchDomain switches(HttpServletRequest request) {
-        if (EnvUtil.isSupportUpgradeFrom1X()) {
-            return switchDomain;
-        }
-        SwitchDomain result = new SwitchDomain();
-        result.update(result);
-        result.setDoubleWriteEnabled(false);
-        return result;
+        return switchDomain;
     }
     
     /**
@@ -207,29 +197,6 @@ public class OperatorController {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
         result.put("responsibleServer", distroMapper.mapSrv(tag));
-        return result;
-    }
-    
-    /**
-     * This interface will be removed in a future release.
-     *
-     * @param healthy whether only query health server.
-     * @return "ok"
-     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
-     */
-    @GetMapping("/servers")
-    public ObjectNode getHealthyServerList(@RequestParam(required = false) boolean healthy) {
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        if (healthy) {
-            List<Member> healthyMember = memberManager.allMembers().stream()
-                    .filter(member -> member.getState() == NodeState.UP)
-                    .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-            result.replace("servers", JacksonUtils.transferToJsonNode(healthyMember));
-        } else {
-            result.replace("servers", JacksonUtils.transferToJsonNode(memberManager.allMembers()));
-        }
-        
         return result;
     }
     

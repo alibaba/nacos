@@ -274,10 +274,6 @@ public class InstanceController {
         if (StringUtils.isNotBlank(metadata)) {
             patchObject.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
-        String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
-        if (StringUtils.isNotBlank(app)) {
-            patchObject.setApp(app);
-        }
         String weight = WebUtils.optional(request, "weight", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(weight)) {
             patchObject.setWeight(Double.parseDouble(weight));

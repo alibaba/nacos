@@ -63,7 +63,7 @@ public class AbstractProcessorTest {
                 return null;
             }
         };
-        AbstractProcessor processor = new NacosLogProcessor(server, SerializeFactory.getDefault());
+        AbstractProcessor processor = new NacosWriteRequestProcessor(server, SerializeFactory.getDefault());
         processor.execute(server, context, WriteRequest.newBuilder().build(), new JRaftServer.RaftGroupTuple());
         
         Response response = reference.get();

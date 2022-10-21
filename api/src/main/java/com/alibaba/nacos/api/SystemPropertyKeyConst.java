@@ -27,8 +27,6 @@ public interface SystemPropertyKeyConst {
     
     String NAMING_SERVER_PORT = "nacos.naming.exposed.port";
     
-    String NAMING_WEB_CONTEXT = "nacos.naming.web.context";
-    
     /**
      * In the cloud (Alibaba Cloud or other cloud vendors) environment, whether to enable namespace resolution in the
      * cloud environment.

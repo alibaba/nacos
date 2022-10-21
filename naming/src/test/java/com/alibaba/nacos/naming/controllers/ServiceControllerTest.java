@@ -121,10 +121,10 @@ public class ServiceControllerTest extends BaseTest {
     public void testSearchService() {
         try {
             Mockito.when(
-                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Collections.singletonList("result"));
             
-            ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "", true);
+            ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "");
             Assert.assertEquals(1, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();
@@ -133,11 +133,11 @@ public class ServiceControllerTest extends BaseTest {
         
         try {
             Mockito.when(
-                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Arrays.asList("re1", "re2"));
             Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
             
-            ObjectNode objectNode = serviceController.searchService(null, "", true);
+            ObjectNode objectNode = serviceController.searchService(null, "");
             Assert.assertEquals(4, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();
