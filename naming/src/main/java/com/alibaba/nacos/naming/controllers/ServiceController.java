@@ -194,25 +194,23 @@ public class ServiceController {
     /**
      * Search service names.
      *
-     * @param namespaceId     namespace
-     * @param expr            search pattern
-     * @param responsibleOnly whether only search responsible service
+     * @param namespaceId namespace
+     * @param expr        search pattern
      * @return search result
      */
     @RequestMapping("/names")
     @Secured(action = ActionTypes.READ)
     public ObjectNode searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
-            @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
-            @RequestParam(required = false) boolean responsibleOnly) throws NacosException {
+            @RequestParam(defaultValue = StringUtils.EMPTY) String expr) throws NacosException {
         Map<String, Collection<String>> serviceNameMap = new HashMap<>(16);
         int totalCount = 0;
         if (StringUtils.isNotBlank(namespaceId)) {
-            Collection<String> names = getServiceOperator().searchServiceName(namespaceId, expr, responsibleOnly);
+            Collection<String> names = getServiceOperator().searchServiceName(namespaceId, expr);
             serviceNameMap.put(namespaceId, names);
             totalCount = names.size();
         } else {
             for (String each : getServiceOperator().listAllNamespace()) {
-                Collection<String> names = getServiceOperator().searchServiceName(each, expr, responsibleOnly);
+                Collection<String> names = getServiceOperator().searchServiceName(each, expr);
                 serviceNameMap.put(each, names);
                 totalCount += names.size();
             }
