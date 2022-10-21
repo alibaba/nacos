@@ -311,7 +311,7 @@ public class IoUtils {
             return false;
         }
         
-        return GZIPInputStream.GZIP_MAGIC == ((bytes[1] << 8 | bytes[0]) & 0xFFFF);
+        return GZIPInputStream.GZIP_MAGIC == (bytes[1] << 8 | (bytes[0] & 0xFFFF));
     }
     
     /**
