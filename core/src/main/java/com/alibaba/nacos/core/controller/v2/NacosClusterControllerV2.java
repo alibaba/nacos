@@ -16,17 +16,20 @@
 
 package com.alibaba.nacos.core.controller.v2;
 
-import com.alibaba.nacos.common.Beta;
+import com.alibaba.nacos.api.annotation.NacosApi;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
+import com.alibaba.nacos.core.service.NacosClusterOperationService;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.core.utils.Loggers;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -35,7 +38,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -45,20 +47,20 @@ import java.util.Locale;
  *
  * @author wuzhiguo
  */
-@Beta
+@NacosApi
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/cluster")
-public class NacosClusterV2Controller {
+public class NacosClusterControllerV2 {
     
-    private final ServerMemberManager memberManager;
+    private final NacosClusterOperationService nacosClusterOperationService;
     
-    public NacosClusterV2Controller(ServerMemberManager memberManager) {
-        this.memberManager = memberManager;
+    public NacosClusterControllerV2(NacosClusterOperationService nacosClusterOperationService) {
+        this.nacosClusterOperationService = nacosClusterOperationService;
     }
     
-    @GetMapping(value = "/nodes/self")
-    public RestResult<Member> self() {
-        return RestResultUtils.success(memberManager.getSelf());
+    @GetMapping(value = "/node/self")
+    public Result<Member> self() {
+        return Result.success(nacosClusterOperationService.self());
     }
     
     /**
@@ -68,35 +70,24 @@ public class NacosClusterV2Controller {
      * @param state   match state
      * @return members that matches condition
      */
-    @GetMapping(value = "/nodes")
-    public RestResult<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
-            @RequestParam(value = "state", required = false) String state) {
+    @GetMapping(value = "/node/list")
+    public Result<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "state", required = false) String state) throws NacosException {
         
         NodeState nodeState = null;
         if (StringUtils.isNoneBlank(state)) {
             try {
                 nodeState = NodeState.valueOf(state.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
-                return RestResultUtils.failedWithMsg(400, "Illegal state: " + state);
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_STATE, "Illegal state: " + state);
             }
         }
-        
-        Collection<Member> members = memberManager.allMembers();
-        Collection<Member> result = new ArrayList<>();
-        
-        for (Member member : members) {
-            if (StringUtils.isNoneBlank(address) && !StringUtils.startsWith(member.getAddress(), address)) {
-                continue;
-            }
-            
-            if (nodeState != null && member.getState() != nodeState) {
-                continue;
-            }
-            
-            result.add(member);
-        }
-        
-        return RestResultUtils.success(result);
+        return Result.success(nacosClusterOperationService.listNodes(address, nodeState));
+    }
+    
+    @GetMapping(value = "/node/self/health")
+    public Result<String> selfHealth() {
+        return Result.success(nacosClusterOperationService.selfHealth());
     }
     
     // The client can get all the nacos node information in the current
@@ -108,25 +99,13 @@ public class NacosClusterV2Controller {
      * @param nodes List of {@link Member}
      * @return {@link RestResult}
      */
-    @PutMapping(value = "/nodes")
-    public RestResult<Void> updateNodes(@RequestBody List<Member> nodes) {
-        for (Member node : nodes) {
-            if (!node.check()) {
-                LoggerUtils.printIfWarnEnabled(Loggers.CLUSTER, "node information is illegal, ignore node: {}", node);
-                continue;
-            }
-            
-            LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state updating, node: {}", node);
-            node.setState(NodeState.UP);
-            node.setFailAccessCnt(0);
-            
-            boolean update = memberManager.update(node);
-            if (!update) {
-                LoggerUtils.printIfErrorEnabled(Loggers.CLUSTER, "node state update failed, node: {}", node);
-            }
+    @PutMapping(value = "/node/list")
+    public Result<Boolean> updateNodes(@RequestBody List<Member> nodes) throws NacosApiException {
+        if (nodes == null || nodes.size() == 0) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "required parameter 'nodes' is missing");
         }
-        
-        return RestResultUtils.success();
+        return Result.success(nacosClusterOperationService.updateNodes(nodes));
     }
     
     /**
@@ -136,13 +115,12 @@ public class NacosClusterV2Controller {
      * @return {@link RestResult}
      */
     @PutMapping(value = "/lookup")
-    public RestResult<Void> updateLookup(@RequestBody LookupUpdateRequest request) {
-        try {
-            memberManager.switchLookup(request.getType());
-            return RestResultUtils.success();
-        } catch (Throwable ex) {
-            return RestResultUtils.failed(ex.getMessage());
+    public Result<Boolean> updateLookup(LookupUpdateRequest request) throws NacosException {
+        if (request == null || request.getType() == null) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+                    "required parameter 'type' is missing");
         }
+        return Result.success(nacosClusterOperationService.updateLookup(request));
     }
     
     /**

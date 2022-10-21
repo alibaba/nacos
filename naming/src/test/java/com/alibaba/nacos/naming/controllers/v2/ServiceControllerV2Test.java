@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.controllers;
+package com.alibaba.nacos.naming.controllers.v2;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.model.form.ServiceForm;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import com.alibaba.nacos.naming.selector.SelectorManager;
@@ -28,10 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import javax.servlet.http.HttpServletRequest;
 
 import java.util.Collections;
 
@@ -59,23 +58,32 @@ public class ServiceControllerV2Test {
     
     @Test
     public void testCreate() throws Exception {
-        RestResult<String> actual = serviceController
-                .create(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP, true, 0.0f, "", "");
+    
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setServiceName("service");
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setEphemeral(true);
+        serviceForm.setProtectThreshold(0.0F);
+        serviceForm.setMetadata("");
+        serviceForm.setSelector("");
+    
+        Result<String> actual = serviceController.create(serviceForm);
         verify(serviceOperatorV2)
                 .create(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                         any(ServiceMetadata.class));
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
-        assertEquals(200, actual.getCode());
     }
     
     @Test
     public void testRemove() throws Exception {
-        RestResult<String> actual = serviceController
+        Result<String> actual = serviceController
                 .remove(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
         verify(serviceOperatorV2)
                 .delete(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service"));
         assertEquals("ok", actual.getData());
-        assertEquals(200, actual.getCode());
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
     }
     
     @Test
@@ -84,21 +92,19 @@ public class ServiceControllerV2Test {
         when(serviceOperatorV2
                 .queryService(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")))
                 .thenReturn(expected);
-        RestResult<ServiceDetailInfo> actual = serviceController
+        Result<ServiceDetailInfo> actual = serviceController
                 .detail(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP);
-        assertEquals(200, actual.getCode());
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(expected, actual.getData());
     }
     
     @Test
     public void testList() throws Exception {
-        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
-        when(request.getParameter("pageNo")).thenReturn("1");
-        when(request.getParameter("pageSize")).thenReturn("10");
+        
         when(serviceOperatorV2.listService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "")).thenReturn(
                 Collections.singletonList("serviceName"));
-        RestResult<ServiceNameView> actual = serviceController.list(request);
-        assertEquals(200, actual.getCode());
+        Result<ServiceNameView> actual = serviceController.list(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "", 1, 10);
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals(1, actual.getData().getCount());
         assertEquals(1, actual.getData().getServices().size());
         assertEquals("serviceName", actual.getData().getServices().iterator().next());
@@ -106,12 +112,19 @@ public class ServiceControllerV2Test {
     
     @Test
     public void testUpdate() throws Exception {
-        RestResult<String> actual = serviceController
-                .update(Constants.DEFAULT_NAMESPACE_ID, "service", Constants.DEFAULT_GROUP, 0.0f, "", "");
+        ServiceForm serviceForm = new ServiceForm();
+        serviceForm.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        serviceForm.setGroupName(Constants.DEFAULT_GROUP);
+        serviceForm.setServiceName("service");
+        serviceForm.setProtectThreshold(0.0f);
+        serviceForm.setMetadata("");
+        serviceForm.setSelector("");
+        Result<String> actual = serviceController
+                .update(serviceForm);
         verify(serviceOperatorV2)
                 .update(eq(Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "service")),
                         any(ServiceMetadata.class));
+        assertEquals(ErrorCode.SUCCESS.getCode(), actual.getCode());
         assertEquals("ok", actual.getData());
-        assertEquals(200, actual.getCode());
     }
 }
