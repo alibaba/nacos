@@ -77,13 +77,7 @@ public class OperatorControllerV2 {
      */
     @GetMapping("/switches")
     public Result<SwitchDomain> switches() {
-        if (EnvUtil.isSupportUpgradeFrom1X()) {
-            return Result.success(switchDomain);
-        }
-        SwitchDomain result = new SwitchDomain();
-        result.update(result);
-        result.setDoubleWriteEnabled(false);
-        return Result.success(result);
+        return Result.success(switchDomain);
     }
     
     /**

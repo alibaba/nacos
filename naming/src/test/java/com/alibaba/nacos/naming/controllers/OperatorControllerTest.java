@@ -93,17 +93,6 @@ public class OperatorControllerTest {
     }
     
     @Test
-    public void testSwitchDomainForNotSupportUpgrade() {
-        MockEnvironment environment = new MockEnvironment();
-        EnvUtil.setEnvironment(environment);
-        SwitchDomain switchDomain = operatorController.switches(new MockHttpServletRequest());
-        SwitchDomain expected = new SwitchDomain();
-        expected.update(switchDomain);
-        expected.setDoubleWriteEnabled(false);
-        Assert.assertEquals(expected.toString(), switchDomain.toString());
-    }
-    
-    @Test
     public void testUpdateSwitch() {
         try {
             String res = operatorController.updateSwitch(true, "test", "test");

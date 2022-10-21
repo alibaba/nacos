@@ -123,13 +123,7 @@ public class OperatorController {
      */
     @GetMapping("/switches")
     public SwitchDomain switches(HttpServletRequest request) {
-        if (EnvUtil.isSupportUpgradeFrom1X()) {
-            return switchDomain;
-        }
-        SwitchDomain result = new SwitchDomain();
-        result.update(result);
-        result.setDoubleWriteEnabled(false);
-        return result;
+        return switchDomain;
     }
     
     /**
