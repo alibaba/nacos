@@ -113,8 +113,9 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         }
         
         if (!serviceStorage.getPushData(service).getHosts().isEmpty()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_DELETE_FAILURE, "Service " + service.getGroupedServiceName()
-                    + " is not empty, can't be delete. Please unregister instance first");
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SERVICE_DELETE_FAILURE,
+                    "Service " + service.getGroupedServiceName()
+                            + " is not empty, can't be delete. Please unregister instance first");
         }
         metadataOperateService.deleteServiceMetadata(service);
     }
@@ -238,8 +239,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
     }
     
     @Override
-    public Collection<String> searchServiceName(String namespaceId, String expr, boolean responsibleOnly)
-            throws NacosException {
+    public Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException {
         String regex = Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN;
         Collection<String> result = new HashSet<>();
         for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
