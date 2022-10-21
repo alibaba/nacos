@@ -584,7 +584,7 @@ class ConfigEditor extends React.Component {
     const activeKey = this.state.activeKey.split('-')[0];
 
     return (
-      <div style={{ padding: 10 }}>
+      <div>
         <Loading
           shape="flower"
           style={{ position: 'relative', width: '100%' }}
@@ -613,7 +613,7 @@ class ConfigEditor extends React.Component {
           )}
 
           <Form field={this.field}>
-            <FormItem label="Data ID:" {...formItemLayout}>
+            <FormItem label="Data ID" {...formItemLayout}>
               <Input
                 disabled
                 {...init('dataId', {
@@ -624,7 +624,7 @@ class ConfigEditor extends React.Component {
                 })}
               />
             </FormItem>
-            <FormItem label="Group:" {...formItemLayout}>
+            <FormItem label="Group" {...formItemLayout}>
               <Input
                 disabled
                 {...init('group', {

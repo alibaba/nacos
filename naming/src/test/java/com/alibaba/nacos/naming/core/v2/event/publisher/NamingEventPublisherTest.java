@@ -29,6 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -92,7 +93,7 @@ public class NamingEventPublisherTest {
         }
         namingEventPublisher.addSubscriber(subscriber, TestEvent.class);
         namingEventPublisher.publish(testEvent);
-        verify(subscriber).onEvent(testEvent);
+        verify(subscriber, atLeastOnce()).onEvent(testEvent);
     }
     
     @Test

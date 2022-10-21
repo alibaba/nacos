@@ -22,6 +22,7 @@ import { getParams, setParams, request } from '@/globalLib';
 
 import './index.scss';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
+import QueryResult from '../../../components/QueryResult';
 
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
@@ -310,7 +311,7 @@ class HistoryRollback extends React.Component {
     const { init } = this.field;
     this.init = init;
     return (
-      <div style={{ padding: 10 }}>
+      <div>
         <Loading
           shape="flower"
           style={{ position: 'relative', width: '100%' }}
@@ -324,7 +325,7 @@ class HistoryRollback extends React.Component {
           />
           <div>
             <Form inline field={this.field}>
-              <Form.Item label="Data ID:" required>
+              <Form.Item label="Data ID" required>
                 <Select
                   style={{ width: 200 }}
                   size="medium"
@@ -396,14 +397,10 @@ class HistoryRollback extends React.Component {
                 lineHeight: '30px',
                 padding: 0,
                 margin: 0,
-                paddingLeft: 10,
-                borderLeft: '3px solid #09c',
                 fontSize: 16,
               }}
             >
-              {locale.queryResult}
-              <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-              {locale.articleMeet}
+              <QueryResult total={this.state.total} />
             </h3>
           </div>
           <div>

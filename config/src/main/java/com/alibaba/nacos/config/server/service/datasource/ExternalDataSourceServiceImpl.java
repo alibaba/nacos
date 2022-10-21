@@ -119,16 +119,37 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     @Override
     public synchronized void reload() throws IOException {
         try {
-            dataSourceList = new ExternalDataSourceProperties()
+            final List<JdbcTemplate> testJtListNew = new ArrayList<JdbcTemplate>();
+            final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
+    
+            List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
                     .build(EnvUtil.getEnvironment(), (dataSource) -> {
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
                         jdbcTemplate.setDataSource(dataSource);
-                        testJtList.add(jdbcTemplate);
-                        isHealthList.add(Boolean.TRUE);
+                        testJtListNew.add(jdbcTemplate);
+                        isHealthListNew.add(Boolean.TRUE);
                     });
+    
+            final List<HikariDataSource> dataSourceListOld = dataSourceList;
+            final List<JdbcTemplate> testJtListOld = testJtList;
+            dataSourceList = dataSourceListNew;
+            testJtList = testJtListNew;
+            isHealthList = isHealthListNew;
             new SelectMasterTask().run();
             new CheckDbHealthTask().run();
+            
+            //close old datasource.
+            if (dataSourceListOld != null && !dataSourceListOld.isEmpty()) {
+                for (HikariDataSource dataSource : dataSourceListOld) {
+                    dataSource.close();
+                }
+            }
+            if (testJtListOld != null && !testJtListOld.isEmpty()) {
+                for (JdbcTemplate oldJdbc : testJtListOld) {
+                    oldJdbc.setDataSource(null);
+                }
+            }
         } catch (RuntimeException e) {
             FATAL_LOG.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);

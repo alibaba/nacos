@@ -90,10 +90,7 @@ class Login extends React.Component {
         >
           <div className="vertical-middle product-area">
             <img className="product-logo" src="img/nacos.png" />
-            <p className="product-desc">
-              an easy-to-use dynamic service discovery, configuration and service management
-              platform for building cloud native applications
-            </p>
+            <p className="product-desc">{locale.productDesc}</p>
           </div>
           <div className="animation animation1" />
           <div className="animation animation2" />

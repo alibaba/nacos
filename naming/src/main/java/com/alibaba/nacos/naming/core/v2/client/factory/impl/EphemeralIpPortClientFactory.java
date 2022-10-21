@@ -21,6 +21,8 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 
+import static com.alibaba.nacos.naming.constants.ClientConstants.REVISION;
+
 /**
  * Client factory for ephemeral {@link IpPortBasedClient}.
  *
@@ -35,11 +37,13 @@ public class EphemeralIpPortClientFactory implements ClientFactory<IpPortBasedCl
     
     @Override
     public IpPortBasedClient newClient(String clientId, ClientAttributes attributes) {
-        return new IpPortBasedClient(clientId, true);
+        long revision = attributes.getClientAttribute(REVISION, 0);
+        return new IpPortBasedClient(clientId, true, revision);
     }
     
     @Override
     public IpPortBasedClient newSyncedClient(String clientId, ClientAttributes attributes) {
-        return new IpPortBasedClient(clientId, true);
+        long revision = attributes.getClientAttribute(REVISION, 0);
+        return new IpPortBasedClient(clientId, true, revision);
     }
 }

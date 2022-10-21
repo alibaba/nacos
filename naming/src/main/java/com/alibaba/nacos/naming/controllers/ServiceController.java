@@ -25,21 +25,16 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.ServiceOperator;
-import com.alibaba.nacos.naming.core.ServiceOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -77,22 +72,10 @@ import java.util.Optional;
 public class ServiceController {
     
     @Autowired
-    protected ServiceManager serviceManager;
-    
-    @Autowired
-    private ServerMemberManager memberManager;
-    
-    @Autowired
     private SubscribeManager subscribeManager;
     
     @Autowired
-    private ServiceOperatorV1Impl serviceOperatorV1;
-    
-    @Autowired
     private ServiceOperatorV2Impl serviceOperatorV2;
-    
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
     
     @Autowired
     private SelectorManager selectorManager;
@@ -121,8 +104,8 @@ public class ServiceController {
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(metadata));
         serviceMetadata.setEphemeral(false);
         getServiceOperator().create(namespaceId, serviceName, serviceMetadata);
-        NotifyCenter.publishEvent(new NamingTraceEvent.RegisterServiceTraceEvent(System.currentTimeMillis(),
-                namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName)));
+        NotifyCenter.publishEvent(new RegisterServiceTraceEvent(System.currentTimeMillis(), namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName)));
         return "ok";
     }
     
@@ -140,8 +123,8 @@ public class ServiceController {
             @RequestParam String serviceName) throws Exception {
         
         getServiceOperator().delete(namespaceId, serviceName);
-        NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterServiceTraceEvent(System.currentTimeMillis(),
-                namespaceId, "", serviceName));
+        NotifyCenter.publishEvent(
+                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, "", serviceName));
         return "ok";
     }
     
@@ -241,94 +224,6 @@ public class ServiceController {
     }
     
     /**
-     * Check service status whether latest.
-     *
-     * @param request http request
-     * @return 'ok' if service status if latest, otherwise 'fail' or exception
-     * @throws Exception exception
-     * @deprecated will removed after v2.1
-     */
-    @PostMapping("/status")
-    @Deprecated
-    public String serviceStatus(HttpServletRequest request) throws Exception {
-        
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
-        String value = URLDecoder.decode(entity, "UTF-8");
-        JsonNode json = JacksonUtils.toObj(value);
-        
-        //format: service1@@checksum@@@service2@@checksum
-        String statuses = json.get("statuses").asText();
-        String serverIp = json.get("clientIP").asText();
-        
-        if (!memberManager.hasMember(serverIp)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "ip: " + serverIp + " is not in serverlist");
-        }
-        
-        try {
-            ServiceManager.ServiceChecksum checksums = JacksonUtils
-                    .toObj(statuses, ServiceManager.ServiceChecksum.class);
-            if (checksums == null) {
-                Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
-                return "fail";
-            }
-            
-            for (Map.Entry<String, String> entry : checksums.serviceName2Checksum.entrySet()) {
-                if (entry == null || StringUtils.isEmpty(entry.getKey()) || StringUtils.isEmpty(entry.getValue())) {
-                    continue;
-                }
-                String serviceName = entry.getKey();
-                String checksum = entry.getValue();
-                Service service = serviceManager.getService(checksums.namespaceId, serviceName);
-                
-                if (service == null) {
-                    continue;
-                }
-                
-                service.recalculateChecksum();
-                
-                if (!checksum.equals(service.getChecksum())) {
-                    if (Loggers.SRV_LOG.isDebugEnabled()) {
-                        Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
-                                serviceName, serverIp, checksum, service.getChecksum());
-                    }
-                    serviceManager.addUpdatedServiceToQueue(checksums.namespaceId, serviceName, serverIp, checksum);
-                }
-            }
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: " + statuses, e);
-        }
-        
-        return "ok";
-    }
-    
-    /**
-     * Get checksum of one service.
-     *
-     * @param request http request
-     * @return checksum of one service
-     * @throws Exception exception
-     * @deprecated will removed after v2.1
-     */
-    @PutMapping("/checksum")
-    @Deprecated
-    public ObjectNode checksum(HttpServletRequest request) throws NacosException {
-        
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        
-        serviceManager.checkServiceIsNull(service, namespaceId, serviceName);
-        
-        service.recalculateChecksum();
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        
-        result.put("checksum", service.getChecksum());
-        
-        return result;
-    }
-    
-    /**
      * get subscriber list.
      *
      * @param request http request
@@ -404,6 +299,6 @@ public class ServiceController {
     }
     
     private ServiceOperator getServiceOperator() {
-        return upgradeJudgement.isUseGrpcFeatures() ? serviceOperatorV2 : serviceOperatorV1;
+        return serviceOperatorV2;
     }
 }

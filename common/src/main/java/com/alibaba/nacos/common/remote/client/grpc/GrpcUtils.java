@@ -32,6 +32,8 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * gRPC utils, use to parse request and response.
@@ -59,8 +61,7 @@ public class GrpcUtils {
         payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
-        request.clearHeaders();
-        byte[] jsonBytes = JacksonUtils.toJsonBytes(request);
+        byte[] jsonBytes = convertRequestToByte(request);
         return payloadBuilder
                 .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .build();
@@ -77,11 +78,11 @@ public class GrpcUtils {
         
         Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
                 .setClientIp(NetUtils.localIP()).putAllHeaders(request.getHeaders()).build();
-        request.clearHeaders();
-        byte[] jsonBytes = JacksonUtils.toJsonBytes(request);
+        
+        byte[] jsonBytes = convertRequestToByte(request);
         
         Payload.Builder builder = Payload.newBuilder();
-    
+        
         return builder
                 .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(newMeta).build();
@@ -101,6 +102,14 @@ public class GrpcUtils {
         return Payload.newBuilder()
                 .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(metaBuilder.build()).build();
+    }
+    
+    private static byte[] convertRequestToByte(Request request) {
+        Map<String, String> requestHeaders = new HashMap<>(request.getHeaders());
+        request.clearHeaders();
+        byte[] jsonBytes = JacksonUtils.toJsonBytes(request);
+        request.putAllHeader(requestHeaders);
+        return jsonBytes;
     }
     
     /**

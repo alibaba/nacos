@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -114,7 +115,7 @@ public class PersistentIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean verifyClient(String clientId) {
+    public boolean verifyClient(DistroClientVerifyInfo verifyData) {
         throw new UnsupportedOperationException("");
     }
     

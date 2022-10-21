@@ -16,27 +16,17 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
 import com.alibaba.nacos.core.utils.TimerContext;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.misc.Loggers;
 
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
 /**
  * Kv storage implementation for naming.
@@ -53,12 +43,9 @@ public class NamingKvStorage extends MemoryKvStorage {
     
     private final KvStorage baseDirStorage;
     
-    private final Map<String, KvStorage> namespaceKvStorage;
-    
     public NamingKvStorage(final String baseDir) throws Exception {
         this.baseDir = baseDir;
         this.baseDirStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, LABEL, baseDir);
-        this.namespaceKvStorage = new ConcurrentHashMap<>(16);
     }
     
     @Override
@@ -67,7 +54,7 @@ public class NamingKvStorage extends MemoryKvStorage {
         byte[] result = super.get(key);
         if (null == result) {
             try {
-                KvStorage storage = createActualStorageIfAbsent(key);
+                KvStorage storage = getStorage();
                 result = null == storage ? null : storage.get(key);
                 if (null != result) {
                     super.put(key, result);
@@ -95,7 +82,7 @@ public class NamingKvStorage extends MemoryKvStorage {
     @Override
     public void put(byte[] key, byte[] value) throws KvStorageException {
         try {
-            KvStorage storage = createActualStorageIfAbsent(key);
+            KvStorage storage = getStorage();
             storage.put(key, value);
         } catch (Exception e) {
             throw new KvStorageException(ErrorCode.KVStorageWriteError.getCode(),
@@ -120,7 +107,7 @@ public class NamingKvStorage extends MemoryKvStorage {
     @Override
     public void delete(byte[] key) throws KvStorageException {
         try {
-            KvStorage storage = createActualStorageIfAbsent(key);
+            KvStorage storage = getStorage();
             if (null != storage) {
                 storage.delete(key);
             }
@@ -150,7 +137,6 @@ public class NamingKvStorage extends MemoryKvStorage {
         try {
             baseDirStorage.snapshotLoad(path);
             loadSnapshotFromActualStorage(baseDirStorage);
-            loadNamespaceSnapshot();
         } finally {
             TimerContext.end(LOAD_SNAPSHOT, Loggers.RAFT);
         }
@@ -163,31 +149,6 @@ public class NamingKvStorage extends MemoryKvStorage {
         }
     }
     
-    private void loadNamespaceSnapshot() {
-        for (String each : getAllNamespaceDirs()) {
-            try {
-                KvStorage kvStorage = createActualStorageIfAbsent(each);
-                loadSnapshotFromActualStorage(kvStorage);
-            } catch (Exception e) {
-                Loggers.RAFT.error("load snapshot for namespace {} failed", each, e);
-            }
-        }
-    }
-    
-    private List<String> getAllNamespaceDirs() {
-        File[] files = new File(baseDir).listFiles();
-        List<String> result = Collections.emptyList();
-        if (null != files) {
-            result = new ArrayList<>(files.length);
-            for (File each : files) {
-                if (each.isDirectory()) {
-                    result.add(each.getName());
-                }
-            }
-        }
-        return Collections.unmodifiableList(result);
-    }
-    
     @Override
     public List<byte[]> allKeys() throws KvStorageException {
         return super.allKeys();
@@ -196,33 +157,10 @@ public class NamingKvStorage extends MemoryKvStorage {
     @Override
     public void shutdown() {
         baseDirStorage.shutdown();
-        for (KvStorage each : namespaceKvStorage.values()) {
-            each.shutdown();
-        }
-        namespaceKvStorage.clear();
         super.shutdown();
     }
     
-    private KvStorage createActualStorageIfAbsent(byte[] key) throws Exception {
-        String keyString = new String(key);
-        String namespace = KeyBuilder.getNamespace(keyString);
-        return createActualStorageIfAbsent(namespace);
-    }
-    
-    private KvStorage createActualStorageIfAbsent(String namespace) throws Exception {
-        if (StringUtils.isBlank(namespace)) {
-            return baseDirStorage;
-        }
-        
-        Function<String, KvStorage> kvStorageBuilder = key -> {
-            try {
-                String namespacePath = Paths.get(baseDir, key).toString();
-                return StorageFactory.createKvStorage(KvType.File, LABEL, namespacePath);
-            } catch (Exception e) {
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
-            }
-        };
-        namespaceKvStorage.computeIfAbsent(namespace, kvStorageBuilder);
-        return namespaceKvStorage.get(namespace);
+    private KvStorage getStorage() throws Exception {
+        return baseDirStorage;
     }
 }

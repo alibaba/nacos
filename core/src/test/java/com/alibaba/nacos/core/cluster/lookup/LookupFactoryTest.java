@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -25,35 +24,33 @@ import com.alibaba.nacos.sys.file.WatchFileCenter;
 import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
-
-import javax.servlet.ServletContext;
-import java.io.File;
-import java.util.Objects;
-
-import static org.mockito.Mockito.when;
+import org.springframework.mock.env.MockEnvironment;
 
 @RunWith(MockitoJUnitRunner.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LookupFactoryTest extends TestCase {
-    
-    @Mock
-    private ServletContext servletContext;
     
     private static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
     
+    @Mock
     private ServerMemberManager memberManager;
     
     private MemberLookup memberLookup;
     
+    MockEnvironment mockEnvironment;
+    
     @Before
     public void setUp() throws Exception {
-        when(servletContext.getContextPath()).thenReturn("");
         EnvUtil.setEnvironment(new StandardEnvironment());
-        memberManager = new ServerMemberManager(servletContext);
+        mockEnvironment = new MockEnvironment();
+        EnvUtil.setEnvironment(mockEnvironment);
     }
     
     @After
@@ -62,48 +59,51 @@ public class LookupFactoryTest extends TestCase {
         memberManager.shutdown();
     }
     
+    /**
+     * createLookUpStandalone MemberLookup.
+     *
+     * @throws NacosException NacosException
+     */
     @Test
-    public void testCreateLookUp() throws NacosException {
+    public void createLookUpStandaloneMemberLookup() throws NacosException {
+        EnvUtil.setIsStandalone(true);
         memberLookup = LookupFactory.createLookUp(memberManager);
-        if (EnvUtil.getStandaloneMode()) {
-            assertEquals(memberLookup.getClass(), StandaloneMemberLookup.class);
-        } else {
-            String lookupType = EnvUtil.getProperty(LOOKUP_MODE_TYPE);
-            if (StringUtils.isNotBlank(lookupType)) {
-                LookupFactory.LookupType type = LookupFactory.LookupType.sourceOf(lookupType);
-                if (Objects.nonNull(type)) {
-                    if (LookupFactory.LookupType.FILE_CONFIG.equals(type)) {
-                        assertEquals(memberLookup.getClass(), FileConfigMemberLookup.class);
-                    }
-                    if (LookupFactory.LookupType.ADDRESS_SERVER.equals(type)) {
-                        assertEquals(memberLookup.getClass(), AddressServerMemberLookup.class);
-                    }
-                } else {
-                    File file = new File(EnvUtil.getClusterConfFilePath());
-                    if (file.exists() || StringUtils.isNotBlank(EnvUtil.getMemberList())) {
-                        assertEquals(memberLookup.getClass(), FileConfigMemberLookup.class);
-                    } else {
-                        assertEquals(memberLookup.getClass(), AddressServerMemberLookup.class);
-                    }
-                }
-            } else {
-                File file = new File(EnvUtil.getClusterConfFilePath());
-                if (file.exists() || StringUtils.isNotBlank(EnvUtil.getMemberList())) {
-                    assertEquals(memberLookup.getClass(), FileConfigMemberLookup.class);
-                } else {
-                    assertEquals(memberLookup.getClass(), AddressServerMemberLookup.class);
-                }
-            }
-        }
+        assertEquals(StandaloneMemberLookup.class, memberLookup.getClass());
     }
     
     @Test
-    public void testSwitchLookup() throws NacosException {
+    public void createLookUpFileConfigMemberLookup() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "file");
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        assertEquals(FileConfigMemberLookup.class, memberLookup.getClass());
+    }
+    
+    @Test
+    public void createLookUpAddressServerMemberLookup() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        mockEnvironment.setProperty(LOOKUP_MODE_TYPE, "address-server");
+        memberLookup = LookupFactory.createLookUp(memberManager);
+        assertEquals(AddressServerMemberLookup.class, memberLookup.getClass());
+    }
+    
+    @Test
+    public void testSwitchLookup() throws Exception {
+        EnvUtil.setIsStandalone(false);
+        createLookUpFileConfigMemberLookup();
+        EnvUtil.setIsStandalone(false);
         String name1 = "file";
         MemberLookup memberLookup = LookupFactory.switchLookup(name1, memberManager);
         assertEquals(memberLookup.getClass(), FileConfigMemberLookup.class);
+        
+        createLookUpAddressServerMemberLookup();
         String name2 = "address-server";
         memberLookup = LookupFactory.switchLookup(name2, memberManager);
         assertEquals(memberLookup.getClass(), AddressServerMemberLookup.class);
+        
+        createLookUpStandaloneMemberLookup();
+        String name3 = "address-server";
+        memberLookup = LookupFactory.switchLookup(name3, memberManager);
+        assertEquals(memberLookup.getClass(), StandaloneMemberLookup.class);
     }
 }

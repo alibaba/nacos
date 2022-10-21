@@ -50,6 +50,6 @@ public class PersistentHealthStatusSynchronizerTest {
         updateInstance.setHealthy(true);
         
         verify(client).getClientId();
-        verify(persistentClientOperationService).registerInstance(service, updateInstance, client.getClientId());
+        verify(persistentClientOperationService).updateInstance(service, updateInstance, client.getClientId());
     }
 }

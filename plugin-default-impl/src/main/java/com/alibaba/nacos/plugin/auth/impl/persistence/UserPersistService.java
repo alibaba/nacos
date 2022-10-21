@@ -67,7 +67,7 @@ public interface UserPersistService {
      * @param pageSize pageSize
      * @return user page info
      */
-    Page<User> getUsers(int pageNo, int pageSize);
+    Page<User> getUsers(int pageNo, int pageSize, String username);
 
     /**
      * fuzzy query user by username.
@@ -76,4 +76,8 @@ public interface UserPersistService {
      * @return usernames
      */
     List<String> findUserLikeUsername(String username);
+
+    Page<User> findUsersLike4Page(String username, int pageNo, int pageSize);
+
+    String generateLikeArgument(String s);
 }
