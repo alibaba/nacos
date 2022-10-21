@@ -104,9 +104,9 @@ public class InstanceControllerV2 {
         // build instance
         Instance instance = buildInstance(instanceForm);
         instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
-        NotifyCenter.publishEvent(new NamingTraceEvent.RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
                 false, instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
-                instance.toInetAddr()));
+                instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -123,9 +123,9 @@ public class InstanceControllerV2 {
         // build instance
         Instance instance = buildInstance(instanceForm);
         instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
-        NotifyCenter.publishEvent(new NamingTraceEvent.DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
                 false, DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance.toInetAddr()));
+                instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     

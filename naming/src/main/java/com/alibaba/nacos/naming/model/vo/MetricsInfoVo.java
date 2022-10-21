@@ -38,12 +38,6 @@ public class MetricsInfoVo implements Serializable {
     
     private Integer subscribeCount;
     
-    private Integer raftNotifyTaskCount;
-    
-    private Integer responsibleServiceCount;
-    
-    private Integer responsibleInstanceCount;
-    
     private Integer clientCount;
     
     private Integer connectionBasedClientCount;
@@ -93,30 +87,6 @@ public class MetricsInfoVo implements Serializable {
     
     public void setSubscribeCount(Integer subscribeCount) {
         this.subscribeCount = subscribeCount;
-    }
-    
-    public Integer getRaftNotifyTaskCount() {
-        return raftNotifyTaskCount;
-    }
-    
-    public void setRaftNotifyTaskCount(Integer raftNotifyTaskCount) {
-        this.raftNotifyTaskCount = raftNotifyTaskCount;
-    }
-    
-    public Integer getResponsibleServiceCount() {
-        return responsibleServiceCount;
-    }
-    
-    public void setResponsibleServiceCount(Integer responsibleServiceCount) {
-        this.responsibleServiceCount = responsibleServiceCount;
-    }
-    
-    public Integer getResponsibleInstanceCount() {
-        return responsibleInstanceCount;
-    }
-    
-    public void setResponsibleInstanceCount(Integer responsibleInstanceCount) {
-        this.responsibleInstanceCount = responsibleInstanceCount;
     }
     
     public Integer getClientCount() {

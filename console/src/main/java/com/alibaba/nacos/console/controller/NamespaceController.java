@@ -148,7 +148,7 @@ public class NamespaceController {
      */
     @DeleteMapping
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
-    public Boolean deleteConfig(@RequestParam("namespaceId") String namespaceId) {
+    public Boolean deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
         return namespaceOperationService.removeNamespace(namespaceId);
     }
     

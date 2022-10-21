@@ -22,9 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.constants.ClientConstants;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -58,24 +56,17 @@ public class OperatorControllerV2 {
     
     private final SwitchManager switchManager;
     
-    private final ServiceManager serviceManager;
-    
     private final ServerStatusManager serverStatusManager;
     
     private final SwitchDomain switchDomain;
     
-    private final RaftCore raftCore;
-    
     private final ClientManager clientManager;
     
-    public OperatorControllerV2(SwitchManager switchManager, ServiceManager serviceManager,
-            ServerStatusManager serverStatusManager, SwitchDomain switchDomain, RaftCore raftCore,
-            ClientManager clientManager) {
+    public OperatorControllerV2(SwitchManager switchManager, ServerStatusManager serverStatusManager,
+            SwitchDomain switchDomain, ClientManager clientManager) {
         this.switchManager = switchManager;
-        this.serviceManager = serviceManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
-        this.raftCore = raftCore;
         this.clientManager = clientManager;
     }
     
@@ -109,7 +100,8 @@ public class OperatorControllerV2 {
         try {
             switchManager.update(updateSwitchForm.getEntry(), updateSwitchForm.getValue(), updateSwitchForm.getDebug());
         } catch (IllegalArgumentException e) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR, e.getMessage());
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
+                    e.getMessage());
         }
         
         return Result.success("ok");
@@ -122,7 +114,8 @@ public class OperatorControllerV2 {
      * @return metrics information
      */
     @GetMapping("/metrics")
-    public Result<MetricsInfoVo> metrics(@RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
+    public Result<MetricsInfoVo> metrics(
+            @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
         MetricsInfoVo metricsInfoVo = new MetricsInfoVo();
         metricsInfoVo.setStatus(serverStatusManager.getServerStatus().name());
         if (onlyStatus) {
@@ -149,14 +142,9 @@ public class OperatorControllerV2 {
             }
         }
         
-        int responsibleDomCount = serviceManager.getResponsibleServiceCount();
-        int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
         metricsInfoVo.setServiceCount(MetricsMonitor.getDomCountMonitor().get());
         metricsInfoVo.setInstanceCount(MetricsMonitor.getIpCountMonitor().get());
         metricsInfoVo.setSubscribeCount(MetricsMonitor.getSubscriberCount().get());
-        metricsInfoVo.setRaftNotifyTaskCount(raftCore.getNotifyTaskCount());
-        metricsInfoVo.setResponsibleServiceCount(responsibleDomCount);
-        metricsInfoVo.setResponsibleInstanceCount(responsibleIpCount);
         metricsInfoVo.setClientCount(allClientId.size());
         metricsInfoVo.setConnectionBasedClientCount(connectionBasedClient);
         metricsInfoVo.setEphemeralIpPortClientCount(ephemeralIpPortClient);
