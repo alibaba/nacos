@@ -68,6 +68,11 @@ class SearchableProperties implements NacosClientProperties {
                 JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE, DEFAULT_SETTING_PROPERTY_SOURCE);
     }
     
+    private SearchableProperties(PropertiesPropertySource propertiesPropertySource, List<AbstractPropertySource> propertySources) {
+        this.propertiesPropertySource = propertiesPropertySource;
+        this.propertySources = propertySources;
+    }
+    
     @Override
     public String getProperty(String key) {
         return getProperty(key, null);
@@ -216,7 +221,19 @@ class SearchableProperties implements NacosClientProperties {
     
     @Override
     public NacosClientProperties derive() {
-        return new SearchableProperties(new PropertiesPropertySource(this.propertiesPropertySource));
+        List<AbstractPropertySource> propertySources = new ArrayList<>(this.propertySources);
+        PropertiesPropertySource newPropertiesPropertySource = new PropertiesPropertySource(this.propertiesPropertySource);
+        int index = 0;
+        for (int i = 0; i < propertySources.size(); i++) {
+            final AbstractPropertySource abstractPropertySource = propertySources.get(i);
+            final SourceType type = abstractPropertySource.getType();
+            if (SourceType.PROPERTIES.equals(type)) {
+                index = i;
+            }
+        }
+        propertySources.set(index, newPropertiesPropertySource);
+        
+        return new SearchableProperties(newPropertiesPropertySource, propertySources);
     }
     
     @Override
