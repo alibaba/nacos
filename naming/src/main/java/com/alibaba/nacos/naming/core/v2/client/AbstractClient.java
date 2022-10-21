@@ -187,7 +187,7 @@ public abstract class AbstractClient implements Client {
                 MetricsMonitor.getIpCountMonitor().decrementAndGet();
             }
         }
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
+        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
     }
     
     @Override
