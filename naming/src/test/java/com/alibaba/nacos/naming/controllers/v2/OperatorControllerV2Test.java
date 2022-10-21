@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchManager;
@@ -45,6 +43,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * OperatorControllerV2Test.
+ *
  * @author dongyafei
  * @date 2022/9/15
  */
@@ -64,18 +63,12 @@ public class OperatorControllerV2Test {
     private ServerStatusManager serverStatusManager;
     
     @Mock
-    private ServiceManager serviceManager;
-    
-    @Mock
     private ClientManager clientManager;
-    
-    @Mock
-    private RaftCore raftCore;
     
     @Before
     public void setUp() {
-        this.operatorControllerV2 = new OperatorControllerV2(switchManager, serviceManager, serverStatusManager,
-                switchDomain, raftCore, clientManager);
+        this.operatorControllerV2 = new OperatorControllerV2(switchManager, serverStatusManager, switchDomain,
+                clientManager);
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
@@ -94,7 +87,7 @@ public class OperatorControllerV2Test {
         updateSwitchForm.setDebug(true);
         updateSwitchForm.setEntry("test");
         updateSwitchForm.setValue("test");
-    
+        
         try {
             Result<String> result = operatorControllerV2.updateSwitch(updateSwitchForm);
             assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -108,23 +101,18 @@ public class OperatorControllerV2Test {
     @Test
     public void testMetrics() {
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
-        Mockito.when(serviceManager.getResponsibleServiceCount()).thenReturn(1);
-        Mockito.when(serviceManager.getResponsibleInstanceCount()).thenReturn(1);
-        Mockito.when(raftCore.getNotifyTaskCount()).thenReturn(1);
         Collection<String> clients = new HashSet<>();
         clients.add("1628132208793_127.0.0.1_8080");
         clients.add("127.0.0.1:8081#true");
         clients.add("127.0.0.1:8082#false");
         Mockito.when(clientManager.allClientId()).thenReturn(clients);
         Mockito.when(clientManager.isResponsibleClient(null)).thenReturn(Boolean.TRUE);
-    
+        
         Result<MetricsInfoVo> result = operatorControllerV2.metrics(false);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-    
+        
         MetricsInfoVo metricsInfoVo = result.getData();
-    
-        Assert.assertEquals(1, metricsInfoVo.getResponsibleServiceCount().intValue());
-        Assert.assertEquals(1, metricsInfoVo.getResponsibleInstanceCount().intValue());
+        
         Assert.assertEquals(ServerStatus.UP.toString(), metricsInfoVo.getStatus());
         Assert.assertEquals(3, metricsInfoVo.getClientCount().intValue());
         Assert.assertEquals(1, metricsInfoVo.getConnectionBasedClientCount().intValue());

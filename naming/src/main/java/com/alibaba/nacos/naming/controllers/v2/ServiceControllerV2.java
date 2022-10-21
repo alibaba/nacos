@@ -85,10 +85,12 @@ public class ServiceControllerV2 {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setEphemeral(serviceForm.getEphemeral());
-        serviceOperatorV2.create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
-                serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
-        NotifyCenter.publishEvent(new NamingTraceEvent.RegisterServiceTraceEvent(System.currentTimeMillis(),
-                serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName()));
+        serviceOperatorV2.create(Service
+                .newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName(),
+                        serviceForm.getEphemeral()), serviceMetadata);
+        NotifyCenter.publishEvent(
+                new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                        serviceForm.getGroupName(), serviceForm.getServiceName()));
         return Result.success("ok");
     }
     
@@ -97,13 +99,14 @@ public class ServiceControllerV2 {
      */
     @DeleteMapping()
     @Secured(action = ActionTypes.WRITE)
-    public Result<String> remove(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    public Result<String> remove(
+            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
         serviceOperatorV2.delete(Service.newService(namespaceId, groupName, serviceName));
-        NotifyCenter.publishEvent(new DeregisterServiceTraceEvent(System.currentTimeMillis(),
-                namespaceId, groupName, serviceName));
+        NotifyCenter.publishEvent(
+                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, groupName, serviceName));
         return Result.success("ok");
     }
     
@@ -132,7 +135,8 @@ public class ServiceControllerV2 {
             @RequestParam(value = "groupName", required = false, defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam(value = "selector", required = false, defaultValue = StringUtils.EMPTY) String selector,
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", required = false, defaultValue = "20") Integer pageSize) throws Exception {
+            @RequestParam(value = "pageSize", required = false, defaultValue = "20") Integer pageSize)
+            throws Exception {
         pageSize = Math.min(500, pageSize);
         ServiceNameView result = new ServiceNameView();
         Collection<String> serviceNameList = serviceOperatorV2.listService(namespaceId, groupName, selector);
@@ -152,8 +156,8 @@ public class ServiceControllerV2 {
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
-        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
-                serviceForm.getServiceName());
+        Service service = Service
+                .newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName());
         serviceOperatorV2.update(service, serviceMetadata);
         return Result.success("ok");
     }
@@ -164,14 +168,14 @@ public class ServiceControllerV2 {
         }
         
         JsonNode selectorJson = JacksonUtils.toObj(URLDecoder.decode(selectorJsonString, "UTF-8"));
-        String type = Optional.ofNullable(selectorJson.get("type"))
-                .orElseThrow(() -> new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
-                        "not match any type of selector!"))
-                .asText();
+        String type = Optional.ofNullable(selectorJson.get("type")).orElseThrow(
+                () -> new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
+                        "not match any type of selector!")).asText();
         String expression = Optional.ofNullable(selectorJson.get("expression")).map(JsonNode::asText).orElse(null);
         Selector selector = selectorManager.parseSelector(type, expression);
         if (Objects.isNull(selector)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR, "not match any type of selector!");
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.SELECTOR_ERROR,
+                    "not match any type of selector!");
         }
         return selector;
     }
