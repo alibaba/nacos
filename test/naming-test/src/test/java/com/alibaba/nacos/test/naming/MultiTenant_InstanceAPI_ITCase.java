@@ -491,7 +491,9 @@ public class MultiTenant_InstanceAPI_ITCase {
                         .appendParam("namespaceId", "namespace-1").appendParam("groupName", TEST_GROUP_1).done(),
                 String.class);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JsonNode json = JacksonUtils.toObj(response.getBody());
+        String body = response.getBody();
+        System.out.println("multipleTenant_group_updateInstance_notExsitInstance received body:  " + body);
+        JsonNode json = JacksonUtils.toObj(body);
         Assert.assertEquals("33.33.33.33", json.get("hosts").get(0).get("ip").asText());
     }
     
