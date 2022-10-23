@@ -65,7 +65,7 @@ public class NacosLdapContextSource extends LdapContextSource {
         if (useTsl) {
             System.setProperty("com.sun.jndi.ldap.object.disableEndpointIdentification", "true");
             config.put("java.naming.security.protocol", "ssl");
-            config.put("java.naming.ldap.factory.socket", LdapSsLSocketFactory.class.getName());
+            config.put("java.naming.ldap.factory.socket", LdapSslSocketFactory.class.getName());
             config.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         }
         config.put("java.naming.ldap.attributes.binary", "objectGUID");
@@ -75,11 +75,11 @@ public class NacosLdapContextSource extends LdapContextSource {
     }
     
     @SuppressWarnings("checkstyle:EmptyLineSeparator")
-    public static class LdapSsLSocketFactory extends SSLSocketFactory {
+    public static class LdapSslSocketFactory extends SSLSocketFactory {
         
         private SSLSocketFactory socketFactory;
         
-        public LdapSsLSocketFactory() {
+        public LdapSslSocketFactory() {
             try {
                 this.socketFactory = TlsHelper.buildSslContext(true).getSocketFactory();
             } catch (NoSuchAlgorithmException | KeyManagementException e) {
