@@ -349,7 +349,6 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             ConcurrentHashMap<String, IpPortBasedClient> snapshot = new ConcurrentHashMap<>(newData.size());
             for (Map.Entry<String, ClientSyncData> entry : newData.entrySet()) {
                 IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
-                snapshotClient.setAttributes(entry.getValue().getAttributes());
                 snapshotClient.init();
                 loadSyncDataToClient(entry, snapshotClient);
                 snapshot.put(entry.getKey(), snapshotClient);

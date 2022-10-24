@@ -117,10 +117,6 @@
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-datasource-plugin</artifactId>
-        </dependency>
     </dependencies>
     <build>
         <plugins>

@@ -52,7 +52,6 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
-import com.alibaba.nacos.naming.web.ClientAttributesFilter;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -329,13 +328,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     private void createIpPortClientIfAbsent(String clientId) {
         if (!clientManager.contains(clientId)) {
-            ClientAttributes clientAttributes;
-            if (ClientAttributesFilter.threadLocalClientAttributes.get() != null) {
-                clientAttributes = ClientAttributesFilter.threadLocalClientAttributes.get();
-            } else {
-                clientAttributes = new ClientAttributes();
-            }
-            clientManager.clientConnected(clientId, clientAttributes);
+            clientManager.clientConnected(clientId, new ClientAttributes());
         }
     }
     

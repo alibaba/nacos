@@ -85,7 +85,10 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
+        final int startRow = (pageNo - 1) * pageSize;
+        String selectSql = sqlFetchRows + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        
+        List<E> result = databaseOperate.queryMany(selectSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -120,7 +123,8 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
+        String selectSql = sqlFetchRows.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        List<E> result = databaseOperate.queryMany(selectSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -155,7 +159,9 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args2, rowMapper);
+        String selectSql = sqlFetchRows.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        
+        List<E> result = databaseOperate.queryMany(selectSql, args2, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -171,7 +177,9 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         // Create Page object
         final Page<E> page = new Page<>();
         
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
+        String selectSql = sqlFetchRows.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        
+        List<E> result = databaseOperate.queryMany(selectSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -180,7 +188,9 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
 
     @Override
     public void updateLimit(final String sql, final Object[] args) {
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        String sqlUpdate = sql.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        
+        EmbeddedStorageContextUtils.addSqlContext(sqlUpdate, args);
         try {
             databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
         } finally {

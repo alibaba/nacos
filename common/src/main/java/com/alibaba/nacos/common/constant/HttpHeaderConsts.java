@@ -34,7 +34,5 @@ public interface HttpHeaderConsts {
     String CONNECTION = "Requester";
     String REQUEST_ID = "RequestId";
     String REQUEST_MODULE = "Request-Module";
-    String APP_FILED = "app";
-    String CLIENT_IP = "clientIp";
     
 }

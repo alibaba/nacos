@@ -108,17 +108,6 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     }
     
     @Override
-    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
-            throws NacosException {
-        NAMING_LOGGER.info("batch DeregisterInstance instances: {} ,serviceName: {} begin.", instances, serviceName);
-        if (CollectionUtils.isEmpty(instances)) {
-            NAMING_LOGGER.warn("batch DeregisterInstance instances is Empty:{}", instances);
-        }
-        grpcClientProxy.batchDeregisterService(serviceName, groupName, instances);
-        NAMING_LOGGER.info("batch DeregisterInstance instances: {} ,serviceName: {} finish.", instances, serviceName);
-    }
-    
-    @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         getExecuteClientProxy(instance).deregisterService(serviceName, groupName, instance);
     }
