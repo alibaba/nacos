@@ -53,7 +53,7 @@ public class HistoryConfigInfoMapperByDerby implements HistoryConfigInfoMapper {
     
     @Override
     public String findConfigHistoryCountRows() {
-        return "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?";
+        return "SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
     }
     
     @Override
