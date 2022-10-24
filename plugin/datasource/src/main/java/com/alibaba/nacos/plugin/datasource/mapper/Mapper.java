@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import java.util.List;
+
 /**
  * The parent class of the all mappers.
  *
@@ -23,6 +25,36 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  **/
 
 public interface Mapper {
+    
+    /**
+     * The select method contains columns and where params.
+     * @param columns The columns
+     * @param where The where params
+     * @return The sql of select
+     */
+    String select(List<String> columns, List<String> where);
+    
+    /**
+     * The insert method contains columns.
+     * @param columns The columns
+     * @return The sql of insert
+     */
+    String insert(List<String> columns);
+    
+    /**
+     * The update method contains columns and where params.
+     * @param columns The columns
+     * @param where The where params
+     * @return The sql of update
+     */
+    String update(List<String> columns, List<String> where);
+    
+    /**
+     * The delete method contains.
+     * @param params The params
+     * @return The sql of delete
+     */
+    String delete(List<String> params);
     
     /**
      * Get the name of table.

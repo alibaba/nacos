@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 
 import java.sql.Timestamp;
@@ -33,7 +34,7 @@ import java.util.Map;
  * @author hyx
  **/
 
-public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
+public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInfoMapper {
     
     private static final String DATA_ID = "dataId";
     
@@ -46,11 +47,6 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     private static final String TENANT = "tenant";
     
     @Override
-    public String updateMd5() {
-        return "UPDATE config_info SET md5 = ? WHERE data_id= ? AND group_id= ? AND tenant_id= ? AND gmt_modified= ?";
-    }
-    
-    @Override
     public String findConfigMaxId() {
         return "SELECT max(id) FROM config_info";
     }
@@ -58,22 +54,6 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     @Override
     public String findAllDataIdAndGroup() {
         return "SELECT DISTINCT data_id, group_id FROM config_info";
-    }
-    
-    @Override
-    public String findConfigInfoApp() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content "
-                + "FROM config_info WHERE data_id= ? AND group_id= ? AND tenant_id= ? AND app_name= ?";
-    }
-    
-    @Override
-    public String findConfigInfoBase() {
-        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id= ? AND group_id= ? AND tenant_id= ?";
-    }
-    
-    @Override
-    public String findConfigInfoById() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id = ?";
     }
     
     @Override
@@ -224,51 +204,9 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
     }
     
     @Override
-    public String addConfigInfoAtomic() {
-        return "INSERT INTO config_info(data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,"
-                + "gmt_modified,c_desc,c_use,effect,type,c_schema,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-    }
-    
-    @Override
-    public String removeConfigInfoAtomic() {
-        return "DELETE FROM config_info WHERE data_id= ? AND group_id= ? AND tenant_id= ?";
-    }
-    
-    @Override
-    public String updateConfigInfoAtomic() {
-        return "UPDATE config_info SET content= ?, md5 = ?, src_ip= ?,src_user= ?,gmt_modified= ?,"
-                + "app_name= ?,c_desc= ?,c_use= ?,effect= ?,type= ?,c_schema= ?,encrypted_data_key= ? "
-                + " WHERE data_id= ? AND group_id= ? AND tenant_id= ?";
-    }
-    
-    @Override
-    public String findConfigAdvanceInfo() {
-        return "SELECT gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema "
-                + "FROM config_info WHERE data_id= ? AND group_id= ? AND tenant_id= ?";
-    }
-    
-    @Override
-    public String findConfigAllInfo() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,"
-                + "gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema,encrypted_data_key FROM config_info "
-                + "WHERE data_id= ? AND group_id= ? AND tenant_id= ?";
-    }
-    
-    @Override
     public String listGroupKeyMd5ByPageFetchRows() {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
                 + "( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
-    }
-    
-    @Override
-    public String queryConfigInfo() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5,encrypted_data_key FROM config_info "
-                + "WHERE data_id= ? AND group_id= ? AND tenant_id= ?";
-    }
-    
-    @Override
-    public String queryConfigInfoByNamespace() {
-        return "SELECT data_id,group_id,tenant_id,app_name,type FROM config_info WHERE tenant_id= ?";
     }
     
     @Override
@@ -629,12 +567,6 @@ public class ConfigInfoMapperByMySql implements ConfigInfoMapper {
         }
         sql.append(") ");
         return sql.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByDataId2Group2Tenant() {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key"
-                + " FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?";
     }
     
     @Override

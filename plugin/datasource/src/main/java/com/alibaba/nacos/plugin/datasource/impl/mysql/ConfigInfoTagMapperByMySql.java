@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
 
 /**
@@ -26,30 +27,12 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
  * @author hyx
  **/
 
-public class ConfigInfoTagMapperByMySql implements ConfigInfoTagMapper {
-    
-    @Override
-    public String addConfigInfo4Tag() {
-        return "INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,"
-                + "gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)";
-    }
-    
-    @Override
-    public String updateConfigInfo4Tag() {
-        return "UPDATE config_info_tag SET content= ?, md5 = ?, src_ip= ?,src_user= ?,gmt_modified= ?,app_name= ? WHERE "
-                + "data_id= ? AND group_id= ? AND tenant_id= ? AND tag_id= ?";
-    }
+public class ConfigInfoTagMapperByMySql extends AbstractMapper implements ConfigInfoTagMapper {
     
     @Override
     public String updateConfigInfo4TagCas() {
-        return "UPDATE config_info_tag SET content= ?, md5 = ?, src_ip= ?,src_user= ?,gmt_modified= ?,app_name= ? WHERE "
-                + "data_id= ? AND group_id= ? AND tenant_id= ? AND tag_id= ? AND (md5= ? or md5 is null or md5='')";
-    }
-    
-    @Override
-    public String findConfigInfo4Tag() {
-        return "SELECT id,data_id,group_id,tenant_id,tag_id,app_name,content "
-                + "FROM config_info_tag WHERE data_id= ? AND group_id= ? AND tenant_id= ? AND tag_id= ?";
+        return "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
     }
     
     @Override
@@ -67,11 +50,6 @@ public class ConfigInfoTagMapperByMySql implements ConfigInfoTagMapper {
         return " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
                 + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,? ) "
                 + "g, config_info_tag t  WHERE g.id = t.id  ";
-    }
-    
-    @Override
-    public String removeConfigInfoTag() {
-        return "DELETE FROM config_info_tag WHERE data_id= ? AND group_id= ? AND tenant_id= ? AND tag_id= ?";
     }
     
     @Override

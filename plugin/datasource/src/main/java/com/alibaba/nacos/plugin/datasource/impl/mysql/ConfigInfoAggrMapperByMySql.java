@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 
 import java.util.List;
@@ -28,27 +29,7 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
-    
-    @Override
-    public String select() {
-        return "SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?  AND datum_id = ?";
-    }
-    
-    @Override
-    public String insert() {
-        return "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?)";
-    }
-    
-    @Override
-    public String update() {
-        return "UPDATE config_info_aggr SET content = ? , gmt_modified = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
-    }
-    
-    @Override
-    public String removeAggrConfigInfo() {
-        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
-    }
+public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements ConfigInfoAggrMapper {
     
     @Override
     public String batchRemoveAggr(List<String> datumList) {
@@ -56,22 +37,13 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
         for (String datum : datumList) {
             datumString.append('\'').append(datum).append("',");
         }
+        datumString.deleteCharAt(datumString.length() - 1);
         return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
                 + datumString.toString() + ")";
     }
     
     @Override
-    public String removeSingleAggrConfigInfo() {
-        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
-    }
-    
-    @Override
-    public String replaceAggr() {
-        return "INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?) ";
-    }
-    
-    @Override
-    public String aggrConfigInfoCount(List<String> datumIds, boolean isIn) {
+    public String aggrConfigInfoCount(int size, boolean isIn) {
         StringBuilder sql = new StringBuilder(
                 " SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id");
         if (isIn) {
@@ -79,7 +51,7 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
         } else {
             sql.append(" NOT IN (");
         }
-        for (int i = 0, size = datumIds.size(); i < size; i++) {
+        for (int i = 0; i < size; i++) {
             if (i > 0) {
                 sql.append(", ");
             }
@@ -96,21 +68,9 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
     }
     
     @Override
-    public String findSingleConfigInfoAggr() {
-        return "SELECT id,data_id,group_id,tenant_id,datum_id,app_name,content FROM "
-                + "config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?";
-    }
-    
-    @Override
     public String findConfigInfoAggr() {
         return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM "
-                + "config_info_aggr WHERE data_id= ? AND group_id= ? AND tenant_id= ? ORDER BY datum_id";
-    }
-    
-    @Override
-    public String findConfigInfoAggrByPageCountRows() {
-        return "SELECT count(*) FROM config_info_aggr "
-                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
+                + "config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY datum_id";
     }
     
     @Override
@@ -122,11 +82,6 @@ public class ConfigInfoAggrMapperByMySql implements ConfigInfoAggrMapper {
     @Override
     public String findAllAggrGroup() {
         return "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
-    }
-    
-    @Override
-    public String findDatumIdByContent() {
-        return "SELECT datum_id FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND content = ? ";
     }
     
     @Override

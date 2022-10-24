@@ -52,16 +52,6 @@ public interface HistoryConfigInfoMapper extends Mapper {
     String findDeletedConfig();
     
     /**
-     * Update change records; database atomic operations, minimal sql actions, no business encapsulation.
-     * The default sql:
-     * INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_modified,op_type,encrypted_data_key)
-     * VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-     *
-     * @return The sql of updating change records; database atomic operations, minimal sql actions, no business encapsulation.
-     */
-    String insertConfigHistoryAtomic();
-    
-    /**
      * Query the numbers of history config information by data_id, group_id AND tenant_id.
      * The default sql:
      * SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?
@@ -81,16 +71,6 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of listing configuration history change record.
      */
     String findConfigHistoryFetchRows(int startRow, int pageSize);
-    
-    /**
-     * Get history config detail.
-     * The default sql:
-     * SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified,encrypted_data_key
-     * FROM his_config_info WHERE nid = ?
-     *
-     * @return The sql of getting history config detail.
-     */
-    String detailConfigHistory();
     
     /**
      * Get previous config detail.

@@ -29,15 +29,6 @@ import java.util.Map;
 public interface ConfigInfoMapper extends Mapper {
     
     /**
-     * Update md5.
-     * The default sql:
-     * UPDATE config_info SET md5 = ? WHERE data_id=? AND group_id=? AND tenant_id=? AND gmt_modified=?
-     *
-     * @return the sql of updating md5.
-     */
-    String updateMd5();
-    
-    /**
      * Get the maxId.
      * The default sql:
      * SELECT max(id) FROM config_info
@@ -54,33 +45,6 @@ public interface ConfigInfoMapper extends Mapper {
      * @return The sql of finding all dataId and group.
      */
     String findAllDataIdAndGroup();
-    
-    /**
-     * Query common configuration information based on dataId and group.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=? AND app_name=?
-     *
-     * @return Query common configur.
-     */
-    String findConfigInfoApp();
-    
-    /**
-     * Query configuration information based on dataId and group.
-     * The default sql:
-     * SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql to select config_info by dataId and group.
-     */
-    String findConfigInfoBase();
-    
-    /**
-     * Query configuration information by primary key ID.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE id=?
-     *
-     * @return The sql to select configInfo by ID.
-     */
-    String findConfigInfoById();
     
     /**
      * Query configuration information based on dataId.
@@ -258,57 +222,6 @@ public interface ConfigInfoMapper extends Mapper {
             int startRow, int pageSize, long lastMaxId);
     
     /**
-     * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
-     * The default sql:
-     * INSERT INTO config_info(data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,
-     * gmt_modified,c_desc,c_use,effect,type,c_schema,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-     *
-     * @return The sql of adding configuration.
-     */
-    String addConfigInfoAtomic();
-    
-    /**
-     * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
-     * DELETE FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of removing configuration.
-     */
-    String removeConfigInfoAtomic();
-    
-    /**
-     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
-     * UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,
-     * app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=?
-     * WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of updating configuration.
-     */
-    String updateConfigInfoAtomic();
-    
-    /**
-     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
-     * SELECT gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema
-     * FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of querying configuration information.
-     */
-    String findConfigAdvanceInfo();
-    
-    /**
-     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,md5,
-     * gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema,encrypted_data_key FROM config_info
-     * WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of getting all config info.
-     */
-    String findConfigAllInfo();
-    
-    /**
      * list group key md5 by page.
      * The default sql:
      * SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM (
@@ -318,25 +231,6 @@ public interface ConfigInfoMapper extends Mapper {
      * @return The sql of listing group key md5 by page.
      */
     String listGroupKeyMd5ByPageFetchRows();
-    
-    /**
-     * Query config info.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,gmt_modified,md5,encrypted_data_key FROM config_info
-     * WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of querying config info.
-     */
-    String queryConfigInfo();
-    
-    /**
-     * Query base config info list by namespace.
-     * The default sql:
-     * SELECT data_id,group_id,tenant_id,app_name,type FROM config_info WHERE tenant_id=?
-     *
-     * @return The sql of querying dataId list by namespace.
-     */
-    String queryConfigInfoByNamespace();
     
     /**
      * query all configuration information according to group, appName, tenant (for export).
@@ -642,16 +536,6 @@ public interface ConfigInfoMapper extends Mapper {
      * @return find ConfigInfo by ids.
      */
     String findConfigInfosByIds(int idSize);
-    
-    /**
-     * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,md5,type,encrypted_data_key
-     * FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of querying configuration information.
-     */
-    String findConfigInfoByDataId2Group2Tenant();
     
     /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
