@@ -116,7 +116,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             where.append('?');
         }
         where.append(") ");
-        return sqlCount;
+        return sqlCount + where;
     }
     
     @Override

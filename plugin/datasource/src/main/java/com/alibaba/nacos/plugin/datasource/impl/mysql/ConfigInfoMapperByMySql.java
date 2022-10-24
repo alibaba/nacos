@@ -237,7 +237,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
             if (StringUtils.isNotBlank(params.get(GROUP))) {
                 where.append(" AND group_id= ? ");
             }
-            if (StringUtils.isNotBlank(APP_NAME)) {
+            if (StringUtils.isNotBlank(params.get(APP_NAME))) {
                 where.append(" AND app_name= ? ");
             }
         }

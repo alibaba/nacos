@@ -66,11 +66,9 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
      * WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
      * @return The sql of listing configuration history change record.
      */
-    String findConfigHistoryFetchRows(int startRow, int pageSize);
+    String findConfigHistoryFetchRows();
     
     /**
      * Get previous config detail.
