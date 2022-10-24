@@ -120,7 +120,6 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-datasource-plugin</artifactId>
-            <version>2.1.1</version>
         </dependency>
     </dependencies>
     <build>
