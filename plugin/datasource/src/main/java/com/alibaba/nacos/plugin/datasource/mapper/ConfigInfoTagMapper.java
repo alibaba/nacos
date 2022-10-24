@@ -25,26 +25,6 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 public interface ConfigInfoTagMapper extends Mapper {
     
     /**
-     * Add tag configuration information and publish data change events.
-     * The default sql:
-     * INSERT INTO config_info_tag(data_id,group_id,tenant_id,tag_id,app_name,content,md5,src_ip,src_user,
-     * gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?,?,?,?,?)
-     *
-     * @return The sql of add tag configuration.
-     */
-    String addConfigInfo4Tag();
-    
-    /**
-     * Update tag configuration information.
-     * The default sql:
-     * UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE
-     * data_id=? AND group_id=? AND tenant_id=? AND tag_id=?
-     *
-     * @return The sql of updating tag configuration information.
-     */
-    String updateConfigInfo4Tag();
-    
-    /**
      * Update tag configuration information.
      * The default sql:
      * UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE
@@ -53,15 +33,6 @@ public interface ConfigInfoTagMapper extends Mapper {
      * @return The sql of updating tag configuration information.
      */
     String updateConfigInfo4TagCas();
-    
-    /**
-     * Query tag configuration information based on dataId and group.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,tag_id,app_name,content FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?
-     *
-     * @return The sql of querying tag configuration information based on dataId and group.
-     */
-    String findConfigInfo4Tag();
     
     /**
      * Returns the number of beta configuration items.
@@ -93,13 +64,4 @@ public interface ConfigInfoTagMapper extends Mapper {
      * @return The sql of querying all tag config info for dump task.
      */
     String findAllConfigInfoTagForDumpAllFetchRows(int startRow, int pageSize);
-    
-    /**
-     * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
-     * DELETE FROM config_info_tag WHERE data_id=? AND group_id=? AND tenant_id=? AND tag_id=?
-     *
-     * @return The sql of deleting configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     */
-    String removeConfigInfoTag();
 }

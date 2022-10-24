@@ -27,42 +27,6 @@ import java.util.List;
 public interface ConfigInfoAggrMapper extends Mapper {
     
     /**
-     * Query content from config_info_aggr by dataId, groupId, tenantId and datumId.
-     * The default sql:
-     * SELECT content FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?  AND datum_id = ?
-     *
-     * @return The sql of querying content from config_info_aggr by dataId, groupId, tenantId and datumId.
-     */
-    String select();
-    
-    /**
-     * Add configInfoAggr.
-     * The default sql:
-     * INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?)
-     *
-     * @return The sql of adding configInfoAggr.
-     */
-    String insert();
-    
-    /**
-     * Update configInfoAggr.
-     * The default sql:
-     * UPDATE config_info_aggr SET content = ? , gmt_modified = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id = ?
-     *
-     * @return The sql of updating configInfoAggr.
-     */
-    String update();
-    
-    /**
-     * Delete all pre-aggregation data under a dataId.
-     * The default sql:
-     * DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of deleting all pre-aggregation data under a dataId.
-     */
-    String removeAggrConfigInfo();
-    
-    /**
      * To delete aggregated data in bulk, you need to specify a list of datum.
      * The default sql:
      * DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN (...)
@@ -71,25 +35,6 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @return The sql of deleting aggregated data in bulk.
      */
     String batchRemoveAggr(List<String> datumList);
-    
-    /**
-     * Delete a single piece of data before aggregation.
-     * The default sql:
-     * DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?
-     *
-     * @return The sql of deleting a single piece of data before aggregation.
-     */
-    String removeSingleAggrConfigInfo();
-    
-    /**
-     * Batch replacement, first delete all the specified DataID+Group data in the aggregation table, and then insert the
-     * data. Any exception during the transaction process will force a TransactionSystemException to be thrown.
-     * The default sql:
-     * INSERT INTO config_info_aggr(data_id, group_id, tenant_id, datum_id, app_name, content, gmt_modified) VALUES(?,?,?,?,?,?,?)
-     *
-     * @return The sql of batching replacement.
-     */
-    String replaceAggr();
     
     /**
      * Get count of aggregation config info.
@@ -112,16 +57,6 @@ public interface ConfigInfoAggrMapper extends Mapper {
     String aggrConfigInfoCount();
     
     /**
-     * Find a single piece of data before aggregation.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,datum_id,app_name,content
-     *  FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id=?
-     *
-     * @return The sql of finding a single piece of data before aggregation.
-     */
-    String findSingleConfigInfoAggr();
-    
-    /**
      * Find all data before aggregation under a dataId. It is guaranteed not to return NULL.
      * The default sql:
      * SELECT data_id,group_id,tenant_id,datum_id,app_name,content
@@ -130,16 +65,6 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @return The sql of finding all data before aggregation under a dataId.
      */
     String findConfigInfoAggr();
-    
-    /**
-     * Query the count of aggregation config info by dataId, groupId and tenantId.
-     * The default sql:
-     * SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND
-     * group_id=? AND tenant_id=? ORDER BY datum_id LIMIT ?,?
-     *
-     * @return The sql of querying the count of aggregation config info by dataId, groupId and tenantId.
-     */
-    String findConfigInfoAggrByPageCountRows();
     
     /**
      * Query aggregation config info.
@@ -161,13 +86,4 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @return The sql of finding all aggregated data sets.
      */
     String findAllAggrGroup();
-    
-    /**
-     * Find datumId by datum content.
-     * The default sql:
-     * SELECT datum_id FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND content = ?
-     *
-     * @return The sql of finding datumId by datum content.
-     */
-    String findDatumIdByContent();
 }
