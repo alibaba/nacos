@@ -56,7 +56,7 @@ public interface NamingClientProxy extends Closeable {
     void batchRegisterService(String serviceName, String groupName, List<Instance> instances) throws NacosException;
     
     /**
-     * Batch register instance to service with specified instance properties.
+     * Batch deRegister instance to service with specified instance properties.
      *
      * @param serviceName service name
      * @param groupName   group name
