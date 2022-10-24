@@ -1278,7 +1278,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         }
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds, isIn);
+        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
         List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
         objectList.addAll(datumIds);
         Integer result = jt.queryForObject(sql, Integer.class, objectList.toArray());

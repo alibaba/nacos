@@ -119,9 +119,9 @@ public abstract class AbstractMapper implements Mapper {
     public String delete(List<String> params) {
         StringBuilder sql = new StringBuilder();
         String method = "DELETE ";
-        sql.append(method).append(" FROM ").append(getTableName()).append(" ");
+        sql.append(method).append(" FROM ").append(getTableName()).append(" ").append("WHERE ");
         for (int i = 0; i < params.size(); i++) {
-            sql.append(params.get(i)).append(" ");
+            sql.append(params.get(i)).append(" ").append("=").append(" ? ");
             if (i != params.size() - 1) {
                 sql.append("AND ");
             }

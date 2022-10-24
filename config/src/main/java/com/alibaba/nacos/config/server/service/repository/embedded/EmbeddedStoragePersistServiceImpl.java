@@ -940,8 +940,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content"),
-                Collections.singletonList("id"));
+        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type", "encrypted_data_key"),
+                Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         return databaseOperate.queryOne(sql, args, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
@@ -1273,7 +1273,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds, isIn);
+        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
         
         List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
         objectList.addAll(datumIds);

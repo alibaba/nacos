@@ -38,12 +38,12 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
             datumString.append('\'').append(datum).append("',");
         }
         datumString.deleteCharAt(datumString.length() - 1);
-        return "DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN ("
+        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
                 + datumString.toString() + ")";
     }
     
     @Override
-    public String aggrConfigInfoCount(List<String> datumIds, boolean isIn) {
+    public String aggrConfigInfoCount(int size, boolean isIn) {
         StringBuilder sql = new StringBuilder(
                 " SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id");
         if (isIn) {
@@ -51,7 +51,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
         } else {
             sql.append(" NOT IN (");
         }
-        for (int i = 0, size = datumIds.size(); i < size; i++) {
+        for (int i = 0; i < size; i++) {
             if (i > 0) {
                 sql.append(", ");
             }
@@ -69,8 +69,8 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
     
     @Override
     public String findConfigInfoAggr() {
-        return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND "
-                + "group_id=? AND tenant_id=? ORDER BY datum_id";
+        return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id = ? AND "
+                + "group_id = ? AND tenant_id = ? ORDER BY datum_id";
     }
     
     @Override
