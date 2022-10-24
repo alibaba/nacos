@@ -62,6 +62,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -258,7 +259,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
             final String sql = configInfoBetaMapper.insert(Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips", "src_ip",
-                    "src_user,gmt_create", "gmt_modified", "encrypted_data_key"));
+                    "src_user","gmt_create", "gmt_modified", "encrypted_data_key"));
             final Object[] args = new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
                     configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, time, encryptedDataKey};
             
@@ -2110,7 +2111,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         final String sql = historyConfigInfoMapper.insert(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name",
-                "coutent", "md5", "src_ip", "src_user", "gmt_modified", "op_type", "encrypted_data_key"));
+                "content", "md5", "src_ip", "src_user", "gmt_modified", "op_type", "encrypted_data_key"));
         final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
                 appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey};
         
@@ -2122,10 +2123,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        final int startRow = (pageNo - 1) * pageSize;
         HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sqlCountRows = historyConfigInfoMapper.findConfigHistoryCountRows();
-        String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows(startRow, pageSize);
+        String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows();
     
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,

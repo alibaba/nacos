@@ -232,7 +232,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
             jt.update(configInfoBetaMapper.insert(Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips", "src_ip",
-                    "src_user,gmt_create", "gmt_modified", "encrypted_data_key")),
+                            "src_user,gmt_create", "gmt_modified", "encrypted_data_key")),
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
                     betaIps, srcIp, srcUser, time, time, encryptedDataKey);
         } catch (CannotGetJdbcConnectionException e) {
@@ -2324,7 +2324,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         final int startRow = (pageNo - 1) * pageSize;
         HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sqlCountRows = historyConfigInfoMapper.findConfigHistoryCountRows();
-        String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows(startRow, pageSize);
+        String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows();
         
         Page<ConfigHistoryInfo> page = null;
         try {
