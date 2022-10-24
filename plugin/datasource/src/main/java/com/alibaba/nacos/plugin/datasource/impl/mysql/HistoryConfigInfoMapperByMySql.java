@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 
 /**
@@ -26,7 +27,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
  * @author hyx
  **/
 
-public class HistoryConfigInfoMapperByMySql implements HistoryConfigInfoMapper {
+public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements HistoryConfigInfoMapper {
     
     @Override
     public String removeConfigHistory() {
@@ -44,12 +45,6 @@ public class HistoryConfigInfoMapperByMySql implements HistoryConfigInfoMapper {
     }
     
     @Override
-    public String insertConfigHistoryAtomic() {
-        return "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,"
-                + "gmt_modified,op_type,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-    }
-    
-    @Override
     public String findConfigHistoryCountRows() {
         return "SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
     }
@@ -58,12 +53,6 @@ public class HistoryConfigInfoMapperByMySql implements HistoryConfigInfoMapper {
     public String findConfigHistoryFetchRows(int startRow, int pageSize) {
         return "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC" + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String detailConfigHistory() {
-        return "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified,encrypted_data_key"
-                + " FROM his_config_info WHERE nid = ?";
     }
     
     @Override

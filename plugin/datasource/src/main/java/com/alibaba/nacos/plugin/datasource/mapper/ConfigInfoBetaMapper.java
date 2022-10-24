@@ -25,26 +25,6 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 public interface ConfigInfoBetaMapper extends Mapper {
     
     /**
-     * Add beta configuration information.
-     * The default sql:
-     * INSERT INTO config_info_beta(data_id,group_id,tenant_id,app_name,content,md5,beta_ips,src_ip,
-     * src_user,gmt_create,gmt_modified,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-     *
-     * @return The sql of adding beta configuration information.
-     */
-    String addConfigInfo4Beta();
-    
-    /**
-     * Update beta configuration information.
-     * The default sql:
-     * UPDATE config_info_beta SET content=?, md5=?, beta_ips=?, src_ip=?,src_user=?,gmt_modified=?,app_name=?,encrypted_data_key=?
-     * WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of updating beta configuration information.
-     */
-    String updateConfigInfo4Beta();
-    
-    /**
      * Update beta configuration information.
      * UPDATE config_info_beta SET content=?, md5=?, beta_ips=?, src_ip=?,src_user=?,gmt_modified=?,app_name=?
      * WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? or md5 is null or md5='')
@@ -52,25 +32,6 @@ public interface ConfigInfoBetaMapper extends Mapper {
      * @return The sql of updating beta configuration information.
      */
     String updateConfigInfo4BetaCas();
-    
-    /**
-     * Delete configuration information, physical deletion.
-     * The default sql:
-     * DELETE FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=
-     *
-     * @return The sql of deleting configuration information, physical deletion.
-     */
-    String removeConfigInfo4Beta();
-    
-    /**
-     * Query beta configuration information based on dataId and group.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,beta_ips,encrypted_data_key
-     * FROM config_info_beta WHERE data_id=? AND group_id=? AND tenant_id=?
-     *
-     * @return The sql of querying beta configuration information based on dataId and group.
-     */
-    String findConfigInfo4Beta();
     
     /**
      * Query the count of beta configuration information.

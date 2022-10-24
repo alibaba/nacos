@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.Map;
  * @author hyx
  **/
 
-public class ConfigTagsRelationMapperByMySql implements ConfigTagsRelationMapper {
+public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements ConfigTagsRelationMapper {
     
     @Override
     public String findConfigInfoAdvanceInfo(Map<String, String> params, int tagSize) {

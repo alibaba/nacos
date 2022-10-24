@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 
 /**
@@ -26,7 +27,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
  * @author hyx
  **/
 
-public class HistoryConfigInfoMapperByDerby implements HistoryConfigInfoMapper {
+public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements HistoryConfigInfoMapper {
     
     @Override
     public String removeConfigHistory() {
@@ -46,12 +47,6 @@ public class HistoryConfigInfoMapperByDerby implements HistoryConfigInfoMapper {
     }
     
     @Override
-    public String insertConfigHistoryAtomic() {
-        return "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,"
-                + "src_ip,src_user,gmt_modified,op_type,encrypted_data_key) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)";
-    }
-    
-    @Override
     public String findConfigHistoryCountRows() {
         return "SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
     }
@@ -61,12 +56,6 @@ public class HistoryConfigInfoMapperByDerby implements HistoryConfigInfoMapper {
         return "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified "
                 + "FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
                 + "ORDER BY nid DESC" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
-    }
-    
-    @Override
-    public String detailConfigHistory() {
-        return "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified,encrypted_data_key "
-                + "FROM his_config_info WHERE nid = ?";
     }
     
     @Override
