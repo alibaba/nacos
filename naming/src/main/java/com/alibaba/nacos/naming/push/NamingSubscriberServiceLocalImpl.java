@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl;
 import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
 
 import java.util.Collection;
@@ -28,51 +27,33 @@ import java.util.HashSet;
  * Naming subscriber service for local.
  *
  * @author xiweng.yy
- * @deprecated Will be removed with {@link com.alibaba.nacos.naming.push.v1.NamingSubscriberServiceV1Impl}
  */
 @org.springframework.stereotype.Service
-@Deprecated
 public class NamingSubscriberServiceLocalImpl implements NamingSubscriberService {
-    
-    private final NamingSubscriberServiceV1Impl namingSubscriberServiceV1;
     
     private final NamingSubscriberServiceV2Impl namingSubscriberServiceV2;
     
-    public NamingSubscriberServiceLocalImpl(NamingSubscriberServiceV1Impl namingSubscriberServiceV1,
-            NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
-        this.namingSubscriberServiceV1 = namingSubscriberServiceV1;
+    public NamingSubscriberServiceLocalImpl(NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
         this.namingSubscriberServiceV2 = namingSubscriberServiceV2;
     }
     
     @Override
     public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
-        Collection<Subscriber> result = new HashSet<>();
-        result.addAll(namingSubscriberServiceV1.getSubscribers(namespaceId, serviceName));
-        result.addAll(namingSubscriberServiceV2.getSubscribers(namespaceId, serviceName));
-        return result;
+        return new HashSet<>(namingSubscriberServiceV2.getSubscribers(namespaceId, serviceName));
     }
     
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
-        Collection<Subscriber> result = new HashSet<>();
-        result.addAll(namingSubscriberServiceV1.getSubscribers(service));
-        result.addAll(namingSubscriberServiceV2.getSubscribers(service));
-        return result;
+        return new HashSet<>(namingSubscriberServiceV2.getSubscribers(service));
     }
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
-        Collection<Subscriber> result = new HashSet<>();
-        result.addAll(namingSubscriberServiceV1.getFuzzySubscribers(namespaceId, serviceName));
-        result.addAll(namingSubscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
-        return result;
+        return new HashSet<>(namingSubscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
     }
     
     @Override
     public Collection<Subscriber> getFuzzySubscribers(Service service) {
-        Collection<Subscriber> result = new HashSet<>();
-        result.addAll(namingSubscriberServiceV1.getFuzzySubscribers(service));
-        result.addAll(namingSubscriberServiceV2.getFuzzySubscribers(service));
-        return result;
+        return new HashSet<>(namingSubscriberServiceV2.getFuzzySubscribers(service));
     }
 }
