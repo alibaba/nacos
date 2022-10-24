@@ -17,9 +17,11 @@
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 import org.mockito.Mockito;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,9 +29,11 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        "nacos.core.auth.system.type=ldap"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
+
+@RunWith(Suite.class)
+@Suite.SuiteClasses({ LdapAuth_ITCase.NonTlsTest.class,LdapAuth_ITCase.TlsTest.class})
 public class LdapAuth_ITCase extends AuthBase {
     
     @LocalServerPort
@@ -44,11 +48,35 @@ public class LdapAuth_ITCase extends AuthBase {
     public void init() throws Exception {
         Mockito.when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + "karson" + ")", "karson"))
                 .thenReturn(true);
+        AuthConfigs.setCachingEnabled(false);
+        TimeUnit.SECONDS.sleep(5L);
+        String url = String.format("http://localhost:%d/", port);
+        System.setProperty("nacos.core.auth.enabled", "true");
+        this.base = new URL(url);
     }
     
-    @Test
-    public void testLdapAuth() throws Exception {
-        super.login("karson", "karson");
+    @RunWith(SpringRunner.class)
+    @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+            "nacos.core.auth.system.type=ldap"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+    public static class NonTlsTest extends LdapAuth_ITCase {
+        
+        @Test
+        public void testLdapAuth() throws Exception {
+            super.login("karson", "karson");
+        }
     }
+    
+    @RunWith(SpringRunner.class)
+    @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+            "nacos.core.auth.system.type=ldap",
+            "nacos.core.auth.ldap.url=ldaps://localhost:636"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+    public static class TlsTest extends LdapAuth_ITCase {
+        
+        @Test
+        public void testLdapAuth() throws Exception {
+            super.login("karson", "karson");
+        }
+    }
+    
     
 }
