@@ -144,7 +144,7 @@ public class ServiceOperatorV2ImplTest {
     
     @Test
     public void testSearchServiceName() throws NacosException {
-        Collection<String> res = serviceOperatorV2.searchServiceName("A", "", true);
+        Collection<String> res = serviceOperatorV2.searchServiceName("A", "");
         Assert.assertEquals(1, res.size());
     }
 }

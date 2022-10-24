@@ -24,9 +24,8 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.pojo.Record;
 import com.google.protobuf.ByteString;
 
 import java.util.Collections;
@@ -41,8 +40,7 @@ import java.util.Optional;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class StandalonePersistentServiceProcessor extends BasePersistentServiceProcessor {
     
-    public StandalonePersistentServiceProcessor(final ClusterVersionJudgement judgement) throws Exception {
-        super(judgement);
+    public StandalonePersistentServiceProcessor() throws Exception {
     }
     
     @Override

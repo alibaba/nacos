@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 
 /**
  * Util and constants.
@@ -25,10 +24,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  * @author xuanyin.zy
  */
 public class UtilAndComs {
-    
-    // using  com.alibaba.nacos.common.utils.VersionUtils.getFullClientVersion instead.
-    @Deprecated
-    public static final String VERSION = VersionUtils.getFullClientVersion();
     
     public static String webContext = "/nacos";
     
