@@ -139,7 +139,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     /**
-     * Get instance list that need to be deregistered.
+     * Get instance list that need to be retained.
      * @param serviceName   service name
      * @param groupName    group name
      * @param instances   instance list
