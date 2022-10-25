@@ -77,8 +77,6 @@ public class PropertyKeyConst {
     
     public static final String NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE = "namingAsyncQuerySubscribeService";
     
-    public static final String PUSH_RECEIVER_UDP_PORT = "push.receiver.udp.port";
-    
     /**
      * Get the key value of some variable value from the system property.
      */
