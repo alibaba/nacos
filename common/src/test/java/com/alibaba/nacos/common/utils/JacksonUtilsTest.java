@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -474,6 +475,7 @@ public class JacksonUtilsTest {
         Assert.assertEquals(999, restResult.getData().get("integer"));
     }
     
+    @JsonPropertyOrder({ "aLong", "aInteger", "aBoolean"})
     static class TestOfAtomicObject {
         
         public AtomicLong aLong = new AtomicLong(0);
@@ -558,6 +560,7 @@ public class JacksonUtilsTest {
         }
     }
     
+    @JsonPropertyOrder({ "value", "key" })
     static class TestOfGetter {
         
         public String getKey() {
