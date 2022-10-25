@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.plugin.environment.impl;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +34,8 @@ public class NacosCustomEnvPluginService implements CustomEnvironmentPluginServi
     @Override
     public Map<String, Object> customValue(Map<String, Object> property) {
         String pwd = (String) property.get("db.password.0");
-        property.put("db.password.0", MD5Utils.md5Hex(pwd, Constants.ENCODE));
+        byte[] decode = Base64.getDecoder().decode(pwd);
+        property.put("db.password.0", new String(decode));
         return property;
     }
 

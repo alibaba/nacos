@@ -18,7 +18,6 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -52,7 +51,6 @@ public class ConsoleConfig {
      */
     @PostConstruct
     public void init() {
-        EnvUtil.customEnvironment();
         methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
         methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
         methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");

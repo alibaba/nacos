@@ -4,6 +4,7 @@ import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -47,5 +48,9 @@ public class CustomEnvironmentPluginManagerTest {
                 return "test";
             }
         });
+        Assert.assertNotNull(CustomEnvironmentPluginManager.getInstance().getPropertyKeys());
+        Map<String, Object> sourcePropertyMap = new HashMap<>();
+        sourcePropertyMap.put("db.password.0", "nacos");
+        Assert.assertNotNull(CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap));
     }
 }

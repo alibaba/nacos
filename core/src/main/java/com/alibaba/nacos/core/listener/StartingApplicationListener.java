@@ -111,7 +111,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
-    
+        EnvUtil.customEnvironment();
     }
     
     @Override
