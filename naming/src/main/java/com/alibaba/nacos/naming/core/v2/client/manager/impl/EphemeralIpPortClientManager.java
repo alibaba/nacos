@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -45,6 +47,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author xiweng.yy
  */
+@DependsOn("clientServiceIndexesManager")
 @Component("ephemeralIpPortClientManager")
 public class EphemeralIpPortClientManager implements ClientManager {
     
@@ -118,12 +121,19 @@ public class EphemeralIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean verifyClient(String clientId) {
+    public boolean verifyClient(DistroClientVerifyInfo verifyData) {
+        String clientId = verifyData.getClientId();
         IpPortBasedClient client = clients.get(clientId);
         if (null != client) {
-            NamingExecuteTaskDispatcher.getInstance()
-                    .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
-            return true;
+            // remote node of old version will always verify with zero revision
+            if (0 == verifyData.getRevision() || client.getRevision() == verifyData.getRevision()) {
+                NamingExecuteTaskDispatcher.getInstance()
+                        .dispatchAndExecuteTask(clientId, new ClientBeatUpdateTask(client));
+                return true;
+            } else {
+                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] IpPortBasedClient[{}] revision local={}, remote={}",
+                        client.getClientId(), client.getRevision(), verifyData.getRevision());
+            }
         }
         return false;
     }

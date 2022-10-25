@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,13 +28,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Collection;
 
-/**
- * AbstractClient test.
- * @ClassName: AbstractClientTest
- * @Author: ChenHao26
- * @Date: 2022/8/3 16:22
- * @Description: TODO
- */
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractClientTest {
     
@@ -47,21 +41,23 @@ public class AbstractClientTest {
     
     @Before
     public void setUp() {
-        abstractClient = new MockAbstractClient();
+        abstractClient = new MockAbstractClient(0L);
         service = Service.newService("ns1", "group1", "serviceName001");
         instancePublishInfo = new InstancePublishInfo("127.0.0.1", 8890);
         subscriber = new Subscriber("127.0.0.1:8848", "agent1", "appName", "127.0.0.1",
                 "ns1", "serviceName001", 9090);
-        addServiceInstance();
-        addServiceSubscriber();
+        MetricsMonitor.getIpCountMonitor().set(0);
+        MetricsMonitor.getSubscriberCount().set(0);
     }
     
-    private void addServiceInstance() {
+    @Test
+    public void addServiceInstance() {
         boolean result = abstractClient.addServiceInstance(service, instancePublishInfo);
         Assert.assertTrue(result);
     }
     
-    private void  addServiceSubscriber() {
+    @Test
+    public void addServiceSubscriber() {
         Assert.assertTrue(abstractClient.addServiceSubscriber(service, subscriber));
     }
     
@@ -72,12 +68,14 @@ public class AbstractClientTest {
     
     @Test
     public void removeServiceInstanceSuccess() {
+        addServiceInstance();
         InstancePublishInfo publishInfo = abstractClient.removeServiceInstance(service);
         Assert.assertNotNull(publishInfo);
     }
     
     @Test
     public void getInstancePublishInfo() {
+        addServiceInstance();
         InstancePublishInfo publishInfo = abstractClient.getInstancePublishInfo(service);
         Assert.assertNotNull(publishInfo);
     }
@@ -96,6 +94,7 @@ public class AbstractClientTest {
     
     @Test
     public void getSubscriber() {
+        addServiceSubscriber();
         Subscriber subscriber1 = abstractClient.getSubscriber(service);
         Assert.assertNotNull(subscriber1);
     }
@@ -114,11 +113,15 @@ public class AbstractClientTest {
     
     @Test
     public void release() {
-        try {
-            abstractClient.release();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.assertNotNull(e);
-        }
+        
+        abstractClient.addServiceInstance(service, instancePublishInfo);
+        Assert.assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
+        abstractClient.addServiceSubscriber(service, subscriber);
+        Assert.assertEquals(1, MetricsMonitor.getSubscriberCount().get());
+        
+        abstractClient.release();
+        
+        Assert.assertEquals(0, MetricsMonitor.getSubscriberCount().get());
+        Assert.assertEquals(0, MetricsMonitor.getIpCountMonitor().get());
     }
 }

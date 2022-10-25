@@ -34,7 +34,6 @@ public class NetUtilsTest {
         field.setAccessible(true);
         field.set(null, "");
         System.clearProperty("com.alibaba.nacos.client.local.ip");
-        System.clearProperty("com.alibaba.nacos.client.naming.local.ip");
         System.clearProperty("com.alibaba.nacos.client.local.preferHostname");
     }
 
@@ -43,12 +42,6 @@ public class NetUtilsTest {
         System.setProperty("com.alibaba.nacos.client.naming.local.ip", "10.2.7.8");
         System.setProperty("com.alibaba.nacos.client.local.ip", "10.2.8.8");
         assertEquals("10.2.8.8", NetUtils.localIP());
-    }
-
-    @Test
-    public void testCompatibleLocalIP() {
-        System.setProperty("com.alibaba.nacos.client.naming.local.ip", "10.2.7.8");
-        assertEquals("10.2.7.8", NetUtils.localIP());
     }
 
     @Test

@@ -35,11 +35,15 @@ public class PersistentIpPortClientFactory implements ClientFactory<IpPortBasedC
     
     @Override
     public IpPortBasedClient newClient(String clientId, ClientAttributes attributes) {
-        return new IpPortBasedClient(clientId, false);
+        IpPortBasedClient ipPortBasedClient = new IpPortBasedClient(clientId, false);
+        ipPortBasedClient.setAttributes(attributes);
+        return ipPortBasedClient;
     }
     
     @Override
     public IpPortBasedClient newSyncedClient(String clientId, ClientAttributes attributes) {
-        return new IpPortBasedClient(clientId, false);
+        IpPortBasedClient ipPortBasedClient = new IpPortBasedClient(clientId, false);
+        ipPortBasedClient.setAttributes(attributes);
+        return ipPortBasedClient;
     }
 }

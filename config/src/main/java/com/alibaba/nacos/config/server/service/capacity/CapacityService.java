@@ -269,10 +269,9 @@ public class CapacityService {
     private boolean initGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         boolean insertSuccess = insertGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
-        if (quota != null) {
-            return insertSuccess;
+        if (quota == null) {
+            autoExpansion(group, null);
         }
-        autoExpansion(group, null);
         return insertSuccess;
     }
     

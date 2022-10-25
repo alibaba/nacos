@@ -70,7 +70,8 @@ public class EmbeddedRolePersistServiceImplTest {
     
     @Test
     public void testGetRolesByUserName() {
-        Page<RoleInfo> page = embeddedRolePersistService.getRolesByUserName("userName", 1, 10);
+        Page<RoleInfo> page = embeddedRolePersistService.getRolesByUserNameAndRoleName(
+                "userName", "roleName", 1, 10);
         
         Assert.assertNull(page);
     }

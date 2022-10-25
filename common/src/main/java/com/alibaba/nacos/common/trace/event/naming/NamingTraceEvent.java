@@ -31,4 +31,9 @@ public class NamingTraceEvent extends TraceEvent {
             String serviceNamespace, String serviceGroup, String name) {
         super(eventType, eventTime, serviceNamespace, serviceGroup, name);
     }
+    
+    @Override
+    public boolean isPluginEvent() {
+        return true;
+    }
 }

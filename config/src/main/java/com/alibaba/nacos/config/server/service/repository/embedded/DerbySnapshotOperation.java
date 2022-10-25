@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
@@ -61,7 +62,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     
     private final String snapshotArchive = "derby_data.zip";
     
-    private final String derbyBaseDir = Paths.get(EnvUtil.getNacosHome(), "data", "derby-data").toString();
+    private final String derbyBaseDir = Paths.get(EnvUtil.getNacosHome(), "data", Constants.DERBY_BASE_DIR).toString();
     
     private final String restoreDB = "jdbc:derby:" + derbyBaseDir;
     
@@ -127,7 +128,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 }
             }
             
-            final String loadPath = Paths.get(readerPath, snapshotDir, "derby-data").toString();
+            final String loadPath = Paths.get(readerPath, snapshotDir, Constants.DERBY_BASE_DIR).toString();
             LogUtil.FATAL_LOG.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
             
             doDerbyRestoreFromBackup(() -> {
