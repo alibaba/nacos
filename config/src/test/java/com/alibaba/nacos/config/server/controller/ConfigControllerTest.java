@@ -27,6 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
@@ -84,6 +85,9 @@ public class ConfigControllerTest {
     private PersistService persistService;
     
     @Mock
+    private ConfigOperationService configOperationService;
+    
+    @Mock
     private ConfigSubService configSubService;
     
     @Before
@@ -92,12 +96,15 @@ public class ConfigControllerTest {
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(configController, "configSubService", configSubService);
         ReflectionTestUtils.setField(configController, "persistService", persistService);
+        ReflectionTestUtils.setField(configController, "configOperationService", configOperationService);
         ReflectionTestUtils.setField(configController, "inner", inner);
         mockmvc = MockMvcBuilders.standaloneSetup(configController).build();
     }
     
     @Test
     public void testPublishConfig() throws Exception {
+        
+        when(configOperationService.publishConfig(any(), any(), anyString())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test")
@@ -158,6 +165,8 @@ public class ConfigControllerTest {
     
     @Test
     public void testDeleteConfig() throws Exception {
+        
+        when(configOperationService.deleteConfig(anyString(), anyString(), anyString(), anyString(), any(), any())).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(Constants.CONFIG_CONTROLLER_PATH)
                 .param("dataId", "test")

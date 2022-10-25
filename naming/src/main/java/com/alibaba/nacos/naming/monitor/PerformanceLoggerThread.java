@@ -18,16 +18,10 @@ package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -43,15 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class PerformanceLoggerThread {
-    
-    @Autowired
-    private ServiceManager serviceManager;
-    
-    @Autowired
-    private RaftCore raftCore;
-    
-    @Autowired
-    private ClusterVersionJudgement versionJudgement;
     
     private static final long PERIOD = 60;
     
@@ -80,23 +65,6 @@ public class PerformanceLoggerThread {
     public void collectMetrics() {
         MetricsMonitor.getDomCountMonitor().set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
         MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
-        metricsRaftLeader();
-    }
-    
-    /**
-     * Will deprecated after v1.4.x
-     */
-    @Deprecated
-    private void metricsRaftLeader() {
-        if (!versionJudgement.allMemberIsNewVersion()) {
-            if (raftCore.isLeader()) {
-                MetricsMonitor.getLeaderStatusMonitor().set(1);
-            } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
-                MetricsMonitor.getLeaderStatusMonitor().set(0);
-            } else {
-                MetricsMonitor.getLeaderStatusMonitor().set(2);
-            }
-        }
     }
     
     class PerformanceLogTask implements Runnable {
@@ -136,14 +104,6 @@ public class PerformanceLoggerThread {
         }
         
         private void printDistroMonitor() {
-            Optional<DistroRecord> v1Record = DistroRecordsHolder.getInstance()
-                    .getRecordIfExist(KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
-            long v1SyncDone = 0;
-            long v1SyncFail = 0;
-            if (v1Record.isPresent()) {
-                v1SyncDone = v1Record.get().getSuccessfulSyncCount();
-                v1SyncFail = v1Record.get().getFailedSyncCount();
-            }
             Optional<DistroRecord> v2Record = DistroRecordsHolder.getInstance()
                     .getRecordIfExist(DistroClientDataProcessor.TYPE);
             long v2SyncDone = 0;
@@ -154,8 +114,7 @@ public class PerformanceLoggerThread {
                 v2SyncFail = v2Record.get().getFailedSyncCount();
                 v2VerifyFail = v2Record.get().getFailedVerifyCount();
             }
-            Loggers.PERFORMANCE_LOG
-                    .info("DISTRO:|{}|{}|{}|{}|{}|", v1SyncDone, v1SyncFail, v2SyncDone, v2SyncFail, v2VerifyFail);
+            Loggers.PERFORMANCE_LOG.info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
     

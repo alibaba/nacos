@@ -50,7 +50,6 @@ public class TraceEventPublisherFactory implements EventPublisherFactory {
 
     @Override
     public EventPublisher apply(final Class<? extends Event> eventType, final Integer maxQueueSize) {
-        // Like ClientEvent$ClientChangeEvent cache by ClientEvent
         Class<? extends Event> cachedEventType = TraceEvent.class;
         
         for (Class<? extends Event> publisherEvent : publisherEvents) {

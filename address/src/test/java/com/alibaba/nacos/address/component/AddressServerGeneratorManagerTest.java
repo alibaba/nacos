@@ -17,7 +17,7 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
-import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -67,7 +67,7 @@ public class AddressServerGeneratorManagerTest {
     
     @Test
     public void testGenerateResponseIps() {
-        final List<Instance> instanceList = new ArrayList<>();
+        final List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList = new ArrayList<>();
         Instance instance1 = new Instance();
         instance1.setIp("192.168.3.1");
         instance1.setPort(8848);
