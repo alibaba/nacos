@@ -2401,7 +2401,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.findAllConfigInfo4Export(ids, params);
-        return databaseOperate.queryMany(SQL_FIND_ALL_CONFIG_INFO, paramList.toArray(),
+        return databaseOperate.queryMany(sql, paramList.toArray(),
                 CONFIG_ALL_INFO_ROW_MAPPER);
     }
     
