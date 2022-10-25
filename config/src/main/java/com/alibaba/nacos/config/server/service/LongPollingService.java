@@ -530,4 +530,8 @@ public class LongPollingService {
     public void setRetainIps(Map<String, Long> retainIps) {
         this.retainIps = retainIps;
     }
+    
+    public int getSubscriberCount() {
+        return allSubs.size();
+    }
 }
