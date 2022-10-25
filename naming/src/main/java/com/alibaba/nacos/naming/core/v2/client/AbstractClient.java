@@ -51,6 +51,8 @@ public abstract class AbstractClient implements Client {
     
     protected final AtomicLong revision;
     
+    protected ClientAttributes attributes;
+    
     public AbstractClient(Long revision) {
         lastUpdatedTime = System.currentTimeMillis();
         this.revision = new AtomicLong(revision == null ? 0 : revision);
@@ -185,7 +187,7 @@ public abstract class AbstractClient implements Client {
                 MetricsMonitor.getIpCountMonitor().decrementAndGet();
             }
         }
-        MetricsMonitor.getIpCountMonitor().addAndGet(-1 * subscribers.size());
+        MetricsMonitor.getSubscriberCount().addAndGet(-1 * subscribers.size());
     }
     
     @Override
@@ -205,4 +207,14 @@ public abstract class AbstractClient implements Client {
         this.revision.set(revision);
     }
     
+    /**
+     * get client attributes.
+     */
+    public ClientAttributes getClientAttributes() {
+        return attributes;
+    }
+    
+    public void setAttributes(ClientAttributes attributes) {
+        this.attributes = attributes;
+    }
 }

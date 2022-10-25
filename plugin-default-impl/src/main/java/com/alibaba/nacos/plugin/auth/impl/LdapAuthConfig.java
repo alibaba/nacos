@@ -29,11 +29,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.core.support.LdapContextSource;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * ldap auth config.
+ *
  * @author onewe
  */
 @Configuration
@@ -60,26 +58,19 @@ public class LdapAuthConfig {
     
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
-    public LdapTemplate ldapTemplate() {
-        LdapContextSource contextSource = new LdapContextSource();
-        final Map<String, Object> config = new HashMap<>(16);
-        contextSource.setUrl(ldapUrl);
-        contextSource.setBase(ldapBaseDc);
-        contextSource.setUserDn(userDn);
-        contextSource.setPassword(password);
-        config.put("java.naming.ldap.attributes.binary", "objectGUID");
-        config.put("com.sun.jndi.ldap.connect.timeout", ldapTimeOut);
-        contextSource.setPooled(true);
-        contextSource.setBaseEnvironmentProperties(config);
-        contextSource.afterPropertiesSet();
-        return new LdapTemplate(contextSource);
-        
+    public LdapTemplate ldapTemplate(LdapContextSource ldapContextSource) {
+        return new LdapTemplate(ldapContextSource);
+    }
+    
+    @Bean
+    public LdapContextSource ldapContextSource() {
+        return new NacosLdapContextSource(ldapUrl, ldapBaseDc, userDn, password, ldapTimeOut);
     }
     
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
-            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService, String filterPrefix) {
+            NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService) {
         return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix);
     }
     

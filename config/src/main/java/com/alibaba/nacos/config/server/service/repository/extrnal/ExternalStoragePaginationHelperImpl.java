@@ -19,8 +19,6 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -86,17 +84,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        final int startRow = (pageNo - 1) * pageSize;
-        String selectSql = "";
-        if (isDerby()) {
-            selectSql = sqlFetchRows + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
-        } else if (lastMaxId != null) {
-            selectSql = sqlFetchRows + " AND id > " + lastMaxId + " ORDER BY id ASC" + " LIMIT " + 0 + "," + pageSize;
-        } else {
-            selectSql = sqlFetchRows + " LIMIT " + startRow + "," + pageSize;
-        }
-        
-        List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
+        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -130,13 +118,8 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         if (pageNo > pageCount) {
             return page;
         }
-        
-        String selectSql = sqlFetchRows;
-        if (isDerby()) {
-            selectSql = selectSql.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-        }
-        
-        List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
+    
+        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -170,13 +153,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         if (pageNo > pageCount) {
             return page;
         }
-        
-        String selectSql = sqlFetchRows;
-        if (isDerby()) {
-            selectSql = selectSql.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-        }
-        
-        List<E> result = jdbcTemplate.query(selectSql, args2, rowMapper);
+        List<E> result = jdbcTemplate.query(sqlFetchRows, args2, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -191,13 +168,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
         // Create Page object
         final Page<E> page = new Page<>();
-        
-        String selectSql = sqlFetchRows;
-        if (isDerby()) {
-            selectSql = selectSql.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-        }
-        
-        List<E> result = jdbcTemplate.query(selectSql, args, rowMapper);
+        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -206,14 +177,8 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
 
     @Override
     public void updateLimit(final String sql, final Object[] args) {
-        String sqlUpdate = sql;
-        
-        if (isDerby()) {
-            sqlUpdate = sqlUpdate.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
-        }
-        
         try {
-            jdbcTemplate.update(sqlUpdate, args);
+            jdbcTemplate.update(sql, args);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
@@ -222,20 +187,11 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
     public int updateLimitWithResponse(final String sql, final Object[] args) {
         String sqlUpdate = sql;
         
-        if (isDerby()) {
-            sqlUpdate = sqlUpdate.replaceAll("LIMIT \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
-        }
-        
         try {
             return jdbcTemplate.update(sqlUpdate, args);
         } finally {
             EmbeddedStorageContextUtils.cleanAllContext();
         }
-    }
-    
-    private boolean isDerby() {
-        return (EnvUtil.getStandaloneMode() && !PropertyUtil.isUseExternalDB()) || PropertyUtil
-                .isEmbeddedStorage();
     }
     
 }

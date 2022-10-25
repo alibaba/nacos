@@ -173,6 +173,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
+    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        throw new UnsupportedOperationException("Do not support persistent instances to perform batch de registration methods.");
+    }
+    
+    @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,

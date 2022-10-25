@@ -110,6 +110,12 @@ public class AbstractNamingClientProxyTest {
         }
     
         @Override
+        public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
+                throws NacosException {
+        
+        }
+    
+        @Override
         public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         
         }
