@@ -146,7 +146,8 @@ public class Chooser<K, T> {
     
             weights = new double[items.size()];
             int index = 0;
-            double exactWeight, randomRange = 0D;
+            double exactWeight;
+            double randomRange = 0D;
             for (Pair<T> item : itemsWithWeight) {
                 double singleWeight = item.weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
