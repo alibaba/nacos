@@ -60,7 +60,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -140,32 +139,37 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     /**
      * Get instance list that need to be deregistered.
-     * @param serviceName   service name
-     * @param groupName    group name
+     *
+     * @param serviceName service name
+     * @param groupName   group name
      * @param instances   instance list
-     * @return  instance list that need to be deregistered.
+     * @return instance list that need to be deregistered.
      */
-    private List<Instance> getRetainInstance(String serviceName, String groupName, List<Instance> instances) throws NacosException {
+    private List<Instance> getRetainInstance(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
         if (CollectionUtils.isEmpty(instances)) {
             throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("[Batch deRegistration] need deRegister instance is empty, instances: %s,", instances));
+                    String.format("[Batch deRegistration] need deRegister instance is empty, instances: %s,",
+                            instances));
         }
         String combinedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesBykey(combinedServiceName);
         if (!(instanceRedoData instanceof BatchInstanceRedoData)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("[Batch deRegistration] batch deRegister is not BatchInstanceRedoData type , instances: %s,", instances));
+            throw new NacosException(NacosException.INVALID_PARAM, String.format(
+                    "[Batch deRegistration] batch deRegister is not BatchInstanceRedoData type , instances: %s,",
+                    instances));
         }
         
         BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) instanceRedoData;
         List<Instance> allInstance = batchInstanceRedoData.getInstances();
         if (CollectionUtils.isEmpty(allInstance)) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    String.format("[Batch deRegistration] not found all registerInstance , serviceName：%s , groupName: %s", serviceName, groupName));
+            throw new NacosException(NacosException.INVALID_PARAM, String.format(
+                    "[Batch deRegistration] not found all registerInstance , serviceName：%s , groupName: %s",
+                    serviceName, groupName));
         }
         
-        Map<Instance, Instance> instanceMap = instances
-                .stream().collect(Collectors.toMap(Function.identity(), Function.identity()));
+        Map<Instance, Instance> instanceMap = instances.stream()
+                .collect(Collectors.toMap(Function.identity(), Function.identity()));
         List<Instance> retainInstances = new ArrayList<>();
         for (Instance instance : allInstance) {
             if (!instanceMap.containsKey(instance)) {
@@ -311,7 +315,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+            NAMING_LOGGER
+                    .debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
         }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);
@@ -335,10 +340,6 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 false);
         requestToServer(request, SubscribeServiceResponse.class);
         redoService.removeSubscriberForRedo(serviceName, groupName, clusters);
-    }
-    
-    @Override
-    public void updateBeatInfo(Set<Instance> modifiedInstances) {
     }
     
     @Override

@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * Naming Client Proxy.
@@ -97,8 +96,8 @@ public interface NamingClientProxy extends Closeable {
      * @return service info
      * @throws NacosException nacos exception
      */
-    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort, boolean healthyOnly)
-            throws NacosException;
+    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
+            boolean healthyOnly) throws NacosException;
     
     /**
      * Query Service.
@@ -182,13 +181,6 @@ public interface NamingClientProxy extends Closeable {
      * @throws NacosException nacos exception
      */
     boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException;
-    
-    /**
-     * Update beat info.
-     *
-     * @param modifiedInstances modified instances
-     */
-    void updateBeatInfo(Set<Instance> modifiedInstances);
     
     /**
      * Check Server healthy.
