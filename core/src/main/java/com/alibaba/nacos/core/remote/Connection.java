@@ -34,8 +34,6 @@ public abstract class Connection implements Requester {
     
     private Map<String, Boolean> abilityTable;
     
-    private ClientAbilities abilities;
-    
     private final ConnectionMeta metaInfo;
     
     public Connection(ConnectionMeta metaInfo) {
@@ -60,28 +58,6 @@ public abstract class Connection implements Requester {
     
     public Map<String, Boolean> getAbilityTable() {
         return this.abilityTable;
-    }
-    
-    /**
-     * get abilities.
-     *
-     * @deprecated it is replaced by abilityTable field
-     * @return
-     */
-    @Deprecated
-    public ClientAbilities getAbilities() {
-        return abilities;
-    }
-    
-    /**
-     * set abilities.
-     *
-     * @deprecated it is replaced by abilityTable field
-     * @param abilities abilities.
-     */
-    @Deprecated
-    public void setAbilities(ClientAbilities abilities) {
-        this.abilities = abilities;
     }
     
     /**

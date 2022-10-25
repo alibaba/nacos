@@ -387,8 +387,10 @@ public abstract class GrpcClient extends RpcClient {
                     synResponse.blocker.await(5000L, TimeUnit.MICROSECONDS);
                 }
                 // leave for adapting old version server
-                //wait to register connection setup
-                Thread.sleep(100L);
+                else {
+                    //wait to register connection setup
+                    Thread.sleep(100L);
+                }
                 return grpcConn;
             }
             return null;
