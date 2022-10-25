@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
@@ -60,9 +61,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -171,9 +170,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @PostConstruct
     public void init() {
         dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        idGeneratorManager.register(RESOURCE_CONFIG_INFO_ID, RESOURCE_CONFIG_HISTORY_ID,
-                RESOURCE_CONFIG_TAG_RELATION_ID, RESOURCE_APP_CONFIGDATA_RELATION_SUBS, RESOURCE_CONFIG_BETA_ID,
-                RESOURCE_NAMESPACE_ID, RESOURCE_USER_ID, RESOURCE_ROLE_ID, RESOURCE_PERMISSIONS_ID);
+        idGeneratorManager
+                .register(RESOURCE_CONFIG_INFO_ID, RESOURCE_CONFIG_HISTORY_ID, RESOURCE_CONFIG_TAG_RELATION_ID,
+                        RESOURCE_APP_CONFIGDATA_RELATION_SUBS, RESOURCE_CONFIG_BETA_ID, RESOURCE_NAMESPACE_ID,
+                        RESOURCE_USER_ID, RESOURCE_ROLE_ID, RESOURCE_PERMISSIONS_ID);
     }
     
     public boolean checkMasterWritable() {
@@ -257,9 +257,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         configInfo.setTenant(tenantTmp);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
-            final String sql = configInfoBetaMapper.insert(Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips", "src_ip",
-                    "src_user","gmt_create", "gmt_modified", "encrypted_data_key"));
+            ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+            final String sql = configInfoBetaMapper.insert(Arrays
+                    .asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips", "src_ip",
+                            "src_user", "gmt_create", "gmt_modified", "encrypted_data_key"));
             final Object[] args = new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
                     configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, time, encryptedDataKey};
             
@@ -283,10 +285,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource,
-                    TableConstant.CONFIG_INFO_TAG).get();
-            final String sql = configInfoTagMapper.insert(Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name",
-                    "content", "md5", "src_ip", "src_user", "gmt_create", "gmt_modified"));
+            ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+            final String sql = configInfoTagMapper.insert(Arrays
+                    .asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content", "md5", "src_ip",
+                            "src_user", "gmt_create", "gmt_modified"));
             final Object[] args = new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp,
                     appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
             
@@ -386,9 +389,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         configInfo.setTenant(tenantTmp);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
-            final String sql = configInfoBetaMapper.update(Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name", "encrypted_data_key"),
-                    Arrays.asList("data_id", "group_id", "tenant_id"));
+            ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+            final String sql = configInfoBetaMapper.update(Arrays
+                    .asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
+                            "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
             
             final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
                     encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
@@ -412,7 +417,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
-            ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+            ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
             final String sql = configInfoBetaMapper.updateConfigInfo4BetaCas();
             
             final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
@@ -439,9 +445,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
-            ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
-            final String sql = configInfoTagMapper.update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name"),
-                    Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
+            ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+            final String sql = configInfoTagMapper
+                    .update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name"),
+                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
             final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp};
             
@@ -465,7 +473,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+            ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
             final String sql = configInfoTagMapper.updateConfigInfo4TagCas();
             final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp, configInfo.getMd5()};
@@ -526,8 +535,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-            final String sql = configInfoMapper.update(Arrays.asList("md5"), Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified"));
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            final String sql = configInfoMapper
+                    .update(Arrays.asList("md5"), Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified"));
             final Object[] args = new Object[] {md5, dataId, group, tenantTmp, lastTime};
             
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -585,8 +596,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     private boolean isAlreadyExist(SubInfo subInfo) {
         final String sql = "SELECT * FROM app_configdata_relation_subs WHERE dara_id=? AND group_id=? AND app_name=?";
-        Map obj = databaseOperate.queryOne(sql,
-                new Object[] {subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName()}, Map.class);
+        Map obj = databaseOperate
+                .queryOne(sql, new Object[] {subInfo.getDataId(), subInfo.getGroup(), subInfo.getAppName()}, Map.class);
         return obj != null;
     }
     
@@ -651,12 +662,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
         if (configInfo != null) {
             try {
-                ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+                ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                        .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
                 final String sql = configInfoBetaMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id"));
                 final Object[] args = new Object[] {dataId, group, tenantTmp};
                 
-                EmbeddedStorageContextUtils.onDeleteConfigBetaInfo(tenantTmp, group, dataId,
-                        System.currentTimeMillis());
+                EmbeddedStorageContextUtils
+                        .onDeleteConfigBetaInfo(tenantTmp, group, dataId, System.currentTimeMillis());
                 EmbeddedStorageContextUtils.addSqlContext(sql, args);
                 
                 boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
@@ -678,13 +690,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String contentTmp = StringUtils.isBlank(content) ? StringUtils.EMPTY : content;
         final Timestamp now = new Timestamp(System.currentTimeMillis());
         
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        final String select = configInfoAggrMapper.select(Collections.singletonList("content"), Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
-        final String insert = configInfoAggrMapper.insert(Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
-        final String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        final String select = configInfoAggrMapper.select(Collections.singletonList("content"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
+        final String insert = configInfoAggrMapper.insert(Arrays
+                .asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
+        final String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         
-        String dbContent = databaseOperate.queryOne(select, new Object[] {dataId, group, tenantTmp, datumId},
-                String.class);
+        String dbContent = databaseOperate
+                .queryOne(select, new Object[] {dataId, group, tenantTmp, datumId}, String.class);
         
         if (Objects.isNull(dbContent)) {
             final Object[] args = new Object[] {dataId, group, tenantTmp, datumId, appNameTmp, contentTmp, now};
@@ -710,7 +726,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             final String datumId) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         final String sql = configInfoAggrMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp, datumId};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -728,8 +745,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void removeAggrConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-    
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         final String sql = configInfoAggrMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -753,9 +771,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             datumString.append('\'').append(datum).append("',");
         }
         datumString.deleteCharAt(datumString.length() - 1);
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        final String sql =
-                configInfoAggrMapper.batchRemoveAggr(datumList);
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList);
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         
@@ -772,7 +790,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sql = historyConfigInfoMapper.removeConfigHistory();
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         helper.updateLimit(sql, new Object[] {startTime, limitSize});
@@ -780,7 +799,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int findConfigHistoryCountByTime(final Timestamp startTime) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sql = historyConfigInfoMapper.findConfigHistoryCountByTime();
         Integer result = databaseOperate.queryOne(sql, new Object[] {startTime}, Integer.class);
         if (result == null) {
@@ -791,7 +811,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public long findConfigMaxId() {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.findConfigMaxId();
         return Optional.ofNullable(databaseOperate.queryOne(sql, Long.class)).orElse(0L);
     }
@@ -825,8 +846,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         removeAggrConfigInfo(dataId, group, tenant);
         
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        final String sql = configInfoAggrMapper.insert(Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        final String sql = configInfoAggrMapper.insert(Arrays
+                .asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
         for (Entry<String, String> datumEntry : datumMap.entrySet()) {
             final Object[] args = new Object[] {dataId, group, tenantTmp, datumEntry.getKey(), appNameTmp,
                     datumEntry.getValue(), new Timestamp(System.currentTimeMillis())};
@@ -847,7 +870,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<ConfigInfo> findAllDataIdAndGroup() {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.findAllDataIdAndGroup();
         return databaseOperate.queryMany(sql, EMPTY_ARRAY, CONFIG_INFO_ROW_MAPPER);
     }
@@ -855,12 +879,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant. CONFIG_INFO_BETA).get();
-        final String sql = configInfoBetaMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips", "encrypted_data_key"),
-                Arrays.asList("data_id", "group_id", "tenant_id"));
+        ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+        final String sql = configInfoBetaMapper.select(Arrays
+                .asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
+                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
         
-        return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp},
-                CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
+        return databaseOperate
+                .queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
         
     }
     
@@ -869,21 +895,25 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             final String tag) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
-        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
-        final String sql = configInfoTagMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content"),
-                Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
+        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+        final String sql = configInfoTagMapper
+                .select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content"),
+                        Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
         
-        return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp},
-                CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
+        return databaseOperate
+                .queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp}, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
     }
     
     @Override
     public ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
             final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content"),
-                Arrays.asList("data_id", "group_id", "tenant_id", "app_name"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper
+                .select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content"),
+                        Arrays.asList("data_id", "group_id", "tenant_id", "app_name"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, appName}, CONFIG_INFO_ROW_MAPPER);
         
@@ -899,7 +929,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         paramList.add(dataId);
         paramList.add(group);
         paramList.add(tenantTmp);
-    
+        
         String sql = null;
         Map<String, String> params = new HashMap<>(16);
         if (StringUtils.isNotBlank(appName)) {
@@ -909,10 +939,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             paramList.addAll(Arrays.asList(tagArr));
-            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
             sql = configTagsRelationMapper.findConfigInfoAdvanceInfo(params, paramList.size());
         } else {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
             sql = configInfoMapper.findConfigInfoAdvanceInfo(params);
         }
         
@@ -921,28 +953,33 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigInfoBase findConfigInfoBase(final String dataId, final String group) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "content"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         
-        return databaseOperate.queryOne(sql, new Object[] {dataId, group, StringUtils.EMPTY},
-                CONFIG_INFO_BASE_ROW_MAPPER);
+        return databaseOperate
+                .queryOne(sql, new Object[] {dataId, group, StringUtils.EMPTY}, CONFIG_INFO_BASE_ROW_MAPPER);
     }
     
     @Override
     public ConfigInfo findConfigInfo(long id) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content"),
-                Collections.singletonList("id"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper
+                .select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content"),
+                        Collections.singletonList("id"));
         return databaseOperate.queryOne(sql, new Object[] {id}, CONFIG_INFO_ROW_MAPPER);
     }
     
     @Override
     public ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type", "encrypted_data_key"),
-                Arrays.asList("data_id", "group_id", "tenant_id"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper.select(Arrays
+                .asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type",
+                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         return databaseOperate.queryOne(sql, args, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
@@ -954,9 +991,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         return helper.fetchPage(configInfoMapper.findConfigInfoByDataIdCountRows(),
-                configInfoMapper.findConfigInfoByDataIdFetchRows(startRow, pageSize), new Object[] {dataId, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+                configInfoMapper.findConfigInfoByDataIdFetchRows(startRow, pageSize), new Object[] {dataId, tenantTmp},
+                pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
     }
     
     @Override
@@ -965,10 +1004,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         return helper.fetchPage(configInfoMapper.findConfigInfoByDataIdAndAppCountRows(),
-                configInfoMapper.findConfigInfoByDataIdAndAppFetchRows(startRow, pageSize), new Object[] {dataId, tenantTmp, appName}, pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+                configInfoMapper.findConfigInfoByDataIdAndAppFetchRows(startRow, pageSize),
+                new Object[] {dataId, tenantTmp, appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
     }
     
     @Override
@@ -991,11 +1031,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             paramList.addAll(Arrays.asList(tagArr));
-            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
             sqlCount = configTagsRelationMapper.findConfigInfoByDataIdAndAdvanceCountRows(paramsMap, paramList.size());
-            sql = configTagsRelationMapper.findConfigInfoByDataIdAndAdvanceFetchRows(paramsMap, paramList.size(), startRow, pageSize);
+            sql = configTagsRelationMapper
+                    .findConfigInfoByDataIdAndAdvanceFetchRows(paramsMap, paramList.size(), startRow, pageSize);
         } else {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
             sqlCount = configInfoMapper.findConfigInfoByDataIdAndAdvanceCountRows(paramsMap);
             sql = configInfoMapper.findConfigInfoByDataIdAndAdvanceFetchRows(paramsMap, startRow, pageSize);
         }
@@ -1032,21 +1075,24 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             paramList.addAll(Arrays.asList(tagArr));
-            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
             sqlCount = configTagsRelationMapper.findConfigInfo4PageCountRows(paramsMap, paramList.size());
-            sql = configTagsRelationMapper.findConfigInfo4PageFetchRows(paramsMap, paramList.size(), startRow, pageSize);
+            sql = configTagsRelationMapper
+                    .findConfigInfo4PageFetchRows(paramsMap, paramList.size(), startRow, pageSize);
         } else {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
             sqlCount = configInfoMapper.findConfigInfo4PageCountRows(paramsMap);
             sql = configInfoMapper.findConfigInfo4PageFetchRows(paramsMap, startRow, pageSize);
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        Page<ConfigInfo> page = helper.fetchPage(sqlCount, sql, paramList.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+        Page<ConfigInfo> page = helper
+                .fetchPage(sqlCount, sql, paramList.toArray(), pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         
         for (ConfigInfo configInfo : page.getPageItems()) {
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
-                    configInfo.getEncryptedDataKey(), configInfo.getContent());
+            Pair<String, String> pair = EncryptionHandler
+                    .decryptHandler(configInfo.getDataId(), configInfo.getEncryptedDataKey(), configInfo.getContent());
             configInfo.setContent(pair.getSecond());
         }
         
@@ -1056,7 +1102,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId) {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         final int startRow = (pageNo - 1) * pageSize;
         return helper.fetchPage(configInfoMapper.findConfigInfoBaseByDataIdCountRows(),
                 configInfoMapper.findConfigInfoBaseByDataIdFetchRows(startRow, pageSize),
@@ -1070,9 +1117,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         return helper.fetchPage(configInfoMapper.findConfigInfoByGroupCountRows(),
-                configInfoMapper.findConfigInfoByGroupFetchRows(startRow, pageSize), new Object[] {group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+                configInfoMapper.findConfigInfoByGroupFetchRows(startRow, pageSize), new Object[] {group, tenantTmp},
+                pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -1082,10 +1131,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         return helper.fetchPage(configInfoMapper.findConfigInfoByGroupAndAppCountRows(),
-                configInfoMapper.findConfigInfoByGroupAndAppFetchRows(startRow, pageSize), new Object[] {group, tenantTmp, appName}, pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+                configInfoMapper.findConfigInfoByGroupAndAppFetchRows(startRow, pageSize),
+                new Object[] {group, tenantTmp, appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -1099,7 +1149,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String sqlCount = null;
         String sql = null;
         Map<String, String> params = new HashMap<>(16);
-    
+        
         List<String> paramList = new ArrayList<>();
         paramList.add(group);
         paramList.add(tenantTmp);
@@ -1111,17 +1161,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             paramList.addAll(Arrays.asList(tagArr));
-            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
             sqlCount = configTagsRelationMapper.findConfigInfoByGroupAndAdvanceCountRows(params, paramList.size());
-            sql = configTagsRelationMapper.findConfigInfoByGroupAndAdvanceFetchRows(params, paramList.size(), startRow, pageSize);
+            sql = configTagsRelationMapper
+                    .findConfigInfoByGroupAndAdvanceFetchRows(params, paramList.size(), startRow, pageSize);
         } else {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
             sqlCount = configInfoMapper.findConfigInfoByGroupAndAdvanceCountRows(params);
             sql = configInfoMapper.findConfigInfoByGroupAndAdvanceFetchRows(params, startRow, pageSize);
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCount, sql, paramList.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+        return helper.fetchPage(sqlCount, sql, paramList.toArray(), pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -1131,10 +1183,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         return helper.fetchPage(configInfoMapper.findConfigInfoByAppCountRows(),
-                configInfoMapper.findConfigInfoByAppFetchRows(startRow, pageSize), new Object[] {generateLikeArgument(tenantTmp), appName}, pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+                configInfoMapper.findConfigInfoByAppFetchRows(startRow, pageSize),
+                new Object[] {generateLikeArgument(tenantTmp), appName}, pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -1147,7 +1200,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String sqlCount = null;
         String sql = null;
         Map<String, String> paramsMap = new HashMap<>(16);
-    
+        
         List<String> paramList = new ArrayList<>();
         paramList.add(tenantTmp);
         if (StringUtils.isNotBlank(appName)) {
@@ -1158,11 +1211,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             paramList.addAll(Arrays.asList(tagArr));
-            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
             sqlCount = configTagsRelationMapper.findConfigInfoByAdvanceCountRows(paramsMap, paramList.size());
-            sql = configTagsRelationMapper.findConfigInfoByAdvanceFetchRows(paramsMap, paramList.size(), startRow, pageSize);
+            sql = configTagsRelationMapper
+                    .findConfigInfoByAdvanceFetchRows(paramsMap, paramList.size(), startRow, pageSize);
         } else {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
             sqlCount = configInfoMapper.findConfigInfoByAdvanceCountRows(paramsMap);
             sql = configInfoMapper.findConfigInfoByAdvanceFetchRows(paramsMap, startRow, pageSize);
         }
@@ -1176,7 +1232,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo, final int pageSize, final String group) {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         return helper.fetchPage(configInfoMapper.findConfigInfoBaseByGroupCountRows(),
                 configInfoMapper.findConfigInfoBaseByGroupFetchRows(startRow, pageSize),
                 new Object[] {group, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
@@ -1184,7 +1241,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoCount() {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.count();
         Integer result = databaseOperate.queryOne(sql, Integer.class);
         if (result == null) {
@@ -1195,7 +1253,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoCount(String tenant) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.configInfoLikeTenantCount();
         Integer result = databaseOperate.queryOne(sql, new Object[] {tenant}, Integer.class);
         if (result == null) {
@@ -1206,7 +1265,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoBetaCount() {
-        ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+        ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
         String sql = configInfoBetaMapper.count();
         Integer result = databaseOperate.queryOne(sql, Integer.class);
         if (result == null) {
@@ -1217,7 +1277,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public int configInfoTagCount() {
-        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
         String sql = configInfoTagMapper.configInfoTagCount();
         Integer result = databaseOperate.queryOne(sql, Integer.class);
         if (result == null) {
@@ -1229,14 +1290,15 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
         PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
-    
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.getTenantIdList();
         
         int from = (page - 1) * pageSize;
         
-        Page<Map<String, Object>> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
-                MAP_ROW_MAPPER);
+        Page<Map<String, Object>> pageList = helper
+                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }
@@ -1245,12 +1307,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public List<String> getGroupIdList(int page, int pageSize) {
         PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
         
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.getGroupIdList();
         int from = (page - 1) * pageSize;
         
-        Page<Map<String, Object>> pageList = helper.fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize,
-                MAP_ROW_MAPPER);
+        Page<Map<String, Object>> pageList = helper
+                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("GROUP_ID")))
                 .collect(Collectors.toList());
     }
@@ -1258,7 +1321,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public int aggrConfigInfoCount(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         String sql = configInfoAggrMapper.aggrConfigInfoCount();
         Integer result = databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, Integer.class);
         if (result == null) {
@@ -1273,7 +1337,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             return 0;
         }
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
         
         List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
@@ -1300,10 +1365,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sqlCountRows = configInfoMapper.count();
         String sqlFetchRows = configInfoMapper.findAllConfigInfoFetchRows(startRow, pageSize);
-    
+        
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
                 new Object[] {generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
@@ -1314,7 +1380,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         final String select = configInfoMapper.findAllConfigKey();
         
         final int totalCount = configInfoCount(tenant);
@@ -1332,10 +1399,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         page.setPagesAvailable(pageCount);
         page.setTotalCount(totalCount);
         
-        List<ConfigKey> result = databaseOperate.queryMany(select,
-                new Object[] {generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize},
-                // new Object[0],
-                CONFIG_KEY_ROW_MAPPER);
+        List<ConfigKey> result = databaseOperate
+                .queryMany(select, new Object[] {generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize},
+                        // new Object[0],
+                        CONFIG_KEY_ROW_MAPPER);
         
         for (ConfigKey item : result) {
             page.getPageItems().add(item);
@@ -1346,33 +1413,38 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sqlCountRows = configInfoMapper.count();
         String sqlFetchRows = configInfoMapper.findAllConfigInfoBaseFetchRows(startRow, pageSize);
-    
+        
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
-                pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
+        return helper
+                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
+                        pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         
     }
     
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         final int startRow = (pageNo - 1) * pageSize;
         String sqlCountRows = configInfoMapper.count();
         String sqlFetchRows = configInfoMapper.findAllConfigInfoForDumpAllFetchRows(startRow, pageSize);
-    
+        
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
-                CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        return helper
+                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
+                        pageSize, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
     }
     
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String select = configInfoMapper.findAllConfigInfoFragment();
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         return helper.fetchPageLimit(select, new Object[] {lastMaxId, 0, pageSize}, 1, pageSize,
@@ -1383,26 +1455,29 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
+        ConfigInfoBetaMapper configInfoBetaMapper = (ConfigInfoBetaMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_BETA).get();
         String sqlCountRows = configInfoBetaMapper.count();
-        String sqlFetchRows =
-                configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(startRow, pageSize);
+        String sqlFetchRows = configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(startRow, pageSize);
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
-                pageNo, pageSize, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
+        return helper
+                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
+                        pageSize, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
         
     }
     
     @Override
     public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
         String sqlCountRows = configInfoTagMapper.count();
         String sqlFetchRows = configInfoTagMapper.findAllConfigInfoTagForDumpAllFetchRows(startRow, pageSize);
-    
+        
         PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
-                pageNo, pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
+        return helper
+                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
+                        pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
         
     }
     
@@ -1423,11 +1498,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         List<ConfigInfo> result = new ArrayList<>(dataIds.size());
         
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         for (int i = 0; i < dataIds.size(); i += subQueryLimit) {
             // dataids
-            List<String> params = new ArrayList<>(
-                    dataIds.subList(i, Math.min(i + subQueryLimit, dataIds.size())));
+            List<String> params = new ArrayList<>(dataIds.subList(i, Math.min(i + subQueryLimit, dataIds.size())));
             
             // group
             params.add(0, group);
@@ -1466,9 +1541,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             paramsMap.put(GROUP, GROUP);
             params.add(generateLikeArgument(group));
         }
-    
+        
         params.add(generateLikeArgument(tenantTmp));
-    
+        
         if (!StringUtils.isBlank(appName)) {
             paramsMap.put(APP_NAME, APP_NAME);
             params.add(appName);
@@ -1477,13 +1552,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             paramsMap.put(CONTENT, CONTENT);
             params.add(generateLikeArgument(content));
         }
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         final int startRow = (pageNo - 1) * pageSize;
         String sqlCountRows = configInfoMapper.findConfigInfoLikeCountRows(paramsMap);
         String sqlFetchRows = configInfoMapper.findConfigInfoLikeFetchRows(paramsMap, startRow, pageSize);
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_ROW_MAPPER);
+        return helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -1576,8 +1651,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
-                pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
+        return helper
+                .fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(), pageNo,
+                        pageSize, CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -1591,7 +1667,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String sqlCountRows = null;
         String sqlFetchRows = null;
         Map<String, String> paramsMap = new HashMap<>(16);
-    
+        
         List<String> params = new ArrayList<>();
         params.add(generateLikeArgument(tenantTmp));
         if (!StringUtils.isBlank(dataId)) {
@@ -1614,20 +1690,23 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             params.addAll(Arrays.asList(tagArr));
-            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+            ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
             sqlCountRows = configTagsRelationMapper.findConfigInfoLike4PageCountRows(paramsMap, params.size());
-            sqlFetchRows = configTagsRelationMapper.findConfigInfoLike4PageFetchRows(paramsMap, params.size(), startRow, pageSize);
+            sqlFetchRows = configTagsRelationMapper
+                    .findConfigInfoLike4PageFetchRows(paramsMap, params.size(), startRow, pageSize);
         } else {
-            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+            ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                    .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
             sqlCountRows = configInfoMapper.findConfigInfoLike4PageCountRows(paramsMap);
             sqlFetchRows = configInfoMapper.findConfigInfoLike4PageFetchRows(paramsMap, startRow, pageSize);
         }
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        Page<ConfigInfo> page = helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo,
-                pageSize, CONFIG_INFO_ROW_MAPPER);
+        Page<ConfigInfo> page = helper
+                .fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize, CONFIG_INFO_ROW_MAPPER);
         for (ConfigInfo configInfo : page.getPageItems()) {
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
-                    configInfo.getEncryptedDataKey(), configInfo.getContent());
+            Pair<String, String> pair = EncryptionHandler
+                    .decryptHandler(configInfo.getDataId(), configInfo.getEncryptedDataKey(), configInfo.getContent());
             configInfo.setContent(pair.getSecond());
         }
         return page;
@@ -1640,7 +1719,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (StringUtils.isBlank(dataId) && StringUtils.isBlank(group)) {
             throw new IOException("invalid param");
         }
-    
+        
         Map<String, String> paramsMap = new HashMap<>(16);
         List<String> params = new ArrayList<>();
         if (!StringUtils.isBlank(dataId)) {
@@ -1655,33 +1734,37 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             params.add(generateLikeArgument(content));
             paramsMap.put(CONTENT, CONTENT);
         }
-    
+        
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sqlCountRows = configInfoMapper.findConfigInfoBaseLikeCountRows(paramsMap);
         String sqlFetchRows = configInfoMapper.findConfigInfoBaseLikeFetchRows(paramsMap, startRow, pageSize);
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
-                CONFIG_INFO_BASE_ROW_MAPPER);
+        return helper
+                .fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         
     }
     
     @Override
     public ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        String sql = configInfoAggrMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "datum_id", "app_name", "content"),
-                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        String sql = configInfoAggrMapper
+                .select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "datum_id", "app_name", "content"),
+                        Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         
-        return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, datumId},
-                CONFIG_INFO_AGGR_ROW_MAPPER);
+        return databaseOperate
+                .queryOne(sql, new Object[] {dataId, group, tenantTmp, datumId}, CONFIG_INFO_AGGR_ROW_MAPPER);
         
     }
     
     @Override
     public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         String sql = configInfoAggrMapper.findConfigInfoAggr();
         
         return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_AGGR_ROW_MAPPER);
@@ -1692,11 +1775,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         final int startRow = (pageNo - 1) * pageSize;
-        String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"), Arrays.asList("data_id", "group_id", "tenant_id"));
+        String sqlCountRows = configInfoAggrMapper
+                .select(Arrays.asList("count(*)"), Arrays.asList("data_id", "group_id", "tenant_id"));
         String sqlFetchRows = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(startRow, pageSize);
-    
+        
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows,
                 new Object[] {dataId, group, tenantTmp, (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
@@ -1793,14 +1878,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             }
         }
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(),
-                pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
+        return helper
+                .fetchPage(sqlCountRows + where.toString(), sqlFetchRows + where.toString(), params.toArray(), pageNo,
+                        pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
         
     }
     
     @Override
     public List<ConfigInfoChanged> findAllAggrGroup() {
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
         String sql = configInfoAggrMapper.findAllAggrGroup();
         
         return databaseOperate.queryMany(sql, EMPTY_ARRAY, CONFIG_INFO_CHANGED_ROW_MAPPER);
@@ -1809,17 +1896,20 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<String> findDatumIdByContent(String dataId, String groupId, String content) {
-        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
-        String sql = configInfoAggrMapper.select(
-                Collections.singletonList("datum_id"), Arrays.asList("data_id", "group_id", "content"));
+        ConfigInfoAggrMapper configInfoAggrMapper = (ConfigInfoAggrMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR).get();
+        String sql = configInfoAggrMapper
+                .select(Collections.singletonList("datum_id"), Arrays.asList("data_id", "group_id", "content"));
         return databaseOperate.queryMany(sql, new Object[] {dataId, groupId, content}, String.class);
         
     }
     
     @Override
     public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        List<Map<String, Object>> list = databaseOperate.queryMany(configInfoMapper.findChangeConfig(), new Object[] {startTime, endTime});
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        List<Map<String, Object>> list = databaseOperate
+                .queryMany(configInfoMapper.findChangeConfig(), new Object[] {startTime, endTime});
         return convertChangeConfig(list);
         
     }
@@ -1839,12 +1929,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             params.add(generateLikeArgument(group));
             paramsMap.put(GROUP, GROUP);
         }
-    
+        
         if (!StringUtils.isBlank(tenantTmp)) {
             params.add(tenantTmp);
             paramsMap.put(TENANT, TENANT);
         }
-    
+        
         if (!StringUtils.isBlank(appName)) {
             params.add(appName);
             paramsMap.put(APP_NAME, APP_NAME);
@@ -1856,20 +1946,24 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             params.add(endTime);
         }
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sqlCountRows = configInfoMapper.findChangeConfigCountRows(paramsMap, startTime, endTime);
-        String sqlFetchRows = configInfoMapper.findChangeConfigFetchRows(paramsMap, startTime, endTime, startRow, pageSize, lastMaxId);
-    
+        String sqlFetchRows = configInfoMapper
+                .findChangeConfigFetchRows(paramsMap, startTime, endTime, startRow, pageSize, lastMaxId);
+        
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize,
-                lastMaxId, CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        return helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), pageNo, pageSize, lastMaxId,
+                CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
     }
     
     @Override
     public List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
-        List<Map<String, Object>> list = databaseOperate.queryMany(historyConfigInfoMapper.findDeletedConfig(), new Object[] {startTime, endTime});
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        List<Map<String, Object>> list = databaseOperate
+                .queryMany(historyConfigInfoMapper.findDeletedConfig(), new Object[] {startTime, endTime});
         return convertDeletedConfig(list);
         
     }
@@ -1889,9 +1983,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.insert(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip", "src_user", "gmt_create",
-                "gmt_modified", "c_desc", "c_use", "effect", "type", "c_schema", "encrypted_data_key"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper.insert(Arrays
+                .asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip", "src_user",
+                        "gmt_create", "gmt_modified", "c_desc", "c_use", "effect", "type", "c_schema",
+                        "encrypted_data_key"));
         final Object[] args = new Object[] {id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
                 configInfo.getContent(), md5Tmp, srcIp, srcUser, time, time, desc, use, effect, type, schema,
                 encryptedDataKey};
@@ -1901,7 +1998,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant) {
-        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
         final String sql = configTagsRelationMapper.addConfigTagRelationAtomic();
         final Object[] args = new Object[] {configId, tagName, StringUtils.EMPTY, dataId, group, tenant};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -1919,7 +2017,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void removeTagByIdAtomic(long id) {
-        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
         final String sql = configTagsRelationMapper.removeTagByIdAtomic();
         final Object[] args = new Object[] {id};
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -1927,14 +2026,16 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<String> getConfigTagsByTenant(String tenant) {
-        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
         String sql = configTagsRelationMapper.getConfigTagsByTenant();
         return databaseOperate.queryMany(sql, new Object[] {tenant}, String.class);
     }
     
     @Override
     public List<String> selectTagByConfig(String dataId, String group, String tenant) {
-        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
+        ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
         String sql = configTagsRelationMapper.selectTagByConfig();
         return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenant}, String.class);
     }
@@ -1943,7 +2044,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         final String sql = configInfoMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         
@@ -1960,7 +2062,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         for (int i = 0; i < tagArr.length; i++) {
             paramList.add(Long.parseLong(tagArr[i]));
         }
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.removeConfigInfoByIdsAtomic(paramList.size());
         EmbeddedStorageContextUtils.addSqlContext(sql.toString(), paramList.toArray());
     }
@@ -1970,8 +2073,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             final String srcIp, final String srcUser) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag;
-    
-        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
+        
+        ConfigInfoTagMapper configInfoTagMapper = (ConfigInfoTagMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO_TAG).get();
         final String sql = configInfoTagMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp, tagTmp};
         
@@ -1999,10 +2103,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
-    
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect", "type",
-                "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+        
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper.update(Arrays
+                .asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect",
+                        "type", "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc,
                 use, effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
         
@@ -2021,10 +2127,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-    
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect", "type",
-                "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+        
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper.update(Arrays
+                .asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect",
+                        "type", "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
         
         final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc,
                 use, effect, type, schema, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
@@ -2043,8 +2151,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         for (int i = 0; i < tagArr.length; i++) {
             paramList.add(Long.parseLong(tagArr[i]));
         }
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        return databaseOperate.queryMany(configInfoMapper.findConfigInfosByIds(tagArr.length), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        return databaseOperate.queryMany(configInfoMapper.findConfigInfosByIds(tagArr.length), paramList.toArray(),
+                CONFIG_INFO_ROW_MAPPER);
         
     }
     
@@ -2053,9 +2163,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
         
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        ConfigAdvanceInfo configAdvance = databaseOperate.queryOne(configInfoMapper.select(Arrays.asList("gmt_create", "gmt_modified", "src_user", "src_ip", "c_desc", "c_use", "effect", "type", "c_schema"),
-                Arrays.asList("data_id", "group_id", "tenant_id")),
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigAdvanceInfo configAdvance = databaseOperate.queryOne(configInfoMapper.select(Arrays
+                        .asList("gmt_create", "gmt_modified", "src_user", "src_ip", "c_desc", "c_use", "effect", "type",
+                                "c_schema"), Arrays.asList("data_id", "group_id", "tenant_id")),
                 new Object[] {dataId, group, tenantTmp}, CONFIG_ADVANCE_INFO_ROW_MAPPER);
         
         if (CollectionUtils.isNotEmpty(configTagList)) {
@@ -2076,15 +2188,17 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5",
-                "gmt_create", "gmt_modified", "src_user", "src_ip", "c_desc", "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
-                Arrays.asList("data_id", "group_id", "tenant_id"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper.select(Arrays
+                .asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "gmt_create",
+                        "gmt_modified", "src_user", "src_ip", "c_desc", "c_use", "effect", "type", "c_schema",
+                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
         
         List<String> configTagList = selectTagByConfig(dataId, group, tenant);
         
-        ConfigAllInfo configAdvance = databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp},
-                CONFIG_ALL_INFO_ROW_MAPPER);
+        ConfigAllInfo configAdvance = databaseOperate
+                .queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_ALL_INFO_ROW_MAPPER);
         
         if (configTagList != null && !configTagList.isEmpty()) {
             StringBuilder configTagsTmp = new StringBuilder();
@@ -2109,9 +2223,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
-        final String sql = historyConfigInfoMapper.insert(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name",
-                "content", "md5", "src_ip", "src_user", "gmt_modified", "op_type", "encrypted_data_key"));
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        final String sql = historyConfigInfoMapper.insert(Arrays
+                .asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip", "src_user",
+                        "gmt_modified", "op_type", "encrypted_data_key"));
         final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
                 appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey};
         
@@ -2123,10 +2239,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sqlCountRows = historyConfigInfoMapper.findConfigHistoryCountRows();
         String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows();
-    
+        
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
                 HISTORY_LIST_ROW_MAPPER);
@@ -2167,15 +2284,19 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
-        String sqlFetchRows = historyConfigInfoMapper.select(Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user", "src_ip", "op_type", "gmt_create",
-                "gmt_modified","encrypted_data_key"), Collections.singletonList("nid"));
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        String sqlFetchRows = historyConfigInfoMapper.select(Arrays
+                        .asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user", "src_ip",
+                                "op_type", "gmt_create", "gmt_modified", "encrypted_data_key"),
+                Collections.singletonList("nid"));
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
     }
     
     @Override
     public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
+        HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sqlFetchRows = historyConfigInfoMapper.detailPreviousConfigHistory();
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
     }
@@ -2292,12 +2413,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sqlCountRows = configInfoMapper.count();
         String sqlFetchRows = configInfoMapper.listGroupKeyMd5ByPageFetchRows();
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-        Page<ConfigInfoWrapper> page = helper.fetchPageLimit(sqlCountRows, sqlFetchRows,
-                new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo, pageSize, CONFIG_INFO_WRAPPER_ROW_MAPPER);
+        Page<ConfigInfoWrapper> page = helper
+                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
+                        pageSize, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
         return page.getPageItems();
     }
@@ -2316,9 +2439,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "type", "gmt_modified", "md5", "encrypted_data_key"),
-                Arrays.asList("data_id", "group_id", "tenant_id"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper.select(Arrays
+                .asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "type", "gmt_modified", "md5",
+                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
     }
@@ -2353,8 +2478,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                         try {
                             updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5, new Timestamp(cf.getLastModified()));
                         } catch (Throwable e) {
-                            LogUtil.DEFAULT_LOG.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-                                    cf.getDataId(), cf.getGroup(), new Timestamp(cf.getLastModified()));
+                            LogUtil.DEFAULT_LOG
+                                    .error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(),
+                                            cf.getGroup(), new Timestamp(cf.getLastModified()));
                         }
                     } else {
                         if (!md5InDb.equals(md5)) {
@@ -2362,8 +2488,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                                 updateMd5(cf.getDataId(), cf.getGroup(), tenant, md5,
                                         new Timestamp(cf.getLastModified()));
                             } catch (Throwable e) {
-                                LogUtil.DEFAULT_LOG.error("[completeMd5-error] datId:{} group:{} lastModified:{}",
-                                        cf.getDataId(), cf.getGroup(), new Timestamp(cf.getLastModified()));
+                                LogUtil.DEFAULT_LOG
+                                        .error("[completeMd5-error] datId:{} group:{} lastModified:{}", cf.getDataId(),
+                                                cf.getGroup(), new Timestamp(cf.getLastModified()));
                             }
                         }
                     }
@@ -2399,10 +2526,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 params.put(APP_NAME, APP_NAME);
             }
         }
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.findAllConfigInfo4Export(ids, params);
-        return databaseOperate.queryMany(sql, paramList.toArray(),
-                CONFIG_ALL_INFO_ROW_MAPPER);
+        return databaseOperate.queryMany(sql, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
     }
     
     @Override
@@ -2423,8 +2550,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         for (int i = 0; i < configInfoList.size(); i++) {
             ConfigAllInfo configInfo = configInfoList.get(i);
             try {
-                ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId",
-                        configInfo.getContent());
+                ParamUtils
+                        .checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (Throwable e) {
                 DEFAULT_LOG.error("data verification failed", e);
                 throw e;
@@ -2509,8 +2636,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
-        Integer result = databaseOperate.queryOne(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[] {tenantId},
-                Integer.class);
+        Integer result = databaseOperate
+                .queryOne(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[] {tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }
@@ -2523,9 +2650,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             throw new IllegalArgumentException("tenantId can not be null");
         }
         String tenantTmp = StringUtils.isBlank(tenantId) ? StringUtils.EMPTY : tenantId;
-        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-        final String sql = configInfoMapper.select(Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type"),
-                Collections.singletonList("tenant_id"));
+        ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
+                .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
+        final String sql = configInfoMapper
+                .select(Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type"),
+                        Collections.singletonList("tenant_id"));
         return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
     }
 }
