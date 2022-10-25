@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -51,7 +52,6 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         serverLoaderInfoResponse
                 .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
-        serverLoaderInfoResponse.putMetricsValue("limitRule", JacksonUtils.toJson(connectionManager.getConnectionLimitRule()));
         serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
         serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCpu()));
         

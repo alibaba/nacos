@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.common.notify.Event;
 
@@ -26,13 +26,13 @@ import com.alibaba.nacos.common.notify.Event;
  */
 public class TpsControlRuleChangeEvent extends Event {
     
-    String pointName;
+    private String pointName;
     
-    String ruleContent;
+    private boolean persist;
     
-    public TpsControlRuleChangeEvent(String pointName, String ruleContent) {
+    public TpsControlRuleChangeEvent(String pointName, boolean persist) {
         this.pointName = pointName;
-        this.ruleContent = ruleContent;
+        persist = persist;
     }
     
     public String getPointName() {
@@ -43,11 +43,11 @@ public class TpsControlRuleChangeEvent extends Event {
         this.pointName = pointName;
     }
     
-    public String getRuleContent() {
-        return ruleContent;
+    public boolean isPersist() {
+        return persist;
     }
     
-    public void setRuleContent(String ruleContent) {
-        this.ruleContent = ruleContent;
+    public void setPersist(boolean persist) {
+        this.persist = persist;
     }
 }

@@ -75,15 +75,15 @@ public class FlowedCountRuleBarrier extends SimpleCountRuleBarrier {
     
     
     public void applyRuleDetail(RuleDetail ruleDetail) {
-        
-        if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod()) || !Objects
-                .equals(this.getModel(), ruleDetail.getModel())) {
-            this.setMaxCount(ruleDetail.getMaxCount());
-            this.setMonitorType(ruleDetail.getMonitorType());
-        } else {
-            this.setMaxCount(ruleDetail.getMaxCount());
-            this.setMonitorType(ruleDetail.getMonitorType());
+        TimeUnit prevPeriod = this.getPeriod();
+        String prevModel = this.getModel();
+        super.applyRuleDetail(ruleDetail);
+    
+        if (!Objects.equals(prevPeriod, ruleDetail.getPeriod()) || !Objects
+                .equals(prevModel, ruleDetail.getModel())) {
+            this.flowCounter = new SimpleCountRateCounter(this.getName(), ruleDetail.getPeriod());
         }
+       
         if (ruleDetail instanceof FlowedRuleDetail) {
             this.maxFlow = ((FlowedRuleDetail) ruleDetail).maxFlow;
         }

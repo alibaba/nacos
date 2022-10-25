@@ -16,12 +16,12 @@ public class TpsControlManager {
     /**
      * point name -> tps barrier
      */
-    public final Map<String, TpsBarrier> points = new ConcurrentHashMap<>(16);
+    private final Map<String, TpsBarrier> points = new ConcurrentHashMap<>(16);
     
     /**
      * point name -> tps control rule
      */
-    public final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
+    private final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
     
     
     /**
@@ -55,6 +55,16 @@ public class TpsControlManager {
             points.get(pointName).applyRule(rule);
         }
     }
+    
+    
+    public Map<String, TpsBarrier> getPoints() {
+        return points;
+    }
+    
+    public Map<String, TpsControlRule> getRules() {
+        return rules;
+    }
+    
     
     /**
      * check tps result.

@@ -23,8 +23,8 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.core.remote.control.TpsControlRuleChangeEvent;
-import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.ruleactivator.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.ruleactivator.TpsControlRuleChangeEvent;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +65,6 @@ public class InternalConfigChangeNotifierTest {
             @Override
             public void onEvent(Event event) {
                 ConnectionLimitRuleChangeEvent connectionLimitRuleChangeEvent = (ConnectionLimitRuleChangeEvent) event;
-                Assert.assertEquals("content", connectionLimitRuleChangeEvent.getLimitRule());
             }
 
             @Override
@@ -78,7 +77,6 @@ public class InternalConfigChangeNotifierTest {
             @Override
             public void onEvent(Event event) {
                 TpsControlRuleChangeEvent tpsControlRuleChangeEvent = (TpsControlRuleChangeEvent) event;
-                Assert.assertEquals("content", tpsControlRuleChangeEvent.getRuleContent());
             }
 
             @Override

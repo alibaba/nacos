@@ -1,5 +1,121 @@
 package com.alibaba.nacos.plugin.control.tps;
 
-public class TpsBarrierTest {
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
+import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
+import org.junit.Assert;
+import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+public class TpsBarrierTest {
+    
+    @Test
+    public void testNormal_PointPassAndMonitorKeyDeny() {
+        String testTpsBarrier = "test_barrier";
+        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
+        
+        TpsControlRule tpsControlRule = new TpsControlRule();
+        tpsControlRule.setPointName(testTpsBarrier);
+        
+        RuleDetail ruleDetail = new RuleDetail();
+        ruleDetail.setMaxCount(6);
+        ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setModel(RuleDetail.MODEL_FUZZY);
+        tpsControlRule.setPointRule(ruleDetail);
+        
+        RuleDetail monitorRuleDetail = new RuleDetail();
+        monitorRuleDetail.setMaxCount(5);
+        monitorRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        monitorRuleDetail.setPeriod(TimeUnit.SECONDS);
+        monitorRuleDetail.setModel(RuleDetail.MODEL_FUZZY);
+        monitorRuleDetail.setPattern("test:simple12*");
+        
+        Map<String, RuleDetail> monitorRules = new HashMap<>();
+        monitorRules.put("monitorKeyRule", monitorRuleDetail);
+        tpsControlRule.setMonitorKeyRule(monitorRules);
+        
+        tpsBarrier.applyRule(tpsControlRule);
+        
+        //test point keys
+        long timeMillis = System.currentTimeMillis();
+        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        MonitorKey monitorKey = new MonitorKey() {
+            @Override
+            public String getType() {
+                return "test";
+            }
+        };
+        monitorKey.setKey("simple12");
+        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
+        tpsCheckRequest.setTimestamp(timeMillis);
+        
+        for(int i=0;i<5;i++){
+            TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
+            Assert.assertTrue(tpsCheckResponse.isSuccess());
+        }
+        TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
+        Assert.assertFalse(tpsCheckResponse.isSuccess());
+        System.out.println(tpsCheckResponse.getMessage());
+    
+    }
+    
+    
+    @Test
+    public void testNormal_PointDenyAndMonitorKeyPass() {
+        String testTpsBarrier = "test_barrier";
+        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
+        
+        TpsControlRule tpsControlRule = new TpsControlRule();
+        tpsControlRule.setPointName(testTpsBarrier);
+        
+        RuleDetail ruleDetail = new RuleDetail();
+        ruleDetail.setMaxCount(5);
+        ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setModel(RuleDetail.MODEL_FUZZY);
+        tpsControlRule.setPointRule(ruleDetail);
+        
+        RuleDetail monitorRuleDetail = new RuleDetail();
+        monitorRuleDetail.setMaxCount(6);
+        monitorRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        monitorRuleDetail.setPeriod(TimeUnit.SECONDS);
+        monitorRuleDetail.setModel(RuleDetail.MODEL_FUZZY);
+        monitorRuleDetail.setPattern("test:simple12*");
+        
+        Map<String, RuleDetail> monitorRules = new HashMap<>();
+        monitorRules.put("monitorKeyRule", monitorRuleDetail);
+        tpsControlRule.setMonitorKeyRule(monitorRules);
+        
+        tpsBarrier.applyRule(tpsControlRule);
+        
+        //test point keys
+        long timeMillis = System.currentTimeMillis();
+        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        MonitorKey monitorKey = new MonitorKey() {
+            @Override
+            public String getType() {
+                return "test";
+            }
+        };
+        monitorKey.setKey("simple12");
+        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
+        tpsCheckRequest.setTimestamp(timeMillis);
+        
+        for(int i=0;i<5;i++){
+            TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
+            Assert.assertTrue(tpsCheckResponse.isSuccess());
+        }
+        TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
+        Assert.assertFalse(tpsCheckResponse.isSuccess());
+        System.out.println(tpsCheckResponse.getMessage());
+        
+    }
 }

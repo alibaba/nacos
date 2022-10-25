@@ -166,5 +166,11 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-testing</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-contrl-plugin</artifactId>
+            <version>2.1.1</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -595,7 +595,6 @@
         <module>sys</module>
         <module>plugin</module>
         <module>plugin-default-impl</module>
-        <module>control</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->

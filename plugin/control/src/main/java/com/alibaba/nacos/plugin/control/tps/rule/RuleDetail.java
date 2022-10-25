@@ -37,13 +37,6 @@ public class RuleDetail {
         this.order = order;
     }
     
-    public RuleDetail(long maxCount, TimeUnit period, String model, String monitorType) {
-        this.maxCount = maxCount;
-        this.period = period;
-        this.model = model;
-        this.monitorType = monitorType;
-    }
-    
     public String getPattern() {
         return pattern;
     }

@@ -30,6 +30,11 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
+import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import org.checkerframework.checker.units.qual.C;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
@@ -49,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
@@ -185,7 +191,7 @@ public class LongPollingService {
                 }
             }
         }
-
+        
         return mergeSampleResult(sampleResultLst);
     }
     
@@ -266,6 +272,11 @@ public class LongPollingService {
             }
         }
         String ip = RequestUtil.getRemoteIp(req);
+        ConnectionCheckResponse connectionCheckResponse = checkLimit(req);
+        if (!connectionCheckResponse.isSuccess()) {
+            generate503Response(req, rsp, connectionCheckResponse.getMessage());
+            return;
+        }
         
         // Must be called by http thread, or send response.
         final AsyncContext asyncContext = req.startAsync();
@@ -275,6 +286,16 @@ public class LongPollingService {
         
         ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+    }
+    
+    
+    private ConnectionCheckResponse checkLimit(HttpServletRequest httpServletRequest) {
+        String ip = RequestUtil.getRemoteIp(httpServletRequest);
+        String appName = httpServletRequest.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
+        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(ip, appName, "LongPolling");
+        ConnectionCheckResponse checkResponse = ControlManagerFactory.getInstance().getConnectionControlManager()
+                .check(connectionCheckRequest);
+        return checkResponse;
     }
     
     public static boolean isSupportLongPolling(HttpServletRequest req) {
@@ -379,6 +400,19 @@ public class LongPollingService {
         final String tag;
     }
     
+    class LongPollingConnectionMetricsCollector implements ConnectionMetricsCollector {
+        
+        @Override
+        public int getTotalCount() {
+            return allSubs.size();
+        }
+        
+        @Override
+        public int getCountForIp(String ip) {
+            return allSubs.stream().filter(a -> a.ip.equalsIgnoreCase(ip)).collect(Collectors.toList()).size();
+        }
+    }
+    
     class StatTask implements Runnable {
         
         @Override
@@ -395,10 +429,10 @@ public class LongPollingService {
             asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
                 try {
                     getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-
+                    
                     // Delete subscriber's relations.
                     boolean removeFlag = allSubs.remove(ClientLongPolling.this);
-
+                    
                     if (removeFlag) {
                         if (isFixedPolling()) {
                             LogUtil.CLIENT_LOG
@@ -426,7 +460,7 @@ public class LongPollingService {
                 } catch (Throwable t) {
                     LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                 }
-
+                
             }, timeoutTime, TimeUnit.MILLISECONDS);
             
             allSubs.add(this);
@@ -522,6 +556,22 @@ public class LongPollingService {
             PULL_LOG.error(ex.toString(), ex);
         }
     }
+    
+    void generate503Response(HttpServletRequest request, HttpServletResponse response, String message) {
+        
+        try {
+            
+            // Disable cache.
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            response.setHeader("Cache-Control", "no-cache,no-store");
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            response.getWriter().println(message);
+        } catch (Exception ex) {
+            PULL_LOG.error(ex.toString(), ex);
+        }
+    }
+    
     
     public Map<String, Long> getRetainIps() {
         return retainIps;

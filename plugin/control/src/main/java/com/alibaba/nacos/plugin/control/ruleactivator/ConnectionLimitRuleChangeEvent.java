@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.event;
+package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.common.notify.Event;
 
@@ -24,17 +24,17 @@ import com.alibaba.nacos.common.notify.Event;
  */
 public class ConnectionLimitRuleChangeEvent extends Event {
     
-    String limitRule;
+    private boolean persist;
     
-    public ConnectionLimitRuleChangeEvent(String limitRule) {
-        this.limitRule = limitRule;
+    public ConnectionLimitRuleChangeEvent(boolean persist) {
+        this.persist = persist;
     }
     
-    public String getLimitRule() {
-        return limitRule;
+    public boolean isPersist() {
+        return persist;
     }
     
-    public void setLimitRule(String limitRule) {
-        this.limitRule = limitRule;
+    public void setPersist(boolean persist) {
+        this.persist = persist;
     }
 }

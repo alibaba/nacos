@@ -20,7 +20,6 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.WatchFileCenter;

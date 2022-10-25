@@ -3,12 +3,8 @@ package com.alibaba.nacos.plugin.control.tps.mse;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRuleBarrier;
-import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRuleBarrierCreator;
-import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -81,7 +77,7 @@ public class FlowCountRuleBarrierTest {
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
         
         long timeMillis = System.currentTimeMillis();
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
         MonitorKey monitorKey = new MonitorKey() {
             @Override
             public String getType() {
@@ -91,7 +87,7 @@ public class FlowCountRuleBarrierTest {
         monitorKey.setKey("simpler12");
         tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
         tpsCheckRequest.setTimestamp(timeMillis);
-        
+        tpsCheckRequest.setFlow(1l);
         // check pass
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
@@ -119,7 +115,7 @@ public class FlowCountRuleBarrierTest {
         ruleBarrier.setMonitorType(MonitorType.MONITOR.getType());
         
         long timeMillis = System.currentTimeMillis();
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
         MonitorKey monitorKey = new MonitorKey() {
             @Override
             public String getType() {
@@ -129,6 +125,7 @@ public class FlowCountRuleBarrierTest {
         monitorKey.setKey("simpler12");
         tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
         tpsCheckRequest.setTimestamp(timeMillis);
+        tpsCheckRequest.setFlow(1L);
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
@@ -148,14 +145,15 @@ public class FlowCountRuleBarrierTest {
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
         
         long timeMillis = System.currentTimeMillis();
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
         MonitorKey monitorKey = new MonitorKey() {
             @Override
             public String getType() {
                 return "test";
             }
         };
-        monitorKey.setKey("simpler12");
+        tpsCheckRequest.setFlow(1L);
+        monitorKey.setKey("simpler123");
         tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
         tpsCheckRequest.setTimestamp(timeMillis);
         //check pass
@@ -203,7 +201,7 @@ public class FlowCountRuleBarrierTest {
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
-        //check pass
+        //check deny
         TpsCheckResponse tpsCheckResponseDeny3 = ruleBarrier.applyTps(tpsCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny3.isSuccess());
         Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny3.getCode());
