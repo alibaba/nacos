@@ -80,7 +80,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
-        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties, null);
+        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties);
     }
     
     private void initSecurityProxy(Properties properties) {
@@ -91,9 +91,10 @@ public class NacosNamingMaintainService implements NamingMaintainService {
             return t;
         });
         this.securityProxy.login(properties);
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
-                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
-    
+        this.executorService
+                .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
+                        TimeUnit.MILLISECONDS);
+        
     }
     
     @Override

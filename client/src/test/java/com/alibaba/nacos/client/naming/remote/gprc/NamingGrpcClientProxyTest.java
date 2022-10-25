@@ -50,6 +50,8 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -64,7 +66,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -119,14 +120,16 @@ public class NamingGrpcClientProxyTest {
     
     @Before
     public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        System.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "1");
+        System.setProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, "1000");
         List<String> serverList = Stream.of(ORIGIN_SERVER, "anotherServer").collect(Collectors.toList());
         when(factory.getServerList()).thenReturn(serverList);
         when(factory.genNextServer()).thenReturn(ORIGIN_SERVER);
-        
         prop = new Properties();
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, prop, holder);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
+        ((RpcClient) rpcClientField.get(client)).shutdown();
         rpcClientField.set(client, this.rpcClient);
         response = new InstanceResponse();
         when(this.rpcClient.request(any())).thenReturn(response);
@@ -134,6 +137,13 @@ public class NamingGrpcClientProxyTest {
         instance.setServiceName(SERVICE_NAME);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
+    }
+    
+    @After
+    public void tearDown() throws NacosException {
+        System.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "3");
+        System.setProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, "3000");
+        client.shutdown();
     }
     
     @Test
@@ -289,18 +299,12 @@ public class NamingGrpcClientProxyTest {
                 SubscribeServiceRequest request1 = (SubscribeServiceRequest) request;
                 
                 // verify request fields
-                return !request1.isSubscribe() && SERVICE_NAME.equals(request1.getServiceName()) && GROUP_NAME.equals(
-                        request1.getGroupName()) && CLUSTERS.equals(request1.getClusters()) && NAMESPACE_ID.equals(
-                        request1.getNamespace());
+                return !request1.isSubscribe() && SERVICE_NAME.equals(request1.getServiceName()) && GROUP_NAME
+                        .equals(request1.getGroupName()) && CLUSTERS.equals(request1.getClusters()) && NAMESPACE_ID
+                        .equals(request1.getNamespace());
             }
             return false;
         }));
-    }
-    
-    @Test
-    public void testUpdateBeatInfo() {
-        //TODO thrown.expect(UnsupportedOperationException.class);
-        client.updateBeatInfo(new HashSet<>());
     }
     
     @Test
@@ -413,7 +417,7 @@ public class NamingGrpcClientProxyTest {
         rpc.start();
         int retry = 10;
         while (!rpc.isRunning()) {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.MILLISECONDS.sleep(200);
             if (--retry < 0) {
                 Assert.fail("rpc is not running");
             }
@@ -428,7 +432,7 @@ public class NamingGrpcClientProxyTest {
         
         retry = 10;
         while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
-            TimeUnit.SECONDS.sleep(1);
+            TimeUnit.MILLISECONDS.sleep(200);
             if (--retry < 0) {
                 Assert.fail("failed to auth switch server");
             }
