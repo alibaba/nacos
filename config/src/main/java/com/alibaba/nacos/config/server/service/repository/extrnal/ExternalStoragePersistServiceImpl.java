@@ -2321,7 +2321,6 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             int pageSize) {
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final int startRow = (pageNo - 1) * pageSize;
         HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sqlCountRows = historyConfigInfoMapper.findConfigHistoryCountRows();
         String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows();
@@ -2622,6 +2621,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             paramList.addAll(ids);
         } else {
             paramList.add(tenantTmp);
+            params.put(TENANT, TENANT);
             if (!StringUtils.isBlank(dataId)) {
                 paramList.add(generateLikeArgument(dataId));
                 params.put(DATA_ID, DATA_ID);
