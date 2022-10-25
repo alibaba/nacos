@@ -39,6 +39,7 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
@@ -388,6 +389,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        MetricsMonitor.getFuzzySearchMonitor().incrementAndGet();
         Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);

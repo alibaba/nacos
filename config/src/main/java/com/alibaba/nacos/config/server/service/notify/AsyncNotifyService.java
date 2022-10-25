@@ -103,6 +103,9 @@ public class AsyncNotifyService {
                     String group = evt.group;
                     String tenant = evt.tenant;
                     String tag = evt.tag;
+                    
+                    MetricsMonitor.incrementConfigChangeCount(tenant, group, dataId);
+                    
                     Collection<Member> ipList = memberManager.allMembers();
                     
                     // In fact, any type of queue here can be
