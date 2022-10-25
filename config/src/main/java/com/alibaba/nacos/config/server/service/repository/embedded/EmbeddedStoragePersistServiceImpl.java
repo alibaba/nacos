@@ -1077,9 +1077,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             paramList.addAll(Arrays.asList(tagArr));
             ConfigTagsRelationMapper configTagsRelationMapper = (ConfigTagsRelationMapper) mapperManager
                     .findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION).get();
-            sqlCount = configTagsRelationMapper.findConfigInfo4PageCountRows(paramsMap, paramList.size());
+            sqlCount = configTagsRelationMapper.findConfigInfo4PageCountRows(paramsMap, tagArr.length);
             sql = configTagsRelationMapper
-                    .findConfigInfo4PageFetchRows(paramsMap, paramList.size(), startRow, pageSize);
+                    .findConfigInfo4PageFetchRows(paramsMap, tagArr.length, startRow, pageSize);
         } else {
             ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager
                     .findMapper(dataSource, TableConstant.CONFIG_INFO).get();
@@ -2513,6 +2513,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             paramList.addAll(ids);
         } else {
             paramList.add(tenantTmp);
+            params.put(TENANT, TENANT);
             if (!StringUtils.isBlank(dataId)) {
                 paramList.add(generateLikeArgument(dataId));
                 params.put(DATA_ID, DATA_ID);
