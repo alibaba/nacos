@@ -43,11 +43,11 @@ public class ConfigFilterChainManagerTest {
             this.name = name;
             this.order = order;
         }
-    
+        
         @Override
         public void init(IFilterConfig filterConfig) {
         }
-    
+        
         @Override
         public void init(Properties properties) {
         }
@@ -100,6 +100,7 @@ public class ConfigFilterChainManagerTest {
         configFilterChainManager.addFilter(filter2);
         configFilterChainManager.addFilter(filter1);
         configFilterChainManager.addFilter(filter3);
+        configFilterChainManager.buildConfigFilterChain();
         
         ConfigRequest configRequest = new ConfigRequest();
         
@@ -127,6 +128,7 @@ public class ConfigFilterChainManagerTest {
         configFilterChainManager.addFilter(filter2);
         configFilterChainManager.addFilter(filter1);
         configFilterChainManager.addFilter(repeatFilter);
+        configFilterChainManager.buildConfigFilterChain();
         
         ConfigRequest configRequest = new ConfigRequest();
         configFilterChainManager.doFilter(configRequest, new ConfigResponse());
@@ -134,5 +136,29 @@ public class ConfigFilterChainManagerTest {
         IConfigContext configContext = configRequest.getConfigContext();
         
         Assert.assertEquals(2, configContext.getParameter("filterCount"));
+    }
+    
+    @Test
+    public void testSpiFilterNodeChain() throws NacosException {
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
+        
+        configFilterChainManager.doFilter(new ConfigRequest(), new ConfigResponse());
+    }
+    
+    @Test
+    public void testAddFilterNodeChain() throws NacosException {
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
+        
+        MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
+        MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
+        MyIConfigFilter filter3 = new MyIConfigFilter("filter3", 3);
+        
+        configFilterChainManager.addFilter(filter2);
+        configFilterChainManager.addFilter(filter1);
+        configFilterChainManager.addFilter(filter3);
+        // When an external filter is added via the addFilter() method, the responsibility chain only needs to be rebuilt, which in fact is rare.
+        configFilterChainManager.buildConfigFilterChain();
+        
+        configFilterChainManager.doFilter(new ConfigRequest(), new ConfigResponse());
     }
 }

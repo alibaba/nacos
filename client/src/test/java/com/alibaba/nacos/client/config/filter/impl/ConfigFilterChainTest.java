@@ -27,6 +27,8 @@ public class ConfigFilterChainTest {
         ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(null);
         configFilterChainManager.addFilter(new DemoFilter1());
         configFilterChainManager.addFilter(new DemoFilter2());
+        configFilterChainManager.buildConfigFilterChain();
+        
         ConfigRequest configRequest = new ConfigRequest();
         ConfigResponse configResponse = new ConfigResponse();
         try {
