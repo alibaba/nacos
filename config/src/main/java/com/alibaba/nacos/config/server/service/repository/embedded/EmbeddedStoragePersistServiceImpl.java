@@ -2169,7 +2169,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
         HistoryConfigInfoMapper historyConfigInfoMapper = (HistoryConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO).get();
         String sqlFetchRows = historyConfigInfoMapper.select(Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user", "src_ip", "op_type", "gmt_create",
-                "encrypted_data_key"), Collections.singletonList("nid"));
+                "gmt_modified","encrypted_data_key"), Collections.singletonList("nid"));
         return databaseOperate.queryOne(sqlFetchRows, new Object[] {nid}, HISTORY_DETAIL_ROW_MAPPER);
     }
     
@@ -2401,7 +2401,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
         String sql = configInfoMapper.findAllConfigInfo4Export(ids, params);
-        return databaseOperate.queryMany(SQL_FIND_ALL_CONFIG_INFO, paramList.toArray(),
+        return databaseOperate.queryMany(sql, paramList.toArray(),
                 CONFIG_ALL_INFO_ROW_MAPPER);
     }
     
