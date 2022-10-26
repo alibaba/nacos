@@ -30,10 +30,12 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.checkerframework.checker.units.qual.C;
 import org.springframework.stereotype.Service;
 
@@ -398,19 +400,6 @@ public class LongPollingService {
         final List<String> betaIps;
         
         final String tag;
-    }
-    
-    class LongPollingConnectionMetricsCollector implements ConnectionMetricsCollector {
-        
-        @Override
-        public int getTotalCount() {
-            return allSubs.size();
-        }
-        
-        @Override
-        public int getCountForIp(String ip) {
-            return allSubs.stream().filter(a -> a.ip.equalsIgnoreCase(ip)).collect(Collectors.toList()).size();
-        }
     }
     
     class StatTask implements Runnable {

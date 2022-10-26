@@ -11,14 +11,12 @@ import com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler;
 import com.alibaba.nacos.config.server.remote.ConfigQueryRequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivator;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
     
-    @Autowired
     private ConfigQueryRequestHandler configQueryRequestHandler;
     
-    @Autowired
     private ConfigPublishRequestHandler configPublishRequestHandler;
     
     public static final String RULE_CONFIG_NAMESPACE = System.getenv("nacos_control_rule_config_namespace");
@@ -29,6 +27,10 @@ public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
     
     public static final String NACOS_GROUP = "nacos";
     
+    public ConfigRulePersistRuleActivator() {
+        configQueryRequestHandler = ApplicationUtils.getBean(ConfigQueryRequestHandler.class);
+        configPublishRequestHandler = ApplicationUtils.getBean(ConfigPublishRequestHandler.class);
+    }
     
     private ConfigPublishResponse publishConfig(String dataId, String group, String tenant, String content)
             throws NacosException {
@@ -61,6 +63,11 @@ public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
             throw new NacosException(NacosException.SERVER_ERROR,
                     "load local config fail,error code=" + handle.getErrorCode());
         }
+    }
+    
+    @Override
+    public String getName() {
+        return "configpersist";
     }
     
     @Override

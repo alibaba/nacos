@@ -1,5 +1,8 @@
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptorHolder;
+import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptResult;
+import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
@@ -72,10 +75,21 @@ public class TpsControlManager {
      * @param tpsRequest TpsRequest.
      * @return check current tps is allowed.
      */
-    public TpsCheckResponse check(String pointName, TpsCheckRequest tpsRequest) {
+    public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
         
-        if (points.containsKey(pointName)) {
-            return points.get(pointName).applyTps(tpsRequest);
+        for (TpsInterceptor tpsInterceptor : InterceptorHolder.getInterceptors()) {
+            InterceptResult intercept = tpsInterceptor.intercept(tpsRequest);
+            if (intercept.equals(InterceptResult.CHECK_PASS)) {
+                return new TpsCheckResponse(true, TpsResultCode.CHECK_PASS,
+                        "pass by interceptor :" + tpsInterceptor.getName());
+            } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
+                return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
+                        "deny by interceptor :" + tpsInterceptor.getName());
+            }
+        }
+        
+        if (points.containsKey(tpsRequest.getPointName())) {
+            return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
         }
         return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "skip");
         

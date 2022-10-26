@@ -15,7 +15,7 @@ public class ConnectionCheckRequest {
     public ConnectionCheckRequest(String clientIp, String appName, String source) {
         this.appName = appName;
         this.clientIp = clientIp;
-        this.source=source;
+        this.source = source;
     }
     
     public String getSource() {

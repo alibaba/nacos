@@ -1,0 +1,2 @@
+com.alibaba.nacos.plugin.control.connection.TestCpuLoadInterceptor
+com.alibaba.nacos.plugin.control.connection.TestLabelsWhiteListInterceptor

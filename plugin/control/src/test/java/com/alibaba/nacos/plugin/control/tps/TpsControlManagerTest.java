@@ -30,7 +30,7 @@ public class TpsControlManagerTest {
     public void setUp() {
         //1.register point
         tpsControlManager.registerTpsPoint(pointName);
-        Assert.assertTrue(tpsControlManager.points.containsKey(pointName));
+        Assert.assertTrue(tpsControlManager.getPoints().containsKey(pointName));
         
     }
     
@@ -51,7 +51,7 @@ public class TpsControlManagerTest {
         ruleDetail.setPattern("test:prefix*");
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
-    
+        
         FlowedRuleDetail ruleDetailMonitor = new FlowedRuleDetail();
         ruleDetailMonitor.setMaxCount(5);
         ruleDetailMonitor.setMaxFlow(11);
@@ -62,12 +62,13 @@ public class TpsControlManagerTest {
         tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
         
         tpsControlManager.applyTpsRule(pointName, tpsControlRule);
-        Assert.assertTrue(tpsControlManager.rules.containsKey(pointName));
+        Assert.assertTrue(tpsControlManager.getRules().containsKey(pointName));
         
         //3.apply tps
         FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
         tpsCheckRequest.setCount(2);
         tpsCheckRequest.setFlow(15);
+        tpsCheckRequest.setPointName(pointName);
         List<MonitorKey> monitorKeyList = new ArrayList<>();
         monitorKeyList.add(new MonitorKey("prefixmonitor123") {
             @Override
@@ -77,8 +78,8 @@ public class TpsControlManagerTest {
         });
         tpsCheckRequest.setMonitorKeys(monitorKeyList);
         
-        TpsCheckResponse check = tpsControlManager.check(pointName, tpsCheckRequest);
-        System.out.println(check.isSuccess()+","+check.getMessage());
+        TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
+        System.out.println(check.isSuccess() + "," + check.getMessage());
         
         
     }

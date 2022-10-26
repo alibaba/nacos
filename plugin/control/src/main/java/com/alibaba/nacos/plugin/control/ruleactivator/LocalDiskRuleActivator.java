@@ -38,6 +38,11 @@ public class LocalDiskRuleActivator implements RuleActivator {
     }
     
     @Override
+    public String getName() {
+        return "localdisk";
+    }
+    
+    @Override
     public void saveConnectionRule(String ruleContent) throws IOException {
         File pointFile = getConnectionRuleFile();
         if (!pointFile.exists()) {

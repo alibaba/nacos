@@ -9,6 +9,8 @@ import java.util.List;
  */
 public class TpsCheckRequest {
     
+    private String pointName;
+    
     private long timestamp = System.currentTimeMillis();
     
     private String connectionId;
@@ -57,5 +59,13 @@ public class TpsCheckRequest {
     
     public void setMonitorKeys(List<MonitorKey> monitorKeys) {
         this.monitorKeys = monitorKeys;
+    }
+    
+    public String getPointName() {
+        return pointName;
+    }
+    
+    public void setPointName(String pointName) {
+        this.pointName = pointName;
     }
 }

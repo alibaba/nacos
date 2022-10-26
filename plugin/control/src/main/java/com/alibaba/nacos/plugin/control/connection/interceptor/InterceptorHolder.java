@@ -1,13 +1,15 @@
 package com.alibaba.nacos.plugin.control.connection.interceptor;
 
-import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 public class InterceptorHolder {
     
-    public static List<ConnectionInterceptor> getInterceptors() {
-        return new ArrayList<>();
+    static Collection<ConnectionInterceptor> connectionInterceptors = NacosServiceLoader
+            .load(ConnectionInterceptor.class);
+    
+    public static Collection<ConnectionInterceptor> getInterceptors() {
+        return connectionInterceptors;
     }
 }

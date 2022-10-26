@@ -29,7 +29,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
-import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
@@ -57,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version $Id: ConnectionManager.java, v 0.1 2020年07月13日 7:07 PM liuzunfei Exp $
  */
 @Service
-public class ConnectionManager{
+public class ConnectionManager {
     
     
     /**
@@ -92,7 +91,7 @@ public class ConnectionManager{
     public boolean traced(String clientIp) {
         ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance().getConnectionControlManager()
                 .getConnectionLimitRule();
-        return  connectionLimitRule!= null && connectionLimitRule.getMonitorIpList() != null && connectionLimitRule
+        return connectionLimitRule != null && connectionLimitRule.getMonitorIpList() != null && connectionLimitRule
                 .getMonitorIpList().contains(clientIp);
     }
     
@@ -143,14 +142,16 @@ public class ConnectionManager{
     }
     
     private boolean checkLimit(Connection connection) {
+        if (connection.getMetaInfo().isClusterSource()) {
+            return false;
+        }
         ConnectionMeta metaInfo = connection.getMetaInfo();
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(metaInfo.getClientIp(),
                 metaInfo.getAppName(), metaInfo.getLabel(RemoteConstants.LABEL_SOURCE));
         connectionCheckRequest.setLabels(connection.getLabels());
         ConnectionCheckResponse checkResponse = ControlManagerFactory.getInstance().getConnectionControlManager()
                 .check(connectionCheckRequest);
-        return checkResponse.isSuccess();
-        //cluster not limit; TODO
+        return !checkResponse.isSuccess();
     }
     
     /**
@@ -233,9 +234,9 @@ public class ConnectionManager{
         // Start UnHealthy Connection Expel Task.
         RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
             try {
-    
-                ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance().getConnectionControlManager()
-                        .getConnectionLimitRule();
+                
+                ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance()
+                        .getConnectionControlManager().getConnectionLimitRule();
                 int totalCount = connections.size();
                 Loggers.REMOTE_DIGEST.info("Connection check task start");
                 MetricsMonitor.getLongConnectionMonitor().set(totalCount);
@@ -506,16 +507,7 @@ public class ConnectionManager{
         return connections;
     }
     
-    class LongConnectionMetricsCollector implements ConnectionMetricsCollector{
-    
-        @Override
-        public int getTotalCount() {
-            return this.getTotalCount();
-        }
-    
-        @Override
-        public int getCountForIp(String ip) {
-            return getCountForIp(ip);
-        }
+    public Map<String, AtomicInteger> getConnectionForClientIp() {
+        return connectionForClientIp;
     }
 }

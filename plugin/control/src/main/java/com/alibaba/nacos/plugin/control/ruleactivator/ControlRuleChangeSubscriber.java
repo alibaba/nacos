@@ -32,7 +32,7 @@ public class ControlRuleChangeSubscriber {
             }
             try {
                 if (event.isPersist()) {
-                    String persistTpsRule = PersistRuleActivatorProxy.getInstace().getTpsRule(pointName);
+                    String persistTpsRule = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
                     LocalDiskRuleActivator.INSTANCE.saveTpsRule(pointName, persistTpsRule);
                 }
                 String tpsRuleContent = LocalDiskRuleActivator.INSTANCE.getTpsRule(pointName);
@@ -71,7 +71,7 @@ public class ControlRuleChangeSubscriber {
             try {
                 
                 if (event.isPersist()) {
-                    String connectionRule = PersistRuleActivatorProxy.getInstace().getConnectionRule();
+                    String connectionRule = PersistRuleActivatorProxy.getInstance().getConnectionRule();
                     LocalDiskRuleActivator.INSTANCE.saveConnectionRule(connectionRule);
                 }
                 String limitRule = LocalDiskRuleActivator.INSTANCE.getConnectionRule();

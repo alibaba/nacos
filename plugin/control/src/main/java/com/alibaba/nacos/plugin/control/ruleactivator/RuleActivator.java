@@ -1,8 +1,12 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
-import java.io.IOException;
-
+/**
+ * @author shiyiyue
+ * @date 2022-10-26 11:43:00
+ */
 interface RuleActivator {
+    
+    String getName();
     
     void saveConnectionRule(String ruleContent) throws Exception;
     

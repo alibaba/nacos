@@ -1,5 +1,21 @@
 package com.alibaba.nacos.plugin.control.connection.interceptor;
 
-public interface ConnectionInterceptor {
+import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 
+public interface ConnectionInterceptor {
+    
+    /**
+     * get name.
+     *
+     * @return
+     */
+    String getName();
+    
+    /**
+     * connection intercept.
+     *
+     * @param connectionCheckRequest
+     * @return
+     */
+    InterceptResult intercept(ConnectionCheckRequest connectionCheckRequest);
 }
