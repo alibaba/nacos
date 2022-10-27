@@ -95,21 +95,6 @@ public class InitUtils {
             UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
             UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
         });
-        initWebRootContext();
-    }
-    
-    /**
-     * Init web root context.
-     */
-    @Deprecated
-    public static void initWebRootContext() {
-        // support the web context with ali-yun if the app deploy by EDAS
-        final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, () -> {
-            UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-            UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-            UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
-        });
     }
     
     /**

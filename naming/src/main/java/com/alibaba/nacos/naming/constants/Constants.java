@@ -29,8 +29,6 @@ public final class Constants {
     
     public static final String INSTANCE_METADATA = "naming_instance_metadata";
     
-    public static final String OLD_NAMING_RAFT_GROUP = "naming";
-    
     public static final String NAMING_PERSISTENT_SERVICE_GROUP = "naming_persistent_service";
     
     public static final String NAMING_PERSISTENT_SERVICE_GROUP_V2 = "naming_persistent_service_v2";
@@ -58,21 +56,6 @@ public final class Constants {
     public static final String EXPIRED_METADATA_EXPIRED_TIME = "nacos.naming.clean.expired-metadata.expired-time";
     
     /**
-     * Task time interval between twice processing, unit is millisecond. default: 2000 ms.
-     */
-    public static final String DISTRO_TASK_DISPATCH_PERIOD = "nacos.naming.distro.taskDispatchPeriod";
-    
-    /**
-     * The batch size of the key that distro combined  delay task for http. default: 1000.
-     */
-    public static final String DISTRO_BATCH_SYNC_KEY_COUNT = "nacos.naming.distro.batchSyncKeyCount";
-    
-    /**
-     * Task time interval between twice processing, unit is millisecond. default: 5000ms
-     */
-    public static final String DISTRO_SYNC_RETRY_DELAY = "nacos.naming.distro.syncRetryDelay";
-    
-    /**
      * default: false.
      */
     public static final String DATA_WARMUP = "nacos.naming.data.warmup";
@@ -83,11 +66,6 @@ public final class Constants {
     public static final String EXPIRE_INSTANCE = "nacos.naming.expireInstance";
     
     /**
-     * default 60000L.
-     */
-    public static final String LOAD_DATA_RETRY_DELAY_MILLIS = "nacos.naming.clean.loadDataRetryDelayMillis";
-    
-    /**
      * UDP max retry times.
      */
     public static final int UDP_MAX_RETRY_TIMES = 1;
@@ -96,11 +74,6 @@ public final class Constants {
      * The Nanoseconds for receive UDP ack time out.
      */
     public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
-    
-    /**
-     * The Milliseconds for push timeout.
-     */
-    public static final long DEFAULT_PUSH_TIMEOUT_MILLS = TimeUnit.SECONDS.toNanos(3L);
     
     /**
      * The custom instance id key.

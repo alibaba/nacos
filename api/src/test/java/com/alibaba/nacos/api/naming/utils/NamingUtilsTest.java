@@ -54,7 +54,7 @@ public class NamingUtilsTest {
             NamingUtils.checkInstanceIsLegal(instance);
             assertTrue(false);
         } catch (Exception e) {
-            assertTrue(NacosException.class.equals(e.getClass()));
+            assertTrue(e instanceof NacosException);
             assertEquals(
                     "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)",
                     e.getMessage());
@@ -75,7 +75,7 @@ public class NamingUtilsTest {
             NamingUtils.checkInstanceIsLegal(instance);
             assertTrue(false);
         } catch (Exception e) {
-            assertTrue(NacosException.class.equals(e.getClass()));
+            assertTrue(e instanceof NacosException);
             assertEquals(
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());
@@ -98,7 +98,7 @@ public class NamingUtilsTest {
             NamingUtils.batchCheckInstanceIsLegal(instanceList);
             assertTrue(false);
         } catch (Exception e) {
-            assertTrue(NacosException.class.equals(e.getClass()));
+            assertTrue(e instanceof NacosException);
             assertEquals(
                     "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)",
                     e.getMessage());
@@ -124,7 +124,7 @@ public class NamingUtilsTest {
             NamingUtils.batchCheckInstanceIsLegal(instanceList);
             assertTrue(false);
         } catch (Exception e) {
-            assertTrue(NacosException.class.equals(e.getClass()));
+            assertTrue(e instanceof NacosException);
             assertEquals(
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());

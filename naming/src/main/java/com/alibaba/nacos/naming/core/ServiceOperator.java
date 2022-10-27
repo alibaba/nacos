@@ -90,11 +90,10 @@ public interface ServiceOperator {
     /**
      * Search service name in namespace according to expr.
      *
-     * @param namespaceId     namespace id
-     * @param expr            search expr
-     * @param responsibleOnly only search responsible service, will deprecated after v2.0.
+     * @param namespaceId namespace id
+     * @param expr        search expr
      * @return service name collection of match expr
      * @throws NacosException nacos exception during query
      */
-    Collection<String> searchServiceName(String namespaceId, String expr, @Deprecated boolean responsibleOnly) throws NacosException;
+    Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException;
 }
