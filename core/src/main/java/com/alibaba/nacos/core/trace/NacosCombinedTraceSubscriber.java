@@ -74,11 +74,20 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
         if (null == subscribers) {
             return;
         }
+        TraceEvent traceEvent = (TraceEvent) event;
         for (NacosTraceSubscriber each : subscribers) {
-            try {
-                each.onEvent((TraceEvent) event);
-            } catch (Exception ignored) {
+            if (null != each.executor()) {
+                each.executor().execute(() -> onEvent0(each, traceEvent));
+            } else {
+                onEvent0(each, traceEvent);
             }
+        }
+    }
+    
+    private void onEvent0(NacosTraceSubscriber subscriber, TraceEvent event) {
+        try {
+            subscriber.onEvent(event);
+        } catch (Exception ignored) {
         }
     }
     

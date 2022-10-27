@@ -24,7 +24,10 @@ import com.alibaba.nacos.common.notify.Event;
  * @author yanda
  */
 public class TraceEvent extends Event {
-    private String type;
+    
+    private static final long serialVersionUID = -3065900892505697062L;
+    
+    private final String type;
     
     private final long eventTime;
     

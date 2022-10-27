@@ -29,17 +29,23 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -104,5 +110,22 @@ public class NacosCombinedTraceSubscriberTest {
         combinedTraceSubscriber.onEvent(event2);
         verify(mockSubscriber, never()).onEvent(event2);
         verify(mockSubscriber2, never()).onEvent(event2);
+    }
+    
+    @Test
+    public void testOnEventWithExecutor() {
+        Executor executor = mock(Executor.class);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                invocationOnMock.getArgument(0, Runnable.class).run();
+                return null;
+            }
+        }).when(executor).execute(any(Runnable.class));
+        when(mockSubscriber.executor()).thenReturn(executor);
+        RegisterInstanceTraceEvent event = new RegisterInstanceTraceEvent(1L, "", true, "", "", "", "", 1);
+        combinedTraceSubscriber.onEvent(event);
+        verify(mockSubscriber).onEvent(event);
+        verify(mockSubscriber2).onEvent(event);
     }
 }
