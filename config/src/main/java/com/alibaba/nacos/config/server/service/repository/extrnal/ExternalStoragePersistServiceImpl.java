@@ -2204,8 +2204,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         
         try {
             ConfigInfoMapper configInfoMapper = (ConfigInfoMapper) mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO).get();
-            return jt.update(configInfoMapper.update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect", "type",
-                    "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
+            return jt.update(configInfoMapper.updateConfigInfoAtomicCas(),
                     configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc, use, effect, type, schema,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, configInfo.getMd5());
         } catch (CannotGetJdbcConnectionException e) {
