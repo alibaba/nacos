@@ -408,7 +408,8 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String findConfigInfoBaseByDataIdFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?" + " LIMIT " + startRow + "," + pageSize;
+        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?" + " LIMIT "
+                + startRow + "," + pageSize;
     }
     
     @Override
@@ -461,7 +462,8 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?"  + " LIMIT " + startRow + "," + pageSize;
+        return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?" + " LIMIT "
+                + startRow + "," + pageSize;
     }
     
     @Override
@@ -591,5 +593,12 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
+    }
+    
+    @Override
+    public String updateConfigInfoAtomicCas() {
+        return "UPDATE config_info SET "
+                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
+                + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
     }
 }

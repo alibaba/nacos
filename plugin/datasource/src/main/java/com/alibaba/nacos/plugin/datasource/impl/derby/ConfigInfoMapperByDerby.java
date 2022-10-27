@@ -581,6 +581,13 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
+    public String updateConfigInfoAtomicCas() {
+        return "UPDATE config_info SET "
+                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
+                + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
+    }
+    
+    @Override
     public String getTableName() {
         return TableConstant.CONFIG_INFO;
     }

@@ -544,4 +544,14 @@ public interface ConfigInfoMapper extends Mapper {
      * @return The sql of removing configuration.
      */
     String removeConfigInfoByIdsAtomic(int size);
+    
+    /**
+     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     * The default sql:
+     * UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,
+     * effect=?,type=?,c_schema=? WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')
+     *
+     * @return The sql of updating configuration cas.
+     */
+    String updateConfigInfoAtomicCas();
 }
