@@ -29,6 +29,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,13 +44,14 @@ import static com.alibaba.nacos.config.server.constant.Constants.LIMIT_ERROR_COD
  * @date 2018/3/13
  */
 @Aspect
+@Component
 public class CapacityManagementAspect {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityManagementAspect.class);
     
     private static final String SYNC_UPDATE_CONFIG_ALL =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args"
-                    + "(request,response,dataId,group,content,appName,srcUser,tenant,tag,..)";
+                    + "(request,response,dataId,group,tenant,content,tag,appName,srcUser,..)";
     
     private static final String DELETE_CONFIG =
             "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args"
