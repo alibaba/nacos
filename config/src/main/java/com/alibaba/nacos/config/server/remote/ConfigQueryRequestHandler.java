@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
@@ -85,13 +86,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             throws UnsupportedEncodingException {
         String dataId = configQueryRequest.getDataId();
         String group = configQueryRequest.getGroup();
-        String tenant = configQueryRequest.getTenant();
+        String tenant = NamespaceUtil.processNamespaceParameter(configQueryRequest.getTenant());
         String clientIp = meta.getClientIp();
         String tag = configQueryRequest.getTag();
         ConfigQueryResponse response = new ConfigQueryResponse();
         
-        final String groupKey = GroupKey2
-                .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
+        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
         String autoTag = configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         
