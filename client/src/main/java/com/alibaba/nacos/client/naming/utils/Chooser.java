@@ -125,7 +125,7 @@ public class Chooser<K, T> {
          */
         public void refresh() {
             Double originWeightSum = (double) 0;
-            
+            int index = 0;
             for (Pair<T> item : itemsWithWeight) {
                 
                 double weight = item.weight();
@@ -142,18 +142,19 @@ public class Chooser<K, T> {
                     weight = 1.0D;
                 }
                 originWeightSum += weight;
+                index++;
             }
-    
-            weights = new double[items.size()];
-            int index = 0;
+            
+            weights = new double[index];
             double exactWeight;
             double randomRange = 0D;
-            for (Pair<T> item : itemsWithWeight) {
-                double singleWeight = item.weight();
+            for (int i = 0; i < index; i++) {
+                double singleWeight = itemsWithWeight.get(i).weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
                 if (singleWeight <= 0) {
                     continue;
                 }
+                
                 exactWeight = singleWeight / originWeightSum;
                 weights[index++] = randomRange + exactWeight;
                 randomRange += exactWeight;
