@@ -21,7 +21,7 @@
 CREATE TABLE `config_info` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_id` varchar(255) NOT NULL COMMENT 'data_id',
-  `group_id` varchar(255) DEFAULT NULL,
+  `group_id` varchar(128) DEFAULT NULL,
   `content` longtext NOT NULL COMMENT 'content',
   `md5` varchar(32) DEFAULT NULL COMMENT 'md5',
   `gmt_create` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -47,7 +47,7 @@ CREATE TABLE `config_info` (
 CREATE TABLE `config_info_aggr` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_id` varchar(255) NOT NULL COMMENT 'data_id',
-  `group_id` varchar(255) NOT NULL COMMENT 'group_id',
+  `group_id` varchar(128) NOT NULL COMMENT 'group_id',
   `datum_id` varchar(255) NOT NULL COMMENT 'datum_id',
   `content` longtext NOT NULL COMMENT '内容',
   `gmt_modified` datetime NOT NULL COMMENT '修改时间',

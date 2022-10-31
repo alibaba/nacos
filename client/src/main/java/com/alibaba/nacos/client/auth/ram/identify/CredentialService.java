@@ -126,25 +126,4 @@ public final class CredentialService implements SpasCredentialLoader {
     public void registerCredentialListener(CredentialListener listener) {
         this.listener = listener;
     }
-    
-    @Deprecated
-    public void setAccessKey(String accessKey) {
-        credentials.setAccessKey(accessKey);
-    }
-    
-    @Deprecated
-    public void setSecretKey(String secretKey) {
-        credentials.setSecretKey(secretKey);
-    }
-    
-    @Deprecated
-    public String getAccessKey() {
-        return credentials.getAccessKey();
-    }
-    
-    @Deprecated
-    public String getSecretKey() {
-        return credentials.getSecretKey();
-    }
-    
 }

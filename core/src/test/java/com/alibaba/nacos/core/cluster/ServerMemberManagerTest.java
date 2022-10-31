@@ -40,7 +40,6 @@ import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.servlet.ServletContext;
@@ -182,29 +181,6 @@ public class ServerMemberManagerTest {
         serverMemberManager.onApplicationEvent(mockEvent);
         int port = EnvUtil.getPort();
         Assert.assertEquals(port, 8848);
-    }
-    
-    @Test
-    public void testReportTaskToBelow13Version() {
-        Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP)
-                .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
-        testMember.setAbilities(new ServerAbilities());
-        testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
-        serverMemberManager.updateMember(testMember);
-        assertTrue(
-                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
-        NacosAsyncRestTemplate mockAsyncRestTemplate = mock(NacosAsyncRestTemplate.class);
-        ReflectionTestUtils.setField(serverMemberManager, "asyncRestTemplate", mockAsyncRestTemplate);
-        doAnswer(invocationOnMock -> {
-            Callback<String> callback = invocationOnMock.getArgument(5);
-            RestResult<String> result = RestResultUtils.failed();
-            result.setCode(HttpStatus.NOT_IMPLEMENTED.value());
-            callback.onReceive(result);
-            return null;
-        }).when(mockAsyncRestTemplate).post(anyString(), any(), any(), any(), any(), any());
-        serverMemberManager.getInfoReportTask().run();
-        assertFalse(
-                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
     }
     
     @Test
