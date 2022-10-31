@@ -158,7 +158,7 @@ public class Chooser<K, T> {
                 }
                 
                 exactWeight = singleWeight / originWeightSum;
-                weights[index++] = randomRange + exactWeight;
+                weights[i] = randomRange + exactWeight;
                 randomRange += exactWeight;
             }
             
