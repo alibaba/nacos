@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.discovery.filter;
 
 import com.alibaba.nacos.plugin.discovery.HttpPluginServiceManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.boot.web.servlet.filter.OrderedCharacterEncodingFilter;
 
 import javax.servlet.FilterChain;
@@ -26,7 +27,7 @@ public class PluginCharacterEncodingFilter extends OrderedCharacterEncodingFilte
         int size = urlPatterns.size();
         patterns = new Pattern[size];
         for (int i = 0; i < size; i++) {
-            patterns[i] = Pattern.compile(urlPatterns.get(i));
+            patterns[i] = Pattern.compile(EnvUtil.getContextPath() + urlPatterns.get(i));
         }
     }
     
