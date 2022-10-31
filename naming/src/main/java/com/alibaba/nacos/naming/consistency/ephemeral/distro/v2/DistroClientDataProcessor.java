@@ -39,7 +39,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -63,15 +62,11 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     
     private final DistroProtocol distroProtocol;
     
-    private final UpgradeJudgement upgradeJudgement;
-    
     private volatile boolean isFinishInitial;
     
-    public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol,
-            UpgradeJudgement upgradeJudgement) {
+    public DistroClientDataProcessor(ClientManager clientManager, DistroProtocol distroProtocol) {
         this.clientManager = clientManager;
         this.distroProtocol = distroProtocol;
-        this.upgradeJudgement = upgradeJudgement;
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
     
@@ -97,9 +92,6 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     @Override
     public void onEvent(Event event) {
         if (EnvUtil.getStandaloneMode()) {
-            return;
-        }
-        if (!upgradeJudgement.isUseGrpcFeatures()) {
             return;
         }
         if (event instanceof ClientEvent.ClientVerifyFailedEvent) {
@@ -159,9 +151,9 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
     }
     
     private void handlerClientSyncData(ClientSyncData clientSyncData) {
-        Loggers.DISTRO.info("[Client-Add] Received distro client sync data {}, revision={}",
-                clientSyncData.getClientId(),
-                clientSyncData.getAttributes().getClientAttribute(ClientConstants.REVISION, 0L));
+        Loggers.DISTRO
+                .info("[Client-Add] Received distro client sync data {}, revision={}", clientSyncData.getClientId(),
+                        clientSyncData.getAttributes().getClientAttribute(ClientConstants.REVISION, 0L));
         clientManager.syncClientConnected(clientSyncData.getClientId(), clientSyncData.getAttributes());
         Client client = clientManager.getClient(clientSyncData.getClientId());
         upgradeClient(client, clientSyncData);
@@ -196,23 +188,26 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
         }
     }
     
-    private static void processBatchInstanceDistroData(Set<Service> syncedService, Client client, ClientSyncData clientSyncData)  {
+    private static void processBatchInstanceDistroData(Set<Service> syncedService, Client client,
+            ClientSyncData clientSyncData) {
         BatchInstanceData batchInstanceData = clientSyncData.getBatchInstanceData();
         if (batchInstanceData == null || CollectionUtils.isEmpty(batchInstanceData.getNamespaces())) {
-            Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}", client.getClientId());
+            Loggers.DISTRO.info("[processBatchInstanceDistroData] BatchInstanceData is null , clientId is :{}",
+                    client.getClientId());
             return;
         }
         List<String> namespaces = batchInstanceData.getNamespaces();
         List<String> groupNames = batchInstanceData.getGroupNames();
         List<String> serviceNames = batchInstanceData.getServiceNames();
         List<BatchInstancePublishInfo> batchInstancePublishInfos = batchInstanceData.getBatchInstancePublishInfos();
-    
+        
         for (int i = 0; i < namespaces.size(); i++) {
             Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i));
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client.getInstancePublishInfo(singleton);
+            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client
+                    .getInstancePublishInfo(singleton);
             boolean result = false;
             if (targetInstanceInfo != null) {
                 result = batchInstancePublishInfo.equals(targetInstanceInfo);
@@ -223,18 +218,13 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
-        client.setRevision(
-                clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
+        client.setRevision(clientSyncData.getAttributes().<Integer>getClientAttribute(ClientConstants.REVISION, 0));
     }
     
     @Override
     public boolean processVerifyData(DistroData distroData, String sourceAddress) {
         DistroClientVerifyInfo verifyData = ApplicationUtils.getBean(Serializer.class)
                 .deserialize(distroData.getContent(), DistroClientVerifyInfo.class);
-        // If not upgraded to 2.0.X, just renew client and return.
-        if (!upgradeJudgement.isUseGrpcFeatures()) {
-            verifyData.setRevision(0L);
-        }
         if (clientManager.verifyClient(verifyData)) {
             return true;
         }
