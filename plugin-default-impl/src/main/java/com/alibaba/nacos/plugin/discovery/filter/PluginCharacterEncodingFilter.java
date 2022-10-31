@@ -56,12 +56,9 @@ public class PluginCharacterEncodingFilter extends OrderedCharacterEncodingFilte
                 request.setCharacterEncoding(encoding);
             }
             
-            if (this.isForceResponseEncoding()) {
-                response.setCharacterEncoding(encoding);
-            } else if (matchUri(request.getRequestURI())) {
+            if (this.isForceResponseEncoding() || matchUri(request.getRequestURI())) {
                 response.setCharacterEncoding(encoding);
             }
-            
         }
         
         filterChain.doFilter(request, response);
