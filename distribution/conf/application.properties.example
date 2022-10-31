@@ -17,8 +17,6 @@
 #*************** Spring Boot Related Configurations ***************#
 ### Default web context path:
 server.servlet.contextPath=/nacos
-### Setting Content-Type response header to include ;charset=UTF-8
-server.servlet.encoding.force-response=true
 ### Include message field
 server.error.include-message=ALWAYS
 ### Default web server port:

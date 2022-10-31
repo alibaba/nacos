@@ -28,8 +28,10 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Http Service Manager.
@@ -64,5 +66,9 @@ public class HttpPluginServiceManager implements ServletContextInitializer, Appl
             
         }
         
+    }
+    
+    public List<String> getUrlPatterns() {
+        return httpServiceContainer.keySet().stream().collect(Collectors.toList());
     }
 }

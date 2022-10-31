@@ -17,8 +17,12 @@
 package com.alibaba.nacos.plugin.discovery.configuration;
 
 import com.alibaba.nacos.plugin.discovery.HttpPluginServiceManager;
+import com.alibaba.nacos.plugin.discovery.filter.PluginCharacterEncodingFilter;
+import org.springframework.boot.autoconfigure.web.ServerProperties;
+import org.springframework.boot.web.servlet.server.Encoding;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.filter.CharacterEncodingFilter;
 
 /**
  * Http plugin configuration.
@@ -28,9 +32,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class HttpPluginConfiguration {
     
+    private final Encoding properties;
+    
+    public HttpPluginConfiguration(ServerProperties properties) {
+        this.properties = properties.getServlet().getEncoding();
+    }
+    
     @Bean
     HttpPluginServiceManager httpServiceManager() {
         return new HttpPluginServiceManager();
     }
     
+    @Bean
+    public CharacterEncodingFilter characterEncodingFilter(HttpPluginServiceManager httpServiceManager) {
+        CharacterEncodingFilter filter = new PluginCharacterEncodingFilter(httpServiceManager);
+        filter.setEncoding(this.properties.getCharset().name());
+        filter.setForceRequestEncoding(this.properties.shouldForce(org.springframework.boot.web.servlet.server.Encoding.Type.REQUEST));
+        filter.setForceResponseEncoding(this.properties.shouldForce(org.springframework.boot.web.servlet.server.Encoding.Type.RESPONSE));
+        return filter;
+    }
 }
