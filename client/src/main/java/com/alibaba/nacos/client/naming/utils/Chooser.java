@@ -117,7 +117,9 @@ public class Chooser<K, T> {
         private double[] weights;
         
         public Ref(List<Pair<T>> itemsWithWeight) {
-            this.itemsWithWeight = itemsWithWeight;
+            if (itemsWithWeight != null) {
+                this.itemsWithWeight = itemsWithWeight;
+            }
         }
         
         /**
