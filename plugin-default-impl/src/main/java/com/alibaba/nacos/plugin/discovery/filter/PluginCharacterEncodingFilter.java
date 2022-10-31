@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.discovery.filter;
 import com.alibaba.nacos.plugin.discovery.HttpPluginServiceManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.boot.web.servlet.filter.OrderedCharacterEncodingFilter;
+import org.springframework.boot.web.servlet.server.Encoding;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -38,13 +39,16 @@ public class PluginCharacterEncodingFilter extends OrderedCharacterEncodingFilte
     
     private final Pattern[] patterns;
     
-    public PluginCharacterEncodingFilter(HttpPluginServiceManager httpPluginServiceManager) {
+    public PluginCharacterEncodingFilter(HttpPluginServiceManager httpPluginServiceManager, Encoding properties) {
         List<String> urlPatterns = httpPluginServiceManager.getUrlPatterns();
         int size = urlPatterns.size();
         patterns = new Pattern[size];
         for (int i = 0; i < size; i++) {
             patterns[i] = Pattern.compile(EnvUtil.getContextPath() + urlPatterns.get(i));
         }
+        this.setEncoding(properties.getCharset().name());
+        this.setForceRequestEncoding(properties.shouldForce(org.springframework.boot.web.servlet.server.Encoding.Type.REQUEST));
+        this.setForceResponseEncoding(properties.shouldForce(org.springframework.boot.web.servlet.server.Encoding.Type.RESPONSE));
     }
     
     @Override

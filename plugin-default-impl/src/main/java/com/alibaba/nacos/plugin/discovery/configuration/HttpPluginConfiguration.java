@@ -45,10 +45,7 @@ public class HttpPluginConfiguration {
     
     @Bean
     public CharacterEncodingFilter characterEncodingFilter(HttpPluginServiceManager httpServiceManager) {
-        CharacterEncodingFilter filter = new PluginCharacterEncodingFilter(httpServiceManager);
-        filter.setEncoding(this.properties.getCharset().name());
-        filter.setForceRequestEncoding(this.properties.shouldForce(org.springframework.boot.web.servlet.server.Encoding.Type.REQUEST));
-        filter.setForceResponseEncoding(this.properties.shouldForce(org.springframework.boot.web.servlet.server.Encoding.Type.RESPONSE));
+        CharacterEncodingFilter filter = new PluginCharacterEncodingFilter(httpServiceManager, properties);
         return filter;
     }
 }
