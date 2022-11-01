@@ -116,6 +116,8 @@ public class Constants {
     
     public static final String BASE_PATH = "/v1/cs";
     
+    public static final String BASE_V2_PATH = "/v2/cs";
+    
     public static final String OPS_CONTROLLER_PATH = BASE_PATH + "/ops";
     
     public static final String CAPACITY_CONTROLLER_PATH = BASE_PATH + "/capacity";
@@ -124,9 +126,13 @@ public class Constants {
     
     public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
     
+    public static final String CONFIG_CONTROLLER_V2_PATH = BASE_V2_PATH + "/config";
+    
     public static final String HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
     
     public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
+    
+    public static final String HISTORY_CONTROLLER_V2_PATH = BASE_V2_PATH + "/history";
     
     public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
     

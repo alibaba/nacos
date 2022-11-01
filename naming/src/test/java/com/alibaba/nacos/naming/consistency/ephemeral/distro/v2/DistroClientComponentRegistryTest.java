@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandl
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,55 +36,51 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DistroClientComponentRegistryTest extends TestCase {
-
+    
     private DistroClientComponentRegistry distroClientComponentRegistry;
-
+    
     @Mock
     private ServerMemberManager serverMemberManager;
-
+    
     @Mock
     private DistroProtocol distroProtocol;
-
+    
     @Mock
     private DistroTaskEngineHolder taskEngineHolder;
-
+    
     @Mock
     private ClientManagerDelegate clientManager;
-
+    
     @Mock
     private ClusterRpcClientProxy clusterRpcClientProxy;
-
-    @Mock
-    private UpgradeJudgement upgradeJudgement;
-
+    
     private DistroComponentHolder componentHolder;
-
+    
     @Before
     public void setUp() throws Exception {
         componentHolder = new DistroComponentHolder();
-
+        
         distroClientComponentRegistry = new DistroClientComponentRegistry(serverMemberManager, distroProtocol,
-                componentHolder, taskEngineHolder,
-                clientManager, clusterRpcClientProxy,
-                upgradeJudgement);
+                componentHolder, taskEngineHolder, clientManager, clusterRpcClientProxy);
     }
-
+    
     @Test
     public void testDoRegister() {
         distroClientComponentRegistry.doRegister();
-
+        
         DistroDataStorage dataStorage = componentHolder.findDataStorage(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(dataStorage);
-
+        
         DistroDataProcessor dataProcessor = componentHolder.findDataProcessor(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(dataProcessor);
-
-        DistroFailedTaskHandler failedTaskHandler = componentHolder.findFailedTaskHandler(DistroClientDataProcessor.TYPE);
+        
+        DistroFailedTaskHandler failedTaskHandler = componentHolder
+                .findFailedTaskHandler(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(failedTaskHandler);
-
+        
         DistroTransportAgent transportAgent = componentHolder.findTransportAgent(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(transportAgent);
-
+        
     }
-
+    
 }

@@ -76,7 +76,7 @@ public class UdpConnectorTest {
         DatagramSocket oldSocket = (DatagramSocket) ReflectionTestUtils.getField(udpConnector, "udpSocket");
         ReflectionTestUtils.setField(udpConnector, "udpSocket", udpSocket);
         doAnswer(invocationOnMock -> {
-            TimeUnit.MINUTES.sleep(1);
+            TimeUnit.SECONDS.sleep(3);
             return null;
         }).when(udpSocket).receive(any(DatagramPacket.class));
         oldSocket.close();
