@@ -21,7 +21,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
@@ -64,13 +64,13 @@ public class HistoryControllerTest {
     private ServletContext servletContext;
     
     @Mock
-    private PersistService persistService;
+    private HistoryService historyService;
     
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(historyController, "persistService", persistService);
+        ReflectionTestUtils.setField(historyController, "historyService", historyService);
         mockmvc = MockMvcBuilders.standaloneSetup(historyController).build();
     }
     
@@ -92,7 +92,7 @@ public class HistoryControllerTest {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(persistService.findConfigHistory("test", "test", "", 1, 10)).thenReturn(page);
+        when(historyService.listConfigHistory("test", "test", "", 1, 10)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH)
                 .param("search", "accurate").param("dataId", "test")
@@ -126,7 +126,7 @@ public class HistoryControllerTest {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(persistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
+        when(historyController.getConfigHistoryInfo("test", "test", "", 1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH)
                 .param("dataId", "test")
@@ -154,7 +154,7 @@ public class HistoryControllerTest {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(persistService.detailPreviousConfigHistory(1L)).thenReturn(configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo("test", "test", "", 1L)).thenReturn(configHistoryInfo);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH + "/previous")
                 .param("dataId", "test")
@@ -180,7 +180,7 @@ public class HistoryControllerTest {
         configInfoWrapper.setContent("test");
         List<ConfigInfoWrapper> configInfoWrappers = new ArrayList<>();
         configInfoWrappers.add(configInfoWrapper);
-        when(persistService.queryConfigInfoByNamespace("test")).thenReturn(configInfoWrappers);
+        when(historyService.getConfigListByNamespace("test")).thenReturn(configInfoWrappers);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HISTORY_CONTROLLER_PATH + "/configs")
                 .param("tenant", "test");

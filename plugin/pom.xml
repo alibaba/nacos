@@ -33,6 +33,8 @@
         <module>auth</module>
         <module>encryption</module>
         <module>discovery</module>
+        <module>trace</module>
+        <module>datasource</module>
     </modules>
     <packaging>pom</packaging>
 

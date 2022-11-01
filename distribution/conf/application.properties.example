@@ -49,15 +49,6 @@ db.pool.config.maximumPoolSize=20
 db.pool.config.minimumIdle=2
 
 #*************** Naming Module Related Configurations ***************#
-### Data dispatch task execution period in milliseconds: Will removed on v2.1.X, replace with nacos.core.protocol.distro.data.sync.delayMs
-# nacos.naming.distro.taskDispatchPeriod=200
-
-### Data count of batch sync task: Will removed on v2.1.X. Deprecated
-# nacos.naming.distro.batchSyncKeyCount=1000
-
-### Retry delay in milliseconds if sync task failed: Will removed on v2.1.X, replace with nacos.core.protocol.distro.data.sync.retryDelayMs
-# nacos.naming.distro.syncRetryDelay=5000
-
 ### If enable data warmup. If set to false, the server would accept request without local data preparation:
 # nacos.naming.data.warmup=true
 
