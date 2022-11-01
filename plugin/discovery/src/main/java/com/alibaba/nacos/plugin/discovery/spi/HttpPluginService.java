@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.discovery.spi;
 
-import com.alibaba.nacos.plugin.discovery.wapper.HttpServletWapper;
+import com.alibaba.nacos.plugin.discovery.wrapper.HttpServletWrapper;
 import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletException;
@@ -95,6 +95,6 @@ public interface HttpPluginService {
      * Bind httpServlet wapper.
      * @param  servletWapper HttpServletWapper.
      */
-    void bind(HttpServletWapper servletWapper);
+    void bind(HttpServletWrapper servletWapper);
     
 }

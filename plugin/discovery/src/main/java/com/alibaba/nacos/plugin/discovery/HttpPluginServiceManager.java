@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.discovery;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.discovery.spi.HttpPluginService;
-import com.alibaba.nacos.plugin.discovery.wapper.HttpServletWapper;
+import com.alibaba.nacos.plugin.discovery.wrapper.HttpServletWrapper;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.ApplicationContext;
@@ -49,7 +49,7 @@ public class HttpPluginServiceManager implements ServletContextInitializer, Appl
         this.servletContext = servletContext;
         httpServiceContainer.forEach((uri, httpService) -> {
             ServletRegistration.Dynamic dynamic = servletContext.addServlet(httpService.getClass().getSimpleName(),
-                    new HttpServletWapper(httpService));
+                    new HttpServletWrapper(httpService));
             dynamic.addMapping(httpService.getRequestUri());
         });
         

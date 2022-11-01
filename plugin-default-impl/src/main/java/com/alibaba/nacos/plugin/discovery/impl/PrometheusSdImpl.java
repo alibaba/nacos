@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.plugin.discovery.spi.HttpPluginService;
-import com.alibaba.nacos.plugin.discovery.wapper.HttpServletWapper;
+import com.alibaba.nacos.plugin.discovery.wrapper.HttpServletWrapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -56,7 +56,7 @@ public class PrometheusSdImpl implements HttpPluginService {
     
     InstanceOperator instanceOperator;
     
-    HttpServletWapper servletWapper;
+    HttpServletWrapper servletWrapper;
     
     @Override
     public String getRequestUri() {
@@ -131,7 +131,7 @@ public class PrometheusSdImpl implements HttpPluginService {
     }
     
     @Override
-    public void bind(HttpServletWapper servletWapper) {
-        this.servletWapper = servletWapper;
+    public void bind(HttpServletWrapper servletWrapper) {
+        this.servletWrapper = servletWrapper;
     }
 }

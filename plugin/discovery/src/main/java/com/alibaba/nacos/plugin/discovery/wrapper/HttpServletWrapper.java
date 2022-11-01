@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.discovery.wapper;
+package com.alibaba.nacos.plugin.discovery.wrapper;
 
 import com.alibaba.nacos.plugin.discovery.spi.HttpPluginService;
 
@@ -29,11 +29,11 @@ import java.io.IOException;
  *
  * @author karsonto
  */
-public class HttpServletWapper extends HttpServlet {
+public class HttpServletWrapper extends HttpServlet {
     
     HttpPluginService httpService;
     
-    public HttpServletWapper(HttpPluginService httpService) {
+    public HttpServletWrapper(HttpPluginService httpService) {
         this.httpService = httpService;
         httpService.bind(this);
     }
