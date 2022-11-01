@@ -159,7 +159,7 @@ public class Chooser<K, T> {
                 
                 exactWeight = singleWeight / originWeightSum;
                 weights[i] = randomRange + exactWeight;
-                randomRange += exactWeight;
+                randomRange = weights[i];
             }
             
             double doublePrecisionDelta = 0.0001;
