@@ -147,6 +147,7 @@ nacos.core.auth.enabled=false
 #nacos.core.auth.ldap.password=admin
 #nacos.core.auth.ldap.userdn=cn={0},dc=example,dc=org
 #nacos.core.auth.ldap.filter.prefix=uid
+#nacos.core.auth.ldap.case.sensitive=true
 
 
 ### The token expiration in seconds:

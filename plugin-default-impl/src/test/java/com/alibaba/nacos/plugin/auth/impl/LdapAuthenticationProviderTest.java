@@ -58,6 +58,8 @@ public class LdapAuthenticationProviderTest {
     private final String normalUserName = "normal";
     
     private final String filterPrefix = "uid";
+
+    private final boolean caseSensitive = true;
     
     Method isAdmin;
     
@@ -87,7 +89,7 @@ public class LdapAuthenticationProviderTest {
                     }
                 });
         this.ldapAuthenticationProvider = new LdapAuthenticationProvider(ldapTemplate, userDetailsService,
-                nacosRoleService, filterPrefix);
+                nacosRoleService, filterPrefix, caseSensitive);
         isAdmin = LdapAuthenticationProvider.class.getDeclaredMethod("isAdmin", String.class);
         isAdmin.setAccessible(true);
         ldapLogin = LdapAuthenticationProvider.class.getDeclaredMethod("ldapLogin", String.class, String.class);

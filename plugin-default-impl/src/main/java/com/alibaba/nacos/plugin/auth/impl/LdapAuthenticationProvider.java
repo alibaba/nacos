@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -53,13 +54,16 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     private final LdapTemplate ldapTemplate;
     
     private final String filterPrefix;
+
+    private final boolean caseSensitive;
     
     public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            NacosRoleServiceImpl nacosRoleService, String filterPrefix) {
+            NacosRoleServiceImpl nacosRoleService, String filterPrefix, boolean caseSensitive) {
         this.ldapTemplate = ldapTemplate;
         this.nacosRoleService = nacosRoleService;
         this.userDetailsService = userDetailsService;
         this.filterPrefix = filterPrefix;
+        this.caseSensitive = caseSensitive;
     }
     
     @Override
@@ -74,6 +78,10 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             } else {
                 return null;
             }
+        }
+
+        if(!caseSensitive){
+            username = StringUtils.lowerCase(username);
         }
         
         try {
