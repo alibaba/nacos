@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
+import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = System.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
+            String value = AppNameUtils.getAppName();
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
