@@ -86,7 +86,7 @@ public class ExternalDataSourceProperties {
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
             HikariDataSource ds = poolProperties.getDataSource();
-            if (StringUtils.isEmpty(poolProperties.getDataSource().getConnectionTestQuery())) {
+            if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
                 ds.setConnectionTestQuery(TEST_QUERY);
             }
             dataSources.add(ds);
