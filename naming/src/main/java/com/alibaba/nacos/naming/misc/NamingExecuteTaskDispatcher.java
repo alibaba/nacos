@@ -19,16 +19,13 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.task.engine.NacosExecuteTaskExecuteEngine;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.stereotype.Component;
 
 /**
  * Naming execute task dispatcher.
  *
  * @author xiweng.yy
  */
-@Component
-public class NamingExecuteTaskDispatcher implements DisposableBean {
+public class NamingExecuteTaskDispatcher {
     
     private static final NamingExecuteTaskDispatcher INSTANCE = new NamingExecuteTaskDispatcher();
     
@@ -50,7 +47,6 @@ public class NamingExecuteTaskDispatcher implements DisposableBean {
         return executeEngine.workersStatus();
     }
     
-    @Override
     public void destroy() throws Exception {
         executeEngine.shutdown();
     }
