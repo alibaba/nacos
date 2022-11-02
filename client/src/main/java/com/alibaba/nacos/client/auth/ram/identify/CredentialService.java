@@ -44,7 +44,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = AppNameUtils.getAppName();
+            String value = System.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
