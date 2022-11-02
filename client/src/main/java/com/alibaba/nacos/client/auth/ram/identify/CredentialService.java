@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
