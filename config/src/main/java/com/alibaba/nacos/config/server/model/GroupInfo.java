@@ -27,9 +27,9 @@ import java.io.Serializable;
  * @author Nacos
  */
 public class GroupInfo implements Serializable {
-    
-    static final long serialVersionUID = -1L;
-    
+
+    static final long serialVersionUID = 3930805434971004186L;
+
     @JsonSerialize(using = ToStringSerializer.class)
     private long id;
     

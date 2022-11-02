@@ -111,6 +111,11 @@ public class CacheData {
      */
     private volatile boolean isSyncWithServer = false;
     
+    /**
+     * if is cache data is discard,need to remove.
+     */
+    private volatile boolean isDiscard = false;
+    
     private String type;
     
     public boolean isInitializing() {
@@ -400,6 +405,14 @@ public class CacheData {
     
     public void setSyncWithServer(boolean syncWithServer) {
         isSyncWithServer = syncWithServer;
+    }
+    
+    public boolean isDiscard() {
+        return isDiscard;
+    }
+    
+    public void setDiscard(boolean discard) {
+        isDiscard = discard;
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {

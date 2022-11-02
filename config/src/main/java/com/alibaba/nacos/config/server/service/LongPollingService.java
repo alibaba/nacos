@@ -185,7 +185,7 @@ public class LongPollingService {
                 }
             }
         }
-
+        
         return mergeSampleResult(sampleResultLst);
     }
     
@@ -240,8 +240,8 @@ public class LongPollingService {
         
         String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
-        String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
-        String tag = req.getHeader("Vipserver-Tag");
+        final String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
+        final String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
         
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
@@ -395,10 +395,10 @@ public class LongPollingService {
             asyncTimeoutFuture = ConfigExecutor.scheduleLongPolling(() -> {
                 try {
                     getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
-
+                    
                     // Delete subscriber's relations.
                     boolean removeFlag = allSubs.remove(ClientLongPolling.this);
-
+                    
                     if (removeFlag) {
                         if (isFixedPolling()) {
                             LogUtil.CLIENT_LOG
@@ -426,7 +426,7 @@ public class LongPollingService {
                 } catch (Throwable t) {
                     LogUtil.DEFAULT_LOG.error("long polling error:" + t.getMessage(), t.getCause());
                 }
-
+                
             }, timeoutTime, TimeUnit.MILLISECONDS);
             
             allSubs.add(this);
@@ -442,13 +442,13 @@ public class LongPollingService {
         }
         
         void generateResponse(List<String> changedGroups) {
+    
             if (null == changedGroups) {
-                
                 // Tell web container to send http response.
                 asyncContext.complete();
                 return;
             }
-            
+    
             HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
             
             try {
@@ -529,5 +529,9 @@ public class LongPollingService {
     
     public void setRetainIps(Map<String, Long> retainIps) {
         this.retainIps = retainIps;
+    }
+    
+    public int getSubscriberCount() {
+        return allSubs.size();
     }
 }

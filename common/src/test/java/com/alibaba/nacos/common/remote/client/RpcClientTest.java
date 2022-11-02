@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.grpc.DefaultGrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConnection;
 import org.junit.After;
 import org.junit.Assert;
@@ -41,6 +42,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
@@ -171,11 +173,11 @@ public class RpcClientTest {
     public void testInitServerListFactory() {
         rpcClient.rpcClientStatus.set(RpcClientStatus.WAIT_INIT);
         rpcClient.serverListFactory(serverListFactory);
-        Assert.assertEquals(RpcClientStatus.INITIALIZED, rpcClient.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.INITIALIZED, rpcClient.rpcClientStatus.get());
         
         rpcClient.rpcClientStatus.set(RpcClientStatus.INITIALIZED);
         rpcClient.serverListFactory(serverListFactory);
-        Assert.assertEquals(RpcClientStatus.INITIALIZED, rpcClient.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.INITIALIZED, rpcClient.rpcClientStatus.get());
         
         RpcClient client1 = new RpcClient(new RpcClientConfig() {
             @Override
@@ -228,7 +230,7 @@ public class RpcClientTest {
                 return null;
             }
         };
-        Assert.assertEquals(RpcClientStatus.INITIALIZED, client1.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.INITIALIZED, client1.rpcClientStatus.get());
         
         RpcClient client2 = new RpcClient(rpcClientConfig, serverListFactory) {
             @Override
@@ -246,21 +248,21 @@ public class RpcClientTest {
                 return null;
             }
         };
-        Assert.assertEquals(RpcClientStatus.INITIALIZED, client2.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.INITIALIZED, client2.rpcClientStatus.get());
     }
     
     @Test
     public void testLabels() {
         when(rpcClientConfig.labels()).thenReturn(Collections.singletonMap("labelKey1", "labelValue1"));
         Map.Entry<String, String> element = rpcClient.getLabels().entrySet().iterator().next();
-        Assert.assertEquals("labelKey1", element.getKey());
-        Assert.assertEquals("labelValue1", element.getValue());
+        assertEquals("labelKey1", element.getKey());
+        assertEquals("labelValue1", element.getValue());
         
         // accumulate labels
         Map<String, String> map = new HashMap<>();
         map.put("labelKey2", "labelValue2");
         when(rpcClientConfig.labels()).thenReturn(map);
-        Assert.assertEquals(1, rpcClient.getLabels().size());
+        assertEquals(1, rpcClient.getLabels().size());
     }
     
     @Test
@@ -271,7 +273,7 @@ public class RpcClientTest {
         rpcClient.onServerListChange();
         
         int afterSize = ((Queue<?>) reconnectionSignalField.get(rpcClient)).size();
-        Assert.assertEquals(beforeSize, afterSize);
+        assertEquals(beforeSize, afterSize);
     }
     
     @Test
@@ -282,7 +284,7 @@ public class RpcClientTest {
         rpcClient.onServerListChange();
         
         int afterSize = ((Queue<?>) reconnectionSignalField.get(rpcClient)).size();
-        Assert.assertEquals(beforeSize, afterSize);
+        assertEquals(beforeSize, afterSize);
     }
     
     @Test
@@ -292,11 +294,11 @@ public class RpcClientTest {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.currentConnection = new GrpcConnection(new RpcClient.ServerInfo("10.10.10.10", 8848), null);
         doReturn(Collections.singletonList("")).when(serverListFactory).getServerList();
-        
+        when(serverListFactory.getServerList()).thenReturn(Collections.singletonList("127.0.0.1"));
         rpcClient.onServerListChange();
         
         int afterSize = ((Queue<?>) reconnectionSignalField.get(rpcClient)).size();
-        Assert.assertEquals(beforeSize + 1, afterSize);
+        assertEquals(beforeSize + 1, afterSize);
     }
     
     @Test
@@ -305,35 +307,35 @@ public class RpcClientTest {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.currentConnection = new GrpcConnection(new RpcClient.ServerInfo("10.10.10.10", 8848), null);
         doReturn(Collections.singletonList("http://10.10.10.10:8848")).when(serverListFactory).getServerList();
-        
         rpcClient.onServerListChange();
         
         int afterSize = ((Queue<?>) reconnectionSignalField.get(rpcClient)).size();
-        Assert.assertEquals(beforeSize, afterSize);
+        assertEquals(beforeSize, afterSize);
     }
     
     @Test
     public void testResolveServerInfo1() throws InvocationTargetException, IllegalAccessException {
-        Assert.assertEquals(":8848",
-                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "")).getAddress());
-        Assert.assertEquals("10.10.10.10:8848",
+        assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "10.10.10.10::8848")).getAddress());
-        Assert.assertEquals("10.10.10.10:8848",
+        assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "10.10.10.10:8848")).getAddress());
-        Assert.assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
-                "http://10.10.10.10:8848")).getAddress());
-        Assert.assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
-                "http://10.10.10.10::8848")).getAddress());
-        Assert.assertEquals("10.10.10.10:8848",
+        assertEquals("10.10.10.10:8848",
+                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10:8848"))
+                        .getAddress());
+        assertEquals("10.10.10.10:8848",
+                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10::8848"))
+                        .getAddress());
+        assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10")).getAddress());
-        Assert.assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
-                "https://10.10.10.10::8848")).getAddress());
+        assertEquals("10.10.10.10:8848",
+                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "https://10.10.10.10::8848"))
+                        .getAddress());
     }
     
     @Test
     public void testResolveServerInfo2() throws InvocationTargetException, IllegalAccessException {
         System.setProperty("nacos.server.port", "4424");
-        Assert.assertEquals("10.10.10.10:4424",
+        assertEquals("10.10.10.10:4424",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10")).getAddress());
     }
     
@@ -377,7 +379,7 @@ public class RpcClientTest {
             exception = e;
         }
         
-        Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
         verify(rpcClient).switchServerAsync();
         Assert.assertNotNull(exception);
     }
@@ -409,7 +411,7 @@ public class RpcClientTest {
         verify(connection, atLeastOnce()).asyncRequest(any(), any());
         verify(rpcClient).switchServerAsyncOnRequestFail();
         Assert.assertNotNull(exception);
-        Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
     }
     
     @Test(expected = NacosException.class)
@@ -438,7 +440,7 @@ public class RpcClientTest {
         verify(connection, times(3)).requestFuture(any());
         verify(rpcClient).switchServerAsyncOnRequestFail();
         Assert.assertNotNull(exception);
-        Assert.assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
+        assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
     }
     
     @Test
@@ -512,5 +514,125 @@ public class RpcClientTest {
             e.printStackTrace();
         }
         verify(connection, times(retry + 1)).request(any(), anyLong());
+    }
+    
+    @Test
+    public void testNextRpcServerForIpv4WithPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:7777");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("127.0.0.1:7777", actual.getAddress());
+        assertEquals("127.0.0.1", actual.getServerIp());
+        assertEquals(7777, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForIpv4WithoutPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("127.0.0.1");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("127.0.0.1:8848", actual.getAddress());
+        assertEquals("127.0.0.1", actual.getServerIp());
+        assertEquals(8848, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForIpv6WithPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("[fe80::35ba:6827:c5ff:d161%11]:7777");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("[fe80::35ba:6827:c5ff:d161%11]:7777", actual.getAddress());
+        assertEquals("[fe80::35ba:6827:c5ff:d161%11]", actual.getServerIp());
+        assertEquals(7777, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForIpv6WithoutPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("[fe80::35ba:6827:c5ff:d161%11]");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("[fe80::35ba:6827:c5ff:d161%11]:8848", actual.getAddress());
+        assertEquals("[fe80::35ba:6827:c5ff:d161%11]", actual.getServerIp());
+        assertEquals(8848, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForDomainWithPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("nacos.io:7777");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("nacos.io:7777", actual.getAddress());
+        assertEquals("nacos.io", actual.getServerIp());
+        assertEquals(7777, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForDomainWithoutPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("nacos.io");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("nacos.io:8848", actual.getAddress());
+        assertEquals("nacos.io", actual.getServerIp());
+        assertEquals(8848, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForLocalhostWithPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("localhost:7777");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("localhost:7777", actual.getAddress());
+        assertEquals("localhost", actual.getServerIp());
+        assertEquals(7777, actual.getServerPort());
+    }
+    
+    @Test
+    public void testNextRpcServerForLocalhostWithoutPort() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("localhost");
+        RpcClient.ServerInfo actual = rpcClient.nextRpcServer();
+        assertEquals("localhost:8848", actual.getAddress());
+        assertEquals("localhost", actual.getServerIp());
+        assertEquals(8848, actual.getServerPort());
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testNextRpcServerForEmpty() {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        rpcClient.serverListFactory(serverListFactory);
+        when(serverListFactory.genNextServer()).thenReturn("");
+        rpcClient.nextRpcServer();
+    }
+    
+    private RpcClient buildTestNextRpcServerClient() {
+        return new RpcClient(DefaultGrpcClientConfig.newBuilder().build()) {
+            @Override
+            public ConnectionType getConnectionType() {
+                return null;
+            }
+            
+            @Override
+            public int rpcPortOffset() {
+                return 0;
+            }
+            
+            @Override
+            public Connection connectToServer(ServerInfo serverInfo) throws Exception {
+                return null;
+            }
+            
+            @Override
+            public ServerInfo nextRpcServer() {
+                return super.nextRpcServer();
+            }
+        };
     }
 }

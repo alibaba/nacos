@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.exception;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -31,6 +32,7 @@ import java.io.IOException;
  *
  * @author Nacos
  */
+@Order(0)
 @ControllerAdvice
 public class GlobalExceptionHandler {
     

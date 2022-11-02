@@ -35,10 +35,8 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -338,25 +336,6 @@ public class NamingClientProxyDelegateTest {
         
         delegate.unsubscribe(serviceName, groupName, clusters);
         verify(mockGrpcClient, times(1)).unsubscribe(serviceName, groupName, clusters);
-    }
-    
-    @Test
-    public void testUpdateBeatInfo() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        String ns = "ns1";
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Properties props = new Properties();
-        props.setProperty("serverAddr", "localhost");
-        InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
-        NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
-        Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
-        mockHttpClientField.setAccessible(true);
-        mockHttpClientField.set(delegate, mockHttpClient);
-        
-        //HTTP ONLY
-        Set<Instance> set = new HashSet<>();
-        delegate.updateBeatInfo(set);
-        verify(mockHttpClient, times(1)).updateBeatInfo(set);
     }
     
     @Test
