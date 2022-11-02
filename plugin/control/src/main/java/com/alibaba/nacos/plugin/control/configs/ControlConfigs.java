@@ -20,11 +20,14 @@ public class ControlConfigs {
         ControlConfigs.INSTANCE = INSTANCE;
     }
     
-    @Value("${nacos.plugin.control.tps.barrier.creator:simplecount}")
+    @Value("${nacos.plugin.control.tps.barrier.creator:localsimplecount}")
     private String tpsBarrierCreator = "localsimplecount";
     
     @Value("${nacos.plugin.control.rule.persist.activator:internalconfigcenter}")
     private String rulePersistActivator = "internalconfigcenter";
+    
+    @Value("${nacos.plugin.control.rule.parser:default}")
+    private String ruleParser = "default";
     
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;
@@ -40,5 +43,13 @@ public class ControlConfigs {
     
     public void setRulePersistActivator(String rulePersistActivator) {
         this.rulePersistActivator = rulePersistActivator;
+    }
+    
+    public String getRuleParser() {
+        return ruleParser;
+    }
+    
+    public void setRuleParser(String ruleParser) {
+        this.ruleParser = ruleParser;
     }
 }

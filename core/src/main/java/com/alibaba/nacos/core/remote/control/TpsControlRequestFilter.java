@@ -24,10 +24,9 @@ import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
-import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyParser;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
@@ -60,35 +59,24 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
             TpsControl tpsControl = method.getAnnotation(TpsControl.class);
             
             String pointName = tpsControl.pointName();
-            Class[] parsers = tpsControl.parsers();
-            List<MonitorKey> monitorKeys = new ArrayList<>();
-            monitorKeys.add(new ClientIpMonitorKey(meta.getClientIp()));
-            if (parsers != null) {
-                for (Class clazz : parsers) {
-                    try {
-                        if (MonitorKeyParser.class.isAssignableFrom(clazz)) {
-                            MonitorKey parseKey = ((MonitorKeyParser) (clazz.newInstance())).parse(request, meta);
-                            if (parseKey != null) {
-                                monitorKeys.add(parseKey);
-                            }
-                        }
-                    } catch (Throwable throwable) {
-                        //ignore
-                    }
-                }
+            TpsCheckRequest tpsCheckRequest = null;
+            RemoteTpsCheckParser parser = TpsCheckRequestParserRegistry.getParser(pointName);
+            if (parser != null) {
+                tpsCheckRequest = parser.parse(request, meta);
+            } else {
+                tpsCheckRequest = new TpsCheckRequest();
+                tpsCheckRequest.setConnectionId(meta.getConnectionId());
+                tpsCheckRequest.setClientIp(meta.getClientIp());
             }
-            
-            TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-            tpsCheckRequest.setConnectionId(meta.getConnectionId());
             tpsCheckRequest.setPointName(pointName);
-            tpsCheckRequest.setMonitorKeys(monitorKeys);
-            boolean pass = tpsControlManager.check(tpsCheckRequest).isSuccess();
             
-            if (!pass) {
+            TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
+            
+            if (!check.isSuccess()) {
                 Response response;
                 try {
                     response = super.getDefaultResponseInstance(handlerClazz);
-                    response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted");
+                    response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted:" + check.getMessage());
                     return response;
                 } catch (Exception e) {
                     Loggers.TPS_CONTROL_DETAIL

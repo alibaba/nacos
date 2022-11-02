@@ -23,6 +23,6 @@ public class FlowedCountBarrierCreator implements RuleBarrierCreator {
     
     @Override
     public String name() {
-        return "flowedcount";
+        return "flowedlocalcount";
     }
 }

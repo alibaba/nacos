@@ -19,4 +19,11 @@ public class DefaultRuleParser implements RuleParser {
         return StringUtils.isBlank(ruleContent) ? new ConnectionLimitRule()
                 : JacksonUtils.toObj(ruleContent, ConnectionLimitRule.class);
     }
+    
+    @Override
+    public String getName() {
+        return "default";
+    }
+    
+    
 }

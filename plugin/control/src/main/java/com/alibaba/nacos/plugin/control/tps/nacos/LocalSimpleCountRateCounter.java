@@ -13,8 +13,8 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     
     private List<TpsSlot> slotList;
     
-    public LocalSimpleCountRateCounter(String name,TimeUnit period) {
-        super(name,period);
+    public LocalSimpleCountRateCounter(String name, TimeUnit period) {
+        super(name, period);
         slotList = new ArrayList<>(DEFAULT_RECORD_SIZE);
         for (int i = 0; i < DEFAULT_RECORD_SIZE; i++) {
             slotList.add(new TpsSlot());
@@ -27,7 +27,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     
     public boolean tryAdd(long timestamp, long count, long upLimit) {
         AtomicLong currentCount = createSlotIfAbsent(timestamp).countHolder.count;
-        if (currentCount.longValue() + count > upLimit) {
+        if (upLimit >= 0 && currentCount.longValue() + count > upLimit) {
             return false;
         } else {
             currentCount.addAndGet(count);
