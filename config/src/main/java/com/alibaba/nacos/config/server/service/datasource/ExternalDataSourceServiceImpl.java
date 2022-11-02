@@ -106,7 +106,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 reload();
             } catch (IOException e) {
                 FATAL_LOG.error("[ExternalDataSourceService] datasource reload error", e);
-                throw new RuntimeException(DB_LOAD_ERROR_MSG);
+                throw new RuntimeException(DB_LOAD_ERROR_MSG,e);
             }
 
             if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {

@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -9,15 +10,23 @@ import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * control rule activator.
  */
+@Component
 public class ControlRuleChangeSubscriber {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ControlRuleChangeSubscriber.class);
     
+    TpsRuleChangeSubscriber tpsRuleChangeSubscriber = new TpsRuleChangeSubscriber();
+    
+    ConnectionRuleChangeSubscriber connectionRuleChangeSubscriber = new ConnectionRuleChangeSubscriber();
+    
     public ControlRuleChangeSubscriber() {
+        NotifyCenter.registerSubscriber(tpsRuleChangeSubscriber);
+        NotifyCenter.registerSubscriber(connectionRuleChangeSubscriber);
     }
     
     class TpsRuleChangeSubscriber extends Subscriber<TpsControlRuleChangeEvent> {
@@ -38,15 +47,9 @@ public class ControlRuleChangeSubscriber {
                 String tpsRuleContent = LocalDiskRuleActivator.INSTANCE.getTpsRule(pointName);
                 
                 TpsControlRule tpsControlRule = StringUtils.isBlank(tpsRuleContent) ? new TpsControlRule()
-                        : JacksonUtils.toObj(tpsRuleContent, TpsControlRule.class);
-                if (!ControlManagerFactory.getInstance().getTpsControlManager().getPoints()
-                        .containsKey(event.getPointName())) {
-                    LOGGER.info("Tps control rule change event ignore,pointName={} ", event.getPointName());
-                    return;
-                } else {
-                    ControlManagerFactory.getInstance().getTpsControlManager().getPoints().get(pointName)
-                            .applyRule(tpsControlRule);
-                }
+                        : RuleParserProxy.getInstance().parseTpsRule(tpsRuleContent);
+                
+                ControlManagerFactory.getInstance().getTpsControlManager().applyTpsRule(pointName, tpsControlRule);
                 
             } catch (Exception e) {
                 LOGGER.warn("Tps control rule apply error ,error= ", e);
@@ -75,7 +78,8 @@ public class ControlRuleChangeSubscriber {
                     LocalDiskRuleActivator.INSTANCE.saveConnectionRule(connectionRule);
                 }
                 String limitRule = LocalDiskRuleActivator.INSTANCE.getConnectionRule();
-                ConnectionLimitRule connectionLimitRule = JacksonUtils.toObj(limitRule, ConnectionLimitRule.class);
+                ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(limitRule) ? new ConnectionLimitRule()
+                        : RuleParserProxy.getInstance().parseConnectionRule(limitRule);
                 if (connectionLimitRule != null) {
                     ControlManagerFactory.getInstance().getConnectionControlManager()
                             .setConnectionLimitRule(connectionLimitRule);

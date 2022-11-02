@@ -21,6 +21,16 @@ public class TpsCheckRequest {
     
     List<MonitorKey> monitorKeys;
     
+    public TpsCheckRequest() {
+    
+    }
+    
+    public TpsCheckRequest(String pointName, String connectionId, String clientIp) {
+        this.connectionId = connectionId;
+        this.clientIp = clientIp;
+        this.pointName = pointName;
+    }
+    
     public long getTimestamp() {
         return timestamp;
     }
@@ -67,5 +77,14 @@ public class TpsCheckRequest {
     
     public void setPointName(String pointName) {
         this.pointName = pointName;
+    }
+    
+    public BarrierCheckRequest buildBarrierCheckRequest(MonitorKey monitorKey) {
+        BarrierCheckRequest barrierCheckRequest = new BarrierCheckRequest();
+        barrierCheckRequest.setCount(this.getCount());
+        barrierCheckRequest.setMonitorKey(monitorKey);
+        barrierCheckRequest.setPointName(this.pointName);
+        barrierCheckRequest.setTimestamp(this.getTimestamp());
+        return barrierCheckRequest;
     }
 }

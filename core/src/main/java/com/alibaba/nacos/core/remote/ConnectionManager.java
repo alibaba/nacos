@@ -118,7 +118,7 @@ public class ConnectionManager {
             if (connections.containsKey(connectionId)) {
                 return true;
             }
-            if (!checkLimit(connection)) {
+            if (checkLimit(connection)) {
                 return false;
             }
             if (traced(clientIp)) {

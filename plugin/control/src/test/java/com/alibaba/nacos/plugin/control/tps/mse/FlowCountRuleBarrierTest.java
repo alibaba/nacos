@@ -5,6 +5,7 @@ import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
+import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,71 +14,56 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
 import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_PROTO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FlowCountRuleBarrierTest {
     
-    
     @Test
     public void testPassAndLimit() {
-        FlowedCountRuleBarrier ruleBarrier = new FlowedCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS);
-        ruleBarrier.setMaxCount(100);
-        ruleBarrier.setMaxFlow(10);
-        ruleBarrier.setModel(MODEL_PROTO);
-        ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
+        flowedRuleDetail.setMaxCount(100);
+        flowedRuleDetail.setMaxFlow(10);
+        flowedRuleDetail.setModel(MODEL_PROTO);
+        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleBarrier.applyRuleDetail(flowedRuleDetail);
         
         // check pass and deny
-        long timeMillis = System.currentTimeMillis();
-        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
-        MonitorKey monitorKey = new MonitorKey() {
-            @Override
-            public String getType() {
-                return "test";
-            }
-        };
-        monitorKey.setKey("simpler12");
-        tpsCheckRequest.setFlow(1);
-        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
-        tpsCheckRequest.setTimestamp(timeMillis);
+        FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
+        long timeMillis =flowedBarrierCheckRequest.getTimestamp();
+    
         for (int i = 0; i < 10; i++) {
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
             
         }
-        TpsCheckResponse tpsCheckResponseFail = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseFail = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseFail.isSuccess());
         Assert.assertTrue(tpsCheckResponseFail.getCode() == TpsResultCode.CHECK_DENY);
         
         //check pass and deny next second.
         long timeMillisPlus = timeMillis + 1000l;
-        tpsCheckRequest.setTimestamp(timeMillisPlus);
+        flowedBarrierCheckRequest.setTimestamp(timeMillisPlus);
         
         for (int i = 0; i < 10; i++) {
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
             
         }
-        TpsCheckResponse tpsCheckResponseFail2 = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseFail2 = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseFail2.isSuccess());
         Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.CHECK_DENY);
         
     }
     
     
-    @Test
-    public void testLimitAndRollback() {
-        FlowedCountRuleBarrier ruleBarrier = new FlowedCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS);
-        ruleBarrier.setMaxCount(100);
-        ruleBarrier.setMaxFlow(10);
-    
-        ruleBarrier.setModel(MODEL_PROTO);
-        ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
-        
-        long timeMillis = System.currentTimeMillis();
-        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
+    FlowedBarrierCheckRequest createFlowedCheckRequest() {
+        FlowedBarrierCheckRequest flowedBarrierCheckRequest = new FlowedBarrierCheckRequest();
         MonitorKey monitorKey = new MonitorKey() {
             @Override
             public String getType() {
@@ -85,85 +71,85 @@ public class FlowCountRuleBarrierTest {
             }
         };
         monitorKey.setKey("simpler12");
-        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
-        tpsCheckRequest.setTimestamp(timeMillis);
-        tpsCheckRequest.setFlow(1l);
+        flowedBarrierCheckRequest.setFlow(1);
+        flowedBarrierCheckRequest.setMonitorKey(monitorKey);
+        flowedBarrierCheckRequest.setTimestamp(System.currentTimeMillis());
+        return flowedBarrierCheckRequest;
+    }
+    
+    @Test
+    public void testLimitAndRollback() {
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
+        flowedRuleDetail.setMaxCount(100);
+        flowedRuleDetail.setMaxFlow(10);
+        flowedRuleDetail.setModel(MODEL_FUZZY);
+        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleBarrier.applyRuleDetail(flowedRuleDetail);
+        FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
         // check pass
         for (int i = 0; i < 10; i++) {
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
         //check deny
-        TpsCheckResponse tpsCheckResponseFail2 = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseFail2 = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseFail2.isSuccess());
         Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.CHECK_DENY);
-        
+        System.out.println(tpsCheckResponseFail2.getMessage());
         //rollback tps and check
-        ruleBarrier.rollbackTps(tpsCheckRequest);
-        TpsCheckResponse tpsCheckResponseSuccess3 = ruleBarrier.applyTps(tpsCheckRequest);
+        ruleBarrier.rollbackTps(flowedBarrierCheckRequest);
+        TpsCheckResponse tpsCheckResponseSuccess3 = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertTrue(tpsCheckResponseSuccess3.isSuccess());
         Assert.assertTrue(tpsCheckResponseSuccess3.getCode() == TpsResultCode.CHECK_PASS);
     }
     
     @Test
     public void testPassByMonitor() {
-        FlowedCountRuleBarrier ruleBarrier = new FlowedCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS);
-        ruleBarrier.setMaxCount(100);
-        ruleBarrier.setMaxFlow(10);
-        ruleBarrier.setModel(MODEL_PROTO);
-        ruleBarrier.setMonitorType(MonitorType.MONITOR.getType());
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
+        flowedRuleDetail.setMaxCount(100);
+        flowedRuleDetail.setMaxFlow(10);
+        flowedRuleDetail.setModel(MODEL_PROTO);
+        flowedRuleDetail.setMonitorType(MonitorType.MONITOR.getType());
         
-        long timeMillis = System.currentTimeMillis();
-        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
-        MonitorKey monitorKey = new MonitorKey() {
-            @Override
-            public String getType() {
-                return "test";
-            }
-        };
-        monitorKey.setKey("simpler12");
-        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
-        tpsCheckRequest.setTimestamp(timeMillis);
-        tpsCheckRequest.setFlow(1L);
+        ruleBarrier.applyRuleDetail(flowedRuleDetail);
+        FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
+    
         for (int i = 0; i < 10; i++) {
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
-        TpsCheckResponse tpsCheckResponseByMonitor = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseByMonitor = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertTrue(tpsCheckResponseByMonitor.isSuccess());
         Assert.assertEquals(TpsResultCode.PASS_BY_MONITOR, tpsCheckResponseByMonitor.getCode());
     }
     
     @Test
     public void testModifyRule() {
-        FlowedCountRuleBarrier ruleBarrier = new FlowedCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS);
-        ruleBarrier.setMaxCount(100);
-        ruleBarrier.setMaxFlow(10);
-        ruleBarrier.setModel(MODEL_PROTO);
-        ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
+        flowedRuleDetail.setMaxCount(100);
+        flowedRuleDetail.setMaxFlow(10);
+        flowedRuleDetail.setModel(MODEL_PROTO);
+        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleBarrier.applyRuleDetail(flowedRuleDetail);
         
-        long timeMillis = System.currentTimeMillis();
-        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
-        MonitorKey monitorKey = new MonitorKey() {
-            @Override
-            public String getType() {
-                return "test";
-            }
-        };
-        tpsCheckRequest.setFlow(1L);
-        monitorKey.setKey("simpler123");
-        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
-        tpsCheckRequest.setTimestamp(timeMillis);
+        FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
+    
         //check pass
         for (int i = 0; i < 10; i++) {
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
         //check deny
-        TpsCheckResponse tpsCheckResponseDeny = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseDeny = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny.isSuccess());
         Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny.getCode());
         
@@ -177,12 +163,12 @@ public class FlowCountRuleBarrierTest {
         ruleBarrier.applyRuleDetail(ruleDetail);
         //check pass
         for (int i = 0; i < 5; i++) {
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
         //check deny
-        TpsCheckResponse tpsCheckResponseDeny2 = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseDeny2 = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny2.isSuccess());
         Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny2.getCode());
         
@@ -196,13 +182,13 @@ public class FlowCountRuleBarrierTest {
         ruleBarrier.applyRuleDetail(ruleDetail2);
         //check pass
         for (int i = 0; i < 15; i++) {
-            tpsCheckRequest.setTimestamp(tpsCheckRequest.getTimestamp() + 1000);
-            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(tpsCheckRequest);
+            flowedBarrierCheckRequest.setTimestamp(flowedBarrierCheckRequest.getTimestamp() + 1000);
+            TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
         //check deny
-        TpsCheckResponse tpsCheckResponseDeny3 = ruleBarrier.applyTps(tpsCheckRequest);
+        TpsCheckResponse tpsCheckResponseDeny3 = ruleBarrier.applyTps(flowedBarrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny3.isSuccess());
         Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny3.getCode());
     }

@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.connection;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptorHolder;
@@ -8,9 +9,11 @@ import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckReques
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
+import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
+import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,20 @@ public class ConnectionControlManager {
     
     public ConnectionControlManager() {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
+        String localRuleContent = LocalDiskRuleActivator.INSTANCE.getConnectionRule();
+        if (StringUtils.isNotBlank(localRuleContent)) {
+            ConnectionLimitRule connectionLimitRule = RuleParserProxy.getInstance()
+                    .parseConnectionRule(localRuleContent);
+            this.connectionLimitRule = connectionLimitRule;
+        } else if (PersistRuleActivatorProxy.getInstance() != null
+                && PersistRuleActivatorProxy.getInstance().getConnectionRule() != null) {
+            String persistConnectionRule = PersistRuleActivatorProxy.getInstance().getConnectionRule();
+            ConnectionLimitRule connectionLimitRule = RuleParserProxy.getInstance()
+                    .parseConnectionRule(persistConnectionRule);
+            this.connectionLimitRule = connectionLimitRule;
+        } else {
+            connectionLimitRule = new ConnectionLimitRule();
+        }
     }
     
     public ConnectionLimitRule getConnectionLimitRule() {

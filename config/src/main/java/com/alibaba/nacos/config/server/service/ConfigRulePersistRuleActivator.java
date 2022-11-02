@@ -1,23 +1,21 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
-import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler;
-import com.alibaba.nacos.config.server.remote.ConfigQueryRequestHandler;
+import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivator;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
     
-    private ConfigQueryRequestHandler configQueryRequestHandler;
-    
     private ConfigPublishRequestHandler configPublishRequestHandler;
+    
+    private PersistService persistService;
     
     public static final String RULE_CONFIG_NAMESPACE = System.getenv("nacos_control_rule_config_namespace");
     
@@ -28,8 +26,8 @@ public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
     public static final String NACOS_GROUP = "nacos";
     
     public ConfigRulePersistRuleActivator() {
-        configQueryRequestHandler = ApplicationUtils.getBean(ConfigQueryRequestHandler.class);
         configPublishRequestHandler = ApplicationUtils.getBean(ConfigPublishRequestHandler.class);
+        persistService = ApplicationUtils.getBean(PersistService.class);
     }
     
     private ConfigPublishResponse publishConfig(String dataId, String group, String tenant, String content)
@@ -44,30 +42,20 @@ public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
     }
     
     private String loadConfig(String dataId, String group, String tenant) throws NacosException {
-        ConfigQueryRequest queryRequest = new ConfigQueryRequest();
-        queryRequest.setDataId(dataId);
-        queryRequest.setGroup(group);
-        queryRequest.setTenant(tenant);
-        RequestMeta meta = new RequestMeta();
-        meta.setClientIp(NetUtils.localIP());
-        ConfigQueryResponse handle = configQueryRequestHandler.handle(queryRequest, meta);
-        if (handle == null) {
-            throw new NacosException(NacosException.SERVER_ERROR, "load local config fail,response is null");
-        }
-        if (handle.isSuccess()) {
-            return handle.getContent();
-        } else if (handle.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
-            return null;
+        
+        ConfigInfoWrapper configInfo = persistService.findConfigInfo(dataId, group, tenant);
+        
+        if (configInfo != null) {
+            return configInfo.getContent();
         } else {
-            Loggers.REMOTE.error("connection limit rule load fail,errorCode={}", handle.getErrorCode());
-            throw new NacosException(NacosException.SERVER_ERROR,
-                    "load local config fail,error code=" + handle.getErrorCode());
+            Loggers.REMOTE.warn(" rule content not found ,dataId={},group={},tenant={}", dataId, group, tenant);
+           return null;
         }
     }
     
     @Override
     public String getName() {
-        return "configpersist";
+        return "internalconfigcenter";
     }
     
     @Override

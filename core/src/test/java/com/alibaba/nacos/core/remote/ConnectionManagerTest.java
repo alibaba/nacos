@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
+import com.alibaba.nacos.plugin.control.ruleactivator.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
@@ -77,7 +78,6 @@ public class ConnectionManagerTest {
         }
         connectId = UUID.randomUUID().toString();
         connectionManager.start();
-        connectionManager.initLimitRue();
         Mockito.when(channel.isOpen()).thenReturn(true);
         Mockito.when(channel.isActive()).thenReturn(true);
         connectionMeta.clientIp = clientIp;
@@ -93,12 +93,6 @@ public class ConnectionManagerTest {
     @After
     public void tearDown() {
         connectionManager.unregister(connectId);
-        
-        String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data", "loader").toString();
-        WatchFileCenter.deregisterAllWatcher(tpsPath);
-        
-        NotifyCenter.deregisterSubscriber(connectionManager);
-        NotifyCenter.deregisterPublisher(ConnectionLimitRuleChangeEvent.class);
     }
     
     @Test
@@ -154,24 +148,6 @@ public class ConnectionManagerTest {
         Assert.assertEquals(1, connectionManager.currentSdkClientCount());
     }
     
-    @Test
-    public void testOnEvent() {
-        try {
-            String limitRule = "{\"monitorIpList\": [\"1.1.1.1\", \"2.2.2.2\"], \"countLimit\": 1}";
-            ConnectionLimitRuleChangeEvent limitRuleChangeEvent = new ConnectionLimitRuleChangeEvent(limitRule);
-            connectionManager.onEvent(limitRuleChangeEvent);
     
-            ConnectionManager.ConnectionLimitRule connectionLimitRule = connectionManager.getConnectionLimitRule();
-            Assert.assertEquals(1, connectionLimitRule.getCountLimit());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
-    }
-    
-    @Test
-    public void testGetSubscribeType() {
-        Assert.assertEquals(ConnectionLimitRuleChangeEvent.class, connectionManager.subscribeType());
-    }
 }
 

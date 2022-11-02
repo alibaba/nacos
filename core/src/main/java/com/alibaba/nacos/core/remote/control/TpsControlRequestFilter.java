@@ -22,7 +22,12 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
+import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyParser;
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.Method;
@@ -38,8 +43,7 @@ import java.util.List;
 @Service
 public class TpsControlRequestFilter extends AbstractRequestFilter {
     
-    @Autowired
-    private TpsMonitorManager tpsMonitorManager;
+    TpsControlManager tpsControlManager = ControlManagerFactory.getInstance().getTpsControlManager();
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) {
@@ -74,7 +78,11 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                 }
             }
             
-            boolean pass = tpsMonitorManager.applyTps(pointName, meta.getConnectionId(), monitorKeys);
+            TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+            tpsCheckRequest.setConnectionId(meta.getConnectionId());
+            tpsCheckRequest.setPointName(pointName);
+            tpsCheckRequest.setMonitorKeys(monitorKeys);
+            boolean pass = tpsControlManager.check(tpsCheckRequest).isSuccess();
             
             if (!pass) {
                 Response response;

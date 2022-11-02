@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedRuleDetail;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedTpsCheckRequest;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
 import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_PROTO;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -26,6 +28,10 @@ public class TpsControlManagerTest {
     
     String pointName = "TEST_POINT_NAME" + System.currentTimeMillis();
     
+    static{
+        ControlConfigs.setINSTANCE(new ControlConfigs());
+    
+    }
     @Before
     public void setUp() {
         //1.register point
@@ -47,7 +53,7 @@ public class TpsControlManagerTest {
         ruleDetail.setMaxCount(10000);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
-        ruleDetail.setModel(MODEL_PROTO);
+        ruleDetail.setModel(MODEL_FUZZY);
         ruleDetail.setPattern("test:prefix*");
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
@@ -57,7 +63,7 @@ public class TpsControlManagerTest {
         ruleDetailMonitor.setMaxFlow(11);
         ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
         ruleDetailMonitor.setMonitorType(MonitorType.MONITOR.getType());
-        ruleDetailMonitor.setModel(MODEL_PROTO);
+        ruleDetailMonitor.setModel(MODEL_FUZZY);
         ruleDetailMonitor.setPattern("test:prefixmonitor*");
         tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
         

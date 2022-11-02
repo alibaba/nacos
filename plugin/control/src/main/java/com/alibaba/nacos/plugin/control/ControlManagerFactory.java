@@ -24,13 +24,11 @@ public class ControlManagerFactory {
     
     private ControlManagerFactory() {
         
-        List<TpsControlManager> tpsControlManagers = new ArrayList<>(NacosServiceLoader.load(TpsControlManager.class));
+        tpsControlManager = new TpsControlManager();
         
-        List<ConnectionControlManager> connectionControlManagers = new ArrayList<>(
-                NacosServiceLoader.load(ConnectionControlManager.class));
+        connectionControlManager = new ConnectionControlManager();
         
-        List<CapacityControlManager> capacityControlManagers = new ArrayList<>(
-                NacosServiceLoader.load(CapacityControlManager.class));
+        capacityControlManager = new CapacityControlManager();
     }
     
     public TpsControlManager getTpsControlManager() {

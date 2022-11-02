@@ -68,9 +68,9 @@ public class StandaloneDatabaseOperateImplTest {
     @Mock
     private BiConsumer<Boolean, Throwable> biConsumer;
     
-    @Mock
+ /*   @Mock
     private File file;
-    
+    */
     @Mock
     private TransactionTemplate transactionTemplate;
     
@@ -78,10 +78,10 @@ public class StandaloneDatabaseOperateImplTest {
     public void setUp() {
         ReflectionTestUtils.setField(operate, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(operate, "transactionTemplate", transactionTemplate);
-        when(file.exists()).thenReturn(true);
+       /* when(file.exists()).thenReturn(true);
         when(file.isDirectory()).thenReturn(false);
         when(file.canRead()).thenReturn(true);
-        when(file.getPath()).thenReturn("test");
+        when(file.getPath()).thenReturn("test");*/
     }
     
     @Test

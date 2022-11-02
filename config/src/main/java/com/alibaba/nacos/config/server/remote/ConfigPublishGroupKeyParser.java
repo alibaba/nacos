@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.config.server.utils.GroupKey;
-import com.alibaba.nacos.core.remote.control.MonitorKey;
-import com.alibaba.nacos.core.remote.control.MonitorKeyParser;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyParser;
 
 /**
  * Parser to get group key of config query request.

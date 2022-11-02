@@ -44,16 +44,9 @@ public class InternalConfigChangeNotifierTest {
 
     private InternalConfigChangeNotifier internalConfigChangeNotifier;
 
-    @Mock
-    private ConfigQueryRequestHandler configQueryRequestHandler;
-
     @Before
     public void setUp() throws IOException, NacosException {
         internalConfigChangeNotifier = new InternalConfigChangeNotifier();
-
-        ReflectionTestUtils.setField(internalConfigChangeNotifier, "configQueryRequestHandler", configQueryRequestHandler);
-
-        when(configQueryRequestHandler.handle(Mockito.any(), Mockito.any())).thenReturn(ConfigQueryResponse.buildSuccessResponse("content"));
     }
 
     @Test

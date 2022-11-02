@@ -14,6 +14,7 @@ public class MonitorKeyMatcherTest {
         Assert.assertTrue(MonitorKeyMatcher.match("test:*eee", "test:12312eee"));
         Assert.assertFalse(MonitorKeyMatcher.match("test:*eee", "test2:12312eee"));
         Assert.assertFalse(MonitorKeyMatcher.match("test:*eee", "test2:12312bee"));
+        Assert.assertTrue(MonitorKeyMatcher.match("test:abc+eee", "test:abc+eee"));
         
     }
 }

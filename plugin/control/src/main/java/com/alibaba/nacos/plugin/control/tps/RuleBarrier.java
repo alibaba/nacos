@@ -1,8 +1,9 @@
 package com.alibaba.nacos.plugin.control.tps;
 
-import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
+import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
+import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 
 import java.util.concurrent.TimeUnit;
 
@@ -76,6 +77,10 @@ public abstract class RuleBarrier {
         this.model = model;
     }
     
+    public boolean isProtoModel() {
+        return RuleModel.PROTO.name().equalsIgnoreCase(this.model);
+    }
+    
     public String getLimitMsg() {
         return String.format("[Name:%s,Pattern:%s,Period:%s,MaxCount:%s]", name, pattern, period, maxCount);
     }
@@ -83,18 +88,18 @@ public abstract class RuleBarrier {
     /**
      * apply tps.
      *
-     * @param tpsCheckRequest
+     * @param barrierCheckRequest
      * @return
      */
-    abstract public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest);
+    abstract public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest);
     
     /**
      * rollback tps.
      *
-     * @param tpsCheckRequest
+     * @param barrierCheckRequest
      * @return
      */
-    abstract public void rollbackTps(TpsCheckRequest tpsCheckRequest);
+    abstract public void rollbackTps(BarrierCheckRequest barrierCheckRequest);
     
     
     /**
@@ -105,5 +110,8 @@ public abstract class RuleBarrier {
     /**
      *
      */
-    abstract public void clearLimitRule();
+    public void clearLimitRule() {
+        this.maxCount = -1;
+        this.monitorType = MonitorType.MONITOR.getType();
+    }
 }

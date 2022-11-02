@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
-import com.alibaba.nacos.core.remote.control.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

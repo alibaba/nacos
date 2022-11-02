@@ -1,5 +1,10 @@
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
+import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
+import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptorHolder;
 import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
@@ -37,9 +42,28 @@ public class TpsControlManager {
             points.put(pointName, new TpsBarrier(pointName));
             if (rules.containsKey(pointName)) {
                 points.get(pointName).applyRule(rules.get(pointName));
+            } else {
+                initTpsRule(pointName);
             }
         }
     }
+    
+    private void initTpsRule(String pointName) {
+        String localRuleContent = LocalDiskRuleActivator.INSTANCE.getTpsRule(pointName);
+        if (StringUtils.isNotBlank(localRuleContent)) {
+            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
+            this.applyTpsRule(pointName, tpsLimitRule);
+        } else if (PersistRuleActivatorProxy.getInstance() != null
+                && PersistRuleActivatorProxy.getInstance().getTpsRule(pointName) != null) {
+            String persistTpsRule = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
+            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(persistTpsRule);
+            this.applyTpsRule(pointName, tpsLimitRule);
+        } else {
+            this.applyTpsRule(pointName, new TpsControlRule());
+            
+        }
+    }
+    
     
     /**
      * apple tps rule.

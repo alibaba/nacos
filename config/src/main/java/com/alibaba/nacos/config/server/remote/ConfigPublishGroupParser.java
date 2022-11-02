@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
-import com.alibaba.nacos.core.remote.control.MonitorKey;
-import com.alibaba.nacos.core.remote.control.MonitorKeyParser;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyParser;
 
 /**
  * parse to get group from config publish parser.

@@ -32,7 +32,7 @@ public class TpsControlRuleChangeEvent extends Event {
     
     public TpsControlRuleChangeEvent(String pointName, boolean persist) {
         this.pointName = pointName;
-        persist = persist;
+        this.persist = persist;
     }
     
     public String getPointName() {

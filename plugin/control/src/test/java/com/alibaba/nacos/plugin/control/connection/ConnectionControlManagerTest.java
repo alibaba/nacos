@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.connection;
 
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
@@ -16,7 +17,10 @@ import java.util.Map;
 public class ConnectionControlManagerTest {
     
     ConnectionControlManager connectionControlManager = new ConnectionControlManager();
-    
+    static{
+        ControlConfigs.setINSTANCE(new ControlConfigs());
+        
+    }
     @Test
     public void testPass() {
         CpuTestUtils.cpuOverLoad = false;

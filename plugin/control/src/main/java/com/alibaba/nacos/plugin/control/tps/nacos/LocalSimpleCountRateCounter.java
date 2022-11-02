@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SimpleCountRateCounter extends RateCounter {
+public class LocalSimpleCountRateCounter extends RateCounter {
     
     private static final int DEFAULT_RECORD_SIZE = 10;
     
@@ -13,7 +13,7 @@ public class SimpleCountRateCounter extends RateCounter {
     
     private List<TpsSlot> slotList;
     
-    public SimpleCountRateCounter(String name,TimeUnit period) {
+    public LocalSimpleCountRateCounter(String name,TimeUnit period) {
         super(name,period);
         slotList = new ArrayList<>(DEFAULT_RECORD_SIZE);
         for (int i = 0; i < DEFAULT_RECORD_SIZE; i++) {
@@ -78,8 +78,9 @@ public class SimpleCountRateCounter extends RateCounter {
                 .toMillis(1);
         long currentWindowTime = startTime + diff * getPeriod().toMillis(1);
         int index = (int) diff % DEFAULT_RECORD_SIZE;
-        if (slotList.get(index).time != currentWindowTime) {
-            slotList.get(index).reset(currentWindowTime);
+        TpsSlot tpsSlot = slotList.get(index);
+        if (tpsSlot.time != currentWindowTime) {
+            tpsSlot.reset(currentWindowTime);
         }
         return slotList.get(index);
     }

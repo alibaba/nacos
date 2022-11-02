@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public class LocalDiskRuleActivator implements RuleActivator {
     
-    static LocalDiskRuleActivator INSTANCE = new LocalDiskRuleActivator();
+    public static LocalDiskRuleActivator INSTANCE = new LocalDiskRuleActivator();
     
     private LocalDiskRuleActivator() {
     
@@ -69,8 +69,13 @@ public class LocalDiskRuleActivator implements RuleActivator {
         if (!tpsFile.exists()) {
             tpsFile.createNewFile();
         }
-        DiskUtils.writeFile(tpsFile, ruleContent.getBytes(Constants.ENCODE), false);
-        LOGGER.info("Save tps rule to local,pointName={}, ruleContent ={} ", pointName, ruleContent);
+        if (ruleContent == null) {
+            DiskUtils.deleteQuietly(tpsFile);
+        } else {
+            DiskUtils.writeFile(tpsFile, ruleContent.getBytes(Constants.ENCODE), false);
+            LOGGER.info("Save tps rule to local,pointName={}, ruleContent ={} ", pointName, ruleContent);
+            
+        }
         
     }
     
