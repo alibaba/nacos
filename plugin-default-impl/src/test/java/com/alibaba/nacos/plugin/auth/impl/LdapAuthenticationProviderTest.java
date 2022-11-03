@@ -58,8 +58,8 @@ public class LdapAuthenticationProviderTest {
     private final String normalUserName = "normal";
     
     private final String filterPrefix = "uid";
-
-    private final boolean caseSensitive = true;
+    
+    private final boolean caseSensitive = false;
     
     Method isAdmin;
     
@@ -75,8 +75,8 @@ public class LdapAuthenticationProviderTest {
         roleInfos.add(adminRole);
         when(nacosRoleService.getRoles(adminUserName)).thenReturn(roleInfos);
         when(nacosRoleService.getRoles(normalUserName)).thenReturn(new ArrayList<>());
-        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + adminUserName + ")", defaultPassWord)).thenAnswer(
-                new Answer<Boolean>() {
+        when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + adminUserName + ")", defaultPassWord))
+                .thenAnswer(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable {
                         Object[] args = invocation.getArguments();

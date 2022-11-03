@@ -48,13 +48,13 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     private static final String LDAP_PREFIX = "LDAP_";
     
     private final NacosUserDetailsServiceImpl userDetailsService;
-
+    
     private final NacosRoleServiceImpl nacosRoleService;
-
+    
     private final LdapTemplate ldapTemplate;
     
     private final String filterPrefix;
-
+    
     private final boolean caseSensitive;
     
     public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
@@ -79,8 +79,8 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
                 return null;
             }
         }
-
-        if(!caseSensitive){
+        
+        if (!caseSensitive) {
             username = StringUtils.lowerCase(username);
         }
         
