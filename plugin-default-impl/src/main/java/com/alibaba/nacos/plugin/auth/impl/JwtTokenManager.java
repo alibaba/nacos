@@ -16,14 +16,17 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,11 +35,10 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import java.nio.charset.StandardCharsets;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * JWT token manager.
@@ -45,43 +47,39 @@ import java.util.Properties;
  * @author nkorange
  */
 @Component
-public class JwtTokenManager {
+public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
     
     private static final String AUTHORITIES_KEY = "auth";
-    
-    private final AuthConfigs authConfigs;
-    
-    /**
-     * secret key.
-     */
-    private String secretKey;
-    
-    /**
-     * secret key byte array.
-     */
-    private byte[] secretKeyBytes;
     
     /**
      * Token validity time(seconds).
      */
-    private long tokenValidityInSeconds;
-
-    private JwtParser jwtParser;
+    private volatile long tokenValidityInSeconds;
     
-    public JwtTokenManager(AuthConfigs authConfigs) {
-        this.authConfigs = authConfigs;
+    private volatile JwtParser jwtParser;
+    
+    private volatile SecretKey secretKey;
+    
+    public JwtTokenManager() {
+        NotifyCenter.registerSubscriber(this);
+        processProperties();
     }
     
-    /**
-     * init tokenValidityInSeconds and secretKey properties.
-     */
-    @PostConstruct
-    public void initProperties() {
-        Properties properties = authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE);
-        String validitySeconds = properties
-                .getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
-        tokenValidityInSeconds = Long.parseLong(validitySeconds);
-        secretKey = properties.getProperty(AuthConstants.TOKEN_SECRET_KEY, AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
+    private void processProperties() {
+        this.tokenValidityInSeconds = EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
+                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
+        
+        String encodedSecretKey = EnvUtil.getProperty(AuthConstants.TOKEN_SECRET_KEY,
+                AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
+        try {
+            this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(encodedSecretKey));
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    "the length of  must great than or equal 32 bytes; And the secret key  must be encoded by base64",
+                    e);
+        }
+        
+        this.jwtParser = Jwts.parserBuilder().setSigningKey(secretKey).build();
     }
     
     /**
@@ -102,15 +100,12 @@ public class JwtTokenManager {
      */
     public String createToken(String userName) {
         
-        long now = System.currentTimeMillis();
-        
-        Date validity;
-        
-        validity = new Date(now + this.getTokenValidityInSeconds() * 1000L);
+        Date validity = new Date(
+                System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(this.getTokenValidityInSeconds()));
         
         Claims claims = Jwts.claims().setSubject(userName);
-        return Jwts.builder().setClaims(claims).setExpiration(validity)
-                .signWith(Keys.hmacShaKeyFor(this.getSecretKeyBytes()), SignatureAlgorithm.HS256).compact();
+        return Jwts.builder().setClaims(claims).setExpiration(validity).signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
     }
     
     /**
@@ -120,13 +115,10 @@ public class JwtTokenManager {
      * @return auth info
      */
     public Authentication getAuthentication(String token) {
-        if (jwtParser == null) {
-            jwtParser = Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build();
-        }
         Claims claims = jwtParser.parseClaimsJws(token).getBody();
         
-        List<GrantedAuthority> authorities = AuthorityUtils
-                .commaSeparatedStringToAuthorityList((String) claims.get(AUTHORITIES_KEY));
+        List<GrantedAuthority> authorities = AuthorityUtils.commaSeparatedStringToAuthorityList(
+                (String) claims.get(AUTHORITIES_KEY));
         
         User principal = new User(claims.getSubject(), "", authorities);
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
@@ -138,25 +130,20 @@ public class JwtTokenManager {
      * @param token token
      */
     public void validateToken(String token) {
-        if (jwtParser == null) {
-            jwtParser = Jwts.parserBuilder().setSigningKey(this.getSecretKeyBytes()).build();
-        }
         jwtParser.parseClaimsJws(token);
-    }
-    
-    public byte[] getSecretKeyBytes() {
-        if (secretKeyBytes == null) {
-            try {
-                secretKeyBytes = Decoders.BASE64.decode(secretKey);
-            } catch (DecodingException e) {
-                secretKeyBytes = secretKey.getBytes(StandardCharsets.UTF_8);
-            }
-            
-        }
-        return secretKeyBytes;
     }
     
     public long getTokenValidityInSeconds() {
         return tokenValidityInSeconds;
+    }
+    
+    @Override
+    public void onEvent(ServerConfigChangeEvent event) {
+        processProperties();
+    }
+    
+    @Override
+    public Class<? extends Event> subscribeType() {
+        return ServerConfigChangeEvent.class;
     }
 }
