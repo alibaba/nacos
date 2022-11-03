@@ -80,7 +80,7 @@ public class CustomEnvironmentPluginManager {
     }
 
     public Map<String, Object> getCustomValues(Map<String, Object> sourceProperty) {
-        Map<String, Object> customValuesMap = new HashMap<>();
+        Map<String, Object> customValuesMap = new HashMap<>(1);
         for (CustomEnvironmentPluginService customEnvironmentPluginService : SERVICE_LIST) {
             Set<String> keys = customEnvironmentPluginService.propertyKey();
             Map<String, Object> propertyMap = new HashMap<>(keys.size());

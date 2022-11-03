@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * @author huangtianhui
  */
-
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosCustomEnvPluginService implements CustomEnvironmentPluginService {
 
     @Override
