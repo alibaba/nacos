@@ -58,6 +58,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -2302,7 +2303,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         
-        final String sql = "INSERT INTO tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?)";
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        final String sql = tenantInfoMapper.insert(Arrays.asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create", "gmt_modified"));
         final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResoure, time, time};
         
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -2319,8 +2321,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
-        
-        final String sql = "UPDATE tenant_info SET tenant_name = ?, tenant_desc = ?, gmt_modified= ? WHERE kp=? AND tenant_id=?";
+    
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        final String sql = tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id"));
         final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
         
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -2337,21 +2340,27 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<TenantInfo> findTenantByKp(String kp) {
-        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=?";
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        String sql = tenantInfoMapper.select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                Collections.singletonList("kp"));
         return databaseOperate.queryMany(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         
     }
     
     @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
-        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=? AND tenant_id=?";
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        String sql = tenantInfoMapper.select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                Arrays.asList("kp", "tenant_id"));
         return databaseOperate.queryOne(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         
     }
     
     @Override
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
-        EmbeddedStorageContextUtils.addSqlContext("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp, tenantId);
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        
+        EmbeddedStorageContextUtils.addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
         try {
             databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
         } finally {
@@ -2634,8 +2643,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        String sql = tenantInfoMapper.getCountByTenantId();
         Integer result = databaseOperate
-                .queryOne(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[] {tenantId}, Integer.class);
+                .queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }
