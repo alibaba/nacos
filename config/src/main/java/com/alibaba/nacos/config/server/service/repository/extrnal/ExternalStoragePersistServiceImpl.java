@@ -52,6 +52,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -114,14 +115,6 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 public class ExternalStoragePersistServiceImpl implements PersistService {
     
     private DataSourceService dataSourceService;
-    
-    private static final String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
-    
-    private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(*) FROM tenant_info WHERE tenant_id = ?";
-    
-    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
-    
-    private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
     
     private static final String PATTERN_STR = "*";
     
@@ -2399,8 +2392,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         try {
-            jt.update(
-                    "INSERT INTO tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES(?,?,?,?,?,?,?)",
+            TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+            jt.update(tenantInfoMapper.insert(Arrays.asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create", "gmt_modified")),
                     kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
@@ -2411,8 +2404,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
         try {
-            jt.update(
-                    "UPDATE tenant_info SET tenant_name = ?, tenant_desc = ?, gmt_modified= ? WHERE kp=? AND tenant_id=?",
+            TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+            jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id")),
                     tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
@@ -2422,7 +2415,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public List<TenantInfo> findTenantByKp(String kp) {
-        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=?";
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        String sql = tenantInfoMapper.select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                Collections.singletonList("kp"));
         try {
             return this.jt.query(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -2438,7 +2433,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     
     @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
-        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=? AND tenant_id=?";
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        String sql = tenantInfoMapper.select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
+                Arrays.asList("kp", "tenant_id"));
         try {
             return jt.queryForObject(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -2455,7 +2452,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
         try {
-            jt.update("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp, tenantId);
+            TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+            jt.update(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
@@ -2735,8 +2733,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
+        TenantInfoMapper tenantInfoMapper = (TenantInfoMapper) mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO).get();
+        String sql = tenantInfoMapper.getCountByTenantId();
         Integer result = this.jt
-                .queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[] {tenantId}, Integer.class);
+                .queryForObject(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }
