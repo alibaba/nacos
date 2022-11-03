@@ -32,6 +32,7 @@ import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
@@ -71,22 +72,23 @@ public class NacosConfigService implements ConfigService {
     private final ConfigFilterChainManager configFilterChainManager;
     
     public NacosConfigService(Properties properties) throws NacosException {
-        ValidatorUtils.checkInitParam(properties);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ValidatorUtils.checkInitParam(clientProperties);
         
-        initNamespace(properties);
-        this.configFilterChainManager = new ConfigFilterChainManager(properties);
-        ServerListManager serverListManager = new ServerListManager(properties);
+        initNamespace(clientProperties);
+        this.configFilterChainManager = new ConfigFilterChainManager(clientProperties.asProperties());
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
         serverListManager.start();
         
-        this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, properties);
+        this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
         // will be deleted in 2.0 later versions
         agent = new ServerHttpAgent(serverListManager);
         
     }
     
-    private void initNamespace(Properties properties) {
+    private void initNamespace(NacosClientProperties properties) {
         namespace = ParamUtil.parseNamespace(properties);
-        properties.put(PropertyKeyConst.NAMESPACE, namespace);
+        properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
     }
     
     @Override
