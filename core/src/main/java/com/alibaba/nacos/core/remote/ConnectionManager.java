@@ -27,11 +27,11 @@ import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedExceptio
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -58,6 +58,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ConnectionManager {
     
+    
+    Logger LOGGER = com.alibaba.nacos.plugin.control.Loggers.CONNECTION;
     
     /**
      * 4 times of client keep alive.
@@ -131,9 +133,9 @@ public class ConnectionManager {
             connectionForClientIp.get(clientIp).getAndIncrement();
             
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            Loggers.REMOTE_DIGEST
-                    .info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
-                            connection);
+            
+            LOGGER.info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
+                    connection);
             return true;
             
         }
@@ -171,7 +173,7 @@ public class ConnectionManager {
                 }
             }
             remove.close();
-            Loggers.REMOTE_DIGEST.info("[{}]Connection unregistered successfully. ", connectionId);
+            LOGGER.info("[{}]Connection unregistered successfully. ", connectionId);
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
@@ -238,7 +240,7 @@ public class ConnectionManager {
                 ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance()
                         .getConnectionControlManager().getConnectionLimitRule();
                 int totalCount = connections.size();
-                Loggers.REMOTE_DIGEST.info("Connection check task start");
+                LOGGER.info("Connection check task start");
                 MetricsMonitor.getLongConnectionMonitor().set(totalCount);
                 Set<Map.Entry<String, Connection>> entries = connections.entrySet();
                 int currentSdkClientCount = currentSdkClientCount();
@@ -246,10 +248,9 @@ public class ConnectionManager {
                 int currentMaxClient = isLoaderClient ? loadClient : connectionLimitRule.getCountLimit();
                 int expelCount = currentMaxClient < 0 ? 0 : Math.max(currentSdkClientCount - currentMaxClient, 0);
                 
-                Loggers.REMOTE_DIGEST
-                        .info("Total count ={}, sdkCount={},clusterCount={}, currentLimit={}, toExpelCount={}",
-                                totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount),
-                                currentMaxClient + (isLoaderClient ? "(loaderCount)" : ""), expelCount);
+                LOGGER.info("Total count ={}, sdkCount={},clusterCount={}, currentLimit={}, toExpelCount={}",
+                        totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount),
+                        currentMaxClient + (isLoaderClient ? "(loaderCount)" : ""), expelCount);
                 
                 List<String> expelClient = new LinkedList<>();
                 
@@ -281,11 +282,10 @@ public class ConnectionManager {
                     }
                 }
                 
-                Loggers.REMOTE_DIGEST
-                        .info("Check over limit for ip limit rule, over limit ip count={}", expelForIp.size());
+                LOGGER.info("Check over limit for ip limit rule, over limit ip count={}", expelForIp.size());
                 
                 if (expelForIp.size() > 0) {
-                    Loggers.REMOTE_DIGEST.info("Over limit ip expel info, {}", expelForIp);
+                    LOGGER.info("Over limit ip expel info, {}", expelForIp);
                 }
                 
                 Set<String> outDatedConnections = new HashSet<>();
@@ -334,22 +334,21 @@ public class ConnectionManager {
                             connectResetRequest.setServerIp(serverIp);
                             connectResetRequest.setServerPort(serverPort);
                             connection.asyncRequest(connectResetRequest, null);
-                            Loggers.REMOTE_DIGEST
-                                    .info("Send connection reset request , connection id = {},recommendServerIp={}, recommendServerPort={}",
-                                            expelledClientId, connectResetRequest.getServerIp(),
-                                            connectResetRequest.getServerPort());
+                            LOGGER.info(
+                                    "Send connection reset request , connection id = {},recommendServerIp={}, recommendServerPort={}",
+                                    expelledClientId, connectResetRequest.getServerIp(),
+                                    connectResetRequest.getServerPort());
                         }
                         
                     } catch (ConnectionAlreadyClosedException e) {
                         unregister(expelledClientId);
                     } catch (Exception e) {
-                        Loggers.REMOTE_DIGEST
-                                .error("Error occurs when expel connection, expelledClientId:{}", expelledClientId, e);
+                        LOGGER.error("Error occurs when expel connection, expelledClientId:{}", expelledClientId, e);
                     }
                 }
                 
                 //4.client active detection.
-                Loggers.REMOTE_DIGEST.info("Out dated connection ,size={}", outDatedConnections.size());
+                LOGGER.info("Out dated connection ,size={}", outDatedConnections.size());
                 if (CollectionUtils.isNotEmpty(outDatedConnections)) {
                     Set<String> successConnections = new HashSet<>();
                     final CountDownLatch latch = new CountDownLatch(outDatedConnections.size());
@@ -384,7 +383,7 @@ public class ConnectionManager {
                                     }
                                 });
                                 
-                                Loggers.REMOTE_DIGEST.info("[{}]send connection active request ", outDateConnectionId);
+                                LOGGER.info("[{}]send connection active request ", outDateConnectionId);
                             } else {
                                 latch.countDown();
                             }
@@ -392,18 +391,18 @@ public class ConnectionManager {
                         } catch (ConnectionAlreadyClosedException e) {
                             latch.countDown();
                         } catch (Exception e) {
-                            Loggers.REMOTE_DIGEST.error("[{}]Error occurs when check client active detection ,error={}",
+                            LOGGER.error("[{}]Error occurs when check client active detection ,error={}",
                                     outDateConnectionId, e);
                             latch.countDown();
                         }
                     }
                     
                     latch.await(3000L, TimeUnit.MILLISECONDS);
-                    Loggers.REMOTE_DIGEST.info("Out dated connection check successCount={}", successConnections.size());
+                    LOGGER.info("Out dated connection check successCount={}", successConnections.size());
                     
                     for (String outDateConnectionId : outDatedConnections) {
                         if (!successConnections.contains(outDateConnectionId)) {
-                            Loggers.REMOTE_DIGEST.info("[{}]Unregister Out dated connection....", outDateConnectionId);
+                            LOGGER.info("[{}]Unregister Out dated connection....", outDateConnectionId);
                             unregister(outDateConnectionId);
                         }
                     }
@@ -416,10 +415,10 @@ public class ConnectionManager {
                     redirectAddress = null;
                 }
                 
-                Loggers.REMOTE_DIGEST.info("Connection check task end");
+                LOGGER.info("Connection check task end");
                 
             } catch (Throwable e) {
-                Loggers.REMOTE.error("Error occurs during connection check... ", e);
+                LOGGER.error("Error occurs during connection check... ", e);
             }
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);
         
@@ -452,7 +451,7 @@ public class ConnectionManager {
                 } catch (ConnectionAlreadyClosedException e) {
                     unregister(connectionId);
                 } catch (Exception e) {
-                    Loggers.REMOTE.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
+                    LOGGER.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
                 }
             }
         }

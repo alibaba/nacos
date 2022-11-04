@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.RuleBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.TpsBarrier;
@@ -11,7 +12,7 @@ import java.util.Collection;
 
 public class PersistRuleActivatorProxy {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(TpsBarrier.class);
+    private static final Logger LOGGER = Loggers.CONTROL;
     
     private static PersistRuleActivator INSTANCE = null;
     
@@ -35,5 +36,5 @@ public class PersistRuleActivatorProxy {
     public static PersistRuleActivator getInstance() {
         return INSTANCE;
     }
- 
+    
 }

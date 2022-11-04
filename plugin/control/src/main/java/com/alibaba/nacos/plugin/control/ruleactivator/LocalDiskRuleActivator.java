@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ public class LocalDiskRuleActivator implements RuleActivator {
     
     }
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(LocalDiskRuleActivator.class);
+    private static final Logger LOGGER = Loggers.CONTROL;
     
     
     private File checkTpsBaseDir() {
@@ -48,9 +49,8 @@ public class LocalDiskRuleActivator implements RuleActivator {
         if (!pointFile.exists()) {
             pointFile.createNewFile();
         }
-        String content = JacksonUtils.toJson(ruleContent);
-        DiskUtils.writeFile(pointFile, content.getBytes(Constants.ENCODE), false);
-        LOGGER.info("Save connection rule to local,pointName={}, ruleContent ={} ", content);
+        DiskUtils.writeFile(pointFile, ruleContent.getBytes(Constants.ENCODE), false);
+        LOGGER.info("Save connection rule to local,pointName={}, ruleContent ={} ", ruleContent);
     }
     
     @Override

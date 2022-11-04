@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.connection;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
@@ -113,6 +114,7 @@ public class ConnectionControlManagerTest {
         Map<String, Integer> ipConfig = new HashMap<>();
         ipConfig.put("127.0.0.3", 15);
         connectionLimitRule.setCountLimitPerClientIp(ipConfig);
+        System.out.println(JacksonUtils.toJson(connectionLimitRule));
         connectionControlManager.setConnectionLimitRule(connectionLimitRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.3", "test", "sdk");

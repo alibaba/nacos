@@ -48,8 +48,7 @@ public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
         if (configInfo != null) {
             return configInfo.getContent();
         } else {
-            Loggers.REMOTE.warn(" rule content not found ,dataId={},group={},tenant={}", dataId, group, tenant);
-           return null;
+            return null;
         }
     }
     

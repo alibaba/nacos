@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
@@ -101,7 +102,7 @@ public class TpsBarrierTest {
         tpsControlRule.setMonitorKeyRule(monitorRules);
         
         tpsBarrier.applyRule(tpsControlRule);
-        
+        System.out.println(JacksonUtils.toJson(tpsControlRule));
         //test point keys
         long timeMillis = System.currentTimeMillis();
         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();

@@ -79,7 +79,7 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                     response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted:" + check.getMessage());
                     return response;
                 } catch (Exception e) {
-                    Loggers.TPS_CONTROL_DETAIL
+                    com.alibaba.nacos.plugin.control.Loggers.TPS
                             .warn("Tps monitor fail , request: {},exception:{}", request.getClass().getSimpleName(), e);
                     return null;
                 }

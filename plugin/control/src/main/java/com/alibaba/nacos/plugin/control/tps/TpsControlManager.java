@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
@@ -51,16 +52,22 @@ public class TpsControlManager {
     private void initTpsRule(String pointName) {
         String localRuleContent = LocalDiskRuleActivator.INSTANCE.getTpsRule(pointName);
         if (StringUtils.isNotBlank(localRuleContent)) {
-            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
-            this.applyTpsRule(pointName, tpsLimitRule);
+            Loggers.CONTROL.info("Found local disk tps control rule of {},content ={}", pointName, localRuleContent);
         } else if (PersistRuleActivatorProxy.getInstance() != null
                 && PersistRuleActivatorProxy.getInstance().getTpsRule(pointName) != null) {
-            String persistTpsRule = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
-            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(persistTpsRule);
+            localRuleContent = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
+            if (StringUtils.isNotBlank(localRuleContent)) {
+                Loggers.CONTROL.info("Found external  tps control rule of {},content ={}", pointName, localRuleContent);
+            }
+        }
+        
+        if (StringUtils.isNotBlank(localRuleContent)) {
+            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
             this.applyTpsRule(pointName, tpsLimitRule);
         } else {
+            Loggers.CONTROL
+                    .info("No tps control rule of {} found , use default empty rule ", pointName, localRuleContent);
             this.applyTpsRule(pointName, new TpsControlRule());
-            
         }
     }
     
@@ -76,7 +83,6 @@ public class TpsControlManager {
             rules.remove(pointName);
         } else {
             rules.put(pointName, rule);
-            
         }
         if (points.containsKey(pointName)) {
             points.get(pointName).applyRule(rule);
@@ -107,6 +113,9 @@ public class TpsControlManager {
                 return new TpsCheckResponse(true, TpsResultCode.CHECK_PASS,
                         "pass by interceptor :" + tpsInterceptor.getName());
             } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
+                Loggers.TPS.warn("[{}]denied by interceptor ={},clientIp={},connectionId={},keys={}",
+                        tpsRequest.getPointName(), tpsInterceptor.getName(), tpsRequest.getClientIp(),
+                        tpsRequest.getConnectionId(), tpsRequest.getMonitorKeys());
                 return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                         "deny by interceptor :" + tpsInterceptor.getName());
             }

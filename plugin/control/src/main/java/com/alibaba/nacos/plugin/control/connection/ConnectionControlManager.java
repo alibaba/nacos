@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.connection;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptorHolder;
@@ -12,6 +13,7 @@ import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Map;
@@ -22,27 +24,32 @@ import java.util.stream.Collectors;
  */
 public class ConnectionControlManager {
     
-    
     private ConnectionLimitRule connectionLimitRule;
     
     Collection<ConnectionMetricsCollector> metricsCollectorList;
     
     public ConnectionControlManager() {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
+        Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
+                metricsCollectorList);
         String localRuleContent = LocalDiskRuleActivator.INSTANCE.getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
-            ConnectionLimitRule connectionLimitRule = RuleParserProxy.getInstance()
-                    .parseConnectionRule(localRuleContent);
-            this.connectionLimitRule = connectionLimitRule;
+            Loggers.CONTROL.info("Found local disk connection rule content ,value  ={}", localRuleContent);
         } else if (PersistRuleActivatorProxy.getInstance() != null
                 && PersistRuleActivatorProxy.getInstance().getConnectionRule() != null) {
-            String persistConnectionRule = PersistRuleActivatorProxy.getInstance().getConnectionRule();
-            ConnectionLimitRule connectionLimitRule = RuleParserProxy.getInstance()
-                    .parseConnectionRule(persistConnectionRule);
-            this.connectionLimitRule = connectionLimitRule;
+            localRuleContent = PersistRuleActivatorProxy.getInstance().getConnectionRule();
+            if (StringUtils.isNotBlank(localRuleContent)) {
+                Loggers.CONTROL.info("Found persist disk connection rule content ,value  ={}", localRuleContent);
+            }
+        }
+        
+        if (StringUtils.isNotBlank(localRuleContent)) {
+            connectionLimitRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
         } else {
+            Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
             connectionLimitRule = new ConnectionLimitRule();
         }
+        
     }
     
     public ConnectionLimitRule getConnectionLimitRule() {
@@ -76,6 +83,9 @@ public class ConnectionControlManager {
                 connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_DENY);
                 connectionCheckResponse.setSuccess(false);
                 connectionCheckResponse.setMessage("denied by interceptor :" + connectionInterceptor.getName());
+                Loggers.CONNECTION.warn("connection denied ,clientIp={},appName={},source={},labels={}",
+                        connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
+                        connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
                 return connectionCheckResponse;
             }
         }
@@ -99,12 +109,17 @@ public class ConnectionControlManager {
             if (countLimitOfIp < 0) {
                 countLimitOfIp = connectionLimitRule.getCountLimitOfApp(appName);
             }
-            if (countLimitOfIp > 0) {
+            if (countLimitOfIp >= 0) {
                 if (totalCountOfIp >= countLimitOfIp) {
                     connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_DENY);
                     connectionCheckResponse.setMessage(
                             "deny by specific ip check model,max allowed count is " + countLimitOfIp
                                     + ",current count detail is " + metricsIpCount.toString());
+                    Loggers.CONNECTION
+                            .warn("connection denied by specific ip or app ip limit ,maxCount allowed is  {},clientIp={},appName={},source={},labels={}",
+                                    countLimitOfIp, connectionCheckRequest.getClientIp(),
+                                    connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
+                                    connectionCheckRequest.getLabels());
                     return connectionCheckResponse;
                 } else {
                     connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_PASS);
@@ -120,16 +135,26 @@ public class ConnectionControlManager {
                 connectionCheckResponse.setMessage(
                         "deny by default ip check model,max allowed count is " + countLimitPerClientIpDefault
                                 + ",current count detail is " + metricsIpCount.toString());
+                Loggers.CONNECTION
+                        .warn("connection denied by default ip limit ,maxCount allowed is  {},clientIp={},appName={},source={},labels={}",
+                                countLimitPerClientIpDefault, connectionCheckRequest.getClientIp(),
+                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
+                                connectionCheckRequest.getLabels());
                 return connectionCheckResponse;
             }
             
+            int totalCountLimit = connectionLimitRule.getCountLimit();
             //total count check model
-            if (connectionLimitRule.getCountLimit() >= 0 && totalCount >= connectionLimitRule.getCountLimit()) {
+            if (totalCountLimit >= 0 && totalCount >= totalCountLimit) {
                 //deny;
                 connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_DENY);
-                connectionCheckResponse.setMessage(
-                        "deny by total count limit,max allowed count is " + connectionLimitRule.getCountLimit()
-                                + ",current count detail is " + metricsTotalCount.toString());
+                connectionCheckResponse.setMessage("deny by total count limit,max allowed count is " + totalCountLimit
+                        + ",current count detail is " + metricsTotalCount.toString());
+                Loggers.CONNECTION
+                        .warn("connection denied by total count  limit ,maxCount allowed is  {},detail={},clientIp={},appName={},source={},labels={}",
+                                totalCountLimit, metricsTotalCount.toString(), connectionCheckRequest.getClientIp(),
+                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
+                                connectionCheckRequest.getLabels());
                 return connectionCheckResponse;
             }
             

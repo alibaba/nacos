@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ import java.util.Collection;
 
 public class RuleParserProxy {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(RuleParserProxy.class);
+    private static final Logger LOGGER = Loggers.CONTROL;
     
     private static RuleParser INSTANCE;
     
@@ -19,7 +20,7 @@ public class RuleParserProxy {
         
         for (RuleParser ruleParser : ruleParsers) {
             if (ruleParser.getName().equalsIgnoreCase(ruleParserName)) {
-                LOGGER.info("Found persist rule activator of name ：" + ruleParserName);
+                LOGGER.info("Found  rule parser of name={},class={}" ,ruleParserName,ruleParser.getClass().getSimpleName());
                 INSTANCE = ruleParser;
                 break;
             }

@@ -6,6 +6,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.slf4j.Logger;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ControlRuleChangeSubscriber {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(ControlRuleChangeSubscriber.class);
+    private static final Logger LOGGER = Loggers.CONTROL;
     
     TpsRuleChangeSubscriber tpsRuleChangeSubscriber = new TpsRuleChangeSubscriber();
     
@@ -69,7 +70,7 @@ public class ControlRuleChangeSubscriber {
         
         @Override
         public void onEvent(ConnectionLimitRuleChangeEvent event) {
-            LOGGER.info("connection limit rule change event receive ,persit:{}", event.isPersist());
+            LOGGER.info("connection limit rule change event receive ,persist:{}", event.isPersist());
             
             try {
                 

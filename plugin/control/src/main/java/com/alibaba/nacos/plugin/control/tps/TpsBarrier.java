@@ -2,11 +2,13 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyMatcher;
+import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -32,8 +34,6 @@ import java.util.stream.Collectors;
  */
 public class TpsBarrier {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(TpsBarrier.class);
-    
     private String pointName;
     
     private RuleBarrier pointBarrier;
@@ -52,13 +52,15 @@ public class TpsBarrier {
         Collection<RuleBarrierCreator> loadedCreators = NacosServiceLoader.load(RuleBarrierCreator.class);
         for (RuleBarrierCreator barrierCreator : loadedCreators) {
             if (tpsBarrierCreator.equalsIgnoreCase(barrierCreator.name())) {
-                LOGGER.info("Found tps rule creator of name : {}", tpsBarrierCreator);
+                Loggers.CONTROL.info("Found tps rule creator of name : {}", tpsBarrierCreator);
                 ruleBarrierCreator = barrierCreator;
                 break;
             }
         }
         if (ruleBarrierCreator == null) {
-            LOGGER.error("Fail to found tps rule creator of name : {}", tpsBarrierCreator);
+            Loggers.CONTROL.warn("Fail to found tps rule creator of name : {},use  default local simple creator",
+                    tpsBarrierCreator);
+            ruleBarrierCreator = LocalSimpleCountBarrierCreator.getInstance();
         }
         
     }
@@ -97,6 +99,7 @@ public class TpsBarrier {
                     } else {
                         patternSuccess = false;
                         denyPatternRate = patternRuleBarrier;
+                        
                         break;
                         
                     }
@@ -111,6 +114,9 @@ public class TpsBarrier {
         //2.when pattern fail,rollback applied count of patterns.
         if (!patternSuccess) {
             rollbackTps(appliedBarriers);
+            Loggers.TPS.warn("[{}]denied by pattern barrier ={},clientIp={},connectionId={},msg={}", pointName,
+                    denyPatternRate.getName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+                    denyPatternRate.getLimitMsg());
             return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     (denyPatternRate == null) ? "unknown" : ("denied by " + denyPatternRate.getLimitMsg()));
         }
@@ -126,6 +132,9 @@ public class TpsBarrier {
         } else {
             //3.1 when point rule fail,rollback applied count of patterns.
             rollbackTps(appliedBarriers);
+            Loggers.TPS.warn("[{}]denied by point barrier ={},clientIp={},connectionId={},msg={}", pointName,
+                    pointBarrier.getName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+                    pointBarrier.getLimitMsg());
             return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     "deny by point rule," + pointBarrier.getLimitMsg());
         }
@@ -170,11 +179,11 @@ public class TpsBarrier {
      * @param newControlRule
      */
     public synchronized void applyRule(TpsControlRule newControlRule) {
-        LOGGER.info("Apply tps control rule parse start,pointName=[{}]  ", this.getPointName());
+        Loggers.CONTROL.info("Apply tps control rule parse start,pointName=[{}]  ", this.getPointName());
         
         //1.reset all monitor point for null.
         if (newControlRule == null) {
-            LOGGER.info("Clear all tps control rule ,pointName=[{}]  ", this.getPointName());
+            Loggers.CONTROL.info("Clear all tps control rule ,pointName=[{}]  ", this.getPointName());
             this.pointBarrier.clearLimitRule();
             this.patternBarriers = new ArrayList<>();
             return;
@@ -183,10 +192,10 @@ public class TpsBarrier {
         //2.check point rule.
         RuleDetail newPointRule = newControlRule.getPointRule();
         if (newPointRule == null) {
-            LOGGER.info("Clear point  control rule ,pointName=[{}]  ", this.getPointName());
+            Loggers.CONTROL.info("Clear point  control rule ,pointName=[{}]  ", this.getPointName());
             this.pointBarrier.clearLimitRule();
         } else {
-            LOGGER.info("Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
+            Loggers.CONTROL.info("Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
                             + ",original monitorType={}, original monitorType={}, ", this.getPointName(),
                     this.pointBarrier.getMaxCount(), newPointRule.getMaxCount(), this.pointBarrier.getMonitorType(),
                     newPointRule.getMonitorType());
@@ -199,7 +208,7 @@ public class TpsBarrier {
         Map<String, RuleDetail> newMonitorKeyRules = newControlRule.getMonitorKeyRule();
         //3.1 clear all monitor keys.
         if (newMonitorKeyRules == null || newMonitorKeyRules.isEmpty()) {
-            LOGGER.info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
+            Loggers.CONTROL.info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
             this.patternBarriers = new ArrayList<>();
         } else {
             Map<String, RuleBarrier> patternRateCounterMap = this.patternBarriers.stream()
@@ -228,10 +237,11 @@ public class TpsBarrier {
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
                     
                 } else {
-                    LOGGER.info(
-                            "Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
-                            this.getPointName(), newMonitorRule.getKey(), newMonitorRule.getValue().getMaxCount(),
-                            newMonitorRule.getValue().getMonitorType());
+                    Loggers.CONTROL
+                            .info("Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
+                                    this.getPointName(), newMonitorRule.getKey(),
+                                    newMonitorRule.getValue().getMaxCount(),
+                                    newMonitorRule.getValue().getMonitorType());
                     // add rule
                     RuleBarrier rateCounterWrapper = ruleBarrierCreator
                             .createRuleBarrier(newMonitorRule.getKey(), newRuleDetail.getPattern(),
@@ -247,8 +257,8 @@ public class TpsBarrier {
             while (currentPatternCounterIterator.hasNext()) {
                 Map.Entry<String, RuleBarrier> currentPattern = currentPatternCounterIterator.next();
                 if (!newMonitorKeyRules.containsKey(currentPattern.getKey())) {
-                    LOGGER.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]", this.getPointName(),
-                            currentPattern.getKey());
+                    Loggers.CONTROL.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]",
+                            this.getPointName(), currentPattern.getKey());
                     currentPatternCounterIterator.remove();
                 }
             }
