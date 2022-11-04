@@ -35,7 +35,7 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
- * ExternalStorageUtils check unit test.
+ * StandaloneExternalStorage unit test.
  *
  * @author Long Yu
  * @since 2.2.0
