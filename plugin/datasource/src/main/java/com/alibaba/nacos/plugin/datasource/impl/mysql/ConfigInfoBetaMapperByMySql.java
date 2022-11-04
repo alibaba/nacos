@@ -36,11 +36,6 @@ public class ConfigInfoBetaMapperByMySql extends AbstractMapper implements Confi
     }
     
     @Override
-    public String count() {
-        return "SELECT count(*) FROM config_info_beta";
-    }
-    
-    @Override
     public String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize) {
         return  " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
                 + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT ?,?  )"

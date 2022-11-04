@@ -45,11 +45,6 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements Hi
     }
     
     @Override
-    public String findConfigHistoryCountRows() {
-        return "SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
-    }
-    
-    @Override
     public String findConfigHistoryFetchRows() {
         return  "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";

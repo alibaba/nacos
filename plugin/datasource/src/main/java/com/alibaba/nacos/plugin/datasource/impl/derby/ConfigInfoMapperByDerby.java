@@ -60,22 +60,12 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id = ? AND "
                 + "tenant_id = ?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
-    
-    @Override
-    public String findConfigInfoByDataIdAndAppCountRows() {
-        return "SELECT count(*) FROM config_info WHERE data_id = ? AND tenant_id = ? AND app_name = ?";
-    }
-    
+
     @Override
     public String findConfigInfoByDataIdAndAppFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id = ? AND "
                 + "tenant_id = ? AND app_name = ?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
                 + " ROWS ONLY";
-    }
-    
-    @Override
-    public String count() {
-        return "SELECT COUNT(*) FROM config_info";
     }
     
     @Override
@@ -329,11 +319,6 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByDataIdCountRows() {
-        return "SELECT count(*) FROM config_info WHERE data_id = ? AND tenant_id = ?";
-    }
-    
-    @Override
     public String findConfigInfoByDataIdAndAdvanceCountRows(Map<String, String> params) {
         final String appName = params.get("appName");
         StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=? ");
@@ -408,19 +393,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByGroupCountRows() {
-        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=?";
-    }
-    
-    @Override
     public String findConfigInfoByGroupFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND "
                 + "tenant_id=?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAppCountRows() {
-        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=? AND app_name =?";
     }
     
     @Override
@@ -448,11 +423,6 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             sql.append(" AND app_name=? ");
         }
         return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
-    }
-    
-    @Override
-    public String findConfigInfoBaseByGroupCountRows() {
-        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=?";
     }
     
     @Override
