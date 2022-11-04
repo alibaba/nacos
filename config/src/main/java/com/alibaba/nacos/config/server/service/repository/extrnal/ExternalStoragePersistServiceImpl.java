@@ -1210,7 +1210,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public int configInfoBetaCount() {
         ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA);
-        String sql = configInfoBetaMapper.count();
+        String sql = configInfoBetaMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
@@ -1221,7 +1221,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public int configInfoTagCount() {
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG);
-        String sql = configInfoTagMapper.configInfoTagCount();
+        String sql = configInfoTagMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
@@ -1249,7 +1249,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public int aggrConfigInfoCount(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR);
-        String sql = configInfoAggrMapper.aggrConfigInfoCount();
+        String sql = configInfoAggrMapper.count(Arrays.asList("data_id","group_id","tenant_id"));
         Integer result = jt.queryForObject(sql, Integer.class, new Object[] {dataId, group, tenantTmp});
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
@@ -1395,7 +1395,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
         ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_BETA);
-        String sqlCountRows = configInfoBetaMapper.count();
+        String sqlCountRows = configInfoBetaMapper.count(null);
         String sqlFetchRows =
                 configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(startRow, pageSize);
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
@@ -1413,7 +1413,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_TAG);
-        String sqlCountRows = configInfoTagMapper.count();
+        String sqlCountRows = configInfoTagMapper.count(null);
         String sqlFetchRows = configInfoTagMapper.findAllConfigInfoTagForDumpAllFetchRows(startRow, pageSize);
         PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
         try {
@@ -1734,7 +1734,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR);
-        String sql = configInfoAggrMapper.findConfigInfoAggr();
+        String sql = configInfoAggrMapper.findConfigInfoAggrIsOrdered();
         
         try {
             return this.jt.query(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_AGGR_ROW_MAPPER);
@@ -1873,7 +1873,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public List<ConfigInfoChanged> findAllAggrGroup() {
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO_AGGR);
-        String sql = configInfoAggrMapper.findAllAggrGroup();
+        String sql = configInfoAggrMapper.findAllAggrGroupByDistinct();
         
         try {
             return jt.query(sql, new Object[] {}, CONFIG_INFO_CHANGED_ROW_MAPPER);
@@ -2307,7 +2307,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(dataSource, TableConstant.HIS_CONFIG_INFO);
-        String sqlCountRows = historyConfigInfoMapper.findConfigHistoryCountRows();
+        String sqlCountRows = historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
         String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows();
         
         Page<ConfigHistoryInfo> page = null;

@@ -129,4 +129,27 @@ public abstract class AbstractMapper implements Mapper {
         
         return sql.toString();
     }
+    
+    @Override
+    public String count(List<String> where) {
+        StringBuilder sql = new StringBuilder();
+        String method = "SELECT ";
+        sql.append(method);
+        sql.append("COUNT(*) FROM ");
+        sql.append(getTableName());
+        sql.append(" ");
+        
+        if (null == where || where.size() == 0) {
+            return sql.toString();
+        }
+        
+        sql.append("WHERE ");
+        for (int i = 0; i < where.size(); i++) {
+            sql.append(where.get(i)).append(" = ").append("?");
+            if (i != where.size() - 1) {
+                sql.append(" AND ");
+            }
+        }
+        return sql.toString();
+    }
 }

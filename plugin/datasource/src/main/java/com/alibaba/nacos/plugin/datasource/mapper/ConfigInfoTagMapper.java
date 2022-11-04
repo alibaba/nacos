@@ -35,24 +35,6 @@ public interface ConfigInfoTagMapper extends Mapper {
     String updateConfigInfo4TagCas();
     
     /**
-     * Returns the number of beta configuration items.
-     * The default sql:
-     * SELECT count(ID) FROM config_info_tag
-     *
-     * @return The sql of querying the number of beta configuration items.
-     */
-    String configInfoTagCount();
-    
-    /**
-     * The count of config_info table sql.
-     * The default sql:
-     * SELECT count(*) FROM config_info_tag
-     *
-     * @return The sql of the count of config_info table.
-     */
-    String count();
-    
-    /**
      * Query all tag config info for dump task.
      * The default sql:
      * SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified

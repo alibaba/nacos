@@ -63,12 +63,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
     }
     
     @Override
-    public String aggrConfigInfoCount() {
-        return " SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?";
-    }
-    
-    @Override
-    public String findConfigInfoAggr() {
+    public String findConfigInfoAggrIsOrdered() {
         return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id = ? AND "
                 + "group_id = ? AND tenant_id = ? ORDER BY datum_id";
     }
@@ -80,7 +75,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
     }
     
     @Override
-    public String findAllAggrGroup() {
+    public String findAllAggrGroupByDistinct() {
         return "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
     }
     
