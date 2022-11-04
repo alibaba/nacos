@@ -57,6 +57,14 @@ public interface Mapper {
     String delete(List<String> params);
     
     /**
+     * The count method contains where params.
+     *
+     * @param where The where params
+     * @return The sql of count
+     */
+    String count(List<String> where);
+    
+    /**
      * Get the name of table.
      * @return The name of table.
      */
