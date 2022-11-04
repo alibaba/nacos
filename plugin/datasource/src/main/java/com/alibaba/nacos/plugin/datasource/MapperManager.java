@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import org.slf4j.Logger;
@@ -25,7 +26,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+
+import static com.alibaba.nacos.api.common.Constants.Exception.FIND_DATASOURCE_ERROR_CODE;
+import static com.alibaba.nacos.api.common.Constants.Exception.FIND_TABLE_ERROR_CODE;
 
 /**
  * DataSource Plugin Mapper Management.
@@ -83,12 +86,23 @@ public class MapperManager {
     
     /**
      * Get the mapper by table name.
-     * @param tableName table name.
+     *
+     * @param tableName  table name.
      * @param dataSource the datasource.
      * @return mapper.
      */
-    public Optional<Mapper> findMapper(String dataSource, String tableName) {
-        LOGGER.info("[findMapper] dataSource: {}, tableName: {}", dataSource, tableName);
-        return Optional.ofNullable(MAPPER_SPI_MAP.get(dataSource).get(tableName));
+    public <R extends Mapper> R findMapper(String dataSource, String tableName) {
+        LOGGER.info("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
+        Map<String, Mapper> tableMapper = MAPPER_SPI_MAP.get(dataSource);
+        if (Objects.isNull(tableMapper)) {
+            throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE,
+                    "[MapperManager] Failed to find the datasource,dataSource:" + dataSource);
+        }
+        Mapper mapper = tableMapper.get(tableName);
+        if (Objects.isNull(mapper)) {
+            throw new NacosRuntimeException(FIND_TABLE_ERROR_CODE,
+                    "[MapperManager] Failed to find the table ,tableName:" + tableName);
+        }
+        return (R) mapper;
     }
 }
