@@ -49,6 +49,7 @@ public class ServiceInfoUpdateServiceTest {
         Properties prop = new Properties();
     
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        nacosClientProperties.setProperty("namingAsyncQuerySubscribeService", "true");
         final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy,
                 notifyer);
         
