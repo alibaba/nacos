@@ -2074,7 +2074,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public List<String> getConfigTagsByTenant(String tenant) {
         ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_TAGS_RELATION);
-        String sql = configTagsRelationMapper.select(Arrays.asList("tag_name"),Arrays.asList("tenant_id"));
+        String sql = configTagsRelationMapper.select(Arrays.asList("tag_name"), Arrays.asList("tenant_id"));
         try {
             return jt.queryForList(sql, new Object[] {tenant}, String.class);
         } catch (EmptyResultDataAccessException e) {
