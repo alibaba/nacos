@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -76,7 +77,8 @@ public class NamingHttpClientProxyTest {
     public void setUp() {
         when(mgr.getServerList()).thenReturn(Arrays.asList("localhost"));
         props = new Properties();
-        clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, props);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        clientProxy = new NamingHttpClientProxy("namespaceId", proxy, mgr, nacosClientProperties);
     }
     
     @After
@@ -528,7 +530,8 @@ public class NamingHttpClientProxyTest {
     @Test
     public void testGetNamespaceId() {
         String namespaceId = "aaa";
-        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, props);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, nacosClientProperties);
         String actualNamespaceId = clientProxy.getNamespaceId();
         Assert.assertEquals(namespaceId, actualNamespaceId);
     }
