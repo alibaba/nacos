@@ -29,6 +29,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
@@ -55,7 +56,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -110,7 +110,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     private int serverPort = DEFAULT_SERVER_PORT;
     
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
-            Properties properties) {
+            NacosClientProperties properties) {
         super(securityProxy);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
@@ -472,7 +472,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
         
-        String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
+        String sp = NacosClientProperties.PROTOTYPE.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
         if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
