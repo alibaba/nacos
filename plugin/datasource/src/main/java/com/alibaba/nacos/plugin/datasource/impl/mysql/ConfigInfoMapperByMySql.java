@@ -63,19 +63,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByDataIdAndAppCountRows() {
-        return "SELECT count(*) FROM config_info WHERE data_id= ? AND tenant_id= ? AND app_name= ?";
-    }
-    
-    @Override
     public String findConfigInfoByDataIdAndAppFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info "
                 + "WHERE data_id= ? AND tenant_id= ? AND app_name= ?" + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String count() {
-        return "SELECT count(*) FROM config_info";
     }
     
     @Override
@@ -336,11 +326,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByDataIdCountRows() {
-        return "SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=?";
-    }
-    
-    @Override
     public String findConfigInfoByDataIdAndAdvanceCountRows(Map<String, String> params) {
         final String appName = params.get(APP_NAME);
         StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=? ");
@@ -413,19 +398,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByGroupCountRows() {
-        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=?";
-    }
-    
-    @Override
     public String findConfigInfoByGroupFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE"
                 + " group_id=? AND tenant_id=?" + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAppCountRows() {
-        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=? AND app_name =?";
     }
     
     @Override
@@ -454,12 +429,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         }
         return sql.toString() + " LIMIT " + startRow + "," + pageSize;
     }
-    
-    @Override
-    public String findConfigInfoBaseByGroupCountRows() {
-        return "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=?";
-    }
-    
+
     @Override
     public String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?" + " LIMIT "
