@@ -34,15 +34,6 @@ public interface ConfigInfoBetaMapper extends Mapper {
     String updateConfigInfo4BetaCas();
     
     /**
-     * Query the count of beta configuration information.
-     * The default sql:
-     * SELECT count(*) FROM config_info_beta
-     *
-     * @return The sql of querying the count of beta configuration information.
-     */
-    String count();
-    
-    /**
      * Query all beta config info for dump task.
      * The default sql:
      * SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key

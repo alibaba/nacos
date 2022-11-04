@@ -129,42 +129,6 @@ public interface ConfigTagsRelationMapper extends Mapper {
     String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
     
     /**
-     * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
-     * The default sql:
-     * INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES(?,?,?,?,?,?)
-     *
-     * @return The sql of adding configuration.
-     */
-    String addConfigTagRelationAtomic();
-    
-    /**
-     * Delete tag.
-     * The default sql:
-     * DELETE FROM config_tags_relation WHERE id=?
-     *
-     * @return The sql of deleting tag.
-     */
-    String removeTagByIdAtomic();
-    
-    /**
-     * Query config tag list.
-     * The default sql:
-     * SELECT tag_name FROM config_tags_relation WHERE tenant_id = ?
-     *
-     * @return The sql of querying config tag list
-     */
-    String getConfigTagsByTenant();
-    
-    /**
-     * Query tag list.
-     * The default sql:
-     * SELECT tag_name FROM config_tags_relation WHERE data_id=? AND group_id=? AND tenant_id = ?
-     *
-     * @return The sql of querying tag list
-     */
-    String selectTagByConfig();
-    
-    /**
      * The number of config.
      * The default sql:
      * SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id=?

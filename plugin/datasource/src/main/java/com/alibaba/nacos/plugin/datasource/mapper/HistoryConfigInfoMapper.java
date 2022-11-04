@@ -52,15 +52,6 @@ public interface HistoryConfigInfoMapper extends Mapper {
     String findDeletedConfig();
     
     /**
-     * Query the numbers of history config information by data_id, group_id AND tenant_id.
-     * The default sql:
-     * SELECT count(*) FROM his_config_info WHERE data_id = ? AND group_id = ? AND tenant_id = ?
-     *
-     * @return The sql of querying the numbers of history config information by data_id, group_id AND tenant_id.
-     */
-    String findConfigHistoryCountRows();
-    
-    /**
      * List configuration history change record.
      * The default sql:
      * SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
