@@ -906,7 +906,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant,
             final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoMapper configInfoMapper =mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
+        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper
                 .select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content"),
                         Arrays.asList("data_id", "group_id", "tenant_id", "app_name"));
