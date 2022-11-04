@@ -20,9 +20,12 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
@@ -40,6 +43,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.HashMap;
 
 /**
  * Its own configuration information manipulation tool class.
@@ -98,7 +103,11 @@ public class EnvUtil {
     private static final String NACOS_TEMP_DIR_1 = "data";
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
-    
+
+    private static final String NACOS_CUSTOM_ENVIRONMENT_ENABLED = "nacos.custom.environment.enabled";
+
+    private static final String NACOS_CUSTOM_CONFIG_NAME = "customFirstNacosConfig";
+
     @JustForTest
     private static String confPath = "";
     
@@ -106,7 +115,24 @@ public class EnvUtil {
     private static String nacosHomePath = null;
     
     private static ConfigurableEnvironment environment;
-    
+
+    /**
+     * customEnvironment.
+     */
+    public static void customEnvironment() {
+        boolean enableCustom = getProperty(NACOS_CUSTOM_ENVIRONMENT_ENABLED, Boolean.class, false);
+        if (enableCustom) {
+            Set<String> propertyKeys = CustomEnvironmentPluginManager.getInstance().getPropertyKeys();
+            Map<String, Object> sourcePropertyMap = new HashMap<>(propertyKeys.size());
+            for (String key : propertyKeys) {
+                sourcePropertyMap.put(key, getProperty(key, Object.class));
+            }
+            Map<String, Object> targetMap = CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap);
+            MutablePropertySources propertySources = environment.getPropertySources();
+            propertySources.addFirst(new MapPropertySource(NACOS_CUSTOM_CONFIG_NAME, targetMap));
+        }
+    }
+
     public static ConfigurableEnvironment getEnvironment() {
         return environment;
     }
