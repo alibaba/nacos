@@ -18,44 +18,14 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.core.listener.NacosApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * graceful shutdown listenner.
+ *
  * @author Weizhan▪Yun
  * @date 2022/11/2 14:40
  */
 public class GracefulShutdownListener implements NacosApplicationListener {
-    
-    @Override
-    public void starting() {
-    
-    }
-    
-    @Override
-    public void environmentPrepared(ConfigurableEnvironment environment) {
-    
-    }
-    
-    @Override
-    public void contextPrepared(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void contextLoaded(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void started(ConfigurableApplicationContext context) {
-    
-    }
-    
-    @Override
-    public void running(ConfigurableApplicationContext context) {
-    
-    }
     
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
