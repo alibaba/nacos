@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
@@ -64,7 +65,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private ScheduledExecutorService executorService;
     
-    public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, Properties properties,
+    public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, NacosClientProperties properties,
             InstancesChangeNotifier changeNotifier) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
@@ -78,16 +79,17 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
                 serviceInfoHolder);
     }
     
-    private void initSecurityProxy(Properties properties) {
+    private void initSecurityProxy(NacosClientProperties properties) {
         this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.client.naming.security");
             t.setDaemon(true);
             return t;
         });
-        this.securityProxy.login(properties);
+        final Properties nacosClientPropertiesView = properties.asProperties();
+        this.securityProxy.login(nacosClientPropertiesView);
         this.executorService
-                .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
+                .scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
                         TimeUnit.MILLISECONDS);
     }
     
