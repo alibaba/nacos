@@ -23,6 +23,7 @@ package com.alibaba.nacos.plugin.datasource.constants;
  **/
 
 public class TableConstant {
+    
     public static final String CONFIG_INFO = "config_info";
     
     public static final String CONFIG_INFO_AGGR = "config_info_aggr";

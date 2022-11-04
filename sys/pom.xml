@@ -71,6 +71,10 @@
             <groupId>org.codehaus.jackson</groupId>
             <artifactId>jackson-core-asl</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>custom-environment-plugin</artifactId>
+        </dependency>
     </dependencies>
     
     <build>
