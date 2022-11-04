@@ -429,9 +429,10 @@ public class ClientWorker implements Closeable {
         
     }
     
-    private void refreshContentAndCheck(String groupKey, boolean notify) {
+    private void refreshContentAndCheck(String groupKey) {
         CacheData cache = cacheMap.get().get(groupKey);
         if (cache != null) {
+            boolean notify = !cache.isInitializing();
             refreshContentAndCheck(cache, notify);
         }
     }
@@ -796,8 +797,7 @@ public class ClientWorker implements Closeable {
                                             .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
                                                     changeConfig.getTenant());
                                     changeKeys.add(changeKey);
-                                    boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
-                                    refreshContentAndCheck(changeKey, !isInitializing);
+                                    refreshContentAndCheck(changeKey);
                                 }
                                 
                             }
