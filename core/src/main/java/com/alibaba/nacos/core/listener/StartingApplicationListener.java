@@ -108,7 +108,12 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         logStarting();
     }
-    
+
+    @Override
+    public void contextLoaded(ConfigurableApplicationContext context) {
+        EnvUtil.customEnvironment();
+    }
+
     @Override
     public void started(ConfigurableApplicationContext context) {
         starting = false;
