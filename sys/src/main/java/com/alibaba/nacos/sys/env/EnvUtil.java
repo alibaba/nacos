@@ -120,8 +120,8 @@ public class EnvUtil {
      * customEnvironment.
      */
     public static void customEnvironment() {
-        Boolean enableCustom = getProperty(NACOS_CUSTOM_ENVIRONMENT_ENABLED, Boolean.class);
-        if (Boolean.TRUE.equals(enableCustom)) {
+        boolean enableCustom = getProperty(NACOS_CUSTOM_ENVIRONMENT_ENABLED, Boolean.class, false);
+        if (enableCustom) {
             Set<String> propertyKeys = CustomEnvironmentPluginManager.getInstance().getPropertyKeys();
             Map<String, Object> sourcePropertyMap = new HashMap<>(propertyKeys.size());
             for (String key : propertyKeys) {

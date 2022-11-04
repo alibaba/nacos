@@ -29,20 +29,22 @@ import java.util.Set;
  * @author huangtianhui
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosCustomEnvPluginService implements CustomEnvironmentPluginService {
+public class NacosDbEncryptPluginService implements CustomEnvironmentPluginService {
+
+    private static final String DB_PWD_KEY = "db.password.0";
 
     @Override
     public Map<String, Object> customValue(Map<String, Object> property) {
-        String pwd = (String) property.get("db.password.0");
+        String pwd = (String) property.get(DB_PWD_KEY);
         byte[] decode = Base64.getDecoder().decode(pwd);
-        property.put("db.password.0", new String(decode));
+        property.put(DB_PWD_KEY, new String(decode));
         return property;
     }
 
     @Override
     public Set<String> propertyKey() {
         Set<String> propertyKey = new HashSet<>();
-        propertyKey.add("db.password.0");
+        propertyKey.add(DB_PWD_KEY);
         return propertyKey;
     }
 
@@ -53,6 +55,6 @@ public class NacosCustomEnvPluginService implements CustomEnvironmentPluginServi
 
     @Override
     public String pluginName() {
-        return "testCustomEnvironmentPluginService";
+        return "NacosDbEncryptPluginService";
     }
 }

@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.environment.impl.NacosCustomEnvPluginService
+com.alibaba.nacos.plugin.environment.impl.NacosDbEncryptPluginService
