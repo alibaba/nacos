@@ -1269,12 +1269,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
         
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String sql = configInfoMapper.getTenantIdList();
-        
-        int from = (page - 1) * pageSize;
+        int pageRow = (page - 1) * pageSize;
+        String sql = configInfoMapper.getTenantIdList(pageRow, pageSize);
         
         Page<Map<String, Object>> pageList = helper
-                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+                .fetchPageLimit(sql, new Object[] {}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }

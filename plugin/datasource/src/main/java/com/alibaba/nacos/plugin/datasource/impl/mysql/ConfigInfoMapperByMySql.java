@@ -85,8 +85,8 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String getTenantIdList() {
-        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+    public String getTenantIdList(int startRow, int pageSize) {
+        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT " + startRow + "," + pageSize;
     }
     
     @Override

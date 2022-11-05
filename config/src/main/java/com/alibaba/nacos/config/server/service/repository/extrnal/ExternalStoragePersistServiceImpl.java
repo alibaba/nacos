@@ -1232,9 +1232,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String sql = configInfoMapper.getTenantIdList();
-        int from = (page - 1) * pageSize;
-        return jt.queryForList(sql, String.class, from, pageSize);
+        int startRow = (page - 1) * pageSize;
+        String sql = configInfoMapper.getTenantIdList(startRow, pageSize);
+        return jt.queryForList(sql, String.class);
     }
     
     @Override

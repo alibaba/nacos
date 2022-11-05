@@ -102,9 +102,11 @@ public interface ConfigInfoMapper extends Mapper {
      * The default sql:
      * SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of getting tenant id list  by page.
      */
-    String getTenantIdList();
+    String getTenantIdList(int startRow, int pageSize);
     
     /**
      * Get group id list  by page.
