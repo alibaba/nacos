@@ -30,11 +30,6 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 public class TenantInfoMapperByDerby extends AbstractMapper implements TenantInfoMapper {
     
     @Override
-    public String getCountByTenantId() {
-        return "SELECT count(1) FROM tenant_info WHERE tenant_id = ?";
-    }
-    
-    @Override
     public String getTableName() {
         return TableConstant.TENANT_INFO;
     }

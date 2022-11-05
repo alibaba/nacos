@@ -17,19 +17,11 @@
 package com.alibaba.nacos.plugin.datasource.mapper;
 
 /**
- * The tenant info mapper.
+ * The tenant info mapper. If there is a new non-universal sql, you can add it here.
  *
  * @author hyx
  **/
 
 public interface TenantInfoMapper extends Mapper {
-    
-    /**
-     * Get the count of tenant information by id.
-     * The defaut sql:
-     * SELECT count(*) FROM tenant_info WHERE tenant_id = ?
-     *
-     * @return The sql of get the count of tenant information.
-     */
-    String getCountByTenantId();
+
 }

@@ -2587,8 +2587,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
-        TenantInfoMapper tenantInfoMapper =  mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.getCountByTenantId();
+        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO);
+        String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
         Integer result = databaseOperate
                 .queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {
