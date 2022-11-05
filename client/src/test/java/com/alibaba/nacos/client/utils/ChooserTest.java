@@ -15,7 +15,7 @@ public class ChooserTest {
     
     //Test the correctness of Chooser, the weight of the final selected instance must be greater than 0
     @Test
-    public void TestChooser() {
+    public void testChooser() {
         List<Instance> hosts = getInstanceList();
         Instance target = getRandomInstance(hosts);
         assertTrue(hosts.contains(target) && target.getWeight() > 0);
@@ -35,7 +35,7 @@ public class ChooserTest {
     
     // If there is only one instance whose weight is not zero, it will be selected
     @Test
-    public void TestOnlyOneInstanceWeightIsNotZero() {
+    public void testOnlyOneInstanceWeightIsNotZero() {
         List<Instance> hosts = getOneInstanceNotZeroList();
         
         Instance target = getRandomInstance(hosts);
