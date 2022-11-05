@@ -262,26 +262,6 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
     }
     
     @Override
-    public String addConfigTagRelationAtomic() {
-        return "INSERT INTO config_tags_relation(id,tag_name,tag_type,data_id,group_id,tenant_id) VALUES(?,?,?,?,?,?)";
-    }
-    
-    @Override
-    public String removeTagByIdAtomic() {
-        return "DELETE FROM config_tags_relation WHERE id=?";
-    }
-    
-    @Override
-    public String getConfigTagsByTenant() {
-        return "SELECT tag_name FROM config_tags_relation WHERE tenant_id = ? ";
-    }
-    
-    @Override
-    public String selectTagByConfig() {
-        return "SELECT tag_name FROM config_tags_relation WHERE data_id=? AND group_id=? AND tenant_id = ? ";
-    }
-    
-    @Override
     public String findConfigInfoByAdvanceCountRows(Map<String, String> params, int tagSize) {
         final String appName = params.get("appName");
         StringBuilder sqlCount = new StringBuilder(

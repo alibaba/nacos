@@ -19,11 +19,11 @@ package com.alibaba.nacos.client.utils;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import org.slf4j.Logger;
 
-import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
@@ -77,18 +77,18 @@ public class ParamUtil {
     
     static {
         // Client identity information
-        appKey = System.getProperty(NACOS_CLIENT_APP_KEY, BLANK_STR);
+        appKey = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_APP_KEY, BLANK_STR);
         
-        defaultContextPath = System.getProperty(NACOS_CLIENT_CONTEXTPATH_KEY, DEFAULT_NACOS_CLIENT_CONTEXTPATH);
+        defaultContextPath = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_CONTEXTPATH_KEY, DEFAULT_NACOS_CLIENT_CONTEXTPATH);
         
         appName = AppNameUtils.getAppName();
         
-        serverPort = System.getProperty(NACOS_SERVER_PORT_KEY, DEFAULT_SERVER_PORT);
+        serverPort = NacosClientProperties.PROTOTYPE.getProperty(NACOS_SERVER_PORT_KEY, DEFAULT_SERVER_PORT);
         LOGGER.info("[settings] [req-serv] nacos-server port:{}", serverPort);
         
         String tmp = "1000";
         try {
-            tmp = System.getProperty(NACOS_CONNECT_TIMEOUT_KEY, DEFAULT_NACOS_CONNECT_TIMEOUT);
+            tmp = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CONNECT_TIMEOUT_KEY, DEFAULT_NACOS_CONNECT_TIMEOUT);
             connectTimeout = Integer.parseInt(tmp);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid connect timeout:" + tmp;
@@ -101,7 +101,7 @@ public class ParamUtil {
         
         try {
             perTaskConfigSize = Double
-                    .parseDouble(System.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+                    .parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
             LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
         } catch (Throwable t) {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", t);
@@ -174,18 +174,18 @@ public class ParamUtil {
      * @param properties properties
      * @return namespace
      */
-    public static String parseNamespace(Properties properties) {
+    public static String parseNamespace(NacosClientProperties properties) {
         String namespaceTmp = null;
         
         String isUseCloudNamespaceParsing = properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                properties.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
                         String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
         
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             namespaceTmp = TenantUtil.getUserTenantForAcm();
             
             namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, () -> {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                String namespace = properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
                 return StringUtils.isNotBlank(namespace) ? namespace : StringUtils.EMPTY;
             });
         }
@@ -206,7 +206,7 @@ public class ParamUtil {
         // If entered in the configuration file, the priority in ENV will be given priority.
         if (endpointUrl == null || !PATTERN.matcher(endpointUrl).find()) {
             // skip retrieve from system property and retrieve directly from system env
-            String endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            String endpointUrlSource = NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
             if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
@@ -223,8 +223,8 @@ public class ParamUtil {
         }
         
         String endpointUrlSource = TemplateUtils
-                .stringBlankAndThenExecute(System.getProperty(endpointUrl, System.getenv(endpointUrl)),
-                        () -> System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
+                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl, System.getenv(endpointUrl)),
+                        () -> NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {

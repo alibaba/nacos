@@ -34,12 +34,7 @@ public class ConfigInfoBetaMapperByDerby extends AbstractMapper implements Confi
         return "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
     }
-    
-    @Override
-    public String count() {
-        return "SELECT COUNT(*) FROM config_info_beta";
-    }
-    
+
     @Override
     public String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "

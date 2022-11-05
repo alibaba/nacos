@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
@@ -56,7 +57,7 @@ public class Limiter {
     
     static {
         try {
-            String limitTimeStr = System.getProperty(LIMIT_TIME_PROPERTY, String.valueOf(limit));
+            String limitTimeStr = NacosClientProperties.PROTOTYPE.getProperty(LIMIT_TIME_PROPERTY, String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
             LOGGER.info("limitTime:{}", limit);
         } catch (Exception e) {
