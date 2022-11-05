@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ChooserTest {
     
+    //Test the correctness of Chooser, the weight of the final selected instance must be greater than 0
     @Test
     public void testChooser() {
         List<Instance> hosts = getInstanceList();
@@ -32,6 +33,7 @@ public class ChooserTest {
         return list;
     }
     
+    // If there is only one instance whose weight is not zero, it will be selected
     @Test
     public void testOnlyOneInstanceWeightIsNotZero() {
         List<Instance> hosts = getOneInstanceNotZeroList();
@@ -58,6 +60,7 @@ public class ChooserTest {
         return list;
     }
     
+    // Throw an IllegalStateException when all instances have a weight of zero.
     @Test
     public void testInstanceWeightAllZero() {
         List<Instance> hosts = getInstanceWeightAllZero();
