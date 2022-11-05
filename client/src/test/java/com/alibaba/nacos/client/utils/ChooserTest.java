@@ -62,17 +62,17 @@ public class ChooserTest {
     
     // Throw an IllegalStateException when all instances have a weight of zero.
     @Test
-    public void testInstanceWeightAllZero(){
+    public void testInstanceWeightAllZero() {
         List<Instance> hosts = getInstanceWeightAllZero();
         
-        try{
+        try {
             getRandomInstance(hosts);
-        } catch (Exception e){
-            assertTrue( e instanceof IllegalStateException);
+        } catch (Exception e) {
+            assertTrue(e instanceof IllegalStateException);
         }
     }
     
-    private List<Instance> getInstanceWeightAllZero(){
+    private List<Instance> getInstanceWeightAllZero() {
         List<Instance> list = new ArrayList<>();
         int size = ThreadLocalRandom.current().nextInt(0, 1000);
         
@@ -85,7 +85,7 @@ public class ChooserTest {
         return list;
     }
     
-    private Instance getRandomInstance(List<Instance> hosts){
+    private Instance getRandomInstance(List<Instance> hosts) {
         List<Pair<Instance>> hostsWithWeight = new ArrayList<>();
         for (Instance host : hosts) {
             if (host.isHealthy()) {
