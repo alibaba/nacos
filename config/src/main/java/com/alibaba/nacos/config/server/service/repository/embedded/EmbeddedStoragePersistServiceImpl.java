@@ -1092,7 +1092,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
         ConfigInfoMapper configInfoMapper =  mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
         final int startRow = (pageNo - 1) * pageSize;
-        return helper.fetchPage(configInfoMapper.findConfigInfoBaseByDataIdCountRows(),
+        return helper.fetchPage(configInfoMapper.count(Arrays.asList("data_id", "tenant_id")),
                 configInfoMapper.findConfigInfoBaseByDataIdFetchRows(startRow, pageSize),
                 new Object[] {dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         
