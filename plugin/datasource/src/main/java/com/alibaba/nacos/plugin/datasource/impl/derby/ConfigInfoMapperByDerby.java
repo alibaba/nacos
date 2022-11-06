@@ -85,40 +85,43 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String getTenantIdList() {
-        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+    public String getTenantIdList(int startRow, int pageSize) {
+        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET "
+                + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
-    public String getGroupIdList() {
-        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+    public String getGroupIdList(int startRow, int pageSize) {
+        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET "
+                + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
-    public String findAllConfigKey() {
+    public String findAllConfigKey(int startRow, int pageSize) {
         return " SELECT data_id,group_id,app_name FROM "
-                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ) "
+                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET "
+                + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY ) "
                 + "g, config_info t  WHERE g.id = t.id ";
     }
     
     @Override
     public String findAllConfigInfoBaseFetchRows(int startRow, int pageSize) {
         return "SELECT t.id,data_id,group_id,content,md5 "
-                + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )  "
+                + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY )  "
                 + " g, config_info t WHERE g.id = t.id ";
     }
     
     @Override
     public String findAllConfigInfoForDumpAllFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified "
-                + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY)"
+                + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY)"
                 + " g, config_info t  WHERE g.id = t.id ";
     }
     
     @Override
-    public String findAllConfigInfoFragment() {
+    public String findAllConfigInfoFragment(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info WHERE id > ? "
-                + "ORDER BY id ASC OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+                + "ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -195,9 +198,10 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String listGroupKeyMd5ByPageFetchRows() {
+    public String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified "
-                + "FROM ( SELECT id FROM config_info ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ) g, config_info t WHERE g.id = t.id";
+                + "FROM ( SELECT id FROM config_info ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT "
+                + pageSize + " ROWS ONLY ) g, config_info t WHERE g.id = t.id";
     }
     
     @Override

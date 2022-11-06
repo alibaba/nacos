@@ -1232,17 +1232,17 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public List<String> getTenantIdList(int page, int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String sql = configInfoMapper.getTenantIdList();
         int from = (page - 1) * pageSize;
-        return jt.queryForList(sql, String.class, from, pageSize);
+        String sql = configInfoMapper.getTenantIdList(from, pageSize);
+        return jt.queryForList(sql, String.class);
     }
     
     @Override
     public List<String> getGroupIdList(int page, int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String sql = configInfoMapper.getGroupIdList();
         int from = (page - 1) * pageSize;
-        return jt.queryForList(sql, String.class, from, pageSize);
+        String sql = configInfoMapper.getGroupIdList(from, pageSize);
+        return jt.queryForList(sql, String.class);
     }
     
     @Override
@@ -1307,7 +1307,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String select = configInfoMapper.findAllConfigKey();
+        int startRow = (pageNo - 1) * pageSize;
+        String select = configInfoMapper.findAllConfigKey(startRow, pageSize);
         
         final int totalCount = configInfoCount(tenant);
         int pageCount = totalCount / pageSize;
@@ -1326,7 +1327,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         
         try {
             List<ConfigKey> result = jt
-                    .query(select, new Object[] {generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize},
+                    .query(select, new Object[] {generateLikeArgument(tenantTmp)},
                             // new Object[0],
                             CONFIG_KEY_ROW_MAPPER);
             
@@ -1380,10 +1381,10 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String select = configInfoMapper.findAllConfigInfoFragment();
+        String select = configInfoMapper.findAllConfigInfoFragment(0, pageSize);
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         try {
-            return helper.fetchPageLimit(select, new Object[] {lastMaxId, 0, pageSize}, 1, pageSize,
+            return helper.fetchPageLimit(select, new Object[] {lastMaxId}, 1, pageSize,
                     CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
@@ -2508,11 +2509,11 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
         String sqlCountRows = configInfoMapper.count(null);
-        String sqlFetchRows = configInfoMapper.listGroupKeyMd5ByPageFetchRows();
+        String sqlFetchRows = configInfoMapper.listGroupKeyMd5ByPageFetchRows((pageNo - 1) * pageSize, pageSize);
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         try {
             Page<ConfigInfoWrapper> page = helper
-                    .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
+                    .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {},
                             pageNo, pageSize, CONFIG_INFO_WRAPPER_ROW_MAPPER);
             
             return page.getPageItems();
