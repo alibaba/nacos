@@ -382,11 +382,6 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoBaseByDataIdCountRows() {
-        return "SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=?";
-    }
-    
-    @Override
     public String findConfigInfoBaseByDataIdFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? " + "AND tenant_id=?" + " OFFSET "
                 + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";

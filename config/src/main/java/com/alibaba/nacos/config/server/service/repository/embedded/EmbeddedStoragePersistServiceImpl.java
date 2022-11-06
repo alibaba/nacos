@@ -1092,7 +1092,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         PaginationHelper<ConfigInfoBase> helper = createPaginationHelper();
         ConfigInfoMapper configInfoMapper =  mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
         final int startRow = (pageNo - 1) * pageSize;
-        return helper.fetchPage(configInfoMapper.findConfigInfoBaseByDataIdCountRows(),
+        return helper.fetchPage(configInfoMapper.count(Arrays.asList("data_id", "tenant_id")),
                 configInfoMapper.findConfigInfoBaseByDataIdFetchRows(startRow, pageSize),
                 new Object[] {dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         
@@ -2587,8 +2587,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
-        TenantInfoMapper tenantInfoMapper =  mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.getCountByTenantId();
+        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO);
+        String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
         Integer result = databaseOperate
                 .queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {

@@ -385,12 +385,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         }
         return sql + where + " LIMIT " + startRow + "," + pageSize;
     }
-    
-    @Override
-    public String findConfigInfoBaseByDataIdCountRows() {
-        return "SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=?";
-    }
-    
+
     @Override
     public String findConfigInfoBaseByDataIdFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?" + " LIMIT "
