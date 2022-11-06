@@ -100,31 +100,37 @@ public interface ConfigInfoMapper extends Mapper {
     /**
      * Get tenant id list  by page.
      * The default sql:
-     * SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?
+     * SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT startRow, pageSize
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of getting tenant id list  by page.
      */
-    String getTenantIdList();
+    String getTenantIdList(int startRow, int pageSize);
     
     /**
      * Get group id list  by page.
      * The default sql:
-     * SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?
+     * SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT startRow, pageSize
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of getting group id list  by page.
      */
-    String getGroupIdList();
+    String getGroupIdList(int startRow, int pageSize);
     
     /**
      * Query all configuration information by page.
      * The default sql:
      * SELECT data_id,group_id,app_name  FROM (
-     * SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ? ) g,
+     * SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT startRow, pageSize ) g,
      * config_info t WHERE g.id = t.id "
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying all configuration information.
      */
-    String findAllConfigKey();
+    String findAllConfigKey(int startRow, int pageSize);
     
     /**
      * Query all configuration information by page.
@@ -156,11 +162,13 @@ public interface ConfigInfoMapper extends Mapper {
      * Query all config info.
      * The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key
-     * FROM config_info WHERE id > ? ORDER BY id ASC LIMIT ?,?
+     * FROM config_info WHERE id > ? ORDER BY id ASC LIMIT startRow,pageSize
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of querying all config info.
      */
-    String findAllConfigInfoFragment();
+    String findAllConfigInfoFragment(int startRow, int pageSize);
     
     /**
      * Query change config.
@@ -209,9 +217,11 @@ public interface ConfigInfoMapper extends Mapper {
      * SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t
      * WHERE g.id = t.id
      *
+     * @param startRow The start index.
+     * @param pageSize The size of page.
      * @return The sql of listing group key md5 by page.
      */
-    String listGroupKeyMd5ByPageFetchRows();
+    String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize);
     
     /**
      * query all configuration information according to group, appName, tenant (for export).

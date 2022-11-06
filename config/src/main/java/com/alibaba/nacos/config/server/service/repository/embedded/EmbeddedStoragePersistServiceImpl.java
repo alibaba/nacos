@@ -1269,12 +1269,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
         
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String sql = configInfoMapper.getTenantIdList();
-        
         int from = (page - 1) * pageSize;
+        String sql = configInfoMapper.getTenantIdList(from, pageSize);
         
         Page<Map<String, Object>> pageList = helper
-                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+                .fetchPageLimit(sql, new Object[] {}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("TENANT_ID")))
                 .collect(Collectors.toList());
     }
@@ -1284,11 +1283,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         PaginationHelper<Map<String, Object>> helper = createPaginationHelper();
         
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String sql = configInfoMapper.getGroupIdList();
         int from = (page - 1) * pageSize;
+        String sql = configInfoMapper.getGroupIdList(from, pageSize);
         
         Page<Map<String, Object>> pageList = helper
-                .fetchPageLimit(sql, new Object[] {from, pageSize}, page, pageSize, MAP_ROW_MAPPER);
+                .fetchPageLimit(sql, new Object[] {}, page, pageSize, MAP_ROW_MAPPER);
         return pageList.getPageItems().stream().map(map -> String.valueOf(map.get("GROUP_ID")))
                 .collect(Collectors.toList());
     }
@@ -1353,7 +1352,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        final String select = configInfoMapper.findAllConfigKey();
+        final String select = configInfoMapper.findAllConfigKey((pageNo - 1) * pageSize, pageSize);
         
         final int totalCount = configInfoCount(tenant);
         int pageCount = totalCount / pageSize;
@@ -1371,7 +1370,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         page.setTotalCount(totalCount);
         
         List<ConfigKey> result = databaseOperate
-                .queryMany(select, new Object[] {generateLikeArgument(tenantTmp), (pageNo - 1) * pageSize, pageSize},
+                .queryMany(select, new Object[] {generateLikeArgument(tenantTmp)},
                         // new Object[0],
                         CONFIG_KEY_ROW_MAPPER);
         
@@ -1413,9 +1412,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-        String select = configInfoMapper.findAllConfigInfoFragment();
+        String select = configInfoMapper.findAllConfigInfoFragment(0, pageSize);
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
-        return helper.fetchPageLimit(select, new Object[] {lastMaxId, 0, pageSize}, 1, pageSize,
+        return helper.fetchPageLimit(select, new Object[] {lastMaxId}, 1, pageSize,
                 CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
     }
@@ -2364,10 +2363,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize) {
         ConfigInfoMapper configInfoMapper =  mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
         String sqlCountRows = configInfoMapper.count(null);
-        String sqlFetchRows = configInfoMapper.listGroupKeyMd5ByPageFetchRows();
+        String sqlFetchRows = configInfoMapper.listGroupKeyMd5ByPageFetchRows((pageNo - 1) * pageSize, pageSize);
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
         Page<ConfigInfoWrapper> page = helper
-                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize}, pageNo,
+                .fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo,
                         pageSize, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
         return page.getPageItems();

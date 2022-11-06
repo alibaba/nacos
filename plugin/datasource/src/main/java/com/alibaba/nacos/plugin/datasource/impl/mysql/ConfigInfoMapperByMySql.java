@@ -85,19 +85,19 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String getTenantIdList() {
-        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT ?, ?";
+    public String getTenantIdList(int startRow, int pageSize) {
+        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
-    public String getGroupIdList() {
-        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT ?, ?";
+    public String getGroupIdList(int startRow, int pageSize) {
+        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
-    public String findAllConfigKey() {
+    public String findAllConfigKey(int startRow, int pageSize) {
         return " SELECT data_id,group_id,app_name  FROM ( "
-                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?, ?  )"
+                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT " + startRow + "," + pageSize + " )"
                 + " g, config_info t WHERE g.id = t.id  ";
     }
     
@@ -116,9 +116,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findAllConfigInfoFragment() {
+    public String findAllConfigInfoFragment(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT ?,?";
+                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -194,9 +194,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String listGroupKeyMd5ByPageFetchRows() {
+    public String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
-                + "( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id";
+                + "( SELECT id FROM config_info ORDER BY id LIMIT " + startRow + "," + pageSize + " ) g, config_info t WHERE g.id = t.id";
     }
     
     @Override
