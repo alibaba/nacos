@@ -88,7 +88,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
+        return sql + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -189,7 +189,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
+        return sql + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -299,7 +299,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
+        return sql + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override

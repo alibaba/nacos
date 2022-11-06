@@ -39,7 +39,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
         }
         datumString.deleteCharAt(datumString.length() - 1);
         return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
-                + datumString.toString() + ")";
+                + datumString + ")";
     }
     
     @Override
@@ -71,7 +71,8 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
     @Override
     public String findConfigInfoAggrByPageFetchRows(int startRow, int pageSize) {
         return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND "
-                + "group_id=? AND tenant_id=? ORDER BY datum_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+                + "group_id=? AND tenant_id=? ORDER BY datum_id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                + " ROWS ONLY";
     }
     
     @Override

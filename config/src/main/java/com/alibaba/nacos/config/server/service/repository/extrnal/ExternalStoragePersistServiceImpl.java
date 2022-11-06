@@ -1400,8 +1400,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
                 configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(startRow, pageSize);
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
         try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
-                    pageNo, pageSize, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
+            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
+                    CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
@@ -1417,8 +1417,8 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         String sqlFetchRows = configInfoTagMapper.findAllConfigInfoTagForDumpAllFetchRows(startRow, pageSize);
         PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
         try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {(pageNo - 1) * pageSize, pageSize},
-                    pageNo, pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
+            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
+                    CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
@@ -1760,8 +1760,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
         try {
             return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows,
-                    new Object[] {dataId, group, tenantTmp, (pageNo - 1) * pageSize, pageSize}, pageNo, pageSize,
-                    CONFIG_INFO_AGGR_ROW_MAPPER);
+                    new Object[] {dataId, group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
         
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
