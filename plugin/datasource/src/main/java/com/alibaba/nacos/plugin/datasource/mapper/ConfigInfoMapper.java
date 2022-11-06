@@ -331,15 +331,6 @@ public interface ConfigInfoMapper extends Mapper {
     String findConfigInfo4PageFetchRows(Map<String, String> params, int startRow, int pageSize);
     
     /**
-     * The count of querying configuration information based on dataId.
-     * The default sql:
-     * SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=?
-     *
-     * @return The sql of query count.
-     */
-    String findConfigInfoBaseByDataIdCountRows();
-    
-    /**
      * Query configuration information based on dataId.
      * The default sql:
      * SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?

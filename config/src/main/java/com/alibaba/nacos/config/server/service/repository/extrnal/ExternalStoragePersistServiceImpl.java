@@ -1028,7 +1028,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         try {
             final int startRow = (pageNo - 1) * pageSize;
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSource, TableConstant.CONFIG_INFO);
-            return helper.fetchPage(configInfoMapper.findConfigInfoBaseByDataIdCountRows(),
+            return helper.fetchPage(configInfoMapper.count(Arrays.asList("data_id", "tenant_id")),
                     configInfoMapper.findConfigInfoBaseByDataIdFetchRows(startRow, pageSize),
                     new Object[] {dataId, StringUtils.EMPTY}, pageNo, pageSize, CONFIG_INFO_BASE_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
@@ -2730,7 +2730,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
             throw new IllegalArgumentException("tenantId can not be null");
         }
         TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSource, TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.getCountByTenantId();
+        String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
         Integer result = this.jt
                 .queryForObject(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {

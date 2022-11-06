@@ -38,9 +38,4 @@ public class TenantInfoMapperByMySql extends AbstractMapper implements TenantInf
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-    
-    @Override
-    public String getCountByTenantId() {
-        return "SELECT count(*) FROM tenant_info WHERE tenant_id = ?";
-    }
 }
