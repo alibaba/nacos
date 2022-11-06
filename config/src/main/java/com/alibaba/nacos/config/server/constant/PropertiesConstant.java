@@ -53,7 +53,7 @@ public class PropertiesConstant {
     
     public static final String INITIAL_EXPANSION_PERCENT = "initialExpansionPercent";
     
-    public static final String SPRING_DATASOURCE_PLATFORM = "spring.datasource.platform";
+    public static final String SPRING_DATASOURCE_PLATFORM = "spring.sql.init.platform";
     
     public static final String MYSQL = "mysql";
     

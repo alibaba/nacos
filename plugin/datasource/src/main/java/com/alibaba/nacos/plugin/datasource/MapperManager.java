@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,6 +94,9 @@ public class MapperManager {
      */
     public <R extends Mapper> R findMapper(String dataSource, String tableName) {
         LOGGER.info("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
+        if (StringUtils.isBlank(dataSource) || StringUtils.isBlank(tableName)) {
+            throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE, "dataSource or tableName is null");
+        }
         Map<String, Mapper> tableMapper = MAPPER_SPI_MAP.get(dataSource);
         if (Objects.isNull(tableMapper)) {
             throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE,

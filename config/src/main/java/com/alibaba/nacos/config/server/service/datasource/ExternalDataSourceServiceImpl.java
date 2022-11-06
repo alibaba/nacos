@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.datasource;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -76,6 +77,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private volatile int masterIndex;
     
+    private String dataSourceType = "";
+    
+    private String defaultDataSourceType = "";
+    
     @Override
     public void init() {
         queryTimeout = ConvertUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
@@ -101,6 +106,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
+    
+        dataSourceType = EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, defaultDataSourceType);
+    
         if (PropertyUtil.isUseExternalDB()) {
             try {
                 reload();
@@ -213,6 +221,11 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         }
         
         return "UP";
+    }
+    
+    @Override
+    public String getDataSourceType() {
+        return dataSourceType;
     }
     
     class SelectMasterTask implements Runnable {
