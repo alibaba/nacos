@@ -38,7 +38,7 @@ public interface ConfigInfoTagMapper extends Mapper {
      * Query all tag config info for dump task.
      * The default sql:
      * SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified
-     * FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,? ) g,
+     * FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT startRow,pageSize ) g,
      * config_info_tag t  WHERE g.id = t.id
      *
      * @param startRow The start index.

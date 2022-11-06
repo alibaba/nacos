@@ -61,7 +61,7 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * Query aggregation config info.
      * The default sql:
      * SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND
-     * group_id=? AND tenant_id=? ORDER BY datum_id LIMIT ?,?
+     * group_id=? AND tenant_id=? ORDER BY datum_id LIMIT startRow,pageSize
      *
      * @param startRow The start index.
      * @param pageSize The size of page.
