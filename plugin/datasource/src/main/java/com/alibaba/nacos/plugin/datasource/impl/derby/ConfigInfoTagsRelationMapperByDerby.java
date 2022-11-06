@@ -92,7 +92,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sql + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -196,7 +196,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sql + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
@@ -307,7 +307,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
         if (StringUtils.isNotBlank(appName)) {
             sql.append(" AND a.app_name=? ");
         }
-        return sql.toString() + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sql + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
