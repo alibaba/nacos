@@ -101,6 +101,11 @@ public class TpsBarrier {
                         appliedBarriers.get(patternRuleBarrier).add(barrierCheckRequest);
                         if (MatchType.EXACT.equals(match)) {
                             exactMatch = true;
+                            Loggers.TPS
+                                    .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
+                                            pointName, patternRuleBarrier.getPattern(), patternRuleBarrier.getName(),
+                                            tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+                                            monitorKey);
                         }
                     } else {
                         patternSuccess = false;
@@ -242,7 +247,8 @@ public class TpsBarrier {
                 if (patternRateCounterMap.containsKey(newMonitorRule.getKey())) {
                     RuleBarrier rateCounterWrapper = patternRateCounterMap.get(newMonitorRule.getKey());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
-                    if (!rateCounterWrapper.getPattern().contains(Constants.ALL_PATTERN)) {
+                    if (rateCounterWrapper.getOrder() == 0 && !rateCounterWrapper.getPattern()
+                            .contains(Constants.ALL_PATTERN)) {
                         rateCounterWrapper.setOrder(1);
                     }
                 } else {
@@ -256,7 +262,8 @@ public class TpsBarrier {
                             .createRuleBarrier(newMonitorRule.getKey(), newRuleDetail.getPattern(),
                                     newRuleDetail.getPeriod(), newRuleDetail.getModel());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
-                    if (!rateCounterWrapper.getPattern().contains(Constants.ALL_PATTERN)) {
+                    if (rateCounterWrapper.getOrder() == 0 && !rateCounterWrapper.getPattern()
+                            .contains(Constants.ALL_PATTERN)) {
                         rateCounterWrapper.setOrder(1);
                     }
                     patternRateCounterMap.put(newMonitorRule.getKey(), rateCounterWrapper);

@@ -51,13 +51,13 @@ public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
         }
     }
     
-    
     public void applyRuleDetail(RuleDetail ruleDetail) {
         tpsBarrier.applyRuleDetail(ruleDetail);
         if (ruleDetail instanceof FlowedRuleDetail) {
             RuleDetail copy = new RuleDetail();
             BeanUtils.copyProperties(ruleDetail, copy);
             copy.setMaxCount(((FlowedRuleDetail) ruleDetail).getMaxFlow());
+            super.setOrder(((FlowedRuleDetail) ruleDetail).getOrder());
             super.applyRuleDetail(copy);
         }
     }
