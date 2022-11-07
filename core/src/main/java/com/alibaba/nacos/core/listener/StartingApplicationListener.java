@@ -72,8 +72,10 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String DEFAULT_DATABASE = "mysql";
     
-    // May be removed with the upgrade of springboot version
-    public static final String  DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
+    /**
+     * May be removed with the upgrade of springboot version.
+     */
+    public static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
     
     private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
