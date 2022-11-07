@@ -79,6 +79,8 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
+    private static final String DERBY_DATABASE = "derby";
+    
     private static final String DEFAULT_DATASOURCE_PLATFORM = "";
     
     private static final String DATASOURCE_MODE_EXTERNAL = "external";
@@ -248,7 +250,9 @@ public class StartingApplicationListener implements NacosApplicationListener {
     private void judgeStorageMode(ConfigurableEnvironment env) {
         
         // External data sources are used by default in cluster mode
-        boolean useExternalStorage = (DEFAULT_DATABASE.equalsIgnoreCase(this.getDatasourcePlatform(env)));
+        String platform = this.getDatasourcePlatform(env);
+        boolean useExternalStorage =
+                !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform) && !DERBY_DATABASE.equalsIgnoreCase(platform);
         
         // must initialize after setUseExternalDB
         // This value is true in stand-alone mode and false in cluster mode
