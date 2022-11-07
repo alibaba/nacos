@@ -12,6 +12,16 @@ public class BarrierCheckRequest {
     
     MonitorKey monitorKey;
     
+    private boolean monitorOnly = false;
+    
+    public boolean isMonitorOnly() {
+        return monitorOnly;
+    }
+    
+    public void setMonitorOnly(boolean monitorOnly) {
+        this.monitorOnly = monitorOnly;
+    }
+    
     public String getPointName() {
         return pointName;
     }

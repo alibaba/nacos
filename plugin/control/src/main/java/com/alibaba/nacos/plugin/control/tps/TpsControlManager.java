@@ -122,7 +122,13 @@ public class TpsControlManager {
         }
         
         if (points.containsKey(tpsRequest.getPointName())) {
-            return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
+            try {
+                return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
+            } catch (Throwable throwable) {
+                Loggers.TPS.warn("[{}]apply tps error,clientIp={},connectionId={},keys={},error={}",
+                        tpsRequest.getPointName(), tpsRequest.getClientIp(), tpsRequest.getConnectionId(),
+                        tpsRequest.getMonitorKeys(), throwable);
+            }
         }
         return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "skip");
         

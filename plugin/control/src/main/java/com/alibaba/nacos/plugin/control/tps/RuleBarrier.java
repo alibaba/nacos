@@ -25,6 +25,16 @@ public abstract class RuleBarrier {
     
     private String model;
     
+    private int order;
+    
+    public int getOrder() {
+        return order;
+    }
+    
+    public void setOrder(int order) {
+        this.order = order;
+    }
+    
     public TimeUnit getPeriod() {
         return period;
     }

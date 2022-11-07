@@ -169,7 +169,7 @@ public class TpsBarrierTest {
         tpsCheckRequest.setClientIp("127.0.0.1");
         tpsCheckRequest.setTimestamp(timeMillis);
         
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
         }

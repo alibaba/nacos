@@ -36,14 +36,14 @@ public class MonitorKeyMatcher {
      * @param monitorKey monitorKey.
      * @return type matched result.
      */
-    public static boolean match(String pattern, String monitorKey) {
+    public static MatchType parse(String pattern, String monitorKey) {
         String[] typeInPattern = pattern.split(Constants.COLON);
         String[] typeInMonitorKey = monitorKey.split(Constants.COLON);
         if (!Objects.equals(typeInPattern[0], typeInMonitorKey[0])) {
-            return false;
+            return MatchType.NO_MATCH;
         }
-        return matchPattern(pattern.substring(pattern.indexOf(Constants.COLON)),
-                monitorKey.substring(monitorKey.indexOf(Constants.COLON)));
+        return matchPattern(pattern.substring(pattern.indexOf(Constants.COLON)+1),
+                monitorKey.substring(monitorKey.indexOf(Constants.COLON)+1));
     }
     
     /**
@@ -52,32 +52,33 @@ public class MonitorKeyMatcher {
      * @param monitorKey monitorKey.
      * @return matched result.
      */
-    private static boolean matchPattern(String pattern, String monitorKey) {
+    private static MatchType matchPattern(String pattern, String monitorKey) {
         pattern = pattern.trim();
         monitorKey = monitorKey.trim();
         //"AB",equals.
         if (!pattern.contains(Constants.ALL_PATTERN)) {
-            return pattern.equals(monitorKey.trim());
+            return pattern.equals(monitorKey.trim()) ? MatchType.EXACT : MatchType.NO_MATCH;
         }
         //"*",match all.
         if (pattern.equals(Constants.ALL_PATTERN)) {
-            return true;
+            return MatchType.ALL;
         }
         String[] split = pattern.split("\\" + Constants.ALL_PATTERN);
         
         if (split.length == 1) {
             //"A*",prefix match.
-            return monitorKey.startsWith(split[0]);
+            return monitorKey.startsWith(split[0]) ? MatchType.PREFIX : MatchType.NO_MATCH;
         } else if (split.length == 2) {
             //"*A",postfix match.
             if (StringUtils.isBlank(split[0])) {
-                return monitorKey.endsWith(split[1]);
+                return monitorKey.endsWith(split[1]) ? MatchType.POSTFIX : MatchType.NO_MATCH;
             }
             //A*B prefix & postfix match
-            return monitorKey.startsWith(split[0]) && monitorKey.endsWith(split[1]);
+            return monitorKey.startsWith(split[0]) && monitorKey.endsWith(split[1]) ? MatchType.PRE_POSTFIX
+                    : MatchType.NO_MATCH;
         }
         
-        return false;
+        return MatchType.NO_MATCH;
     }
     
 }

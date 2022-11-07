@@ -1,11 +1,13 @@
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
+import com.alibaba.nacos.plugin.control.tps.key.MatchType;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyMatcher;
 import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountBarrierCreator;
@@ -16,11 +18,10 @@ import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -79,13 +80,15 @@ public class TpsBarrier {
         List<RuleBarrier> patternBarriers = this.patternBarriers;
         
         buildIpOrConnectionIdKey(tpsCheckRequest);
-        
+        boolean exactMatch = false;
         //1.check pattern barriers
         for (MonitorKey monitorKey : tpsCheckRequest.getMonitorKeys()) {
             
             for (RuleBarrier patternRuleBarrier : patternBarriers) {
                 BarrierCheckRequest barrierCheckRequest = tpsCheckRequest.buildBarrierCheckRequest(monitorKey);
-                if (MonitorKeyMatcher.match(patternRuleBarrier.getPattern(), monitorKey.build())) {
+                barrierCheckRequest.setMonitorOnly(exactMatch);
+                MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
+                if (match.isMatch()) {
                     TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
                     if (patternCheckResponse.isSuccess()) {
                         if (appliedBarriers == null) {
@@ -96,6 +99,9 @@ public class TpsBarrier {
                         }
                         
                         appliedBarriers.get(patternRuleBarrier).add(barrierCheckRequest);
+                        if (MatchType.EXACT.equals(match)) {
+                            exactMatch = true;
+                        }
                     } else {
                         patternSuccess = false;
                         denyPatternRate = patternRuleBarrier;
@@ -126,6 +132,7 @@ public class TpsBarrier {
         pointCheckRequest.setCount(tpsCheckRequest.getCount());
         pointCheckRequest.setPointName(this.pointName);
         pointCheckRequest.setTimestamp(tpsCheckRequest.getTimestamp());
+        pointCheckRequest.setMonitorOnly(exactMatch);
         TpsCheckResponse pointCheckSuccess = pointBarrier.applyTps(pointCheckRequest);
         if (pointCheckSuccess.isSuccess()) {
             return pointCheckSuccess;
@@ -235,7 +242,9 @@ public class TpsBarrier {
                 if (patternRateCounterMap.containsKey(newMonitorRule.getKey())) {
                     RuleBarrier rateCounterWrapper = patternRateCounterMap.get(newMonitorRule.getKey());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
-                    
+                    if (!rateCounterWrapper.getPattern().contains(Constants.ALL_PATTERN)) {
+                        rateCounterWrapper.setOrder(1);
+                    }
                 } else {
                     Loggers.CONTROL
                             .info("Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
@@ -247,6 +256,9 @@ public class TpsBarrier {
                             .createRuleBarrier(newMonitorRule.getKey(), newRuleDetail.getPattern(),
                                     newRuleDetail.getPeriod(), newRuleDetail.getModel());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
+                    if (!rateCounterWrapper.getPattern().contains(Constants.ALL_PATTERN)) {
+                        rateCounterWrapper.setOrder(1);
+                    }
                     patternRateCounterMap.put(newMonitorRule.getKey(), rateCounterWrapper);
                 }
             }
@@ -262,7 +274,10 @@ public class TpsBarrier {
                     currentPatternCounterIterator.remove();
                 }
             }
-            this.patternBarriers = patternRateCounterMap.values().stream().collect(Collectors.toList());
+            //exact pattern has higher priority.
+            this.patternBarriers = patternRateCounterMap.values().stream()
+                    .sorted(Comparator.comparing(RuleBarrier::getOrder, Comparator.reverseOrder()))
+                    .collect(Collectors.toList());
         }
         
     }

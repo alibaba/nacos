@@ -66,7 +66,7 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
         RateCounter currentRateCounter = getRateCounter(barrierCheckRequest);
-        if (isMonitorType()) {
+        if (isMonitorType() || barrierCheckRequest.isMonitorOnly()) {
             boolean overLimit = false;
             if (currentRateCounter.getCount(barrierCheckRequest.getTimestamp()) + barrierCheckRequest.getCount() > this
                     .getMaxCount()) {
