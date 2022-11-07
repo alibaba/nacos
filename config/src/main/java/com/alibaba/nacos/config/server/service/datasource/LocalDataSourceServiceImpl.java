@@ -71,9 +71,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private String healthStatus = "UP";
     
-    private String dataSourceType = "";
-    
-    private String defaultDataSourceType = "derby";
+    private String dataSourceType = "derby";
     
     @Override
     public synchronized void init() throws Exception {
@@ -84,7 +82,6 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             LogUtil.DEFAULT_LOG.info("use local db service for init");
             final String jdbcUrl = "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
             initialize(jdbcUrl);
-            dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
             initialize = true;
         }
     }
