@@ -62,4 +62,6 @@ public class AuthConstants {
     public static final String NACOS_CORE_AUTH_LDAP_PASSWORD = "nacos.core.auth.ldap.password";
     
     public static final String NACOS_CORE_AUTH_LDAP_FILTER_PREFIX = "nacos.core.auth.ldap.filter.prefix";
+    
+    public static final String NACOS_CORE_AUTH_CASE_SENSITIVE = "nacos.core.auth.ldap.case.sensitive";
 }

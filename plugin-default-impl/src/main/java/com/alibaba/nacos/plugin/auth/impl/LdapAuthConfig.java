@@ -56,6 +56,9 @@ public class LdapAuthConfig {
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_FILTER_PREFIX + ":uid}"))
     private String filterPrefix;
     
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_CASE_SENSITIVE + ":true}"))
+    private boolean caseSensitive;
+    
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate(LdapContextSource ldapContextSource) {
@@ -71,7 +74,8 @@ public class LdapAuthConfig {
     @Conditional(ConditionOnLdapAuth.class)
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
             NacosUserDetailsServiceImpl userDetailsService, NacosRoleServiceImpl nacosRoleService) {
-        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix);
+        return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
+                caseSensitive);
     }
     
 }
