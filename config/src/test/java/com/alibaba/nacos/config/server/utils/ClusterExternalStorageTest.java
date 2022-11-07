@@ -69,9 +69,9 @@ public class ClusterExternalStorageTest {
     
     @Test
     public void test005WithClusterAndNullDatabase() {
-        // 模拟设置环境05：指定集群，未指定数据库，UseExternalDB是true，数据库类型是mysql
+        // 模拟设置环境05：指定集群，未指定数据库，UseExternalDB是true，数据库类型是""
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         PropertyUtil.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
@@ -87,7 +87,7 @@ public class ClusterExternalStorageTest {
     public void test006WithClusterAndMysqlDatabase() {
         // 模拟设置环境06：指定集群，指定数据库mysql，UseExternalDB是true，数据库类型是mysql
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "mysql");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         PropertyUtil.setEmbeddedStorage(EnvUtil.getStandaloneMode());
     
@@ -103,7 +103,7 @@ public class ClusterExternalStorageTest {
     public void test007WithClusterAndDerbyDatabase() {
         // 模拟设置环境07：指定集群，指定数据库derby，UseExternalDB是false，数据库类型是derby
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "derby");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         PropertyUtil.setEmbeddedStorage(true);
         
@@ -119,7 +119,7 @@ public class ClusterExternalStorageTest {
     public void test008WithClusterAndOtherDatabase() {
         // 模拟设置环境08: 指定集群，指定数据库其他，UseExternalDB是true，数据库类型是其他
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "postgresql");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         PropertyUtil.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
