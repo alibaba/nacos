@@ -12,7 +12,9 @@ public abstract class RuleBarrier {
     
     private TimeUnit period;
     
-    private String name;
+    private String barrierName;
+    
+    private String ruleName;
     
     private String pattern;
     
@@ -43,12 +45,16 @@ public abstract class RuleBarrier {
         this.period = period;
     }
     
-    public String getName() {
-        return name;
+    public String getBarrierName() {
+        return barrierName;
     }
     
-    public void setName(String name) {
-        this.name = name;
+    public String getRuleName() {
+        return ruleName;
+    }
+    
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
     }
     
     public String getPattern() {
@@ -92,7 +98,7 @@ public abstract class RuleBarrier {
     }
     
     public String getLimitMsg() {
-        return String.format("[Name:%s,Pattern:%s,Period:%s,MaxCount:%s]", name, pattern, period, maxCount);
+        return String.format("[Name:%s,Pattern:%s,Period:%s,MaxCount:%s]", ruleName, pattern, period, maxCount);
     }
     
     /**
@@ -116,6 +122,15 @@ public abstract class RuleBarrier {
      * @param ruleDetail
      */
     abstract public void applyRuleDetail(RuleDetail ruleDetail);
+    
+    
+    /**
+     * get metrics.
+     *
+     * @param timeStamp
+     * @return
+     */
+    abstract public TpsMetrics getMetrics(long timeStamp);
     
     /**
      *

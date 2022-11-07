@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
+import com.alibaba.nacos.plugin.control.tps.TpsMetrics;
 import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRuleBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -13,12 +14,12 @@ public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
     
     RuleBarrier tpsBarrier;
     
-    public FlowedRuleBarrier(String name, String pattern, TimeUnit period, String model) {
-        super(name, pattern, period, model);
-        tpsBarrier = createRuleBarrier(name, pattern, period, model);
+    public FlowedRuleBarrier(String ruleName, String pattern, TimeUnit period, String model) {
+        super(ruleName, pattern, period, model);
+        tpsBarrier = createRuleBarrier(ruleName, pattern, period, model);
     }
     
-    abstract RuleBarrier createRuleBarrier(String name, String pattern, TimeUnit period, String model);
+    abstract RuleBarrier createRuleBarrier(String ruleName, String pattern, TimeUnit period, String model);
     
     @Override
     public String getLimitMsg() {
@@ -38,6 +39,11 @@ public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
         } else {
             return rateCheck;
         }
+    }
+    
+    @Override
+    public TpsMetrics getMetrics(long timeStamp) {
+        return tpsBarrier.getMetrics(timeStamp);
     }
     
     @Override

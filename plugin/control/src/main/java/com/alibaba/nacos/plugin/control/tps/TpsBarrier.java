@@ -103,7 +103,7 @@ public class TpsBarrier {
                             exactMatch = true;
                             Loggers.TPS
                                     .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
-                                            pointName, patternRuleBarrier.getPattern(), patternRuleBarrier.getName(),
+                                            pointName, patternRuleBarrier.getPattern(), patternRuleBarrier.getRuleName(),
                                             tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
                                             monitorKey);
                         }
@@ -126,7 +126,7 @@ public class TpsBarrier {
         if (!patternSuccess) {
             rollbackTps(appliedBarriers);
             Loggers.TPS.warn("[{}]denied by pattern barrier ={},clientIp={},connectionId={},msg={}", pointName,
-                    denyPatternRate.getName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+                    denyPatternRate.getRuleName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
                     denyPatternRate.getLimitMsg());
             return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     (denyPatternRate == null) ? "unknown" : ("denied by " + denyPatternRate.getLimitMsg()));
@@ -145,7 +145,7 @@ public class TpsBarrier {
             //3.1 when point rule fail,rollback applied count of patterns.
             rollbackTps(appliedBarriers);
             Loggers.TPS.warn("[{}]denied by point barrier ={},clientIp={},connectionId={},msg={}", pointName,
-                    pointBarrier.getName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+                    pointBarrier.getRuleName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
                     pointBarrier.getLimitMsg());
             return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     "deny by point rule," + pointBarrier.getLimitMsg());
@@ -181,6 +181,14 @@ public class TpsBarrier {
             }
             
         }
+    }
+    
+    public RuleBarrier getPointBarrier() {
+        return pointBarrier;
+    }
+    
+    public List<RuleBarrier> getPatternBarriers() {
+        return patternBarriers;
     }
     
     public String getPointName() {
@@ -224,7 +232,7 @@ public class TpsBarrier {
             this.patternBarriers = new ArrayList<>();
         } else {
             Map<String, RuleBarrier> patternRateCounterMap = this.patternBarriers.stream()
-                    .collect(Collectors.toMap(a -> a.getName(), Function.identity(), (key1, key2) -> key1));
+                    .collect(Collectors.toMap(a -> a.getRuleName(), Function.identity(), (key1, key2) -> key1));
             
             for (Map.Entry<String, RuleDetail> newMonitorRule : newMonitorKeyRules.entrySet()) {
                 if (newMonitorRule.getValue() == null) {

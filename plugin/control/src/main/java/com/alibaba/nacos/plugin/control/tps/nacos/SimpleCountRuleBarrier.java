@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.tps.nacos;
 
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
+import com.alibaba.nacos.plugin.control.tps.TpsMetrics;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
@@ -17,8 +18,8 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     Map<String, RateCounter> protoKeyCounter;
     
-    public SimpleCountRuleBarrier(String name, String pattern, TimeUnit period, String model) {
-        super.setName(name);
+    public SimpleCountRuleBarrier(String ruleName, String pattern, TimeUnit period, String model) {
+        super.setRuleName(ruleName);
         super.setPattern(pattern);
         super.setPeriod(period);
         super.setModel(model);
@@ -26,9 +27,9 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     public abstract LocalSimpleCountRateCounter createSimpleCounter(String name, TimeUnit period);
     
-    public RateCounter getFuzzyRaterCounter(String name, TimeUnit period) {
+    public RateCounter getFuzzyRaterCounter(String ruleName, TimeUnit period) {
         if (fuzzyRateCounter == null) {
-            this.fuzzyRateCounter = createSimpleCounter(name, period);
+            this.fuzzyRateCounter = createSimpleCounter(ruleName, period);
         }
         return fuzzyRateCounter;
     }
@@ -49,7 +50,7 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
                 protoKeyCounter = new HashMap<>();
             }
             if (!protoKeyCounter.containsKey(key)) {
-                protoKeyCounter.putIfAbsent(key, createSimpleCounter(this.getName(), this.getPeriod()));
+                protoKeyCounter.putIfAbsent(key, createSimpleCounter(this.getRuleName(), this.getPeriod()));
             }
             return protoKeyCounter.get(key);
         }
@@ -57,9 +58,10 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     private RateCounter getRateCounter(BarrierCheckRequest barrierCheckRequest) {
         if (!isProtoModel()) {
-            return getFuzzyRaterCounter(this.getName(), this.getPeriod());
+            return getFuzzyRaterCounter(this.getRuleName(), this.getPeriod());
         } else {
-            return getProtoRaterCounter(this.getName(), this.getPeriod(), barrierCheckRequest.getMonitorKey().getKey());
+            return getProtoRaterCounter(this.getRuleName(), this.getPeriod(),
+                    barrierCheckRequest.getMonitorKey().getKey());
         }
     }
     
@@ -84,15 +86,68 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         
     }
     
+    long trimTimeStamp(long timeStamp) {
+        if (this.getPeriod() == TimeUnit.SECONDS) {
+            timeStamp = RateCounter.getTrimMillsOfSecond(timeStamp);
+        } else if (this.getPeriod() == TimeUnit.MINUTES) {
+            timeStamp = RateCounter.getTrimMillsOfMinute(timeStamp);
+        } else if (this.getPeriod() == TimeUnit.HOURS) {
+            timeStamp = RateCounter.getTrimMillsOfHour(timeStamp);
+        } else {
+            //second default
+            timeStamp = RateCounter.getTrimMillsOfSecond(timeStamp);
+        }
+        return timeStamp;
+    }
+    
+    @Override
+    public TpsMetrics getMetrics(long timeStamp) {
+        timeStamp = trimTimeStamp(timeStamp);
+        if (protoKeyCounter != null && !protoKeyCounter.isEmpty()) {
+            TpsMetrics tpsMetrics = new TpsMetrics("", "", timeStamp, super.getPeriod());
+            Map<String, TpsMetrics.Counter> protoMetrics = new HashMap<>();
+            for (Map.Entry<String, RateCounter> protoCounter : protoKeyCounter.entrySet()) {
+                long protoPassCount = protoCounter.getValue().getCount(timeStamp);
+                long protoDeniedCount = protoCounter.getValue().getDeniedCount(timeStamp);
+                if (protoPassCount <= 0 && protoDeniedCount <= 0) {
+                    continue;
+                }
+                protoMetrics.put(protoCounter.getKey(),
+                        new TpsMetrics.Counter(protoCounter.getValue().getCount(timeStamp),
+                                protoCounter.getValue().getDeniedCount(timeStamp)));
+            }
+            
+            tpsMetrics.setProtoKeyCounter(protoMetrics);
+            long totalPass = protoMetrics.values().stream().mapToLong(TpsMetrics.Counter::getPassCount).sum();
+            long totalDenied = protoMetrics.values().stream().mapToLong(TpsMetrics.Counter::getDeniedCount).sum();
+            if (totalPass <= 0 && totalDenied <= 0) {
+                return null;
+            }
+            tpsMetrics.setCounter(new TpsMetrics.Counter(totalPass, totalDenied));
+            return tpsMetrics;
+            
+        } else if (fuzzyRateCounter != null) {
+            TpsMetrics tpsMetrics = new TpsMetrics("", "", timeStamp, super.getPeriod());
+            long totalPass = fuzzyRateCounter.getCount(timeStamp);
+            long totalDenied = fuzzyRateCounter.getDeniedCount(timeStamp);
+            if (totalPass <= 0 && totalDenied <= 0) {
+                return null;
+            }
+            tpsMetrics.setCounter(new TpsMetrics.Counter(totalPass, totalDenied));
+            return tpsMetrics;
+        } else {
+            return null;
+        }
+    }
     
     @Override
     public void rollbackTps(BarrierCheckRequest barrierCheckRequest) {
         
         if (!isProtoModel()) {
-            getFuzzyRaterCounter(this.getName(), this.getPeriod())
+            getFuzzyRaterCounter(this.getRuleName(), this.getPeriod())
                     .minus(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
         } else {
-            getProtoRaterCounter(this.getName(), this.getPeriod(), barrierCheckRequest.getMonitorKey().getKey())
+            getProtoRaterCounter(this.getRuleName(), this.getPeriod(), barrierCheckRequest.getMonitorKey().getKey())
                     .minus(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
             ;
         }
@@ -107,7 +162,7 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
             this.setMonitorType(ruleDetail.getMonitorType());
             this.setPeriod(ruleDetail.getPeriod());
             this.setModel(ruleDetail.getModel());
-            reCreateRaterCounter(this.getName(), this.getPeriod());
+            reCreateRaterCounter(this.getRuleName(), this.getPeriod());
         } else {
             this.setMaxCount(ruleDetail.getMaxCount());
             this.setMonitorType(ruleDetail.getMonitorType());

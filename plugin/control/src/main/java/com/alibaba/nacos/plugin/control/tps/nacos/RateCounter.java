@@ -57,8 +57,50 @@ public abstract class RateCounter {
      */
     abstract public long getCount(long timestamp);
     
+    /**
+     * @param timestamp
+     * @return
+     */
+    abstract public long getDeniedCount(long timestamp);
+    
+    
     public String getName() {
         return name;
     }
     
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return
+     */
+    public static long getTrimMillsOfMinute(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.valueOf(Long.valueOf(substring) / 60 * 60 + "000");
+    }
+    
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return
+     */
+    public static long getTrimMillsOfSecond(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.valueOf(substring + "000");
+    }
+    
+    /**
+     * get trim mills of second.
+     *
+     * @param timeStamp timestamp milliseconds.
+     * @return
+     */
+    public static long getTrimMillsOfHour(long timeStamp) {
+        String millString = String.valueOf(timeStamp);
+        String substring = millString.substring(0, millString.length() - 3);
+        return Long.valueOf(Long.valueOf(substring) / (60 * 60) * (60 * 60) + "000");
+    }
 }

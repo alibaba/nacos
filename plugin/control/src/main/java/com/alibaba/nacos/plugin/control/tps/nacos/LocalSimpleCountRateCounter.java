@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.tps.nacos;
 
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +20,18 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         for (int i = 0; i < DEFAULT_RECORD_SIZE; i++) {
             slotList.add(new TpsSlot());
         }
+        long now = System.currentTimeMillis();
+        
+        if (period == TimeUnit.SECONDS) {
+            startTime = RateCounter.getTrimMillsOfSecond(now);
+        } else if (period == TimeUnit.MINUTES) {
+            startTime = RateCounter.getTrimMillsOfMinute(now);
+        } else if (period == TimeUnit.HOURS) {
+            startTime = RateCounter.getTrimMillsOfHour(now);
+        } else {
+            //second default
+            getTrimMillsOfSecond(now);
+        }
     }
     
     public void add(long timestamp, long count) {
@@ -26,8 +39,10 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     }
     
     public boolean tryAdd(long timestamp, long count, long upLimit) {
-        AtomicLong currentCount = createSlotIfAbsent(timestamp).countHolder.count;
+        SlotCountHolder countHolder = createSlotIfAbsent(timestamp).countHolder;
+        AtomicLong currentCount = countHolder.count;
         if (upLimit >= 0 && currentCount.longValue() + count > upLimit) {
+            countHolder.interceptedCount.addAndGet(count);
             return false;
         } else {
             currentCount.addAndGet(count);
@@ -42,8 +57,13 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     
     public long getCount(long timestamp) {
         TpsSlot point = getPoint(timestamp);
-        
         return point == null ? 0l : point.countHolder.count.longValue();
+    }
+    
+    @Override
+    public long getDeniedCount(long timestamp) {
+        TpsSlot point = getPoint(timestamp);
+        return point == null ? 0l : point.countHolder.interceptedCount.longValue();
     }
     
     /**
@@ -84,6 +104,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         }
         return slotList.get(index);
     }
+    
     
     static class TpsSlot {
         
