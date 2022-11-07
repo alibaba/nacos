@@ -19,9 +19,9 @@ package com.alibaba.nacos.config.server.service.datasource;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.config.server.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
@@ -107,7 +107,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
     
-        dataSourceType = EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, defaultDataSourceType);
+        dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
     
         if (PropertyUtil.isUseExternalDB()) {
             try {

@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.constant.PropertiesConstant;
+import com.alibaba.nacos.config.server.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -84,7 +84,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             LogUtil.DEFAULT_LOG.info("use local db service for init");
             final String jdbcUrl = "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
             initialize(jdbcUrl);
-            dataSourceType = EnvUtil.getProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, defaultDataSourceType);
+            dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
             initialize = true;
         }
     }

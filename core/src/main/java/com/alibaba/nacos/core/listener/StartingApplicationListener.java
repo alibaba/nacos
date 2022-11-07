@@ -72,6 +72,9 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final String DEFAULT_DATABASE = "mysql";
     
+    // May be removed with the upgrade of springboot version
+    public static final String  DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
+    
     private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
     private static final String DEFAULT_DATASOURCE_PLATFORM = "";
@@ -243,8 +246,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     private void judgeStorageMode(ConfigurableEnvironment env) {
         
         // External data sources are used by default in cluster mode
-        boolean useExternalStorage = (DEFAULT_DATABASE.equalsIgnoreCase(
-                env.getProperty(DATASOURCE_PLATFORM_PROPERTY, DEFAULT_DATASOURCE_PLATFORM)));
+        boolean useExternalStorage = (DEFAULT_DATABASE.equalsIgnoreCase(this.getDatasourcePlatform(env)));
         
         // must initialize after setUseExternalDB
         // This value is true in stand-alone mode and false in cluster mode
@@ -263,5 +265,19 @@ public class StartingApplicationListener implements NacosApplicationListener {
         LOGGER.info("Nacos started successfully in {} mode. use {} storage",
                 System.getProperty(MODE_PROPERTY_KEY_STAND_MODE),
                 useExternalStorage ? DATASOURCE_MODE_EXTERNAL : DATASOURCE_MODE_EMBEDDED);
+    }
+    
+    /**
+     * get datasource platform.
+     *
+     * @param env ConfigurableEnvironment.
+     * @return
+     */
+    private String getDatasourcePlatform(ConfigurableEnvironment env) {
+        String platform = env.getProperty(DATASOURCE_PLATFORM_PROPERTY, DEFAULT_DATASOURCE_PLATFORM);
+        if (StringUtils.isBlank(platform)) {
+            platform = env.getProperty(DATASOURCE_PLATFORM_PROPERTY_OLD, DEFAULT_DATASOURCE_PLATFORM);
+        }
+        return platform;
     }
 }
