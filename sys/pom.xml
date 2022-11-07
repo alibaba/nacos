@@ -73,7 +73,7 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>custom-environment-plugin</artifactId>
+            <artifactId>nacos-custom-environment-plugin</artifactId>
         </dependency>
     </dependencies>
     
