@@ -726,7 +726,7 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>custom-environment-plugin</artifactId>
+                <artifactId>nacos-custom-environment-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

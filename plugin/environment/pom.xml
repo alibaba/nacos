@@ -25,8 +25,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>custom-environment-plugin</artifactId>
-    <name>custom-environment-plugin ${project.version}</name>
+    <artifactId>nacos-custom-environment-plugin</artifactId>
+    <name>nacos-custom-environment-plugin ${project.version}</name>
     <url>http://nacos.io</url>
 
     <dependencies>
