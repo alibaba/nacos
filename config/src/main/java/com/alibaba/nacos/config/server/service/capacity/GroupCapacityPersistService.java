@@ -368,7 +368,7 @@ public class GroupCapacityPersistService {
                     TableConstant.GROUP_CAPACITY);
             PreparedStatementCreator preparedStatementCreator = connection -> {
                 PreparedStatement ps = connection.prepareStatement(
-                        groupCapacityMapper.delete(Arrays.asList("group_id'")));
+                        groupCapacityMapper.delete(Arrays.asList("group_id")));
                 ps.setString(1, group);
                 return ps;
             };
