@@ -70,7 +70,7 @@ public class StandaloneExternalStorageTest {
     public void test001WithStandaloneAndNullDatabase() {
         // 模拟设置环境01：指定单例，未指定数据库，UseExternalDB是false
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         
         // 模拟初始化
@@ -85,7 +85,7 @@ public class StandaloneExternalStorageTest {
     public void test002WithStandaloneAndDerbyDatabase() {
         // 模拟设置环境02：指定单例，指定数据库derby，UseExternalDB是false
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "derby");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         // 模拟初始化
         
@@ -100,7 +100,7 @@ public class StandaloneExternalStorageTest {
     public void test003WithStandaloneAndMysqlDatabase() {
         // 模拟设置环境03：指定单例，指定数据库为mysql， UseExternalDB是true
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "mysql");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         // 模拟初始化
         
@@ -115,7 +115,7 @@ public class StandaloneExternalStorageTest {
     public void test004WithStandaloneAndOtherDatabase() {
         // 模拟设置环境04：指定单例，指定数据库为其他， UseExternalDB是true
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.SPRING_DATASOURCE_PLATFORM, "postgresql");
+        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         // 模拟初始化
         
