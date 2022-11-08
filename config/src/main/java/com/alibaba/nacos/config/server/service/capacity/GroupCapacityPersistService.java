@@ -93,7 +93,7 @@ public class GroupCapacityPersistService {
         GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.GROUP_CAPACITY);
         String sql = groupCapacityMapper.select(
-                Arrays.asList("id", "quota", "usage", "max_size", "max_aggr_count", "max_aggr_size", "group_id"),
+                Arrays.asList("id", "quota", "`usage`", "`max_size`", "max_aggr_count", "max_aggr_size", "group_id"),
                 Arrays.asList("group_id"));
         List<GroupCapacity> list = jdbcTemplate.query(sql, new Object[] {groupId}, GROUP_CAPACITY_ROW_MAPPER);
         if (list.isEmpty()) {

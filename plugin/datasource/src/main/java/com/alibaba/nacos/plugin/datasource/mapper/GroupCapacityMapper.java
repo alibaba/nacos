@@ -26,7 +26,7 @@ public interface GroupCapacityMapper extends Mapper {
     /**
      * INSERT INTO SELECT statement. Used to insert query results into a table.
      *
-     * <p>Example: INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count,
+     * <p>Example: INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count,
      * max_aggr_size,gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info;
      *
      * @return sql.
@@ -38,7 +38,7 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Where condition: group_id=? AND tenant_id = ''
      *
-     * <p>Example: INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count,
+     * <p>Example: INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count,
      * max_aggr_size,gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info where group_id=?
      * AND tenant_id = '';
      *
@@ -51,7 +51,8 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Where condition: group_id = ? AND usage < ? AND quota = 0;
      *
-     * <p>Example: UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND
+     * <p>Example: UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` < ?
+     * AND
      * quota = 0;
      *
      * @return
@@ -63,7 +64,8 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Where condition: group_id = ? AND usage < quota AND quota != 0
      *
-     * <p>Example: UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota
+     * <p>Example: UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` <
+     * quota
      * AND quota != 0;
      *
      * @return
@@ -96,7 +98,7 @@ public interface GroupCapacityMapper extends Mapper {
     /**
      * used to update usage field.
      *
-     * <p>Example: UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE
+     * <p>Example: UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE
      * group_id = ?;
      *
      * @return
@@ -108,7 +110,8 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Where condition: group_id=? AND tenant_id = ''
      *
-     * <p>Example: UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id =
+     * <p>Example: UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id
+     * =
      * ''), gmt_modified = ? WHERE group_id= ?;
      *
      * @return
