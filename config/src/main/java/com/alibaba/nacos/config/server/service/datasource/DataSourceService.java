@@ -77,4 +77,11 @@ public interface DataSourceService {
      */
     String getHealth();
     
+    /**
+     * Get current db type.
+     *
+     * @return
+     */
+    String getDataSourceType();
+    
 }
