@@ -22,6 +22,7 @@ com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigTagsRelationMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.HistoryConfigInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql
 com.alibaba.nacos.plugin.datasource.impl.mysql.TenantCapacityMapperByMySql
+com.alibaba.nacos.plugin.datasource.impl.mysql.GroupCapacityMapperByMysql
 
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoAggrMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoBetaMapperByDerby
@@ -31,3 +32,4 @@ com.alibaba.nacos.plugin.datasource.impl.derby.ConfigInfoTagsRelationMapperByDer
 com.alibaba.nacos.plugin.datasource.impl.derby.HistoryConfigInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantCapacityMapperByDerby
+com.alibaba.nacos.plugin.datasource.impl.derby.GroupCapacityMapperByDerby
