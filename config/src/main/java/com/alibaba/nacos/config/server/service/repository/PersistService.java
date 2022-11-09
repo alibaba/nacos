@@ -586,6 +586,18 @@ public interface PersistService {
     int aggrConfigInfoCount(String dataId, String group, String tenant);
     
     /**
+     * Get count of aggregation config info.
+     *
+     * @param dataId   data id
+     * @param group    group
+     * @param tenant   tenant
+     * @param datumIds datum id list
+     * @param isIn     search condition
+     * @return count
+     */
+    int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn);
+    
+    /**
      * Query all configuration information by page.
      *
      * @param pageNo   Page number (starting at 1)

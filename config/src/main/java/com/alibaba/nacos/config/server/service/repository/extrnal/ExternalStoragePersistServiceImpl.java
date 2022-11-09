@@ -1024,6 +1024,24 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
+    public int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn) {
+        if (datumIds == null || datumIds.isEmpty()) {
+            return 0;
+        }
+        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                TableConstant.CONFIG_INFO_AGGR);
+        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
+        List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
+        objectList.addAll(datumIds);
+        Integer result = jt.queryForObject(sql, Integer.class, objectList.toArray());
+        if (result == null) {
+            throw new IllegalArgumentException("aggrConfigInfoCount error");
+        }
+        return result.intValue();
+    }
+    
+    @Override
     public Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final int startRow = (pageNo - 1) * pageSize;
