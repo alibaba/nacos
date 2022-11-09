@@ -21,7 +21,6 @@ public class DefaultControlDeniedListener {
         
         @Override
         public void onEvent(ConnectionDeniedEvent event) {
-            System.out.println("connection denied:" + event.getMessage());
         }
         
         @Override
@@ -34,7 +33,6 @@ public class DefaultControlDeniedListener {
         
         @Override
         public void onEvent(TpsRequestDeniedEvent event) {
-            System.out.println("tps denied:" + event.getMessage());
         }
         
         @Override

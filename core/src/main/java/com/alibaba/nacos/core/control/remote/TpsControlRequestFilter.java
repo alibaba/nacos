@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
@@ -55,10 +56,10 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
         if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
             
             TpsControl tpsControl = method.getAnnotation(TpsControl.class);
-            
             String pointName = tpsControl.pointName();
             TpsCheckRequest tpsCheckRequest = null;
-            RemoteTpsCheckParser parser = TpsCheckRequestParserRegistry.getParser(pointName);
+            String parseName = StringUtils.isBlank(tpsControl.name()) ? pointName : tpsControl.name();
+            RemoteTpsCheckRequestParser parser = TpsCheckRequestParserRegistry.getParser(parseName);
             if (parser != null) {
                 tpsCheckRequest = parser.parse(request, meta);
             } else {

@@ -51,6 +51,7 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.YamlParserUtil;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
@@ -126,6 +127,7 @@ public class ConfigController {
      * @throws NacosException NacosException.
      */
     @PostMapping
+    @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,

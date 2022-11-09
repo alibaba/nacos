@@ -7,18 +7,23 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TpsCheckRequestParserRegistry {
     
-    static final Map<String, RemoteTpsCheckParser> PARSER_MAP = new ConcurrentHashMap<>();
+    static final Map<String, RemoteTpsCheckRequestParser> PARSER_MAP = new ConcurrentHashMap<>();
     
-    public static void register(String pointName, RemoteTpsCheckParser remoteTpsCheckParser) {
-        RemoteTpsCheckParser prevRemoteTpsCheckParser = PARSER_MAP.put(pointName, remoteTpsCheckParser);
+    public static void register(RemoteTpsCheckRequestParser remoteTpsCheckParser) {
+        RemoteTpsCheckRequestParser prevRemoteTpsCheckParser = PARSER_MAP
+                .put(remoteTpsCheckParser.getName(), remoteTpsCheckParser);
         if (prevRemoteTpsCheckParser != null) {
-            Loggers.CONTROL.info("RemoteTpsCheckParser {} of point name {} replaced with {}", pointName,
-                    prevRemoteTpsCheckParser.getClass().getSimpleName(),
+            Loggers.CONTROL.info("RemoteTpsCheckParser  name  {},point name {} will be replaced with {}",
+                    remoteTpsCheckParser.getName(), remoteTpsCheckParser.getPointName(),
                     remoteTpsCheckParser.getClass().getSimpleName());
+        } else {
+            Loggers.CONTROL.info("RemoteTpsCheckParser register parser {} of name {},point name {}",
+                    remoteTpsCheckParser.getClass().getSimpleName(), remoteTpsCheckParser.getName(),
+                    remoteTpsCheckParser.getPointName());
         }
     }
     
-    public static RemoteTpsCheckParser getParser(String pointName) {
-        return PARSER_MAP.get(pointName);
+    public static RemoteTpsCheckRequestParser getParser(String name) {
+        return PARSER_MAP.get(name);
     }
 }

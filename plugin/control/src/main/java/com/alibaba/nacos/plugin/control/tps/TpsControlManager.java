@@ -84,9 +84,7 @@ public class TpsControlManager {
             TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
             this.applyTpsRule(pointName, tpsLimitRule);
         } else {
-            Loggers.CONTROL
-                    .info("No tps control rule of {} found , use default empty rule ", pointName, localRuleContent);
-            this.applyTpsRule(pointName, new TpsControlRule());
+            Loggers.CONTROL.info("No tps control rule of {} found  ", pointName, localRuleContent);
         }
     }
     

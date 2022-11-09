@@ -7,17 +7,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TpsCheckRequestParserRegistry {
     
-    static final Map<String, HttpTpsCheckParser> PARSER_MAP = new ConcurrentHashMap<>();
+    static final Map<String, HttpTpsCheckRequestParser> PARSER_MAP = new ConcurrentHashMap<>();
     
-    public static void register(String pointName, HttpTpsCheckParser httpTpsCheckParser) {
-        HttpTpsCheckParser prevTpsCheckParser = PARSER_MAP.put(pointName, httpTpsCheckParser);
+    public static synchronized void register(HttpTpsCheckRequestParser httpTpsCheckParser) {
+        HttpTpsCheckRequestParser prevTpsCheckParser = PARSER_MAP.put(httpTpsCheckParser.getName(), httpTpsCheckParser);
         if (prevTpsCheckParser != null) {
-            Loggers.CONTROL.info("RemoteTpsCheckParser {} of point name {} replaced with {}", pointName,
-                    prevTpsCheckParser.getClass().getSimpleName(), httpTpsCheckParser.getClass().getSimpleName());
+            Loggers.CONTROL.info("HttpTpsCheckRequestParser  name {}, point name {} will be replaced with {}",
+                    httpTpsCheckParser.getName(), prevTpsCheckParser.getPointName(),
+                    httpTpsCheckParser.getClass().getSimpleName());
+        } else {
+            Loggers.CONTROL.info("HttpTpsCheckRequestParser register parser {} of name {},point name {}",
+                    httpTpsCheckParser.getClass().getSimpleName(), httpTpsCheckParser.getName(),
+                    httpTpsCheckParser.getPointName());
         }
     }
     
-    public static HttpTpsCheckParser getParser(String pointName) {
+    public static HttpTpsCheckRequestParser getParser(String pointName) {
         return PARSER_MAP.get(pointName);
     }
 }

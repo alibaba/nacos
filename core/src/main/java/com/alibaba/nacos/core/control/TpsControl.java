@@ -28,18 +28,19 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TpsControl {
     
+    
     /**
-     * The action type of the request.
+     * alias name for control point.
+     *
+     * @return
+     */
+    String name() default "";
+    
+    /**
+     * The point name should applied for.
      *
      * @return action type, default READ
      */
     String pointName();
-    
-    /**
-     * Resource name parser. Should have lower priority than resource().
-     *
-     * @return class type of resource parser
-     */
-    Class[] parsers() default {};
     
 }

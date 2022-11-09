@@ -269,9 +269,9 @@ public class TpsBarrier {
                     }
                 } else {
                     Loggers.CONTROL
-                            .info("Add  point  control rule for client ip ,pointName=[{}],monitorKey=[{}], new maxTps={}, new monitorType={}, ",
+                            .info("pointName=[{}] ,Add  point  control rule for pattern , name={}, pattern={}, new maxTps={}, new monitorType={} ",
                                     this.getPointName(), newMonitorRule.getKey(),
-                                    newMonitorRule.getValue().getMaxCount(),
+                                    newMonitorRule.getValue().getPattern(), newMonitorRule.getValue().getMaxCount(),
                                     newMonitorRule.getValue().getMonitorType());
                     // add rule
                     RuleBarrier rateCounterWrapper = ruleBarrierCreator
