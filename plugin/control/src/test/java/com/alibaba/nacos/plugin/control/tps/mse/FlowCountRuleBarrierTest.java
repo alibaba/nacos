@@ -82,7 +82,7 @@ public class FlowCountRuleBarrierTest {
         flowedRuleDetail.setMaxCount(100);
         flowedRuleDetail.setMaxFlow(10);
         flowedRuleDetail.setModel(MODEL_FUZZY);
-        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType())
+        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
                 TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ;

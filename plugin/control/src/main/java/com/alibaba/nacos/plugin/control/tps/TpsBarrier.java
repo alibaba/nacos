@@ -128,8 +128,8 @@ public class TpsBarrier {
         //2.when pattern fail,rollback applied count of patterns.
         if (!patternSuccess) {
             rollbackTps(appliedBarriers);
-            Loggers.TPS.warn("[{}]denied by pattern barrier ={},clientIp={},connectionId={},msg={}", pointName,
-                    denyPatternRate.getRuleName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+            Loggers.TPS.warn("[{}]denied by pattern barrier [{}],monitorKeys={},msg={}", pointName,
+                    denyPatternRate.getRuleName(),tpsCheckRequest.getMonitorKeys(),
                     denyPatternRate.getLimitMsg());
             NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, denyPatternRate.getLimitMsg()));
             

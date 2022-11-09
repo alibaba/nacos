@@ -55,4 +55,9 @@ public abstract class MonitorKey {
     public String build() {
         return this.getType() + Constants.COLON + this.getKey();
     }
+    
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "{" + build() + "}";
+    }
 }
