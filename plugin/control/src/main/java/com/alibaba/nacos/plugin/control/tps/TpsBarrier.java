@@ -2,9 +2,12 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.utils.StringUtils;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
+import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.TpsRequestDeniedEvent;
 import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MatchType;
@@ -85,10 +88,11 @@ public class TpsBarrier {
         for (MonitorKey monitorKey : tpsCheckRequest.getMonitorKeys()) {
             
             for (RuleBarrier patternRuleBarrier : patternBarriers) {
-                BarrierCheckRequest barrierCheckRequest = tpsCheckRequest.buildBarrierCheckRequest(monitorKey);
-                barrierCheckRequest.setMonitorOnly(exactMatch);
+                
                 MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
                 if (match.isMatch()) {
+                    BarrierCheckRequest barrierCheckRequest = tpsCheckRequest.buildBarrierCheckRequest(monitorKey);
+                    barrierCheckRequest.setMonitorOnly(exactMatch);
                     TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
                     if (patternCheckResponse.isSuccess()) {
                         if (appliedBarriers == null) {
@@ -103,9 +107,9 @@ public class TpsBarrier {
                             exactMatch = true;
                             Loggers.TPS
                                     .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
-                                            pointName, patternRuleBarrier.getPattern(), patternRuleBarrier.getRuleName(),
-                                            tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
-                                            monitorKey);
+                                            pointName, patternRuleBarrier.getPattern(),
+                                            patternRuleBarrier.getRuleName(), tpsCheckRequest.getClientIp(),
+                                            tpsCheckRequest.getConnectionId(), monitorKey);
                         }
                     } else {
                         patternSuccess = false;
@@ -128,6 +132,8 @@ public class TpsBarrier {
             Loggers.TPS.warn("[{}]denied by pattern barrier ={},clientIp={},connectionId={},msg={}", pointName,
                     denyPatternRate.getRuleName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
                     denyPatternRate.getLimitMsg());
+            NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, denyPatternRate.getLimitMsg()));
+            
             return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     (denyPatternRate == null) ? "unknown" : ("denied by " + denyPatternRate.getLimitMsg()));
         }
@@ -147,6 +153,8 @@ public class TpsBarrier {
             Loggers.TPS.warn("[{}]denied by point barrier ={},clientIp={},connectionId={},msg={}", pointName,
                     pointBarrier.getRuleName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
                     pointBarrier.getLimitMsg());
+            NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, pointBarrier.getLimitMsg()));
+            
             return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     "deny by point rule," + pointBarrier.getLimitMsg());
         }

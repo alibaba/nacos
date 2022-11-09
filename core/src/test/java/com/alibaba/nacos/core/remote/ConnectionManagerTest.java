@@ -19,11 +19,8 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
-import com.alibaba.nacos.plugin.control.ruleactivator.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.file.WatchFileCenter;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.After;
 import org.junit.Assert;
@@ -36,7 +33,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

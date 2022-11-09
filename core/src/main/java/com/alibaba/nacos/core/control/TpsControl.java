@@ -14,21 +14,32 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.core.control;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * tps control manager.
  *
  * @author liuzunfei
- * @version $Id: TpsControlManager.java, v 0.1 2021年01月12日 12:38 PM liuzunfei Exp $
+ * @version $Id: TpsControlManager.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
-public class TpsControlConfig {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TpsControl {
     
     /**
-     * tps control is enabled.
-     * @return true/false.
+     * The action type of the request.
+     *
+     * @return action type, default READ
      */
-    public static final boolean isTpsControlEnabled() {
-        return true;
-    }
+    String pointName();
+    
+    /**
+     * Resource name parser. Should have lower priority than resource().
+     *
+     * @return class type of resource parser
+     */
+    Class[] parsers() default {};
+    
 }

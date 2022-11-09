@@ -4,7 +4,7 @@ import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.remote.tpsparser.ConfigPublishParser;
-import com.alibaba.nacos.core.remote.control.TpsCheckRequestParserRegistry;
+import com.alibaba.nacos.core.control.remote.TpsCheckRequestParserRegistry;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedTpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.beans.BeanUtils;

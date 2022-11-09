@@ -58,8 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ConnectionManager {
     
-    
-    Logger LOGGER = com.alibaba.nacos.plugin.control.Loggers.CONNECTION;
+    private static final Logger LOGGER = com.alibaba.nacos.plugin.control.Loggers.CONNECTION;
     
     /**
      * 4 times of client keep alive.

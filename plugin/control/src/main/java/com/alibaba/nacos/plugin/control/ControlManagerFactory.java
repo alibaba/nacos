@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 public class ControlManagerFactory {
     
     
-    static ControlManagerFactory controlManagerFactory = new ControlManagerFactory();
+    static final ControlManagerFactory controlManagerFactory = new ControlManagerFactory();
     
     private TpsControlManager tpsControlManager;
     

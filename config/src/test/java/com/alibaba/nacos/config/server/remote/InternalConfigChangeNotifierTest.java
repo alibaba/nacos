@@ -16,28 +16,21 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.plugin.control.ruleactivator.ConnectionLimitRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.TpsControlRuleChangeEvent;
-import org.junit.Assert;
+import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
-
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InternalConfigChangeNotifierTest {

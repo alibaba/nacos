@@ -1,12 +1,10 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;

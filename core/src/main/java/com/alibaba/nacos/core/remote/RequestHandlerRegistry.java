@@ -18,8 +18,8 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.core.remote.control.TpsControl;
-import com.alibaba.nacos.core.remote.control.TpsControlConfig;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;

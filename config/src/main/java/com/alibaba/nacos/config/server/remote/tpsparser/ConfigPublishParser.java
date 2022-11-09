@@ -4,8 +4,8 @@ import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.utils.GroupKey;
-import com.alibaba.nacos.core.remote.control.RemoteTpsCheckParser;
-import com.alibaba.nacos.core.remote.control.TpsCheckRequestParserRegistry;
+import com.alibaba.nacos.core.control.remote.RemoteTpsCheckParser;
+import com.alibaba.nacos.core.control.remote.TpsCheckRequestParserRegistry;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.stereotype.Component;
 

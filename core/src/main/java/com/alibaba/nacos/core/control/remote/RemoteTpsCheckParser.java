@@ -1,4 +1,4 @@
-package com.alibaba.nacos.core.remote.control;
+package com.alibaba.nacos.core.control.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;

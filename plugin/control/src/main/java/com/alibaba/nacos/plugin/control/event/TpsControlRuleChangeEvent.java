@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.control.ruleactivator;
+package com.alibaba.nacos.plugin.control.event;
 
 import com.alibaba.nacos.common.notify.Event;
 

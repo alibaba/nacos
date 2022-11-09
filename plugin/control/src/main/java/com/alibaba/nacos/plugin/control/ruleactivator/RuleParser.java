@@ -20,6 +20,9 @@ public interface RuleParser {
      */
     ConnectionLimitRule parseConnectionRule(String ruleContent);
     
-    
+    /**
+     *
+     * @return
+     */
     String getName();
 }

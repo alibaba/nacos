@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.control.ruleactivator;
-
-import com.alibaba.nacos.common.notify.Event;
+package com.alibaba.nacos.core.control;
 
 /**
- *  connection limit rule change event.
- *  @author zunfei.lzf
+ * tps control manager.
+ *
+ * @author liuzunfei
+ * @version $Id: TpsControlManager.java, v 0.1 2021年01月12日 12:38 PM liuzunfei Exp $
  */
-public class ConnectionLimitRuleChangeEvent extends Event {
+public class TpsControlConfig {
     
-    private boolean persist;
-    
-    public ConnectionLimitRuleChangeEvent(boolean persist) {
-        this.persist = persist;
-    }
-    
-    public boolean isPersist() {
-        return persist;
-    }
-    
-    public void setPersist(boolean persist) {
-        this.persist = persist;
+    /**
+     * tps control is enabled.
+     * @return true/false.
+     */
+    public static final boolean isTpsControlEnabled() {
+        return true;
     }
 }

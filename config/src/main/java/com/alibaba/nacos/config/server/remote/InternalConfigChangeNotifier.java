@@ -23,8 +23,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.plugin.control.ruleactivator.ConnectionLimitRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.TpsControlRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleActivator.DATA_ID_CONNECTION_LIMIT_RULE;

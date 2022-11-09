@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.connection;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
@@ -10,10 +11,11 @@ import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckReques
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.event.ConnectionDeniedEvent;
+import com.alibaba.nacos.plugin.control.event.TpsRequestDeniedEvent;
 import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
-import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Map;
@@ -86,6 +88,9 @@ public class ConnectionControlManager {
                 Loggers.CONNECTION.warn("connection denied ,clientIp={},appName={},source={},labels={}",
                         connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
                         connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
+                NotifyCenter.publishEvent(new ConnectionDeniedEvent(connectionCheckRequest,
+                        "denied by interceptor :" + connectionInterceptor.getName()));
+                
                 return connectionCheckResponse;
             }
         }
@@ -120,6 +125,9 @@ public class ConnectionControlManager {
                                     countLimitOfIp, connectionCheckRequest.getClientIp(),
                                     connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
                                     connectionCheckRequest.getLabels());
+                    NotifyCenter.publishEvent(new ConnectionDeniedEvent(connectionCheckRequest,
+                            "connection denied by specific ip or app ip limit ,maxCount allowed is  "
+                                    + countLimitOfIp));
                     return connectionCheckResponse;
                 } else {
                     connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_PASS);
@@ -140,6 +148,8 @@ public class ConnectionControlManager {
                                 countLimitPerClientIpDefault, connectionCheckRequest.getClientIp(),
                                 connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
                                 connectionCheckRequest.getLabels());
+                NotifyCenter.publishEvent(new ConnectionDeniedEvent(connectionCheckRequest,
+                        "connection denied by default ip limit ,maxCount allowed is  " + countLimitPerClientIpDefault));
                 return connectionCheckResponse;
             }
             
@@ -155,6 +165,8 @@ public class ConnectionControlManager {
                                 totalCountLimit, metricsTotalCount.toString(), connectionCheckRequest.getClientIp(),
                                 connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
                                 connectionCheckRequest.getLabels());
+                NotifyCenter.publishEvent(new ConnectionDeniedEvent(connectionCheckRequest,
+                        "connection denied by total count  limit ,maxCount allowed is " + totalCountLimit));
                 return connectionCheckResponse;
             }
             

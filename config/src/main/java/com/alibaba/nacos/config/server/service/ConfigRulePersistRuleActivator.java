@@ -7,7 +7,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivator;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 

@@ -13,11 +13,11 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.control.ControlManagerFactory;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
-import com.alibaba.nacos.plugin.control.ruleactivator.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
-import com.alibaba.nacos.plugin.control.ruleactivator.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -39,18 +39,14 @@ import java.util.concurrent.TimeUnit;
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/controlrule")
 public class TpsRuleController {
     
-    
     private static final Logger LOGGER = LoggerFactory.getLogger(TpsRuleController.class);
     
     private ServerMemberManager serverMemberManager;
     
     private NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(LOGGER);
     
-    
     public TpsRuleController(ServerMemberManager serverMemberManager) {
         this.serverMemberManager = serverMemberManager;
-        NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, 16384);
-        NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, 16384);
     }
     
     @GetMapping(value = "/tps/points")
@@ -79,6 +75,14 @@ public class TpsRuleController {
         return RestResultUtils.success(getClusterTpsControl(pointName));
     }
     
+    /**
+     * update tps control rule.
+     * @param pointName
+     * @param content
+     * @param isPersist
+     * @return
+     * @throws Exception
+     */
     @PostMapping(value = "/tps")
     public RestResult<Boolean> updateTpsRule(@RequestParam(value = "pointname") String pointName,
             @RequestParam(value = "rulecontent") String content, @RequestParam(value = "persist") Boolean isPersist)
@@ -152,14 +156,12 @@ public class TpsRuleController {
         return RestResultUtils.success();
     }
     
-    
     @PostMapping(value = "/connection/reload/cluster")
     public RestResult<Map<String, Boolean>> reloadClusterConnectionRule(
             @RequestParam(value = "persist") Boolean isPersist) throws Exception {
         Map<String, Boolean> clusterResult = reloadClusterConnectionControl(isPersist);
         return RestResultUtils.success(clusterResult);
     }
-    
     
     private static final String TPSRULE_URL_PATTERN = "http://{0}{1}/v2/core/controlrule/tps/current";
     
@@ -259,7 +261,6 @@ public class TpsRuleController {
         
     }
     
-    
     private static final String RELOAD_CONNECTION_RULE_URL_PATTERN = "http://{0}{1}/v2/core/controlrule/connection/reload/current";
     
     private Map<String, Boolean> reloadClusterConnectionControl(boolean isPersist) {
@@ -310,7 +311,6 @@ public class TpsRuleController {
         return clusterResult;
         
     }
-    
     
     private static final String RELOAD_TPS_RULE_URL_PATTERN = "http://{0}{1}/v2/core/controlrule/tps/reload/current";
     
