@@ -154,7 +154,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         this.databaseOperate = databaseOperate;
         this.idGeneratorManager = idGeneratorManager;
         Boolean isDataSourceLogEnable = EnvUtil
-                .getProperty(com.alibaba.nacos.sys.env.Constants.NACOS_PLUGIN_DATASOURCE_LOG, boolean.class, false);
+                .getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
         mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }

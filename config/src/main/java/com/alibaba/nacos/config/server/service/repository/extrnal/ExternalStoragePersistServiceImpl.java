@@ -150,7 +150,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         jt = getJdbcTemplate();
         tjt = getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil
-                .getProperty(com.alibaba.nacos.sys.env.Constants.NACOS_PLUGIN_DATASOURCE_LOG, boolean.class, false);
+                .getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
         mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     

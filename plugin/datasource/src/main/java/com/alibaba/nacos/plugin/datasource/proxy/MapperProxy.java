@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.proxy;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public class MapperProxy implements InvocationHandler {
         String methodName = method.getName();
         String sql = invoke.toString();
         
-        LOGGER.info("[{}] method:{}, sql:{}", className, methodName, sql);
+        LOGGER.info("[{}] METHOD : {}, SQL : {}, ARGS : {}", className, methodName, sql, JacksonUtils.toJson(args));
         return invoke;
     }
 }
