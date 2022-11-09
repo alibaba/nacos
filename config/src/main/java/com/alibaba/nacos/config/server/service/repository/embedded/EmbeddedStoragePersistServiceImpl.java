@@ -60,6 +60,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -152,9 +153,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public EmbeddedStoragePersistServiceImpl(DatabaseOperate databaseOperate, IdGeneratorManager idGeneratorManager) {
         this.databaseOperate = databaseOperate;
         this.idGeneratorManager = idGeneratorManager;
-        
+        Boolean isDataSourceLogEnable = EnvUtil
+                .getProperty(com.alibaba.nacos.sys.env.Constants.NACOS_PLUGIN_DATASOURCE_LOG, boolean.class, false);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
-        mapperManager = MapperManager.instance();
+        mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     /**

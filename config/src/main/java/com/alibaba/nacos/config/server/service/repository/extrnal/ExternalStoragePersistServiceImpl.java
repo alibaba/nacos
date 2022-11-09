@@ -54,6 +54,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -148,7 +149,9 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
         
         jt = getJdbcTemplate();
         tjt = getTransactionTemplate();
-        mapperManager = MapperManager.instance();
+        Boolean isDataSourceLogEnable = EnvUtil
+                .getProperty(com.alibaba.nacos.sys.env.Constants.NACOS_PLUGIN_DATASOURCE_LOG, boolean.class, false);
+        mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     public boolean checkMasterWritable() {

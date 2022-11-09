@@ -69,5 +69,5 @@ public interface Constants {
     
     String SUPPORT_UPGRADE_FROM_1X = "nacos.core.support.upgrade.from.1x";
     
-    String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log";
+    String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
 }

@@ -21,8 +21,6 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import com.alibaba.nacos.plugin.datasource.proxy.MapperProxy;
-import com.alibaba.nacos.sys.env.Constants;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,22 +46,18 @@ public class MapperManager {
     
     private static final MapperManager INSTANCE = new MapperManager();
     
-    private static boolean dataSourceLog;
+    private boolean dataSourceLogEnable;
     
     private MapperManager() {
-        loadLog();
         loadInitial();
-    }
-    
-    public void loadLog() {
-        dataSourceLog = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, boolean.class, false);
     }
     
     /**
      * Get the instance of MapperManager.
      * @return The instance of MapperManager.
      */
-    public static MapperManager instance() {
+    public static MapperManager instance(boolean isDataSourceLogEnable) {
+        INSTANCE.dataSourceLogEnable = isDataSourceLogEnable;
         return INSTANCE;
     }
     
@@ -117,7 +111,7 @@ public class MapperManager {
             throw new NacosRuntimeException(FIND_TABLE_ERROR_CODE,
                     "[MapperManager] Failed to find the table ,tableName:" + tableName);
         }
-        if (dataSourceLog) {
+        if (dataSourceLogEnable) {
             MapperProxy mapperProxy = new MapperProxy();
             return (R) mapperProxy.createProxy(mapper);
         }
