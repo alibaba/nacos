@@ -153,7 +153,11 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         }
     }
     
-    
+    /**
+     * apply rule detail.
+     *
+     * @param ruleDetail ruleDetail.
+     */
     public void applyRuleDetail(RuleDetail ruleDetail) {
         
         if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod()) || !Objects

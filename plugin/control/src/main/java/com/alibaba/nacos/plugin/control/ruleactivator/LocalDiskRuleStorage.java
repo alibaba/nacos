@@ -9,16 +9,15 @@ import org.slf4j.Logger;
 import java.io.File;
 import java.io.IOException;
 
-public class LocalDiskRuleActivator implements RuleActivator {
+public class LocalDiskRuleStorage implements RuleStorage {
     
-    public static LocalDiskRuleActivator INSTANCE = new LocalDiskRuleActivator();
+    public static final LocalDiskRuleStorage INSTANCE = new LocalDiskRuleStorage();
     
-    private LocalDiskRuleActivator() {
+    private LocalDiskRuleStorage() {
     
     }
     
     private static final Logger LOGGER = Loggers.CONTROL;
-    
     
     private File checkTpsBaseDir() {
         File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);

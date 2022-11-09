@@ -9,18 +9,23 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 public interface RuleParser {
     
     /**
-     * @param ruleContent
+     * parse tps rule content.
+     *
+     * @param ruleContent ruleContent.
      * @return
      */
     TpsControlRule parseTpsRule(String ruleContent);
     
     /**
-     * @param ruleContent
+     * parse connection rule.
+     *
+     * @param ruleContent ruleContent.
      * @return
      */
     ConnectionLimitRule parseConnectionRule(String ruleContent);
     
     /**
+     * get name.
      *
      * @return
      */

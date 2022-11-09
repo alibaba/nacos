@@ -55,7 +55,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
     
     private static final int DB_MASTER_SELECT_THRESHOLD = 1;
-
+    
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
@@ -106,9 +106,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 reload();
             } catch (IOException e) {
                 FATAL_LOG.error("[ExternalDataSourceService] datasource reload error", e);
-                throw new RuntimeException(DB_LOAD_ERROR_MSG,e);
+                throw new RuntimeException(DB_LOAD_ERROR_MSG, e);
             }
-
+            
             if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
                 ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
             }
@@ -119,14 +119,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     @Override
     public synchronized void reload() throws IOException {
         try {
-            dataSourceList = new ExternalDataSourceProperties()
-                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
-                        JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                        jdbcTemplate.setQueryTimeout(queryTimeout);
-                        jdbcTemplate.setDataSource(dataSource);
-                        testJtList.add(jdbcTemplate);
-                        isHealthList.add(Boolean.TRUE);
-                    });
+            dataSourceList = new ExternalDataSourceProperties().build(EnvUtil.getEnvironment(), (dataSource) -> {
+                JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                jdbcTemplate.setQueryTimeout(queryTimeout);
+                jdbcTemplate.setDataSource(dataSource);
+                testJtList.add(jdbcTemplate);
+                isHealthList.add(Boolean.TRUE);
+            });
             new SelectMasterTask().run();
             new CheckDbHealthTask().run();
         } catch (RuntimeException e) {

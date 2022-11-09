@@ -7,7 +7,6 @@ import com.alibaba.nacos.config.server.remote.tpsparser.ConfigPublishParser;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedTpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component

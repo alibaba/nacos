@@ -14,7 +14,7 @@ public interface TpsInterceptor {
     /**
      * tps intercept method.
      *
-     * @param tpsCheckRequest
+     * @param tpsCheckRequest tpsCheckRequest.
      * @return
      */
     InterceptResult intercept(TpsCheckRequest tpsCheckRequest);

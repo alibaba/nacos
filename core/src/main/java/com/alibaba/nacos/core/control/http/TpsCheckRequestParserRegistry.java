@@ -9,6 +9,11 @@ public class TpsCheckRequestParserRegistry {
     
     static final Map<String, HttpTpsCheckRequestParser> PARSER_MAP = new ConcurrentHashMap<>();
     
+    /**
+     * register httpTpsCheckParser.
+     *
+     * @param httpTpsCheckParser httpTpsCheckParser.
+     */
     public static synchronized void register(HttpTpsCheckRequestParser httpTpsCheckParser) {
         HttpTpsCheckRequestParser prevTpsCheckParser = PARSER_MAP.put(httpTpsCheckParser.getName(), httpTpsCheckParser);
         if (prevTpsCheckParser != null) {

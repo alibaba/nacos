@@ -1,7 +1,6 @@
 package com.alibaba.nacos.plugin.control.ruleactivator.mse;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.ruleactivator.DefaultRuleParser;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedRuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
@@ -9,7 +8,6 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.lang.reflect.Type;
 import java.util.Map;
 
 public class MseRuleParser extends DefaultRuleParser {

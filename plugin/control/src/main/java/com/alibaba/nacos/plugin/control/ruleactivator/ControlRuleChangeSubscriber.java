@@ -43,9 +43,9 @@ public class ControlRuleChangeSubscriber {
             try {
                 if (event.isPersist()) {
                     String persistTpsRule = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
-                    LocalDiskRuleActivator.INSTANCE.saveTpsRule(pointName, persistTpsRule);
+                    LocalDiskRuleStorage.INSTANCE.saveTpsRule(pointName, persistTpsRule);
                 }
-                String tpsRuleContent = LocalDiskRuleActivator.INSTANCE.getTpsRule(pointName);
+                String tpsRuleContent = LocalDiskRuleStorage.INSTANCE.getTpsRule(pointName);
                 
                 TpsControlRule tpsControlRule = StringUtils.isBlank(tpsRuleContent) ? new TpsControlRule()
                         : RuleParserProxy.getInstance().parseTpsRule(tpsRuleContent);
@@ -58,7 +58,6 @@ public class ControlRuleChangeSubscriber {
             
         }
         
-        
         @Override
         public Class<? extends Event> subscribeType() {
             return TpsControlRuleChangeEvent.class;
@@ -66,7 +65,6 @@ public class ControlRuleChangeSubscriber {
     }
     
     class ConnectionRuleChangeSubscriber extends Subscriber<ConnectionLimitRuleChangeEvent> {
-        
         
         @Override
         public void onEvent(ConnectionLimitRuleChangeEvent event) {
@@ -76,9 +74,9 @@ public class ControlRuleChangeSubscriber {
                 
                 if (event.isPersist()) {
                     String connectionRule = PersistRuleActivatorProxy.getInstance().getConnectionRule();
-                    LocalDiskRuleActivator.INSTANCE.saveConnectionRule(connectionRule);
+                    LocalDiskRuleStorage.INSTANCE.saveConnectionRule(connectionRule);
                 }
-                String limitRule = LocalDiskRuleActivator.INSTANCE.getConnectionRule();
+                String limitRule = LocalDiskRuleStorage.INSTANCE.getConnectionRule();
                 ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(limitRule) ? new ConnectionLimitRule()
                         : RuleParserProxy.getInstance().parseConnectionRule(limitRule);
                 if (connectionLimitRule != null) {
@@ -92,7 +90,6 @@ public class ControlRuleChangeSubscriber {
                 LOGGER.error("Fail to parse connection limit rule ,persit:{}", event.isPersist(), e);
             }
         }
-        
         
         @Override
         public Class<? extends Event> subscribeType() {

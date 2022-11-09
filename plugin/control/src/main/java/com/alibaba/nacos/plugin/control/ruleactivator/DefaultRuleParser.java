@@ -25,5 +25,4 @@ public class DefaultRuleParser implements RuleParser {
         return "default";
     }
     
-    
 }

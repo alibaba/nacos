@@ -1,6 +1,5 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -11,7 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
@@ -22,19 +20,19 @@ public class FlowCountRuleBarrierTest {
     
     @Test
     public void testPassAndLimit() {
-        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
-                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        
         FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
         flowedRuleDetail.setMaxCount(100);
         flowedRuleDetail.setMaxFlow(10);
         flowedRuleDetail.setModel(MODEL_PROTO);
         flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.applyRuleDetail(flowedRuleDetail);
         
         // check pass and deny
         FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
-        long timeMillis =flowedBarrierCheckRequest.getTimestamp();
-    
+        
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
@@ -45,8 +43,9 @@ public class FlowCountRuleBarrierTest {
         Assert.assertFalse(tpsCheckResponseFail.isSuccess());
         Assert.assertTrue(tpsCheckResponseFail.getCode() == TpsResultCode.CHECK_DENY);
         
+        long timeMillis = flowedBarrierCheckRequest.getTimestamp();
         //check pass and deny next second.
-        long timeMillisPlus = timeMillis + 1000l;
+        long timeMillisPlus = timeMillis + 1000L;
         flowedBarrierCheckRequest.setTimestamp(timeMillisPlus);
         
         for (int i = 0; i < 10; i++) {
@@ -60,7 +59,6 @@ public class FlowCountRuleBarrierTest {
         Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.CHECK_DENY);
         
     }
-    
     
     FlowedBarrierCheckRequest createFlowedCheckRequest() {
         FlowedBarrierCheckRequest flowedBarrierCheckRequest = new FlowedBarrierCheckRequest();
@@ -79,13 +77,15 @@ public class FlowCountRuleBarrierTest {
     
     @Test
     public void testLimitAndRollback() {
-        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
-                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        
         FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
         flowedRuleDetail.setMaxCount(100);
         flowedRuleDetail.setMaxFlow(10);
         flowedRuleDetail.setModel(MODEL_FUZZY);
-        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType())
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        ;
         ruleBarrier.applyRuleDetail(flowedRuleDetail);
         FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
         // check pass
@@ -108,17 +108,17 @@ public class FlowCountRuleBarrierTest {
     
     @Test
     public void testPassByMonitor() {
-        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
-                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        
         FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
         flowedRuleDetail.setMaxCount(100);
         flowedRuleDetail.setMaxFlow(10);
         flowedRuleDetail.setModel(MODEL_PROTO);
         flowedRuleDetail.setMonitorType(MonitorType.MONITOR.getType());
-        
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.applyRuleDetail(flowedRuleDetail);
         FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
-    
+        
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
@@ -131,17 +131,18 @@ public class FlowCountRuleBarrierTest {
     
     @Test
     public void testModifyRule() {
-        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
-                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        
         FlowedRuleDetail flowedRuleDetail = new FlowedRuleDetail();
         flowedRuleDetail.setMaxCount(100);
         flowedRuleDetail.setMaxFlow(10);
         flowedRuleDetail.setModel(MODEL_PROTO);
         flowedRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        FlowedLocalSimpleCountRuleBarrier ruleBarrier = new FlowedLocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.applyRuleDetail(flowedRuleDetail);
         
         FlowedBarrierCheckRequest flowedBarrierCheckRequest = createFlowedCheckRequest();
-    
+        
         //check pass
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(flowedBarrierCheckRequest);

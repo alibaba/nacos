@@ -43,7 +43,6 @@ public class RequestHandlerRegistry implements ApplicationListener<ContextRefres
     
     Map<String, RequestHandler> registryHandlers = new HashMap<>();
     
-    
     /**
      * Get Request Handler By request Type.
      *

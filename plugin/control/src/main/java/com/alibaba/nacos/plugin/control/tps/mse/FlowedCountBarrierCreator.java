@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FlowedCountBarrierCreator implements RuleBarrierCreator {
     
-    private static FlowedCountBarrierCreator INSTANCE = new FlowedCountBarrierCreator();
+    private static final FlowedCountBarrierCreator INSTANCE = new FlowedCountBarrierCreator();
     
     public FlowedCountBarrierCreator() {
     }

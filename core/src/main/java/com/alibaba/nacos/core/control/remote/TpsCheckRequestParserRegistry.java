@@ -9,6 +9,11 @@ public class TpsCheckRequestParserRegistry {
     
     static final Map<String, RemoteTpsCheckRequestParser> PARSER_MAP = new ConcurrentHashMap<>();
     
+    /**
+     * register remoteTpsCheckParser.
+     *
+     * @param remoteTpsCheckParser remoteTpsCheckParser.
+     */
     public static void register(RemoteTpsCheckRequestParser remoteTpsCheckParser) {
         RemoteTpsCheckRequestParser prevRemoteTpsCheckParser = PARSER_MAP
                 .put(remoteTpsCheckParser.getName(), remoteTpsCheckParser);

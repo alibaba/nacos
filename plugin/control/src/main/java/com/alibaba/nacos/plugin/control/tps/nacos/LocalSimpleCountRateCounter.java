@@ -1,6 +1,5 @@
 package com.alibaba.nacos.plugin.control.tps.nacos;
 
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -34,10 +33,12 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         }
     }
     
+    @Override
     public void add(long timestamp, long count) {
         createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
     }
     
+    @Override
     public boolean tryAdd(long timestamp, long count, long upLimit) {
         SlotCountHolder countHolder = createSlotIfAbsent(timestamp).countHolder;
         AtomicLong currentCount = countHolder.count;
@@ -57,13 +58,13 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     
     public long getCount(long timestamp) {
         TpsSlot point = getPoint(timestamp);
-        return point == null ? 0l : point.countHolder.count.longValue();
+        return point == null ? 0L : point.countHolder.count.longValue();
     }
     
     @Override
     public long getDeniedCount(long timestamp) {
         TpsSlot point = getPoint(timestamp);
-        return point == null ? 0l : point.countHolder.interceptedCount.longValue();
+        return point == null ? 0L : point.countHolder.interceptedCount.longValue();
     }
     
     /**
@@ -104,7 +105,6 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         }
         return slotList.get(index);
     }
-    
     
     static class TpsSlot {
         

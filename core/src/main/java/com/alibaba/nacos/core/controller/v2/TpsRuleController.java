@@ -15,7 +15,7 @@ import com.alibaba.nacos.plugin.control.ControlManagerFactory;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
+import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -77,22 +77,21 @@ public class TpsRuleController {
     
     /**
      * update tps control rule.
-     * @param pointName
-     * @param content
-     * @param isPersist
+     *
+     * @param pointName pointName.
+     * @param content   content.
+     * @param isPersist isPersist.
      * @return
-     * @throws Exception
      */
     @PostMapping(value = "/tps")
     public RestResult<Boolean> updateTpsRule(@RequestParam(value = "pointname") String pointName,
-            @RequestParam(value = "rulecontent") String content, @RequestParam(value = "persist") Boolean isPersist)
-            throws Exception {
+            @RequestParam(value = "rulecontent") String content, @RequestParam(value = "persist") Boolean isPersist) {
         try {
             RuleParserProxy.getInstance().parseTpsRule(content);
             if (isPersist) {
                 PersistRuleActivatorProxy.getInstance().saveTpsRule(pointName, content);
             } else {
-                LocalDiskRuleActivator.INSTANCE.saveTpsRule(pointName, content);
+                LocalDiskRuleStorage.INSTANCE.saveTpsRule(pointName, content);
             }
             
             return RestResultUtils.success();
@@ -103,9 +102,16 @@ public class TpsRuleController {
         
     }
     
+    /**
+     * reload tps rule.
+     *
+     * @param pointName pointName.
+     * @param isPersist isPersist.
+     * @return
+     */
     @PostMapping(value = "/tps/reload/current")
     public RestResult<Void> reloadTpsRule(@RequestParam(value = "pointname") String pointName,
-            @RequestParam(value = "persist") Boolean isPersist) throws Exception {
+            @RequestParam(value = "persist") Boolean isPersist) {
         
         NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, isPersist));
         return RestResultUtils.success();
@@ -124,22 +130,34 @@ public class TpsRuleController {
         return RestResultUtils.success(connectionLimitRule);
     }
     
+    /**
+     * get cluster connection control rule.
+     *
+     * @return
+     */
     @GetMapping(value = "/connection/cluster")
     public RestResult<Map<String, ConnectionLimitRule>> getClusterConnectionRule() {
         
         return RestResultUtils.success(getClusterConnectionControl());
     }
     
+    /**
+     * update connection rule.
+     *
+     * @param content   content.
+     * @param isPersist isPersist.
+     * @return
+     */
     @PostMapping(value = "/connection")
     public RestResult<Boolean> updateConnectionRule(@RequestParam(value = "rulecontent") String content,
-            @RequestParam(value = "persist") Boolean isPersist) throws Exception {
+            @RequestParam(value = "persist") Boolean isPersist) {
         try {
             RuleParserProxy.getInstance().parseConnectionRule(content);
             if (isPersist) {
                 
                 PersistRuleActivatorProxy.getInstance().saveConnectionRule(content);
             } else {
-                LocalDiskRuleActivator.INSTANCE.saveConnectionRule(content);
+                LocalDiskRuleStorage.INSTANCE.saveConnectionRule(content);
             }
             
             return RestResultUtils.success();

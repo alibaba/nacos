@@ -79,6 +79,12 @@ public class TpsCheckRequest {
         this.pointName = pointName;
     }
     
+    /**
+     * build barrier check request.
+     *
+     * @param monitorKey monitorKey.
+     * @return
+     */
     public BarrierCheckRequest buildBarrierCheckRequest(MonitorKey monitorKey) {
         BarrierCheckRequest barrierCheckRequest = new BarrierCheckRequest();
         barrierCheckRequest.setCount(this.getCount());

@@ -14,7 +14,7 @@ public interface ConnectionInterceptor {
     /**
      * connection intercept.
      *
-     * @param connectionCheckRequest
+     * @param connectionCheckRequest connectionCheckRequest.
      * @return
      */
     InterceptResult intercept(ConnectionCheckRequest connectionCheckRequest);

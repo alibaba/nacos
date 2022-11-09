@@ -1,6 +1,5 @@
 package com.alibaba.nacos.plugin.control.tps.rule;
 
-
 public enum RuleModel {
     
     FUZZY("FUZZY", "every single monitor key will be counted as one counter"),

@@ -11,27 +11,27 @@ public class PersistRuleActivatorProxy {
     
     private static final Logger LOGGER = Loggers.CONTROL;
     
-    private static PersistRuleActivator INSTANCE = null;
+    private static PersistRuleStorage instance = null;
     
     static {
-        Collection<PersistRuleActivator> persistRuleActivators = NacosServiceLoader.load(PersistRuleActivator.class);
+        Collection<PersistRuleStorage> persistRuleActivators = NacosServiceLoader.load(PersistRuleStorage.class);
         String rulePersistActivator = ControlConfigs.getInstance().getRulePersistActivator();
         
-        for (PersistRuleActivator persistRuleActivator : persistRuleActivators) {
+        for (PersistRuleStorage persistRuleActivator : persistRuleActivators) {
             if (persistRuleActivator.getName().equalsIgnoreCase(rulePersistActivator)) {
                 LOGGER.info("Found persist rule activator of name ：" + rulePersistActivator);
-                INSTANCE = persistRuleActivator;
+                instance = persistRuleActivator;
                 break;
             }
         }
-        if (INSTANCE == null) {
+        if (instance == null) {
             LOGGER.error("Fail to found persist rule activator of name ：" + rulePersistActivator);
             
         }
     }
     
-    public static PersistRuleActivator getInstance() {
-        return INSTANCE;
+    public static PersistRuleStorage getInstance() {
+        return instance;
     }
     
 }

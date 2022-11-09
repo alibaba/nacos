@@ -7,10 +7,10 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.remote.ConfigPublishRequestHandler;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivator;
+import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleStorage;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
-public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
+public class ConfigRulePersistRuleStorage implements PersistRuleStorage {
     
     private ConfigPublishRequestHandler configPublishRequestHandler;
     
@@ -24,7 +24,7 @@ public class ConfigRulePersistRuleActivator implements PersistRuleActivator {
     
     public static final String NACOS_GROUP = "nacos";
     
-    public ConfigRulePersistRuleActivator() {
+    public ConfigRulePersistRuleStorage() {
         configPublishRequestHandler = ApplicationUtils.getBean(ConfigPublishRequestHandler.class);
         persistService = ApplicationUtils.getBean(PersistService.class);
     }

@@ -151,5 +151,4 @@ public class NamingTpsMonitor {
                 .check(new TpsCheckRequest(TpsMonitorItem.NAMING_DISTRO_VERIFY_FAIL.name(), clientId, clientIp));
     }
     
-    
 }

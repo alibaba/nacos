@@ -8,7 +8,6 @@ import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,13 +19,12 @@ import java.util.concurrent.TimeUnit;
 public class TpsBarrierTest {
     
     static {
-        ControlConfigs.setINSTANCE(new ControlConfigs());
+        ControlConfigs.setInstance(new ControlConfigs());
     }
     
     @Test
-    public void testNormal_PointPassAndMonitorKeyDeny() {
+    public void testNormalPointPassAndMonitorKeyDeny() {
         String testTpsBarrier = "test_barrier";
-        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
         
         TpsControlRule tpsControlRule = new TpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
@@ -48,7 +46,7 @@ public class TpsBarrierTest {
         Map<String, RuleDetail> monitorRules = new HashMap<>();
         monitorRules.put("monitorKeyRule", monitorRuleDetail);
         tpsControlRule.setMonitorKeyRule(monitorRules);
-        
+        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         
         //test point keys
@@ -74,11 +72,9 @@ public class TpsBarrierTest {
         
     }
     
-    
     @Test
-    public void testNormal_PointDenyAndMonitorKeyPass() {
+    public void testNormalPointDenyAndMonitorKeyPass() {
         String testTpsBarrier = "test_barrier";
-        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
         
         TpsControlRule tpsControlRule = new TpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
@@ -100,7 +96,7 @@ public class TpsBarrierTest {
         Map<String, RuleDetail> monitorRules = new HashMap<>();
         monitorRules.put("monitorKeyRule", monitorRuleDetail);
         tpsControlRule.setMonitorKeyRule(monitorRules);
-        
+        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         System.out.println(JacksonUtils.toJson(tpsControlRule));
         //test point keys
@@ -127,9 +123,8 @@ public class TpsBarrierTest {
     }
     
     @Test
-    public void testNormal_ConnectionAndClientIpMonitor() {
+    public void testNormalConnectionAndClientIpMonitor() {
         String testTpsBarrier = "test_barrier";
-        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
         
         TpsControlRule tpsControlRule = new TpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
@@ -159,7 +154,7 @@ public class TpsBarrierTest {
         monitorRules.put("monitorKeyRule_clientIp", clientIpRuleDetail);
         
         tpsControlRule.setMonitorKeyRule(monitorRules);
-        
+        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         
         //test point keys

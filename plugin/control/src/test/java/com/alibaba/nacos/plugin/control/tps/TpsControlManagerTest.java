@@ -4,7 +4,6 @@ import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedRuleDetail;
 import com.alibaba.nacos.plugin.control.tps.mse.FlowedTpsCheckRequest;
-import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
-import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_PROTO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TpsControlManagerTest {
@@ -28,10 +26,11 @@ public class TpsControlManagerTest {
     
     String pointName = "TEST_POINT_NAME" + System.currentTimeMillis();
     
-    static{
-        ControlConfigs.setINSTANCE(new ControlConfigs());
-    
+    static {
+        ControlConfigs.setInstance(new ControlConfigs());
+        
     }
+    
     @Before
     public void setUp() {
         //1.register point
@@ -44,17 +43,17 @@ public class TpsControlManagerTest {
      * test denied by monitor key rules.
      */
     @Test
-    public void testMonitor_DenyByMonitor() {
+    public void testMonitorDenyByMonitor() {
         
         tpsControlManager.applyTpsRule(pointName, null);
         //1.register rule
-        TpsControlRule tpsControlRule = new TpsControlRule();
         RuleDetail ruleDetail = new FlowedRuleDetail();
         ruleDetail.setMaxCount(10000);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
         ruleDetail.setModel(MODEL_FUZZY);
         ruleDetail.setPattern("test:prefix*");
+        TpsControlRule tpsControlRule = new TpsControlRule();
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
         
@@ -86,7 +85,6 @@ public class TpsControlManagerTest {
         
         TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
         System.out.println(check.isSuccess() + "," + check.getMessage());
-        
         
     }
 }

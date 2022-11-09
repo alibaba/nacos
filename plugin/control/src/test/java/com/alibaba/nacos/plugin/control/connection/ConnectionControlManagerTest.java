@@ -18,10 +18,11 @@ import java.util.Map;
 public class ConnectionControlManagerTest {
     
     ConnectionControlManager connectionControlManager = new ConnectionControlManager();
-    static{
-        ControlConfigs.setINSTANCE(new ControlConfigs());
-        
+    
+    static {
+        ControlConfigs.setInstance(new ControlConfigs());
     }
+    
     @Test
     public void testPass() {
         CpuTestUtils.cpuOverLoad = false;
@@ -38,7 +39,6 @@ public class ConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.CHECK_PASS, check.getCheckCode());
         
     }
-    
     
     @Test
     public void testPassByWhiteListLabel() {
@@ -152,7 +152,6 @@ public class ConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.CHECK_PASS, check.getCheckCode());
         
     }
-    
     
     @Test
     public void testDeniedByCpuInterceptor() {

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class RateCounter {
     
     /**
-     * rate count name;
+     * rate count name.
      */
     private String name;
     
@@ -29,40 +29,47 @@ public abstract class RateCounter {
     }
     
     /**
-     * @param timestamp
-     * @param count
-     * @return
-     */
-    abstract public void add(long timestamp, long count);
-    
-    /**
-     * @param timestamp
-     * @param count
-     * @param upLimit
-     * @return
-     */
-    abstract public boolean tryAdd(long timestamp, long count, long upLimit);
-    
-    /**
-     * minus count
+     * add count for the second of timestamp.
      *
-     * @param count
-     * @param timestamp
-     */
-    abstract public void minus(long timestamp, long count);
-    
-    /**
-     * @param timestamp
+     * @param timestamp timestamp.
+     * @param count     count.
      * @return
      */
-    abstract public long getCount(long timestamp);
+    public abstract void add(long timestamp, long count);
     
     /**
-     * @param timestamp
+     * add count for the second of timestamp with up limit.
+     *
+     * @param timestamp timestamp.
+     * @param count     count.
+     * @param upLimit   upLimit.
      * @return
      */
-    abstract public long getDeniedCount(long timestamp);
+    public abstract boolean tryAdd(long timestamp, long count, long upLimit);
     
+    /**
+     * minus count.
+     *
+     * @param timestamp timestamp.
+     * @param count     count.
+     */
+    public abstract void minus(long timestamp, long count);
+    
+    /**
+     * get count of the second of timestamp.
+     *
+     * @param timestamp timestamp.
+     * @return
+     */
+    public abstract long getCount(long timestamp);
+    
+    /**
+     * get denied count of the second of timestamp.
+     *
+     * @param timestamp timestamp.
+     * @return
+     */
+    public abstract long getDeniedCount(long timestamp);
     
     public String getName() {
         return name;

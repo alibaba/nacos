@@ -11,7 +11,7 @@ public class RuleParserProxy {
     
     private static final Logger LOGGER = Loggers.CONTROL;
     
-    private static RuleParser INSTANCE;
+    private static RuleParser instance;
     
     static {
         Collection<RuleParser> ruleParsers = NacosServiceLoader.load(RuleParser.class);
@@ -19,18 +19,19 @@ public class RuleParserProxy {
         
         for (RuleParser ruleParser : ruleParsers) {
             if (ruleParser.getName().equalsIgnoreCase(ruleParserName)) {
-                LOGGER.info("Found  rule parser of name={},class={}" ,ruleParserName,ruleParser.getClass().getSimpleName());
-                INSTANCE = ruleParser;
+                LOGGER.info("Found  rule parser of name={},class={}", ruleParserName,
+                        ruleParser.getClass().getSimpleName());
+                instance = ruleParser;
                 break;
             }
         }
-        if (INSTANCE == null) {
+        if (instance == null) {
             LOGGER.warn("Fail to found persist rule activator of name ：" + ruleParserName);
-            INSTANCE = new DefaultRuleParser();
+            instance = new DefaultRuleParser();
         }
     }
     
     public static RuleParser getInstance() {
-        return INSTANCE;
+        return instance;
     }
 }

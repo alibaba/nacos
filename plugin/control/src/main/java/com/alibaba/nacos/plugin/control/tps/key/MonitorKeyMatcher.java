@@ -42,8 +42,8 @@ public class MonitorKeyMatcher {
         if (!Objects.equals(typeInPattern[0], typeInMonitorKey[0])) {
             return MatchType.NO_MATCH;
         }
-        return matchPattern(pattern.substring(pattern.indexOf(Constants.COLON)+1),
-                monitorKey.substring(monitorKey.indexOf(Constants.COLON)+1));
+        return matchPattern(pattern.substring(pattern.indexOf(Constants.COLON) + 1),
+                monitorKey.substring(monitorKey.indexOf(Constants.COLON) + 1));
     }
     
     /**

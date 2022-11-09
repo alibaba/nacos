@@ -57,6 +57,7 @@ public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
         }
     }
     
+    @Override
     public void applyRuleDetail(RuleDetail ruleDetail) {
         tpsBarrier.applyRuleDetail(ruleDetail);
         if (ruleDetail instanceof FlowedRuleDetail) {
@@ -68,6 +69,7 @@ public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
         }
     }
     
+    @Override
     public void clearLimitRule() {
         tpsBarrier.clearLimitRule();
         super.clearLimitRule();

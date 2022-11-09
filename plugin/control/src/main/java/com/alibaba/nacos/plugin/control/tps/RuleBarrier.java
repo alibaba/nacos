@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class RuleBarrier {
     
-    
     private TimeUnit period;
     
     private String barrierName;
@@ -104,36 +103,36 @@ public abstract class RuleBarrier {
     /**
      * apply tps.
      *
-     * @param barrierCheckRequest
+     * @param barrierCheckRequest barrierCheckRequest.
      * @return
      */
-    abstract public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest);
+    public abstract TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest);
     
     /**
      * rollback tps.
      *
-     * @param barrierCheckRequest
+     * @param barrierCheckRequest barrierCheckRequest.
      * @return
      */
-    abstract public void rollbackTps(BarrierCheckRequest barrierCheckRequest);
-    
+    public abstract void rollbackTps(BarrierCheckRequest barrierCheckRequest);
     
     /**
-     * @param ruleDetail
+     * apply rule detail.
+     *
+     * @param ruleDetail ruleDetail.
      */
-    abstract public void applyRuleDetail(RuleDetail ruleDetail);
-    
+    public abstract void applyRuleDetail(RuleDetail ruleDetail);
     
     /**
      * get metrics.
      *
-     * @param timeStamp
+     * @param timeStamp timeStamp.
      * @return
      */
-    abstract public TpsMetrics getMetrics(long timeStamp);
+    public abstract TpsMetrics getMetrics(long timeStamp);
     
     /**
-     *
+     * clear limit rule.
      */
     public void clearLimitRule() {
         this.maxCount = -1;

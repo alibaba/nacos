@@ -144,6 +144,5 @@ public class ConnectionManagerTest {
         Assert.assertEquals(1, connectionManager.currentSdkClientCount());
     }
     
-    
 }
 

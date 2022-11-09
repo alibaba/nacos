@@ -6,7 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 public class LocalSimpleCountRuleBarrier extends SimpleCountRuleBarrier {
     
-    
     public LocalSimpleCountRuleBarrier(String name, String pattern, TimeUnit period) {
         super(name, pattern, period, RuleModel.FUZZY.name());
     }

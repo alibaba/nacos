@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class LocalSimpleCountBarrierCreator implements RuleBarrierCreator {
     
-    private static LocalSimpleCountBarrierCreator INSTANCE = new LocalSimpleCountBarrierCreator();
+    private static final LocalSimpleCountBarrierCreator INSTANCE = new LocalSimpleCountBarrierCreator();
     
     public LocalSimpleCountBarrierCreator() {
     }

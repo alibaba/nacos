@@ -22,8 +22,8 @@ public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testPassAndLimit() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS,
-                RuleModel.FUZZY.name());
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_PROTO);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
@@ -51,7 +51,7 @@ public class LocalSimpleCountRuleBarrierTest {
         Assert.assertTrue(tpsCheckResponseFail.getCode() == TpsResultCode.CHECK_DENY);
         
         //check pass and deny next second.
-        long timeMillisPlus = timeMillis + 1000l;
+        long timeMillisPlus = timeMillis + 1000L;
         barrierCheckRequest.setTimestamp(timeMillisPlus);
         
         for (int i = 0; i < 10; i++) {
@@ -66,11 +66,10 @@ public class LocalSimpleCountRuleBarrierTest {
         
     }
     
-    
     @Test
     public void testLimitAndRollback() {
         SimpleCountRuleBarrier ruleBarrier = (SimpleCountRuleBarrier) LocalSimpleCountBarrierCreator.getInstance()
-                .createRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS,RuleModel.FUZZY.name());
+                .createRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
@@ -107,7 +106,8 @@ public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testPassByMonitor() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS);
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
         ruleBarrier.setMonitorType(MonitorType.MONITOR.getType());
@@ -123,7 +123,7 @@ public class LocalSimpleCountRuleBarrierTest {
         monitorKey.setKey("simpler12");
         barrierCheckRequest.setMonitorKey(monitorKey);
         barrierCheckRequest.setTimestamp(timeMillis);
-    
+        
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
@@ -134,10 +134,10 @@ public class LocalSimpleCountRuleBarrierTest {
         Assert.assertEquals(TpsResultCode.PASS_BY_MONITOR, tpsCheckResponseByMonitor.getCode());
     }
     
-    
     @Test
-    public void testFuzzyModel(){
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS,MODEL_FUZZY);
+    public void testFuzzyModel() {
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, MODEL_FUZZY);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
@@ -156,14 +156,14 @@ public class LocalSimpleCountRuleBarrierTest {
         
         //check different keys pass
         for (int i = 0; i < 10; i++) {
-            monitorKey.setKey("simpler12"+i);
+            monitorKey.setKey("simpler12" + i);
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
-      
+        
         //check deny
-        monitorKey.setKey("simpler12"+System.currentTimeMillis());
+        monitorKey.setKey("simpler12" + System.currentTimeMillis());
         TpsCheckResponse tpsCheckResponseDeny = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny.isSuccess());
         Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny.getCode());
@@ -171,12 +171,13 @@ public class LocalSimpleCountRuleBarrierTest {
     }
     
     @Test
-    public void testProtoModel(){
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS,MODEL_PROTO);
+    public void testProtoModel() {
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS, MODEL_PROTO);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_PROTO);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
-    
+        
         long timeMillis = System.currentTimeMillis();
         BarrierCheckRequest barrierCheckRequest = new BarrierCheckRequest();
         MonitorKey monitorKey = new MonitorKey() {
@@ -188,17 +189,17 @@ public class LocalSimpleCountRuleBarrierTest {
         monitorKey.setKey("simpler12");
         barrierCheckRequest.setMonitorKey(monitorKey);
         barrierCheckRequest.setTimestamp(timeMillis);
-    
+        
         //check different keys pass
         for (int i = 0; i < 20; i++) {
-            monitorKey.setKey("simpler12"+i);
+            monitorKey.setKey("simpler12" + i);
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
         }
         
         //check same key
-        barrierCheckRequest.setTimestamp(barrierCheckRequest.getTimestamp()+1000);
+        barrierCheckRequest.setTimestamp(barrierCheckRequest.getTimestamp() + 1000);
         for (int i = 0; i < 10; i++) {
             monitorKey.setKey("simpler12");
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
@@ -214,7 +215,8 @@ public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testModifyRule() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS);
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+                TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
@@ -230,7 +232,7 @@ public class LocalSimpleCountRuleBarrierTest {
         monitorKey.setKey("simpler12");
         barrierCheckRequest.setMonitorKey(monitorKey);
         barrierCheckRequest.setTimestamp(timeMillis);
-    
+        
         //check pass
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);

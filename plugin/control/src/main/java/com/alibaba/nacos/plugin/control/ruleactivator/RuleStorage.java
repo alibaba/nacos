@@ -1,10 +1,12 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
 /**
+ * rule storage.
+ *
  * @author shiyiyue
  * @date 2022-10-26 11:43:00
  */
-public interface RuleActivator {
+public interface RuleStorage {
     
     String getName();
     

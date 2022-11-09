@@ -3,7 +3,7 @@ package com.alibaba.nacos.plugin.control.tps;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
+import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptorHolder;
@@ -24,17 +24,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * abstract tps control manager
+ * abstract tps control manager.
  */
 public class TpsControlManager {
     
     /**
-     * point name -> tps barrier
+     * point name -> tps barrier.
      */
     private final Map<String, TpsBarrier> points = new ConcurrentHashMap<>(16);
     
     /**
-     * point name -> tps control rule
+     * point name -> tps control rule.
      */
     private final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
     
@@ -55,7 +55,7 @@ public class TpsControlManager {
     /**
      * apple tps rule.
      *
-     * @param pointName
+     * @param pointName pointName.
      */
     public synchronized void registerTpsPoint(String pointName) {
         if (!points.containsKey(pointName)) {
@@ -69,7 +69,7 @@ public class TpsControlManager {
     }
     
     private void initTpsRule(String pointName) {
-        String localRuleContent = LocalDiskRuleActivator.INSTANCE.getTpsRule(pointName);
+        String localRuleContent = LocalDiskRuleStorage.INSTANCE.getTpsRule(pointName);
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk tps control rule of {},content ={}", pointName, localRuleContent);
         } else if (PersistRuleActivatorProxy.getInstance() != null
@@ -88,12 +88,11 @@ public class TpsControlManager {
         }
     }
     
-    
     /**
      * apple tps rule.
      *
-     * @param pointName
-     * @param rule
+     * @param pointName pointName.
+     * @param rule      rule.
      */
     public synchronized void applyTpsRule(String pointName, TpsControlRule rule) {
         if (rule == null) {
@@ -106,7 +105,6 @@ public class TpsControlManager {
         }
     }
     
-    
     public Map<String, TpsBarrier> getPoints() {
         return points;
     }
@@ -114,7 +112,6 @@ public class TpsControlManager {
     public Map<String, TpsControlRule> getRules() {
         return rules;
     }
-    
     
     /**
      * check tps result.
@@ -198,7 +195,6 @@ public class TpsControlManager {
                     List<RuleBarrier> patternBarriers = tpsBarrier.getPatternBarriers();
                     
                     for (RuleBarrier tpsPatternBarrier : patternBarriers) {
-                        String patternMonitorName = tpsPatternBarrier.getRuleName();
                         TpsMetrics patternMetrics = tpsPatternBarrier
                                 .getMetrics(now - tpsPatternBarrier.getPeriod().toMillis(1));
                         if (patternMetrics == null) {
@@ -221,6 +217,7 @@ public class TpsControlManager {
                         //check if print detail log.
                         boolean printDetail = false;
                         
+                        String patternMonitorName = tpsPatternBarrier.getRuleName();
                         if (rules != null && rules.get(pointName) != null
                                 && rules.get(pointName).getMonitorKeyRule() != null
                                 && rules.get(pointName).getMonitorKeyRule().get(patternMonitorName) != null) {

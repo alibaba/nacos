@@ -7,7 +7,10 @@ public interface RuleBarrierCreator {
     /**
      * create a count for time unit period.
      *
-     * @param period
+     * @param name    name.
+     * @param pattern pattern.
+     * @param period  period.
+     * @param model   model.
      * @return
      */
     RuleBarrier createRuleBarrier(String name, String pattern, TimeUnit period, String model);

@@ -19,16 +19,16 @@ public class ConfigPublishParser extends RemoteTpsCheckRequestParser {
     public TpsCheckRequest parse(Request request, RequestMeta meta) {
         if (request instanceof ConfigPublishRequest) {
             ConfigPublishRequest configpublishrequest = (ConfigPublishRequest) request;
-            ConfigGroupKey configGroupKey = new ConfigGroupKey(
-                    GroupKey.getKeyTenant(configpublishrequest.getDataId(), configpublishrequest.getGroup(),
-                            configpublishrequest.getTenant()));
             
-            ConfigGroupMonitorKey configGroupMonitorKey = new ConfigGroupMonitorKey(configpublishrequest.getGroup());
             TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
             tpsCheckRequest.setClientIp(meta.getClientIp());
             tpsCheckRequest.setConnectionId(meta.getConnectionId());
             tpsCheckRequest.setMonitorKeys(new ArrayList<>());
+            ConfigGroupKey configGroupKey = new ConfigGroupKey(
+                    GroupKey.getKeyTenant(configpublishrequest.getDataId(), configpublishrequest.getGroup(),
+                            configpublishrequest.getTenant()));
             tpsCheckRequest.getMonitorKeys().add(configGroupKey);
+            ConfigGroupMonitorKey configGroupMonitorKey = new ConfigGroupMonitorKey(configpublishrequest.getGroup());
             tpsCheckRequest.getMonitorKeys().add(configGroupMonitorKey);
             return tpsCheckRequest;
             

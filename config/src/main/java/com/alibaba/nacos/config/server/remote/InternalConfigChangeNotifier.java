@@ -27,10 +27,10 @@ import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import org.springframework.stereotype.Component;
 
-import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleActivator.DATA_ID_CONNECTION_LIMIT_RULE;
-import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleActivator.DATA_ID_TPS_CONTROL_RULE;
-import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleActivator.NACOS_GROUP;
-import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleActivator.RULE_CONFIG_NAMESPACE;
+import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleStorage.DATA_ID_CONNECTION_LIMIT_RULE;
+import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleStorage.DATA_ID_TPS_CONTROL_RULE;
+import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleStorage.NACOS_GROUP;
+import static com.alibaba.nacos.config.server.service.ConfigRulePersistRuleStorage.RULE_CONFIG_NAMESPACE;
 
 /**
  * ConfigChangeNotifier.

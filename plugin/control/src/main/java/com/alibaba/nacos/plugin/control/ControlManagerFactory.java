@@ -2,18 +2,14 @@ package com.alibaba.nacos.plugin.control;
 
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ControlManagerFactory {
     
-    
-    static final ControlManagerFactory controlManagerFactory = new ControlManagerFactory();
+    static final ControlManagerFactory INSTANCE = new ControlManagerFactory();
     
     private TpsControlManager tpsControlManager;
     
     private ConnectionControlManager connectionControlManager;
-    
     
     private ControlManagerFactory() {
         
@@ -31,8 +27,7 @@ public class ControlManagerFactory {
         return connectionControlManager;
     }
     
-    
     public static final ControlManagerFactory getInstance() {
-        return controlManagerFactory;
+        return INSTANCE;
     }
 }

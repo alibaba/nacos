@@ -1,6 +1,6 @@
 package com.alibaba.nacos.plugin.control.connection;
 
-public class TestBConnectionMetricsCollector implements ConnectionMetricsCollector{
+public class TestBConnectionMetricsCollector implements ConnectionMetricsCollector {
     
     @Override
     public String getName() {

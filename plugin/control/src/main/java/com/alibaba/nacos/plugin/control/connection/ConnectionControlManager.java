@@ -12,8 +12,7 @@ import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.event.ConnectionDeniedEvent;
-import com.alibaba.nacos.plugin.control.event.TpsRequestDeniedEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleActivator;
+import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 
@@ -22,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * connection control manager
+ * connection control manager.
  */
 public class ConnectionControlManager {
     
@@ -34,7 +33,7 @@ public class ConnectionControlManager {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
         Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
                 metricsCollectorList);
-        String localRuleContent = LocalDiskRuleActivator.INSTANCE.getConnectionRule();
+        String localRuleContent = LocalDiskRuleStorage.INSTANCE.getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk connection rule content ,value  ={}", localRuleContent);
         } else if (PersistRuleActivatorProxy.getInstance() != null
@@ -65,7 +64,7 @@ public class ConnectionControlManager {
     /**
      * check connection allowed.
      *
-     * @param connectionCheckRequest
+     * @param connectionCheckRequest connectionCheckRequest.
      * @return
      */
     public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
@@ -100,13 +99,9 @@ public class ConnectionControlManager {
             String appName = connectionCheckRequest.getAppName();
             String clientIp = connectionCheckRequest.getClientIp();
             
-            Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
-                    Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
-            
             Map<String, Integer> metricsIpCount = metricsCollectorList.stream()
                     .collect(Collectors.toMap(ConnectionMetricsCollector::getName, a -> a.getCountForIp(clientIp)));
             
-            int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
             int totalCountOfIp = metricsIpCount.values().stream().mapToInt(Integer::intValue).sum();
             
             //client ip limit check model;
@@ -120,11 +115,10 @@ public class ConnectionControlManager {
                     connectionCheckResponse.setMessage(
                             "deny by specific ip check model,max allowed count is " + countLimitOfIp
                                     + ",current count detail is " + metricsIpCount.toString());
-                    Loggers.CONNECTION
-                            .warn("connection denied by specific ip or app ip limit ,maxCount allowed is  {},clientIp={},appName={},source={},labels={}",
-                                    countLimitOfIp, connectionCheckRequest.getClientIp(),
-                                    connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                                    connectionCheckRequest.getLabels());
+                    Loggers.CONNECTION.warn("connection denied by specific ip or app ip limit ,maxCount allowed is {}"
+                                    + ",clientIp={},appName={},source={},labels={}", countLimitOfIp,
+                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
+                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
                     NotifyCenter.publishEvent(new ConnectionDeniedEvent(connectionCheckRequest,
                             "connection denied by specific ip or app ip limit ,maxCount allowed is  "
                                     + countLimitOfIp));
@@ -154,6 +148,9 @@ public class ConnectionControlManager {
             }
             
             int totalCountLimit = connectionLimitRule.getCountLimit();
+            Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
+                    Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
+            int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
             //total count check model
             if (totalCountLimit >= 0 && totalCount >= totalCountLimit) {
                 //deny;
@@ -179,7 +176,6 @@ public class ConnectionControlManager {
             connectionCheckResponse.setSuccess(true);
             return connectionCheckResponse;
         }
-        
         
     }
 }

@@ -6,7 +6,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
-import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsRequestDeniedEvent;
 import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
@@ -204,7 +203,9 @@ public class TpsBarrier {
     }
     
     /**
-     * @param newControlRule
+     * apply rule.
+     *
+     * @param newControlRule newControlRule.
      */
     public synchronized void applyRule(TpsControlRule newControlRule) {
         Loggers.CONTROL.info("Apply tps control rule parse start,pointName=[{}]  ", this.getPointName());

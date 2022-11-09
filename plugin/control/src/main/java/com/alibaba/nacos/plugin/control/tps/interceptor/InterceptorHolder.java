@@ -6,9 +6,7 @@ import java.util.Collection;
 
 public class InterceptorHolder {
     
-    
-    static Collection<TpsInterceptor> INTERCEPTORS = NacosServiceLoader.load(TpsInterceptor.class);
-    
+    static final Collection<TpsInterceptor> INTERCEPTORS = NacosServiceLoader.load(TpsInterceptor.class);
     
     public static Collection<TpsInterceptor> getInterceptors() {
         return INTERCEPTORS;

@@ -7,17 +7,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class ControlConfigs {
     
-    private static ControlConfigs INSTANCE = null;
+    private static  ControlConfigs instance = null;
     
     public static ControlConfigs getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = ApplicationUtils.getBean(ControlConfigs.class);
+        if (instance == null) {
+            instance = ApplicationUtils.getBean(ControlConfigs.class);
         }
-        return INSTANCE;
+        return instance;
     }
     
-    public static void setINSTANCE(ControlConfigs INSTANCE) {
-        ControlConfigs.INSTANCE = INSTANCE;
+    public static void setInstance(ControlConfigs instance) {
+        ControlConfigs.instance = instance;
     }
     
     @Value("${nacos.plugin.control.tps.barrier.creator:localsimplecount}")
