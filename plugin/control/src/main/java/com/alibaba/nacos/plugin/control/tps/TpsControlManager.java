@@ -6,9 +6,6 @@ import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
 import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
-import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptorHolder;
-import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptResult;
-import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
@@ -141,7 +138,6 @@ public class TpsControlManager {
         long lastReportMinutes = 0L;
         
         long lastReportHours = 0L;
-        
         
         /**
          * get format string "2021-01-16 17:20:21" of timestamp.
