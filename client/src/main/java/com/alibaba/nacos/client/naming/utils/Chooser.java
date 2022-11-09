@@ -69,6 +69,10 @@ public class Chooser<K, T> {
             }
         }
         
+        if (ref.weights.length == 0) {
+            throw new IllegalStateException("Cumulative Weight wrong , the array length is equal to 0.");
+        }
+        
         /* This should never happen, but it ensures we will return a correct
          * object in case there is some floating point inequality problem
          * wrt the cumulative probabilities. */
