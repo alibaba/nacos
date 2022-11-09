@@ -37,17 +37,6 @@ public interface ConfigInfoAggrMapper extends Mapper {
     String batchRemoveAggr(List<String> datumList);
     
     /**
-     * Get count of aggregation config info.
-     * The default sql:
-     * SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ?
-     *
-     * @param size datum id list size
-     * @param isIn search condition
-     * @return The sql of getting count of aggregation config info.
-     */
-    String aggrConfigInfoCount(int size, boolean isIn);
-    
-    /**
      * Find all data before aggregation under a dataId. It is guaranteed not to return NULL.
      * The default sql:
      * SELECT data_id,group_id,tenant_id,datum_id,app_name,content

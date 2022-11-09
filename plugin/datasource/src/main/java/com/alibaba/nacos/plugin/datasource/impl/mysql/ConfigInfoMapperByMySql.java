@@ -57,18 +57,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByDataIdFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info "
-                + "WHERE data_id = ? AND tenant_id = ? " + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByDataIdAndAppFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info "
-                + "WHERE data_id= ? AND tenant_id= ? AND app_name= ?" + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
     public String findConfigInfoByAppCountRows() {
         return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name= ?";
     }
@@ -86,19 +74,21 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String getTenantIdList(int startRow, int pageSize) {
-        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT " + startRow + "," + pageSize;
+        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT " + startRow + ","
+                + pageSize;
     }
     
     @Override
     public String getGroupIdList(int startRow, int pageSize) {
-        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT " + startRow + "," + pageSize;
+        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT " + startRow + ","
+                + pageSize;
     }
     
     @Override
     public String findAllConfigKey(int startRow, int pageSize) {
         return " SELECT data_id,group_id,app_name  FROM ( "
-                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT " + startRow + "," + pageSize + " )"
-                + " g, config_info t WHERE g.id = t.id  ";
+                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT " + startRow + "," + pageSize
+                + " )" + " g, config_info t WHERE g.id = t.id  ";
     }
     
     @Override
@@ -106,13 +96,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         return " SELECT t.id,data_id,group_id,content,md5"
                 + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
                 + " g, config_info t  WHERE g.id = t.id ";
-    }
-    
-    @Override
-    public String findAllConfigInfoForDumpAllFetchRows(int startRow, int pageSize) {
-        return " SELECT t.id,type,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified "
-                + " FROM ( SELECT id FROM config_info   ORDER BY id LIMIT ?,?  )"
-                + " g, config_info t WHERE g.id = t.id ";
     }
     
     @Override
@@ -196,7 +179,8 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     @Override
     public String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize) {
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
-                + "( SELECT id FROM config_info ORDER BY id LIMIT " + startRow + "," + pageSize + " ) g, config_info t WHERE g.id = t.id";
+                + "( SELECT id FROM config_info ORDER BY id LIMIT " + startRow + "," + pageSize
+                + " ) g, config_info t WHERE g.id = t.id";
     }
     
     @Override
@@ -235,64 +219,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public String findConfigInfoByBatch(int paramSize) {
-        String sqlStart = "SELECT data_id, group_id, tenant_id, app_name, content "
-                + "FROM config_info WHERE group_id = ? AND tenant_id = ? AND data_id IN (";
-        String sqlEnd = ")";
-        StringBuilder subQuerySql = new StringBuilder();
-        
-        for (int i = 0; i < paramSize; i++) {
-            subQuerySql.append('?');
-            if (i != paramSize - 1) {
-                subQuerySql.append(',');
-            }
-        }
-        return sqlStart + subQuerySql.toString() + sqlEnd;
-    }
-    
-    @Override
-    public String findConfigInfoLikeCountRows(Map<String, String> params) {
-        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
-        String where = " 1=1 ";
-        if (!StringUtils.isEmpty(params.get(DATA_ID))) {
-            where += " AND data_id LIKE ? ";
-        }
-        if (!StringUtils.isEmpty(params.get(GROUP))) {
-            where += " AND group_id LIKE ? ";
-        }
-        where += " AND tenant_id LIKE ? ";
-        if (!StringUtils.isEmpty(params.get(APP_NAME))) {
-            where += " AND app_name = ? ";
-        }
-        if (!StringUtils.isBlank(params.get(CONTENT))) {
-            where += " AND content LIKE ? ";
-        }
-        
-        return sqlCountRows + where;
-    }
-    
-    @Override
-    public String findConfigInfoLikeFetchRows(Map<String, String> params, int startRow, int pageSize) {
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE ";
-        String where = " 1=1 ";
-        if (!StringUtils.isEmpty(params.get(DATA_ID))) {
-            where += " AND data_id LIKE ? ";
-        }
-        if (!StringUtils.isEmpty(params.get(GROUP))) {
-            where += " AND group_id LIKE ? ";
-        }
-        where += " AND tenant_id LIKE ? ";
-        if (!StringUtils.isEmpty(params.get(APP_NAME))) {
-            where += " AND app_name = ? ";
-        }
-        if (!StringUtils.isBlank(params.get(CONTENT))) {
-            where += " AND content LIKE ? ";
-        }
-        
-        return sqlFetchRows + where + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
     public String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
         String where = " 1=1 AND tenant_id='' ";
@@ -323,27 +249,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
             where += " AND content LIKE ? ";
         }
         return sqlFetchRows + where + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByDataIdAndAdvanceCountRows(Map<String, String> params) {
-        final String appName = params.get(APP_NAME);
-        StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE data_id=? AND tenant_id=? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sqlCount.append(" AND app_name=? ");
-        }
-        return sqlCount.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize) {
-        final String appName = params.get(APP_NAME);
-        StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND tenant_id=? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND app_name=? ");
-        }
-        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -385,46 +290,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         }
         return sql + where + " LIMIT " + startRow + "," + pageSize;
     }
-
-    @Override
-    public String findConfigInfoBaseByDataIdFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,content FROM config_info WHERE data_id=? AND tenant_id=?" + " LIMIT "
-                + startRow + "," + pageSize;
-    }
     
-    @Override
-    public String findConfigInfoByGroupFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE"
-                + " group_id=? AND tenant_id=?" + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAppFetchRows(int startRow, int pageSize) {
-        return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE "
-                + "group_id=? AND tenant_id=? AND app_name =?" + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByAdvanceCountRows(Map<String, String> params) {
-        final String appName = params.get("appName");
-        StringBuilder sqlCount = new StringBuilder("SELECT count(*) FROM config_info WHERE tenant_id LIKE ? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sqlCount.append(" AND app_name=? ");
-        }
-        return sqlCount.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize) {
-        final String appName = params.get("appName");
-        StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND app_name=? ");
-        }
-        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
-    }
-
     @Override
     public String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?" + " LIMIT "
@@ -484,41 +350,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
                 + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
                 + " g, config_info t  WHERE g.id = t.id ";
-    }
-    
-    @Override
-    public String findConfigInfoAdvanceInfo(Map<String, String> params) {
-        final String appName = params.get("appName");
-        
-        StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND app_name=? ");
-        }
-        
-        return sql.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAdvanceCountRows(Map<String, String> params) {
-        final String appName = params.get(APP_NAME);
-        StringBuilder sqlCount = new StringBuilder(
-                "SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id=? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sqlCount.append(" AND app_name=? ");
-        }
-        return sqlCount.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAdvanceFetchRows(Map<String, String> params, int startRow, int pageSize) {
-        final String appName = params.get(APP_NAME);
-        StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE group_id=? AND tenant_id=? ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND app_name=? ");
-        }
-        return sql.toString() + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
