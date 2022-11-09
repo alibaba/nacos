@@ -41,6 +41,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
         return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
                 + datumString + ")";
     }
+    
     @Override
     public String aggrConfigInfoCount(int size, boolean isIn) {
         StringBuilder sql = new StringBuilder(
