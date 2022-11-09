@@ -37,7 +37,6 @@ import javax.annotation.PostConstruct;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
@@ -122,14 +121,15 @@ public class GroupCapacityPersistService {
             // Note: add "tenant_id = ''" condition.
             sql = groupCapacityMapper.insertIntoSelectByWhere();
         }
-        return insertGroupCapacity(sql, capacity);
+        String[] primaryKeyGeneratedKeys = groupCapacityMapper.getPrimaryKeyGeneratedKeys();
+        return insertGroupCapacity(sql, capacity, primaryKeyGeneratedKeys);
     }
     
-    private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity) {
+    private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity, String[] primaryKeyGeneratedKeys) {
         try {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
             PreparedStatementCreator preparedStatementCreator = connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement ps = connection.prepareStatement(sql, primaryKeyGeneratedKeys);
                 String group = capacity.getGroup();
                 ps.setString(1, group);
                 ps.setInt(2, capacity.getQuota());
