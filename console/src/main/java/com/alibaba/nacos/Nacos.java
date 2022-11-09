@@ -30,7 +30,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ServletComponentScan
 @EnableScheduling
 public class Nacos {
-    
     public static void main(String[] args) {
         SpringApplication.run(Nacos.class, args);
     }

@@ -29,14 +29,14 @@ public class ClientOperationEvent extends Event {
     private static final long serialVersionUID = -4582413232902517619L;
     
     private final String clientId;
-    
-    private final Service service;
-    
+
     public ClientOperationEvent(String clientId, Service service) {
         this.clientId = clientId;
         this.service = service;
     }
-    
+
+    private final Service service;
+
     public String getClientId() {
         return clientId;
     }

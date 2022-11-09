@@ -80,7 +80,7 @@
             additivity="false">
             <AppenderRef ref="NAMING_LOG_FILE"/>
         </Logger>
-        <Root level="INFO">
+        <Root level="debug">
             <AppenderRef ref="CONFIG_LOG_FILE"/>
         </Root>
     </Loggers>

@@ -36,9 +36,9 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
-    
     private final EphemeralClientOperationServiceImpl clientOperationService;
-    
+
+
     public InstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
         this.clientOperationService = clientOperationService;
     }
