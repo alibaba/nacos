@@ -68,4 +68,6 @@ public interface Constants {
     String AVAILABLE_PROCESSORS_BASIC = "nacos.core.sys.basic.processors";
     
     String SUPPORT_UPGRADE_FROM_1X = "nacos.core.support.upgrade.from.1x";
+    
+    String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log";
 }
