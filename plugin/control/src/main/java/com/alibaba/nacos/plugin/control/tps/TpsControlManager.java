@@ -121,20 +121,6 @@ public class TpsControlManager {
      */
     public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
         
-        for (TpsInterceptor tpsInterceptor : InterceptorHolder.getInterceptors()) {
-            InterceptResult intercept = tpsInterceptor.intercept(tpsRequest);
-            if (intercept.equals(InterceptResult.CHECK_PASS)) {
-                return new TpsCheckResponse(true, TpsResultCode.CHECK_PASS,
-                        "pass by interceptor :" + tpsInterceptor.getName());
-            } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
-                Loggers.TPS.warn("[{}]denied by interceptor ={},clientIp={},connectionId={},keys={}",
-                        tpsRequest.getPointName(), tpsInterceptor.getName(), tpsRequest.getClientIp(),
-                        tpsRequest.getConnectionId(), tpsRequest.getMonitorKeys());
-                return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
-                        "deny by interceptor :" + tpsInterceptor.getName());
-            }
-        }
-        
         if (points.containsKey(tpsRequest.getPointName())) {
             try {
                 return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
@@ -153,6 +139,9 @@ public class TpsControlManager {
         long lastReportSecond = 0L;
         
         long lastReportMinutes = 0L;
+        
+        long lastReportHours = 0L;
+        
         
         /**
          * get format string "2021-01-16 17:20:21" of timestamp.
@@ -174,6 +163,8 @@ public class TpsControlManager {
                 
                 long tempSecond = 0L;
                 long tempMinutes = 0L;
+                long tempHours = 0L;
+                
                 long metricsTime = now - 1000L;
                 String formatString = getTimeFormatOfSecond(metricsTime);
                 for (Map.Entry<String, TpsBarrier> entry : entries) {
@@ -212,6 +203,12 @@ public class TpsControlManager {
                                 continue;
                             }
                             tempMinutes = patternMetrics.getTimeStamp();
+                        }
+                        if (patternMetrics.getPeriod() == TimeUnit.HOURS) {
+                            if (lastReportHours != 0L && lastReportHours == patternMetrics.getTimeStamp()) {
+                                continue;
+                            }
+                            tempHours = patternMetrics.getTimeStamp();
                         }
                         
                         //check if print detail log.
@@ -256,6 +253,10 @@ public class TpsControlManager {
                 if (tempMinutes > 0) {
                     lastReportMinutes = tempMinutes;
                 }
+                if (tempHours > 0) {
+                    lastReportHours = tempHours;
+                }
+                
                 if (stringBuilder.length() > 0) {
                     Loggers.TPS.info("Tps reporting...\n" + stringBuilder.toString());
                 }

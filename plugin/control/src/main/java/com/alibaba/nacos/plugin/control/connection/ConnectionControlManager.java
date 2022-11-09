@@ -158,12 +158,13 @@ public class ConnectionControlManager {
                 connectionCheckResponse.setMessage("deny by total count limit,max allowed count is " + totalCountLimit
                         + ",current count detail is " + metricsTotalCount.toString());
                 Loggers.CONNECTION
-                        .warn("connection denied by total count  limit ,maxCount allowed is  {},detail={},clientIp={},appName={},source={},labels={}",
+                        .warn("connection denied by total count  limit ,maxCount allowed is {},detail={},clientIp={},appName={},source={},labels={}",
                                 totalCountLimit, metricsTotalCount.toString(), connectionCheckRequest.getClientIp(),
                                 connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
                                 connectionCheckRequest.getLabels());
                 NotifyCenter.publishEvent(new ConnectionDeniedEvent(connectionCheckRequest,
-                        "connection denied by total count  limit ,maxCount allowed is " + totalCountLimit));
+                        "connection denied by total count  limit ,maxCount allowed is " + totalCountLimit
+                                + ",current total detail is " + metricsTotalCount.toString()));
                 return connectionCheckResponse;
             }
             

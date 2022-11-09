@@ -7,6 +7,9 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.event.TpsRequestDeniedEvent;
+import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptResult;
+import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptorHolder;
+import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MatchType;
@@ -76,13 +79,30 @@ public class TpsBarrier {
      */
     public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
         
+        //pre interceptor.
+        for (TpsInterceptor tpsInterceptor : InterceptorHolder.getInterceptors()) {
+            if (tpsInterceptor.getPointName().equalsIgnoreCase(tpsCheckRequest.getPointName())) {
+                InterceptResult intercept = tpsInterceptor.preIntercept(tpsCheckRequest);
+                if (intercept.equals(InterceptResult.CHECK_PASS)) {
+                    return new TpsCheckResponse(true, TpsResultCode.CHECK_PASS,
+                            "pass by interceptor :" + tpsInterceptor.getName());
+                } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
+                    Loggers.TPS.warn("[{}]denied by interceptor ={},clientIp={},connectionId={},keys={}",
+                            tpsCheckRequest.getPointName(), tpsInterceptor.getName(), tpsCheckRequest.getClientIp(),
+                            tpsCheckRequest.getConnectionId(), tpsCheckRequest.getMonitorKeys());
+                    return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
+                            "deny by interceptor :" + tpsInterceptor.getName());
+                }
+            }
+        }
+        
         Map<RuleBarrier, List<BarrierCheckRequest>> appliedBarriers = null;
         RuleBarrier denyPatternRate = null;
         boolean patternSuccess = true;
         List<RuleBarrier> patternBarriers = this.patternBarriers;
         
         buildIpOrConnectionIdKey(tpsCheckRequest);
-        boolean exactMatch = false;
+        boolean monitorOnly = false;
         //1.check pattern barriers
         for (MonitorKey monitorKey : tpsCheckRequest.getMonitorKeys()) {
             
@@ -91,7 +111,7 @@ public class TpsBarrier {
                 MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
                 if (match.isMatch()) {
                     BarrierCheckRequest barrierCheckRequest = tpsCheckRequest.buildBarrierCheckRequest(monitorKey);
-                    barrierCheckRequest.setMonitorOnly(exactMatch);
+                    barrierCheckRequest.setMonitorOnly(monitorOnly);
                     TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
                     if (patternCheckResponse.isSuccess()) {
                         if (appliedBarriers == null) {
@@ -103,7 +123,7 @@ public class TpsBarrier {
                         
                         appliedBarriers.get(patternRuleBarrier).add(barrierCheckRequest);
                         if (MatchType.EXACT.equals(match)) {
-                            exactMatch = true;
+                            monitorOnly = true;
                             Loggers.TPS
                                     .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
                                             pointName, patternRuleBarrier.getPattern(),
@@ -127,14 +147,25 @@ public class TpsBarrier {
         
         //2.when pattern fail,rollback applied count of patterns.
         if (!patternSuccess) {
-            rollbackTps(appliedBarriers);
-            Loggers.TPS.warn("[{}]denied by pattern barrier [{}],monitorKeys={},msg={}", pointName,
-                    denyPatternRate.getRuleName(),tpsCheckRequest.getMonitorKeys(),
-                    denyPatternRate.getLimitMsg());
-            NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, denyPatternRate.getLimitMsg()));
-            
-            return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
+            TpsCheckResponse tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
                     (denyPatternRate == null) ? "unknown" : ("denied by " + denyPatternRate.getLimitMsg()));
+            InterceptResult interceptResult = postInterceptor(tpsCheckRequest, tpsCheckResponse);
+            if (interceptResult.equals(InterceptResult.CHECK_PASS)) {
+                //denied by pattern ,but passed by interceptor.
+                tpsCheckResponse.setSuccess(true);
+                tpsCheckResponse
+                        .setMessage("denied by pattern " + denyPatternRate.getRuleName() + ", but pass by interceptor");
+                return tpsCheckResponse;
+            } else {
+                rollbackTps(appliedBarriers);
+                Loggers.TPS.warn("[{}]denied by pattern barrier [{}],monitorKeys={},msg={}", pointName,
+                        denyPatternRate.getRuleName(), tpsCheckRequest.getMonitorKeys(), denyPatternRate.getLimitMsg());
+                NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, denyPatternRate.getLimitMsg()));
+                
+                return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
+                        (denyPatternRate == null) ? "unknown" : ("denied by " + denyPatternRate.getLimitMsg()));
+            }
+            
         }
         
         //3. check point rule
@@ -142,22 +173,56 @@ public class TpsBarrier {
         pointCheckRequest.setCount(tpsCheckRequest.getCount());
         pointCheckRequest.setPointName(this.pointName);
         pointCheckRequest.setTimestamp(tpsCheckRequest.getTimestamp());
-        pointCheckRequest.setMonitorOnly(exactMatch);
-        TpsCheckResponse pointCheckSuccess = pointBarrier.applyTps(pointCheckRequest);
-        if (pointCheckSuccess.isSuccess()) {
-            return pointCheckSuccess;
+        pointCheckRequest.setMonitorOnly(monitorOnly);
+        TpsCheckResponse pointCheck = pointBarrier.applyTps(pointCheckRequest);
+        InterceptResult interceptResult = postInterceptor(tpsCheckRequest, pointCheck);
+        //point check pass,post interceptor not deny,return success
+        if (pointCheck.isSuccess() && !interceptResult.equals(InterceptResult.CHECK_DENY)) {
+            return pointCheck;
+        } else if (pointCheck.isSuccess() && interceptResult.equals(InterceptResult.CHECK_DENY)) {
+            //point check pass,post interceptor  deny,return false
+            pointBarrier.rollbackTps(pointCheckRequest);
+            rollbackTps(appliedBarriers);
+            pointCheck.setSuccess(false);
+            pointCheck.setCode(TpsResultCode.CHECK_DENY);
+            String message = "pass by barrier,but denied by interceptor";
+            pointCheck.setMessage(message);
+            NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, message));
+            return pointCheck;
+        } else if (!pointCheck.isSuccess() && interceptResult.equals(InterceptResult.CHECK_PASS)) {
+            //point check denied,but post interceptor pass,return true
+            pointCheck.setSuccess(true);
+            pointCheck.setCode(TpsResultCode.PASS_BY_INTERCEPTOR);
+            pointCheck.setMessage("denied by point " + pointBarrier.getRuleName() + ", but pass by interceptor");
+            return pointCheck;
         } else {
-            //3.1 when point rule fail,rollback applied count of patterns.
+            //point check denied,and post interceptor not pass.
             rollbackTps(appliedBarriers);
             Loggers.TPS.warn("[{}]denied by point barrier ={},clientIp={},connectionId={},msg={}", pointName,
                     pointBarrier.getRuleName(), tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
                     pointBarrier.getLimitMsg());
             NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, pointBarrier.getLimitMsg()));
-            
-            return new TpsCheckResponse(false, TpsResultCode.CHECK_DENY,
-                    "deny by point rule," + pointBarrier.getLimitMsg());
+            return pointCheck;
         }
         
+    }
+    
+    private InterceptResult postInterceptor(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
+        for (TpsInterceptor tpsInterceptor : InterceptorHolder.getInterceptors()) {
+            if (tpsInterceptor.getPointName().equals(tpsCheckRequest.getPointName())) {
+                InterceptResult intercept = tpsInterceptor.postIntercept(tpsCheckRequest, tpsCheckResponse);
+                if (intercept.equals(InterceptResult.CHECK_PASS)) {
+                    Loggers.TPS.warn("[{}]pass by interceptor ={},keys={}", tpsCheckRequest.getPointName(),
+                            tpsInterceptor.getName(), tpsCheckRequest.getMonitorKeys());
+                    return InterceptResult.CHECK_PASS;
+                } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
+                    Loggers.TPS.warn("[{}]denied by interceptor ={},keys={}", tpsCheckRequest.getPointName(),
+                            tpsInterceptor.getName(), tpsCheckRequest.getMonitorKeys());
+                    return InterceptResult.CHECK_DENY;
+                }
+            }
+        }
+        return InterceptResult.CHECK_SKIP;
     }
     
     private void rollbackTps(Map<RuleBarrier, List<BarrierCheckRequest>> appliedBarriers) {

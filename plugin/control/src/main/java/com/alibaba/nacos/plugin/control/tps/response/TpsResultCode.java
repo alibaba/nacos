@@ -6,9 +6,11 @@ public enum TpsResultCode {
     
     PASS_BY_MONITOR(201, "check fail ,but passed by monitor mode"),
     
+    PASS_BY_INTERCEPTOR(202, "check fail ,but passed by monitor mode"),
+    
     CHECK_DENY(503, "tps check deny"),
     
-    CHECK_SKIP(202, "check skip");
+    CHECK_SKIP(100, "check skip");
     
     int code;
     
