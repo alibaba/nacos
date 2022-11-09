@@ -14,29 +14,33 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <artifactId>nacos-plugin</artifactId>
         <groupId>com.alibaba.nacos</groupId>
-        <artifactId>nacos-all</artifactId>
         <version>${revision}</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    <artifactId>nacos-plugin</artifactId>
-    <name>nacos-plugin ${project.version}</name>
-    <url>http://nacos.io</url>
-    <modules>
-        <module>auth</module>
-        <module>encryption</module>
-        <module>trace</module>
-        <module>datasource</module>
-        <module>environment</module>
-        <module>cleaner</module>
-    </modules>
-    <packaging>pom</packaging>
+    <artifactId>nacos-cleaner-plugin</artifactId>
+    <name>nacos-cleaner-plugin ${project.version}</name>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

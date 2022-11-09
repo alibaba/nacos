@@ -102,6 +102,16 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      */
     private static boolean embeddedStorage = EnvUtil.getStandaloneMode();
     
+    private static String cleanerName;
+    
+    public static String getCleanerName() {
+        return cleanerName;
+    }
+    
+    public static void setCleanerName(String cleanerName) {
+        PropertyUtil.cleanerName = cleanerName;
+    }
+    
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
     }
@@ -285,7 +295,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             boolean useExternalStorage = !PropertiesConstant.EMPTY_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
                     && !PropertiesConstant.DERBY.equalsIgnoreCase(platform);
             setUseExternalDB(useExternalStorage);
-            
+            setCleanerName(getString(PropertiesConstant.NACOS_PLUGIN_CLEANER_NAME, "default"));
+    
             // must initialize after setUseExternalDB
             // This value is true in stand-alone mode and false in cluster mode
             // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on

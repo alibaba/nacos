@@ -47,13 +47,17 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.plugin.cleaner.CleanerPluginManager;
+import com.alibaba.nacos.plugin.cleaner.spi.CleanerService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.core.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,6 +67,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -177,19 +182,9 @@ public abstract class DumpService {
             
             Runnable dumpAllTag = () -> dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
             
-            Runnable clearConfigHistory = () -> {
-                LOGGER.warn("clearConfigHistory start");
-                if (canExecute()) {
-                    try {
-                        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                        int pageSize = 1000;
-                        LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-                        persistService.removeConfigHistory(startTime, pageSize);
-                    } catch (Throwable e) {
-                        LOGGER.error("clearConfigHistory error : {}", e.toString());
-                    }
-                }
-            };
+            Optional<CleanerService> impl = CleanerPluginManager.getInstance().findImpl(PropertyUtil.getCleanerName());
+            JdbcTemplate jdbcTemplate = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+            impl.ifPresent(cleanerService -> cleanerService.startConfigHistoryTask(this::canExecute, jdbcTemplate));
             
             try {
                 dumpConfigInfo(dumpAllProcessor);
@@ -250,7 +245,6 @@ public abstract class DumpService {
                         .scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
             }
             
-            ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
         } finally {
             TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
