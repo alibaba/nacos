@@ -50,6 +50,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-istio</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-prometheus</artifactId>
+        </dependency>
         
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->

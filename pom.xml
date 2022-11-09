@@ -596,6 +596,7 @@
         <module>sys</module>
         <module>plugin</module>
         <module>plugin-default-impl</module>
+        <module>prometheus</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -697,6 +698,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-istio</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-prometheus</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
