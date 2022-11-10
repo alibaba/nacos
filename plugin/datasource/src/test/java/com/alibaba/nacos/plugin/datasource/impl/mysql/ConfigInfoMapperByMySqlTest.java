@@ -36,51 +36,51 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findConfigMaxId() {
+    public void testFindConfigMaxId() {
         String sql = configInfoMapperByMySql.findConfigMaxId();
         Assert.assertEquals(sql, "SELECT MAX(id) FROM config_info");
     }
     
     @Test
-    public void findAllDataIdAndGroup() {
+    public void testFindAllDataIdAndGroup() {
         String sql = configInfoMapperByMySql.findAllDataIdAndGroup();
         Assert.assertEquals(sql, "SELECT DISTINCT data_id, group_id FROM config_info");
     }
     
     @Test
-    public void findConfigInfoByAppCountRows() {
+    public void testFindConfigInfoByAppCountRows() {
         String sql = configInfoMapperByMySql.findConfigInfoByAppCountRows();
         Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name= ?");
     }
     
     @Test
-    public void findConfigInfoByAppFetchRows() {
+    public void testFindConfigInfoByAppFetchRows() {
         String sql = configInfoMapperByMySql.findConfigInfoByAppFetchRows(0, 5);
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name= ? LIMIT 0,5");
     }
     
     @Test
-    public void configInfoLikeTenantCount() {
+    public void testConfigInfoLikeTenantCount() {
         String sql = configInfoMapperByMySql.configInfoLikeTenantCount();
         Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?");
     }
     
     @Test
-    public void getTenantIdList() {
+    public void testGetTenantIdList() {
         String sql = configInfoMapperByMySql.getTenantIdList(0, 5);
         Assert.assertEquals(sql,
                 "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT 0,5");
     }
     
     @Test
-    public void getGroupIdList() {
+    public void testGetGroupIdList() {
         String sql = configInfoMapperByMySql.getGroupIdList(0, 5);
         Assert.assertEquals(sql, "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT 0,5");
     }
     
     @Test
-    public void findAllConfigKey() {
+    public void testFindAllConfigKey() {
         String sql = configInfoMapperByMySql.findAllConfigKey(0, 5);
         Assert.assertEquals(sql, " SELECT data_id,group_id,app_name  FROM ( "
                 + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT 0,5 )"
@@ -88,7 +88,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findAllConfigInfoBaseFetchRows() {
+    public void testFindAllConfigInfoBaseFetchRows() {
         String sql = configInfoMapperByMySql.findAllConfigInfoBaseFetchRows(0, 5);
         Assert.assertEquals(sql,
                 "SELECT t.id,data_id,group_id,content,md5 FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?"
@@ -96,7 +96,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findAllConfigInfoFragment() {
+    public void testFindAllConfigInfoFragment() {
         String sql = configInfoMapperByMySql.findAllConfigInfoFragment(0, 5);
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
@@ -104,7 +104,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findChangeConfig() {
+    public void testFindChangeConfig() {
         String sql = configInfoMapperByMySql.findChangeConfig();
         Assert.assertEquals(sql,
                 "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified,encrypted_data_key "
@@ -112,7 +112,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findChangeConfigCountRows() {
+    public void testFindChangeConfigCountRows() {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         String sql = configInfoMapperByMySql.findChangeConfigCountRows(new HashMap<>(), timestamp, timestamp);
         Assert.assertEquals(sql,
@@ -120,7 +120,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findChangeConfigFetchRows() {
+    public void testFindChangeConfigFetchRows() {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         String sql = configInfoMapperByMySql.findChangeConfigFetchRows(new HashMap<>(), timestamp, timestamp, 0, 5,
                 100);
@@ -130,7 +130,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void listGroupKeyMd5ByPageFetchRows() {
+    public void testListGroupKeyMd5ByPageFetchRows() {
         String sql = configInfoMapperByMySql.listGroupKeyMd5ByPageFetchRows(0, 5);
         Assert.assertEquals(sql,
                 "SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
@@ -138,7 +138,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findAllConfigInfo4Export() {
+    public void testFindAllConfigInfo4Export() {
         String sql = configInfoMapperByMySql.findAllConfigInfo4Export(new ArrayList<>(), new HashMap<>());
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
@@ -146,26 +146,26 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findConfigInfoBaseLikeCountRows() {
+    public void testFindConfigInfoBaseLikeCountRows() {
         String sql = configInfoMapperByMySql.findConfigInfoBaseLikeCountRows(new HashMap<>());
         Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='' ");
     }
     
     @Test
-    public void findConfigInfoBaseLikeFetchRows() {
+    public void testFindConfigInfoBaseLikeFetchRows() {
         String sql = configInfoMapperByMySql.findConfigInfoBaseLikeFetchRows(new HashMap<>(), 0, 5);
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id=''  LIMIT 0,5");
     }
     
     @Test
-    public void findConfigInfo4PageCountRows() {
+    public void testFindConfigInfo4PageCountRows() {
         String sql = configInfoMapperByMySql.findConfigInfo4PageCountRows(new HashMap<>());
         Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE  tenant_id=? ");
     }
     
     @Test
-    public void findConfigInfo4PageFetchRows() {
+    public void testFindConfigInfo4PageFetchRows() {
         String sql = configInfoMapperByMySql.findConfigInfo4PageFetchRows(new HashMap<>(), 0, 5);
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info"
@@ -173,20 +173,20 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findConfigInfoBaseByGroupFetchRows() {
+    public void testFindConfigInfoBaseByGroupFetchRows() {
         String sql = configInfoMapperByMySql.findConfigInfoBaseByGroupFetchRows(0, 5);
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? LIMIT 0,5");
     }
     
     @Test
-    public void findConfigInfoLike4PageCountRows() {
+    public void testFindConfigInfoLike4PageCountRows() {
         String sql = configInfoMapperByMySql.findConfigInfoLike4PageCountRows(new HashMap<>());
         Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE  tenant_id LIKE ? ");
     }
     
     @Test
-    public void findConfigInfoLike4PageFetchRows() {
+    public void testFindConfigInfoLike4PageFetchRows() {
         String sql = configInfoMapperByMySql.findConfigInfoLike4PageFetchRows(new HashMap<>(), 0, 5);
         Assert.assertEquals(sql,
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
@@ -194,7 +194,7 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findAllConfigInfoFetchRows() {
+    public void testFindAllConfigInfoFetchRows() {
         String sql = configInfoMapperByMySql.findAllConfigInfoFetchRows(0, 5);
         Assert.assertEquals(sql,
                 "SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5  FROM (  SELECT id FROM config_info "
@@ -202,32 +202,32 @@ public class ConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void findConfigInfosByIds() {
+    public void testFindConfigInfosByIds() {
         String sql = configInfoMapperByMySql.findConfigInfosByIds(5);
         Assert.assertEquals(sql,
                 "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ");
     }
     
     @Test
-    public void removeConfigInfoByIdsAtomic() {
+    public void testRemoveConfigInfoByIdsAtomic() {
         String sql = configInfoMapperByMySql.removeConfigInfoByIdsAtomic(5);
         Assert.assertEquals(sql, "DELETE FROM config_info WHERE id IN (?, ?, ?, ?, ?) ");
     }
     
     @Test
-    public void getTableName() {
+    public void testGetTableName() {
         String sql = configInfoMapperByMySql.getTableName();
         Assert.assertEquals(sql, TableConstant.CONFIG_INFO);
     }
     
     @Test
-    public void getDataSource() {
+    public void testGetDataSource() {
         String sql = configInfoMapperByMySql.getDataSource();
         Assert.assertEquals(sql, DataSourceConstant.MYSQL);
     }
     
     @Test
-    public void updateConfigInfoAtomicCas() {
+    public void testUpdateConfigInfoAtomicCas() {
         String sql = configInfoMapperByMySql.updateConfigInfoAtomicCas();
         Assert.assertEquals(sql, "UPDATE config_info SET "
                 + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
