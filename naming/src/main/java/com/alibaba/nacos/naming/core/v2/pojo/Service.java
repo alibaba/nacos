@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author xiweng.yy
  */
-public class Service implements Serializable {
+public class Service implements Serializable, Comparable<Service> {
     
     private static final long serialVersionUID = -990509089519499344L;
     
@@ -117,5 +117,10 @@ public class Service implements Serializable {
     public String toString() {
         return "Service{" + "namespace='" + namespace + '\'' + ", group='" + group + '\'' + ", name='" + name + '\''
                 + ", ephemeral=" + ephemeral + ", revision=" + revision + '}';
+    }
+    
+    @Override
+    public int compareTo(Service service) {
+        return this.name.compareTo(service.name);
     }
 }

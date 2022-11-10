@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Nacos service manager for v2.
@@ -59,7 +60,7 @@ public class ServiceManager {
     public Service getSingleton(Service service) {
         singletonRepository.putIfAbsent(service, service);
         Service result = singletonRepository.get(service);
-        namespaceSingletonMaps.computeIfAbsent(result.getNamespace(), (namespace) -> new ConcurrentHashSet<>());
+        namespaceSingletonMaps.computeIfAbsent(result.getNamespace(), (namespace) -> new ConcurrentSkipListSet<>());
         namespaceSingletonMaps.get(result.getNamespace()).add(result);
         return result;
     }
