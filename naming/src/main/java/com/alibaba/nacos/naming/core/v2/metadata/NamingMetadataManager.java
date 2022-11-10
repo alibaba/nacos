@@ -127,6 +127,7 @@ public class NamingMetadataManager extends SmartSubscriber {
      * @param instanceMetadata new instance metadata
      */
     public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
+        instanceMetadata.setLastUpdateTime(System.currentTimeMillis());
         if (!instanceMetadataMap.containsKey(service)) {
             instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(INITIAL_CAPACITY));
         }

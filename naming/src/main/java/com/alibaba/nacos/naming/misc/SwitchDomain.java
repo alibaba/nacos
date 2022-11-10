@@ -106,6 +106,16 @@ public class SwitchDomain implements Record, Cloneable {
     
     private boolean defaultInstanceEphemeral = true;
     
+    private boolean latestEffective = GlobalConfig.getInstanceLatestEffective();
+    
+    public boolean isLatestEffective() {
+        return latestEffective;
+    }
+    
+    public void setLatestEffective(boolean latestEffective) {
+        this.latestEffective = latestEffective;
+    }
+    
     public boolean isEnableAuthentication() {
         return enableAuthentication;
     }

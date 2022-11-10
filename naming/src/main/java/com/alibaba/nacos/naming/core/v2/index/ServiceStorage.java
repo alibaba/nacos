@@ -129,14 +129,17 @@ public class ServiceStorage {
     
     /**
      * Parse batch instance.
-     * @param service service
+     *
+     * @param service                  service
      * @param batchInstancePublishInfo batchInstancePublishInfo
      * @return batch instance list
      */
-    private List<Instance> parseBatchInstance(Service service, BatchInstancePublishInfo batchInstancePublishInfo, Set<String> clusters) {
+    private List<Instance> parseBatchInstance(Service service, BatchInstancePublishInfo batchInstancePublishInfo,
+            Set<String> clusters) {
         List<Instance> resultInstanceList = new ArrayList<>();
         List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
         for (InstancePublishInfo instancePublishInfo : instancePublishInfos) {
+            instancePublishInfo.setLastUpdateTime(batchInstancePublishInfo.getLastUpdateTime());
             Instance instance = parseInstance(service, instancePublishInfo);
             resultInstanceList.add(instance);
             clusters.add(instance.getClusterName());
@@ -154,9 +157,16 @@ public class ServiceStorage {
     
     private Instance parseInstance(Service service, InstancePublishInfo instanceInfo) {
         Instance result = InstanceUtil.parseToApiInstance(service, instanceInfo);
-        Optional<InstanceMetadata> metadata = metadataManager
-                .getInstanceMetadata(service, instanceInfo.getMetadataId());
-        metadata.ifPresent(instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));
+        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service,
+                instanceInfo.getMetadataId());
+        metadata.ifPresent(instanceMetadata -> {
+            if (switchDomain.isLatestEffective()
+                    && instanceInfo.getLastUpdateTime() > instanceMetadata.getLastUpdateTime()) {
+                InstanceUtil.updateInstanceMetadataIfAbsent(result, instanceMetadata);
+            } else {
+                InstanceUtil.updateInstanceMetadata(result, instanceMetadata);
+            }
+        });
         return result;
     }
 }

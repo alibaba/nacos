@@ -42,6 +42,8 @@ public class InstancePublishInfo implements Serializable {
     
     private Map<String, Object> extendDatum;
     
+    private long lastUpdateTime;
+    
     public InstancePublishInfo() {
     }
     
@@ -93,6 +95,14 @@ public class InstancePublishInfo implements Serializable {
     
     public String getMetadataId() {
         return genMetadataId(ip, port, cluster);
+    }
+    
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+    
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
     }
     
     @Override

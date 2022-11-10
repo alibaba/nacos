@@ -81,7 +81,19 @@ public final class InstanceUtil {
             instance.getMetadata().put(entry.getKey(), entry.getValue().toString());
         }
     }
-
+    
+    /**
+     * Update metadata if absent in {@code Instance} according to {@code InstanceMetadata}.
+     *
+     * @param instance instance need to be update
+     * @param metadata instance metadata
+     */
+    public static void updateInstanceMetadataIfAbsent(Instance instance, InstanceMetadata metadata) {
+        for (Map.Entry<String, Object> entry : metadata.getExtendData().entrySet()) {
+            instance.getMetadata().putIfAbsent(entry.getKey(), entry.getValue().toString());
+        }
+    }
+    
     /**
      * Deepcopy one instance.
      * 

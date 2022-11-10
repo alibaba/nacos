@@ -283,6 +283,10 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             if (entry.equals(SwitchEntry.LIGHT_BEAT_ENABLED)) {
                 switchDomain.setLightBeatEnabled(ConvertUtils.toBoolean(value));
             }
+    
+            if (entry.equals(SwitchEntry.LATEST_EFFECTIVE)) {
+                switchDomain.setLatestEffective(ConvertUtils.toBoolean(value));
+            }
             
             if (entry.equals(SwitchEntry.AUTO_CHANGE_HEALTH_CHECK_ENABLED)) {
                 switchDomain.setAutoChangeHealthCheckEnabled(ConvertUtils.toBoolean(value));
@@ -338,6 +342,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
         switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
         switchDomain.setLightBeatEnabled(newSwitchDomain.isLightBeatEnabled());
+        switchDomain.setLatestEffective(newSwitchDomain.isLatestEffective());
     }
     
     public SwitchDomain getSwitchDomain() {

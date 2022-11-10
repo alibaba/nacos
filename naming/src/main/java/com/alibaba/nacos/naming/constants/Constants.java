@@ -36,6 +36,11 @@ public final class Constants {
     public static final String NACOS_NAMING_USE_NEW_RAFT_FIRST = "nacos.naming.use-new-raft.first";
     
     /**
+     * instance metadata latest effective default: false.
+     */
+    public static final String INSTANCE_METADATA_LATEST_EFFECTIVE = "nacos.instance.metadata.latest.effective";
+    
+    /**
      * Time interval to clear empty services, unit: millisecond. default: 60000 ms.
      */
     public static final String EMPTY_SERVICE_CLEAN_INTERVAL = "nacos.naming.clean.empty-service.interval";

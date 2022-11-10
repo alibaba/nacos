@@ -25,6 +25,7 @@ import static com.alibaba.nacos.naming.constants.Constants.EMPTY_SERVICE_EXPIRED
 import static com.alibaba.nacos.naming.constants.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
 import static com.alibaba.nacos.naming.constants.Constants.EXPIRED_METADATA_EXPIRED_TIME;
 import static com.alibaba.nacos.naming.constants.Constants.EXPIRE_INSTANCE;
+import static com.alibaba.nacos.naming.constants.Constants.INSTANCE_METADATA_LATEST_EFFECTIVE;
 
 /**
  * Stores some configurations for Distro protocol.
@@ -59,4 +60,7 @@ public class GlobalConfig {
         return EnvUtil.getProperty(EXPIRED_METADATA_EXPIRED_TIME, Long.class, 60000L);
     }
     
+    public static boolean getInstanceLatestEffective() {
+        return EnvUtil.getProperty(INSTANCE_METADATA_LATEST_EFFECTIVE, Boolean.class, false);
+    }
 }

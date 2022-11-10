@@ -35,6 +35,11 @@ public class InstanceMetadata implements Serializable {
     private double weight = 1.0D;
     
     /**
+     * lastUpdateTime.
+     */
+    private long lastUpdateTime = 0L;
+    
+    /**
      * If instance is enabled to accept request.
      */
     private boolean enabled = true;
@@ -61,7 +66,16 @@ public class InstanceMetadata implements Serializable {
         return extendData;
     }
     
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+    
+    public void setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+    }
+    
     public void setExtendData(Map<String, Object> extendData) {
         this.extendData = extendData;
     }
+    
 }

@@ -99,6 +99,8 @@ public class SwitchEntry {
     
     public static final String AUTO_CHANGE_HEALTH_CHECK_ENABLED = "autoChangeHealthCheckEnabled";
     
+    public static final String LATEST_EFFECTIVE = "latestEffective";
+    
     /**
      * Used to open or close double write service data between v2.0.0 - v2.1.0
      */
