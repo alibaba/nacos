@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2;
 
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 import java.util.HashSet;
