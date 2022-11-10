@@ -32,7 +32,7 @@ public class ConfigInfoBetaMapperByMySqlTest {
     }
     
     @Test
-    public void updateConfigInfo4BetaCas() {
+    public void testUpdateConfigInfo4BetaCas() {
         String sql = configInfoBetaMapperByMySql.updateConfigInfo4BetaCas();
         Assert.assertEquals(sql,
                 "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
@@ -40,7 +40,7 @@ public class ConfigInfoBetaMapperByMySqlTest {
     }
     
     @Test
-    public void findAllConfigInfoBetaForDumpAllFetchRows() {
+    public void testFindAllConfigInfoBetaForDumpAllFetchRows() {
         String sql = configInfoBetaMapperByMySql.findAllConfigInfoBetaForDumpAllFetchRows(0, 5);
         Assert.assertEquals(sql,
                 " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
@@ -49,13 +49,13 @@ public class ConfigInfoBetaMapperByMySqlTest {
     }
     
     @Test
-    public void getTableName() {
+    public void testGetTableName() {
         String tableName = configInfoBetaMapperByMySql.getTableName();
         Assert.assertEquals(tableName, TableConstant.CONFIG_INFO_BETA);
     }
     
     @Test
-    public void getDataSource() {
+    public void testGetDataSource() {
         String dataSource = configInfoBetaMapperByMySql.getDataSource();
         Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
     }
