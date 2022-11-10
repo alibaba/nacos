@@ -58,7 +58,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
             sql.append('?');
         }
         sql.append(')');
-    
+        
         return sql.toString();
     }
     
