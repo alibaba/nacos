@@ -37,7 +37,6 @@ import javax.annotation.PostConstruct;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -113,10 +112,11 @@ public class TenantCapacityPersistService {
         TenantCapacityMapper tenantCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_CAPACITY);
         final String sql = tenantCapacityMapper.insertTenantCapacity();
+        String[] primaryKeyGeneratedKeys = tenantCapacityMapper.getPrimaryKeyGeneratedKeys();
         try {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
             PreparedStatementCreator preparedStatementCreator = connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement ps = connection.prepareStatement(sql, primaryKeyGeneratedKeys);
                 String tenant = tenantCapacity.getTenant();
                 ps.setString(1, tenant);
                 ps.setInt(2, tenantCapacity.getQuota());

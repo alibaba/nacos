@@ -32,7 +32,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 
 import java.io.IOException;
@@ -56,15 +55,9 @@ public interface PersistService {
      * constant variables.
      */
     String SPOT = ".";
+    
     Object[] EMPTY_ARRAY = new Object[] {};
-    @SuppressWarnings("checkstyle:linelength")
-    String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
-
-    String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(1) FROM tenant_info WHERE tenant_id = ?";
-    String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
-
-    String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
-    int QUERY_LIMIT_SIZE = 50;
+    
     String PATTERN_STR = "*";
     
     /**
@@ -315,13 +308,6 @@ public interface PersistService {
     // ----------------------- config_aggr_info table insert update delete
     
     /**
-     * Write to the main table, insert or update.
-     *
-     * @param subInfo sub info
-     */
-    void insertOrUpdateSub(SubInfo subInfo);
-    
-    /**
      * Delete configuration information, physical deletion.
      *
      * @param dataId  data id
@@ -476,30 +462,8 @@ public interface PersistService {
      * @param tag    tag
      * @return {@link ConfigInfo4Tag}
      */
-    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
-    
-    /**
-     * Query common configuration information based on dataId and group.
-     *
-     * @param dataId  data id
-     * @param group   group
-     * @param tenant  tenant
-     * @param appName app name
-     * @return {@link ConfigInfo}
-     */
-    ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant, final String appName);
-    
-    /**
-     * Query configuration information based on dataId and group.
-     *
-     * @param dataId            data id
-     * @param group             group
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link com.alibaba.nacos.config.server.Config}
-     */
-    ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
-            final Map<String, Object> configAdvanceInfo);
+    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant,
+            final String tag);
     
     /**
      * Query configuration information based on dataId and group.
@@ -529,44 +493,6 @@ public interface PersistService {
     ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
-     * Query configuration information based on dataId.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   data id
-     * @param tenant   tenant
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
-            final String tenant);
-    
-    /**
-     * Query configuration information based on dataId.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   data id
-     * @param tenant   tenant
-     * @param appName  app name
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
-            final String tenant, final String appName);
-    
-    /**
-     * find config info.
-     *
-     * @param pageNo            page number
-     * @param pageSize          page size
-     * @param dataId            data id
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
-    
-    /**
      * find config info.
      *
      * @param pageNo            page number
@@ -581,54 +507,6 @@ public interface PersistService {
             final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
-     * Query configuration information based on dataId.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   data id
-     * @return {@link Page} with {@link ConfigInfoBase} generation
-     */
-    Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId);
-    
-    /**
-     * Query configuration information based on group.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param group    group
-     * @param tenant   tenant
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
-            final String tenant);
-    
-    /**
-     * Query configuration information based on group.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param group    group
-     * @param tenant   tenant
-     * @param appName  app name
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
-            final String tenant, final String appName);
-    
-    /**
-     * Query configuration information.
-     *
-     * @param pageNo            page number
-     * @param pageSize          page size
-     * @param group             group
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
-    
-    /**
      * Query configuration information based on group.
      *
      * @param pageNo   Page number (must be greater than 0)
@@ -639,18 +517,6 @@ public interface PersistService {
      */
     Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
             final String appName);
-    
-    /**
-     * Query configuration information.
-     *
-     * @param pageNo            page number
-     * @param pageSize          page size
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
-            final Map<String, Object> configAdvanceInfo);
     
     /**
      * Query configuration information based on group.
@@ -732,29 +598,6 @@ public interface PersistService {
     int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn);
     
     /**
-     * Get count of aggregation config info.
-     *
-     * @param dataId   data id
-     * @param group    group
-     * @param tenant   tenant
-     * @param datumIds datum id
-     * @return count
-     */
-    int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds);
-    
-    /**
-     * Get count of aggregation config info.
-     *
-     * @param dataId   data id
-     * @param group    group
-     * @param tenant   tenant
-     * @param datumIds datum id
-     * @return count
-     */
-    int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds);
-    
-    
-    /**
      * Query all configuration information by page.
      *
      * @param pageNo   Page number (starting at 1)
@@ -785,15 +628,6 @@ public interface PersistService {
     Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize);
     
     /**
-     * Query all configuration information by page for dump task.
-     *
-     * @param pageNo   page number
-     * @param pageSize page size
-     * @return {@link Page} with {@link ConfigInfoWrapper} generation
-     */
-    Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize);
-    
-    /**
      * Query all config info.
      *
      * @param lastMaxId last max id
@@ -819,35 +653,6 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize);
-    
-    
-    /**
-     * Use select in to realize batch query of db records; subQueryLimit specifies the number of conditions in in, with
-     * an upper limit of 20.
-     *
-     * @param dataIds       data id list
-     * @param group         group
-     * @param tenant        tenant
-     * @param subQueryLimit sub query limit
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
-            int subQueryLimit);
-    
-    /**
-     * Fuzzy query configuration information based on dataId and group.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   Support fuzzy query
-     * @param group    Support fuzzy query
-     * @param tenant   Support fuzzy query
-     * @param appName  app name
-     * @param content  config content
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId, final String group,
-            final String tenant, final String appName, final String content);
     
     /**
      * Fuzzy query configuration information based on dataId and group.
@@ -1032,14 +837,6 @@ public interface PersistService {
     void removeTagByIdAtomic(long id);
     
     /**
-     * Query config tag list.
-     *
-     * @param tenant tenant
-     * @return config tag list
-     */
-    List<String> getConfigTagsByTenant(String tenant);
-    
-    /**
      * Query tag list.
      *
      * @param dataId data id
@@ -1148,26 +945,6 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigHistoryInfo} generation
      */
     Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
-    
-    /**
-     * Increase configuration; database atomic operation, minimum sql action, no business encapsulation.
-     *
-     * @param dataId  dataId
-     * @param group   group
-     * @param appName appName
-     * @param date    date
-     */
-    void addConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp date);
-    
-    /**
-     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     *
-     * @param dataId  data Id
-     * @param group   group
-     * @param appName app name
-     * @param time    time
-     */
-    void updateConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp time);
     
     /**
      * Get history config detail.
@@ -1293,13 +1070,6 @@ public interface PersistService {
     boolean isExistTable(String tableName);
     
     /**
-     * complete md5.
-     *
-     * @return {@code true} if success
-     */
-    Boolean completeMd5();
-    
-    /**
      * query all configuration information according to group, appName, tenant (for export).
      *
      * @param dataId  data id
@@ -1338,7 +1108,7 @@ public interface PersistService {
      * @return count by tenantId
      */
     int tenantInfoCountByTenantId(String tenantId);
-
+    
     /**
      * Query dataId list by namespace.
      *
