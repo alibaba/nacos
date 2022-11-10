@@ -37,9 +37,9 @@ public class ConfigInfoBetaMapperByDerby extends AbstractMapper implements Confi
 
     @Override
     public String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize) {
-        return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
+        return "SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips "
                 + " FROM (  SELECT id FROM config_info_beta ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT "
-                + pageSize + " ROWS ONLY  )" + " g, config_info_beta t WHERE g.id = t.id  ";
+                + pageSize + " ROWS ONLY  )" + " g, config_info_beta t WHERE g.id = t.id";
     }
     
     @Override
