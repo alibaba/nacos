@@ -45,7 +45,7 @@ public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements Confi
     @Override
     public String aggrConfigInfoCount(int size, boolean isIn) {
         StringBuilder sql = new StringBuilder(
-                " SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id");
+                "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id");
         if (isIn) {
             sql.append(" IN (");
         } else {
