@@ -212,6 +212,7 @@ public class ConfigController {
      * @throws NacosException   NacosException.
      */
     @GetMapping
+    @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
