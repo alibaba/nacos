@@ -1,8 +1,9 @@
-package com.alibaba.nacos.plugin.control.tps;
+package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
+import com.alibaba.nacos.plugin.control.tps.MonitorType;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -19,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
 
 @RunWith(MockitoJUnitRunner.class)
-public class TpsControlManagerTest {
+public class FlowTpsControlManagerTest {
     
     TpsControlManager tpsControlManager = new TpsControlManager();
     
@@ -42,11 +43,11 @@ public class TpsControlManagerTest {
      * test denied by monitor key rules.
      */
     @Test
-    public void testPatternDeny() {
+    public void testMonitorDenyByMonitor() {
         
         tpsControlManager.applyTpsRule(pointName, null);
         //1.register rule
-        RuleDetail ruleDetail = new RuleDetail();
+        RuleDetail ruleDetail = new MseRuleDetail();
         ruleDetail.setMaxCount(10000);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
@@ -56,10 +57,11 @@ public class TpsControlManagerTest {
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
         
-        RuleDetail ruleDetailMonitor = new RuleDetail();
-        ruleDetailMonitor.setMaxCount(20);
+        MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
+        ruleDetailMonitor.setMaxCount(5);
+        ruleDetailMonitor.setMaxFlow(11);
         ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
-        ruleDetailMonitor.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleDetailMonitor.setMonitorType(MonitorType.MONITOR.getType());
         ruleDetailMonitor.setModel(MODEL_FUZZY);
         ruleDetailMonitor.setPattern("test:prefixmonitor*");
         tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
@@ -68,8 +70,9 @@ public class TpsControlManagerTest {
         Assert.assertTrue(tpsControlManager.getRules().containsKey(pointName));
         
         //3.apply tps
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
         tpsCheckRequest.setCount(2);
+        tpsCheckRequest.setFlow(15);
         tpsCheckRequest.setPointName(pointName);
         List<MonitorKey> monitorKeyList = new ArrayList<>();
         monitorKeyList.add(new MonitorKey("prefixmonitor123") {
@@ -79,12 +82,9 @@ public class TpsControlManagerTest {
             }
         });
         tpsCheckRequest.setMonitorKeys(monitorKeyList);
-        for (int i = 0; i < 10; i++) {
-            TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
-            Assert.assertTrue(check.isSuccess());
-        }
         
         TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
-        Assert.assertFalse(check.isSuccess());
+        System.out.println(check.isSuccess() + "," + check.getMessage());
+        
     }
 }

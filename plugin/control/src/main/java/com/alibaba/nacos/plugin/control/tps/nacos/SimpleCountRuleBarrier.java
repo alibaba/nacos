@@ -18,7 +18,8 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     Map<String, RateCounter> protoKeyCounter;
     
-    public SimpleCountRuleBarrier(String ruleName, String pattern, TimeUnit period, String model) {
+    public SimpleCountRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period, String model) {
+        super.setPointName(pointName);
         super.setRuleName(ruleName);
         super.setPattern(pattern);
         super.setPeriod(period);
@@ -75,12 +76,12 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
                 overLimit = true;
             }
             currentRateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
-            return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.CHECK_PASS,
+            return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.PASS_BY_POINT,
                     "success");
         } else {
             boolean success = currentRateCounter
                     .tryAdd(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount(), this.getMaxCount());
-            return new TpsCheckResponse(success, success ? TpsResultCode.CHECK_PASS : TpsResultCode.CHECK_DENY,
+            return new TpsCheckResponse(success, success ? TpsResultCode.PASS_BY_POINT : TpsResultCode.DENY_BY_POINT,
                     "success");
         }
         

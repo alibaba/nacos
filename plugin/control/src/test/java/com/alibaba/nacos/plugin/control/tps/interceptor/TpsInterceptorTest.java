@@ -1,16 +1,17 @@
-package com.alibaba.nacos.plugin.control.tps;
+package com.alibaba.nacos.plugin.control.tps.interceptor;
 
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
+import com.alibaba.nacos.plugin.control.tps.MonitorType;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,16 +19,14 @@ import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
 
-@RunWith(MockitoJUnitRunner.class)
-public class TpsControlManagerTest {
+public class TpsInterceptorTest {
     
     TpsControlManager tpsControlManager = new TpsControlManager();
     
-    String pointName = "TEST_POINT_NAME" + System.currentTimeMillis();
+    String pointName = "interceptortest";
     
     static {
         ControlConfigs.setInstance(new ControlConfigs());
-        
     }
     
     @Before
@@ -39,12 +38,10 @@ public class TpsControlManagerTest {
     }
     
     /**
-     * test denied by monitor key rules.
+     * testPassByMonitor.
      */
     @Test
-    public void testPatternDeny() {
-        
-        tpsControlManager.applyTpsRule(pointName, null);
+    public void testPassByMonitor() {
         //1.register rule
         RuleDetail ruleDetail = new RuleDetail();
         ruleDetail.setMaxCount(10000);
@@ -78,6 +75,7 @@ public class TpsControlManagerTest {
                 return "test";
             }
         });
+        
         tpsCheckRequest.setMonitorKeys(monitorKeyList);
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
@@ -86,5 +84,12 @@ public class TpsControlManagerTest {
         
         TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
         Assert.assertFalse(check.isSuccess());
+        
+        tpsCheckRequest.setClientIp("127.0.0.10");
+        TpsCheckResponse checkInterceptor = tpsControlManager.check(tpsCheckRequest);
+        Assert.assertEquals(TpsResultCode.PASS_BY_POST_INTERCEPTOR, checkInterceptor.getCode());
+        
+        Assert.assertTrue(checkInterceptor.isSuccess());
+        
     }
 }

@@ -3,6 +3,7 @@ package com.alibaba.nacos.plugin.control.connection;
 import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 
 public class TestLabelsWhiteListInterceptor implements ConnectionInterceptor {
     
@@ -12,7 +13,7 @@ public class TestLabelsWhiteListInterceptor implements ConnectionInterceptor {
     }
     
     @Override
-    public InterceptResult intercept(ConnectionCheckRequest connectionCheckRequest) {
+    public InterceptResult preIntercept(ConnectionCheckRequest connectionCheckRequest) {
         
         if (connectionCheckRequest.getLabels() != null && "Y"
                 .equalsIgnoreCase(connectionCheckRequest.getLabels().get("nolimitlabel")) && connectionCheckRequest
@@ -21,5 +22,15 @@ public class TestLabelsWhiteListInterceptor implements ConnectionInterceptor {
         } else {
             return InterceptResult.CHECK_SKIP;
         }
+    }
+    
+    @Override
+    public InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
+            ConnectionCheckResponse connectionCheckResponse) {
+        if (!connectionCheckResponse.isSuccess() && connectionCheckRequest.getLabels() != null && "Y"
+                .equalsIgnoreCase(connectionCheckRequest.getLabels().get("overturned"))) {
+            return InterceptResult.CHECK_PASS;
+        }
+        return null;
     }
 }

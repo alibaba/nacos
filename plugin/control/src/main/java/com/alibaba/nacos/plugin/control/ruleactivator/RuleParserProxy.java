@@ -26,7 +26,7 @@ public class RuleParserProxy {
             }
         }
         if (instance == null) {
-            LOGGER.warn("Fail to found persist rule activator of name ：" + ruleParserName);
+            LOGGER.warn("Fail to rule parser of name ：" + ruleParserName);
             instance = new DefaultRuleParser();
         }
     }

@@ -11,7 +11,7 @@ public abstract class RuleBarrier {
     
     private TimeUnit period;
     
-    private String barrierName;
+    private String pointName;
     
     private String ruleName;
     
@@ -27,6 +27,14 @@ public abstract class RuleBarrier {
     private String model;
     
     private int order;
+    
+    public String getPointName() {
+        return pointName;
+    }
+    
+    public void setPointName(String pointName) {
+        this.pointName = pointName;
+    }
     
     public int getOrder() {
         return order;
@@ -44,9 +52,7 @@ public abstract class RuleBarrier {
         this.period = period;
     }
     
-    public String getBarrierName() {
-        return barrierName;
-    }
+    public abstract String getBarrierName();
     
     public String getRuleName() {
         return ruleName;

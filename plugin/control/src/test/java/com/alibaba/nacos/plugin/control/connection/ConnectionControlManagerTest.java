@@ -36,7 +36,7 @@ public class ConnectionControlManagerTest {
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_PASS, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCheckCode());
         
     }
     
@@ -58,7 +58,7 @@ public class ConnectionControlManagerTest {
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_PASS, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.PASS_BY_PRE_INTERCEPT, check.getCheckCode());
         
     }
     
@@ -79,7 +79,7 @@ public class ConnectionControlManagerTest {
         System.out.println(check.getMessage());
         
         Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_DENY, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.DENY_BY_TOTAL_OVER, check.getCheckCode());
         
     }
     
@@ -100,7 +100,30 @@ public class ConnectionControlManagerTest {
         System.out.println(check.getMessage());
         
         Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_DENY, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.DENY_BY_IP_OVER, check.getCheckCode());
+        
+    }
+    
+    @Test
+    public void testOverTurnedForIpTotalCountDefault() {
+        
+        CpuTestUtils.cpuOverLoad = false;
+        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
+        connectionLimitRule.setCountLimit(40);
+        connectionLimitRule.setCountLimitPerClientIpDefault(15);
+        connectionControlManager.setConnectionLimitRule(connectionLimitRule);
+        
+        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
+        Map<String, String> labels = new HashMap<>();
+        labels.put("overturned", "Y");
+        connectionCheckRequest.setLabels(labels);
+        ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
+        
+        System.out.println(check.getCheckCode());
+        System.out.println(check.getMessage());
+        
+        Assert.assertTrue(check.isSuccess());
+        Assert.assertEquals(ConnectionCheckCode.PASS_BY_POST_INTERCEPT, check.getCheckCode());
         
     }
     
@@ -125,7 +148,7 @@ public class ConnectionControlManagerTest {
         System.out.println(check.getMessage());
         
         Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_DENY, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.DENY_BY_IP_OVER, check.getCheckCode());
         
     }
     
@@ -149,7 +172,7 @@ public class ConnectionControlManagerTest {
         System.out.println(check.getMessage());
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_PASS, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.PASS_BY_IP, check.getCheckCode());
         
     }
     
@@ -165,6 +188,7 @@ public class ConnectionControlManagerTest {
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
+        Assert.assertEquals(check.getCheckCode(), ConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
         System.out.println(check.getCheckCode());
         System.out.println(check.getMessage());
         

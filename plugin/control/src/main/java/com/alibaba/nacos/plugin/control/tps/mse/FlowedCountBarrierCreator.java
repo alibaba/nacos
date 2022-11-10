@@ -17,8 +17,9 @@ public class FlowedCountBarrierCreator implements RuleBarrierCreator {
     }
     
     @Override
-    public RuleBarrier createRuleBarrier(String name, String pattern, TimeUnit period, String model) {
-        return new FlowedLocalSimpleCountRuleBarrier(name, pattern, period, model);
+    public RuleBarrier createRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
+            String model) {
+        return new FlowedLocalSimpleCountRuleBarrier(pointName, ruleName, pattern, period, model);
     }
     
     @Override

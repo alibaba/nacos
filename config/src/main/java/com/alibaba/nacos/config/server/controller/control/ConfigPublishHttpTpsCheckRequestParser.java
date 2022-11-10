@@ -1,4 +1,4 @@
-package com.alibaba.nacos.config.server.controller.tpsparser;
+package com.alibaba.nacos.config.server.controller.control;
 
 import com.alibaba.nacos.config.server.control.ConfigGroupKey;
 import com.alibaba.nacos.config.server.control.ConfigGroupMonitorKey;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class ConfigPublishTpsParser extends HttpTpsCheckRequestParser {
+public class ConfigPublishHttpTpsCheckRequestParser extends HttpTpsCheckRequestParser {
     
     @Override
     public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {

@@ -3,22 +3,31 @@ package com.alibaba.nacos.plugin.control.tps.interceptor;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 
-public interface TpsInterceptor {
+public abstract class TpsInterceptor {
+    
+    boolean disabled;
+    
+    public boolean isDisabled() {
+        return disabled;
+    }
+    
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+    }
     
     /**
      * get interceptor name.
      *
      * @return
      */
-    String getName();
-    
+    public abstract String getName();
     
     /**
      * get point name.
      *
      * @return
      */
-    String getPointName();
+    public abstract String getPointName();
     
     /**
      * tps pre intercept method.
@@ -26,7 +35,7 @@ public interface TpsInterceptor {
      * @param tpsCheckRequest tpsCheckRequest.
      * @return if return denied or passed,return directly.
      */
-    InterceptResult preIntercept(TpsCheckRequest tpsCheckRequest);
+    public abstract InterceptResult preIntercept(TpsCheckRequest tpsCheckRequest);
     
     /**
      * tps post intercept method,the returned InterceptResult  will influence the final tps check response.
@@ -35,5 +44,5 @@ public interface TpsInterceptor {
      * @param tpsCheckResponse tpsCheckResponse.
      * @return
      */
-    InterceptResult postIntercept(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse);
+    public abstract InterceptResult postIntercept(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse);
 }

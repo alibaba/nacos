@@ -28,6 +28,12 @@ public class TpsMetrics {
         
     }
     
+    @Override
+    public String toString() {
+        return "TpsMetrics{" + "pointName='" + pointName + '\'' + ", type='" + type + '\'' + ", timeStamp=" + timeStamp
+                + ", period=" + period + ", counter=" + counter + ", protoKeyCounter=" + protoKeyCounter + '}';
+    }
+    
     public String getTimeFormatOfSecond(long timeStamp) {
         String format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timeStamp));
         return format;
@@ -112,6 +118,15 @@ public class TpsMetrics {
         
         public void setDeniedCount(long deniedCount) {
             this.deniedCount = deniedCount;
+        }
+        
+        @Override
+        public String toString() {
+            return "{" + "passCount=" + passCount + ", deniedCount=" + deniedCount + '}';
+        }
+        
+        public String getSimpleLog() {
+            return String.join("|", String.valueOf(passCount), String.valueOf(deniedCount));
         }
     }
 }

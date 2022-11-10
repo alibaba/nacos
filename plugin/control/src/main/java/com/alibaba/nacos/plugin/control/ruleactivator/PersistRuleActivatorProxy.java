@@ -19,13 +19,13 @@ public class PersistRuleActivatorProxy {
         
         for (PersistRuleStorage persistRuleActivator : persistRuleActivators) {
             if (persistRuleActivator.getName().equalsIgnoreCase(rulePersistActivator)) {
-                LOGGER.info("Found persist rule activator of name ：" + rulePersistActivator);
+                LOGGER.info("Found persist rule storage of name ：" + rulePersistActivator);
                 instance = persistRuleActivator;
                 break;
             }
         }
         if (instance == null) {
-            LOGGER.error("Fail to found persist rule activator of name ：" + rulePersistActivator);
+            LOGGER.error("Fail to found persist rule storage of name ：" + rulePersistActivator);
             
         }
     }

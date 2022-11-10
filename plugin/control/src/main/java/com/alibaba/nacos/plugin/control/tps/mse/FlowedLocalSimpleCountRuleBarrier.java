@@ -8,13 +8,14 @@ import java.util.concurrent.TimeUnit;
 
 public class FlowedLocalSimpleCountRuleBarrier extends FlowedRuleBarrier {
     
-    public FlowedLocalSimpleCountRuleBarrier(String ruleName, String pattern, TimeUnit period, String model) {
-        super(ruleName, pattern, period, model);
+    public FlowedLocalSimpleCountRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
+            String model) {
+        super(pointName, ruleName, pattern, period, model);
     }
     
     @Override
-    RuleBarrier createRuleBarrier(String ruleName, String pattern, TimeUnit period, String model) {
-        return new LocalSimpleCountRuleBarrier(ruleName, pattern, period, model);
+    RuleBarrier createRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period, String model) {
+        return new LocalSimpleCountRuleBarrier(pointName, ruleName, pattern, period, model);
     }
     
     @Override

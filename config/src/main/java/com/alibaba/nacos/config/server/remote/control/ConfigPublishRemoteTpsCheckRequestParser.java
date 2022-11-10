@@ -1,4 +1,4 @@
-package com.alibaba.nacos.config.server.remote.tpsparser;
+package com.alibaba.nacos.config.server.remote.control;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 
 @Component
-public class ConfigPublishParser extends RemoteTpsCheckRequestParser {
+public class ConfigPublishRemoteTpsCheckRequestParser extends RemoteTpsCheckRequestParser {
     
     @Override
     public TpsCheckRequest parse(Request request, RequestMeta meta) {

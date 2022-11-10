@@ -235,8 +235,7 @@ public class TpsControlManager {
                                 stringBuilder.append(pointName).append("|").append(patternMonitorName).append("|")
                                         .append("proto").append("|").append(patternMetrics.getPeriod()).append("|")
                                         .append(formatString).append("|").append(protoKeyCounter.getKey()).append("|")
-                                        .append(protoKeyCounter.getValue().getPassCount()).append("|")
-                                        .append(protoKeyCounter.getValue().getDeniedCount()).append("|").append("\n");
+                                        .append(protoKeyCounter.getValue().getSimpleLog()).append("|").append("\n");
                             }
                             
                         }

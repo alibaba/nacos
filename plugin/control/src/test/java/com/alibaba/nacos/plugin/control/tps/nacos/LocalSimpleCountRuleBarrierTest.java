@@ -22,7 +22,7 @@ public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testPassAndLimit() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
                 TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_PROTO);
@@ -43,12 +43,12 @@ public class LocalSimpleCountRuleBarrierTest {
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
             
         }
         TpsCheckResponse tpsCheckResponseFail = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseFail.isSuccess());
-        Assert.assertTrue(tpsCheckResponseFail.getCode() == TpsResultCode.CHECK_DENY);
+        Assert.assertTrue(tpsCheckResponseFail.getCode() == TpsResultCode.DENY_BY_POINT);
         
         //check pass and deny next second.
         long timeMillisPlus = timeMillis + 1000L;
@@ -57,19 +57,19 @@ public class LocalSimpleCountRuleBarrierTest {
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
             
         }
         TpsCheckResponse tpsCheckResponseFail2 = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseFail2.isSuccess());
-        Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.CHECK_DENY);
+        Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.DENY_BY_POINT);
         
     }
     
     @Test
     public void testLimitAndRollback() {
         SimpleCountRuleBarrier ruleBarrier = (SimpleCountRuleBarrier) LocalSimpleCountBarrierCreator.getInstance()
-                .createRuleBarrier("test", "test:simple123*", TimeUnit.SECONDS, RuleModel.FUZZY.name());
+                .createRuleBarrier("test", "test", "test:simple123*", TimeUnit.SECONDS, RuleModel.FUZZY.name());
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
@@ -90,23 +90,23 @@ public class LocalSimpleCountRuleBarrierTest {
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         //check deny
         TpsCheckResponse tpsCheckResponseFail2 = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseFail2.isSuccess());
-        Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.CHECK_DENY);
+        Assert.assertTrue(tpsCheckResponseFail2.getCode() == TpsResultCode.DENY_BY_POINT);
         
         //rollback tps and check
         ruleBarrier.rollbackTps(barrierCheckRequest);
         TpsCheckResponse tpsCheckResponseSuccess3 = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertTrue(tpsCheckResponseSuccess3.isSuccess());
-        Assert.assertTrue(tpsCheckResponseSuccess3.getCode() == TpsResultCode.CHECK_PASS);
+        Assert.assertTrue(tpsCheckResponseSuccess3.getCode() == TpsResultCode.PASS_BY_POINT);
     }
     
     @Test
     public void testPassByMonitor() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
                 TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
@@ -127,7 +127,7 @@ public class LocalSimpleCountRuleBarrierTest {
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         TpsCheckResponse tpsCheckResponseByMonitor = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertTrue(tpsCheckResponseByMonitor.isSuccess());
@@ -136,7 +136,7 @@ public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testFuzzyModel() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
                 TimeUnit.SECONDS, MODEL_FUZZY);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
@@ -159,20 +159,20 @@ public class LocalSimpleCountRuleBarrierTest {
             monitorKey.setKey("simpler12" + i);
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         
         //check deny
         monitorKey.setKey("simpler12" + System.currentTimeMillis());
         TpsCheckResponse tpsCheckResponseDeny = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny.isSuccess());
-        Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny.getCode());
+        Assert.assertEquals(TpsResultCode.DENY_BY_POINT, tpsCheckResponseDeny.getCode());
         ruleBarrier.setModel(MODEL_PROTO);
     }
     
     @Test
     public void testProtoModel() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
                 TimeUnit.SECONDS, MODEL_PROTO);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_PROTO);
@@ -195,7 +195,7 @@ public class LocalSimpleCountRuleBarrierTest {
             monitorKey.setKey("simpler12" + i);
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         
         //check same key
@@ -204,18 +204,18 @@ public class LocalSimpleCountRuleBarrierTest {
             monitorKey.setKey("simpler12");
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         //check deny
         TpsCheckResponse tpsCheckResponseDeny = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny.isSuccess());
-        Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny.getCode());
+        Assert.assertEquals(TpsResultCode.DENY_BY_POINT, tpsCheckResponseDeny.getCode());
         ruleBarrier.setModel(MODEL_PROTO);
     }
     
     @Test
     public void testModifyRule() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test:simple123*",
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
                 TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setModel(MODEL_FUZZY);
@@ -237,12 +237,12 @@ public class LocalSimpleCountRuleBarrierTest {
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         //check deny
         TpsCheckResponse tpsCheckResponseDeny = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny.isSuccess());
-        Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny.getCode());
+        Assert.assertEquals(TpsResultCode.DENY_BY_POINT, tpsCheckResponseDeny.getCode());
         
         //apply new rule,add max count
         RuleDetail ruleDetail = new RuleDetail();
@@ -255,12 +255,12 @@ public class LocalSimpleCountRuleBarrierTest {
         for (int i = 0; i < 5; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         //check deny
         TpsCheckResponse tpsCheckResponseDeny2 = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny2.isSuccess());
-        Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny2.getCode());
+        Assert.assertEquals(TpsResultCode.DENY_BY_POINT, tpsCheckResponseDeny2.getCode());
         
         //apply new rule,modify period
         RuleDetail ruleDetail2 = new RuleDetail();
@@ -271,15 +271,15 @@ public class LocalSimpleCountRuleBarrierTest {
         ruleBarrier.applyRuleDetail(ruleDetail2);
         //check pass
         for (int i = 0; i < 15; i++) {
-            barrierCheckRequest.setTimestamp(barrierCheckRequest.getTimestamp() + 1000);
+            barrierCheckRequest.setTimestamp(barrierCheckRequest.getTimestamp());
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
-            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.CHECK_PASS);
+            Assert.assertTrue(tpsCheckResponse.getCode() == TpsResultCode.PASS_BY_POINT);
         }
         //check pass
         TpsCheckResponse tpsCheckResponseDeny3 = ruleBarrier.applyTps(barrierCheckRequest);
         Assert.assertFalse(tpsCheckResponseDeny3.isSuccess());
-        Assert.assertEquals(TpsResultCode.CHECK_DENY, tpsCheckResponseDeny3.getCode());
+        Assert.assertEquals(TpsResultCode.DENY_BY_POINT, tpsCheckResponseDeny3.getCode());
     }
     
 }
