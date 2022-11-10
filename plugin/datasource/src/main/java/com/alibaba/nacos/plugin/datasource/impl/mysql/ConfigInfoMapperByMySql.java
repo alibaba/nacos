@@ -48,7 +48,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String findConfigMaxId() {
-        return "SELECT max(id) FROM config_info";
+        return "SELECT MAX(id) FROM config_info";
     }
     
     @Override
@@ -93,7 +93,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String findAllConfigInfoBaseFetchRows(int startRow, int pageSize) {
-        return " SELECT t.id,data_id,group_id,content,md5"
+        return "SELECT t.id,data_id,group_id,content,md5"
                 + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
                 + " g, config_info t  WHERE g.id = t.id ";
     }
@@ -178,7 +178,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize) {
-        return " SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
+        return "SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
                 + "( SELECT id FROM config_info ORDER BY id LIMIT " + startRow + "," + pageSize
                 + " ) g, config_info t WHERE g.id = t.id";
     }
@@ -347,7 +347,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public String findAllConfigInfoFetchRows(int startRow, int pageSize) {
-        return " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
+        return "SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
                 + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
                 + " g, config_info t  WHERE g.id = t.id ";
     }
