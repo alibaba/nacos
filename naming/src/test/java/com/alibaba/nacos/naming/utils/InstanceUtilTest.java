@@ -65,6 +65,22 @@ public class InstanceUtilTest {
     }
     
     @Test
+    public void testUpdateInstanceMetadataIfAbsent() {
+        InstanceMetadata metaData = new InstanceMetadata();
+        Map<String, Object> extendData = new ConcurrentHashMap<>(1);
+        extendData.put("k1", "v1");
+        extendData.put("k2", "v2");
+        metaData.setExtendData(extendData);
+        metaData.setEnabled(true);
+        metaData.setWeight(1);
+        Instance instance = InstanceUtil.parseToApiInstance(service, instancePublishInfo);
+        
+        InstanceUtil.updateInstanceMetadataIfAbsent(instance, metaData);
+        assertNotNull(instance.getMetadata());
+        assertEquals(metaData.getExtendData().size(), 2);
+    }
+    
+    @Test
     public void testDeepCopy() {
         Instance source = new Instance();
         source.setInstanceId("instanceId");
