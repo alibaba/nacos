@@ -27,6 +27,14 @@ public class ConnectionDeniedEvent extends Event {
         this.connectionCheckRequest = connectionCheckRequest;
     }
     
+    public ConnectionCheckCode getConnectionCheckCode() {
+        return connectionCheckCode;
+    }
+    
+    public void setConnectionCheckCode(ConnectionCheckCode connectionCheckCode) {
+        this.connectionCheckCode = connectionCheckCode;
+    }
+    
     public String getMessage() {
         return message;
     }

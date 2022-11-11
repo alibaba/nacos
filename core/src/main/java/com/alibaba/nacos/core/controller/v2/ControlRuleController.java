@@ -7,14 +7,11 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
-import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -79,7 +76,7 @@ public class ControlRuleController {
      *
      * @param pointName pointName.
      * @param content   content.
-     * @param external external.
+     * @param external  external.
      * @return
      */
     @PostMapping(value = "/tps")
@@ -107,14 +104,13 @@ public class ControlRuleController {
      * reload tps rule.
      *
      * @param pointName pointName.
-     * @param external external.
+     * @param external  external.
      * @return
      */
     @PostMapping(value = "/tps/reload/current")
     public RestResult<Void> reloadTpsRule(@RequestParam(value = "pointname") String pointName,
             @RequestParam(value = "external") Boolean external) {
-        
-        NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, external));
+        ControlManagerCenter.getInstance().reloadTpsControlRule(pointName, external);
         return RestResultUtils.success();
     }
     
@@ -145,7 +141,7 @@ public class ControlRuleController {
     /**
      * update connection rule.
      *
-     * @param content   content.
+     * @param content  content.
      * @param external external.
      * @return
      */
@@ -171,7 +167,7 @@ public class ControlRuleController {
     
     @PostMapping(value = "/connection/reload/current")
     public RestResult<Void> reloadConnectionRule(@RequestParam(value = "external") Boolean external) throws Exception {
-        NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(external));
+        ControlManagerCenter.getInstance().reloadConnectionControlRule(external);
         return RestResultUtils.success();
     }
     

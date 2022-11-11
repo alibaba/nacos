@@ -2,7 +2,6 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
@@ -45,7 +44,7 @@ public class TpsControlManager {
             return thread;
         });
         
-        executorService.scheduleWithFixedDelay(new TpsReporter(), 0, 900, TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(new TpsMetricsReporter(), 0, 900, TimeUnit.MILLISECONDS);
         
     }
     
@@ -133,7 +132,7 @@ public class TpsControlManager {
         
     }
     
-    class TpsReporter implements Runnable {
+    class TpsMetricsReporter implements Runnable {
         
         long lastReportSecond = 0L;
         

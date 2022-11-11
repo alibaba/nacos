@@ -81,8 +81,13 @@ public class ControlRuleChangeActivator {
                     ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(connectionRule);
                 }
                 String limitRule = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
+                
+                Loggers.CONTROL.info("start to apply connection rule content " + limitRule);
+                
                 ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(limitRule) ? new ConnectionLimitRule()
                         : ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(limitRule);
+                Loggers.CONTROL.info("end to  apply connection rule content ");
+                
                 if (connectionLimitRule != null) {
                     ControlManagerCenter.getInstance().getConnectionControlManager()
                             .setConnectionLimitRule(connectionLimitRule);

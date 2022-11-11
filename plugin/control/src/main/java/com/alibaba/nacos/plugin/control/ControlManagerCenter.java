@@ -1,8 +1,11 @@
 package com.alibaba.nacos.plugin.control;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
+import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
+import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.ruleactivator.DefaultRuleParser;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParser;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
@@ -12,7 +15,7 @@ import java.util.Collection;
 
 public class ControlManagerCenter {
     
-    static ControlManagerCenter INSTANCE = null;
+    static ControlManagerCenter instance = null;
     
     private TpsControlManager tpsControlManager;
     
@@ -27,9 +30,9 @@ public class ControlManagerCenter {
         String ruleParserName = ControlConfigs.getInstance().getRuleParser();
         
         for (RuleParser ruleParserInternal : ruleParsers) {
-            if (ruleParser.getName().equalsIgnoreCase(ruleParserName)) {
+            if (ruleParserInternal.getName().equalsIgnoreCase(ruleParserName)) {
                 Loggers.CONTROL.info("Found  rule parser of name={},class={}", ruleParserName,
-                        ruleParser.getClass().getSimpleName());
+                        ruleParserInternal.getClass().getSimpleName());
                 ruleParser = ruleParserInternal;
                 break;
             }
@@ -64,13 +67,21 @@ public class ControlManagerCenter {
     }
     
     public static final ControlManagerCenter getInstance() {
-        if (INSTANCE == null) {
+        if (instance == null) {
             synchronized (ControlManagerCenter.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new ControlManagerCenter();
+                if (instance == null) {
+                    instance = new ControlManagerCenter();
                 }
             }
         }
-        return INSTANCE;
+        return instance;
+    }
+    
+    public void reloadTpsControlRule(String pointName, boolean external) {
+        NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, external));
+    }
+    
+    public void reloadConnectionControlRule(boolean external) {
+        NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(external));
     }
 }

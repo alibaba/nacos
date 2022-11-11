@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.connection;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
@@ -35,17 +36,20 @@ public class ConnectionControlManager {
         RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
-            Loggers.CONTROL.info("Found local disk connection rule content ,value  ={}", localRuleContent);
+            Loggers.CONTROL.info("Found local disk connection rule content on start up,value  ={}", localRuleContent);
         } else if (ruleStorageProxy.getExternalDiskStorage() != null
                 && ruleStorageProxy.getExternalDiskStorage().getConnectionRule() != null) {
             localRuleContent = ruleStorageProxy.getExternalDiskStorage().getConnectionRule();
             if (StringUtils.isNotBlank(localRuleContent)) {
-                Loggers.CONTROL.info("Found persist disk connection rule content ,value  ={}", localRuleContent);
+                Loggers.CONTROL
+                        .info("Found persist disk connection rule content on start up ,value  ={}", localRuleContent);
             }
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
             connectionLimitRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
+            Loggers.CONTROL.info("init connection rule end");
+            
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
             connectionLimitRule = new ConnectionLimitRule();
@@ -59,6 +63,9 @@ public class ConnectionControlManager {
     
     public void setConnectionLimitRule(ConnectionLimitRule connectionLimitRule) {
         this.connectionLimitRule = connectionLimitRule;
+        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionLimitRule == null ? null
+                : JacksonUtils.toJson(this.connectionLimitRule)));
+        
     }
     
     private ConnectionCheckResponse checkInternal(ConnectionCheckRequest connectionCheckRequest) {

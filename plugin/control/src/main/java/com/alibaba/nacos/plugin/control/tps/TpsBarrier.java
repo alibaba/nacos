@@ -206,7 +206,8 @@ public class TpsBarrier {
         tpsCheckResponse.setMessage(originalMsg);
         tpsCheckResponse.setCode(originalCheck);
         if (!tpsCheckResponse.isSuccess()) {
-            NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, originalMsg));
+            NotifyCenter
+                    .publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, tpsCheckResponse.getCode(), originalMsg));
         }
         return tpsCheckResponse;
     }
@@ -224,7 +225,9 @@ public class TpsBarrier {
                             .format("[%s] denied by interceptor =%s,keys=%s", tpsCheckRequest.getPointName(),
                                     tpsInterceptor.getName(), tpsCheckRequest.getMonitorKeys());
                     Loggers.TPS.warn(message);
-                    NotifyCenter.publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, message));
+                    NotifyCenter.publishEvent(
+                            new TpsRequestDeniedEvent(tpsCheckRequest, TpsResultCode.DENY_BY_POST_INTERCEPTOR,
+                                    message));
                     return InterceptResult.CHECK_DENY;
                 }
             }
@@ -289,7 +292,7 @@ public class TpsBarrier {
      * @param newControlRule newControlRule.
      */
     public synchronized void applyRule(TpsControlRule newControlRule) {
-        Loggers.CONTROL.info("Apply tps control rule parse start,pointName=[{}]  ", this.getPointName());
+        Loggers.CONTROL.info("Apply tps control rule start,pointName=[{}]  ", this.getPointName());
         
         //1.reset all monitor point for null.
         if (newControlRule == null) {
@@ -349,7 +352,7 @@ public class TpsBarrier {
                     }
                 } else {
                     Loggers.CONTROL
-                            .info("pointName=[{}] ,Add  point  control rule for pattern , name={}, pattern={}, new maxTps={}, new monitorType={} ",
+                            .info("pointName=[{}] ,Add  pattern control rule, name={}, pattern={}, new maxTps={}, new monitorType={} ",
                                     this.getPointName(), newMonitorRule.getKey(),
                                     newMonitorRule.getValue().getPattern(), newMonitorRule.getValue().getMaxCount(),
                                     newMonitorRule.getValue().getMonitorType());
@@ -382,6 +385,8 @@ public class TpsBarrier {
                     .sorted(Comparator.comparing(RuleBarrier::getOrder, Comparator.reverseOrder()))
                     .collect(Collectors.toList());
         }
+        
+        Loggers.CONTROL.info("Apply tps control rule end,pointName=[{}]  ", this.getPointName());
         
     }
 }
