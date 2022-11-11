@@ -12,7 +12,7 @@ import java.util.Collection;
 
 public class ControlManagerCenter {
     
-    static final ControlManagerCenter INSTANCE = new ControlManagerCenter();
+    static ControlManagerCenter INSTANCE = null;
     
     private TpsControlManager tpsControlManager;
     
@@ -20,15 +20,17 @@ public class ControlManagerCenter {
     
     private RuleParser ruleParser;
     
+    private RuleStorageProxy ruleStorageProxy;
+    
     private void initRuleParser() {
         Collection<RuleParser> ruleParsers = NacosServiceLoader.load(RuleParser.class);
         String ruleParserName = ControlConfigs.getInstance().getRuleParser();
         
-        for (RuleParser ruleParser : ruleParsers) {
+        for (RuleParser ruleParserInternal : ruleParsers) {
             if (ruleParser.getName().equalsIgnoreCase(ruleParserName)) {
                 Loggers.CONTROL.info("Found  rule parser of name={},class={}", ruleParserName,
                         ruleParser.getClass().getSimpleName());
-                ruleParser = ruleParser;
+                ruleParser = ruleParserInternal;
                 break;
             }
         }
@@ -42,10 +44,11 @@ public class ControlManagerCenter {
         tpsControlManager = new TpsControlManager();
         connectionControlManager = new ConnectionControlManager();
         initRuleParser();
+        ruleStorageProxy = new RuleStorageProxy();
     }
     
     public RuleStorageProxy getRuleStorageProxy() {
-        return new RuleStorageProxy();
+        return ruleStorageProxy;
     }
     
     public RuleParser getRuleParser() {
@@ -61,6 +64,13 @@ public class ControlManagerCenter {
     }
     
     public static final ControlManagerCenter getInstance() {
+        if (INSTANCE == null) {
+            synchronized (ControlManagerCenter.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new ControlManagerCenter();
+                }
+            }
+        }
         return INSTANCE;
     }
 }

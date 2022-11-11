@@ -3,7 +3,6 @@ package com.alibaba.nacos.plugin.control.connection;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
@@ -33,7 +32,7 @@ public class ConnectionControlManager {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
         Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
                 metricsCollectorList);
-        RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+        RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk connection rule content ,value  ={}", localRuleContent);
@@ -46,7 +45,7 @@ public class ConnectionControlManager {
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            connectionLimitRule = ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(localRuleContent);
+            connectionLimitRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
             connectionLimitRule = new ConnectionLimitRule();

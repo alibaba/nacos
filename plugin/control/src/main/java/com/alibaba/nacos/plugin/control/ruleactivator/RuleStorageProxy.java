@@ -9,9 +9,11 @@ import java.util.Collection;
 
 public class RuleStorageProxy {
     
-    private LocalDiskRuleStorage localDiskRuleStorage = new LocalDiskRuleStorage();
-    
     private static final Logger LOGGER = Loggers.CONTROL;
+    
+    private static final RuleStorageProxy INSTANCE = new RuleStorageProxy();
+    
+    private LocalDiskRuleStorage localDiskRuleStorage = new LocalDiskRuleStorage();
     
     private ExternalRuleStorage externalRuleStorage = null;
     
@@ -38,5 +40,9 @@ public class RuleStorageProxy {
     
     public RuleStorage getExternalDiskStorage() {
         return externalRuleStorage;
+    }
+    
+    public static final RuleStorageProxy getInstance() {
+        return INSTANCE;
     }
 }

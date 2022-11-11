@@ -66,7 +66,7 @@ public class TpsControlManager {
     }
     
     private void initTpsRule(String pointName) {
-        RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+        RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
         
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
         if (StringUtils.isNotBlank(localRuleContent)) {
@@ -80,8 +80,7 @@ public class TpsControlManager {
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            TpsControlRule tpsLimitRule = ControlManagerCenter.getInstance().getRuleParser()
-                    .parseTpsRule(localRuleContent);
+            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
             this.applyTpsRule(pointName, tpsLimitRule);
         } else {
             Loggers.CONTROL.info("No tps control rule of {} found  ", pointName, localRuleContent);
