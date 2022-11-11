@@ -288,4 +288,6 @@ public class Constants {
     public static final String CONFIG_EXPORT_METADATA_NEW = ".metadata.yml";
     
     public static final int LIMIT_ERROR_CODE = 429;
+    
+    public static final String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
 }
