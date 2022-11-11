@@ -18,11 +18,11 @@ public class RemoteTpsCheckRequestParserRegistry {
         RemoteTpsCheckRequestParser prevRemoteTpsCheckParser = PARSER_MAP
                 .put(remoteTpsCheckParser.getName(), remoteTpsCheckParser);
         if (prevRemoteTpsCheckParser != null) {
-            Loggers.CONTROL.info("RemoteTpsCheckParser  name  {},point name {} will be replaced with {}",
+            Loggers.CONTROL.info("RemoteTpsCheckRequestParser  name  {},point name {} will be replaced with {}",
                     remoteTpsCheckParser.getName(), remoteTpsCheckParser.getPointName(),
                     remoteTpsCheckParser.getClass().getSimpleName());
         } else {
-            Loggers.CONTROL.info("RemoteTpsCheckParser register parser {} of name {},point name {}",
+            Loggers.CONTROL.info("RemoteTpsCheckRequestParser register parser {} of name {},point name {}",
                     remoteTpsCheckParser.getClass().getSimpleName(), remoteTpsCheckParser.getName(),
                     remoteTpsCheckParser.getPointName());
         }
