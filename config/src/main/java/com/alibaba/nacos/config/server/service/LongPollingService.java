@@ -30,7 +30,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import org.springframework.stereotype.Service;
@@ -289,7 +289,7 @@ public class LongPollingService {
         String ip = RequestUtil.getRemoteIp(httpServletRequest);
         String appName = httpServletRequest.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(ip, appName, "LongPolling");
-        ConnectionCheckResponse checkResponse = ControlManagerFactory.getInstance().getConnectionControlManager()
+        ConnectionCheckResponse checkResponse = ControlManagerCenter.getInstance().getConnectionControlManager()
                 .check(connectionCheckRequest);
         return checkResponse;
     }

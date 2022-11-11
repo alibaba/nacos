@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -41,7 +41,7 @@ import java.lang.reflect.Method;
 @Service
 public class TpsControlRequestFilter extends AbstractRequestFilter {
     
-    TpsControlManager tpsControlManager = ControlManagerFactory.getInstance().getTpsControlManager();
+    TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) {
@@ -55,34 +55,44 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
         
         if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
             
-            TpsControl tpsControl = method.getAnnotation(TpsControl.class);
-            String pointName = tpsControl.pointName();
-            TpsCheckRequest tpsCheckRequest = null;
-            String parseName = StringUtils.isBlank(tpsControl.name()) ? pointName : tpsControl.name();
-            RemoteTpsCheckRequestParser parser = RemoteTpsCheckRequestParserRegistry.getParser(parseName);
-            if (parser != null) {
-                tpsCheckRequest = parser.parse(request, meta);
-            } else {
-                tpsCheckRequest = new TpsCheckRequest();
-                tpsCheckRequest.setConnectionId(meta.getConnectionId());
-                tpsCheckRequest.setClientIp(meta.getClientIp());
-            }
-            tpsCheckRequest.setPointName(pointName);
-            
-            TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
-            
-            if (!check.isSuccess()) {
-                Response response;
-                try {
-                    response = super.getDefaultResponseInstance(handlerClazz);
-                    response.setErrorInfo(NacosException.OVER_THRESHOLD, "Tps Flow restricted:" + check.getMessage());
-                    return response;
-                } catch (Exception e) {
-                    com.alibaba.nacos.plugin.control.Loggers.TPS
-                            .warn("Tps monitor fail , request: {},exception:{}", request.getClass().getSimpleName(), e);
-                    return null;
+            try {
+                TpsControl tpsControl = method.getAnnotation(TpsControl.class);
+                String pointName = tpsControl.pointName();
+                TpsCheckRequest tpsCheckRequest = null;
+                String parseName = StringUtils.isBlank(tpsControl.name()) ? pointName : tpsControl.name();
+                RemoteTpsCheckRequestParser parser = RemoteTpsCheckRequestParserRegistry.getParser(parseName);
+                if (parser != null) {
+                    tpsCheckRequest = parser.parse(request, meta);
+                }
+                if (tpsCheckRequest == null) {
+                    tpsCheckRequest = new TpsCheckRequest();
                 }
                 
+                tpsCheckRequest.setConnectionId(meta.getConnectionId());
+                tpsCheckRequest.setClientIp(meta.getClientIp());
+                tpsCheckRequest.setPointName(pointName);
+                
+                TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
+                
+                if (!check.isSuccess()) {
+                    Response response;
+                    try {
+                        response = super.getDefaultResponseInstance(handlerClazz);
+                        response.setErrorInfo(NacosException.OVER_THRESHOLD,
+                                "Tps Flow restricted:" + check.getMessage());
+                        return response;
+                    } catch (Exception e) {
+                        com.alibaba.nacos.plugin.control.Loggers.TPS
+                                .warn("Tps check fail , request: {},exception:{}", request.getClass().getSimpleName(),
+                                        e);
+                        return null;
+                    }
+                    
+                }
+            } catch (Throwable throwable) {
+                com.alibaba.nacos.plugin.control.Loggers.TPS
+                        .warn("Tps check exception , request: {},exception:{}", request.getClass().getSimpleName(),
+                                throwable);
             }
         }
         

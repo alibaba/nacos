@@ -2,10 +2,10 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
-import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
+import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
@@ -66,19 +66,22 @@ public class TpsControlManager {
     }
     
     private void initTpsRule(String pointName) {
-        String localRuleContent = LocalDiskRuleStorage.INSTANCE.getTpsRule(pointName);
+        RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+        
+        String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk tps control rule of {},content ={}", pointName, localRuleContent);
-        } else if (PersistRuleActivatorProxy.getInstance() != null
-                && PersistRuleActivatorProxy.getInstance().getTpsRule(pointName) != null) {
-            localRuleContent = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
+        } else if (ruleStorageProxy.getExternalDiskStorage() != null
+                && ruleStorageProxy.getExternalDiskStorage().getTpsRule(pointName) != null) {
+            localRuleContent = ruleStorageProxy.getExternalDiskStorage().getTpsRule(pointName);
             if (StringUtils.isNotBlank(localRuleContent)) {
                 Loggers.CONTROL.info("Found external  tps control rule of {},content ={}", pointName, localRuleContent);
             }
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            TpsControlRule tpsLimitRule = RuleParserProxy.getInstance().parseTpsRule(localRuleContent);
+            TpsControlRule tpsLimitRule = ControlManagerCenter.getInstance().getRuleParser()
+                    .parseTpsRule(localRuleContent);
             this.applyTpsRule(pointName, tpsLimitRule);
         } else {
             Loggers.CONTROL.info("No tps control rule of {} found  ", pointName, localRuleContent);

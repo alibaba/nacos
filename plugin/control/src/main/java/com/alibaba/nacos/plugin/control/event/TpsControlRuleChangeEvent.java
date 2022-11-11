@@ -28,11 +28,11 @@ public class TpsControlRuleChangeEvent extends Event {
     
     private String pointName;
     
-    private boolean persist;
+    private boolean external;
     
-    public TpsControlRuleChangeEvent(String pointName, boolean persist) {
+    public TpsControlRuleChangeEvent(String pointName, boolean external) {
         this.pointName = pointName;
-        this.persist = persist;
+        this.external = external;
     }
     
     public String getPointName() {
@@ -43,11 +43,11 @@ public class TpsControlRuleChangeEvent extends Event {
         this.pointName = pointName;
     }
     
-    public boolean isPersist() {
-        return persist;
+    public boolean isExternal() {
+        return external;
     }
     
-    public void setPersist(boolean persist) {
-        this.persist = persist;
+    public void setExternal(boolean external) {
+        this.external = external;
     }
 }

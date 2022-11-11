@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedExceptio
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
@@ -90,7 +90,7 @@ public class ConnectionManager {
      * @return
      */
     public boolean traced(String clientIp) {
-        ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance().getConnectionControlManager()
+        ConnectionLimitRule connectionLimitRule = ControlManagerCenter.getInstance().getConnectionControlManager()
                 .getConnectionLimitRule();
         return connectionLimitRule != null && connectionLimitRule.getMonitorIpList() != null && connectionLimitRule
                 .getMonitorIpList().contains(clientIp);
@@ -150,7 +150,7 @@ public class ConnectionManager {
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(metaInfo.getClientIp(),
                 metaInfo.getAppName(), metaInfo.getLabel(RemoteConstants.LABEL_SOURCE));
         connectionCheckRequest.setLabels(connection.getLabels());
-        ConnectionCheckResponse checkResponse = ControlManagerFactory.getInstance().getConnectionControlManager()
+        ConnectionCheckResponse checkResponse = ControlManagerCenter.getInstance().getConnectionControlManager()
                 .check(connectionCheckRequest);
         return !checkResponse.isSuccess();
     }
@@ -236,7 +236,7 @@ public class ConnectionManager {
         RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
             try {
                 
-                ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance()
+                ConnectionLimitRule connectionLimitRule = ControlManagerCenter.getInstance()
                         .getConnectionControlManager().getConnectionLimitRule();
                 int totalCount = connections.size();
                 LOGGER.info("Connection check task start");

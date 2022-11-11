@@ -31,7 +31,7 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcPushService;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +57,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
     
-    TpsControlManager tpsControlManager = ControlManagerFactory.getInstance().getTpsControlManager();
+    TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
     
     public RpcConfigChangeNotifier() {
         NotifyCenter.registerSubscriber(this);

@@ -4,7 +4,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  * control rule activator.
  */
 @Component
-public class ControlRuleChangeSubscriber {
+public class ControlRuleChangeActivator {
     
     private static final Logger LOGGER = Loggers.CONTROL;
     
@@ -25,7 +25,7 @@ public class ControlRuleChangeSubscriber {
     
     ConnectionRuleChangeSubscriber connectionRuleChangeSubscriber = new ConnectionRuleChangeSubscriber();
     
-    public ControlRuleChangeSubscriber() {
+    public ControlRuleChangeActivator() {
         NotifyCenter.registerSubscriber(tpsRuleChangeSubscriber);
         NotifyCenter.registerSubscriber(connectionRuleChangeSubscriber);
     }
@@ -35,22 +35,24 @@ public class ControlRuleChangeSubscriber {
         @Override
         public void onEvent(TpsControlRuleChangeEvent event) {
             String pointName = event.getPointName();
-            LOGGER.info("Tps control rule change event receive,pointName={}, persist={} ", pointName,
-                    event.isPersist());
+            LOGGER.info("Tps control rule change event receive,pointName={}, external={} ", pointName,
+                    event.isExternal());
             if (event == null || event.getPointName() == null) {
                 return;
             }
             try {
-                if (event.isPersist()) {
-                    String persistTpsRule = PersistRuleActivatorProxy.getInstance().getTpsRule(pointName);
-                    LocalDiskRuleStorage.INSTANCE.saveTpsRule(pointName, persistTpsRule);
+                RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+                
+                if (event.isExternal()) {
+                    String persistTpsRule = ruleStorageProxy.getExternalDiskStorage().getTpsRule(pointName);
+                    ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, persistTpsRule);
                 }
-                String tpsRuleContent = LocalDiskRuleStorage.INSTANCE.getTpsRule(pointName);
+                String tpsRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
                 
                 TpsControlRule tpsControlRule = StringUtils.isBlank(tpsRuleContent) ? new TpsControlRule()
-                        : RuleParserProxy.getInstance().parseTpsRule(tpsRuleContent);
+                        : ControlManagerCenter.getInstance().getRuleParser().parseTpsRule(tpsRuleContent);
                 
-                ControlManagerFactory.getInstance().getTpsControlManager().applyTpsRule(pointName, tpsControlRule);
+                ControlManagerCenter.getInstance().getTpsControlManager().applyTpsRule(pointName, tpsControlRule);
                 
             } catch (Exception e) {
                 LOGGER.warn("Tps control rule apply error ,error= ", e);
@@ -68,26 +70,28 @@ public class ControlRuleChangeSubscriber {
         
         @Override
         public void onEvent(ConnectionLimitRuleChangeEvent event) {
-            LOGGER.info("connection limit rule change event receive ,persist:{}", event.isPersist());
+            LOGGER.info("connection limit rule change event receive ,external:{}", event.isExternal());
             
             try {
                 
-                if (event.isPersist()) {
-                    String connectionRule = PersistRuleActivatorProxy.getInstance().getConnectionRule();
-                    LocalDiskRuleStorage.INSTANCE.saveConnectionRule(connectionRule);
+                RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+                
+                if (event.isExternal()) {
+                    String connectionRule = ruleStorageProxy.getExternalDiskStorage().getConnectionRule();
+                    ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(connectionRule);
                 }
-                String limitRule = LocalDiskRuleStorage.INSTANCE.getConnectionRule();
+                String limitRule = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
                 ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(limitRule) ? new ConnectionLimitRule()
-                        : RuleParserProxy.getInstance().parseConnectionRule(limitRule);
+                        : ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(limitRule);
                 if (connectionLimitRule != null) {
-                    ControlManagerFactory.getInstance().getConnectionControlManager()
+                    ControlManagerCenter.getInstance().getConnectionControlManager()
                             .setConnectionLimitRule(connectionLimitRule);
                 } else {
                     LOGGER.info("Parse rule is null,Ignore illegal rule  :{}", limitRule);
                 }
                 
             } catch (Exception e) {
-                LOGGER.error("Fail to parse connection limit rule ,persit:{}", event.isPersist(), e);
+                LOGGER.error("Fail to parse connection limit rule ,persit:{}", event.isExternal(), e);
             }
         }
         

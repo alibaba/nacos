@@ -24,17 +24,17 @@ import com.alibaba.nacos.common.notify.Event;
  */
 public class ConnectionLimitRuleChangeEvent extends Event {
     
-    private boolean persist;
+    private boolean external;
     
-    public ConnectionLimitRuleChangeEvent(boolean persist) {
-        this.persist = persist;
+    public ConnectionLimitRuleChangeEvent(boolean external) {
+        this.external = external;
     }
     
-    public boolean isPersist() {
-        return persist;
+    public boolean isExternal() {
+        return external;
     }
     
-    public void setPersist(boolean persist) {
-        this.persist = persist;
+    public void setExternal(boolean external) {
+        this.external = external;
     }
 }

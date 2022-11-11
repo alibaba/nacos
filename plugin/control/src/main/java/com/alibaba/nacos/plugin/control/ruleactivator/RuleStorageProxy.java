@@ -7,31 +7,36 @@ import org.slf4j.Logger;
 
 import java.util.Collection;
 
-public class PersistRuleActivatorProxy {
+public class RuleStorageProxy {
+    
+    private LocalDiskRuleStorage localDiskRuleStorage = new LocalDiskRuleStorage();
     
     private static final Logger LOGGER = Loggers.CONTROL;
     
-    private static PersistRuleStorage instance = null;
+    private ExternalRuleStorage externalRuleStorage = null;
     
-    static {
-        Collection<PersistRuleStorage> persistRuleActivators = NacosServiceLoader.load(PersistRuleStorage.class);
+    public RuleStorageProxy() {
+        Collection<ExternalRuleStorage> persistRuleActivators = NacosServiceLoader.load(ExternalRuleStorage.class);
         String rulePersistActivator = ControlConfigs.getInstance().getRulePersistActivator();
         
-        for (PersistRuleStorage persistRuleActivator : persistRuleActivators) {
+        for (ExternalRuleStorage persistRuleActivator : persistRuleActivators) {
             if (persistRuleActivator.getName().equalsIgnoreCase(rulePersistActivator)) {
                 LOGGER.info("Found persist rule storage of name ：" + rulePersistActivator);
-                instance = persistRuleActivator;
+                externalRuleStorage = persistRuleActivator;
                 break;
             }
         }
-        if (instance == null) {
+        if (externalRuleStorage == null) {
             LOGGER.error("Fail to found persist rule storage of name ：" + rulePersistActivator);
             
         }
     }
     
-    public static PersistRuleStorage getInstance() {
-        return instance;
+    public RuleStorage getLocalDiskStorage() {
+        return localDiskRuleStorage;
     }
     
+    public RuleStorage getExternalDiskStorage() {
+        return externalRuleStorage;
+    }
 }

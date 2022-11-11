@@ -11,9 +11,7 @@ import java.io.IOException;
 
 public class LocalDiskRuleStorage implements RuleStorage {
     
-    public static final LocalDiskRuleStorage INSTANCE = new LocalDiskRuleStorage();
-    
-    private LocalDiskRuleStorage() {
+    LocalDiskRuleStorage() {
     
     }
     

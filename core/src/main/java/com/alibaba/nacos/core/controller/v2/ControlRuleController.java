@@ -11,13 +11,12 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Commons;
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
-import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
+import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
@@ -37,34 +36,34 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/controlrule")
-public class TpsRuleController {
+public class ControlRuleController {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(TpsRuleController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ControlRuleController.class);
     
     private ServerMemberManager serverMemberManager;
     
     private NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(LOGGER);
     
-    public TpsRuleController(ServerMemberManager serverMemberManager) {
+    public ControlRuleController(ServerMemberManager serverMemberManager) {
         this.serverMemberManager = serverMemberManager;
     }
     
     @GetMapping(value = "/tps/points")
     public RestResult<Set<String>> getTpsPointNames() {
-        Set<String> pointNames = ControlManagerFactory.getInstance().getTpsControlManager().getPoints().keySet();
+        Set<String> pointNames = ControlManagerCenter.getInstance().getTpsControlManager().getPoints().keySet();
         return RestResultUtils.success(pointNames);
     }
     
     @GetMapping(value = "/tps/current")
     public RestResult<TpsControlRule> getTpsRule(@RequestParam(value = "pointname") String pointName) {
-        TpsControlRule tpsControlRule = ControlManagerFactory.getInstance().getTpsControlManager().getRules()
+        TpsControlRule tpsControlRule = ControlManagerCenter.getInstance().getTpsControlManager().getRules()
                 .get(pointName);
         return RestResultUtils.success(tpsControlRule);
     }
     
     @GetMapping(value = "/tps/currentall")
     public RestResult<Map<String, TpsControlRule>> getTpsRule() {
-        Map<String, TpsControlRule> rules = ControlManagerFactory.getInstance().getTpsControlManager().getRules();
+        Map<String, TpsControlRule> rules = ControlManagerCenter.getInstance().getTpsControlManager().getRules();
         return RestResultUtils.success(rules);
     }
     
@@ -80,18 +79,20 @@ public class TpsRuleController {
      *
      * @param pointName pointName.
      * @param content   content.
-     * @param isPersist isPersist.
+     * @param external external.
      * @return
      */
     @PostMapping(value = "/tps")
     public RestResult<Boolean> updateTpsRule(@RequestParam(value = "pointname") String pointName,
-            @RequestParam(value = "rulecontent") String content, @RequestParam(value = "persist") Boolean isPersist) {
+            @RequestParam(value = "rulecontent") String content, @RequestParam(value = "external") Boolean external) {
         try {
             RuleParserProxy.getInstance().parseTpsRule(content);
-            if (isPersist) {
-                PersistRuleActivatorProxy.getInstance().saveTpsRule(pointName, content);
+            RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+            
+            if (external) {
+                ruleStorageProxy.getExternalDiskStorage().saveTpsRule(pointName, content);
             } else {
-                LocalDiskRuleStorage.INSTANCE.saveTpsRule(pointName, content);
+                ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, content);
             }
             
             return RestResultUtils.success();
@@ -106,26 +107,26 @@ public class TpsRuleController {
      * reload tps rule.
      *
      * @param pointName pointName.
-     * @param isPersist isPersist.
+     * @param external external.
      * @return
      */
     @PostMapping(value = "/tps/reload/current")
     public RestResult<Void> reloadTpsRule(@RequestParam(value = "pointname") String pointName,
-            @RequestParam(value = "persist") Boolean isPersist) {
+            @RequestParam(value = "external") Boolean external) {
         
-        NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, isPersist));
+        NotifyCenter.publishEvent(new TpsControlRuleChangeEvent(pointName, external));
         return RestResultUtils.success();
     }
     
     @PostMapping(value = "/tps/reload/cluster")
     public RestResult<Map<String, Boolean>> reloadClusterTpsRule(@RequestParam(value = "pointname") String pointName,
-            @RequestParam(value = "persist") Boolean isPersist) throws Exception {
-        return RestResultUtils.success(reloadClusterTpsControl(pointName, isPersist));
+            @RequestParam(value = "external") Boolean external) throws Exception {
+        return RestResultUtils.success(reloadClusterTpsControl(pointName, external));
     }
     
     @GetMapping(value = "/connection/current")
     public RestResult<ConnectionLimitRule> getConnectionRule() {
-        ConnectionLimitRule connectionLimitRule = ControlManagerFactory.getInstance().getConnectionControlManager()
+        ConnectionLimitRule connectionLimitRule = ControlManagerCenter.getInstance().getConnectionControlManager()
                 .getConnectionLimitRule();
         return RestResultUtils.success(connectionLimitRule);
     }
@@ -145,19 +146,19 @@ public class TpsRuleController {
      * update connection rule.
      *
      * @param content   content.
-     * @param isPersist isPersist.
+     * @param external external.
      * @return
      */
     @PostMapping(value = "/connection")
     public RestResult<Boolean> updateConnectionRule(@RequestParam(value = "rulecontent") String content,
-            @RequestParam(value = "persist") Boolean isPersist) {
+            @RequestParam(value = "external") Boolean external) {
         try {
-            RuleParserProxy.getInstance().parseConnectionRule(content);
-            if (isPersist) {
-                
-                PersistRuleActivatorProxy.getInstance().saveConnectionRule(content);
+            ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(content);
+            RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+            if (external) {
+                ruleStorageProxy.getExternalDiskStorage().saveConnectionRule(content);
             } else {
-                LocalDiskRuleStorage.INSTANCE.saveConnectionRule(content);
+                ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(content);
             }
             
             return RestResultUtils.success();
@@ -169,15 +170,15 @@ public class TpsRuleController {
     }
     
     @PostMapping(value = "/connection/reload/current")
-    public RestResult<Void> reloadConnectionRule(@RequestParam(value = "persist") Boolean isPersist) throws Exception {
-        NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(isPersist));
+    public RestResult<Void> reloadConnectionRule(@RequestParam(value = "external") Boolean external) throws Exception {
+        NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(external));
         return RestResultUtils.success();
     }
     
     @PostMapping(value = "/connection/reload/cluster")
     public RestResult<Map<String, Boolean>> reloadClusterConnectionRule(
-            @RequestParam(value = "persist") Boolean isPersist) throws Exception {
-        Map<String, Boolean> clusterResult = reloadClusterConnectionControl(isPersist);
+            @RequestParam(value = "external") Boolean external) throws Exception {
+        Map<String, Boolean> clusterResult = reloadClusterConnectionControl(external);
         return RestResultUtils.success(clusterResult);
     }
     
@@ -281,7 +282,7 @@ public class TpsRuleController {
     
     private static final String RELOAD_CONNECTION_RULE_URL_PATTERN = "http://{0}{1}/v2/core/controlrule/connection/reload/current";
     
-    private Map<String, Boolean> reloadClusterConnectionControl(boolean isPersist) {
+    private Map<String, Boolean> reloadClusterConnectionControl(boolean external) {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
         Map<String, Boolean> clusterResult = new HashMap<>();
@@ -291,7 +292,7 @@ public class TpsRuleController {
                     .format(RELOAD_CONNECTION_RULE_URL_PATTERN, member.getAddress(), EnvUtil.getContextPath());
             Header header = Header.newInstance();
             Map<String, String> bodyValues = new HashMap<>();
-            bodyValues.put("persist", String.valueOf(isPersist));
+            bodyValues.put("external", String.valueOf(external));
             nacosAsyncRestTemplate.postForm(url, header, bodyValues, RestResult.class, new Callback<Boolean>() {
                 
                 @Override
@@ -332,7 +333,7 @@ public class TpsRuleController {
     
     private static final String RELOAD_TPS_RULE_URL_PATTERN = "http://{0}{1}/v2/core/controlrule/tps/reload/current";
     
-    private Map<String, Boolean> reloadClusterTpsControl(String pointName, boolean isPersist) {
+    private Map<String, Boolean> reloadClusterTpsControl(String pointName, boolean external) {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
         Map<String, Boolean> clusterResult = new HashMap<>();
@@ -343,7 +344,7 @@ public class TpsRuleController {
             Header header = Header.newInstance();
             Map<String, String> bodyValues = new HashMap<>();
             bodyValues.put("pointname", pointName);
-            bodyValues.put("persist", String.valueOf(isPersist));
+            bodyValues.put("external", String.valueOf(external));
             nacosAsyncRestTemplate.postForm(url, header, bodyValues, RestResult.class, new Callback<Void>() {
                 
                 @Override

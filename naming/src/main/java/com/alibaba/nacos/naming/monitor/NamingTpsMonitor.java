@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.monitor;
 
-import com.alibaba.nacos.plugin.control.ControlManagerFactory;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 
@@ -29,7 +29,7 @@ public class NamingTpsMonitor {
     
     private static final NamingTpsMonitor INSTANCE = new NamingTpsMonitor();
     
-    private final TpsControlManager tpsControlManager = ControlManagerFactory.getInstance().getTpsControlManager();
+    private final TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
     
     private NamingTpsMonitor() {
         registerPushMonitorPoint();

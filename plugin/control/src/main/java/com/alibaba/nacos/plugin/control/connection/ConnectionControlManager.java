@@ -3,6 +3,7 @@ package com.alibaba.nacos.plugin.control.connection;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
@@ -12,9 +13,8 @@ import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.event.ConnectionDeniedEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.LocalDiskRuleStorage;
-import com.alibaba.nacos.plugin.control.ruleactivator.PersistRuleActivatorProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
+import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 
 import java.util.Collection;
 import java.util.Map;
@@ -33,19 +33,20 @@ public class ConnectionControlManager {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
         Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
                 metricsCollectorList);
-        String localRuleContent = LocalDiskRuleStorage.INSTANCE.getConnectionRule();
+        RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
+        String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk connection rule content ,value  ={}", localRuleContent);
-        } else if (PersistRuleActivatorProxy.getInstance() != null
-                && PersistRuleActivatorProxy.getInstance().getConnectionRule() != null) {
-            localRuleContent = PersistRuleActivatorProxy.getInstance().getConnectionRule();
+        } else if (ruleStorageProxy.getExternalDiskStorage() != null
+                && ruleStorageProxy.getExternalDiskStorage().getConnectionRule() != null) {
+            localRuleContent = ruleStorageProxy.getExternalDiskStorage().getConnectionRule();
             if (StringUtils.isNotBlank(localRuleContent)) {
                 Loggers.CONTROL.info("Found persist disk connection rule content ,value  ={}", localRuleContent);
             }
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            connectionLimitRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
+            connectionLimitRule = ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(localRuleContent);
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
             connectionLimitRule = new ConnectionLimitRule();
