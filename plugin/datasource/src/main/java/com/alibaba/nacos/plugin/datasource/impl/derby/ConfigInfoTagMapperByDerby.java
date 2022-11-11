@@ -37,9 +37,9 @@ public class ConfigInfoTagMapperByDerby extends AbstractMapper implements Config
     
     @Override
     public String findAllConfigInfoTagForDumpAllFetchRows(int startRow, int pageSize) {
-        return " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
+        return "SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
                 + " FROM ( SELECT id FROM config_info_tag  ORDER BY id  OFFSET " + startRow + " ROWS FETCH NEXT "
-                + pageSize + " ROWS ONLY ) " + " g, config_info_tag t  WHERE g.id = t.id ";
+                + pageSize + " ROWS ONLY ) " + " g, config_info_tag t  WHERE g.id = t.id";
     }
     
     @Override
