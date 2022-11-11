@@ -25,7 +25,7 @@ public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
                     
                     TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                     String pointName = tpsControl.pointName();
-                    HttpTpsCheckRequestParser parser = TpsCheckRequestParserRegistry.getParser(pointName);
+                    HttpTpsCheckRequestParser parser = HttpTpsCheckRequestParserRegistry.getParser(pointName);
                     if (parser != null) {
                         TpsCheckRequest httpTpsCheckRequest = parser.parse(request);
                         TpsCheckResponse checkResponse = ControlManagerFactory.getInstance().getTpsControlManager()

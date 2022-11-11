@@ -7,7 +7,7 @@ import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 public abstract class RemoteTpsCheckRequestParser {
     
     public RemoteTpsCheckRequestParser() {
-        TpsCheckRequestParserRegistry.register(this);
+        RemoteTpsCheckRequestParserRegistry.register(this);
     }
     
     public abstract TpsCheckRequest parse(Request request, RequestMeta meta);

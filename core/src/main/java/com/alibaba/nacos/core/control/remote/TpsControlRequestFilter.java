@@ -59,7 +59,7 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
             String pointName = tpsControl.pointName();
             TpsCheckRequest tpsCheckRequest = null;
             String parseName = StringUtils.isBlank(tpsControl.name()) ? pointName : tpsControl.name();
-            RemoteTpsCheckRequestParser parser = TpsCheckRequestParserRegistry.getParser(parseName);
+            RemoteTpsCheckRequestParser parser = RemoteTpsCheckRequestParserRegistry.getParser(parseName);
             if (parser != null) {
                 tpsCheckRequest = parser.parse(request, meta);
             } else {

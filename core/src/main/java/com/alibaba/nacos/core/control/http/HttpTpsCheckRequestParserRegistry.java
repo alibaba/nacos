@@ -5,7 +5,7 @@ import com.alibaba.nacos.plugin.control.Loggers;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TpsCheckRequestParserRegistry {
+public class HttpTpsCheckRequestParserRegistry {
     
     static final Map<String, HttpTpsCheckRequestParser> PARSER_MAP = new ConcurrentHashMap<>();
     

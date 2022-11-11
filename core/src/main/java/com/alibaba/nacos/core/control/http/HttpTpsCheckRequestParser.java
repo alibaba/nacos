@@ -11,7 +11,7 @@ public abstract class HttpTpsCheckRequestParser {
     }
     
     public void registerParser() {
-        TpsCheckRequestParserRegistry.register(this);
+        HttpTpsCheckRequestParserRegistry.register(this);
     }
     
     public abstract TpsCheckRequest parse(HttpServletRequest httpServletRequest);
