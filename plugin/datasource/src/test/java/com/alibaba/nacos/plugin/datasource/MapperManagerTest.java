@@ -29,13 +29,13 @@ public class MapperManagerTest {
     
     @Test
     public void testInstance() {
-        MapperManager instance = MapperManager.instance();
+        MapperManager instance = MapperManager.instance(false);
         Assert.assertNotNull(instance);
     }
     
     @Test
     public void testLoadInitial() throws NoSuchFieldException, IllegalAccessException {
-        MapperManager instance = MapperManager.instance();
+        MapperManager instance = MapperManager.instance(false);
         instance.loadInitial();
         Class<MapperManager> mapperManagerClass = MapperManager.class;
         Field declaredField = mapperManagerClass.getDeclaredField("MAPPER_SPI_MAP");
@@ -57,7 +57,7 @@ public class MapperManagerTest {
                 return DataSourceConstant.MYSQL;
             }
         });
-        MapperManager instance = MapperManager.instance();
+        MapperManager instance = MapperManager.instance(false);
         Mapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
         Assert.assertNotNull(mapper);
     }
@@ -65,7 +65,7 @@ public class MapperManagerTest {
     @Test
     public void testFindMapper() {
         testJoin();
-        MapperManager instance = MapperManager.instance();
+        MapperManager instance = MapperManager.instance(false);
         Mapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
         Assert.assertNotNull(mapper);
     }
