@@ -64,11 +64,9 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate    {@link EmbeddedStoragePersistServiceImpl}
-     * @param idGeneratorManager {@link IdGeneratorManager}
+     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
      */
-    public EmbeddedConfigInfoBetaPersistServiceImpl(DatabaseOperate databaseOperate,
-            IdGeneratorManager idGeneratorManager) {
+    public EmbeddedConfigInfoBetaPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
@@ -77,7 +75,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     }
     
     /**
-     * init DataSourceService and IdGeneratorManager.
+     * init DataSourceService .
      */
     @PostConstruct
     public void init() {

@@ -22,6 +22,7 @@ import com.alibaba.nacos.config.server.model.Page;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Database service, providing access to his_config_info in the database.
@@ -29,6 +30,23 @@ import java.util.List;
  * @author lixiaoshuang
  */
 public interface HistoryConfigInfoPersistService {
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
+    
+    /**
+     * Convert delete config.
+     *
+     * @param list origin data
+     * @return {@link ConfigInfo} list
+     */
+    List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list);
+    
     //------------------------------------------insert---------------------------------------------//
     
     /**

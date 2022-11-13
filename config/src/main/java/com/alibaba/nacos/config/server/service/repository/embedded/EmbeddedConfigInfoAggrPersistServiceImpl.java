@@ -70,11 +70,9 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate    {@link EmbeddedStoragePersistServiceImpl}
-     * @param idGeneratorManager {@link IdGeneratorManager}
+     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
      */
-    public EmbeddedConfigInfoAggrPersistServiceImpl(DatabaseOperate databaseOperate,
-            IdGeneratorManager idGeneratorManager) {
+    public EmbeddedConfigInfoAggrPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
@@ -83,7 +81,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     }
     
     /**
-     * init DataSourceService and IdGeneratorManager.
+     * init DataSourceService .
      */
     @PostConstruct
     public void init() {
