@@ -30,6 +30,15 @@ import java.sql.Timestamp;
  * @author lixiaoshuang
  */
 public interface ConfigInfoTagPersistService {
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
+    
     //------------------------------------------insert---------------------------------------------//
     
     /**

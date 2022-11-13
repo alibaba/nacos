@@ -45,34 +45,19 @@ import java.util.Arrays;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 
+/**
+ * EmbeddedConfigInfoBetaPersistServiceImpl.
+ *
+ * @author lixiaoshuang
+ */
 @SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaPersistService {
     
-    private static final String RESOURCE_CONFIG_INFO_ID = "config-info-id";
-    
-    private static final String RESOURCE_CONFIG_HISTORY_ID = "config-history-id";
-    
-    private static final String RESOURCE_CONFIG_TAG_RELATION_ID = "config-tag-relation-id";
-    
-    private static final String RESOURCE_APP_CONFIGDATA_RELATION_SUBS = "app-configdata-relation-subs";
-    
-    private static final String RESOURCE_CONFIG_BETA_ID = "config-beta-id";
-    
-    private static final String RESOURCE_NAMESPACE_ID = "namespace-id";
-    
-    private static final String RESOURCE_USER_ID = "user-id";
-    
-    private static final String RESOURCE_ROLE_ID = "role-id";
-    
-    private static final String RESOURCE_PERMISSIONS_ID = "permissions_id";
-    
     private DataSourceService dataSourceService;
     
     private final DatabaseOperate databaseOperate;
-    
-    private final IdGeneratorManager idGeneratorManager;
     
     private MapperManager mapperManager;
     
@@ -85,7 +70,6 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     public EmbeddedConfigInfoBetaPersistServiceImpl(DatabaseOperate databaseOperate,
             IdGeneratorManager idGeneratorManager) {
         this.databaseOperate = databaseOperate;
-        this.idGeneratorManager = idGeneratorManager;
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
@@ -98,9 +82,6 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @PostConstruct
     public void init() {
         dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        idGeneratorManager.register(RESOURCE_CONFIG_INFO_ID, RESOURCE_CONFIG_HISTORY_ID,
-                RESOURCE_CONFIG_TAG_RELATION_ID, RESOURCE_APP_CONFIGDATA_RELATION_SUBS, RESOURCE_CONFIG_BETA_ID,
-                RESOURCE_NAMESPACE_ID, RESOURCE_USER_ID, RESOURCE_ROLE_ID, RESOURCE_PERMISSIONS_ID);
     }
     
     @Override

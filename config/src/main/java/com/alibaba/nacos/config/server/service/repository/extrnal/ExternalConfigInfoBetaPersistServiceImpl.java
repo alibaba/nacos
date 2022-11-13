@@ -46,6 +46,11 @@ import java.util.Arrays;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 
+/**
+ * ExternalConfigInfoBetaPersistServiceImpl.
+ *
+ * @author lixiaoshuang
+ */
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
