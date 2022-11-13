@@ -105,6 +105,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 @SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
+@Deprecated
 public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     private static final String RESOURCE_CONFIG_INFO_ID = "config-info-id";
