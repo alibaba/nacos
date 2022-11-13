@@ -45,6 +45,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -55,7 +56,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -88,7 +89,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
  */
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
-@Component
+@Service("externalConfigInfoPersistServiceImpl")
 public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistService {
     
     private static final String DATA_ID = "dataId";
@@ -116,7 +117,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    public ExternalConfigInfoPersistServiceImpl(HistoryConfigInfoPersistService historyConfigInfoPersistService) {
+    public ExternalConfigInfoPersistServiceImpl(
+            @Qualifier("externalHistoryConfigInfoPersistServiceImpl") HistoryConfigInfoPersistService historyConfigInfoPersistService) {
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
     }
     

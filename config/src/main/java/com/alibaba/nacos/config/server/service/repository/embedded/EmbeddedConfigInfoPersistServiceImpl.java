@@ -50,8 +50,9 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -83,7 +84,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 @SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnEmbeddedStorage.class)
-@Component
+@Service("embeddedConfigInfoPersistServiceImpl")
 public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistService {
     
     private static final String RESOURCE_CONFIG_INFO_ID = "config-info-id";
@@ -133,7 +134,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
      * @param idGeneratorManager {@link IdGeneratorManager}
      */
     public EmbeddedConfigInfoPersistServiceImpl(DatabaseOperate databaseOperate, IdGeneratorManager idGeneratorManager,
-            HistoryConfigInfoPersistService historyConfigInfoPersistService) {
+            @Qualifier("embeddedHistoryConfigInfoPersistServiceImpl") HistoryConfigInfoPersistService historyConfigInfoPersistService) {
         this.databaseOperate = databaseOperate;
         this.idGeneratorManager = idGeneratorManager;
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,

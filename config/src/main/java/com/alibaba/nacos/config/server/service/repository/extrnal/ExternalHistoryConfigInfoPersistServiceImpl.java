@@ -35,7 +35,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
@@ -56,7 +56,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
  */
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
-@Component
+@Service("externalHistoryConfigInfoPersistServiceImpl")
 public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfigInfoPersistService {
     
     private DataSourceService dataSourceService;

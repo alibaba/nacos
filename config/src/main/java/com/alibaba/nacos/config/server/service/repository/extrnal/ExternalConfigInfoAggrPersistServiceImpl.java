@@ -38,7 +38,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -61,7 +61,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
  */
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
-@Component
+@Service("externalConfigInfoAggrPersistServiceImpl")
 public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrPersistService {
     
     private DataSourceService dataSourceService;

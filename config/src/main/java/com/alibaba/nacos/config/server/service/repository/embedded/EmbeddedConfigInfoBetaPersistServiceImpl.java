@@ -36,7 +36,7 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
@@ -51,7 +51,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
  */
 @SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnEmbeddedStorage.class)
-@Component
+@Service("embeddedConfigInfoBetaPersistServiceImpl")
 public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaPersistService {
     
     private DataSourceService dataSourceService;

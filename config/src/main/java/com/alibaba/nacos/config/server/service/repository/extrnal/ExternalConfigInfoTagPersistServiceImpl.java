@@ -37,7 +37,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
@@ -53,7 +53,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
  */
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
-@Component
+@Service("externalConfigInfoTagPersistServiceImpl")
 public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPersistService {
     
     private DataSourceService dataSourceService;
