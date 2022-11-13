@@ -54,7 +54,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -137,22 +136,16 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             @Qualifier("embeddedHistoryConfigInfoPersistServiceImpl") HistoryConfigInfoPersistService historyConfigInfoPersistService) {
         this.databaseOperate = databaseOperate;
         this.idGeneratorManager = idGeneratorManager;
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
-                false);
-        NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
-        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
-    }
-    
-    /**
-     * init DataSourceService and IdGeneratorManager.
-     */
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
         idGeneratorManager.register(RESOURCE_CONFIG_INFO_ID, RESOURCE_CONFIG_HISTORY_ID,
                 RESOURCE_CONFIG_TAG_RELATION_ID, RESOURCE_APP_CONFIGDATA_RELATION_SUBS, RESOURCE_CONFIG_BETA_ID,
                 RESOURCE_NAMESPACE_ID, RESOURCE_USER_ID, RESOURCE_ROLE_ID, RESOURCE_PERMISSIONS_ID);
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+                false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
+        NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
+        
     }
     
     @Override

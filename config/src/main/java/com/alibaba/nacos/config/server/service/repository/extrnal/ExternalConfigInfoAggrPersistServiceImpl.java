@@ -43,7 +43,6 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,17 +71,13 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     
     private MapperManager mapperManager;
     
-    /**
-     * init datasource.
-     */
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        jt = dataSourceService.getJdbcTemplate();
-        tjt = dataSourceService.getTransactionTemplate();
+    public ExternalConfigInfoAggrPersistServiceImpl() {
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        this.jt = dataSourceService.getJdbcTemplate();
+        this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     @Override

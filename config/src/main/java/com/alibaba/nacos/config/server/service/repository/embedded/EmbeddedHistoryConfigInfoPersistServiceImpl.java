@@ -37,7 +37,6 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,18 +70,11 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
      */
     public EmbeddedHistoryConfigInfoPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
-        mapperManager = MapperManager.instance(isDataSourceLogEnable);
-    }
-    
-    /**
-     * init DataSourceService.
-     */
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
     }
     
     @Override

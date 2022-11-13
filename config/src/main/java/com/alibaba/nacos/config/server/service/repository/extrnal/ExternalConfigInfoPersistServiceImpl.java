@@ -61,7 +61,6 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -119,21 +118,13 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     public ExternalConfigInfoPersistServiceImpl(
             @Qualifier("externalHistoryConfigInfoPersistServiceImpl") HistoryConfigInfoPersistService historyConfigInfoPersistService) {
-        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
-    }
-    
-    /**
-     * init datasource.
-     */
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        
-        jt = dataSourceService.getJdbcTemplate();
-        tjt = dataSourceService.getTransactionTemplate();
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        this.jt = dataSourceService.getJdbcTemplate();
+        this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
     }
     
     @Override

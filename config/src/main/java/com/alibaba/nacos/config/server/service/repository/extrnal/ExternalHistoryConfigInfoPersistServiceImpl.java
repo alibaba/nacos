@@ -38,7 +38,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,18 +66,13 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     private MapperManager mapperManager;
     
-    /**
-     * init datasource.
-     */
-    @PostConstruct
-    public void init() {
-        dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        
-        jt = dataSourceService.getJdbcTemplate();
-        tjt = dataSourceService.getTransactionTemplate();
+    public ExternalHistoryConfigInfoPersistServiceImpl() {
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        this.jt = dataSourceService.getJdbcTemplate();
+        this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     @Override
