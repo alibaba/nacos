@@ -31,6 +31,14 @@ import java.sql.Timestamp;
  */
 public interface ConfigInfoBetaPersistService {
     
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
+    
     //------------------------------------------insert---------------------------------------------//
     
     /**
