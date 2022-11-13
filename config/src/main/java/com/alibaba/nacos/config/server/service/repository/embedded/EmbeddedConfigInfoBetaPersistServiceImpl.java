@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -35,6 +36,8 @@ import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
@@ -42,6 +45,9 @@ import java.util.Arrays;
 
 import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 
+@SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
+@Conditional(value = ConditionOnEmbeddedStorage.class)
+@Component
 public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaPersistService {
     
     private static final String RESOURCE_CONFIG_INFO_ID = "config-info-id";

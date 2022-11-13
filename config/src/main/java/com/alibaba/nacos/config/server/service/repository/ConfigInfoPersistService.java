@@ -38,6 +38,26 @@ import java.util.Map;
  */
 public interface ConfigInfoPersistService {
     
+    String PATTERN_STR = "*";
+    Object[] EMPTY_ARRAY = new Object[] {};
+    
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
+    
+    /**
+     * Generate fuzzy search Sql.
+     *
+     * @param s origin string
+     * @return fuzzy search Sql
+     */
+    String generateLikeArgument(String s);
+    
     //------------------------------------------insert---------------------------------------------//
     
     
