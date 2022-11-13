@@ -27,6 +27,8 @@ import java.util.List;
  */
 public interface OtherPersistService {
     
+    String PATTERN_STR = "*";
+    
     //------------------------------------------insert---------------------------------------------//
     
     /**
