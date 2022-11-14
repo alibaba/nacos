@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author lixiaoshuang
  */
-public interface OtherPersistService {
+public interface CommonPersistService {
     
     String PATTERN_STR = "*";
     
