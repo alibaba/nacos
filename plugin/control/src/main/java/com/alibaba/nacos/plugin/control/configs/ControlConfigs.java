@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ControlConfigs {
     
-    private static  ControlConfigs instance = null;
+    private static ControlConfigs instance = null;
     
     public static ControlConfigs getInstance() {
         if (instance == null) {
@@ -23,11 +23,14 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.tps.barrier.creator:localsimplecount}")
     private String tpsBarrierCreator = "localsimplecount";
     
-    @Value("${nacos.plugin.control.rule.persist.activator:internalconfigcenter}")
-    private String rulePersistActivator = "internalconfigcenter";
+    @Value("${nacos.plugin.control.connection.manager:nacos}")
+    private String connectionManager = "nacos";
     
-    @Value("${nacos.plugin.control.rule.parser:default}")
-    private String ruleParser = "default";
+    @Value("${nacos.plugin.control.rule.external.activator:internalconfigcenter}")
+    private String ruleExternalActivator = "internalconfigcenter";
+    
+    @Value("${nacos.plugin.control.rule.parser:nacos}")
+    private String ruleParser = "nacos";
     
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;
@@ -37,12 +40,12 @@ public class ControlConfigs {
         this.tpsBarrierCreator = tpsBarrierCreator;
     }
     
-    public String getRulePersistActivator() {
-        return rulePersistActivator;
+    public String getRuleExternalActivator() {
+        return ruleExternalActivator;
     }
     
-    public void setRulePersistActivator(String rulePersistActivator) {
-        this.rulePersistActivator = rulePersistActivator;
+    public void setRuleExternalActivator(String ruleExternalActivator) {
+        this.ruleExternalActivator = ruleExternalActivator;
     }
     
     public String getRuleParser() {
@@ -51,5 +54,13 @@ public class ControlConfigs {
     
     public void setRuleParser(String ruleParser) {
         this.ruleParser = ruleParser;
+    }
+    
+    public String getConnectionManager() {
+        return connectionManager;
+    }
+    
+    public void setConnectionManager(String connectionManager) {
+        this.connectionManager = connectionManager;
     }
 }

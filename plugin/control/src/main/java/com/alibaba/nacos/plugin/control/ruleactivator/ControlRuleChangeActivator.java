@@ -90,7 +90,7 @@ public class ControlRuleChangeActivator {
                 
                 if (connectionLimitRule != null) {
                     ControlManagerCenter.getInstance().getConnectionControlManager()
-                            .setConnectionLimitRule(connectionLimitRule);
+                            .applyConnectionLimitRule(connectionLimitRule);
                 } else {
                     LOGGER.info("Parse rule is null,Ignore illegal rule  :{}", limitRule);
                 }

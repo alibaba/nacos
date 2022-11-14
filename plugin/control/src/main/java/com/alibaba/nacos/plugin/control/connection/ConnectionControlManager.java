@@ -23,16 +23,22 @@ import java.util.stream.Collectors;
 /**
  * connection control manager.
  */
-public class ConnectionControlManager {
+public abstract class ConnectionControlManager {
     
-    private ConnectionLimitRule connectionLimitRule;
+    protected ConnectionLimitRule connectionLimitRule;
     
-    Collection<ConnectionMetricsCollector> metricsCollectorList;
+    protected Collection<ConnectionMetricsCollector> metricsCollectorList;
+    
+    public abstract String getName();
     
     public ConnectionControlManager() {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
         Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
                 metricsCollectorList);
+        initConnectionRule();
+    }
+    
+    private void initConnectionRule() {
         RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
@@ -54,102 +60,13 @@ public class ConnectionControlManager {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
             connectionLimitRule = new ConnectionLimitRule();
         }
-        
     }
     
     public ConnectionLimitRule getConnectionLimitRule() {
         return connectionLimitRule;
     }
     
-    public void setConnectionLimitRule(ConnectionLimitRule connectionLimitRule) {
-        this.connectionLimitRule = connectionLimitRule;
-        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionLimitRule == null ? null
-                : JacksonUtils.toJson(this.connectionLimitRule)));
-        
-    }
-    
-    private ConnectionCheckResponse checkInternal(ConnectionCheckRequest connectionCheckRequest) {
-        
-        ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
-        //limit rule check.
-        if (this.connectionLimitRule != null) {
-            String appName = connectionCheckRequest.getAppName();
-            String clientIp = connectionCheckRequest.getClientIp();
-            
-            Map<String, Integer> metricsIpCount = metricsCollectorList.stream()
-                    .collect(Collectors.toMap(ConnectionMetricsCollector::getName, a -> a.getCountForIp(clientIp)));
-            
-            int totalCountOfIp = metricsIpCount.values().stream().mapToInt(Integer::intValue).sum();
-            
-            //client ip limit check model;
-            int countLimitOfIp = connectionLimitRule.getCountLimitOfIp(clientIp);
-            if (countLimitOfIp < 0) {
-                countLimitOfIp = connectionLimitRule.getCountLimitOfApp(appName);
-            }
-            if (countLimitOfIp >= 0) {
-                if (totalCountOfIp >= countLimitOfIp) {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
-                    connectionCheckResponse.setMessage(
-                            "Specific ip check over limit,max allowed count is " + countLimitOfIp
-                                    + ",current count detail is " + metricsIpCount.toString());
-                    Loggers.CONNECTION.warn("Specific ip or app ip limit ,maxCount allowed is {}"
-                                    + ",clientIp={},appName={},source={},labels={}", countLimitOfIp,
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-                    
-                    return connectionCheckResponse;
-                } else {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_IP);
-                    connectionCheckResponse.setSuccess(true);
-                    return connectionCheckResponse;
-                }
-            }
-            
-            //default client ip limit check model;
-            int countLimitPerClientIpDefault = connectionLimitRule.getCountLimitPerClientIpDefault();
-            if (countLimitPerClientIpDefault > 0 && totalCountOfIp >= countLimitPerClientIpDefault) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
-                connectionCheckResponse.setMessage(
-                        "deny by default ip check model,max allowed count is " + countLimitPerClientIpDefault
-                                + ",current count detail is " + metricsIpCount.toString());
-                Loggers.CONNECTION
-                        .warn("connection denied by default ip limit ,maxCount allowed is  {},clientIp={},appName={},source={},labels={}",
-                                countLimitPerClientIpDefault, connectionCheckRequest.getClientIp(),
-                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                                connectionCheckRequest.getLabels());
-                return connectionCheckResponse;
-            }
-            
-            int totalCountLimit = connectionLimitRule.getCountLimit();
-            Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
-                    Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
-            int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
-            //total count check model
-            if (totalCountLimit >= 0 && totalCount >= totalCountLimit) {
-                //deny;
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_TOTAL_OVER);
-                connectionCheckResponse.setMessage(
-                        "total count over limit,max allowed count is " + totalCountLimit + ",current count detail is "
-                                + metricsTotalCount.toString());
-                Loggers.CONNECTION.warn("total count over limit,max allowed count is {},current count detail is {}"
-                                + ",detail={},clientIp={},appName={},source={},labels={}", totalCountLimit,
-                        metricsTotalCount.toString(), connectionCheckRequest.getClientIp(),
-                        connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                        connectionCheckRequest.getLabels());
-                return connectionCheckResponse;
-            }
-            
-            connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_TOTAL);
-            connectionCheckResponse.setMessage("check pass");
-            return connectionCheckResponse;
-        } else {
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
-            connectionCheckResponse.setSuccess(true);
-            return connectionCheckResponse;
-        }
-        
-    }
+    public abstract void applyConnectionLimitRule(ConnectionLimitRule connectionLimitRule);
     
     /**
      * check connection allowed.
@@ -157,103 +74,16 @@ public class ConnectionControlManager {
      * @param connectionCheckRequest connectionCheckRequest.
      * @return
      */
-    public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
-        
-        ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
-        
-        //1.interceptor pre interceptor
-        Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();
-        for (ConnectionInterceptor connectionInterceptor : interceptors) {
-            InterceptResult intercept = connectionInterceptor.preIntercept(connectionCheckRequest);
-            if (intercept.equals(InterceptResult.CHECK_PASS)) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_PRE_INTERCEPT);
-                connectionCheckResponse.setSuccess(true);
-                connectionCheckResponse.setMessage("passed by pre interceptor :" + connectionInterceptor.getName());
-                return connectionCheckResponse;
-            } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
-                connectionCheckResponse.setSuccess(false);
-                String message = String
-                        .format("denied by pre interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                                connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                                connectionCheckRequest.getLabels());
-                connectionCheckResponse.setMessage(message);
-                Loggers.CONNECTION.warn(message);
-                NotifyCenter.publishEvent(
-                        new ConnectionDeniedEvent(connectionCheckRequest, connectionCheckResponse.getCheckCode(),
-                                message));
-                
-                return connectionCheckResponse;
-            }
-        }
-        
-        //2.check for rule
-        connectionCheckResponse = checkInternal(connectionCheckRequest);
-        boolean originalSuccess = connectionCheckResponse.isSuccess();
-        String originalMsg = connectionCheckResponse.getMessage();
-        ConnectionCheckCode originalConnectionCheckCode = connectionCheckResponse.getCheckCode();
-        
-        //3.post interceptor.
-        InterceptResult interceptResult = postIntercept(connectionCheckRequest, connectionCheckResponse);
-        if (originalSuccess && InterceptResult.CHECK_DENY == interceptResult) {
-            //pass->deny
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_POST_INTERCEPT);
-            connectionCheckResponse.setSuccess(false);
-            String message = String
-                    .format("over turned, denied by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-            connectionCheckResponse.setMessage(message);
-        } else if (!originalSuccess && InterceptResult.CHECK_PASS == interceptResult) {
-            //deny->pass
-            connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_POST_INTERCEPT);
-            String message = String
-                    .format("over turned, passed by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-            connectionCheckResponse.setMessage(message);
-        } else {
-            //not changed
-            connectionCheckResponse.setCheckCode(originalConnectionCheckCode);
-            connectionCheckResponse.setSuccess(originalSuccess);
-            connectionCheckResponse.setMessage(originalMsg);
-        }
-        
-        if (!connectionCheckResponse.isSuccess()) {
-            NotifyCenter.publishEvent(
-                    new ConnectionDeniedEvent(connectionCheckRequest, connectionCheckResponse.getCheckCode(),
-                            connectionCheckResponse.getMessage()));
-        }
-        
-        return connectionCheckResponse;
-        
-    }
+    public abstract ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest);
     
-    private InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
-            ConnectionCheckResponse connectionCheckResponse) {
-        for (ConnectionInterceptor connectionInterceptor : InterceptorHolder.getInterceptors()) {
-            InterceptResult intercept = connectionInterceptor
-                    .postIntercept(connectionCheckRequest, connectionCheckResponse);
-            if (InterceptResult.CHECK_PASS.equals(intercept)) {
-                String message = String.format("pass by interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                        connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                        connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                        connectionCheckRequest.getLabels());
-                Loggers.CONNECTION.info(message);
-                return intercept;
-            } else if (InterceptResult.CHECK_DENY.equals(intercept)) {
-                String message = String.format("denied by interceptor %s ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                        connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                        connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                        connectionCheckRequest.getLabels());
-                Loggers.CONNECTION.warn(message);
-                return intercept;
-            }
-        }
-        
-        return InterceptResult.CHECK_SKIP;
-    }
+    /**
+     * post intercept.
+     *
+     * @param connectionCheckRequest
+     * @param connectionCheckResponse
+     * @return
+     */
+    public abstract InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
+            ConnectionCheckResponse connectionCheckResponse);
     
 }

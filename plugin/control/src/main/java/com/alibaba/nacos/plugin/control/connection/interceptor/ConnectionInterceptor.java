@@ -1,16 +1,30 @@
 package com.alibaba.nacos.plugin.control.connection.interceptor;
 
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 
-public interface ConnectionInterceptor {
+public abstract class ConnectionInterceptor {
+    
+    
+    boolean disabled;
+    
+    public boolean isDisabled() {
+        return disabled;
+    }
+    
+    public void setDisabled(boolean disabled) {
+        Loggers.CONTROL.warn("ConnectionInterceptor {} disabled status is set to {}", this.getClass().getSimpleName(),
+                disabled);
+        this.disabled = disabled;
+    }
     
     /**
      * get name.
      *
      * @return
      */
-    String getName();
+    public abstract String getName();
     
     /**
      * connection intercept.
@@ -18,7 +32,7 @@ public interface ConnectionInterceptor {
      * @param connectionCheckRequest connectionCheckRequest.
      * @return
      */
-    InterceptResult preIntercept(ConnectionCheckRequest connectionCheckRequest);
+    public abstract InterceptResult preIntercept(ConnectionCheckRequest connectionCheckRequest);
     
     /**
      * connection intercept.
@@ -27,6 +41,6 @@ public interface ConnectionInterceptor {
      * @param connectionCheckResponse connectionCheckResponse.
      * @return
      */
-    InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
+    public abstract InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
             ConnectionCheckResponse connectionCheckResponse);
 }

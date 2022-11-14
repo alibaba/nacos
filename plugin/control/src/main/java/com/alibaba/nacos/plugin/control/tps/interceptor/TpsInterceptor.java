@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.tps.interceptor;
 
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 
@@ -12,6 +13,7 @@ public abstract class TpsInterceptor {
     }
     
     public void setDisabled(boolean disabled) {
+        Loggers.CONTROL.warn("TpsInterceptor {} disabled status is set to {}", this.getClass().getSimpleName(), disabled);
         this.disabled = disabled;
     }
     

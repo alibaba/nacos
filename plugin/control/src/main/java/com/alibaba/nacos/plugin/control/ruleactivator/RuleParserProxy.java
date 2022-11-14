@@ -27,7 +27,7 @@ public class RuleParserProxy {
         }
         if (instance == null) {
             LOGGER.warn("Fail to rule parser of name ：" + ruleParserName);
-            instance = new DefaultRuleParser();
+            instance = new NacosRuleParser();
         }
     }
     

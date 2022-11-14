@@ -5,7 +5,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
-public class DefaultRuleParser implements RuleParser {
+public class NacosRuleParser implements RuleParser {
     
     @Override
     public TpsControlRule parseTpsRule(String ruleContent) {
@@ -22,7 +22,7 @@ public class DefaultRuleParser implements RuleParser {
     
     @Override
     public String getName() {
-        return "default";
+        return "nacos";
     }
     
 }

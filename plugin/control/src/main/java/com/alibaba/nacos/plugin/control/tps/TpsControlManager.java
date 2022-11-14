@@ -39,7 +39,7 @@ public class TpsControlManager {
     public TpsControlManager() {
         
         executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
-            Thread thread = new Thread(r, "nacos.core.remote.tps.control.reporter");
+            Thread thread = new Thread(r, "nacos.plugin.tps.control.reporter");
             thread.setDaemon(true);
             return thread;
         });

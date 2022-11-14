@@ -5,7 +5,7 @@ import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 
-public class TestLabelsWhiteListInterceptor implements ConnectionInterceptor {
+public class TestLabelsWhiteListInterceptor extends ConnectionInterceptor {
     
     @Override
     public String getName() {
