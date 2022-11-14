@@ -443,9 +443,8 @@ public class JacksonUtilsTest {
 
         byte[] bytes = JacksonUtils.toJsonBytes(restResult);
         String jsonFromBytes = ByteUtils.toString(bytes);
-        String expectedJson = "{\"code\":0,\"data\":{\"string\":\"你好，中国！\",\"integer\":999}}";
-        Assert.assertEquals(expectedJson, jsonFromBytes);
-
+        Assert.assertTrue(jsonFromBytes.contains("\"code\":0"));
+        Assert.assertTrue(jsonFromBytes.contains("\"data\":{\"string\":\"你好，中国！\",\"integer\":999}"));
         // old `toJsonBytes` method implementation:
         //     public static byte[] toJsonBytes(Object obj) {
         //        try {
@@ -457,7 +456,9 @@ public class JacksonUtilsTest {
 
         // here is a verification to compare with the old implementation
         byte[] bytesFromOldImplementation = ByteUtils.toBytes(JacksonUtils.toJson(restResult));
-        Assert.assertEquals(expectedJson, new String(bytesFromOldImplementation, Charset.forName(Constants.ENCODE)));
+        String jsonFromBytesOldImplementation = new String(bytesFromOldImplementation, Charset.forName(Constants.ENCODE));
+        Assert.assertTrue(jsonFromBytesOldImplementation.contains("\"code\":0"));
+        Assert.assertTrue(jsonFromBytesOldImplementation.contains("\"data\":{\"string\":\"你好，中国！\",\"integer\":999}"));
     }
 
     @Test

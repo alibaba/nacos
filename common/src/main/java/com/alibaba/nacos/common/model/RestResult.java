@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.common.model;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.io.Serializable;
 
 /**
@@ -24,7 +23,6 @@ import java.io.Serializable;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@JsonPropertyOrder(alphabetic = true)
 public class RestResult<T> implements Serializable {
     
     private static final long serialVersionUID = 6095433538316185017L;
