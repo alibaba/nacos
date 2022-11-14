@@ -1,2 +1,2 @@
 com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountBarrierCreator
-com.alibaba.nacos.plugin.control.tps.mse.FlowedCountBarrierCreator
+com.alibaba.nacos.plugin.control.tps.mse.MseRuleBarrierCreator

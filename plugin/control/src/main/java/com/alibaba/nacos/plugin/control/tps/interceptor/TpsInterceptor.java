@@ -13,8 +13,13 @@ public abstract class TpsInterceptor {
     }
     
     public void setDisabled(boolean disabled) {
-        Loggers.CONTROL.warn("TpsInterceptor {} disabled status is set to {}", this.getClass().getSimpleName(), disabled);
+        Loggers.CONTROL
+                .warn("TpsInterceptor {} disabled status is set to {}", this.getClass().getSimpleName(), disabled);
         this.disabled = disabled;
+    }
+    
+    public int getOrder() {
+        return 0;
     }
     
     /**

@@ -258,7 +258,6 @@ public class TpsControlManager {
                 }
             } catch (Throwable throwable) {
                 Loggers.TPS.error("Tps reporting error", throwable);
-                
             }
             
         }

@@ -6,7 +6,6 @@ import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckRespo
 
 public abstract class ConnectionInterceptor {
     
-    
     boolean disabled;
     
     public boolean isDisabled() {
@@ -17,6 +16,10 @@ public abstract class ConnectionInterceptor {
         Loggers.CONTROL.warn("ConnectionInterceptor {} disabled status is set to {}", this.getClass().getSimpleName(),
                 disabled);
         this.disabled = disabled;
+    }
+    
+    public int getOrder() {
+        return 0;
     }
     
     /**

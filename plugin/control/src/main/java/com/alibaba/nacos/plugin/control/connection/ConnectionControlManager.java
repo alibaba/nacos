@@ -1,23 +1,20 @@
 package com.alibaba.nacos.plugin.control.connection;
 
-import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
-import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptorHolder;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
-import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
-import com.alibaba.nacos.plugin.control.event.ConnectionDeniedEvent;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -31,11 +28,30 @@ public abstract class ConnectionControlManager {
     
     public abstract String getName();
     
+    private ScheduledExecutorService executorService;
+    
     public ConnectionControlManager() {
         metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
         Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
                 metricsCollectorList);
         initConnectionRule();
+        if (!metricsCollectorList.isEmpty()) {
+            initExecuteService();
+            startConnectionMetricsReport();
+        }
+        
+    }
+    
+    private void initExecuteService() {
+        executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
+            Thread thread = new Thread(r, "nacos.plugin.control.connection.reporter");
+            thread.setDaemon(true);
+            return thread;
+        });
+    }
+    
+    private void startConnectionMetricsReport() {
+        executorService.scheduleWithFixedDelay(new ConnectionMetricsReporter(), 0, 3000, TimeUnit.MILLISECONDS);
     }
     
     private void initConnectionRule() {
@@ -86,4 +102,17 @@ public abstract class ConnectionControlManager {
     public abstract InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
             ConnectionCheckResponse connectionCheckResponse);
     
+    class ConnectionMetricsReporter implements Runnable {
+        
+        @Override
+        public void run() {
+            Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
+                    Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
+            int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
+            
+            Loggers.CONNECTION.info(String.format("ConnectionMetrics, totalCount = %s, detail = %s", totalCount,
+                    metricsTotalCount.toString()));
+            
+        }
+    }
 }

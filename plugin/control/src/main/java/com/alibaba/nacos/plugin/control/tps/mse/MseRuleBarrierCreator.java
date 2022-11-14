@@ -5,14 +5,14 @@ import com.alibaba.nacos.plugin.control.tps.RuleBarrierCreator;
 
 import java.util.concurrent.TimeUnit;
 
-public class FlowedCountBarrierCreator implements RuleBarrierCreator {
+public class MseRuleBarrierCreator implements RuleBarrierCreator {
     
-    private static final FlowedCountBarrierCreator INSTANCE = new FlowedCountBarrierCreator();
+    private static final MseRuleBarrierCreator INSTANCE = new MseRuleBarrierCreator();
     
-    public FlowedCountBarrierCreator() {
+    public MseRuleBarrierCreator() {
     }
     
-    public static final FlowedCountBarrierCreator getInstance() {
+    public static final MseRuleBarrierCreator getInstance() {
         return INSTANCE;
     }
     
@@ -24,6 +24,6 @@ public class FlowedCountBarrierCreator implements RuleBarrierCreator {
     
     @Override
     public String name() {
-        return "flowedlocalcount";
+        return "mse";
     }
 }

@@ -247,7 +247,8 @@ public class ConnectionManager {
                 int currentMaxClient = isLoaderClient ? loadClient : connectionLimitRule.getCountLimit();
                 int expelCount = currentMaxClient < 0 ? 0 : Math.max(currentSdkClientCount - currentMaxClient, 0);
                 
-                LOGGER.info("Total count ={}, sdkCount={},clusterCount={}, currentLimit={}, toExpelCount={}",
+                LOGGER.info(
+                        "Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}, currentLimit={}, toExpelCount={}",
                         totalCount, currentSdkClientCount, (totalCount - currentSdkClientCount),
                         currentMaxClient + (isLoaderClient ? "(loaderCount)" : ""), expelCount);
                 
@@ -281,9 +282,8 @@ public class ConnectionManager {
                     }
                 }
                 
-                LOGGER.info("Check over limit for ip limit rule, over limit ip count={}", expelForIp.size());
-                
                 if (expelForIp.size() > 0) {
+                    LOGGER.info("Check over limit for ip limit rule, over limit ip count={}", expelForIp.size());
                     LOGGER.info("Over limit ip expel info, {}", expelForIp);
                 }
                 
@@ -408,7 +408,6 @@ public class ConnectionManager {
                 }
                 
                 //reset loader client
-                
                 if (isLoaderClient) {
                     loadClient = -1;
                     redirectAddress = null;

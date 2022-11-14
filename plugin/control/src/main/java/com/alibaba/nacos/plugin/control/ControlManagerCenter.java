@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control;
 
+import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
@@ -13,6 +14,7 @@ import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 
 import java.util.Collection;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class ControlManagerCenter {
     
@@ -61,7 +63,7 @@ public class ControlManagerCenter {
         }
         
     }
-    
+   
     private void initConnectionManager() {
         
         Collection<ConnectionControlManager> connectionControlManagers = NacosServiceLoader
@@ -124,4 +126,5 @@ public class ControlManagerCenter {
     public void reloadConnectionControlRule(boolean external) {
         NotifyCenter.publishEvent(new ConnectionLimitRuleChangeEvent(external));
     }
+    
 }
