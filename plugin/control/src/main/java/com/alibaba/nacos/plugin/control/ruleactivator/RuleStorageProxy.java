@@ -19,7 +19,7 @@ public class RuleStorageProxy {
     
     public RuleStorageProxy() {
         Collection<ExternalRuleStorage> persistRuleActivators = NacosServiceLoader.load(ExternalRuleStorage.class);
-        String rulePersistActivator = ControlConfigs.getInstance().getRuleExternalActivator();
+        String rulePersistActivator = ControlConfigs.getInstance().getRuleExternalStorage();
         
         for (ExternalRuleStorage persistRuleActivator : persistRuleActivators) {
             if (persistRuleActivator.getName().equalsIgnoreCase(rulePersistActivator)) {

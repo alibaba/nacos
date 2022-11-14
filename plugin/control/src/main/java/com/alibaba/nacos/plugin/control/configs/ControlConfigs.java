@@ -26,8 +26,8 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
     
-    @Value("${nacos.plugin.control.rule.external.activator:internalconfigcenter}")
-    private String ruleExternalActivator = "internalconfigcenter";
+    @Value("${nacos.plugin.control.rule.external.storage:internalconfigcenter}")
+    private String ruleExternalStorage = "internalconfigcenter";
     
     @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";
@@ -40,12 +40,12 @@ public class ControlConfigs {
         this.tpsBarrierCreator = tpsBarrierCreator;
     }
     
-    public String getRuleExternalActivator() {
-        return ruleExternalActivator;
+    public String getRuleExternalStorage() {
+        return ruleExternalStorage;
     }
     
-    public void setRuleExternalActivator(String ruleExternalActivator) {
-        this.ruleExternalActivator = ruleExternalActivator;
+    public void setRuleExternalStorage(String ruleExternalStorage) {
+        this.ruleExternalStorage = ruleExternalStorage;
     }
     
     public String getRuleParser() {

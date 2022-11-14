@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import org.springframework.stereotype.Component;
@@ -45,11 +46,13 @@ public class InternalConfigChangeNotifier extends Subscriber<LocalDataChangeEven
         NotifyCenter.registerToPublisher(ConnectionLimitRuleChangeEvent.class, 16384);
         NotifyCenter.registerToPublisher(TpsControlRuleChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(this);
-        
     }
     
     @Override
     public void onEvent(LocalDataChangeEvent event) {
+        if (!"internalconfigcenter".equalsIgnoreCase(ControlConfigs.getInstance().getRuleExternalStorage())) {
+            return;
+        }
         String groupKey = event.groupKey;
         String[] groupKeyElements = GroupKey.parseKey(groupKey);
         String dataId = groupKeyElements[0];
