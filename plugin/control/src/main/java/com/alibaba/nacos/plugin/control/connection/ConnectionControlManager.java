@@ -95,8 +95,8 @@ public abstract class ConnectionControlManager {
     /**
      * post intercept.
      *
-     * @param connectionCheckRequest
-     * @param connectionCheckResponse
+     * @param connectionCheckRequest  connectionCheckRequest.
+     * @param connectionCheckResponse connectionCheckResponse.
      * @return
      */
     public abstract InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,

@@ -29,9 +29,8 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
     }
     
     public NacosConnectionControlManager() {
-       super();
+        super();
     }
-    
     
     @Override
     public void applyConnectionLimitRule(ConnectionLimitRule connectionLimitRule) {
@@ -207,6 +206,7 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         
     }
     
+    @Override
     public InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
             ConnectionCheckResponse connectionCheckResponse) {
         for (ConnectionInterceptor connectionInterceptor : InterceptorHolder.getInterceptors()) {

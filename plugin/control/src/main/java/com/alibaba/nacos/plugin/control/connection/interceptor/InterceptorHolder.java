@@ -1,7 +1,6 @@
 package com.alibaba.nacos.plugin.control.connection.interceptor;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
 
 import java.util.Collection;
 import java.util.Comparator;
