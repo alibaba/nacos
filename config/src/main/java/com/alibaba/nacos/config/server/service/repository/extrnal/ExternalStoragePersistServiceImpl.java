@@ -109,6 +109,7 @@ import static com.alibaba.nacos.config.server.service.repository.RowMapperManage
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
+@Deprecated
 public class ExternalStoragePersistServiceImpl implements PersistService {
     
     private DataSourceService dataSourceService;
