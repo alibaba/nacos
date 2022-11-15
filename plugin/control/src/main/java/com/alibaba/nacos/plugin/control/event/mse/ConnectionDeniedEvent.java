@@ -1,4 +1,4 @@
-package com.alibaba.nacos.plugin.control.event;
+package com.alibaba.nacos.plugin.control.event.mse;
 
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;

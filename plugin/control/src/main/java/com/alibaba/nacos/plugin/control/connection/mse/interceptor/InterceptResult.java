@@ -1,4 +1,4 @@
-package com.alibaba.nacos.plugin.control.tps.interceptor;
+package com.alibaba.nacos.plugin.control.connection.mse.interceptor;
 
 public enum InterceptResult {
     

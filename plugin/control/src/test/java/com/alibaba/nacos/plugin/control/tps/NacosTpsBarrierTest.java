@@ -4,6 +4,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
@@ -16,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class TpsBarrierTest {
+public class NacosTpsBarrierTest {
     
     static {
         ControlConfigs.setInstance(new ControlConfigs());
@@ -46,7 +47,7 @@ public class TpsBarrierTest {
         Map<String, RuleDetail> monitorRules = new HashMap<>();
         monitorRules.put("monitorKeyRule", monitorRuleDetail);
         tpsControlRule.setMonitorKeyRule(monitorRules);
-        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
+        TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         
         //test point keys
@@ -96,7 +97,7 @@ public class TpsBarrierTest {
         Map<String, RuleDetail> monitorRules = new HashMap<>();
         monitorRules.put("monitorKeyRule", monitorRuleDetail);
         tpsControlRule.setMonitorKeyRule(monitorRules);
-        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
+        TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         System.out.println(JacksonUtils.toJson(tpsControlRule));
         //test point keys
@@ -154,7 +155,7 @@ public class TpsBarrierTest {
         monitorRules.put("monitorKeyRule_clientIp", clientIpRuleDetail);
         
         tpsControlRule.setMonitorKeyRule(monitorRules);
-        TpsBarrier tpsBarrier = new TpsBarrier(testTpsBarrier);
+        TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         
         //test point keys

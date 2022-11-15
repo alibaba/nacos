@@ -1,4 +1,4 @@
-package com.alibaba.nacos.plugin.control.connection.interceptor;
+package com.alibaba.nacos.plugin.control.connection.mse.interceptor;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 

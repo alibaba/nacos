@@ -1,8 +1,10 @@
-package com.alibaba.nacos.plugin.control.event;
+package com.alibaba.nacos.plugin.control.event.mse;
 
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.plugin.control.event.mse.ConnectionDeniedEvent;
+import com.alibaba.nacos.plugin.control.event.mse.TpsRequestDeniedEvent;
 import org.springframework.stereotype.Component;
 
 @Component

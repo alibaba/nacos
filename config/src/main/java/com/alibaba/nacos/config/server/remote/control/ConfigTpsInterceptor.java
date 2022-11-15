@@ -1,7 +1,7 @@
 package com.alibaba.nacos.config.server.remote.control;
 
-import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptResult;
-import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptResult;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 

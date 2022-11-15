@@ -55,7 +55,7 @@ public class TpsControlManager {
      */
     public synchronized void registerTpsPoint(String pointName) {
         if (!points.containsKey(pointName)) {
-            points.put(pointName, new TpsBarrier(pointName));
+            points.put(pointName, TpsBarrierCreatorProxy.getTpsBarrierCreator().createTpsBarrier(pointName));
             if (rules.containsKey(pointName)) {
                 points.get(pointName).applyRule(rules.get(pointName));
             } else {

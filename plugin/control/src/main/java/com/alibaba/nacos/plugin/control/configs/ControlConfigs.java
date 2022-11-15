@@ -23,6 +23,9 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.tps.barrier.creator:localsimplecount}")
     private String tpsBarrierCreator = "localsimplecount";
     
+    @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
+    private String tpsRuleBarrierCreator = "nacos";
+    
     @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
     
@@ -38,6 +41,14 @@ public class ControlConfigs {
     
     public void setTpsBarrierCreator(String tpsBarrierCreator) {
         this.tpsBarrierCreator = tpsBarrierCreator;
+    }
+    
+    public String getTpsRuleBarrierCreator() {
+        return tpsRuleBarrierCreator;
+    }
+    
+    public void setTpsRuleBarrierCreator(String tpsRuleBarrierCreator) {
+        this.tpsRuleBarrierCreator = tpsRuleBarrierCreator;
     }
     
     public String getRuleExternalStorage() {

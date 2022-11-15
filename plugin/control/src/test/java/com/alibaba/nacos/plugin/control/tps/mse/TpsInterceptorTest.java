@@ -1,4 +1,4 @@
-package com.alibaba.nacos.plugin.control.tps.interceptor;
+package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
@@ -63,6 +63,7 @@ public class TpsInterceptorTest {
         
         tpsControlManager.applyTpsRule(pointName, tpsControlRule);
         Assert.assertTrue(tpsControlManager.getRules().containsKey(pointName));
+        Assert.assertTrue(tpsControlManager.getRules().get(pointName).getMonitorKeyRule().containsKey("monitorkey"));
         
         //3.apply tps
         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
@@ -87,9 +88,9 @@ public class TpsInterceptorTest {
         
         tpsCheckRequest.setClientIp("127.0.0.10");
         TpsCheckResponse checkInterceptor = tpsControlManager.check(tpsCheckRequest);
-        Assert.assertEquals(TpsResultCode.PASS_BY_POST_INTERCEPTOR, checkInterceptor.getCode());
+        Assert.assertEquals(TpsResultCode.DENY_BY_PATTERN, checkInterceptor.getCode());
         
-        Assert.assertTrue(checkInterceptor.isSuccess());
+        Assert.assertFalse(checkInterceptor.isSuccess());
         
     }
 }

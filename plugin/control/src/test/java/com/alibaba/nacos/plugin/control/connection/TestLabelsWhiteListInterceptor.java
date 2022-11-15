@@ -1,7 +1,7 @@
 package com.alibaba.nacos.plugin.control.connection;
 
-import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
-import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
+import com.alibaba.nacos.plugin.control.connection.mse.interceptor.ConnectionInterceptor;
+import com.alibaba.nacos.plugin.control.connection.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 

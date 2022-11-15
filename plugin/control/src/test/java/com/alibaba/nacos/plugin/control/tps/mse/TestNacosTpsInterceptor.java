@@ -1,5 +1,7 @@
-package com.alibaba.nacos.plugin.control.tps.interceptor;
+package com.alibaba.nacos.plugin.control.tps.mse;
 
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptResult;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 

@@ -1,20 +1,14 @@
 package com.alibaba.nacos.plugin.control.connection.nacos;
 
-import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
-import com.alibaba.nacos.plugin.control.connection.interceptor.ConnectionInterceptor;
-import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptResult;
-import com.alibaba.nacos.plugin.control.connection.interceptor.InterceptorHolder;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
-import com.alibaba.nacos.plugin.control.event.ConnectionDeniedEvent;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -40,7 +34,8 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         
     }
     
-    private ConnectionCheckResponse checkInternal(ConnectionCheckRequest connectionCheckRequest) {
+    @Override
+    public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
         
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         //limit rule check.
@@ -121,115 +116,6 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
             return connectionCheckResponse;
         }
         
-    }
-    
-    /**
-     * check connection allowed.
-     *
-     * @param connectionCheckRequest connectionCheckRequest.
-     * @return
-     */
-    public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
-        
-        ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
-        
-        //1.interceptor pre interceptor
-        Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();
-        for (ConnectionInterceptor connectionInterceptor : interceptors) {
-            if (connectionInterceptor.isDisabled()) {
-                continue;
-            }
-            InterceptResult intercept = connectionInterceptor.preIntercept(connectionCheckRequest);
-            if (intercept.equals(InterceptResult.CHECK_PASS)) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_PRE_INTERCEPT);
-                connectionCheckResponse.setSuccess(true);
-                connectionCheckResponse.setMessage("passed by pre interceptor :" + connectionInterceptor.getName());
-                return connectionCheckResponse;
-            } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
-                connectionCheckResponse.setSuccess(false);
-                String message = String
-                        .format("denied by pre interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                                connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                                connectionCheckRequest.getLabels());
-                connectionCheckResponse.setMessage(message);
-                Loggers.CONNECTION.warn(message);
-                NotifyCenter.publishEvent(
-                        new ConnectionDeniedEvent(connectionCheckRequest, connectionCheckResponse.getCheckCode(),
-                                message));
-                
-                return connectionCheckResponse;
-            }
-        }
-        
-        //2.check for rule
-        connectionCheckResponse = checkInternal(connectionCheckRequest);
-        boolean originalSuccess = connectionCheckResponse.isSuccess();
-        String originalMsg = connectionCheckResponse.getMessage();
-        ConnectionCheckCode originalConnectionCheckCode = connectionCheckResponse.getCheckCode();
-        
-        //3.post interceptor.
-        InterceptResult interceptResult = postIntercept(connectionCheckRequest, connectionCheckResponse);
-        if (originalSuccess && InterceptResult.CHECK_DENY == interceptResult) {
-            //pass->deny
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_POST_INTERCEPT);
-            connectionCheckResponse.setSuccess(false);
-            String message = String
-                    .format("over turned, denied by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-            connectionCheckResponse.setMessage(message);
-        } else if (!originalSuccess && InterceptResult.CHECK_PASS == interceptResult) {
-            //deny->pass
-            connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_POST_INTERCEPT);
-            String message = String
-                    .format("over turned, passed by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-            connectionCheckResponse.setMessage(message);
-        } else {
-            //not changed
-            connectionCheckResponse.setCheckCode(originalConnectionCheckCode);
-            connectionCheckResponse.setSuccess(originalSuccess);
-            connectionCheckResponse.setMessage(originalMsg);
-        }
-        
-        if (!connectionCheckResponse.isSuccess()) {
-            NotifyCenter.publishEvent(
-                    new ConnectionDeniedEvent(connectionCheckRequest, connectionCheckResponse.getCheckCode(),
-                            connectionCheckResponse.getMessage()));
-        }
-        
-        return connectionCheckResponse;
-        
-    }
-    
-    @Override
-    public InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
-            ConnectionCheckResponse connectionCheckResponse) {
-        for (ConnectionInterceptor connectionInterceptor : InterceptorHolder.getInterceptors()) {
-            InterceptResult intercept = connectionInterceptor
-                    .postIntercept(connectionCheckRequest, connectionCheckResponse);
-            if (InterceptResult.CHECK_PASS.equals(intercept)) {
-                String message = String.format("pass by interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                        connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                        connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                        connectionCheckRequest.getLabels());
-                Loggers.CONNECTION.info(message);
-                return intercept;
-            } else if (InterceptResult.CHECK_DENY.equals(intercept)) {
-                String message = String.format("denied by interceptor %s ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                        connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                        connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                        connectionCheckRequest.getLabels());
-                Loggers.CONNECTION.warn(message);
-                return intercept;
-            }
-        }
-        
-        return InterceptResult.CHECK_SKIP;
     }
     
 }

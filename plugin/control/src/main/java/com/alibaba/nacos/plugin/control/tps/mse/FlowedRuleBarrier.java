@@ -2,8 +2,8 @@ package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
 import com.alibaba.nacos.plugin.control.tps.TpsMetrics;
-import com.alibaba.nacos.plugin.control.tps.interceptor.InterceptorHolder;
-import com.alibaba.nacos.plugin.control.tps.interceptor.TpsInterceptor;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptorHolder;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.nacos.SimpleCountRuleBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
