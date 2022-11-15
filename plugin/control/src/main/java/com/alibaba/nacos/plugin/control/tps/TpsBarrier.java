@@ -31,7 +31,7 @@ public abstract class TpsBarrier {
                 .createRuleBarrier(pointName, pointName, "", TimeUnit.SECONDS, RuleModel.FUZZY.name());
     }
     
-    static protected RuleBarrierCreator ruleBarrierCreator;
+    protected static RuleBarrierCreator ruleBarrierCreator;
     
     static {
         String tpsBarrierCreator = ControlConfigs.getInstance().getTpsBarrierCreator();

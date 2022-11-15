@@ -3,7 +3,6 @@ package com.alibaba.nacos.plugin.control.connection.mse;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
-import com.alibaba.nacos.plugin.control.connection.nacos.NacosConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
@@ -41,7 +40,6 @@ public class MseConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCheckCode());
         
     }
-    
     
     @Test
     public void testDeniedByTotalCount() {
@@ -85,7 +83,6 @@ public class MseConnectionControlManagerTest {
         
     }
     
-
     @Test
     public void testDeniedByIpTotalCountSpecific() {
         
@@ -133,7 +130,6 @@ public class MseConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.PASS_BY_POST_INTERCEPT, check.getCheckCode());
         
     }
-    
     
     @Test
     public void testPassByIpTotalCountSpecific() {

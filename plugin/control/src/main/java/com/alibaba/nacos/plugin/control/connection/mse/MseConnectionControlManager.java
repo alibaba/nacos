@@ -39,10 +39,8 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                 }
             }
             
-            
         }
     }
-    
     
     private ConnectionCheckResponse checkInternal(ConnectionCheckRequest connectionCheckRequest) {
         
@@ -222,11 +220,9 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                 connectionDeniedEvent.setMonitorModel(true);
             }
             NotifyCenter.publishEvent(connectionDeniedEvent);
-            
         }
         
         return connectionCheckResponse;
-        
     }
     
     private InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,

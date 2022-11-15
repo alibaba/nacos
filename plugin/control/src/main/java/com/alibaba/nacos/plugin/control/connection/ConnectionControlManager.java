@@ -4,7 +4,6 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.connection.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
@@ -91,7 +90,6 @@ public abstract class ConnectionControlManager {
      * @return
      */
     public abstract ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest);
-    
     
     class ConnectionMetricsReporter implements Runnable {
         

@@ -1,5 +1,5 @@
 package com.alibaba.nacos.plugin.control.connection.mse;
-import com.alibaba.nacos.plugin.control.connection.mse.CpuTestUtils;
+
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;

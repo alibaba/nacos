@@ -3,6 +3,8 @@ package com.alibaba.nacos.plugin.control.tps;
 public interface TpsBarrierCreator {
     
     /**
+     * get name.
+     *
      * @return
      */
     String getName();
@@ -10,7 +12,7 @@ public interface TpsBarrierCreator {
     /**
      * create tps barrier.
      *
-     * @param pointName
+     * @param pointName pointName.
      * @return
      */
     TpsBarrier createTpsBarrier(String pointName);

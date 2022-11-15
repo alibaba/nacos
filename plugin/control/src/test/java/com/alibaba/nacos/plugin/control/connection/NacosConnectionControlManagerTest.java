@@ -2,7 +2,6 @@ package com.alibaba.nacos.plugin.control.connection;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
-import com.alibaba.nacos.plugin.control.connection.mse.CpuTestUtils;
 import com.alibaba.nacos.plugin.control.connection.nacos.NacosConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
@@ -40,7 +39,6 @@ public class NacosConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCheckCode());
         
     }
-    
     
     @Test
     public void testDeniedByTotalCount() {
@@ -81,7 +79,6 @@ public class NacosConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.DENY_BY_IP_OVER, check.getCheckCode());
         
     }
-    
 
     @Test
     public void testDeniedByIpTotalCountSpecific() {
@@ -106,7 +103,6 @@ public class NacosConnectionControlManagerTest {
         Assert.assertEquals(ConnectionCheckCode.DENY_BY_IP_OVER, check.getCheckCode());
         
     }
-    
     
     @Test
     public void testPassByIpTotalCountSpecific() {
