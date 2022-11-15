@@ -34,8 +34,8 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     }
     
     @Override
-    public void add(long timestamp, long count) {
-        createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
+    public long add(long timestamp, long count) {
+        return createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
     }
     
     @Override

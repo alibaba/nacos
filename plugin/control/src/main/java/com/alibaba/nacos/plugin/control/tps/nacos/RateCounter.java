@@ -35,7 +35,7 @@ public abstract class RateCounter {
      * @param count     count.
      * @return
      */
-    public abstract void add(long timestamp, long count);
+    public abstract long add(long timestamp, long count);
     
     /**
      * add count for the second of timestamp with up limit.

@@ -1,6 +1,9 @@
 package com.alibaba.nacos.plugin.control.ruleactivator.mse;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.connection.mse.MseConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.NacosRuleParser;
 import com.alibaba.nacos.plugin.control.tps.mse.MseRuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
@@ -41,5 +44,11 @@ public class MseRuleParser extends NacosRuleParser {
             }
         }
         return tpsControlRule;
+    }
+    
+    @Override
+    public ConnectionLimitRule parseConnectionRule(String ruleContent) {
+        return StringUtils.isBlank(ruleContent) ? new MseConnectionLimitRule()
+                : JacksonUtils.toObj(ruleContent, MseConnectionLimitRule.class);
     }
 }

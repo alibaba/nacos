@@ -1,24 +1,22 @@
-package com.alibaba.nacos.plugin.control.connection;
-
+package com.alibaba.nacos.plugin.control.connection.mse;
+import com.alibaba.nacos.plugin.control.connection.mse.CpuTestUtils;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 
-public class TestLabelsWhiteListInterceptor extends ConnectionInterceptor {
+public class TestCpuLoadInterceptor extends ConnectionInterceptor {
     
     @Override
     public String getName() {
-        return "testlabelwhitelist";
+        return "cputestinterceptor";
     }
     
     @Override
     public InterceptResult preIntercept(ConnectionCheckRequest connectionCheckRequest) {
         
-        if (connectionCheckRequest.getLabels() != null && "Y"
-                .equalsIgnoreCase(connectionCheckRequest.getLabels().get("nolimitlabel")) && connectionCheckRequest
-                .getSource().equalsIgnoreCase("cluster")) {
-            return InterceptResult.CHECK_PASS;
+        if (CpuTestUtils.cpuOverLoad) {
+            return InterceptResult.CHECK_DENY;
         } else {
             return InterceptResult.CHECK_SKIP;
         }
@@ -27,10 +25,6 @@ public class TestLabelsWhiteListInterceptor extends ConnectionInterceptor {
     @Override
     public InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,
             ConnectionCheckResponse connectionCheckResponse) {
-        if (!connectionCheckResponse.isSuccess() && connectionCheckRequest.getLabels() != null && "Y"
-                .equalsIgnoreCase(connectionCheckRequest.getLabels().get("overturned"))) {
-            return InterceptResult.CHECK_PASS;
-        }
-        return null;
+        return InterceptResult.CHECK_SKIP;
     }
 }

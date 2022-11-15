@@ -10,12 +10,22 @@ public class TpsRequestDeniedEvent extends Event {
     
     private TpsResultCode tpsResultCode;
     
+    private boolean isMonitorModel;
+    
     private String message;
     
     public TpsRequestDeniedEvent(TpsCheckRequest tpsCheckRequest, TpsResultCode tpsResultCode, String message) {
         this.tpsCheckRequest = tpsCheckRequest;
         this.tpsResultCode = tpsResultCode;
         this.message = message;
+    }
+    
+    public boolean isMonitorModel() {
+        return isMonitorModel;
+    }
+    
+    public void setMonitorModel(boolean monitorModel) {
+        isMonitorModel = monitorModel;
     }
     
     public TpsResultCode getTpsResultCode() {

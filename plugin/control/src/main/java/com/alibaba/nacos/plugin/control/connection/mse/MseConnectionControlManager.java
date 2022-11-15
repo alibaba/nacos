@@ -39,6 +39,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                 }
             }
             
+            
         }
     }
     
@@ -66,7 +67,8 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                     connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
                     connectionCheckResponse.setMessage(
                             "Specific ip check over limit,max allowed count is " + countLimitOfIp
-                                    + ",current count detail is " + metricsIpCount.toString());
+                                    + ",current count detail is " + metricsIpCount.toString() + "，monitorMode="
+                                    + isMonitorMode());
                     Loggers.CONNECTION.warn("Specific ip or app ip limit ,maxCount allowed is {}"
                                     + ",clientIp={},appName={},source={},labels={}", countLimitOfIp,
                             connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
@@ -126,6 +128,11 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
         
     }
     
+    private boolean isMonitorMode() {
+        return (super.connectionLimitRule instanceof MseConnectionLimitRule
+                && !((MseConnectionLimitRule) super.connectionLimitRule).isInterceptMode());
+    }
+    
     /**
      * check connection allowed.
      *
@@ -158,9 +165,14 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                                 connectionCheckRequest.getLabels());
                 connectionCheckResponse.setMessage(message);
                 Loggers.CONNECTION.warn(message);
-                NotifyCenter.publishEvent(
-                        new ConnectionDeniedEvent(connectionCheckRequest, connectionCheckResponse.getCheckCode(),
-                                message));
+                ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
+                        connectionCheckResponse.getCheckCode(), message);
+                if (isMonitorMode()) {
+                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+                    connectionCheckResponse.setSuccess(true);
+                    connectionDeniedEvent.setMonitorModel(true);
+                }
+                NotifyCenter.publishEvent(connectionDeniedEvent);
                 
                 return connectionCheckResponse;
             }
@@ -200,9 +212,17 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
         }
         
         if (!connectionCheckResponse.isSuccess()) {
-            NotifyCenter.publishEvent(
-                    new ConnectionDeniedEvent(connectionCheckRequest, connectionCheckResponse.getCheckCode(),
-                            connectionCheckResponse.getMessage()));
+            ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
+                    connectionCheckResponse.getCheckCode(), connectionCheckResponse.getMessage());
+            boolean monitorMode = isMonitorMode();
+            if (monitorMode) {
+                //pass by monitor.
+                connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+                connectionCheckResponse.setSuccess(true);
+                connectionDeniedEvent.setMonitorModel(true);
+            }
+            NotifyCenter.publishEvent(connectionDeniedEvent);
+            
         }
         
         return connectionCheckResponse;

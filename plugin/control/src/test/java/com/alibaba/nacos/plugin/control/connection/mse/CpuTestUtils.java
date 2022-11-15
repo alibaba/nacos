@@ -1,4 +1,4 @@
-package com.alibaba.nacos.plugin.control.connection;
+package com.alibaba.nacos.plugin.control.connection.mse;
 
 public class CpuTestUtils {
     

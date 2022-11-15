@@ -10,6 +10,8 @@ public class ConnectionDeniedEvent extends Event {
     
     private ConnectionCheckCode connectionCheckCode;
     
+    private boolean isMonitorModel;
+    
     private String message;
     
     public ConnectionDeniedEvent(ConnectionCheckRequest connectionCheckRequest, ConnectionCheckCode connectionCheckCode,
@@ -17,6 +19,14 @@ public class ConnectionDeniedEvent extends Event {
         this.connectionCheckRequest = connectionCheckRequest;
         this.connectionCheckCode = connectionCheckCode;
         this.message = message;
+    }
+    
+    public boolean isMonitorModel() {
+        return isMonitorModel;
+    }
+    
+    public void setMonitorModel(boolean monitorModel) {
+        isMonitorModel = monitorModel;
     }
     
     public ConnectionCheckRequest getConnectionCheckRequest() {

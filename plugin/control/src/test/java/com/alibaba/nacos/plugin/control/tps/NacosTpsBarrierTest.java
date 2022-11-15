@@ -131,20 +131,20 @@ public class NacosTpsBarrierTest {
         tpsControlRule.setPointName(testTpsBarrier);
         
         RuleDetail ruleDetail = new RuleDetail();
-        ruleDetail.setMaxCount(5);
+        ruleDetail.setMaxCount(6);
         ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setModel(RuleDetail.MODEL_FUZZY);
         tpsControlRule.setPointRule(ruleDetail);
         
         RuleDetail connectionIdRuleDetail = new RuleDetail();
-        connectionIdRuleDetail.setMaxCount(6);
+        connectionIdRuleDetail.setMaxCount(5);
         connectionIdRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         connectionIdRuleDetail.setPeriod(TimeUnit.SECONDS);
         connectionIdRuleDetail.setModel(RuleDetail.MODEL_FUZZY);
         connectionIdRuleDetail.setPattern("connectionId:simple12*");
         RuleDetail clientIpRuleDetail = new RuleDetail();
-        clientIpRuleDetail.setMaxCount(6);
+        clientIpRuleDetail.setMaxCount(5);
         clientIpRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         clientIpRuleDetail.setPeriod(TimeUnit.SECONDS);
         clientIpRuleDetail.setModel(RuleDetail.MODEL_FUZZY);
@@ -165,7 +165,7 @@ public class NacosTpsBarrierTest {
         tpsCheckRequest.setClientIp("127.0.0.1");
         tpsCheckRequest.setTimestamp(timeMillis);
         
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 5; i++) {
             TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
         }

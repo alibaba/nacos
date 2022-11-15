@@ -58,11 +58,23 @@ public class MseTpsBarrier extends TpsBarrier {
                 if (InterceptResult.CHECK_PASS.equals(intercept)) {
                     preInterceptPassed = true;
                 } else if (InterceptResult.CHECK_DENY.equals(intercept)) {
-                    Loggers.TPS.warn("[{}]denied by pre interceptor ={},clientIp={},connectionId={},keys={}",
-                            tpsCheckRequest.getPointName(), tpsInterceptor.getName(), tpsCheckRequest.getClientIp(),
-                            tpsCheckRequest.getConnectionId(), tpsCheckRequest.getMonitorKeys());
-                    return new TpsCheckResponse(false, TpsResultCode.DENY_BY_POINT,
+                    boolean monitorType = getPointBarrier().isMonitorType();
+                    
+                    Loggers.TPS
+                            .warn("[{}]denied by pre interceptor ={},clientIp={},connectionId={},keys={},monitorType={}",
+                                    tpsCheckRequest.getPointName(), tpsInterceptor.getName(),
+                                    tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
+                                    tpsCheckRequest.getMonitorKeys(), monitorType);
+                    TpsCheckResponse tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.DENY_BY_POINT,
                             "deny by interceptor :" + tpsInterceptor.getName());
+                    TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(tpsCheckRequest,
+                            tpsCheckResponse.getCode(), tpsCheckResponse.getMessage());
+                    if (monitorType) {
+                        tpsCheckResponse.setSuccess(true);
+                        tpsRequestDeniedEvent.setMonitorModel(true);
+                    }
+                    NotifyCenter.publishEvent(tpsRequestDeniedEvent);
+                    return tpsCheckResponse;
                 }
             }
         }
@@ -101,6 +113,14 @@ public class MseTpsBarrier extends TpsBarrier {
                                             patternRuleBarrier.getRuleName(), tpsCheckRequest.getClientIp(),
                                             tpsCheckRequest.getConnectionId(), monitorKey);
                         }
+                        
+                        if (TpsResultCode.PASS_BY_MONITOR.equals(patternCheckResponse.getCode())) {
+                            TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(tpsCheckRequest,
+                                    patternCheckResponse.getCode(), patternCheckResponse.getMessage());
+                            tpsRequestDeniedEvent.setMonitorModel(true);
+                            NotifyCenter.publishEvent(tpsRequestDeniedEvent);
+                        }
+                        
                     } else {
                         patternSuccess = false;
                         denyPatternRate = patternRuleBarrier;
@@ -190,14 +210,21 @@ public class MseTpsBarrier extends TpsBarrier {
                             tpsInterceptor.getName(), tpsCheckRequest.getMonitorKeys());
                     return InterceptResult.CHECK_PASS;
                 } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
-                    String message = String
-                            .format("[%s] denied by interceptor =%s,keys=%s", tpsCheckRequest.getPointName(),
-                                    tpsInterceptor.getName(), tpsCheckRequest.getMonitorKeys());
+                    boolean monitorType = getPointBarrier().isMonitorType();
+                    
+                    String message = String.format("[%s] denied by interceptor =%s,keys=%s,monitorType=%s",
+                            tpsCheckRequest.getPointName(), tpsInterceptor.getName(), tpsCheckRequest.getMonitorKeys(),
+                            monitorType);
                     Loggers.TPS.warn(message);
-                    NotifyCenter.publishEvent(
-                            new TpsRequestDeniedEvent(tpsCheckRequest, TpsResultCode.DENY_BY_POST_INTERCEPTOR,
-                                    message));
-                    return InterceptResult.CHECK_DENY;
+                    TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(tpsCheckRequest,
+                            TpsResultCode.DENY_BY_POST_INTERCEPTOR, message);
+                    if (getPointBarrier().isMonitorType()) {
+                        tpsRequestDeniedEvent.setMonitorModel(true);
+                    }
+                    
+                    NotifyCenter.publishEvent(tpsRequestDeniedEvent);
+                    
+                    return monitorType ? InterceptResult.CHECK_SKIP : InterceptResult.CHECK_DENY;
                 }
             }
         }

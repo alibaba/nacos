@@ -71,11 +71,12 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         RateCounter currentRateCounter = getRateCounter(barrierCheckRequest);
         if (isMonitorType() || barrierCheckRequest.isMonitorOnly()) {
             boolean overLimit = false;
-            if (currentRateCounter.getCount(barrierCheckRequest.getTimestamp()) + barrierCheckRequest.getCount() > this
-                    .getMaxCount()) {
+            
+            long addResult = currentRateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
+            if (addResult > this.getMaxCount()) {
                 overLimit = true;
             }
-            currentRateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
+            
             return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.PASS_BY_POINT,
                     "success");
         } else {
