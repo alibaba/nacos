@@ -21,7 +21,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
@@ -50,7 +50,7 @@ import java.util.regex.Pattern;
 public class NamespaceController {
     
     @Autowired
-    private PersistService persistService;
+    private CommonPersistService commonPersistService;
     
     @Autowired
     private NamespaceOperationService namespaceOperationService;
@@ -121,7 +121,7 @@ public class NamespaceController {
         if (StringUtils.isBlank(namespaceId)) {
             return false;
         }
-        return (persistService.tenantInfoCountByTenantId(namespaceId) > 0);
+        return (commonPersistService.tenantInfoCountByTenantId(namespaceId) > 0);
     }
     
     /**

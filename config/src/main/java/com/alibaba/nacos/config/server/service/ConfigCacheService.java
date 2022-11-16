@@ -22,7 +22,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -69,7 +69,7 @@ public class ConfigCacheService {
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     @Autowired
-    private static PersistService persistService;
+    private static ConfigInfoPersistService configInfoPersistService;
     
     public static int groupCount() {
         return CACHE.size();
@@ -296,7 +296,7 @@ public class ConfigCacheService {
         String aggreds = null;
         try {
             if (PropertyUtil.isEmbeddedStorage()) {
-                ConfigInfoBase config = persistService
+                ConfigInfoBase config = configInfoPersistService
                         .findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     aggreds = config.getContent();
@@ -314,7 +314,7 @@ public class ConfigCacheService {
         String clientIpWhitelist = null;
         try {
             if (PropertyUtil.isEmbeddedStorage()) {
-                ConfigInfoBase config = persistService
+                ConfigInfoBase config = configInfoPersistService
                         .findConfigInfoBase(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     clientIpWhitelist = config.getContent();
@@ -333,7 +333,7 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (PropertyUtil.isEmbeddedStorage()) {
-                ConfigInfoBase config = persistService
+                ConfigInfoBase config = configInfoPersistService
                         .findConfigInfoBase(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
