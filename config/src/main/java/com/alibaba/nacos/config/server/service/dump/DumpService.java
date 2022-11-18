@@ -40,7 +40,12 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
@@ -88,7 +93,17 @@ public abstract class DumpService {
     
     protected DumpAllTagProcessor dumpAllTagProcessor;
     
-    protected final PersistService persistService;
+    protected ConfigInfoPersistService configInfoPersistService;
+    
+    protected CommonPersistService commonPersistService;
+    
+    protected HistoryConfigInfoPersistService historyConfigInfoPersistService;
+    
+    protected ConfigInfoAggrPersistService configInfoAggrPersistService;
+    
+    protected ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    protected ConfigInfoTagPersistService configInfoTagPersistService;
     
     protected final ServerMemberManager memberManager;
     
@@ -126,11 +141,19 @@ public abstract class DumpService {
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param persistService {@link PersistService}
      * @param memberManager  {@link ServerMemberManager}
      */
-    public DumpService(PersistService persistService, ServerMemberManager memberManager) {
-        this.persistService = persistService;
+    public DumpService(ConfigInfoPersistService configInfoPersistService, CommonPersistService commonPersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoAggrPersistService configInfoAggrPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.commonPersistService = commonPersistService;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
+        this.configInfoAggrPersistService = configInfoAggrPersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
         this.memberManager = memberManager;
         this.processor = new DumpProcessor(this);
         this.dumpAllProcessor = new DumpAllProcessor(this);
@@ -149,8 +172,20 @@ public abstract class DumpService {
         DynamicDataSource.getInstance().getDataSource();
     }
     
-    public PersistService getPersistService() {
-        return persistService;
+    public ConfigInfoPersistService getConfigInfoPersistService() {
+        return configInfoPersistService;
+    }
+    
+    public ConfigInfoBetaPersistService getConfigInfoBetaPersistService() {
+        return configInfoBetaPersistService;
+    }
+    
+    public ConfigInfoTagPersistService getConfigInfoTagPersistService() {
+        return configInfoTagPersistService;
+    }
+    
+    public HistoryConfigInfoPersistService getHistoryConfigInfoPersistService() {
+        return historyConfigInfoPersistService;
     }
     
     public ServerMemberManager getMemberManager() {
@@ -184,7 +219,7 @@ public abstract class DumpService {
                         Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                         int pageSize = 1000;
                         LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-                        persistService.removeConfigHistory(startTime, pageSize);
+                        historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
                     } catch (Throwable e) {
                         LOGGER.error("clearConfigHistory error : {}", e.toString());
                     }
@@ -197,18 +232,18 @@ public abstract class DumpService {
                 // update Beta cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
                 DiskUtil.clearAllBeta();
-                if (persistService.isExistTable(BETA_TABLE_NAME)) {
+                if (commonPersistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
                 DiskUtil.clearAllTag();
-                if (persistService.isExistTable(TAG_TABLE_NAME)) {
+                if (commonPersistService.isExistTable(TAG_TABLE_NAME)) {
                     dumpAllTagProcessor.process(new DumpAllTagTask());
                 }
                 
                 // add to dump aggr
-                List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
+                List<ConfigInfoChanged> configList = configInfoAggrPersistService.findAllAggrGroup();
                 if (configList != null && !configList.isEmpty()) {
                     total = configList.size();
                     List<List<ConfigInfoChanged>> splitList = splitList(configList, INIT_THREAD_COUNT);
@@ -293,7 +328,7 @@ public abstract class DumpService {
                         String dataId = dg[0];
                         String group = dg[1];
                         String tenant = dg[2];
-                        ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
+                        ConfigInfoWrapper configInfo = configInfoPersistService.queryConfigInfo(dataId, group, tenant);
                         ConfigCacheService.dumpChange(dataId, group, tenant, configInfo.getContent(),
                                 configInfo.getLastModified(), configInfo.getEncryptedDataKey());
                     }
@@ -424,10 +459,10 @@ public abstract class DumpService {
                 String tenant = configInfo.getTenant();
                 try {
                     List<ConfigInfoAggr> datumList = new ArrayList<>();
-                    int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
+                    int rowCount = configInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                        Page<ConfigInfoAggr> page = persistService
+                        Page<ConfigInfoAggr> page = configInfoAggrPersistService
                                 .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
@@ -445,14 +480,14 @@ public abstract class DumpService {
                         String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
                         
                         if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
-                            persistService.insertOrUpdate(null, null, cf, time, null, false);
+                            configInfoPersistService.insertOrUpdate(null, null, cf, time, null, false);
                             LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                     datumList.size(), cf.getContent().length(), cf.getMd5(),
                                     ContentUtils.truncateContent(cf.getContent()));
                         }
                     } else {
                         // remove config info
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
+                        configInfoPersistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn(
                                 "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                         + group);

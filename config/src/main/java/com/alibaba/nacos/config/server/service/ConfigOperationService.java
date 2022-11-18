@@ -25,7 +25,9 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -49,12 +51,20 @@ import java.util.Map;
 @Service
 public class ConfigOperationService {
     
-    private PersistService persistService;
+    private ConfigInfoPersistService configInfoPersistService;
+    
+    private ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOperationService.class);
     
-    public ConfigOperationService(PersistService persistService) {
-        this.persistService = persistService;
+    public ConfigOperationService(ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
     }
     
     /**
@@ -84,23 +94,22 @@ public class ConfigOperationService {
         
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             if (StringUtils.isBlank(configForm.getTag())) {
-                persistService.insertOrUpdate(configRequestInfo.getSrcIp(), configForm.getSrcUser(), configInfo, time,
-                        configAdvanceInfo, false);
+                configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(), configForm.getSrcUser(),
+                        configInfo, time, configAdvanceInfo, false);
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
                                 configForm.getNamespaceId(), time.getTime()));
             } else {
-                persistService.insertOrUpdateTag(configInfo, configForm.getTag(), configRequestInfo.getSrcIp(),
-                        configForm.getSrcUser(), time, false);
+                configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
+                        configRequestInfo.getSrcIp(), configForm.getSrcUser(), time, false);
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
                                 configForm.getNamespaceId(), configForm.getTag(), time.getTime()));
             }
         } else {
             // beta publish
-            persistService
-                    .insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(),
-                            configForm.getSrcUser(), time, false);
+            configInfoBetaPersistService.insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(),
+                    configRequestInfo.getSrcIp(), configForm.getSrcUser(), time, false);
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
                             time.getTime()));
@@ -118,9 +127,9 @@ public class ConfigOperationService {
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) {
         if (StringUtils.isBlank(tag)) {
-            persistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
+            configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
         } else {
-            persistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
+            configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();
         ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp,
