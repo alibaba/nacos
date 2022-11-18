@@ -26,6 +26,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,7 +42,7 @@ public class DiskServiceUnitTest {
     
     @Before
     public void setUp() throws IOException {
-        this.tempFile = File.createTempFile("diskServiceTest", "tmp");
+        this.tempFile = Files.createTempFile("diskServiceTest", "tmp").toFile();
         this.path = tempFile.getParent();
         this.diskService = new DiskUtil();
     }

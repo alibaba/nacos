@@ -25,12 +25,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class ConcurrentDiskUtilTest {
     
     @Test
     public void testReadAndWrite() throws IOException {
-        File tempFile = File.createTempFile("aaa", "bbb");
+        File tempFile = Files.createTempFile("aaa", "bbb").toFile();
         String fileName = tempFile.getAbsolutePath();
         String content = "hello";
         String charset = "UTF-8";
@@ -41,7 +42,7 @@ public class ConcurrentDiskUtilTest {
     
     @Test
     public void testReadAndWrite2() throws IOException {
-        File tempFile = File.createTempFile("aaa", "bbb");
+        File tempFile = Files.createTempFile("aaa", "bbb").toFile();
         String content = "hello";
         String charset = "UTF-8";
         ConcurrentDiskUtil.writeFileContent(tempFile, content, charset);
