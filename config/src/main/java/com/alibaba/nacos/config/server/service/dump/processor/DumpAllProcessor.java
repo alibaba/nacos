@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
@@ -43,15 +43,15 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     
     public DumpAllProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
-        this.persistService = dumpService.getPersistService();
+        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
     }
     
     @Override
     public boolean process(NacosTask task) {
-        long currentMaxId = persistService.findConfigMaxId();
+        long currentMaxId = configInfoPersistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
-            Page<ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId, PAGE_SIZE);
+            Page<ConfigInfoWrapper> page = configInfoPersistService.findAllConfigInfoFragment(lastMaxId, PAGE_SIZE);
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
@@ -89,5 +89,5 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     
     final DumpService dumpService;
     
-    final PersistService persistService;
+    final ConfigInfoPersistService configInfoPersistService;
 }

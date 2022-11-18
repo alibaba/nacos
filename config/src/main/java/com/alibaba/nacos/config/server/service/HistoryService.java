@@ -20,7 +20,8 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import org.springframework.stereotype.Service;
@@ -37,10 +38,14 @@ import java.util.Objects;
 @Service
 public class HistoryService {
     
-    private final PersistService persistService;
+    private final HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
-    public HistoryService(PersistService persistService) {
-        this.persistService = persistService;
+    private final ConfigInfoPersistService configInfoPersistService;
+    
+    public HistoryService(HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoPersistService configInfoPersistService) {
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
+        this.configInfoPersistService = configInfoPersistService;
     }
     
     /**
@@ -48,7 +53,7 @@ public class HistoryService {
      */
     public Page<ConfigHistoryInfo> listConfigHistory(String dataId, String group, String namespaceId, Integer pageNo,
             Integer pageSize) {
-        return persistService.findConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
+        return historyConfigInfoPersistService.findConfigHistory(dataId, group, namespaceId, pageNo, pageSize);
     }
     
     /**
@@ -56,7 +61,7 @@ public class HistoryService {
      */
     public ConfigHistoryInfo getConfigHistoryInfo(String dataId, String group, String namespaceId, Long nid)
             throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = persistService.detailConfigHistory(nid);
+        ConfigHistoryInfo configHistoryInfo = historyConfigInfoPersistService.detailConfigHistory(nid);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
@@ -76,7 +81,7 @@ public class HistoryService {
      */
     public ConfigHistoryInfo getPreviousConfigHistoryInfo(String dataId, String group, String namespaceId, Long id)
             throws AccessException {
-        ConfigHistoryInfo configHistoryInfo = persistService.detailPreviousConfigHistory(id);
+        ConfigHistoryInfo configHistoryInfo = historyConfigInfoPersistService.detailPreviousConfigHistory(id);
         if (Objects.isNull(configHistoryInfo)) {
             return null;
         }
@@ -89,7 +94,7 @@ public class HistoryService {
      * Query configs list by namespace.
      */
     public List<ConfigInfoWrapper> getConfigListByNamespace(String namespaceId) {
-        return persistService.queryConfigInfoByNamespace(namespaceId);
+        return configInfoPersistService.queryConfigInfoByNamespace(namespaceId);
     }
     
     /**

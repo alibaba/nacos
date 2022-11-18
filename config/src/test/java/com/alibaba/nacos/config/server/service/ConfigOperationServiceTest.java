@@ -20,6 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -52,10 +55,20 @@ public class ConfigOperationServiceTest {
     @Mock
     private PersistService persistService;
     
+    @Mock
+    private ConfigInfoPersistService configInfoPersistService;
+    
+    @Mock
+    private ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    @Mock
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
     @Before
     public void setUp() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
-        this.configOperationService = new ConfigOperationService(persistService);
+        this.configOperationService = new ConfigOperationService(configInfoPersistService, configInfoTagPersistService,
+                configInfoBetaPersistService);
     }
     
     @Test
