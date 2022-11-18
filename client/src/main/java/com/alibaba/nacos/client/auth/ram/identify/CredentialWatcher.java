@@ -174,6 +174,7 @@ public class CredentialWatcher {
                 SPAS_LOGGER.error("[26] Unable to load credential file, appName:" + appName
                         + "Unable to load credential file " + propertyPath, e);
                 propertyPath = null;
+                return;
             } finally {
                 try {
                     propertiesIS.close();
