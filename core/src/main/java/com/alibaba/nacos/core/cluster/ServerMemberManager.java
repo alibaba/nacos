@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
@@ -219,10 +220,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
      * @throws NacosException exception.
      */
     public void switchAddressPlugin(String pluginName) throws NacosException {
-        this.addressPlugin =  AddressPluginManager.getInstance()
-                .findAuthServiceSpiImpl(pluginName).get();
+        this.addressPlugin = AddressPluginManager.getInstance()
+                .findAuthServiceSpiImpl(pluginName).orElseThrow(() -> new NacosException(500, "can't find address plugin: " + pluginName));
         registerPluginListener();
-        
         this.addressPlugin.start();
         List<String> serverListTemp = this.addressPlugin.getServerList();
         memberChange(MemberUtil.readServerConf(serverListTemp));

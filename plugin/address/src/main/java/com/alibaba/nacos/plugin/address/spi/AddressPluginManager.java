@@ -64,8 +64,8 @@ public class AddressPluginManager {
     
     /**
      * Get address plugin by plugin name.
-     *@Param: plugin name.
-     *@return: address plugin.
+     * @Param plugin name.
+     * @return address plugin.
      */
     public Optional<AddressPlugin> findAuthServiceSpiImpl(String pluginName) {
         return Optional.ofNullable(addressPluginMap.get(pluginName));
