@@ -321,7 +321,7 @@ public class AsyncNotifyService {
             
             long delayed = System.currentTimeMillis() - task.getLastModified();
             LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.target, task.getDataId(),
-                    task.getGroup(), task.getLastModified(), ex.toString());
+                    task.getGroup(), task.getLastModified(), ex);
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
                             InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
@@ -396,7 +396,7 @@ public class AsyncNotifyService {
         public void onException(Throwable ex) {
             long delayed = System.currentTimeMillis() - task.getLastModified();
             LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.member.getAddress(),
-                    task.getDataId(), task.getGroup(), task.getLastModified(), ex.toString());
+                    task.getDataId(), task.getGroup(), task.getLastModified(), ex);
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
                             InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
@@ -415,7 +415,7 @@ public class AsyncNotifyService {
         
         private String target;
         
-        public String url;
+        private String url;
         
         private boolean isBeta;
         
@@ -458,7 +458,6 @@ public class AsyncNotifyService {
                 url = url + "&tag=" + tag;
             }
             failCount = 0;
-            // this.executor = executor;
         }
         
         @Override
