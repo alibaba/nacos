@@ -54,6 +54,7 @@ public class NetUtilsTest {
 
         System.setProperty("com.alibaba.nacos.client.local.preferHostname", "true");
         assertEquals(hostname, NetUtils.localIP());
+        assertEquals(hostname, NetUtils.localIP());
     }
 
 }
