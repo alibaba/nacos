@@ -205,7 +205,7 @@ public class WatchFileCenter {
         
         @Override
         public void run() {
-            while (watch) {
+            while (watch && !this.isInterrupted()) {
                 try {
                     final WatchKey watchKey = watchService.take();
                     final List<WatchEvent<?>> events = watchKey.pollEvents();
