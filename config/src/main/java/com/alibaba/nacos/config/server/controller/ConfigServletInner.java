@@ -30,7 +30,9 @@ import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -75,11 +77,19 @@ public class ConfigServletInner {
     
     private final LongPollingService longPollingService;
     
-    private final PersistService persistService;
+    private  ConfigInfoPersistService configInfoPersistService;
     
-    public ConfigServletInner(LongPollingService longPollingService, PersistService persistService) {
+    private  ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    private  ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    public ConfigServletInner(LongPollingService longPollingService, ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService) {
         this.longPollingService = longPollingService;
-        this.persistService = persistService;
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
     }
     
     /**
@@ -185,7 +195,7 @@ public class ConfigServletInner {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
                     if (PropertyUtil.isDirectRead()) {
-                        configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
+                        configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
@@ -200,7 +210,7 @@ public class ConfigServletInner {
                                 lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
@@ -211,7 +221,7 @@ public class ConfigServletInner {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
+                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
@@ -240,7 +250,7 @@ public class ConfigServletInner {
                             }
                         }
                         if (PropertyUtil.isDirectRead()) {
-                            configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+                            configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }

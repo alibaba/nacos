@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
@@ -49,7 +49,7 @@ public class NamespaceControllerTest {
     private NamespaceController namespaceController;
     
     @Mock
-    private PersistService persistService;
+    private CommonPersistService commonPersistService;
     
     @Mock
     private NamespaceOperationService namespaceOperationService;
@@ -115,8 +115,8 @@ public class NamespaceControllerTest {
     
     @Test
     public void testCheckNamespaceIdExist() throws Exception {
-        when(persistService.tenantInfoCountByTenantId("public")).thenReturn(1);
-        when(persistService.tenantInfoCountByTenantId("123")).thenReturn(0);
+        when(commonPersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+        when(commonPersistService.tenantInfoCountByTenantId("123")).thenReturn(0);
         assertFalse(namespaceController.checkNamespaceIdExist(""));
         assertTrue(namespaceController.checkNamespaceIdExist("public"));
         assertFalse(namespaceController.checkNamespaceIdExist("123"));
