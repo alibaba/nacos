@@ -325,10 +325,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             final Checksum checksum = new CRC64();
             byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
             LocalFileMeta fileMeta = reader.getFileMeta(SNAPSHOT_ARCHIVE);
-            if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)) {
-                if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
-                    throw new IllegalArgumentException("Snapshot checksum failed");
-                }
+            if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)
+                    && !Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+                throw new IllegalArgumentException("Snapshot checksum failed");
             }
             loadSnapshot(snapshotBytes);
             Loggers.RAFT.info("snapshot success to load from : {}", readerPath);
@@ -338,9 +337,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         protected InputStream dumpSnapshot() {
             Map<String, IpPortBasedClient> clientMap = clientManager.showClients();
             ConcurrentHashMap<String, ClientSyncData> clone = new ConcurrentHashMap<>(INITIAL_CAPACITY);
-            clientMap.forEach((clientId, client) -> {
-                clone.put(clientId, client.generateSyncData());
-            });
+            clientMap.forEach((clientId, client) -> clone.put(clientId, client.generateSyncData()));
             return new ByteArrayInputStream(serializer.serialize(clone));
         }
         
