@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -204,7 +205,7 @@ public class WatchFileCenter {
         
         @Override
         public void run() {
-            while (watch) {
+            while (watch && !this.isInterrupted()) {
                 try {
                     final WatchKey watchKey = watchService.take();
                     final List<WatchEvent<?>> events = watchKey.pollEvents();
@@ -227,7 +228,7 @@ public class WatchFileCenter {
                             }
                         }
                     });
-                } catch (InterruptedException ignore) {
+                } catch (InterruptedException | ClosedWatchServiceException ignore) {
                     Thread.interrupted();
                 } catch (Throwable ex) {
                     LOGGER.error("An exception occurred during file listening : ", ex);
