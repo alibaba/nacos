@@ -161,7 +161,7 @@ public class HttpClientManager {
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConnectionRequestTimeout(500).setReadTimeOutMillis(500)
                     .setConTimeOutMillis(500).setIoThreadCount(1).setContentCompressionEnabled(false).setMaxRedirects(0)
-                    .setMaxConnTotal(-1).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
+                    .setMaxConnTotal(5000).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
         }
         
         @Override
