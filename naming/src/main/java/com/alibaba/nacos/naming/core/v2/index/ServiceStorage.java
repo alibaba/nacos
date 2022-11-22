@@ -162,10 +162,9 @@ public class ServiceStorage {
         metadata.ifPresent(instanceMetadata -> {
             if (switchDomain.isLatestEffective()
                     && instanceInfo.getLastUpdateTime() > instanceMetadata.getLastUpdateTime()) {
-                InstanceUtil.updateInstanceMetadataIfAbsent(result, instanceMetadata);
-            } else {
-                InstanceUtil.updateInstanceMetadata(result, instanceMetadata);
+                return;
             }
+            InstanceUtil.updateInstanceMetadata(result, instanceMetadata);
         });
         return result;
     }
