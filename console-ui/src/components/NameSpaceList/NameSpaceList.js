@@ -192,7 +192,7 @@ class NameSpaceList extends React.Component {
         className={namespaceList.length ? 'namespacewrapper' : ''}
         style={{
           display: 'flex',
-          flex-wrap: 'wrap',
+          flexWrap: 'wrap',
           alignItems: 'center',
           marginTop: 8,
           marginBottom: 16,
