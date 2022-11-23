@@ -189,7 +189,7 @@ public class NacosConfigService implements ConfigService {
             
             return content;
         } catch (NacosException ioe) {
-            if (NacosException.NO_RIGHT == ioe.getErrCode()) {
+            if (NacosException.NO_RIGHT == ioe.getErrCode() || NacosException.CLIENT_DISCONNECT == ioe.getErrCode()) {
                 throw ioe;
             }
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
