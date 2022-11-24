@@ -1113,8 +1113,8 @@ class ConfigurationManagement extends React.Component {
               style={{
                 position: 'relative',
                 marginTop: 10,
-                height: this.state.isAdvancedQuery ? 'auto' : 42,
-                overflow: 'hidden',
+                height: 'auto',
+                overflow: 'visible',
               }}
             >
               <Form inline>
@@ -1207,7 +1207,16 @@ class ConfigurationManagement extends React.Component {
                   </Button>
                 </Form.Item>
                 <br />
-                <Form.Item style={this.inApp ? { display: 'none' } : {}} label={locale.application}>
+                <Form.Item
+                  style={
+                    this.inApp
+                      ? { display: 'none' }
+                      : this.state.isAdvancedQuery
+                      ? {}
+                      : { display: 'none' }
+                  }
+                  label={locale.application}
+                >
                   <Input
                     htmlType={'text'}
                     placeholder={locale.app1}
@@ -1217,7 +1226,10 @@ class ConfigurationManagement extends React.Component {
                     onPressEnter={() => this.getData()}
                   />
                 </Form.Item>
-                <Form.Item label={locale.tags}>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.tags}
+                >
                   <Select
                     style={{ width: 200 }}
                     size="medium"
