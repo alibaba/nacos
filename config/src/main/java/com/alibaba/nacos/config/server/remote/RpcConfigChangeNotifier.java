@@ -171,8 +171,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         public void run() {
             tryTimes++;
             TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-            tpsCheckRequest.setClientIp(clientIp);
-            tpsCheckRequest.setConnectionId(connectionId);
+           
             tpsCheckRequest.setPointName(POINT_CONFIG_PUSH);
             if (!tpsControlManager.check(tpsCheckRequest).isSuccess()) {
                 push(this);
@@ -181,8 +180,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                     @Override
                     public void onSuccess() {
                         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-                        tpsCheckRequest.setClientIp(clientIp);
-                        tpsCheckRequest.setConnectionId(connectionId);
+                        
                         tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_SUCCESS);
                         tpsControlManager.check(tpsCheckRequest);
                     }
@@ -190,8 +188,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                     @Override
                     public void onFail(Throwable e) {
                         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-                        tpsCheckRequest.setClientIp(clientIp);
-                        tpsCheckRequest.setConnectionId(connectionId);
+                        
                         tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_FAIL);
                         tpsControlManager.check(tpsCheckRequest);
                         Loggers.REMOTE_PUSH.warn("Push fail", e);

@@ -2,12 +2,15 @@ package com.alibaba.nacos.plugin.control.connection.nacos;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,6 +39,14 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
     
     @Override
     public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
+        
+        if (!ControlConfigs.getInstance().isConnectionEnabled()) {
+            ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
+            connectionCheckResponse.setSuccess(true);
+            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+            connectionCheckResponse.setMessage("connection check not enabled.");
+            return connectionCheckResponse;
+        }
         
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         //limit rule check.

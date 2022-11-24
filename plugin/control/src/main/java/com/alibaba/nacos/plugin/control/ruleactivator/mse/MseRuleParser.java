@@ -6,6 +6,7 @@ import com.alibaba.nacos.plugin.control.connection.mse.MseConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.NacosRuleParser;
 import com.alibaba.nacos.plugin.control.tps.mse.MseRuleDetail;
+import com.alibaba.nacos.plugin.control.tps.mse.MseTpsControlRule;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -20,9 +21,14 @@ public class MseRuleParser extends NacosRuleParser {
         return "flowed";
     }
     
+    private MseTpsControlRule parse(String ruleContent) {
+        return StringUtils.isBlank(ruleContent) ? new MseTpsControlRule()
+                : JacksonUtils.toObj(ruleContent, MseTpsControlRule.class);
+    }
+    
     @Override
     public TpsControlRule parseTpsRule(String ruleContent) {
-        TpsControlRule tpsControlRule = super.parseTpsRule(ruleContent);
+        MseTpsControlRule tpsControlRule = parse(ruleContent);
         if (tpsControlRule == null) {
             return null;
         }
@@ -33,16 +39,6 @@ public class MseRuleParser extends NacosRuleParser {
             tpsControlRule.setPointRule(mseRuleDetail);
         }
         
-        if (jsonNode.get("monitorKeyRule") != null) {
-            Map<String, MseRuleDetail> monitorKeyRule = JacksonUtils
-                    .toObj(jsonNode.get("monitorKeyRule").toPrettyString(),
-                            new TypeReference<Map<String, MseRuleDetail>>() {
-                            });
-            Map<String, RuleDetail> monitorKeyRule1 = tpsControlRule.getMonitorKeyRule();
-            for (Map.Entry<String, MseRuleDetail> entry : monitorKeyRule.entrySet()) {
-                monitorKeyRule1.put(entry.getKey(), entry.getValue());
-            }
-        }
         return tpsControlRule;
     }
     

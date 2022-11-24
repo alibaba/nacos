@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.tps.mse.interceptor;
 
 import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.plugin.control.tps.mse.MseTpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 
@@ -39,17 +40,18 @@ public abstract class TpsInterceptor {
     /**
      * tps pre intercept method.
      *
-     * @param tpsCheckRequest tpsCheckRequest.
+     * @param mseTpsCheckRequest mseTpsCheckRequest.
      * @return if return denied or passed,return directly.
      */
-    public abstract InterceptResult preIntercept(TpsCheckRequest tpsCheckRequest);
+    public abstract InterceptResult preIntercept(MseTpsCheckRequest mseTpsCheckRequest);
     
     /**
      * tps post intercept method,the returned InterceptResult  will influence the final tps check response.
      *
-     * @param tpsCheckRequest  tpsCheckRequest.
-     * @param tpsCheckResponse tpsCheckResponse.
+     * @param mseTpsCheckRequest mseTpsCheckRequest.
+     * @param tpsCheckResponse   tpsCheckResponse.
      * @return
      */
-    public abstract InterceptResult postIntercept(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse);
+    public abstract InterceptResult postIntercept(MseTpsCheckRequest mseTpsCheckRequest,
+            TpsCheckResponse tpsCheckResponse);
 }

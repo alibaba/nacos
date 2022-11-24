@@ -1,12 +1,9 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
-import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
-import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,19 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
+import static com.alibaba.nacos.plugin.control.tps.mse.MseRuleDetail.MODEL_FUZZY;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FlowTpsControlManagerTest {
     
-    TpsControlManager tpsControlManager = new TpsControlManager();
+    TpsControlManager tpsControlManager = new MseTpsControlManager();
     
     String pointName = "TEST_POINT_NAME" + System.currentTimeMillis();
-    
-    static {
-        ControlConfigs.setInstance(new ControlConfigs());
-        
-    }
     
     @Before
     public void setUp() {
@@ -47,13 +39,13 @@ public class FlowTpsControlManagerTest {
         
         tpsControlManager.applyTpsRule(pointName, null);
         //1.register rule
-        RuleDetail ruleDetail = new MseRuleDetail();
+        MseRuleDetail ruleDetail = new MseRuleDetail();
         ruleDetail.setMaxCount(10000);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
         ruleDetail.setModel(MODEL_FUZZY);
         ruleDetail.setPattern("test:prefix*");
-        TpsControlRule tpsControlRule = new TpsControlRule();
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
         
@@ -70,7 +62,7 @@ public class FlowTpsControlManagerTest {
         Assert.assertTrue(tpsControlManager.getRules().containsKey(pointName));
         
         //3.apply tps
-        FlowedTpsCheckRequest tpsCheckRequest = new FlowedTpsCheckRequest();
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
         tpsCheckRequest.setCount(2);
         tpsCheckRequest.setFlow(15);
         tpsCheckRequest.setPointName(pointName);

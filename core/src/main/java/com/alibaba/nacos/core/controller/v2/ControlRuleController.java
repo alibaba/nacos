@@ -1,5 +1,6 @@
 package com.alibaba.nacos.core.controller.v2;
 
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
@@ -10,6 +11,8 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Commons;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
@@ -79,6 +82,7 @@ public class ControlRuleController {
      * @param external  external.
      * @return
      */
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @PostMapping(value = "/tps")
     public RestResult<Boolean> updateTpsRule(@RequestParam(value = "pointname") String pointName,
             @RequestParam(value = "rulecontent") String content, @RequestParam(value = "external") Boolean external) {
@@ -107,6 +111,7 @@ public class ControlRuleController {
      * @param external  external.
      * @return
      */
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @PostMapping(value = "/tps/reload/current")
     public RestResult<Void> reloadTpsRule(@RequestParam(value = "pointname") String pointName,
             @RequestParam(value = "external") Boolean external) {
@@ -114,6 +119,7 @@ public class ControlRuleController {
         return RestResultUtils.success();
     }
     
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @PostMapping(value = "/tps/reload/cluster")
     public RestResult<Map<String, Boolean>> reloadClusterTpsRule(@RequestParam(value = "pointname") String pointName,
             @RequestParam(value = "external") Boolean external) throws Exception {
@@ -145,6 +151,7 @@ public class ControlRuleController {
      * @param external external.
      * @return
      */
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @PostMapping(value = "/connection")
     public RestResult<Boolean> updateConnectionRule(@RequestParam(value = "rulecontent") String content,
             @RequestParam(value = "external") Boolean external) {
@@ -165,12 +172,14 @@ public class ControlRuleController {
         
     }
     
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @PostMapping(value = "/connection/reload/current")
     public RestResult<Void> reloadConnectionRule(@RequestParam(value = "external") Boolean external) throws Exception {
         ControlManagerCenter.getInstance().reloadConnectionControlRule(external);
         return RestResultUtils.success();
     }
     
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     @PostMapping(value = "/connection/reload/cluster")
     public RestResult<Map<String, Boolean>> reloadClusterConnectionRule(
             @RequestParam(value = "external") Boolean external) throws Exception {

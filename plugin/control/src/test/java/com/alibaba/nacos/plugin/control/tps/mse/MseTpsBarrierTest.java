@@ -1,7 +1,10 @@
-package com.alibaba.nacos.plugin.control.tps;
+package com.alibaba.nacos.plugin.control.tps.mse;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.MonitorType;
+import com.alibaba.nacos.plugin.control.tps.TpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
@@ -9,34 +12,51 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class NacosTpsBarrierTest {
+public class MseTpsBarrierTest {
     
     @Test
     public void testNormalPointPassAndMonitorKeyDeny() {
         String testTpsBarrier = "test_barrier";
         
-        TpsControlRule tpsControlRule = new TpsControlRule();
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
         
-        RuleDetail ruleDetail = new RuleDetail();
+        MseRuleDetail ruleDetail = new MseRuleDetail();
         ruleDetail.setMaxCount(6);
         ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
         tpsControlRule.setPointRule(ruleDetail);
-        
-        RuleDetail monitorRuleDetail = new RuleDetail();
+    
+        MseRuleDetail monitorRuleDetail = new MseRuleDetail();
         monitorRuleDetail.setMaxCount(5);
         monitorRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         monitorRuleDetail.setPeriod(TimeUnit.SECONDS);
-   
-        TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
+        monitorRuleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
+        monitorRuleDetail.setPattern("test:simple12*");
+        
+        Map<String, MseRuleDetail> monitorRules = new HashMap<>();
+        monitorRules.put("monitorKeyRule", monitorRuleDetail);
+        tpsControlRule.setMonitorKeyRule(monitorRules);
+        TpsBarrier tpsBarrier = new MseTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         
         //test point keys
         long timeMillis = System.currentTimeMillis();
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        MonitorKey monitorKey = new MonitorKey() {
+            @Override
+            public String getType() {
+                return "test";
+            }
+        };
+        monitorKey.setKey("simple12");
+        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
         tpsCheckRequest.setTimestamp(timeMillis);
         
         for (int i = 0; i < 5; i++) {
@@ -51,30 +71,44 @@ public class NacosTpsBarrierTest {
     
     @Test
     public void testNormalPointDenyAndMonitorKeyPass() {
-        String testTpsBarrier = "test_barrier";
-        
-        TpsControlRule tpsControlRule = new TpsControlRule();
+        String testTpsBarrier = "interceptortest";
+    
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
         
-        RuleDetail ruleDetail = new RuleDetail();
+        MseRuleDetail ruleDetail = new MseRuleDetail();
         ruleDetail.setMaxCount(5);
         ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
         tpsControlRule.setPointRule(ruleDetail);
-        
-        RuleDetail monitorRuleDetail = new RuleDetail();
+    
+        MseRuleDetail monitorRuleDetail = new MseRuleDetail();
         monitorRuleDetail.setMaxCount(6);
         monitorRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         monitorRuleDetail.setPeriod(TimeUnit.SECONDS);
+        monitorRuleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
+        monitorRuleDetail.setPattern("test:simple12*");
         
-        TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
+        Map<String, MseRuleDetail> monitorRules = new HashMap<>();
+        monitorRules.put("monitorKeyRule", monitorRuleDetail);
+        tpsControlRule.setMonitorKeyRule(monitorRules);
+        TpsBarrier tpsBarrier = new MseTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         System.out.println(JacksonUtils.toJson(tpsControlRule));
         //test point keys
         long timeMillis = System.currentTimeMillis();
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
-        
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        MonitorKey monitorKey = new MonitorKey() {
+            @Override
+            public String getType() {
+                return "test";
+            }
+        };
+        monitorKey.setKey("simple12");
+        tpsCheckRequest.setMonitorKeys(new ArrayList<>(CollectionUtils.list(monitorKey)));
         tpsCheckRequest.setTimestamp(timeMillis);
+        tpsCheckRequest.setPointName("interceptortest");
         
         for (int i = 0; i < 5; i++) {
             TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
@@ -89,32 +123,43 @@ public class NacosTpsBarrierTest {
     @Test
     public void testNormalConnectionAndClientIpMonitor() {
         String testTpsBarrier = "test_barrier";
-        
-        TpsControlRule tpsControlRule = new TpsControlRule();
+    
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
-        
-        RuleDetail ruleDetail = new RuleDetail();
+    
+        MseRuleDetail ruleDetail = new MseRuleDetail();
         ruleDetail.setMaxCount(6);
         ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
         tpsControlRule.setPointRule(ruleDetail);
-        
-        RuleDetail connectionIdRuleDetail = new RuleDetail();
+    
+        MseRuleDetail connectionIdRuleDetail = new MseRuleDetail();
         connectionIdRuleDetail.setMaxCount(5);
         connectionIdRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         connectionIdRuleDetail.setPeriod(TimeUnit.SECONDS);
-       
-        RuleDetail clientIpRuleDetail = new RuleDetail();
+        connectionIdRuleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
+        connectionIdRuleDetail.setPattern("connectionId:simple12*");
+        MseRuleDetail clientIpRuleDetail = new MseRuleDetail();
         clientIpRuleDetail.setMaxCount(5);
         clientIpRuleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         clientIpRuleDetail.setPeriod(TimeUnit.SECONDS);
-       
-        TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
+        clientIpRuleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
+        clientIpRuleDetail.setPattern("clientIp:127.0.0.1");
+        
+        Map<String, MseRuleDetail> monitorRules = new HashMap<>();
+        monitorRules.put("monitorKeyRule_conn", connectionIdRuleDetail);
+        monitorRules.put("monitorKeyRule_clientIp", clientIpRuleDetail);
+        
+        tpsControlRule.setMonitorKeyRule(monitorRules);
+        TpsBarrier tpsBarrier = new MseTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
         
         //test point keys
         long timeMillis = System.currentTimeMillis();
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        tpsCheckRequest.setConnectionId("simple123");
+        tpsCheckRequest.setClientIp("127.0.0.1");
         tpsCheckRequest.setTimestamp(timeMillis);
         
         for (int i = 0; i < 5; i++) {

@@ -3,6 +3,7 @@ package com.alibaba.nacos.plugin.control.tps;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
@@ -12,7 +13,6 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,14 +27,14 @@ public class TpsControlManager {
     /**
      * point name -> tps barrier.
      */
-    private final Map<String, TpsBarrier> points = new ConcurrentHashMap<>(16);
+    protected final Map<String, TpsBarrier> points = new ConcurrentHashMap<>(16);
     
     /**
      * point name -> tps control rule.
      */
-    private final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
+    protected final Map<String, TpsControlRule> rules = new ConcurrentHashMap<>(16);
     
-    private ScheduledExecutorService executorService;
+    protected ScheduledExecutorService executorService;
     
     public TpsControlManager() {
         
@@ -44,8 +44,11 @@ public class TpsControlManager {
             return thread;
         });
         
+        startTpsReport();
+    }
+    
+    protected void startTpsReport() {
         executorService.scheduleWithFixedDelay(new TpsMetricsReporter(), 0, 900, TimeUnit.MILLISECONDS);
-        
     }
     
     /**
@@ -64,7 +67,7 @@ public class TpsControlManager {
         }
     }
     
-    private void initTpsRule(String pointName) {
+    protected void initTpsRule(String pointName) {
         RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
         
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
@@ -118,19 +121,21 @@ public class TpsControlManager {
      * @return check current tps is allowed.
      */
     public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
+        if (!ControlConfigs.getInstance().isTpsEnabled()) {
+            return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "tps control not enabled");
+        }
         
         if (points.containsKey(tpsRequest.getPointName())) {
             try {
                 return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
             } catch (Throwable throwable) {
-                Loggers.TPS.warn("[{}]apply tps error,clientIp={},connectionId={},keys={},error={}",
-                        tpsRequest.getPointName(), tpsRequest.getClientIp(), tpsRequest.getConnectionId(),
-                        tpsRequest.getMonitorKeys(), throwable);
+                Loggers.TPS.warn("[{}]apply tps error,error={}", tpsRequest.getPointName(), throwable);
             }
         }
         return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "skip");
         
     }
+    
     
     class TpsMetricsReporter implements Runnable {
         
@@ -179,67 +184,6 @@ public class TpsControlManager {
                                 .append(metrics.getPeriod()).append("|").append(formatString).append("|")
                                 .append(metrics.getCounter().getPassCount()).append("|")
                                 .append(metrics.getCounter().getDeniedCount()).append("|").append("\n");
-                    }
-                    List<RuleBarrier> patternBarriers = tpsBarrier.getPatternBarriers();
-                    
-                    for (RuleBarrier tpsPatternBarrier : patternBarriers) {
-                        TpsMetrics patternMetrics = tpsPatternBarrier
-                                .getMetrics(now - tpsPatternBarrier.getPeriod().toMillis(1));
-                        if (patternMetrics == null) {
-                            continue;
-                        }
-                        
-                        //already reported.
-                        if (patternMetrics.getPeriod() == TimeUnit.SECONDS) {
-                            if (lastReportSecond != 0L && lastReportSecond == patternMetrics.getTimeStamp()) {
-                                continue;
-                            }
-                        }
-                        if (patternMetrics.getPeriod() == TimeUnit.MINUTES) {
-                            if (lastReportMinutes != 0L && lastReportMinutes == patternMetrics.getTimeStamp()) {
-                                continue;
-                            }
-                            tempMinutes = patternMetrics.getTimeStamp();
-                        }
-                        if (patternMetrics.getPeriod() == TimeUnit.HOURS) {
-                            if (lastReportHours != 0L && lastReportHours == patternMetrics.getTimeStamp()) {
-                                continue;
-                            }
-                            tempHours = patternMetrics.getTimeStamp();
-                        }
-                        
-                        //check if print detail log.
-                        boolean printDetail = false;
-                        
-                        String patternMonitorName = tpsPatternBarrier.getRuleName();
-                        if (rules != null && rules.get(pointName) != null
-                                && rules.get(pointName).getMonitorKeyRule() != null
-                                && rules.get(pointName).getMonitorKeyRule().get(patternMonitorName) != null) {
-                            printDetail = rules.get(pointName).getMonitorKeyRule().get(patternMonitorName).isPrintLog();
-                        }
-                        
-                        if (!printDetail) {
-                            continue;
-                        }
-                        TpsMetrics.Counter fuzzyCounter = patternMetrics.getCounter();
-                        if (fuzzyCounter != null) {
-                            stringBuilder.append(pointName).append("|").append(patternMonitorName).append("|")
-                                    .append("fuzzy").append("|").append(patternMetrics.getPeriod()).append("|")
-                                    .append(formatString).append("|").append(fuzzyCounter.getPassCount()).append("|")
-                                    .append(fuzzyCounter.getDeniedCount()).append("|").append("\n");
-                        }
-                        
-                        Map<String, TpsMetrics.Counter> protoKeyCounters = patternMetrics.getProtoKeyCounter();
-                        if (protoKeyCounters != null && !protoKeyCounters.isEmpty()) {
-                            for (Map.Entry<String, TpsMetrics.Counter> protoKeyCounter : protoKeyCounters.entrySet()) {
-                                
-                                stringBuilder.append(pointName).append("|").append(patternMonitorName).append("|")
-                                        .append("proto").append("|").append(patternMetrics.getPeriod()).append("|")
-                                        .append(formatString).append("|").append(protoKeyCounter.getKey()).append("|")
-                                        .append(protoKeyCounter.getValue().getSimpleLog()).append("|").append("\n");
-                            }
-                            
-                        }
                     }
                 }
                 

@@ -1,5 +1,6 @@
 package com.alibaba.nacos.config.server.remote.control;
 
+import com.alibaba.nacos.plugin.control.tps.mse.MseTpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
@@ -18,12 +19,12 @@ public class ConfigTpsInterceptor extends TpsInterceptor {
     }
     
     @Override
-    public InterceptResult preIntercept(TpsCheckRequest tpsCheckRequest) {
+    public InterceptResult preIntercept(MseTpsCheckRequest mseTpsCheckRequest) {
         return null;
     }
     
     @Override
-    public InterceptResult postIntercept(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
+    public InterceptResult postIntercept(MseTpsCheckRequest mseTpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
         return null;
     }
 }

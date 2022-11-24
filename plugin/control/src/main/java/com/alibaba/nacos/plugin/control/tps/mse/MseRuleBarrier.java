@@ -6,9 +6,9 @@ import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountRuleBarrier;
 
 import java.util.concurrent.TimeUnit;
 
-public class FlowedLocalSimpleCountRuleBarrier extends FlowedRuleBarrier {
+public class MseRuleBarrier extends FlowedRuleBarrier {
     
-    public FlowedLocalSimpleCountRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
+    public MseRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
             String model) {
         super(pointName, ruleName, pattern, period, model);
     }

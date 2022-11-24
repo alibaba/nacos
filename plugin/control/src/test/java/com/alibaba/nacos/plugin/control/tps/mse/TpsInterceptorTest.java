@@ -1,14 +1,10 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
-import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
-import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,17 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.plugin.control.tps.rule.RuleDetail.MODEL_FUZZY;
+import static com.alibaba.nacos.plugin.control.tps.mse.MseRuleDetail.MODEL_FUZZY;
 
 public class TpsInterceptorTest {
     
     TpsControlManager tpsControlManager = new TpsControlManager();
     
     String pointName = "interceptortest";
-    
-    static {
-        ControlConfigs.setInstance(new ControlConfigs());
-    }
     
     @Before
     public void setUp() {
@@ -43,17 +35,17 @@ public class TpsInterceptorTest {
     @Test
     public void testPassByMonitor() {
         //1.register rule
-        RuleDetail ruleDetail = new RuleDetail();
+        MseRuleDetail ruleDetail = new MseRuleDetail();
         ruleDetail.setMaxCount(10000);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
         ruleDetail.setModel(MODEL_FUZZY);
         ruleDetail.setPattern("test:prefix*");
-        TpsControlRule tpsControlRule = new TpsControlRule();
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
         
-        RuleDetail ruleDetailMonitor = new RuleDetail();
+        MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
         ruleDetailMonitor.setMaxCount(20);
         ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
         ruleDetailMonitor.setMonitorType(MonitorType.INTERCEPT.getType());
@@ -63,10 +55,11 @@ public class TpsInterceptorTest {
         
         tpsControlManager.applyTpsRule(pointName, tpsControlRule);
         Assert.assertTrue(tpsControlManager.getRules().containsKey(pointName));
-        Assert.assertTrue(tpsControlManager.getRules().get(pointName).getMonitorKeyRule().containsKey("monitorkey"));
+        Assert.assertTrue(((MseTpsControlRule) tpsControlManager.getRules().get(pointName)).getMonitorKeyRule()
+                .containsKey("monitorkey"));
         
         //3.apply tps
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
         tpsCheckRequest.setCount(2);
         tpsCheckRequest.setPointName(pointName);
         List<MonitorKey> monitorKeyList = new ArrayList<>();

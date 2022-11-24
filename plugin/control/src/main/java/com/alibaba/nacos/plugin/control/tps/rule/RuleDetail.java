@@ -4,19 +4,10 @@ import java.util.concurrent.TimeUnit;
 
 public class RuleDetail {
     
-    private String pattern;
     
     long maxCount = -1;
     
-    boolean printLog = false;
-    
     TimeUnit period = TimeUnit.SECONDS;
-    
-    public static final String MODEL_FUZZY = "FUZZY";
-    
-    public static final String MODEL_PROTO = "PROTO";
-    
-    String model = MODEL_FUZZY;
     
     /**
      * monitor/intercept.
@@ -25,30 +16,6 @@ public class RuleDetail {
     
     public RuleDetail() {
     
-    }
-    
-    public String getPattern() {
-        return pattern;
-    }
-    
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
-    }
-    
-    public boolean isPrintLog() {
-        return printLog;
-    }
-    
-    public void setPrintLog(boolean printLog) {
-        this.printLog = printLog;
-    }
-    
-    public String getModel() {
-        return model;
-    }
-    
-    public void setModel(String model) {
-        this.model = model;
     }
     
     public TimeUnit getPeriod() {

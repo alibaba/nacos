@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.connection.mse;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.InterceptResult;
@@ -140,6 +141,14 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
     public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
         
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
+        
+        if (!ControlConfigs.getInstance().isConnectionEnabled()) {
+            connectionCheckResponse = new ConnectionCheckResponse();
+            connectionCheckResponse.setSuccess(true);
+            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+            connectionCheckResponse.setMessage("connection check not enabled.");
+            return connectionCheckResponse;
+        }
         
         //1.interceptor pre interceptor
         Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();

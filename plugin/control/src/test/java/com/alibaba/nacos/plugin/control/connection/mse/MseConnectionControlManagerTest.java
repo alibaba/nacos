@@ -19,9 +19,8 @@ import java.util.Map;
 public class MseConnectionControlManagerTest {
     
     ConnectionControlManager connectionControlManager = new MseConnectionControlManager();
-    
     static {
-        ControlConfigs.setInstance(new ControlConfigs());
+        ControlConfigs.getInstance().setConnectionEnabled(true);
     }
     
     @Test

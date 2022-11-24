@@ -9,9 +9,7 @@ import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,8 +20,6 @@ public abstract class TpsBarrier {
     protected String pointName;
     
     protected RuleBarrier pointBarrier;
-    
-    protected List<RuleBarrier> patternBarriers = new ArrayList<>();
     
     public TpsBarrier(String pointName) {
         this.pointName = pointName;
@@ -61,10 +57,6 @@ public abstract class TpsBarrier {
     
     public RuleBarrier getPointBarrier() {
         return pointBarrier;
-    }
-    
-    public List<RuleBarrier> getPatternBarriers() {
-        return patternBarriers;
     }
     
     public String getPointName() {

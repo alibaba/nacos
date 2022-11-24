@@ -14,11 +14,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
+public abstract class FlowedRuleBarrier extends ProtoModelRuleBarrier {
     
     RuleBarrier tpsBarrier;
     
@@ -107,26 +108,35 @@ public abstract class FlowedRuleBarrier extends SimpleCountRuleBarrier {
     
     @Override
     public void applyRuleDetail(RuleDetail ruleDetail) {
-        tpsBarrier.applyRuleDetail(ruleDetail);
-        if (ruleDetail instanceof MseRuleDetail) {
-            RuleDetail copy = new RuleDetail();
-            BeanUtils.copyProperties(ruleDetail, copy);
-            copy.setMaxCount(((MseRuleDetail) ruleDetail).getMaxFlow());
-            super.setOrder(((MseRuleDetail) ruleDetail).getOrder());
-            super.applyRuleDetail(copy);
-            Collection<TpsInterceptor> interceptors = InterceptorHolder.getInterceptors();
-            List<TpsInterceptor> pointerInterceptor = interceptors.stream()
-                    .filter(a -> a.getPointName().equalsIgnoreCase(this.getPointName())).collect(Collectors.toList());
-            Set<String> disabledInterceptors = ((MseRuleDetail) ruleDetail).getDisabledInterceptors();
-            for (TpsInterceptor tpsInterceptor : pointerInterceptor) {
-                if (disabledInterceptors != null && disabledInterceptors.contains(tpsInterceptor.getName())) {
-                    tpsInterceptor.setDisabled(true);
-                } else {
-                    tpsInterceptor.setDisabled(false);
-                }
-            }
-            
+        MseRuleDetail mseRuleDetail = (MseRuleDetail) ruleDetail;
+        if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod()) || !Objects
+                .equals(this.getModel(), mseRuleDetail.getModel())) {
+            this.setMaxCount(ruleDetail.getMaxCount());
+            this.setMonitorType(ruleDetail.getMonitorType());
+            this.setPeriod(ruleDetail.getPeriod());
+            this.setModel(mseRuleDetail.getModel());
+            reCreateRaterCounter(this.getRuleName(), this.getPeriod());
+        } else {
+            this.setMaxCount(ruleDetail.getMaxCount());
+            this.setMonitorType(ruleDetail.getMonitorType());
         }
+        RuleDetail copy = new RuleDetail();
+        BeanUtils.copyProperties(ruleDetail, copy);
+        copy.setMaxCount(((MseRuleDetail) ruleDetail).getMaxFlow());
+        super.setOrder(((MseRuleDetail) ruleDetail).getOrder());
+        super.applyRuleDetail(copy);
+        Collection<TpsInterceptor> interceptors = InterceptorHolder.getInterceptors();
+        List<TpsInterceptor> pointerInterceptor = interceptors.stream()
+                .filter(a -> a.getPointName().equalsIgnoreCase(this.getPointName())).collect(Collectors.toList());
+        Set<String> disabledInterceptors = ((MseRuleDetail) ruleDetail).getDisabledInterceptors();
+        for (TpsInterceptor tpsInterceptor : pointerInterceptor) {
+            if (disabledInterceptors != null && disabledInterceptors.contains(tpsInterceptor.getName())) {
+                tpsInterceptor.setDisabled(true);
+            } else {
+                tpsInterceptor.setDisabled(false);
+            }
+        }
+        
     }
     
     @Override

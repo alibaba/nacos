@@ -67,9 +67,6 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                 if (tpsCheckRequest == null) {
                     tpsCheckRequest = new TpsCheckRequest();
                 }
-                
-                tpsCheckRequest.setConnectionId(meta.getConnectionId());
-                tpsCheckRequest.setClientIp(meta.getClientIp());
                 tpsCheckRequest.setPointName(pointName);
                 
                 TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);

@@ -27,12 +27,12 @@ public class TestNacosTpsInterceptor extends TpsInterceptor {
     }
     
     @Override
-    public InterceptResult preIntercept(TpsCheckRequest tpsCheckRequest) {
+    public InterceptResult preIntercept(MseTpsCheckRequest tpsCheckRequest) {
         return null;
     }
     
     @Override
-    public InterceptResult postIntercept(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
+    public InterceptResult postIntercept(MseTpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
         String clientIp = tpsCheckRequest.getClientIp();
         
         if (!tpsCheckResponse.isSuccess() && whiteList.contains(clientIp)) {

@@ -1,9 +1,5 @@
 package com.alibaba.nacos.plugin.control.tps.request;
 
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-
-import java.util.List;
-
 /**
  * tps request.
  */
@@ -18,8 +14,6 @@ public class TpsCheckRequest {
     private String clientIp;
     
     private long count = 1;
-    
-    List<MonitorKey> monitorKeys;
     
     public TpsCheckRequest() {
     
@@ -63,14 +57,6 @@ public class TpsCheckRequest {
         this.clientIp = clientIp;
     }
     
-    public List<MonitorKey> getMonitorKeys() {
-        return monitorKeys;
-    }
-    
-    public void setMonitorKeys(List<MonitorKey> monitorKeys) {
-        this.monitorKeys = monitorKeys;
-    }
-    
     public String getPointName() {
         return pointName;
     }
@@ -79,18 +65,4 @@ public class TpsCheckRequest {
         this.pointName = pointName;
     }
     
-    /**
-     * build barrier check request.
-     *
-     * @param monitorKey monitorKey.
-     * @return
-     */
-    public BarrierCheckRequest buildBarrierCheckRequest(MonitorKey monitorKey) {
-        BarrierCheckRequest barrierCheckRequest = new BarrierCheckRequest();
-        barrierCheckRequest.setCount(this.getCount());
-        barrierCheckRequest.setMonitorKey(monitorKey);
-        barrierCheckRequest.setPointName(this.pointName);
-        barrierCheckRequest.setTimestamp(this.getTimestamp());
-        return barrierCheckRequest;
-    }
 }

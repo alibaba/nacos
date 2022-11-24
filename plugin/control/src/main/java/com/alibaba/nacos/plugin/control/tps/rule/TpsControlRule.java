@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.plugin.control.tps.rule;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * tps control point.
  *
@@ -30,11 +27,6 @@ public class TpsControlRule {
     private String pointName;
     
     private RuleDetail pointRule;
-    
-    /**
-     * rule name,rule detail.
-     */
-    private Map<String, RuleDetail> monitorKeyRule = new HashMap<>();
     
     public String getPointName() {
         return pointName;
@@ -52,17 +44,8 @@ public class TpsControlRule {
         this.pointRule = pointRule;
     }
     
-    public Map<String, RuleDetail> getMonitorKeyRule() {
-        return monitorKeyRule;
-    }
-    
-    public void setMonitorKeyRule(Map<String, RuleDetail> monitorKeyRule) {
-        this.monitorKeyRule = monitorKeyRule;
-    }
-    
     @Override
     public String toString() {
-        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule + ", monitorKeyRule="
-                + monitorKeyRule + '}';
+        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule + "}'";
     }
 }

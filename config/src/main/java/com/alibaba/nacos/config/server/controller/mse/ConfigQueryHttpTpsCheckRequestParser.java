@@ -1,10 +1,11 @@
-package com.alibaba.nacos.config.server.controller.control;
+package com.alibaba.nacos.config.server.controller.mse;
 
 import com.alibaba.nacos.config.server.control.ConfigGroupKey;
 import com.alibaba.nacos.config.server.control.ConfigGroupMonitorKey;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.core.control.http.HttpTpsCheckRequestParser;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.MseTpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +19,7 @@ public class ConfigQueryHttpTpsCheckRequestParser extends HttpTpsCheckRequestPar
     @Override
     public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
         
-        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
         tpsCheckRequest.setPointName(getPointName());
         List<MonitorKey> monitorTypeList = new ArrayList();
         String dataId = httpServletRequest.getParameter("dataId");

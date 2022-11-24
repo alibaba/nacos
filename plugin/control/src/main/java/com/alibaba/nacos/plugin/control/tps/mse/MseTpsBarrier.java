@@ -6,7 +6,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.event.mse.TpsRequestDeniedEvent;
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
-import com.alibaba.nacos.plugin.control.tps.TpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptorHolder;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
@@ -15,6 +14,7 @@ import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MatchType;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyMatcher;
+import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -35,7 +35,9 @@ import java.util.stream.Collectors;
 /**
  * tps barrier for tps point.
  */
-public class MseTpsBarrier extends TpsBarrier {
+public class MseTpsBarrier extends NacosTpsBarrier {
+    
+    protected List<RuleBarrier> patternBarriers = new ArrayList<>();
     
     public MseTpsBarrier(String pointName) {
         super(pointName);
@@ -49,12 +51,16 @@ public class MseTpsBarrier extends TpsBarrier {
      */
     public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
         
+        if (!(tpsCheckRequest instanceof MseTpsCheckRequest)) {
+            return super.applyTps(tpsCheckRequest);
+        }
+        MseTpsCheckRequest mseTpsCheckRequest = (MseTpsCheckRequest) tpsCheckRequest;
         boolean preInterceptPassed = false;
         //1.pre interceptor.
         for (TpsInterceptor tpsInterceptor : InterceptorHolder.getInterceptors()) {
-            if (tpsInterceptor.getPointName().equalsIgnoreCase(tpsCheckRequest.getPointName()) && !tpsInterceptor
+            if (tpsInterceptor.getPointName().equalsIgnoreCase(mseTpsCheckRequest.getPointName()) && !tpsInterceptor
                     .isDisabled()) {
-                InterceptResult intercept = tpsInterceptor.preIntercept(tpsCheckRequest);
+                InterceptResult intercept = tpsInterceptor.preIntercept(mseTpsCheckRequest);
                 if (InterceptResult.CHECK_PASS.equals(intercept)) {
                     preInterceptPassed = true;
                 } else if (InterceptResult.CHECK_DENY.equals(intercept)) {
@@ -62,12 +68,12 @@ public class MseTpsBarrier extends TpsBarrier {
                     
                     Loggers.TPS
                             .warn("[{}]denied by pre interceptor ={},clientIp={},connectionId={},keys={},monitorType={}",
-                                    tpsCheckRequest.getPointName(), tpsInterceptor.getName(),
-                                    tpsCheckRequest.getClientIp(), tpsCheckRequest.getConnectionId(),
-                                    tpsCheckRequest.getMonitorKeys(), monitorType);
+                                    mseTpsCheckRequest.getPointName(), tpsInterceptor.getName(),
+                                    mseTpsCheckRequest.getClientIp(), mseTpsCheckRequest.getConnectionId(),
+                                    mseTpsCheckRequest.getMonitorKeys(), monitorType);
                     TpsCheckResponse tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.DENY_BY_POINT,
                             "deny by interceptor :" + tpsInterceptor.getName());
-                    TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(tpsCheckRequest,
+                    TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(mseTpsCheckRequest,
                             tpsCheckResponse.getCode(), tpsCheckResponse.getMessage());
                     if (monitorType) {
                         tpsCheckResponse.setSuccess(true);
@@ -84,16 +90,16 @@ public class MseTpsBarrier extends TpsBarrier {
         boolean patternSuccess = true;
         List<RuleBarrier> patternBarriers = this.patternBarriers;
         
-        buildIpOrConnectionIdKey(tpsCheckRequest);
+        buildIpOrConnectionIdKey(mseTpsCheckRequest);
         boolean monitorOnly = preInterceptPassed;
         //1.check pattern barriers
-        for (MonitorKey monitorKey : tpsCheckRequest.getMonitorKeys()) {
+        for (MonitorKey monitorKey : mseTpsCheckRequest.getMonitorKeys()) {
             
             for (RuleBarrier patternRuleBarrier : patternBarriers) {
                 
                 MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
                 if (match.isMatch()) {
-                    BarrierCheckRequest barrierCheckRequest = tpsCheckRequest.buildBarrierCheckRequest(monitorKey);
+                    BarrierCheckRequest barrierCheckRequest = mseTpsCheckRequest.buildBarrierCheckRequest(monitorKey);
                     barrierCheckRequest.setMonitorOnly(monitorOnly);
                     TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
                     if (patternCheckResponse.isSuccess()) {
@@ -110,12 +116,12 @@ public class MseTpsBarrier extends TpsBarrier {
                             Loggers.TPS
                                     .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
                                             pointName, patternRuleBarrier.getPattern(),
-                                            patternRuleBarrier.getRuleName(), tpsCheckRequest.getClientIp(),
-                                            tpsCheckRequest.getConnectionId(), monitorKey);
+                                            patternRuleBarrier.getRuleName(), mseTpsCheckRequest.getClientIp(),
+                                            mseTpsCheckRequest.getConnectionId(), monitorKey);
                         }
                         
                         if (TpsResultCode.PASS_BY_MONITOR.equals(patternCheckResponse.getCode())) {
-                            TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(tpsCheckRequest,
+                            TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(mseTpsCheckRequest,
                                     patternCheckResponse.getCode(), patternCheckResponse.getMessage());
                             tpsRequestDeniedEvent.setMonitorModel(true);
                             NotifyCenter.publishEvent(tpsRequestDeniedEvent);
@@ -141,16 +147,16 @@ public class MseTpsBarrier extends TpsBarrier {
         if (!patternSuccess) {
             tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.DENY_BY_PATTERN, "");
             String message = String.format("[%s] pattern barrier [%s] check fail,monitorKeys=%s,msg=%s", pointName,
-                    denyPatternRate.getRuleName(), tpsCheckRequest.getMonitorKeys(), denyPatternRate.getLimitMsg());
+                    denyPatternRate.getRuleName(), mseTpsCheckRequest.getMonitorKeys(), denyPatternRate.getLimitMsg());
             Loggers.TPS.warn(message);
             tpsCheckResponse.setMessage(message);
             
         } else {
             //3. check point rule
             pointCheckRequest = new BarrierCheckRequest();
-            pointCheckRequest.setCount(tpsCheckRequest.getCount());
+            pointCheckRequest.setCount(mseTpsCheckRequest.getCount());
             pointCheckRequest.setPointName(this.pointName);
-            pointCheckRequest.setTimestamp(tpsCheckRequest.getTimestamp());
+            pointCheckRequest.setTimestamp(mseTpsCheckRequest.getTimestamp());
             pointCheckRequest.setMonitorOnly(monitorOnly);
             tpsCheckResponse = pointBarrier.applyTps(pointCheckRequest);
             if (!tpsCheckResponse.isSuccess()) {
@@ -170,7 +176,7 @@ public class MseTpsBarrier extends TpsBarrier {
         final TpsResultCode originalCheck = tpsCheckResponse.getCode();
         String originalMsg = tpsCheckResponse.getMessage();
         
-        InterceptResult interceptResult = postInterceptor(tpsCheckRequest, tpsCheckResponse);
+        InterceptResult interceptResult = postInterceptor(mseTpsCheckRequest, tpsCheckResponse);
         if (originalCheckSuccess && InterceptResult.CHECK_DENY.equals(interceptResult)) {
             //pass -> deny
             rollbackTps(appliedBarriers);
@@ -195,13 +201,13 @@ public class MseTpsBarrier extends TpsBarrier {
         tpsCheckResponse.setMessage(originalMsg);
         tpsCheckResponse.setCode(originalCheck);
         if (!tpsCheckResponse.isSuccess()) {
-            NotifyCenter
-                    .publishEvent(new TpsRequestDeniedEvent(tpsCheckRequest, tpsCheckResponse.getCode(), originalMsg));
+            NotifyCenter.publishEvent(
+                    new TpsRequestDeniedEvent(mseTpsCheckRequest, tpsCheckResponse.getCode(), originalMsg));
         }
         return tpsCheckResponse;
     }
     
-    private InterceptResult postInterceptor(TpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
+    private InterceptResult postInterceptor(MseTpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
         for (TpsInterceptor tpsInterceptor : InterceptorHolder.getInterceptors()) {
             if (tpsInterceptor.getPointName().equals(tpsCheckRequest.getPointName())) {
                 InterceptResult intercept = tpsInterceptor.postIntercept(tpsCheckRequest, tpsCheckResponse);
@@ -242,7 +248,7 @@ public class MseTpsBarrier extends TpsBarrier {
         }
     }
     
-    private void buildIpOrConnectionIdKey(TpsCheckRequest tpsCheckRequest) {
+    private void buildIpOrConnectionIdKey(MseTpsCheckRequest tpsCheckRequest) {
         if (!StringUtils.isBlank(tpsCheckRequest.getClientIp()) || !StringUtils
                 .isBlank(tpsCheckRequest.getConnectionId())) {
             boolean clientIpMonitorKeyFound = false;
@@ -288,10 +294,18 @@ public class MseTpsBarrier extends TpsBarrier {
      * @param newControlRule newControlRule.
      */
     public synchronized void applyRule(TpsControlRule newControlRule) {
+        
+        if (!(newControlRule instanceof MseTpsControlRule)) {
+            super.applyRule(newControlRule);
+            return;
+        }
+        
+        MseTpsControlRule mseNewControlRule = (MseTpsControlRule) newControlRule;
+        
         Loggers.CONTROL.info("Apply tps control rule start,pointName=[{}]  ", this.getPointName());
         
         //1.reset all monitor point for null.
-        if (newControlRule == null) {
+        if (mseNewControlRule == null) {
             Loggers.CONTROL.info("Clear all tps control rule ,pointName=[{}]  ", this.getPointName());
             this.pointBarrier.clearLimitRule();
             this.patternBarriers = new ArrayList<>();
@@ -299,7 +313,7 @@ public class MseTpsBarrier extends TpsBarrier {
         }
         
         //2.check point rule.
-        RuleDetail newPointRule = newControlRule.getPointRule();
+        RuleDetail newPointRule = mseNewControlRule.getPointRule();
         if (newPointRule == null) {
             Loggers.CONTROL.info("Clear point  control rule ,pointName=[{}]  ", this.getPointName());
             this.pointBarrier.clearLimitRule();
@@ -312,7 +326,7 @@ public class MseTpsBarrier extends TpsBarrier {
         }
         
         //3.check monitor key rules.
-        Map<String, RuleDetail> newMonitorKeyRules = newControlRule.getMonitorKeyRule();
+        Map<String, MseRuleDetail> newMonitorKeyRules = mseNewControlRule.getMonitorKeyRule();
         //3.1 clear all monitor keys.
         if (newMonitorKeyRules == null || newMonitorKeyRules.isEmpty()) {
             Loggers.CONTROL.info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
@@ -321,7 +335,7 @@ public class MseTpsBarrier extends TpsBarrier {
             Map<String, RuleBarrier> patternRateCounterMap = this.patternBarriers.stream()
                     .collect(Collectors.toMap(a -> a.getRuleName(), Function.identity(), (key1, key2) -> key1));
             
-            for (Map.Entry<String, RuleDetail> newMonitorRule : newMonitorKeyRules.entrySet()) {
+            for (Map.Entry<String, MseRuleDetail> newMonitorRule : newMonitorKeyRules.entrySet()) {
                 if (newMonitorRule.getValue() == null) {
                     continue;
                 }
@@ -329,13 +343,13 @@ public class MseTpsBarrier extends TpsBarrier {
                     newMonitorRule.getValue().setPattern(newMonitorRule.getKey());
                 }
                 
-                RuleDetail newRuleDetail = newMonitorRule.getValue();
+                MseRuleDetail newRuleDetail = newMonitorRule.getValue();
                 if (newRuleDetail.getPeriod() == null) {
                     newRuleDetail.setPeriod(TimeUnit.SECONDS);
                 }
                 
                 if (newRuleDetail.getModel() == null) {
-                    newRuleDetail.setModel(RuleDetail.MODEL_FUZZY);
+                    newRuleDetail.setModel(MseRuleDetail.MODEL_FUZZY);
                 }
                 
                 //update rule.

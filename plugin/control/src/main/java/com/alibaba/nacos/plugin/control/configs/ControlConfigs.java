@@ -1,5 +1,6 @@
 package com.alibaba.nacos.plugin.control.configs;
 
+import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,13 @@ public class ControlConfigs {
     
     public static ControlConfigs getInstance() {
         if (instance == null) {
-            instance = ApplicationUtils.getBean(ControlConfigs.class);
+            try {
+                instance = ApplicationUtils.getBean(ControlConfigs.class);
+            } catch (Throwable throwable) {
+                Loggers.CONTROL
+                        .warn("Fail to get control configs bean from spring context,use default constructor instance");
+                instance = new ControlConfigs();
+            }
         }
         return instance;
     }
@@ -20,11 +27,17 @@ public class ControlConfigs {
         ControlConfigs.instance = instance;
     }
     
+    @Value("${nacos.plugin.control.tps.enabled:false}")
+    private boolean tpsEnabled = false;
+    
     @Value("${nacos.plugin.control.tps.barrier.creator:localsimplecount}")
     private String tpsBarrierCreator = "localsimplecount";
     
     @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
     private String tpsRuleBarrierCreator = "nacos";
+    
+    @Value("${nacos.plugin.control.connection.enabled:false}")
+    private boolean connectionEnabled = false;
     
     @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
@@ -34,6 +47,22 @@ public class ControlConfigs {
     
     @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";
+    
+    public boolean isTpsEnabled() {
+        return tpsEnabled;
+    }
+    
+    public void setTpsEnabled(boolean tpsEnabled) {
+        this.tpsEnabled = tpsEnabled;
+    }
+    
+    public boolean isConnectionEnabled() {
+        return connectionEnabled;
+    }
+    
+    public void setConnectionEnabled(boolean connectionEnabled) {
+        this.connectionEnabled = connectionEnabled;
+    }
     
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;

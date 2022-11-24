@@ -19,11 +19,9 @@ import java.util.Map;
 public class NacosConnectionControlManagerTest {
     
     NacosConnectionControlManager connectionControlManager = new NacosConnectionControlManager();
-    
     static {
-        ControlConfigs.setInstance(new ControlConfigs());
+        ControlConfigs.getInstance().setConnectionEnabled(true);
     }
-    
     @Test
     public void testPass() {
         ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();

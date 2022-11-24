@@ -41,9 +41,6 @@ public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
                     }
                     
                     httpTpsCheckRequest.setPointName(pointName);
-                    if (httpTpsCheckRequest.getClientIp() == null) {
-                        httpTpsCheckRequest.setClientIp(getRemoteIp(request));
-                    }
                     TpsCheckResponse checkResponse = ControlManagerCenter.getInstance().getTpsControlManager()
                             .check(httpTpsCheckRequest);
                     if (!checkResponse.isSuccess()) {
