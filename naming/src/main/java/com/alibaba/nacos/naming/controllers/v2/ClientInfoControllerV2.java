@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
@@ -45,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * ClientInfoControllerV2.
@@ -74,7 +74,7 @@ public class ClientInfoControllerV2 {
      * Query all clients.
      */
     @GetMapping("/list")
-    public Result<List<String>> getClientList() throws NacosApiException {
+    public Result<List<String>> getClientList() {
         return Result.success(new ArrayList<>(clientManager.allClientId()));
     }
     
@@ -190,10 +190,8 @@ public class ClientInfoControllerV2 {
         for (String clientId : allClientsRegisteredService) {
             Client client = clientManager.getClient(clientId);
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
-            if ((!StringUtils.isBlank(ip)) && (!ip.equals(instancePublishInfo.getIp()))) {
-                continue;
-            }
-            if ((port != null) && (!port.equals(instancePublishInfo.getPort()))) {
+            if (!Objects.equals(instancePublishInfo.getIp(), ip) || !Objects.equals(port,
+                    instancePublishInfo.getPort())) {
                 continue;
             }
             ObjectNode item = JacksonUtils.createEmptyJsonNode();
@@ -229,10 +227,7 @@ public class ClientInfoControllerV2 {
         for (String clientId : allClientsSubscribeService) {
             Client client = clientManager.getClient(clientId);
             Subscriber subscriber = client.getSubscriber(service);
-            if ((!StringUtils.isBlank(ip)) && (!ip.equals(subscriber.getIp()))) {
-                continue;
-            }
-            if ((port != null) && (!port.equals(subscriber.getPort()))) {
+            if (!Objects.equals(subscriber.getIp(), ip) || !Objects.equals(port, subscriber.getPort())) {
                 continue;
             }
             ObjectNode item = JacksonUtils.createEmptyJsonNode();
