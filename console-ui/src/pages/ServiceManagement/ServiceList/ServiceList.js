@@ -30,7 +30,7 @@ import {
   ConfigProvider,
   Switch,
 } from '@alifd/next';
-import { request } from '../../../globalLib';
+import { getParams, setParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
@@ -64,8 +64,8 @@ class ServiceList extends React.Component {
       currentPage: 1,
       dataSource: [],
       search: {
-        serviceName: '',
-        groupName: '',
+        serviceName: getParams('serviceNameParam') || '',
+        groupName: getParams('groupNameParam') || '',
       },
       hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
@@ -96,6 +96,10 @@ class ServiceList extends React.Component {
       `serviceNameParam=${search.serviceName}`,
       `groupNameParam=${search.groupName}`,
     ];
+    setParams({
+      serviceNameParam: search.serviceName,
+      groupNameParam: search.groupName,
+    });
     this.openLoading();
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
