@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.constants.ClientConstants;
@@ -57,8 +56,6 @@ public class OperatorController {
     
     private final SwitchManager switchManager;
     
-    private final ServerMemberManager memberManager;
-    
     private final ServerStatusManager serverStatusManager;
     
     private final SwitchDomain switchDomain;
@@ -67,11 +64,10 @@ public class OperatorController {
     
     private final ClientManager clientManager;
     
-    public OperatorController(SwitchManager switchManager, ServerMemberManager memberManager,
-            ServerStatusManager serverStatusManager, SwitchDomain switchDomain, DistroMapper distroMapper,
+    public OperatorController(SwitchManager switchManager, ServerStatusManager serverStatusManager,
+            SwitchDomain switchDomain, DistroMapper distroMapper,
             ClientManager clientManager) {
         this.switchManager = switchManager;
-        this.memberManager = memberManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
