@@ -1,6 +1,6 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
 /**
@@ -22,7 +22,7 @@ public interface RuleParser {
      * @param ruleContent ruleContent.
      * @return
      */
-    ConnectionLimitRule parseConnectionRule(String ruleContent);
+    ConnectionControlRule parseConnectionRule(String ruleContent);
     
     /**
      * get name.

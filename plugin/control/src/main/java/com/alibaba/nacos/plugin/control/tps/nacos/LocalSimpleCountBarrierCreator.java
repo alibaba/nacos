@@ -17,9 +17,8 @@ public class LocalSimpleCountBarrierCreator implements RuleBarrierCreator {
     }
     
     @Override
-    public RuleBarrier createRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
-            String model) {
-        return new LocalSimpleCountRuleBarrier(pointName, ruleName, pattern, period, model);
+    public RuleBarrier createRuleBarrier(String pointName, String ruleName, TimeUnit period) {
+        return new LocalSimpleCountRuleBarrier(pointName, ruleName, period);
     }
     
     @Override

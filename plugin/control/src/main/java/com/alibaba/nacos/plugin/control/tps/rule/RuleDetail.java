@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 public class RuleDetail {
     
+    String ruleName;
     
     long maxCount = -1;
     
@@ -16,6 +17,14 @@ public class RuleDetail {
     
     public RuleDetail() {
     
+    }
+    
+    public String getRuleName() {
+        return ruleName;
+    }
+    
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
     }
     
     public TimeUnit getPeriod() {

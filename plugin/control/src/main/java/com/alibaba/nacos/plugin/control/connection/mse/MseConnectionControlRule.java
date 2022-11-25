@@ -1,15 +1,16 @@
-package com.alibaba.nacos.plugin.control.connection.rule;
+package com.alibaba.nacos.plugin.control.connection.mse;
+
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ConnectionLimitRule {
+public class MseConnectionControlRule extends ConnectionControlRule {
     
-    private Set<String> monitorIpList = new HashSet<>();
+    Set<String> disabledInterceptors;
     
-    private int countLimit = -1;
+    String monitorType = MonitorType.MONITOR.getType();
     
     private int countLimitPerClientIpDefault = -1;
     
@@ -17,12 +18,24 @@ public class ConnectionLimitRule {
     
     private Map<String, Integer> countLimitPerClientApp = new HashMap<>();
     
-    public int getCountLimit() {
-        return countLimit;
+    public Set<String> getDisabledInterceptors() {
+        return disabledInterceptors;
     }
     
-    public void setCountLimit(int countLimit) {
-        this.countLimit = countLimit;
+    public void setDisabledInterceptors(Set<String> disabledInterceptors) {
+        this.disabledInterceptors = disabledInterceptors;
+    }
+    
+    public boolean isInterceptMode() {
+        return MonitorType.INTERCEPT.type.equalsIgnoreCase(monitorType);
+    }
+    
+    public String getMonitorType() {
+        return monitorType;
+    }
+    
+    public void setMonitorType(String monitorType) {
+        this.monitorType = monitorType;
     }
     
     public int getCountLimitPerClientIpDefault() {
@@ -69,11 +82,4 @@ public class ConnectionLimitRule {
         this.countLimitPerClientApp = countLimitPerClientApp;
     }
     
-    public Set<String> getMonitorIpList() {
-        return monitorIpList;
-    }
-    
-    public void setMonitorIpList(Set<String> monitorIpList) {
-        this.monitorIpList = monitorIpList;
-    }
 }

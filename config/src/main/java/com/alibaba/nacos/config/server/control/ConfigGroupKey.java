@@ -1,7 +1,7 @@
 package com.alibaba.nacos.config.server.control;
 
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKey;
 
 public class ConfigGroupKey extends MonitorKey {
     

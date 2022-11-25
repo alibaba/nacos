@@ -8,9 +8,7 @@ import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
-import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
-import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,10 +28,10 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
     }
     
     @Override
-    public void applyConnectionLimitRule(ConnectionLimitRule connectionLimitRule) {
-        super.connectionLimitRule = connectionLimitRule;
-        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionLimitRule == null ? null
-                : JacksonUtils.toJson(this.connectionLimitRule)));
+    public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
+        super.connectionControlRule = connectionControlRule;
+        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionControlRule == null ? null
+                : JacksonUtils.toJson(this.connectionControlRule)));
         
     }
     
@@ -50,55 +48,9 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         //limit rule check.
-        if (this.connectionLimitRule != null) {
-            String appName = connectionCheckRequest.getAppName();
-            String clientIp = connectionCheckRequest.getClientIp();
+        if (this.connectionControlRule != null) {
             
-            Map<String, Integer> metricsIpCount = super.metricsCollectorList.stream()
-                    .collect(Collectors.toMap(ConnectionMetricsCollector::getName, a -> a.getCountForIp(clientIp)));
-            
-            int totalCountOfIp = metricsIpCount.values().stream().mapToInt(Integer::intValue).sum();
-            
-            //client ip limit check.
-            int countLimitOfIp = connectionLimitRule.getCountLimitOfIp(clientIp);
-            if (countLimitOfIp < 0) {
-                countLimitOfIp = connectionLimitRule.getCountLimitOfApp(appName);
-            }
-            if (countLimitOfIp >= 0) {
-                if (totalCountOfIp >= countLimitOfIp) {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
-                    connectionCheckResponse.setMessage(
-                            "Specific ip check over limit,max allowed count is " + countLimitOfIp
-                                    + ",current count detail is " + metricsIpCount.toString());
-                    Loggers.CONNECTION.warn("Specific ip or app ip limit ,maxCount allowed is {}"
-                                    + ",clientIp={},appName={},source={},labels={}", countLimitOfIp,
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-                    
-                    return connectionCheckResponse;
-                } else {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_IP);
-                    connectionCheckResponse.setSuccess(true);
-                    return connectionCheckResponse;
-                }
-            }
-            
-            //default client ip limit check
-            int countLimitPerClientIpDefault = connectionLimitRule.getCountLimitPerClientIpDefault();
-            if (countLimitPerClientIpDefault > 0 && totalCountOfIp >= countLimitPerClientIpDefault) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
-                connectionCheckResponse.setMessage(
-                        "deny by default ip check model,max allowed count is " + countLimitPerClientIpDefault
-                                + ",current count detail is " + metricsIpCount.toString());
-                Loggers.CONNECTION
-                        .warn("connection denied by default ip limit ,maxCount allowed is  {},clientIp={},appName={},source={},labels={}",
-                                countLimitPerClientIpDefault, connectionCheckRequest.getClientIp(),
-                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                                connectionCheckRequest.getLabels());
-                return connectionCheckResponse;
-            }
-            
-            int totalCountLimit = connectionLimitRule.getCountLimit();
+            int totalCountLimit = connectionControlRule.getCountLimit();
             Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
                     Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
             int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();

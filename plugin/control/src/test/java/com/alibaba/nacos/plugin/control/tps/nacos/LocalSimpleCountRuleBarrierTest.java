@@ -1,12 +1,10 @@
 package com.alibaba.nacos.plugin.control.tps.nacos;
 
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,29 +12,18 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.plugin.control.tps.mse.MseRuleDetail.MODEL_FUZZY;
-
 @RunWith(MockitoJUnitRunner.class)
 public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testPassAndLimit() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
-                TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
         
         // check pass and deny
         long timeMillis = System.currentTimeMillis();
         BarrierCheckRequest barrierCheckRequest = new BarrierCheckRequest();
-        MonitorKey monitorKey = new MonitorKey() {
-            @Override
-            public String getType() {
-                return "test";
-            }
-        };
-        monitorKey.setKey("simpler12");
-        barrierCheckRequest.setMonitorKey(monitorKey);
         barrierCheckRequest.setTimestamp(timeMillis);
         for (int i = 0; i < 10; i++) {
             TpsCheckResponse tpsCheckResponse = ruleBarrier.applyTps(barrierCheckRequest);
@@ -67,20 +54,12 @@ public class LocalSimpleCountRuleBarrierTest {
     @Test
     public void testLimitAndRollback() {
         SimpleCountRuleBarrier ruleBarrier = (SimpleCountRuleBarrier) LocalSimpleCountBarrierCreator.getInstance()
-                .createRuleBarrier("test", "test", "test:simple123*", TimeUnit.SECONDS, RuleModel.FUZZY.name());
+                .createRuleBarrier("test", "test", TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setMonitorType(MonitorType.INTERCEPT.getType());
         
         long timeMillis = System.currentTimeMillis();
         BarrierCheckRequest barrierCheckRequest = new BarrierCheckRequest();
-        MonitorKey monitorKey = new MonitorKey() {
-            @Override
-            public String getType() {
-                return "test";
-            }
-        };
-        monitorKey.setKey("simpler12");
-        barrierCheckRequest.setMonitorKey(monitorKey);
         barrierCheckRequest.setTimestamp(timeMillis);
         
         // check pass
@@ -103,8 +82,7 @@ public class LocalSimpleCountRuleBarrierTest {
     
     @Test
     public void testPassByMonitor() {
-        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", "test:simple123*",
-                TimeUnit.SECONDS);
+        SimpleCountRuleBarrier ruleBarrier = new LocalSimpleCountRuleBarrier("test", "test", TimeUnit.SECONDS);
         ruleBarrier.setMaxCount(10);
         ruleBarrier.setMonitorType(MonitorType.MONITOR.getType());
         
@@ -117,7 +95,6 @@ public class LocalSimpleCountRuleBarrierTest {
             }
         };
         monitorKey.setKey("simpler12");
-        barrierCheckRequest.setMonitorKey(monitorKey);
         barrierCheckRequest.setTimestamp(timeMillis);
         
         for (int i = 0; i < 10; i++) {

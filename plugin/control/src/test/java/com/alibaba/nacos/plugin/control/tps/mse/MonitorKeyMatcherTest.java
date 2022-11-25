@@ -1,7 +1,7 @@
-package com.alibaba.nacos.plugin.control.tps.nacos;
+package com.alibaba.nacos.plugin.control.tps.mse;
 
-import com.alibaba.nacos.plugin.control.tps.key.MatchType;
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyMatcher;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MatchType;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKeyMatcher;
 import org.junit.Assert;
 import org.junit.Test;
 

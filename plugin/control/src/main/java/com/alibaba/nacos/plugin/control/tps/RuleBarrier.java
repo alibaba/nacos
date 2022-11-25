@@ -13,20 +13,22 @@ public abstract class RuleBarrier {
     
     private String pointName;
     
-    private String ruleName;
-    
-    private String pattern;
-    
     private long maxCount;
+    
+    private String ruleName;
     
     /**
      * monitor/intercept.
      */
     private String monitorType = MonitorType.MONITOR.type;
     
-    private String model;
+    public String getRuleName() {
+        return ruleName;
+    }
     
-    private int order;
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
+    }
     
     public String getPointName() {
         return pointName;
@@ -34,14 +36,6 @@ public abstract class RuleBarrier {
     
     public void setPointName(String pointName) {
         this.pointName = pointName;
-    }
-    
-    public int getOrder() {
-        return order;
-    }
-    
-    public void setOrder(int order) {
-        this.order = order;
     }
     
     public TimeUnit getPeriod() {
@@ -53,22 +47,6 @@ public abstract class RuleBarrier {
     }
     
     public abstract String getBarrierName();
-    
-    public String getRuleName() {
-        return ruleName;
-    }
-    
-    public void setRuleName(String ruleName) {
-        this.ruleName = ruleName;
-    }
-    
-    public String getPattern() {
-        return pattern;
-    }
-    
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
-    }
     
     public long getMaxCount() {
         return maxCount;
@@ -90,20 +68,8 @@ public abstract class RuleBarrier {
         return MonitorType.MONITOR.type.equalsIgnoreCase(this.monitorType);
     }
     
-    public String getModel() {
-        return model;
-    }
-    
-    public void setModel(String model) {
-        this.model = model;
-    }
-    
-    public boolean isProtoModel() {
-        return RuleModel.PROTO.name().equalsIgnoreCase(this.model);
-    }
-    
     public String getLimitMsg() {
-        return String.format("[Name:%s,Pattern:%s,Period:%s,MaxCount:%s]", ruleName, pattern, period, maxCount);
+        return String.format("[Period:%s,MaxCount:%s]", period, maxCount);
     }
     
     /**

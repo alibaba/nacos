@@ -6,7 +6,7 @@ import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,6 +19,7 @@ import java.util.Map;
 public class MseConnectionControlManagerTest {
     
     ConnectionControlManager connectionControlManager = new MseConnectionControlManager();
+    
     static {
         ControlConfigs.getInstance().setConnectionEnabled(true);
     }
@@ -26,10 +27,10 @@ public class MseConnectionControlManagerTest {
     @Test
     public void testPass() {
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(100);
-        connectionLimitRule.setCountLimitPerClientIpDefault(100);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(100);
+        connectionControlRule.setCountLimitPerClientIpDefault(100);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -44,10 +45,11 @@ public class MseConnectionControlManagerTest {
     public void testDeniedByTotalCount() {
         
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(30);
-        connectionLimitRule.setCountLimitPerClientIpDefault(16);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(30);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(16);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -65,10 +67,11 @@ public class MseConnectionControlManagerTest {
     public void testDeniedByIpTotalCountDefault() {
         
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(15);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+        connectionControlRule.setCountLimitPerClientIpDefault(15);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -86,14 +89,15 @@ public class MseConnectionControlManagerTest {
     public void testDeniedByIpTotalCountSpecific() {
         
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(16);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(16);
         Map<String, Integer> ipConfig = new HashMap<>();
         ipConfig.put("127.0.0.3", 15);
-        connectionLimitRule.setCountLimitPerClientIp(ipConfig);
-        System.out.println(JacksonUtils.toJson(connectionLimitRule));
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        connectionControlRule.setCountLimitPerClientIp(ipConfig);
+        System.out.println(JacksonUtils.toJson(connectionControlRule));
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.3", "test", "sdk");
         
@@ -111,10 +115,11 @@ public class MseConnectionControlManagerTest {
     public void testOverTurnedForIpTotalCountDefault() {
         
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(15);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(15);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         Map<String, String> labels = new HashMap<>();
@@ -134,13 +139,14 @@ public class MseConnectionControlManagerTest {
     public void testPassByIpTotalCountSpecific() {
         
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(15);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(15);
         Map<String, Integer> ipConfig = new HashMap<>();
         ipConfig.put("127.0.0.3", 16);
-        connectionLimitRule.setCountLimitPerClientIp(ipConfig);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        connectionControlRule.setCountLimitPerClientIp(ipConfig);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.3", "test", "sdk");
         
@@ -158,10 +164,11 @@ public class MseConnectionControlManagerTest {
     public void testDeniedByCpuInterceptor() {
         
         CpuTestUtils.cpuOverLoad = true;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(20);
-        connectionLimitRule.setCountLimitPerClientIpDefault(15);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(20);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(15);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -175,10 +182,11 @@ public class MseConnectionControlManagerTest {
     @Test
     public void testPassByWhiteListLabel() {
         CpuTestUtils.cpuOverLoad = false;
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(1);
-        connectionLimitRule.setCountLimitPerClientIpDefault(0);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(1);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(0);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.2", "test", "sdk");
         connectionCheckRequest.setAppName("diamond");

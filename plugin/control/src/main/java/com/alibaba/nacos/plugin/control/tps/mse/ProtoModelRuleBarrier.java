@@ -8,6 +8,7 @@ import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
+import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,13 +21,26 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
     
     Map<String, RateCounter> protoKeyCounter;
     
-    public ProtoModelRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period, String model) {
+    private String model;
+    
+    public ProtoModelRuleBarrier(String pointName, String ruleName, TimeUnit period) {
         super.setPointName(pointName);
-        super.setRuleName(ruleName);
-        super.setPattern(pattern);
         super.setPeriod(period);
-        super.setModel(model);
+        super.setRuleName(ruleName);
     }
+    
+    public String getModel() {
+        return model;
+    }
+    
+    public void setModel(String model) {
+        this.model = model;
+    }
+    
+    public boolean isProtoModel() {
+        return RuleModel.PROTO.name().equalsIgnoreCase(this.model);
+    }
+    
     
     public abstract LocalSimpleCountRateCounter createSimpleCounter(String name, TimeUnit period);
     
@@ -53,13 +67,13 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
                 protoKeyCounter = new HashMap<>();
             }
             if (!protoKeyCounter.containsKey(key)) {
-                protoKeyCounter.putIfAbsent(key, createSimpleCounter(this.getRuleName(), this.getPeriod()));
+                protoKeyCounter.putIfAbsent(key, createSimpleCounter(name, this.getPeriod()));
             }
             return protoKeyCounter.get(key);
         }
     }
     
-    private RateCounter getRateCounter(BarrierCheckRequest barrierCheckRequest) {
+    private RateCounter getRateCounter(MseBarrierCheckRequest barrierCheckRequest) {
         if (!isProtoModel()) {
             return getFuzzyRaterCounter(this.getRuleName(), this.getPeriod());
         } else {
@@ -70,8 +84,8 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
     
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
-        RateCounter currentRateCounter = getRateCounter(barrierCheckRequest);
-        if (isMonitorType() || barrierCheckRequest.isMonitorOnly()) {
+        RateCounter currentRateCounter = getRateCounter((MseBarrierCheckRequest) barrierCheckRequest);
+        if (isMonitorType() || ((MseBarrierCheckRequest) barrierCheckRequest).isMonitorOnly()) {
             boolean overLimit = false;
             
             long addResult = currentRateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
@@ -108,7 +122,7 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
     public TpsMetrics getMetrics(long timeStamp) {
         timeStamp = trimTimeStamp(timeStamp);
         if (protoKeyCounter != null && !protoKeyCounter.isEmpty()) {
-            TpsMetrics tpsMetrics = new TpsMetrics("", "", timeStamp, super.getPeriod());
+            MseTpsMetrics tpsMetrics = new MseTpsMetrics("", "", timeStamp, super.getPeriod());
             Map<String, TpsMetrics.Counter> protoMetrics = new HashMap<>();
             for (Map.Entry<String, RateCounter> protoCounter : protoKeyCounter.entrySet()) {
                 long protoPassCount = protoCounter.getValue().getCount(timeStamp);
@@ -151,7 +165,8 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
             getFuzzyRaterCounter(this.getRuleName(), this.getPeriod())
                     .minus(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
         } else {
-            getProtoRaterCounter(this.getRuleName(), this.getPeriod(), barrierCheckRequest.getMonitorKey().getKey())
+            getProtoRaterCounter(this.getRuleName(), this.getPeriod(),
+                    ((MseBarrierCheckRequest) barrierCheckRequest).getMonitorKey().getKey())
                     .minus(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
             ;
         }

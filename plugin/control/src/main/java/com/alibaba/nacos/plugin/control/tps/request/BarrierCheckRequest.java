@@ -1,7 +1,5 @@
 package com.alibaba.nacos.plugin.control.tps.request;
 
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-
 public class BarrierCheckRequest {
     
     private String pointName;
@@ -9,19 +7,7 @@ public class BarrierCheckRequest {
     private long timestamp = System.currentTimeMillis();
     
     private long count = 1;
-    
-    MonitorKey monitorKey;
-    
-    private boolean monitorOnly = false;
-    
-    public boolean isMonitorOnly() {
-        return monitorOnly;
-    }
-    
-    public void setMonitorOnly(boolean monitorOnly) {
-        this.monitorOnly = monitorOnly;
-    }
-    
+
     public String getPointName() {
         return pointName;
     }
@@ -46,11 +32,4 @@ public class BarrierCheckRequest {
         this.count = count;
     }
     
-    public MonitorKey getMonitorKey() {
-        return monitorKey;
-    }
-    
-    public void setMonitorKey(MonitorKey monitorKey) {
-        this.monitorKey = monitorKey;
-    }
 }

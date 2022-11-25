@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.connection.mse;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
@@ -11,8 +12,9 @@ import com.alibaba.nacos.plugin.control.connection.nacos.NacosConnectionControlM
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.plugin.control.event.mse.ConnectionDeniedEvent;
+import org.springframework.beans.BeanUtils;
 
 import java.util.Collection;
 import java.util.Map;
@@ -27,27 +29,35 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
     }
     
     @Override
-    public void applyConnectionLimitRule(ConnectionLimitRule connectionLimitRule) {
-        super.applyConnectionLimitRule(connectionLimitRule);
-        if (connectionLimitRule instanceof MseConnectionLimitRule) {
-            Set<String> disabledInterceptors = ((MseConnectionLimitRule) connectionLimitRule).getDisabledInterceptors();
-            Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();
-            for (ConnectionInterceptor tpsInterceptor : interceptors) {
-                if (disabledInterceptors != null && disabledInterceptors.contains(tpsInterceptor.getName())) {
-                    tpsInterceptor.setDisabled(true);
-                } else {
-                    tpsInterceptor.setDisabled(false);
-                }
-            }
-            
+    public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
+        if (!(connectionControlRule instanceof MseConnectionControlRule)) {
+            MseConnectionControlRule mseConnectionControlRule = new MseConnectionControlRule();
+            BeanUtils.copyProperties(connectionControlRule, mseConnectionControlRule);
+            connectionControlRule = mseConnectionControlRule;
         }
+        
+        super.connectionControlRule = connectionControlRule;
+        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionControlRule == null ? null
+                : JacksonUtils.toJson(this.connectionControlRule)));
+        
+        Set<String> disabledInterceptors = ((MseConnectionControlRule) connectionControlRule).getDisabledInterceptors();
+        Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();
+        for (ConnectionInterceptor tpsInterceptor : interceptors) {
+            if (disabledInterceptors != null && disabledInterceptors.contains(tpsInterceptor.getName())) {
+                tpsInterceptor.setDisabled(true);
+            } else {
+                tpsInterceptor.setDisabled(false);
+            }
+        }
+        
     }
     
     private ConnectionCheckResponse checkInternal(ConnectionCheckRequest connectionCheckRequest) {
         
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
+        MseConnectionControlRule connectionControlRule = (MseConnectionControlRule) this.connectionControlRule;
         //limit rule check.
-        if (this.connectionLimitRule != null) {
+        if (connectionControlRule != null) {
             String appName = connectionCheckRequest.getAppName();
             String clientIp = connectionCheckRequest.getClientIp();
             
@@ -57,9 +67,9 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             int totalCountOfIp = metricsIpCount.values().stream().mapToInt(Integer::intValue).sum();
             
             //client ip limit check.
-            int countLimitOfIp = connectionLimitRule.getCountLimitOfIp(clientIp);
+            int countLimitOfIp = connectionControlRule.getCountLimitOfIp(clientIp);
             if (countLimitOfIp < 0) {
-                countLimitOfIp = connectionLimitRule.getCountLimitOfApp(appName);
+                countLimitOfIp = connectionControlRule.getCountLimitOfApp(appName);
             }
             if (countLimitOfIp >= 0) {
                 if (totalCountOfIp >= countLimitOfIp) {
@@ -82,7 +92,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             }
             
             //default client ip limit check
-            int countLimitPerClientIpDefault = connectionLimitRule.getCountLimitPerClientIpDefault();
+            int countLimitPerClientIpDefault = connectionControlRule.getCountLimitPerClientIpDefault();
             if (countLimitPerClientIpDefault > 0 && totalCountOfIp >= countLimitPerClientIpDefault) {
                 connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
                 connectionCheckResponse.setMessage(
@@ -96,7 +106,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                 return connectionCheckResponse;
             }
             
-            int totalCountLimit = connectionLimitRule.getCountLimit();
+            int totalCountLimit = connectionControlRule.getCountLimit();
             Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
                     Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
             int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
@@ -128,8 +138,8 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
     }
     
     private boolean isMonitorMode() {
-        return (super.connectionLimitRule instanceof MseConnectionLimitRule
-                && !((MseConnectionLimitRule) super.connectionLimitRule).isInterceptMode());
+        return (super.connectionControlRule instanceof MseConnectionControlRule
+                && !((MseConnectionControlRule) super.connectionControlRule).isInterceptMode());
     }
     
     /**
@@ -142,13 +152,13 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
         
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         
-        if (!ControlConfigs.getInstance().isConnectionEnabled()) {
+/*        if (!ControlConfigs.getInstance().isConnectionEnabled()) {
             connectionCheckResponse = new ConnectionCheckResponse();
             connectionCheckResponse.setSuccess(true);
             connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
             connectionCheckResponse.setMessage("connection check not enabled.");
             return connectionCheckResponse;
-        }
+        }*/
         
         //1.interceptor pre interceptor
         Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();

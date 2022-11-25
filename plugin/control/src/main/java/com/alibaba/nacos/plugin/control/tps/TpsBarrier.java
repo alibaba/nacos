@@ -6,7 +6,6 @@ import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 
 import java.util.Collection;
@@ -23,8 +22,7 @@ public abstract class TpsBarrier {
     
     public TpsBarrier(String pointName) {
         this.pointName = pointName;
-        pointBarrier = ruleBarrierCreator
-                .createRuleBarrier(pointName, pointName, "", TimeUnit.SECONDS, RuleModel.FUZZY.name());
+        pointBarrier = ruleBarrierCreator.createRuleBarrier(pointName, pointName, TimeUnit.SECONDS);
     }
     
     protected static RuleBarrierCreator ruleBarrierCreator;

@@ -8,13 +8,11 @@ public interface RuleBarrierCreator {
      * create a count for time unit period.
      *
      * @param pointName pointName.
-     * @param ruleName ruleName.
-     * @param pattern  pattern.
-     * @param period   period.
-     * @param model    model.
+     * @param ruleName  ruleName.
+     * @param period    period.
      * @return
      */
-    RuleBarrier createRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period, String model);
+    RuleBarrier createRuleBarrier(String pointName, String ruleName, TimeUnit period);
     
     /**
      * rate count creator name.

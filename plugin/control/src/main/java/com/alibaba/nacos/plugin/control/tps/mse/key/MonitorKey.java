@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.control.tps.key;
+package com.alibaba.nacos.plugin.control.tps.mse.key;
 
 import com.alibaba.nacos.api.common.Constants;
 

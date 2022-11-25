@@ -6,7 +6,7 @@ import com.alibaba.nacos.plugin.control.connection.nacos.NacosConnectionControlM
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,10 +24,9 @@ public class NacosConnectionControlManagerTest {
     }
     @Test
     public void testPass() {
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(100);
-        connectionLimitRule.setCountLimitPerClientIpDefault(100);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        ConnectionControlRule connectionControlRule = new ConnectionControlRule();
+        connectionControlRule.setCountLimit(100);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -41,10 +40,9 @@ public class NacosConnectionControlManagerTest {
     @Test
     public void testDeniedByTotalCount() {
         
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(30);
-        connectionLimitRule.setCountLimitPerClientIpDefault(16);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        ConnectionControlRule connectionControlRule = new ConnectionControlRule();
+        connectionControlRule.setCountLimit(30);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -61,10 +59,9 @@ public class NacosConnectionControlManagerTest {
     @Test
     public void testDeniedByIpTotalCountDefault() {
         
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(15);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        ConnectionControlRule connectionControlRule = new ConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
@@ -81,14 +78,11 @@ public class NacosConnectionControlManagerTest {
     @Test
     public void testDeniedByIpTotalCountSpecific() {
         
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(16);
-        Map<String, Integer> ipConfig = new HashMap<>();
-        ipConfig.put("127.0.0.3", 15);
-        connectionLimitRule.setCountLimitPerClientIp(ipConfig);
-        System.out.println(JacksonUtils.toJson(connectionLimitRule));
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        ConnectionControlRule connectionControlRule = new ConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+       
+        System.out.println(JacksonUtils.toJson(connectionControlRule));
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.3", "test", "sdk");
         
@@ -105,13 +99,10 @@ public class NacosConnectionControlManagerTest {
     @Test
     public void testPassByIpTotalCountSpecific() {
     
-        ConnectionLimitRule connectionLimitRule = new ConnectionLimitRule();
-        connectionLimitRule.setCountLimit(40);
-        connectionLimitRule.setCountLimitPerClientIpDefault(15);
-        Map<String, Integer> ipConfig = new HashMap<>();
-        ipConfig.put("127.0.0.3", 16);
-        connectionLimitRule.setCountLimitPerClientIp(ipConfig);
-        connectionControlManager.applyConnectionLimitRule(connectionLimitRule);
+        ConnectionControlRule connectionControlRule = new ConnectionControlRule();
+        connectionControlRule.setCountLimit(40);
+        
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
     
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.3", "test", "sdk");
     

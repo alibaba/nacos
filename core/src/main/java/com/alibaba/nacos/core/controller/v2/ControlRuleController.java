@@ -14,7 +14,7 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -127,10 +127,10 @@ public class ControlRuleController {
     }
     
     @GetMapping(value = "/connection/current")
-    public RestResult<ConnectionLimitRule> getConnectionRule() {
-        ConnectionLimitRule connectionLimitRule = ControlManagerCenter.getInstance().getConnectionControlManager()
+    public RestResult<ConnectionControlRule> getConnectionRule() {
+        ConnectionControlRule connectionControlRule = ControlManagerCenter.getInstance().getConnectionControlManager()
                 .getConnectionLimitRule();
-        return RestResultUtils.success(connectionLimitRule);
+        return RestResultUtils.success(connectionControlRule);
     }
     
     /**
@@ -139,7 +139,7 @@ public class ControlRuleController {
      * @return
      */
     @GetMapping(value = "/connection/cluster")
-    public RestResult<Map<String, ConnectionLimitRule>> getClusterConnectionRule() {
+    public RestResult<Map<String, ConnectionControlRule>> getClusterConnectionRule() {
         
         return RestResultUtils.success(getClusterConnectionControl());
     }
@@ -239,20 +239,20 @@ public class ControlRuleController {
     
     private static final String CONNECTION_RULE_URL_PATTERN = "http://{0}{1}/v2/core/controlrule/connection/current";
     
-    private Map<String, ConnectionLimitRule> getClusterConnectionControl() {
+    private Map<String, ConnectionControlRule> getClusterConnectionControl() {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
-        Map<String, ConnectionLimitRule> clusterResult = new HashMap<>();
+        Map<String, ConnectionControlRule> clusterResult = new HashMap<>();
         
         for (Member member : serverMemberManager.allMembers()) {
             String url = MessageFormat
                     .format(CONNECTION_RULE_URL_PATTERN, member.getAddress(), EnvUtil.getContextPath());
             Header header = Header.newInstance();
             Query query = Query.newInstance();
-            nacosAsyncRestTemplate.get(url, header, query, RestResult.class, new Callback<ConnectionLimitRule>() {
+            nacosAsyncRestTemplate.get(url, header, query, RestResult.class, new Callback<ConnectionControlRule>() {
                 
                 @Override
-                public void onReceive(RestResult<ConnectionLimitRule> result) {
+                public void onReceive(RestResult<ConnectionControlRule> result) {
                     if (result.ok() && result.getData() != null) {
                         clusterResult.put(member.getIp(), result.getData());
                     } else {

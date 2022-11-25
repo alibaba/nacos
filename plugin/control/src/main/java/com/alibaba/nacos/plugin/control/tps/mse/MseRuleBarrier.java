@@ -8,14 +8,34 @@ import java.util.concurrent.TimeUnit;
 
 public class MseRuleBarrier extends FlowedRuleBarrier {
     
-    public MseRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
-            String model) {
-        super(pointName, ruleName, pattern, period, model);
+    String pattern;
+    
+    int order;
+    
+    public String getPattern() {
+        return pattern;
+    }
+    
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+    }
+    
+    public int getOrder() {
+        return order;
+    }
+    
+    public void setOrder(int order) {
+        this.order = order;
+    }
+    
+    public MseRuleBarrier(String pointName, String ruleName, TimeUnit period) {
+        super(pointName, ruleName, period);
+        this.pattern = pattern;
     }
     
     @Override
-    RuleBarrier createRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period, String model) {
-        return new LocalSimpleCountRuleBarrier(pointName, ruleName, pattern, period, model);
+    RuleBarrier createRuleBarrier(String pointName, String ruleName, TimeUnit period) {
+        return new LocalSimpleCountRuleBarrier(pointName, ruleName, period);
     }
     
     @Override

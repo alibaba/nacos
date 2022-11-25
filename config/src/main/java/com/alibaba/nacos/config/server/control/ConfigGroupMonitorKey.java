@@ -1,6 +1,6 @@
 package com.alibaba.nacos.config.server.control;
 
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKey;
 
 public class ConfigGroupMonitorKey extends MonitorKey {
     

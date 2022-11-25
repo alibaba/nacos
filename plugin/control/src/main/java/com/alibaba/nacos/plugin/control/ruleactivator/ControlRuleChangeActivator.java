@@ -6,7 +6,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
@@ -84,13 +84,13 @@ public class ControlRuleChangeActivator {
                 
                 Loggers.CONTROL.info("start to apply connection rule content " + limitRule);
                 
-                ConnectionLimitRule connectionLimitRule = StringUtils.isBlank(limitRule) ? new ConnectionLimitRule()
+                ConnectionControlRule connectionControlRule = StringUtils.isBlank(limitRule) ? new ConnectionControlRule()
                         : ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(limitRule);
                 Loggers.CONTROL.info("end to  apply connection rule content ");
                 
-                if (connectionLimitRule != null) {
+                if (connectionControlRule != null) {
                     ControlManagerCenter.getInstance().getConnectionControlManager()
-                            .applyConnectionLimitRule(connectionLimitRule);
+                            .applyConnectionLimitRule(connectionControlRule);
                 } else {
                     LOGGER.info("Parse rule is null,Ignore illegal rule  :{}", limitRule);
                 }

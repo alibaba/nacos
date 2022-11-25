@@ -1,19 +1,18 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.event.mse.TpsRequestDeniedEvent;
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
+import com.alibaba.nacos.plugin.control.tps.mse.key.ClientIpMonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.key.ConnectionIdMonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MatchType;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKey;
+import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKeyMatcher;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptResult;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptorHolder;
 import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
-import com.alibaba.nacos.plugin.control.tps.key.ClientIpMonitorKey;
-import com.alibaba.nacos.plugin.control.tps.key.ConnectionIdMonitorKey;
-import com.alibaba.nacos.plugin.control.tps.key.MatchType;
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKey;
-import com.alibaba.nacos.plugin.control.tps.key.MonitorKeyMatcher;
 import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
@@ -21,6 +20,7 @@ import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
+import org.springframework.beans.BeanUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public class MseTpsBarrier extends NacosTpsBarrier {
     
-    protected List<RuleBarrier> patternBarriers = new ArrayList<>();
+    protected List<MseRuleBarrier> patternBarriers = new ArrayList<>();
     
     public MseTpsBarrier(String pointName) {
         super(pointName);
@@ -52,8 +52,11 @@ public class MseTpsBarrier extends NacosTpsBarrier {
     public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
         
         if (!(tpsCheckRequest instanceof MseTpsCheckRequest)) {
-            return super.applyTps(tpsCheckRequest);
+            MseTpsCheckRequest mseTpsCheckRequest = new MseTpsCheckRequest();
+            BeanUtils.copyProperties(tpsCheckRequest, mseTpsCheckRequest);
+            tpsCheckRequest = mseTpsCheckRequest;
         }
+        
         MseTpsCheckRequest mseTpsCheckRequest = (MseTpsCheckRequest) tpsCheckRequest;
         boolean preInterceptPassed = false;
         //1.pre interceptor.
@@ -88,18 +91,18 @@ public class MseTpsBarrier extends NacosTpsBarrier {
         Map<RuleBarrier, List<BarrierCheckRequest>> appliedBarriers = null;
         RuleBarrier denyPatternRate = null;
         boolean patternSuccess = true;
-        List<RuleBarrier> patternBarriers = this.patternBarriers;
+        List<MseRuleBarrier> patternBarriers = this.patternBarriers;
         
         buildIpOrConnectionIdKey(mseTpsCheckRequest);
         boolean monitorOnly = preInterceptPassed;
         //1.check pattern barriers
         for (MonitorKey monitorKey : mseTpsCheckRequest.getMonitorKeys()) {
             
-            for (RuleBarrier patternRuleBarrier : patternBarriers) {
+            for (MseRuleBarrier patternRuleBarrier : patternBarriers) {
                 
                 MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
                 if (match.isMatch()) {
-                    BarrierCheckRequest barrierCheckRequest = mseTpsCheckRequest.buildBarrierCheckRequest(monitorKey);
+                    MseBarrierCheckRequest barrierCheckRequest = mseTpsCheckRequest.buildBarrierCheckRequest(monitorKey);
                     barrierCheckRequest.setMonitorOnly(monitorOnly);
                     TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
                     if (patternCheckResponse.isSuccess()) {
@@ -142,7 +145,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
         
         TpsCheckResponse tpsCheckResponse = null;
         boolean pointCheckSuccess = false;
-        BarrierCheckRequest pointCheckRequest = null;
+        MseBarrierCheckRequest pointCheckRequest = null;
         //2.when pattern fail,rollback applied count of patterns.
         if (!patternSuccess) {
             tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.DENY_BY_PATTERN, "");
@@ -153,7 +156,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
             
         } else {
             //3. check point rule
-            pointCheckRequest = new BarrierCheckRequest();
+            pointCheckRequest = new MseBarrierCheckRequest();
             pointCheckRequest.setCount(mseTpsCheckRequest.getCount());
             pointCheckRequest.setPointName(this.pointName);
             pointCheckRequest.setTimestamp(mseTpsCheckRequest.getTimestamp());
@@ -280,7 +283,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
         return pointBarrier;
     }
     
-    public List<RuleBarrier> getPatternBarriers() {
+    public List<MseRuleBarrier> getPatternBarriers() {
         return patternBarriers;
     }
     
@@ -296,8 +299,9 @@ public class MseTpsBarrier extends NacosTpsBarrier {
     public synchronized void applyRule(TpsControlRule newControlRule) {
         
         if (!(newControlRule instanceof MseTpsControlRule)) {
-            super.applyRule(newControlRule);
-            return;
+            MseTpsControlRule mseTpsControlRule = new MseTpsControlRule();
+            BeanUtils.copyProperties(newControlRule, mseTpsControlRule);
+            newControlRule = mseTpsControlRule;
         }
         
         MseTpsControlRule mseNewControlRule = (MseTpsControlRule) newControlRule;
@@ -332,7 +336,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
             Loggers.CONTROL.info("Clear point  control rule for monitorKeys, pointName=[{}]  ", this.getPointName());
             this.patternBarriers = new ArrayList<>();
         } else {
-            Map<String, RuleBarrier> patternRateCounterMap = this.patternBarriers.stream()
+            Map<String, MseRuleBarrier> patternRateCounterMap = this.patternBarriers.stream()
                     .collect(Collectors.toMap(a -> a.getRuleName(), Function.identity(), (key1, key2) -> key1));
             
             for (Map.Entry<String, MseRuleDetail> newMonitorRule : newMonitorKeyRules.entrySet()) {
@@ -356,10 +360,6 @@ public class MseTpsBarrier extends NacosTpsBarrier {
                 if (patternRateCounterMap.containsKey(newMonitorRule.getKey())) {
                     RuleBarrier rateCounterWrapper = patternRateCounterMap.get(newMonitorRule.getKey());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
-                    if (rateCounterWrapper.getOrder() == 0 && !rateCounterWrapper.getPattern()
-                            .contains(Constants.ALL_PATTERN)) {
-                        rateCounterWrapper.setOrder(1);
-                    }
                 } else {
                     Loggers.CONTROL
                             .info("pointName=[{}] ,Add  pattern control rule, name={}, pattern={}, new maxTps={}, new monitorType={} ",
@@ -367,23 +367,18 @@ public class MseTpsBarrier extends NacosTpsBarrier {
                                     newMonitorRule.getValue().getPattern(), newMonitorRule.getValue().getMaxCount(),
                                     newMonitorRule.getValue().getMonitorType());
                     // add rule
-                    RuleBarrier rateCounterWrapper = ruleBarrierCreator
-                            .createRuleBarrier(pointName, newMonitorRule.getKey(), newRuleDetail.getPattern(),
-                                    newRuleDetail.getPeriod(), newRuleDetail.getModel());
+                    MseRuleBarrier rateCounterWrapper = (MseRuleBarrier) ruleBarrierCreator
+                            .createRuleBarrier(pointName, newMonitorRule.getKey(), newRuleDetail.getPeriod());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
-                    if (rateCounterWrapper.getOrder() == 0 && !rateCounterWrapper.getPattern()
-                            .contains(Constants.ALL_PATTERN)) {
-                        rateCounterWrapper.setOrder(1);
-                    }
                     patternRateCounterMap.put(newMonitorRule.getKey(), rateCounterWrapper);
                 }
             }
             
             //delete rule.
-            Iterator<Map.Entry<String, RuleBarrier>> currentPatternCounterIterator = patternRateCounterMap.entrySet()
+            Iterator<Map.Entry<String, MseRuleBarrier>> currentPatternCounterIterator = patternRateCounterMap.entrySet()
                     .iterator();
             while (currentPatternCounterIterator.hasNext()) {
-                Map.Entry<String, RuleBarrier> currentPattern = currentPatternCounterIterator.next();
+                Map.Entry<String, MseRuleBarrier> currentPattern = currentPatternCounterIterator.next();
                 if (!newMonitorKeyRules.containsKey(currentPattern.getKey())) {
                     Loggers.CONTROL.info("Delete  point  control rule for pointName=[{}] ,monitorKey=[{}]",
                             this.getPointName(), currentPattern.getKey());
@@ -392,7 +387,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
             }
             //exact pattern has higher priority.
             this.patternBarriers = patternRateCounterMap.values().stream()
-                    .sorted(Comparator.comparing(RuleBarrier::getOrder, Comparator.reverseOrder()))
+                    .sorted(Comparator.comparing(MseRuleBarrier::getOrder, Comparator.reverseOrder()))
                     .collect(Collectors.toList());
         }
         

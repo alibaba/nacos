@@ -1,7 +1,6 @@
-package com.alibaba.nacos.plugin.control.tps.key;
+package com.alibaba.nacos.plugin.control.tps.mse.key;
 
 public enum MatchType {
-    
     
     NO_MATCH(false, false, "no ", "no match"),
     

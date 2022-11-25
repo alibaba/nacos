@@ -23,12 +23,8 @@ public class TpsControlManagerTest {
         Assert.assertTrue(tpsControlManager.getPoints().containsKey(pointName));
         
     }
-    
-    /**
-     * test denied by monitor key rules.
-     */
     @Test
-    public void testPatternDeny() {
+    public void test(){
     
     }
 }

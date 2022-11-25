@@ -6,7 +6,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionLimitRule;
+import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public abstract class ConnectionControlManager {
     
-    protected ConnectionLimitRule connectionLimitRule;
+    protected ConnectionControlRule connectionControlRule;
     
     protected Collection<ConnectionMetricsCollector> metricsCollectorList;
     
@@ -68,20 +68,20 @@ public abstract class ConnectionControlManager {
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            connectionLimitRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
+            connectionControlRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
             Loggers.CONTROL.info("init connection rule end");
             
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
-            connectionLimitRule = new ConnectionLimitRule();
+            connectionControlRule = new ConnectionControlRule();
         }
     }
     
-    public ConnectionLimitRule getConnectionLimitRule() {
-        return connectionLimitRule;
+    public ConnectionControlRule getConnectionLimitRule() {
+        return connectionControlRule;
     }
     
-    public abstract void applyConnectionLimitRule(ConnectionLimitRule connectionLimitRule);
+    public abstract void applyConnectionLimitRule(ConnectionControlRule connectionControlRule);
     
     /**
      * check connection allowed.

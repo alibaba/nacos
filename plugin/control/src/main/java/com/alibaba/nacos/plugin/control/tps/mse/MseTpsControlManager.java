@@ -127,10 +127,10 @@ public class MseTpsControlManager extends TpsControlManager {
                                 .append(metrics.getCounter().getPassCount()).append("|")
                                 .append(metrics.getCounter().getDeniedCount()).append("|").append("\n");
                     }
-                    List<RuleBarrier> patternBarriers = tpsBarrier.getPatternBarriers();
+                    List<MseRuleBarrier> patternBarriers = tpsBarrier.getPatternBarriers();
                     
-                    for (RuleBarrier tpsPatternBarrier : patternBarriers) {
-                        TpsMetrics patternMetrics = tpsPatternBarrier
+                    for (MseRuleBarrier tpsPatternBarrier : patternBarriers) {
+                        MseTpsMetrics patternMetrics = (MseTpsMetrics)tpsPatternBarrier
                                 .getMetrics(now - tpsPatternBarrier.getPeriod().toMillis(1));
                         if (patternMetrics == null) {
                             continue;

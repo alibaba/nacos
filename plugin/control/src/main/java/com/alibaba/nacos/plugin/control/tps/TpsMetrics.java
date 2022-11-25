@@ -18,7 +18,6 @@ public class TpsMetrics {
     
     private Counter counter;
     
-    private Map<String, Counter> protoKeyCounter = new HashMap<>();
     
     public TpsMetrics(String pointName, String type, long timeStamp, TimeUnit period) {
         this.pointName = pointName;
@@ -31,7 +30,7 @@ public class TpsMetrics {
     @Override
     public String toString() {
         return "TpsMetrics{" + "pointName='" + pointName + '\'' + ", type='" + type + '\'' + ", timeStamp=" + timeStamp
-                + ", period=" + period + ", counter=" + counter + ", protoKeyCounter=" + protoKeyCounter + '}';
+                + ", period=" + period + ", counter=" + counter + '}';
     }
     
     public String getTimeFormatOfSecond(long timeStamp) {
@@ -83,14 +82,6 @@ public class TpsMetrics {
     
     public void setCounter(Counter counter) {
         this.counter = counter;
-    }
-    
-    public Map<String, Counter> getProtoKeyCounter() {
-        return protoKeyCounter;
-    }
-    
-    public void setProtoKeyCounter(Map<String, Counter> protoKeyCounter) {
-        this.protoKeyCounter = protoKeyCounter;
     }
     
     public static class Counter {

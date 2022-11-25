@@ -17,9 +17,8 @@ public class MseRuleBarrierCreator implements RuleBarrierCreator {
     }
     
     @Override
-    public RuleBarrier createRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period,
-            String model) {
-        return new MseRuleBarrier(pointName, ruleName, pattern, period, model);
+    public RuleBarrier createRuleBarrier(String pointName, String ruleName, TimeUnit period) {
+        return new MseRuleBarrier(pointName, ruleName, period);
     }
     
     @Override

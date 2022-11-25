@@ -14,32 +14,25 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     RateCounter rateCounter;
     
-    public SimpleCountRuleBarrier(String pointName, String ruleName, String pattern, TimeUnit period, String model) {
+    public SimpleCountRuleBarrier(String pointName, String ruleName, TimeUnit period) {
         super.setPointName(pointName);
-        super.setRuleName(ruleName);
-        super.setPattern(pattern);
         super.setPeriod(period);
-        super.setModel(model);
+        super.setRuleName(ruleName);
+        this.rateCounter = createSimpleCounter(ruleName, period);
     }
     
-    public abstract LocalSimpleCountRateCounter createSimpleCounter(String name, TimeUnit period);
-    
+    public abstract RateCounter createSimpleCounter(String name, TimeUnit period);
     
     public void reCreateRaterCounter(String name, TimeUnit period) {
         this.rateCounter = createSimpleCounter(name, period);
     }
     
-    private RateCounter getRateCounter(BarrierCheckRequest barrierCheckRequest) {
-        return rateCounter;
-    }
-    
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
-        RateCounter currentRateCounter = getRateCounter(barrierCheckRequest);
         if (isMonitorType()) {
             boolean overLimit = false;
             
-            long addResult = currentRateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
+            long addResult = rateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
             if (addResult > this.getMaxCount()) {
                 overLimit = true;
             }
@@ -47,7 +40,7 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
             return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.PASS_BY_POINT,
                     "success");
         } else {
-            boolean success = currentRateCounter
+            boolean success = rateCounter
                     .tryAdd(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount(), this.getMaxCount());
             return new TpsCheckResponse(success, success ? TpsResultCode.PASS_BY_POINT : TpsResultCode.DENY_BY_POINT,
                     "success");
@@ -100,7 +93,7 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
             this.setMaxCount(ruleDetail.getMaxCount());
             this.setMonitorType(ruleDetail.getMonitorType());
             this.setPeriod(ruleDetail.getPeriod());
-            reCreateRaterCounter(this.getRuleName(), this.getPeriod());
+            reCreateRaterCounter(ruleDetail.getRuleName(), this.getPeriod());
         } else {
             this.setMaxCount(ruleDetail.getMaxCount());
             this.setMonitorType(ruleDetail.getMonitorType());

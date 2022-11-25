@@ -39,6 +39,9 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.connection.enabled:false}")
     private boolean connectionEnabled = false;
     
+    @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
+    private String connectionRuntimeEjector = "nacos";
+    
     @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
     
@@ -102,5 +105,13 @@ public class ControlConfigs {
     
     public void setConnectionManager(String connectionManager) {
         this.connectionManager = connectionManager;
+    }
+    
+    public String getConnectionRuntimeEjector() {
+        return connectionRuntimeEjector;
+    }
+    
+    public void setConnectionRuntimeEjector(String connectionRuntimeEjector) {
+        this.connectionRuntimeEjector = connectionRuntimeEjector;
     }
 }

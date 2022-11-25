@@ -31,6 +31,7 @@ public class ConfigPublishRemoteTpsCheckRequestParser extends RemoteTpsCheckRequ
             tpsCheckRequest.getMonitorKeys().add(configGroupKey);
             ConfigGroupMonitorKey configGroupMonitorKey = new ConfigGroupMonitorKey(configpublishrequest.getGroup());
             tpsCheckRequest.getMonitorKeys().add(configGroupMonitorKey);
+            tpsCheckRequest.setFlow(((ConfigPublishRequest) request).getContent().length());
             return tpsCheckRequest;
             
         }
