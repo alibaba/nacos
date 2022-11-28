@@ -37,6 +37,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         final String appName = params.get("appName");
         final String dataId = params.get("dataId");
         final String group = params.get("group");
+        final String configInformation = params.get("configInformation");
         StringBuilder where = new StringBuilder(" WHERE ");
         final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
         where.append(" a.tenant_id=? ");
@@ -48,6 +49,9 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         }
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND a.app_name=? ");
+        }
+        if (StringUtils.isNotBlank(configInformation)) {
+            where.append(" AND a.content like ?");
         }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagSize; i++) {
@@ -65,6 +69,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         final String appName = params.get("appName");
         final String dataId = params.get("dataId");
         final String group = params.get("group");
+        final String configInformation = params.get("configInformation");
         StringBuilder where = new StringBuilder(" WHERE ");
         final String sql =
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
@@ -81,7 +86,9 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND a.app_name=? ");
         }
-        
+        if (StringUtils.isNotBlank(configInformation)) {
+            where.append(" AND a.content like ?");
+        }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagSize; i++) {
             if (i != 0) {

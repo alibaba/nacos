@@ -299,6 +299,8 @@ const I18N_CONF = {
     tags: '标签',
     pleaseEnterTag: '请输入标签',
     application: '归属应用',
+    configInfo: '配置信息',
+    configInfoPlaceHolder: '请输入配置信息',
     operation: '操作',
     export: '导出查询结果',
     newExport: '新版导出查询结果',
