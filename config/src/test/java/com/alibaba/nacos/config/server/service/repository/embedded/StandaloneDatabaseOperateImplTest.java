@@ -51,39 +51,35 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StandaloneDatabaseOperateImplTest {
-    
+
     @Spy
     @InjectMocks
     private StandaloneDatabaseOperateImpl operate;
-    
+
     @Mock
     private RowMapper<ConfigInfo> rowMapper;
-    
+
     @Mock
     private JdbcTemplate jdbcTemplate;
-    
+
     @Mock
     private JdbcTemplate tempJdbcTemplate;
-    
+
     @Mock
     private BiConsumer<Boolean, Throwable> biConsumer;
-    
+
     @Mock
     private File file;
-    
+
     @Mock
     private TransactionTemplate transactionTemplate;
-    
+
     @Before
     public void setUp() {
         ReflectionTestUtils.setField(operate, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(operate, "transactionTemplate", transactionTemplate);
-        when(file.exists()).thenReturn(true);
-        when(file.isDirectory()).thenReturn(false);
-        when(file.canRead()).thenReturn(true);
-        when(file.getPath()).thenReturn("test");
     }
-    
+
     @Test
     public void testQueryOne1() {
         String sql = "SELECT 1";
@@ -92,7 +88,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(jdbcTemplate.queryForObject(sql, clazz)).thenReturn(num);
         Assert.assertEquals(operate.queryOne(sql, clazz), (Long) 1L);
     }
-    
+
     @Test
     public void testQueryOne2() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
@@ -104,7 +100,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(jdbcTemplate.queryForObject(sql, args, ConfigInfo.class)).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(sql, args, ConfigInfo.class), configInfo);
     }
-    
+
     @Test
     public void testQueryOne3() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
@@ -116,7 +112,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(sql, args, rowMapper), configInfo);
     }
-    
+
     @Test
     public void testQueryOne4() {
         String sql = "SELECT 1";
@@ -125,7 +121,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(tempJdbcTemplate.queryForObject(sql, clazz)).thenReturn(result);
         Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, clazz), result);
     }
-    
+
     @Test
     public void testQueryOne5() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
@@ -137,7 +133,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(tempJdbcTemplate.queryForObject(sql, args, ConfigInfo.class)).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, ConfigInfo.class), configInfo);
     }
-    
+
     @Test
     public void testQueryOne6() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
@@ -149,7 +145,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(tempJdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, rowMapper), configInfo);
     }
-    
+
     @Test
     public void testQueryMany1() {
         final String sql = "SELECT * FROM config_info WHERE id >= ? AND id <= ?";
@@ -164,30 +160,30 @@ public class StandaloneDatabaseOperateImplTest {
         when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfos);
         Assert.assertEquals(configInfos, operate.queryMany(sql, args, rowMapper));
     }
-    
+
     @Test
     public void testQueryMany2() {
         final String sql = "SELECT id, data_id, group_id FROM config_info WHERE id >= ? AND id <= ?";
         final Object[] args = new Object[]{1, 2};
-        
+
         final List<Map<String, Object>> resultList = new ArrayList<>();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("id", 1);
         map1.put("data_id", "test");
         map1.put("group_id", "test");
-        
+
         final Map<String, Object> map2 = new HashMap<>();
         map1.put("id", 2);
         map1.put("data_id", "test");
         map1.put("group_id", "test");
-        
+
         resultList.add(map1);
         resultList.add(map2);
-        
+
         when(jdbcTemplate.queryForList(sql, args)).thenReturn(resultList);
         Assert.assertEquals(operate.queryMany(sql, args), resultList);
     }
-    
+
     @Test
     public void testQueryMany3() {
         String sql = "SELECT data_id FROM config_info WHERE id >= ? AND id <= ?";
@@ -201,7 +197,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(jdbcTemplate.queryForList(sql, args, clazz)).thenReturn(resultList);
         Assert.assertEquals(operate.queryMany(sql, args, clazz), resultList);
     }
-    
+
     @Test
     public void testQueryMany4() {
         final String sql = "SELECT data_id FROM config_info WHERE id >= ? AND id <= ?";
@@ -211,19 +207,19 @@ public class StandaloneDatabaseOperateImplTest {
         map1.put("id", 1);
         map1.put("data_id", "test");
         map1.put("group_id", "test");
-    
+
         final Map<String, Object> map2 = new HashMap<>();
         map1.put("id", 2);
         map1.put("data_id", "test");
         map1.put("group_id", "test");
-    
+
         resultList.add(map1);
         resultList.add(map2);
-        
+
         when(tempJdbcTemplate.queryForList(sql, args)).thenReturn(resultList);
         Assert.assertEquals(operate.queryMany(tempJdbcTemplate, sql, args), resultList);
     }
-    
+
     @Test
     public void testQueryMany5() {
         String sql = "SELECT data_id FROM config_info WHERE id >= ? AND id <= ?";
@@ -237,7 +233,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(operate.queryMany(jdbcTemplate, sql, args, clazz)).thenReturn(resultList);
         Assert.assertEquals(operate.queryMany(jdbcTemplate, sql, args, clazz), resultList);
     }
-    
+
     @Test
     public void testQueryMany6() {
         final String sql = "SELECT * FROM config_info WHERE id >= ? AND id <= ?";
@@ -252,7 +248,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(tempJdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfos);
         Assert.assertEquals(operate.queryMany(tempJdbcTemplate, sql, args, rowMapper), configInfos);
     }
-    
+
     @Test
     public void testDataImport() throws ExecutionException, InterruptedException {
         RestResult<String> errorResult = RestResult.<String>builder().withCode(500).withMsg("null").withData(null)
@@ -262,7 +258,7 @@ public class StandaloneDatabaseOperateImplTest {
         doReturn(errorFuture).when(operate).dataImport(null);
         Assert.assertEquals(operate.dataImport(null).get(), errorResult);
     }
-    
+
     @Test
     public void testUpdate1() {
         List<ModifyRequest> modifyRequests = new ArrayList<>();
@@ -275,7 +271,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.update(modifyRequests));
     }
-    
+
     @Test
     public void testUpdate2() {
         List<ModifyRequest> modifyRequests = new ArrayList<>();
@@ -288,7 +284,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.update(modifyRequests, biConsumer));
     }
-    
+
     @Test
     public void testUpdate3() {
         List<ModifyRequest> modifyRequests = new ArrayList<>();
@@ -301,7 +297,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.update(transactionTemplate, jdbcTemplate, modifyRequests));
     }
-    
+
     @Test
     public void testUpdate4() {
         List<ModifyRequest> modifyRequests = new ArrayList<>();
@@ -314,7 +310,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.update(transactionTemplate, jdbcTemplate, modifyRequests, biConsumer));
     }
-    
+
     @Test
     public void testBlockUpdate1() {
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = 1;";
@@ -322,7 +318,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.blockUpdate());
     }
-    
+
     @Test
     public void testBlockUpdate2() {
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = 1;";
@@ -330,7 +326,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.blockUpdate(biConsumer));
     }
-    
+
     @Test
     public void testDoDataImport() {
         List<ModifyRequest> modifyRequests = new ArrayList<>();
@@ -343,7 +339,7 @@ public class StandaloneDatabaseOperateImplTest {
         when(tempJdbcTemplate.batchUpdate(sql)).thenReturn(new int[]{1});
         Assert.assertTrue(operate.doDataImport(tempJdbcTemplate, modifyRequests));
     }
-    
+
     @Test
     public void testFutureUpdate() throws ExecutionException, InterruptedException {
         String sql = "SELECT 1";
