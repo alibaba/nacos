@@ -110,6 +110,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     private static final String APP_NAME = "appName";
     
+    private static final String CONFIG_INFORMATION = "configInformation";
+    
     private static final String CONTENT = "content";
     
     private static final String TENANT = "tenant_id";
@@ -675,6 +677,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        final String configInformation = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_info");
         String sql = null;
         String sqlCount = null;
         List<String> paramList = new ArrayList<>();
@@ -691,6 +694,10 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         if (StringUtils.isNotBlank(appName)) {
             paramList.add(appName);
             paramsMap.put(APP_NAME, APP_NAME);
+        }
+        if (StringUtils.isNotBlank(configInformation)) {
+            paramList.add(configInformation);
+            paramsMap.put(CONFIG_INFORMATION, CONFIG_INFORMATION);
         }
         final int startRow = (pageNo - 1) * pageSize;
         if (StringUtils.isNotBlank(configTags)) {

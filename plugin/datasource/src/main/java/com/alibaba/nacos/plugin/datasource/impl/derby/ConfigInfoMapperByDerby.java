@@ -39,6 +39,8 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     
     private static final String GROUP = "group";
     
+    private static final String CONFIG_INFORMATION = "configInformation";
+    
     private static final String APP_NAME = "appName";
     
     private static final String CONTENT = "content";
@@ -248,6 +250,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         final String appName = params.get(APP_NAME);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
+        final String configInformation = params.get(CONFIG_INFORMATION);
         final String sqlCount = "SELECT count(*) FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
@@ -260,6 +263,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
         }
+        if (StringUtils.isNotBlank(configInformation)) {
+            where.append(" AND content LIKE ? ");
+        }
         return sqlCount + where;
     }
     
@@ -268,6 +274,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         final String appName = params.get(APP_NAME);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
+        final String configInformation = params.get(CONFIG_INFORMATION);
         final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
@@ -279,6 +286,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         }
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
+        }
+        if (StringUtils.isNotBlank(configInformation)) {
+            where.append(" AND content LIKE ? ");
         }
         return sql + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }

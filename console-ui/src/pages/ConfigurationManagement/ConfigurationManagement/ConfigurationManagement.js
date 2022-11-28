@@ -80,6 +80,7 @@ class ConfigurationManagement extends React.Component {
     this.preGroup = this.group;
     this.dataId = getParams('dataId') || '';
     this.preDataId = this.dataId;
+    this.config_info = getParams('configInfo') || '';
     this.serverId = getParams('serverId') || 'center';
     this.edasAppId = getParams('edasAppId') || '';
     this.edasAppName = getParams('edasAppName') || '';
@@ -98,6 +99,7 @@ class ConfigurationManagement extends React.Component {
       group: this.group,
       appName: this.appName,
       config_tags: [],
+      config_info: this.config_info,
       tagLst: [],
       selectValue: [],
       loading: false,
@@ -272,6 +274,7 @@ class ConfigurationManagement extends React.Component {
       group: this.group,
       appName: this.appName,
       config_tags: this.state.config_tags.join(','),
+      config_info: this.state.config_info,
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
@@ -453,6 +456,11 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  setConfigInfo(value) {
+    this.setState({
+      config_info: value,
+    });
+  }
   /**
    * groupId赋值
    */
@@ -1247,6 +1255,18 @@ class ConfigurationManagement extends React.Component {
                       }
                     }}
                     hasClear
+                  />
+                </Form.Item>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.configInfo}
+                >
+                  <Input
+                    htmlType={'text'}
+                    style={{ width: 200 }}
+                    placeholder={locale.configInfoPlaceHolder}
+                    value={this.state.config_info}
+                    onChange={this.setConfigInfo.bind(this)}
                   />
                 </Form.Item>
               </Form>

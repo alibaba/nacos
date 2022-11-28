@@ -299,6 +299,8 @@ const I18N_CONF = {
     query: 'Search',
     advancedQuery9: 'Advanced Query',
     app1: 'Enter App Name\n',
+    configInfo: 'configInfo',
+    configInfoPlaceHolder: 'Enter Config Info',
     tags: 'Tags',
     pleaseEnterTag: 'Enter Tag',
     application: 'Application',
