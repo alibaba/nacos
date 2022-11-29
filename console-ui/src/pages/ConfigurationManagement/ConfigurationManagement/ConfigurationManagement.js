@@ -74,7 +74,7 @@ class ConfigurationManagement extends React.Component {
     this.deleteDialog = React.createRef();
     this.showcode = React.createRef();
     this.field = new Field(this);
-    this.appName = getParams('appName') || getParams('edasAppId') || '';
+    this.appName = getParams('appName') || '';
     this.preAppName = this.appName;
     this.group = getParams('group') || '';
     this.preGroup = this.group;
@@ -85,6 +85,7 @@ class ConfigurationManagement extends React.Component {
     this.edasAppId = getParams('edasAppId') || '';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppId;
+    this.isAdvance = getParams('isAdvanceQuery') || false;
     this.state = {
       value: '',
       visible: false,
@@ -113,7 +114,7 @@ class ConfigurationManagement extends React.Component {
       hasdash: false,
       isCn: true,
       contentList: [],
-      isAdvancedQuery: false,
+      isAdvancedQuery: this.isAdvance,
       isCheckAll: false,
       rowSelection: {
         onChange: this.configDataTableOnChange.bind(this),
@@ -447,6 +448,7 @@ class ConfigurationManagement extends React.Component {
     this.setState({
       appName: value,
     });
+    setParams('appName', value);
   }
 
   setConfigTags(value) {
@@ -454,12 +456,14 @@ class ConfigurationManagement extends React.Component {
       config_tags: value || [],
       tagLst: value,
     });
+    setParams('configTags', value);
   }
 
   setConfigInfo(value) {
     this.setState({
       config_info: value,
     });
+    setParams('configInfo', value);
   }
   /**
    * groupId赋值
@@ -469,6 +473,7 @@ class ConfigurationManagement extends React.Component {
     this.setState({
       group: value || '',
     });
+    setParams('group', value);
   }
 
   handleDefaultFuzzySwitchChange = () => {
@@ -478,9 +483,6 @@ class ConfigurationManagement extends React.Component {
   };
 
   selectAll() {
-    setParams('dataId', this.dataId);
-    setParams('group', this.group);
-    setParams('appName', this.appName);
     this.getData();
   }
 
@@ -529,6 +531,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   changeAdvancedQuery = () => {
+    setParams('isAdvanceQuery', !this.state.isAdvancedQuery);
     this.setState({
       isAdvancedQuery: !this.state.isAdvancedQuery,
     });
@@ -1142,6 +1145,7 @@ class ConfigurationManagement extends React.Component {
                     onChange={dataId => {
                       this.dataId = dataId;
                       this.setState({ dataId });
+                      setParams('dataId', this.dataId);
                     }}
                     onPressEnter={() => this.selectAll()}
                   />
