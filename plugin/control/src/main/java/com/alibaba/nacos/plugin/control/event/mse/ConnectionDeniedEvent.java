@@ -21,6 +21,11 @@ public class ConnectionDeniedEvent extends Event {
         this.message = message;
     }
     
+    /**
+     * monitor model,not intercept actual
+     *
+     * @return
+     */
     public boolean isMonitorModel() {
         return isMonitorModel;
     }

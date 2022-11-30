@@ -149,98 +149,99 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
      */
     public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
         
-        ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
-        
-/*        if (!ControlConfigs.getInstance().isConnectionEnabled()) {
-            connectionCheckResponse = new ConnectionCheckResponse();
-            connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
-            connectionCheckResponse.setMessage("connection check not enabled.");
-            return connectionCheckResponse;
-        }*/
-        
-        //1.interceptor pre interceptor
-        Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();
-        for (ConnectionInterceptor connectionInterceptor : interceptors) {
-            if (connectionInterceptor.isDisabled()) {
-                continue;
+        try {
+            ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
+            
+            //1.interceptor pre interceptor
+            Collection<ConnectionInterceptor> interceptors = InterceptorHolder.getInterceptors();
+            for (ConnectionInterceptor connectionInterceptor : interceptors) {
+                if (connectionInterceptor.isDisabled()) {
+                    continue;
+                }
+                InterceptResult intercept = connectionInterceptor.preIntercept(connectionCheckRequest);
+                if (intercept.equals(InterceptResult.CHECK_PASS)) {
+                    connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_PRE_INTERCEPT);
+                    connectionCheckResponse.setSuccess(true);
+                    connectionCheckResponse.setMessage("passed by pre interceptor :" + connectionInterceptor.getName());
+                    return connectionCheckResponse;
+                } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
+                    connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
+                    connectionCheckResponse.setSuccess(false);
+                    String message = String
+                            .format("denied by pre interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
+                                    connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
+                                    connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
+                                    connectionCheckRequest.getLabels());
+                    connectionCheckResponse.setMessage(message);
+                    Loggers.CONNECTION.warn(message);
+                    ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
+                            connectionCheckResponse.getCode(), message);
+                    if (isMonitorMode()) {
+                        connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
+                        connectionCheckResponse.setSuccess(true);
+                        connectionDeniedEvent.setMonitorModel(true);
+                    }
+                    NotifyCenter.publishEvent(connectionDeniedEvent);
+                    
+                    return connectionCheckResponse;
+                }
             }
-            InterceptResult intercept = connectionInterceptor.preIntercept(connectionCheckRequest);
-            if (intercept.equals(InterceptResult.CHECK_PASS)) {
-                connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_PRE_INTERCEPT);
-                connectionCheckResponse.setSuccess(true);
-                connectionCheckResponse.setMessage("passed by pre interceptor :" + connectionInterceptor.getName());
-                return connectionCheckResponse;
-            } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
-                connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
+            
+            //2.check for rule
+            connectionCheckResponse = checkInternal(connectionCheckRequest);
+            boolean originalSuccess = connectionCheckResponse.isSuccess();
+            String originalMsg = connectionCheckResponse.getMessage();
+            int originalConnectionCheckCode = connectionCheckResponse.getCode();
+            
+            //3.post interceptor.
+            InterceptResult interceptResult = postIntercept(connectionCheckRequest, connectionCheckResponse);
+            if (originalSuccess && InterceptResult.CHECK_DENY == interceptResult) {
+                //pass->deny
+                connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_POST_INTERCEPT);
                 connectionCheckResponse.setSuccess(false);
                 String message = String
-                        .format("denied by pre interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                                connectionInterceptor.getName(), connectionCheckRequest.getClientIp(),
-                                connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
-                                connectionCheckRequest.getLabels());
+                        .format("over turned, denied by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
+                                connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
+                                connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
                 connectionCheckResponse.setMessage(message);
-                Loggers.CONNECTION.warn(message);
+            } else if (!originalSuccess && InterceptResult.CHECK_PASS == interceptResult) {
+                //deny->pass
+                connectionCheckResponse.setSuccess(true);
+                connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_POST_INTERCEPT);
+                String message = String
+                        .format("over turned, passed by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
+                                connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
+                                connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
+                connectionCheckResponse.setMessage(message);
+            } else {
+                //not changed
+                connectionCheckResponse.setCode(originalConnectionCheckCode);
+                connectionCheckResponse.setSuccess(originalSuccess);
+                connectionCheckResponse.setMessage(originalMsg);
+            }
+            
+            if (!connectionCheckResponse.isSuccess()) {
+                boolean monitorMode = isMonitorMode();
+                
                 ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
-                        connectionCheckResponse.getCode(), message);
-                if (isMonitorMode()) {
-                    connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
+                        connectionCheckResponse.getCode(), connectionCheckResponse.getMessage());
+                if (monitorMode) {
+                    //pass by monitor.
+                    connectionCheckResponse.setCode(ConnectionCheckCode.PASS_BY_MONITOR);
                     connectionCheckResponse.setSuccess(true);
+                    connectionDeniedEvent.setConnectionCheckCode(connectionCheckResponse.getCode());
                     connectionDeniedEvent.setMonitorModel(true);
                 }
                 NotifyCenter.publishEvent(connectionDeniedEvent);
-                
-                return connectionCheckResponse;
             }
+            
+            return connectionCheckResponse;
+        } catch (Throwable throwable) {
+            Loggers.CONNECTION.error("Exception throw during connection limit check ,skip check", throwable);
+            ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
+            connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
+            return connectionCheckResponse;
         }
-        
-        //2.check for rule
-        connectionCheckResponse = checkInternal(connectionCheckRequest);
-        boolean originalSuccess = connectionCheckResponse.isSuccess();
-        String originalMsg = connectionCheckResponse.getMessage();
-        int originalConnectionCheckCode = connectionCheckResponse.getCode();
-        
-        //3.post interceptor.
-        InterceptResult interceptResult = postIntercept(connectionCheckRequest, connectionCheckResponse);
-        if (originalSuccess && InterceptResult.CHECK_DENY == interceptResult) {
-            //pass->deny
-            connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_POST_INTERCEPT);
-            connectionCheckResponse.setSuccess(false);
-            String message = String
-                    .format("over turned, denied by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-            connectionCheckResponse.setMessage(message);
-        } else if (!originalSuccess && InterceptResult.CHECK_PASS == interceptResult) {
-            //deny->pass
-            connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_POST_INTERCEPT);
-            String message = String
-                    .format("over turned, passed by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
-                            connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
-                            connectionCheckRequest.getSource(), connectionCheckRequest.getLabels());
-            connectionCheckResponse.setMessage(message);
-        } else {
-            //not changed
-            connectionCheckResponse.setCode(originalConnectionCheckCode);
-            connectionCheckResponse.setSuccess(originalSuccess);
-            connectionCheckResponse.setMessage(originalMsg);
-        }
-        
-        if (!connectionCheckResponse.isSuccess()) {
-            ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
-                    connectionCheckResponse.getCode(), connectionCheckResponse.getMessage());
-            boolean monitorMode = isMonitorMode();
-            if (monitorMode) {
-                //pass by monitor.
-                connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
-                connectionCheckResponse.setSuccess(true);
-                connectionDeniedEvent.setMonitorModel(true);
-            }
-            NotifyCenter.publishEvent(connectionDeniedEvent);
-        }
-        
-        return connectionCheckResponse;
     }
     
     private InterceptResult postIntercept(ConnectionCheckRequest connectionCheckRequest,

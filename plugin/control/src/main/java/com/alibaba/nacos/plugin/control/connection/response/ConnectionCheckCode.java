@@ -17,5 +17,8 @@ public class ConnectionCheckCode {
      */
     public static final int DENY_BY_TOTAL_OVER = 300;
     
-    
+    /**
+     *
+     */
+    public static final int PASS_BY_MONITOR = 205;
 }
