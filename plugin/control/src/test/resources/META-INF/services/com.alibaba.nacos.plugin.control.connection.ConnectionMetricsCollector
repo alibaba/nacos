@@ -1,2 +1,2 @@
-com.alibaba.nacos.plugin.control.connection.mse.TestAConnectionMetricsCollector
-com.alibaba.nacos.plugin.control.connection.mse.TestBConnectionMetricsCollector
+com.alibaba.nacos.plugin.control.connection.TestAConnectionMetricsCollector
+com.alibaba.nacos.plugin.control.connection.TestBConnectionMetricsCollector

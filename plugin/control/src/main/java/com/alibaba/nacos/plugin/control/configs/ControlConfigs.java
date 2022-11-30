@@ -27,11 +27,11 @@ public class ControlConfigs {
         ControlConfigs.instance = instance;
     }
     
-    @Value("${nacos.plugin.control.tps.barrier.creator:mse}")
-    private String tpsBarrierCreator = "mse";
+    @Value("${nacos.plugin.control.tps.barrier.creator:nacos}")
+    private String tpsBarrierCreator = "nacos";
     
-    @Value("${nacos.plugin.control.tps.barrier.rule.creator:mse}")
-    private String tpsRuleBarrierCreator = "mse";
+    @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
+    private String tpsRuleBarrierCreator = "nacos";
     
     @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
     private String connectionRuntimeEjector = "nacos";
@@ -39,8 +39,8 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
     
-    @Value("${nacos.plugin.control.rule.external.storage:internalconfigcenter}")
-    private String ruleExternalStorage = "internalconfigcenter";
+    @Value("${nacos.plugin.control.rule.external.storage:}")
+    private String ruleExternalStorage = "";
     
     @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";

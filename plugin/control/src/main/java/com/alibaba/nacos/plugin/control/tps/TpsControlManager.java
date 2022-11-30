@@ -132,7 +132,6 @@ public class TpsControlManager {
         
     }
     
-    
     class TpsMetricsReporter implements Runnable {
         
         long lastReportSecond = 0L;

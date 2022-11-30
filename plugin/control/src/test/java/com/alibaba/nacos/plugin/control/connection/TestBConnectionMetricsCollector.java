@@ -1,6 +1,4 @@
-package com.alibaba.nacos.plugin.control.connection.mse;
-
-import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
+package com.alibaba.nacos.plugin.control.connection;
 
 public class TestBConnectionMetricsCollector implements ConnectionMetricsCollector {
     

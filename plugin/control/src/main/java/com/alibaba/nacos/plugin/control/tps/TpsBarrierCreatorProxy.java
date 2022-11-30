@@ -16,7 +16,7 @@ public class TpsBarrierCreatorProxy {
         Collection<TpsBarrierCreator> loadedCreators = NacosServiceLoader.load(TpsBarrierCreator.class);
         for (TpsBarrierCreator barrierCreator : loadedCreators) {
             if (tpsRuleBarrierCreator.equalsIgnoreCase(barrierCreator.getName())) {
-                Loggers.CONTROL.info("Found tps barrier creator of name : {}", tpsBarrierCreator);
+                Loggers.CONTROL.info("Found tps barrier creator of name : {}", tpsRuleBarrierCreator);
                 tpsBarrierCreator = barrierCreator;
                 break;
             }

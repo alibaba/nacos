@@ -1,6 +1,7 @@
 package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import org.slf4j.Logger;
@@ -28,9 +29,8 @@ public class RuleStorageProxy {
                 break;
             }
         }
-        if (externalRuleStorage == null) {
+        if (externalRuleStorage == null && StringUtils.isNotBlank(rulePersistActivator)) {
             LOGGER.error("Fail to found persist rule storage of name ：" + rulePersistActivator);
-            
         }
     }
     
