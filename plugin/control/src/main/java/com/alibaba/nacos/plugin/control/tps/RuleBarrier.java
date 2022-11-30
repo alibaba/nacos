@@ -3,7 +3,6 @@ package com.alibaba.nacos.plugin.control.tps;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
-import com.alibaba.nacos.plugin.control.tps.rule.RuleModel;
 
 import java.util.concurrent.TimeUnit;
 

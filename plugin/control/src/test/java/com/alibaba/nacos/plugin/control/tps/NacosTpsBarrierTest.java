@@ -17,15 +17,16 @@ import java.util.concurrent.TimeUnit;
 public class NacosTpsBarrierTest {
     
     RuleBarrierCreator before;
+    
     @Before
-    public void setUp(){
-        before=TpsBarrier.ruleBarrierCreator;
-        TpsBarrier.ruleBarrierCreator=new LocalSimpleCountBarrierCreator();
+    public void setUp() {
+        before = TpsBarrier.ruleBarrierCreator;
+        TpsBarrier.ruleBarrierCreator = new LocalSimpleCountBarrierCreator();
     }
     
     @After
-    public void after(){
-        TpsBarrier.ruleBarrierCreator=before;
+    public void after() {
+        TpsBarrier.ruleBarrierCreator = before;
     }
     
     @Test
@@ -187,7 +188,6 @@ public class NacosTpsBarrierTest {
             Assert.assertEquals(TpsResultCode.DENY_BY_POINT, tpsCheckResponse.getCode());
         }
         
-        
     }
     
     @Test
@@ -254,7 +254,7 @@ public class NacosTpsBarrierTest {
             Assert.assertTrue(tpsCheckResponse.isSuccess());
             Assert.assertEquals(TpsResultCode.PASS_BY_POINT, tpsCheckResponse.getCode());
         }
-    
+        
         // next hours 5tps check deny.
         for (int i = 0; i < 5; i++) {
             TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);

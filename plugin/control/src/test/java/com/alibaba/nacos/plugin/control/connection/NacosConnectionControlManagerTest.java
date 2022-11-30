@@ -25,10 +25,10 @@ public class NacosConnectionControlManagerTest {
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         Assert.assertFalse(check.isSuccess());
         Assert.assertEquals(ConnectionCheckCode.DENY_BY_TOTAL_OVER, check.getCode());
-    
+        
         connectionControlRule.setCountLimit(40);
         connectionControlManager.applyConnectionLimitRule(connectionControlRule);
-         check = connectionControlManager.check(connectionCheckRequest);
+        check = connectionControlManager.check(connectionCheckRequest);
         Assert.assertTrue(check.isSuccess());
         Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCode());
         

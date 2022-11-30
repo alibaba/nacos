@@ -2,8 +2,6 @@ package com.alibaba.nacos.plugin.control.tps;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class TpsMetrics {
@@ -17,7 +15,6 @@ public class TpsMetrics {
     private TimeUnit period;
     
     private Counter counter;
-    
     
     public TpsMetrics(String pointName, String type, long timeStamp, TimeUnit period) {
         this.pointName = pointName;

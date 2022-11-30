@@ -120,7 +120,7 @@ public class TpsControlManager {
      * @return check current tps is allowed.
      */
     public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
-       
+        
         if (points.containsKey(tpsRequest.getPointName())) {
             try {
                 return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);
@@ -135,10 +135,6 @@ public class TpsControlManager {
     class TpsMetricsReporter implements Runnable {
         
         long lastReportSecond = 0L;
-        
-        long lastReportMinutes = 0L;
-        
-        long lastReportHours = 0L;
         
         /**
          * get format string "2021-01-16 17:20:21" of timestamp.
@@ -159,8 +155,6 @@ public class TpsControlManager {
                 Set<Map.Entry<String, TpsBarrier>> entries = points.entrySet();
                 
                 long tempSecond = 0L;
-                long tempMinutes = 0L;
-                long tempHours = 0L;
                 
                 long metricsTime = now - 1000L;
                 String formatString = getTimeFormatOfSecond(metricsTime);
@@ -184,12 +178,6 @@ public class TpsControlManager {
                 
                 if (tempSecond > 0) {
                     lastReportSecond = tempSecond;
-                }
-                if (tempMinutes > 0) {
-                    lastReportMinutes = tempMinutes;
-                }
-                if (tempHours > 0) {
-                    lastReportHours = tempHours;
                 }
                 
                 if (stringBuilder.length() > 0) {

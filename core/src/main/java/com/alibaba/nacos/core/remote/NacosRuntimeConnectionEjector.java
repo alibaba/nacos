@@ -28,6 +28,9 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
     
     }
     
+    /**
+     * eject connections on runtime.
+     */
     public void doEject() {
         try {
             

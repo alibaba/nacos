@@ -2,7 +2,6 @@ package com.alibaba.nacos.plugin.control.connection.nacos;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
