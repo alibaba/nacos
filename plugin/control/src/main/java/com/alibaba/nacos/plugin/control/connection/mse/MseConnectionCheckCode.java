@@ -1,6 +1,8 @@
 package com.alibaba.nacos.plugin.control.connection.mse;
 
-public class MseConnectionCheckCode {
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
+
+public class MseConnectionCheckCode extends ConnectionCheckCode {
     
     /**
      * check fail ,but passed by ip mode.

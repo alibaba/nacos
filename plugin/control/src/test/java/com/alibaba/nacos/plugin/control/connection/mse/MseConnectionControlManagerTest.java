@@ -5,6 +5,7 @@ import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
+import com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -159,7 +160,7 @@ public class MseConnectionControlManagerTest {
         
         CpuTestUtils.cpuOverLoad = true;
         MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
-        connectionControlRule.setCountLimit(20);
+        connectionControlRule.setCountLimit(50);
         connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
         connectionControlRule.setCountLimitPerClientIpDefault(15);
         connectionControlManager.applyConnectionLimitRule(connectionControlRule);
@@ -172,6 +173,27 @@ public class MseConnectionControlManagerTest {
         System.out.println(check.getMessage());
         
     }
+    
+    @Test
+    public void testDeniedByCpuInterceptorDisableInterceptors() {
+        
+        CpuTestUtils.cpuOverLoad = true;
+        MseConnectionControlRule connectionControlRule = new MseConnectionControlRule();
+        connectionControlRule.setCountLimit(50);
+        connectionControlRule.setMonitorType(MonitorType.INTERCEPT.type);
+        connectionControlRule.setCountLimitPerClientIpDefault(20);
+        connectionControlRule.setDisabledInterceptors(Sets.newHashSet("cputestinterceptor"));
+        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
+        
+        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
+        
+        ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
+        Assert.assertEquals(MseConnectionCheckCode.PASS_BY_TOTAL, check.getCode());
+        System.out.println(check.getCode());
+        System.out.println(check.getMessage());
+        
+    }
+    
     
     @Test
     public void testPassByWhiteListLabel() {

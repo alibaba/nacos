@@ -1,6 +1,8 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
-public class MseTpsResultCode {
+import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
+
+public class MseTpsResultCode extends TpsResultCode {
     
     /**
      *

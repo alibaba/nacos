@@ -14,7 +14,7 @@ public class MseRuleParser extends NacosRuleParser {
     
     @Override
     public String getName() {
-        return "flowed";
+        return "mse";
     }
     
     private MseTpsControlRule parse(String ruleContent) {

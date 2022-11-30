@@ -27,15 +27,12 @@ public class ControlConfigs {
         ControlConfigs.instance = instance;
     }
     
-    @Value("${nacos.plugin.control.tps.enabled:false}")
-    private boolean tpsEnabled = false;
-    
     @Value("${nacos.plugin.control.tps.barrier.creator:mse}")
     private String tpsBarrierCreator = "mse";
     
     @Value("${nacos.plugin.control.tps.barrier.rule.creator:mse}")
     private String tpsRuleBarrierCreator = "mse";
-
+    
     @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
     private String connectionRuntimeEjector = "nacos";
     
@@ -47,10 +44,6 @@ public class ControlConfigs {
     
     @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";
-    
-    public void setTpsEnabled(boolean tpsEnabled) {
-        this.tpsEnabled = tpsEnabled;
-    }
     
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;

@@ -83,7 +83,7 @@ public class DeniedEventTest {
             @Override
             public void onEvent(TpsRequestDeniedEvent event) {
                 System.out.println("event receive-" + event.getMessage());
-                if (event.getTpsCheckRequest().getPointName().equalsIgnoreCase(testTpsBarrier)) {
+                if (testTpsBarrier.equalsIgnoreCase(event.getTpsCheckRequest().getPointName())) {
                     Assert.assertTrue(event.isMonitorModel());
                     deniedEventCount.incrementAndGet();
                 }
@@ -138,7 +138,8 @@ public class DeniedEventTest {
             @Override
             public void onEvent(TpsRequestDeniedEvent event) {
                 System.out.println("event receive-" + event.getMessage());
-                if (event.getTpsCheckRequest().getPointName().equalsIgnoreCase(testTpsBarrier)) {
+                if (testTpsBarrier.equalsIgnoreCase(event.getTpsCheckRequest().getPointName())) {
+                    System.out.println("isMonitorModel:" + event.isMonitorModel());
                     Assert.assertFalse(event.isMonitorModel());
                     deniedEventCount.incrementAndGet();
                 }
@@ -201,7 +202,7 @@ public class DeniedEventTest {
             @Override
             public void onEvent(TpsRequestDeniedEvent event) {
                 System.out.println("event receive-" + event.getMessage());
-                if (event.getTpsCheckRequest().getPointName().equalsIgnoreCase(testTpsBarrier)) {
+                if (testTpsBarrier.equalsIgnoreCase(event.getTpsCheckRequest().getPointName())) {
                     Assert.assertTrue(event.isMonitorModel());
                     deniedEventCount.incrementAndGet();
                 }
