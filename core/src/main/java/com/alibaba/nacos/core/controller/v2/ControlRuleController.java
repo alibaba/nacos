@@ -91,7 +91,7 @@ public class ControlRuleController {
             RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
             
             if (external) {
-                ruleStorageProxy.getExternalDiskStorage().saveTpsRule(pointName, content);
+                ruleStorageProxy.getExternalStorage().saveTpsRule(pointName, content);
             } else {
                 ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, content);
             }
@@ -159,7 +159,7 @@ public class ControlRuleController {
             ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(content);
             RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
             if (external) {
-                ruleStorageProxy.getExternalDiskStorage().saveConnectionRule(content);
+                ruleStorageProxy.getExternalStorage().saveConnectionRule(content);
             } else {
                 ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(content);
             }

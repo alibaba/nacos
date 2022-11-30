@@ -44,8 +44,15 @@ public class ControlRuleChangeActivator {
                 RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
                 
                 if (event.isExternal()) {
-                    String persistTpsRule = ruleStorageProxy.getExternalDiskStorage().getTpsRule(pointName);
-                    ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, persistTpsRule);
+                    if (ruleStorageProxy.getExternalStorage() != null) {
+                        String persistTpsRule = ruleStorageProxy.getExternalStorage().getTpsRule(pointName);
+                        ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, persistTpsRule);
+                    } else {
+                        Loggers.CONTROL
+                                .info("No external rule storage found,will load local disk instead,point name={}",
+                                        event.getPointName());
+                    }
+                    
                 }
                 String tpsRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
                 
@@ -77,15 +84,22 @@ public class ControlRuleChangeActivator {
                 RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
                 
                 if (event.isExternal()) {
-                    String connectionRule = ruleStorageProxy.getExternalDiskStorage().getConnectionRule();
-                    ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(connectionRule);
+                    if (ruleStorageProxy.getExternalStorage() != null) {
+                        String connectionRule = ruleStorageProxy.getExternalStorage().getConnectionRule();
+                        ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(connectionRule);
+                    } else {
+                        Loggers.CONTROL.info("No external rule storage found,will load local disk instead");
+                        
+                    }
+                    
                 }
                 String limitRule = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
                 
                 Loggers.CONTROL.info("start to apply connection rule content " + limitRule);
                 
-                ConnectionControlRule connectionControlRule = StringUtils.isBlank(limitRule) ? new ConnectionControlRule()
-                        : ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(limitRule);
+                ConnectionControlRule connectionControlRule =
+                        StringUtils.isBlank(limitRule) ? new ConnectionControlRule()
+                                : ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(limitRule);
                 Loggers.CONTROL.info("end to  apply connection rule content ");
                 
                 if (connectionControlRule != null) {

@@ -58,9 +58,9 @@ public abstract class ConnectionControlManager {
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk connection rule content on start up,value  ={}", localRuleContent);
-        } else if (ruleStorageProxy.getExternalDiskStorage() != null
-                && ruleStorageProxy.getExternalDiskStorage().getConnectionRule() != null) {
-            localRuleContent = ruleStorageProxy.getExternalDiskStorage().getConnectionRule();
+        } else if (ruleStorageProxy.getExternalStorage() != null
+                && ruleStorageProxy.getExternalStorage().getConnectionRule() != null) {
+            localRuleContent = ruleStorageProxy.getExternalStorage().getConnectionRule();
             if (StringUtils.isNotBlank(localRuleContent)) {
                 Loggers.CONTROL
                         .info("Found persist disk connection rule content on start up ,value  ={}", localRuleContent);

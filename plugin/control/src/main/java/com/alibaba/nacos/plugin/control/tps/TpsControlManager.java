@@ -3,7 +3,6 @@ package com.alibaba.nacos.plugin.control.tps;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
@@ -73,9 +72,9 @@ public class TpsControlManager {
         String localRuleContent = ruleStorageProxy.getLocalDiskStorage().getTpsRule(pointName);
         if (StringUtils.isNotBlank(localRuleContent)) {
             Loggers.CONTROL.info("Found local disk tps control rule of {},content ={}", pointName, localRuleContent);
-        } else if (ruleStorageProxy.getExternalDiskStorage() != null
-                && ruleStorageProxy.getExternalDiskStorage().getTpsRule(pointName) != null) {
-            localRuleContent = ruleStorageProxy.getExternalDiskStorage().getTpsRule(pointName);
+        } else if (ruleStorageProxy.getExternalStorage() != null
+                && ruleStorageProxy.getExternalStorage().getTpsRule(pointName) != null) {
+            localRuleContent = ruleStorageProxy.getExternalStorage().getTpsRule(pointName);
             if (StringUtils.isNotBlank(localRuleContent)) {
                 Loggers.CONTROL.info("Found external  tps control rule of {},content ={}", pointName, localRuleContent);
             }

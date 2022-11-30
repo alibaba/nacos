@@ -38,7 +38,7 @@ public class RuleStorageProxy {
         return localDiskRuleStorage;
     }
     
-    public RuleStorage getExternalDiskStorage() {
+    public RuleStorage getExternalStorage() {
         return externalRuleStorage;
     }
     
