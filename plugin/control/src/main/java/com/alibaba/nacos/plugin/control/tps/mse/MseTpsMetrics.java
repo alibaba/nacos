@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 public class MseTpsMetrics extends TpsMetrics {
     
-    
     private Map<String, Counter> protoKeyCounter = new HashMap<>();
 
     public MseTpsMetrics(String pointName, String type, long timeStamp, TimeUnit period) {
@@ -22,4 +21,5 @@ public class MseTpsMetrics extends TpsMetrics {
     public void setProtoKeyCounter(Map<String, Counter> protoKeyCounter) {
         this.protoKeyCounter = protoKeyCounter;
     }
+    
 }

@@ -38,14 +38,6 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
     @Override
     public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
         
-        if (!ControlConfigs.getInstance().isConnectionEnabled()) {
-            ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
-            connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
-            connectionCheckResponse.setMessage("connection check not enabled.");
-            return connectionCheckResponse;
-        }
-        
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         //limit rule check.
         if (this.connectionControlRule != null) {
@@ -57,7 +49,7 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
             //total count check model
             if (totalCountLimit >= 0 && totalCount >= totalCountLimit) {
                 //deny;
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_TOTAL_OVER);
+                connectionCheckResponse.setCode(ConnectionCheckCode.DENY_BY_TOTAL_OVER);
                 connectionCheckResponse.setMessage(
                         "total count over limit,max allowed count is " + totalCountLimit + ",current count detail is "
                                 + metricsTotalCount.toString());
@@ -70,11 +62,11 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
             }
             
             connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_TOTAL);
+            connectionCheckResponse.setCode(ConnectionCheckCode.PASS_BY_TOTAL);
             connectionCheckResponse.setMessage("check pass");
             return connectionCheckResponse;
         } else {
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+            connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
             connectionCheckResponse.setSuccess(true);
             return connectionCheckResponse;
         }

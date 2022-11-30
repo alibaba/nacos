@@ -12,6 +12,13 @@ public class MseTpsCheckRequest extends TpsCheckRequest {
     
     long flow;
     
+    public MseTpsCheckRequest() {
+    }
+    
+    public MseTpsCheckRequest(String pointName, String connectionId, String clientIp) {
+        super(pointName, connectionId, clientIp);
+    }
+    
     public long getFlow() {
         return flow;
     }

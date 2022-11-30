@@ -2,6 +2,7 @@ package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.event.mse.TpsRequestDeniedEvent;
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
@@ -41,6 +42,8 @@ public class MseTpsBarrier extends NacosTpsBarrier {
     
     public MseTpsBarrier(String pointName) {
         super(pointName);
+        this.pointBarrier = MseRuleBarrierCreator.getInstance()
+                .createRuleBarrier(pointName, pointName, TimeUnit.SECONDS);
     }
     
     /**
@@ -74,8 +77,9 @@ public class MseTpsBarrier extends NacosTpsBarrier {
                                     mseTpsCheckRequest.getPointName(), tpsInterceptor.getName(),
                                     mseTpsCheckRequest.getClientIp(), mseTpsCheckRequest.getConnectionId(),
                                     mseTpsCheckRequest.getMonitorKeys(), monitorType);
-                    TpsCheckResponse tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.DENY_BY_POINT,
-                            "deny by interceptor :" + tpsInterceptor.getName());
+                    TpsCheckResponse tpsCheckResponse = new TpsCheckResponse(false,
+                            MseTpsResultCode.PASS_BY_PRE_INTERCEPTOR,
+                            "deny by pre interceptor :" + tpsInterceptor.getName());
                     TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(mseTpsCheckRequest,
                             tpsCheckResponse.getCode(), tpsCheckResponse.getMessage());
                     if (monitorType) {
@@ -89,58 +93,67 @@ public class MseTpsBarrier extends NacosTpsBarrier {
         }
         
         Map<RuleBarrier, List<BarrierCheckRequest>> appliedBarriers = null;
-        RuleBarrier denyPatternRate = null;
+        MseRuleBarrier denyPatternRate = null;
         boolean patternSuccess = true;
         List<MseRuleBarrier> patternBarriers = this.patternBarriers;
         
         buildIpOrConnectionIdKey(mseTpsCheckRequest);
-        boolean monitorOnly = preInterceptPassed;
+        
+        boolean patternExactMatchPassed = false;
         //1.check pattern barriers
-        for (MonitorKey monitorKey : mseTpsCheckRequest.getMonitorKeys()) {
-            
+        if (!CollectionUtils.isEmpty(mseTpsCheckRequest.getMonitorKeys())) {
             for (MseRuleBarrier patternRuleBarrier : patternBarriers) {
-                
-                MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
-                if (match.isMatch()) {
-                    MseBarrierCheckRequest barrierCheckRequest = mseTpsCheckRequest.buildBarrierCheckRequest(monitorKey);
-                    barrierCheckRequest.setMonitorOnly(monitorOnly);
-                    TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
-                    if (patternCheckResponse.isSuccess()) {
-                        if (appliedBarriers == null) {
-                            appliedBarriers = new HashMap<>();
-                        }
-                        if (!appliedBarriers.containsKey(patternRuleBarrier)) {
-                            appliedBarriers.putIfAbsent(patternRuleBarrier, new ArrayList<>());
-                        }
-                        
-                        appliedBarriers.get(patternRuleBarrier).add(barrierCheckRequest);
-                        if (MatchType.EXACT.equals(match) && !preInterceptPassed) {
-                            monitorOnly = true;
-                            Loggers.TPS
-                                    .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
-                                            pointName, patternRuleBarrier.getPattern(),
-                                            patternRuleBarrier.getRuleName(), mseTpsCheckRequest.getClientIp(),
-                                            mseTpsCheckRequest.getConnectionId(), monitorKey);
-                        }
-                        
-                        if (TpsResultCode.PASS_BY_MONITOR.equals(patternCheckResponse.getCode())) {
+                for (MonitorKey monitorKey : mseTpsCheckRequest.getMonitorKeys()) {
+                    
+                    MatchType match = MonitorKeyMatcher.parse(patternRuleBarrier.getPattern(), monitorKey.build());
+                    if (match.isMatch()) {
+                        MseBarrierCheckRequest barrierCheckRequest = mseTpsCheckRequest
+                                .buildBarrierCheckRequest(monitorKey);
+                        barrierCheckRequest.setMonitorOnly(preInterceptPassed || patternExactMatchPassed);
+                        TpsCheckResponse patternCheckResponse = patternRuleBarrier.applyTps(barrierCheckRequest);
+                        if (patternCheckResponse.isSuccess()) {
+                            if (appliedBarriers == null) {
+                                appliedBarriers = new HashMap<>();
+                            }
+                            if (!appliedBarriers.containsKey(patternRuleBarrier)) {
+                                appliedBarriers.putIfAbsent(patternRuleBarrier, new ArrayList<>());
+                            }
+                            
+                            appliedBarriers.get(patternRuleBarrier).add(barrierCheckRequest);
+                            if (MatchType.EXACT.equals(match) && !preInterceptPassed) {
+                                patternExactMatchPassed = true;
+                                Loggers.TPS
+                                        .info("[{}]pass by exact pattern ={},barrier ={},clientIp={},connectionId={},monitorKey={}",
+                                                pointName, patternRuleBarrier.getPattern(),
+                                                patternRuleBarrier.getRuleName(), mseTpsCheckRequest.getClientIp(),
+                                                mseTpsCheckRequest.getConnectionId(), monitorKey);
+                            }
+                            
+                            if (TpsResultCode.PASS_BY_MONITOR == (patternCheckResponse.getCode())
+                                    && !preInterceptPassed) {
+                                TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(
+                                        mseTpsCheckRequest, patternCheckResponse.getCode(),
+                                        "pattern tps over limit ,but pass by monitor type.");
+                                tpsRequestDeniedEvent.setMonitorModel(true);
+                                NotifyCenter.publishEvent(tpsRequestDeniedEvent);
+                            }
+                            
+                        } else {
                             TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(mseTpsCheckRequest,
                                     patternCheckResponse.getCode(), patternCheckResponse.getMessage());
                             tpsRequestDeniedEvent.setMonitorModel(true);
                             NotifyCenter.publishEvent(tpsRequestDeniedEvent);
+                            patternSuccess = false;
+                            denyPatternRate = patternRuleBarrier;
+                            break;
                         }
-                        
-                    } else {
-                        patternSuccess = false;
-                        denyPatternRate = patternRuleBarrier;
-                        break;
                     }
                 }
+                if (!patternSuccess) {
+                    break;
+                }
+                
             }
-            if (!patternSuccess) {
-                break;
-            }
-            
         }
         
         TpsCheckResponse tpsCheckResponse = null;
@@ -148,9 +161,11 @@ public class MseTpsBarrier extends NacosTpsBarrier {
         MseBarrierCheckRequest pointCheckRequest = null;
         //2.when pattern fail,rollback applied count of patterns.
         if (!patternSuccess) {
-            tpsCheckResponse = new TpsCheckResponse(false, TpsResultCode.DENY_BY_PATTERN, "");
-            String message = String.format("[%s] pattern barrier [%s] check fail,monitorKeys=%s,msg=%s", pointName,
-                    denyPatternRate.getRuleName(), mseTpsCheckRequest.getMonitorKeys(), denyPatternRate.getLimitMsg());
+            tpsCheckResponse = new TpsCheckResponse(false, MseTpsResultCode.DENY_BY_PATTERN, "");
+            String message = String
+                    .format("[%s] pattern barrier [%s],pattern=[%s], check fail,monitorKeys=%s,msg=%s", pointName,
+                            denyPatternRate.getRuleName(), denyPatternRate.pattern, mseTpsCheckRequest.getMonitorKeys(),
+                            denyPatternRate.getLimitMsg());
             Loggers.TPS.warn(message);
             tpsCheckResponse.setMessage(message);
             
@@ -160,23 +175,36 @@ public class MseTpsBarrier extends NacosTpsBarrier {
             pointCheckRequest.setCount(mseTpsCheckRequest.getCount());
             pointCheckRequest.setPointName(this.pointName);
             pointCheckRequest.setTimestamp(mseTpsCheckRequest.getTimestamp());
-            pointCheckRequest.setMonitorOnly(monitorOnly);
+            pointCheckRequest.setFlow(mseTpsCheckRequest.getFlow());
+            pointCheckRequest.setMonitorOnly(patternExactMatchPassed || preInterceptPassed);
             tpsCheckResponse = pointBarrier.applyTps(pointCheckRequest);
             if (!tpsCheckResponse.isSuccess()) {
                 tpsCheckResponse.setCode(TpsResultCode.DENY_BY_POINT);
-                String message = "pass by barrier,but denied by interceptor";
+                String message = "denied by point,msg=" + pointBarrier.getLimitMsg();
                 tpsCheckResponse.setMessage(message);
             } else {
                 pointCheckSuccess = true;
+                if (TpsResultCode.PASS_BY_MONITOR == tpsCheckResponse.getCode()) {
+                    TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(mseTpsCheckRequest,
+                            tpsCheckResponse.getCode(), "point tps over limit ,but pass by monitor type.");
+                    tpsRequestDeniedEvent.setMonitorModel(true);
+                    NotifyCenter.publishEvent(tpsRequestDeniedEvent);
+                }
             }
         }
         
+        //pre intercept has higher priority  than post interceptor.
         if (preInterceptPassed) {
+            tpsCheckResponse.setCode(MseTpsResultCode.PASS_BY_PRE_INTERCEPTOR);
             return tpsCheckResponse;
         }
         
+        if (patternExactMatchPassed) {
+            tpsCheckResponse.setCode(MseTpsResultCode.PASS_BY_PATTERN);
+        }
+        
         boolean originalCheckSuccess = tpsCheckResponse.isSuccess();
-        final TpsResultCode originalCheck = tpsCheckResponse.getCode();
+        final int originalCheck = tpsCheckResponse.getCode();
         String originalMsg = tpsCheckResponse.getMessage();
         
         InterceptResult interceptResult = postInterceptor(mseTpsCheckRequest, tpsCheckResponse);
@@ -188,14 +216,14 @@ public class MseTpsBarrier extends NacosTpsBarrier {
             }
             tpsCheckResponse.setSuccess(false);
             tpsCheckResponse.setMessage("denied by post interceptor");
-            tpsCheckResponse.setCode(TpsResultCode.DENY_BY_POST_INTERCEPTOR);
+            tpsCheckResponse.setCode(MseTpsResultCode.DENY_BY_POST_INTERCEPTOR);
             return tpsCheckResponse;
             
         } else if (!originalCheckSuccess && InterceptResult.CHECK_PASS.equals(interceptResult)) {
             //deny -> pass
             tpsCheckResponse.setSuccess(true);
             tpsCheckResponse.setMessage("passed by post interceptor");
-            tpsCheckResponse.setCode(TpsResultCode.PASS_BY_POST_INTERCEPTOR);
+            tpsCheckResponse.setCode(MseTpsResultCode.PASS_BY_POST_INTERCEPTOR);
             return tpsCheckResponse;
         }
         
@@ -204,6 +232,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
         tpsCheckResponse.setMessage(originalMsg);
         tpsCheckResponse.setCode(originalCheck);
         if (!tpsCheckResponse.isSuccess()) {
+            rollbackTps(appliedBarriers);
             NotifyCenter.publishEvent(
                     new TpsRequestDeniedEvent(mseTpsCheckRequest, tpsCheckResponse.getCode(), originalMsg));
         }
@@ -226,7 +255,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
                             monitorType);
                     Loggers.TPS.warn(message);
                     TpsRequestDeniedEvent tpsRequestDeniedEvent = new TpsRequestDeniedEvent(tpsCheckRequest,
-                            TpsResultCode.DENY_BY_POST_INTERCEPTOR, message);
+                            MseTpsResultCode.DENY_BY_POST_INTERCEPTOR, message);
                     if (getPointBarrier().isMonitorType()) {
                         tpsRequestDeniedEvent.setMonitorModel(true);
                     }
@@ -326,6 +355,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
                             + ",original monitorType={}, original monitorType={}, ", this.getPointName(),
                     this.pointBarrier.getMaxCount(), newPointRule.getMaxCount(), this.pointBarrier.getMonitorType(),
                     newPointRule.getMonitorType());
+            newPointRule.setRuleName(pointName);
             this.pointBarrier.applyRuleDetail(newPointRule);
         }
         
@@ -367,8 +397,8 @@ public class MseTpsBarrier extends NacosTpsBarrier {
                                     newMonitorRule.getValue().getPattern(), newMonitorRule.getValue().getMaxCount(),
                                     newMonitorRule.getValue().getMonitorType());
                     // add rule
-                    MseRuleBarrier rateCounterWrapper = (MseRuleBarrier) ruleBarrierCreator
-                            .createRuleBarrier(pointName, newMonitorRule.getKey(), newRuleDetail.getPeriod());
+                    MseRuleBarrier rateCounterWrapper = (MseRuleBarrier) MseRuleBarrierCreator.getInstance().
+                            createRuleBarrier(pointName, newMonitorRule.getKey(), newRuleDetail.getPeriod());
                     rateCounterWrapper.applyRuleDetail(newRuleDetail);
                     patternRateCounterMap.put(newMonitorRule.getKey(), rateCounterWrapper);
                 }
@@ -387,7 +417,7 @@ public class MseTpsBarrier extends NacosTpsBarrier {
             }
             //exact pattern has higher priority.
             this.patternBarriers = patternRateCounterMap.values().stream()
-                    .sorted(Comparator.comparing(MseRuleBarrier::getOrder, Comparator.reverseOrder()))
+                    .sorted(Comparator.comparing(MseRuleBarrier::getOrder, Comparator.naturalOrder()))
                     .collect(Collectors.toList());
         }
         

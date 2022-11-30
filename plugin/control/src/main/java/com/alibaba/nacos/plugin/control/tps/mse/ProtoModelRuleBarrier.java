@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public abstract class ProtoModelRuleBarrier extends RuleBarrier {
+public class ProtoModelRuleBarrier extends RuleBarrier {
     
     RateCounter fuzzyRateCounter;
     
@@ -41,18 +41,19 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
         return RuleModel.PROTO.name().equalsIgnoreCase(this.model);
     }
     
-    
-    public abstract LocalSimpleCountRateCounter createSimpleCounter(String name, TimeUnit period);
+    public RateCounter createCounter(String name, TimeUnit period) {
+        return new LocalSimpleCountRateCounter(name, period);
+    }
     
     public RateCounter getFuzzyRaterCounter(String ruleName, TimeUnit period) {
         if (fuzzyRateCounter == null) {
-            this.fuzzyRateCounter = createSimpleCounter(ruleName, period);
+            this.fuzzyRateCounter = createCounter(ruleName, period);
         }
         return fuzzyRateCounter;
     }
     
     public void reCreateRaterCounter(String name, TimeUnit period) {
-        this.fuzzyRateCounter = createSimpleCounter(name, period);
+        this.fuzzyRateCounter = createCounter(name, period);
         this.protoKeyCounter = new HashMap<>();
     }
     
@@ -67,7 +68,7 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
                 protoKeyCounter = new HashMap<>();
             }
             if (!protoKeyCounter.containsKey(key)) {
-                protoKeyCounter.putIfAbsent(key, createSimpleCounter(name, this.getPeriod()));
+                protoKeyCounter.putIfAbsent(key, createCounter(name, this.getPeriod()));
             }
             return protoKeyCounter.get(key);
         }
@@ -83,9 +84,15 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
     }
     
     @Override
+    public String getBarrierName() {
+        return "proto";
+    }
+    
+    @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
         RateCounter currentRateCounter = getRateCounter((MseBarrierCheckRequest) barrierCheckRequest);
-        if (isMonitorType() || ((MseBarrierCheckRequest) barrierCheckRequest).isMonitorOnly()) {
+        boolean monitorOnly = ((MseBarrierCheckRequest) barrierCheckRequest).isMonitorOnly();
+        if (isMonitorType() || monitorOnly) {
             boolean overLimit = false;
             
             long addResult = currentRateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
@@ -145,7 +152,7 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
             return tpsMetrics;
             
         } else if (fuzzyRateCounter != null) {
-            TpsMetrics tpsMetrics = new TpsMetrics("", "", timeStamp, super.getPeriod());
+            MseTpsMetrics tpsMetrics = new MseTpsMetrics("", "", timeStamp, super.getPeriod());
             long totalPass = fuzzyRateCounter.getCount(timeStamp);
             long totalDenied = fuzzyRateCounter.getDeniedCount(timeStamp);
             if (totalPass <= 0 && totalDenied <= 0) {
@@ -178,16 +185,18 @@ public abstract class ProtoModelRuleBarrier extends RuleBarrier {
      * @param ruleDetail ruleDetail.
      */
     public void applyRuleDetail(RuleDetail ruleDetail) {
+        MseRuleDetail mseRuleDetail = (MseRuleDetail) ruleDetail;
+        this.model = ((MseRuleDetail) ruleDetail).getModel();
         
-        if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod())) {
-            this.setMaxCount(ruleDetail.getMaxCount());
-            this.setMonitorType(ruleDetail.getMonitorType());
-            this.setPeriod(ruleDetail.getPeriod());
+        if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod()) || !Objects
+                .equals(this.getModel(), mseRuleDetail.getModel())) {
+            
             reCreateRaterCounter(this.getRuleName(), this.getPeriod());
-        } else {
-            this.setMaxCount(ruleDetail.getMaxCount());
-            this.setMonitorType(ruleDetail.getMonitorType());
         }
+        this.setMaxCount(ruleDetail.getMaxCount());
+        this.setMonitorType(ruleDetail.getMonitorType());
+        this.setPeriod(ruleDetail.getPeriod());
+        
     }
     
 }

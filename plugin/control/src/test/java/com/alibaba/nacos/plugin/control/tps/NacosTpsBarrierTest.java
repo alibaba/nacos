@@ -1,17 +1,32 @@
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
 public class NacosTpsBarrierTest {
+    
+    RuleBarrierCreator before;
+    @Before
+    public void setUp(){
+        before=TpsBarrier.ruleBarrierCreator;
+        TpsBarrier.ruleBarrierCreator=new LocalSimpleCountBarrierCreator();
+    }
+    
+    @After
+    public void after(){
+        TpsBarrier.ruleBarrierCreator=before;
+    }
     
     @Test
     public void testNormalPointPassAndDeny() {

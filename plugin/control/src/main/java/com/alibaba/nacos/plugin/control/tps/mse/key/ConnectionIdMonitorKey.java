@@ -26,14 +26,12 @@ public class ConnectionIdMonitorKey extends MonitorKey {
     
     private static final String TYPE = "connectionId";
     
-    String key;
-    
     public ConnectionIdMonitorKey() {
     
     }
     
-    public ConnectionIdMonitorKey(String clientIp) {
-        this.key = clientIp;
+    public ConnectionIdMonitorKey(String connectionId) {
+        this.key = connectionId;
     }
     
     @Override

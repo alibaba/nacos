@@ -10,10 +10,19 @@ import java.util.Set;
 
 public class TestNacosTpsInterceptor extends TpsInterceptor {
     
-    Set<String> whiteList = new HashSet<>();
+    Set<String> postwhiteList = new HashSet<>();
+    
+    Set<String> prewhiteList = new HashSet<>();
+    
+    Set<String> postBlackList = new HashSet<>();
+    
+    Set<String> preBlackList = new HashSet<>();
     
     public TestNacosTpsInterceptor() {
-        whiteList.add("127.0.0.10");
+        postwhiteList.add("127.0.0.1_post");
+        prewhiteList.add("127.0.0.1_pre");
+        postBlackList.add("127.0.0.1_post_black");
+        preBlackList.add("127.0.0.1_pre_black");
     }
     
     @Override
@@ -28,6 +37,14 @@ public class TestNacosTpsInterceptor extends TpsInterceptor {
     
     @Override
     public InterceptResult preIntercept(MseTpsCheckRequest tpsCheckRequest) {
+        String clientIp = tpsCheckRequest.getClientIp();
+        if (clientIp != null && prewhiteList.contains(clientIp)) {
+            return InterceptResult.CHECK_PASS;
+        }
+        if (clientIp != null && preBlackList.contains(clientIp)) {
+            return InterceptResult.CHECK_DENY;
+        }
+        
         return null;
     }
     
@@ -35,8 +52,12 @@ public class TestNacosTpsInterceptor extends TpsInterceptor {
     public InterceptResult postIntercept(MseTpsCheckRequest tpsCheckRequest, TpsCheckResponse tpsCheckResponse) {
         String clientIp = tpsCheckRequest.getClientIp();
         
-        if (!tpsCheckResponse.isSuccess() && whiteList.contains(clientIp)) {
+        if (!tpsCheckResponse.isSuccess() && postwhiteList.contains(clientIp)) {
             return InterceptResult.CHECK_PASS;
+        }
+        
+        if (tpsCheckResponse.isSuccess() && postBlackList.contains(clientIp)) {
+            return InterceptResult.CHECK_DENY;
         }
         return InterceptResult.CHECK_SKIP;
     }

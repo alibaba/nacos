@@ -1,10 +1,15 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
-import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
-import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountRateCounter;
-import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountRuleBarrier;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.InterceptorHolder;
+import com.alibaba.nacos.plugin.control.tps.mse.interceptor.TpsInterceptor;
+import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class MseRuleBarrier extends FlowedRuleBarrier {
     
@@ -30,12 +35,6 @@ public class MseRuleBarrier extends FlowedRuleBarrier {
     
     public MseRuleBarrier(String pointName, String ruleName, TimeUnit period) {
         super(pointName, ruleName, period);
-        this.pattern = pattern;
-    }
-    
-    @Override
-    RuleBarrier createRuleBarrier(String pointName, String ruleName, TimeUnit period) {
-        return new LocalSimpleCountRuleBarrier(pointName, ruleName, period);
     }
     
     @Override
@@ -44,7 +43,31 @@ public class MseRuleBarrier extends FlowedRuleBarrier {
     }
     
     @Override
-    public LocalSimpleCountRateCounter createSimpleCounter(String name, TimeUnit period) {
-        return new LocalSimpleCountRateCounter(name, period);
+    public void applyRuleDetail(RuleDetail ruleDetail) {
+        
+        super.applyRuleDetail(ruleDetail);
+        if (!(ruleDetail instanceof MseRuleDetail)) {
+            return;
+        }
+        MseRuleDetail mseRuleDetail = (MseRuleDetail) ruleDetail;
+        this.pattern = mseRuleDetail.getPattern();
+        this.order = mseRuleDetail.getOrder();
+        
+        //interceptor,only apply for point
+        Collection<TpsInterceptor> interceptors = InterceptorHolder.getInterceptors();
+        List<TpsInterceptor> pointerInterceptor = interceptors.stream()
+                .filter(a -> a.getPointName().equalsIgnoreCase(this.getPointName())).collect(Collectors.toList());
+        Set<String> disabledInterceptors = ((MseRuleDetail) ruleDetail).getDisabledInterceptors();
+        for (TpsInterceptor tpsInterceptor : pointerInterceptor) {
+            if (tpsInterceptor.getPointName().equalsIgnoreCase(this.getPointName()) && this.getPointName()
+                    .equalsIgnoreCase(ruleDetail.getRuleName())) {
+                if (disabledInterceptors != null && disabledInterceptors.contains(tpsInterceptor.getName())) {
+                    tpsInterceptor.setDisabled(true);
+                } else {
+                    tpsInterceptor.setDisabled(false);
+                }
+            }
+        }
+        
     }
 }

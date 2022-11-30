@@ -8,13 +8,13 @@ public class ConnectionDeniedEvent extends Event {
     
     private ConnectionCheckRequest connectionCheckRequest;
     
-    private ConnectionCheckCode connectionCheckCode;
+    private int connectionCheckCode;
     
     private boolean isMonitorModel;
     
     private String message;
     
-    public ConnectionDeniedEvent(ConnectionCheckRequest connectionCheckRequest, ConnectionCheckCode connectionCheckCode,
+    public ConnectionDeniedEvent(ConnectionCheckRequest connectionCheckRequest, int connectionCheckCode,
             String message) {
         this.connectionCheckRequest = connectionCheckRequest;
         this.connectionCheckCode = connectionCheckCode;
@@ -37,11 +37,11 @@ public class ConnectionDeniedEvent extends Event {
         this.connectionCheckRequest = connectionCheckRequest;
     }
     
-    public ConnectionCheckCode getConnectionCheckCode() {
+    public int getConnectionCheckCode() {
         return connectionCheckCode;
     }
     
-    public void setConnectionCheckCode(ConnectionCheckCode connectionCheckCode) {
+    public void setConnectionCheckCode(int connectionCheckCode) {
         this.connectionCheckCode = connectionCheckCode;
     }
     

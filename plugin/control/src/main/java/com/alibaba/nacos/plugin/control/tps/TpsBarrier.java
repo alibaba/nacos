@@ -37,12 +37,17 @@ public abstract class TpsBarrier {
                 break;
             }
         }
+        
         if (ruleBarrierCreator == null) {
             Loggers.CONTROL.warn("Fail to found tps rule creator of name : {},use  default local simple creator",
                     tpsBarrierCreator);
             ruleBarrierCreator = LocalSimpleCountBarrierCreator.getInstance();
         }
         
+    }
+    
+    public static void setRuleBarrierCreator(RuleBarrierCreator ruleBarrierCreatorInstance) {
+        ruleBarrierCreator = ruleBarrierCreatorInstance;
     }
     
     /**

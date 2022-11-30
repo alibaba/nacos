@@ -30,15 +30,12 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.tps.enabled:false}")
     private boolean tpsEnabled = false;
     
-    @Value("${nacos.plugin.control.tps.barrier.creator:localsimplecount}")
-    private String tpsBarrierCreator = "localsimplecount";
+    @Value("${nacos.plugin.control.tps.barrier.creator:mse}")
+    private String tpsBarrierCreator = "mse";
     
-    @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
-    private String tpsRuleBarrierCreator = "nacos";
-    
-    @Value("${nacos.plugin.control.connection.enabled:false}")
-    private boolean connectionEnabled = false;
-    
+    @Value("${nacos.plugin.control.tps.barrier.rule.creator:mse}")
+    private String tpsRuleBarrierCreator = "mse";
+
     @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
     private String connectionRuntimeEjector = "nacos";
     
@@ -51,20 +48,8 @@ public class ControlConfigs {
     @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";
     
-    public boolean isTpsEnabled() {
-        return tpsEnabled;
-    }
-    
     public void setTpsEnabled(boolean tpsEnabled) {
         this.tpsEnabled = tpsEnabled;
-    }
-    
-    public boolean isConnectionEnabled() {
-        return connectionEnabled;
-    }
-    
-    public void setConnectionEnabled(boolean connectionEnabled) {
-        this.connectionEnabled = connectionEnabled;
     }
     
     public String getTpsBarrierCreator() {

@@ -121,10 +121,7 @@ public class TpsControlManager {
      * @return check current tps is allowed.
      */
     public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
-        if (!ControlConfigs.getInstance().isTpsEnabled()) {
-            return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "tps control not enabled");
-        }
-        
+       
         if (points.containsKey(tpsRequest.getPointName())) {
             try {
                 return points.get(tpsRequest.getPointName()).applyTps(tpsRequest);

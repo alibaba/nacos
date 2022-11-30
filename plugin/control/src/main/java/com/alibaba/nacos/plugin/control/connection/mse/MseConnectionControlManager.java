@@ -3,7 +3,6 @@ package com.alibaba.nacos.plugin.control.connection.mse;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionMetricsCollector;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.ConnectionInterceptor;
 import com.alibaba.nacos.plugin.control.connection.mse.interceptor.InterceptResult;
@@ -73,7 +72,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             }
             if (countLimitOfIp >= 0) {
                 if (totalCountOfIp >= countLimitOfIp) {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
+                    connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_IP_OVER);
                     connectionCheckResponse.setMessage(
                             "Specific ip check over limit,max allowed count is " + countLimitOfIp
                                     + ",current count detail is " + metricsIpCount.toString() + "，monitorMode="
@@ -85,7 +84,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                     
                     return connectionCheckResponse;
                 } else {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_IP);
+                    connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_IP);
                     connectionCheckResponse.setSuccess(true);
                     return connectionCheckResponse;
                 }
@@ -94,7 +93,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             //default client ip limit check
             int countLimitPerClientIpDefault = connectionControlRule.getCountLimitPerClientIpDefault();
             if (countLimitPerClientIpDefault > 0 && totalCountOfIp >= countLimitPerClientIpDefault) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_IP_OVER);
+                connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_IP_OVER);
                 connectionCheckResponse.setMessage(
                         "deny by default ip check model,max allowed count is " + countLimitPerClientIpDefault
                                 + ",current count detail is " + metricsIpCount.toString());
@@ -113,7 +112,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             //total count check model
             if (totalCountLimit >= 0 && totalCount >= totalCountLimit) {
                 //deny;
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_TOTAL_OVER);
+                connectionCheckResponse.setCode(ConnectionCheckCode.DENY_BY_TOTAL_OVER);
                 connectionCheckResponse.setMessage(
                         "total count over limit,max allowed count is " + totalCountLimit + ",current count detail is "
                                 + metricsTotalCount.toString());
@@ -126,11 +125,11 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             }
             
             connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_TOTAL);
+            connectionCheckResponse.setCode(ConnectionCheckCode.PASS_BY_TOTAL);
             connectionCheckResponse.setMessage("check pass");
             return connectionCheckResponse;
         } else {
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+            connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
             connectionCheckResponse.setSuccess(true);
             return connectionCheckResponse;
         }
@@ -168,12 +167,12 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             }
             InterceptResult intercept = connectionInterceptor.preIntercept(connectionCheckRequest);
             if (intercept.equals(InterceptResult.CHECK_PASS)) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_PRE_INTERCEPT);
+                connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_PRE_INTERCEPT);
                 connectionCheckResponse.setSuccess(true);
                 connectionCheckResponse.setMessage("passed by pre interceptor :" + connectionInterceptor.getName());
                 return connectionCheckResponse;
             } else if (intercept.equals(InterceptResult.CHECK_DENY)) {
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
+                connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
                 connectionCheckResponse.setSuccess(false);
                 String message = String
                         .format("denied by pre interceptor %s  ,clientIp=%s,appName=%s,source=%s,labels=%s",
@@ -183,9 +182,9 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
                 connectionCheckResponse.setMessage(message);
                 Loggers.CONNECTION.warn(message);
                 ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
-                        connectionCheckResponse.getCheckCode(), message);
+                        connectionCheckResponse.getCode(), message);
                 if (isMonitorMode()) {
-                    connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+                    connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
                     connectionCheckResponse.setSuccess(true);
                     connectionDeniedEvent.setMonitorModel(true);
                 }
@@ -199,13 +198,13 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
         connectionCheckResponse = checkInternal(connectionCheckRequest);
         boolean originalSuccess = connectionCheckResponse.isSuccess();
         String originalMsg = connectionCheckResponse.getMessage();
-        ConnectionCheckCode originalConnectionCheckCode = connectionCheckResponse.getCheckCode();
+        int originalConnectionCheckCode = connectionCheckResponse.getCode();
         
         //3.post interceptor.
         InterceptResult interceptResult = postIntercept(connectionCheckRequest, connectionCheckResponse);
         if (originalSuccess && InterceptResult.CHECK_DENY == interceptResult) {
             //pass->deny
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.DENY_BY_POST_INTERCEPT);
+            connectionCheckResponse.setCode(MseConnectionCheckCode.DENY_BY_POST_INTERCEPT);
             connectionCheckResponse.setSuccess(false);
             String message = String
                     .format("over turned, denied by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
@@ -215,7 +214,7 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
         } else if (!originalSuccess && InterceptResult.CHECK_PASS == interceptResult) {
             //deny->pass
             connectionCheckResponse.setSuccess(true);
-            connectionCheckResponse.setCheckCode(ConnectionCheckCode.PASS_BY_POST_INTERCEPT);
+            connectionCheckResponse.setCode(MseConnectionCheckCode.PASS_BY_POST_INTERCEPT);
             String message = String
                     .format("over turned, passed by post interceptor ,clientIp=%s,appName=%s,source=%s,labels=%s",
                             connectionCheckRequest.getClientIp(), connectionCheckRequest.getAppName(),
@@ -223,18 +222,18 @@ public class MseConnectionControlManager extends NacosConnectionControlManager {
             connectionCheckResponse.setMessage(message);
         } else {
             //not changed
-            connectionCheckResponse.setCheckCode(originalConnectionCheckCode);
+            connectionCheckResponse.setCode(originalConnectionCheckCode);
             connectionCheckResponse.setSuccess(originalSuccess);
             connectionCheckResponse.setMessage(originalMsg);
         }
         
         if (!connectionCheckResponse.isSuccess()) {
             ConnectionDeniedEvent connectionDeniedEvent = new ConnectionDeniedEvent(connectionCheckRequest,
-                    connectionCheckResponse.getCheckCode(), connectionCheckResponse.getMessage());
+                    connectionCheckResponse.getCode(), connectionCheckResponse.getMessage());
             boolean monitorMode = isMonitorMode();
             if (monitorMode) {
                 //pass by monitor.
-                connectionCheckResponse.setCheckCode(ConnectionCheckCode.CHECK_SKIP);
+                connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
                 connectionCheckResponse.setSuccess(true);
                 connectionDeniedEvent.setMonitorModel(true);
             }

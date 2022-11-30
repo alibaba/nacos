@@ -8,13 +8,13 @@ public class TpsRequestDeniedEvent extends Event {
     
     private TpsCheckRequest tpsCheckRequest;
     
-    private TpsResultCode tpsResultCode;
+    private int tpsResultCode;
     
     private boolean isMonitorModel;
     
     private String message;
     
-    public TpsRequestDeniedEvent(TpsCheckRequest tpsCheckRequest, TpsResultCode tpsResultCode, String message) {
+    public TpsRequestDeniedEvent(TpsCheckRequest tpsCheckRequest, int tpsResultCode, String message) {
         this.tpsCheckRequest = tpsCheckRequest;
         this.tpsResultCode = tpsResultCode;
         this.message = message;
@@ -28,11 +28,11 @@ public class TpsRequestDeniedEvent extends Event {
         isMonitorModel = monitorModel;
     }
     
-    public TpsResultCode getTpsResultCode() {
+    public int getTpsResultCode() {
         return tpsResultCode;
     }
     
-    public void setTpsResultCode(TpsResultCode tpsResultCode) {
+    public void setTpsResultCode(int tpsResultCode) {
         this.tpsResultCode = tpsResultCode;
     }
     

@@ -6,7 +6,7 @@ public class ConnectionCheckResponse {
     
     private String message;
     
-    private ConnectionCheckCode checkCode;
+    private int code;
     
     public boolean isSuccess() {
         return success;
@@ -24,11 +24,11 @@ public class ConnectionCheckResponse {
         this.message = message;
     }
     
-    public ConnectionCheckCode getCheckCode() {
-        return checkCode;
+    public int getCode() {
+        return code;
     }
     
-    public void setCheckCode(ConnectionCheckCode checkCode) {
-        this.checkCode = checkCode;
+    public void setCode(int code) {
+        this.code = code;
     }
 }

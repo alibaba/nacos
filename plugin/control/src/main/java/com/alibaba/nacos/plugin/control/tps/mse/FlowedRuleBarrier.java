@@ -18,33 +18,37 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public abstract class FlowedRuleBarrier extends ProtoModelRuleBarrier {
+public class FlowedRuleBarrier extends ProtoModelRuleBarrier {
     
     RuleBarrier tpsBarrier;
     
+    RuleBarrier flowBarrier;
+    
     public FlowedRuleBarrier(String pointName, String ruleName, TimeUnit period) {
         super(pointName, ruleName, period);
-        tpsBarrier = createRuleBarrier(pointName, ruleName, period);
+        tpsBarrier = new ProtoModelRuleBarrier(pointName, ruleName, period);
+        flowBarrier = new ProtoModelRuleBarrier(pointName, ruleName, period);
     }
-    
-    abstract RuleBarrier createRuleBarrier(String pointName, String ruleName, TimeUnit period);
     
     @Override
     public String getLimitMsg() {
         return String.format("[period:%s,maxCount:%s,maxFlow:%s]", getPeriod(), tpsBarrier.getMaxCount(),
-                this.getMaxCount());
+                flowBarrier.getMaxCount());
     }
     
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
         
-        TpsCheckResponse rateCheck = tpsBarrier.applyTps(barrierCheckRequest);
+        //tps check
+        TpsCheckResponse rateCheck = (tpsBarrier).applyTps(barrierCheckRequest);
+        
+        //flow tps check.
         if (rateCheck.isSuccess() && barrierCheckRequest instanceof MseBarrierCheckRequest
                 && ((MseBarrierCheckRequest) barrierCheckRequest).getFlow() > 0) {
             MseBarrierCheckRequest copy = new MseBarrierCheckRequest();
             BeanUtils.copyProperties(barrierCheckRequest, copy);
             copy.setCount(((MseBarrierCheckRequest) barrierCheckRequest).getFlow());
-            TpsCheckResponse flowedCheck = super.applyTps(copy);
+            TpsCheckResponse flowedCheck = flowBarrier.applyTps(copy);
             if (!flowedCheck.isSuccess()) {
                 tpsBarrier.rollbackTps(barrierCheckRequest);
             }
@@ -57,11 +61,14 @@ public abstract class FlowedRuleBarrier extends ProtoModelRuleBarrier {
     @Override
     public TpsMetrics getMetrics(long timeStamp) {
         MseTpsMetrics tpsMetrics = (MseTpsMetrics) tpsBarrier.getMetrics(timeStamp);
+        
         if (tpsMetrics == null) {
             return null;
         }
+        tpsMetrics.setPointName(this.getPointName());
+        tpsMetrics.setPeriod(this.getPeriod());
         
-        MseTpsMetrics flowMetrics = (MseTpsMetrics) super.getMetrics(timeStamp);
+        MseTpsMetrics flowMetrics = (MseTpsMetrics) flowBarrier.getMetrics(timeStamp);
         if (flowMetrics == null) {
             return tpsMetrics;
         }
@@ -91,6 +98,7 @@ public abstract class FlowedRuleBarrier extends ProtoModelRuleBarrier {
             }
             
         }
+        
         return tpsMetrics;
     }
     
@@ -98,49 +106,35 @@ public abstract class FlowedRuleBarrier extends ProtoModelRuleBarrier {
     public void rollbackTps(BarrierCheckRequest barrierCheckRequest) {
         tpsBarrier.rollbackTps(barrierCheckRequest);
         if (barrierCheckRequest instanceof MseBarrierCheckRequest) {
-            BarrierCheckRequest copy = new BarrierCheckRequest();
+            MseBarrierCheckRequest copy = new MseBarrierCheckRequest();
             BeanUtils.copyProperties(barrierCheckRequest, copy);
             copy.setCount(((MseBarrierCheckRequest) barrierCheckRequest).getFlow());
-            super.rollbackTps(copy);
+            flowBarrier.rollbackTps(copy);
         }
     }
     
     @Override
     public void applyRuleDetail(RuleDetail ruleDetail) {
-        MseRuleDetail mseRuleDetail = (MseRuleDetail) ruleDetail;
-        if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod()) || !Objects
-                .equals(this.getModel(), mseRuleDetail.getModel())) {
-            this.setMaxCount(ruleDetail.getMaxCount());
-            this.setMonitorType(ruleDetail.getMonitorType());
-            this.setPeriod(ruleDetail.getPeriod());
-            this.setModel(mseRuleDetail.getModel());
-            reCreateRaterCounter(this.getRuleName(), this.getPeriod());
-        } else {
-            this.setMaxCount(ruleDetail.getMaxCount());
-            this.setMonitorType(ruleDetail.getMonitorType());
+        if (!(ruleDetail instanceof MseRuleDetail)) {
+            return;
         }
+        MseRuleDetail mseRuleDetail = (MseRuleDetail) ruleDetail;
+        tpsBarrier.applyRuleDetail(mseRuleDetail);
         MseRuleDetail copy = new MseRuleDetail();
         BeanUtils.copyProperties(ruleDetail, copy);
         copy.setMaxCount(((MseRuleDetail) ruleDetail).getMaxFlow());
-        super.applyRuleDetail(copy);
-        Collection<TpsInterceptor> interceptors = InterceptorHolder.getInterceptors();
-        List<TpsInterceptor> pointerInterceptor = interceptors.stream()
-                .filter(a -> a.getPointName().equalsIgnoreCase(this.getPointName())).collect(Collectors.toList());
-        Set<String> disabledInterceptors = ((MseRuleDetail) ruleDetail).getDisabledInterceptors();
-        for (TpsInterceptor tpsInterceptor : pointerInterceptor) {
-            if (disabledInterceptors != null && disabledInterceptors.contains(tpsInterceptor.getName())) {
-                tpsInterceptor.setDisabled(true);
-            } else {
-                tpsInterceptor.setDisabled(false);
-            }
-        }
-        
+        flowBarrier.applyRuleDetail(copy);
+        this.setModel(((MseRuleDetail) ruleDetail).getModel());
+        this.setMonitorType(ruleDetail.getMonitorType());
+        this.setPeriod(ruleDetail.getPeriod());
+        this.setMaxCount(ruleDetail.getMaxCount());
+    
     }
     
     @Override
     public void clearLimitRule() {
         tpsBarrier.clearLimitRule();
-        super.clearLimitRule();
+        flowBarrier.clearLimitRule();
         Collection<TpsInterceptor> interceptors = InterceptorHolder.getInterceptors();
         interceptors.stream().forEach(a -> a.setDisabled(true));
     }

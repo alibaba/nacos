@@ -35,7 +35,7 @@ public class MseTpsControlManager extends TpsControlManager {
     public synchronized void registerTpsPoint(String pointName) {
         if (!super.getPoints().containsKey(pointName)) {
             super.getPoints().put(pointName, TpsBarrierCreatorProxy.getTpsBarrierCreator().createTpsBarrier(pointName));
-            if (super.getPoints().containsKey(pointName)) {
+            if (super.getRules().containsKey(pointName)) {
                 super.getPoints().get(pointName).applyRule(super.getRules().get(pointName));
             } else {
                 super.initTpsRule(pointName);
@@ -57,9 +57,6 @@ public class MseTpsControlManager extends TpsControlManager {
      * @return check current tps is allowed.
      */
     public TpsCheckResponse check(TpsCheckRequest tpsRequest) {
-        if (!ControlConfigs.getInstance().isTpsEnabled()) {
-            return new TpsCheckResponse(true, TpsResultCode.CHECK_SKIP, "tps control not enabled");
-        }
         
         if (!(tpsRequest instanceof MseTpsCheckRequest)) {
             return super.check(tpsRequest);
@@ -130,7 +127,7 @@ public class MseTpsControlManager extends TpsControlManager {
                     List<MseRuleBarrier> patternBarriers = tpsBarrier.getPatternBarriers();
                     
                     for (MseRuleBarrier tpsPatternBarrier : patternBarriers) {
-                        MseTpsMetrics patternMetrics = (MseTpsMetrics)tpsPatternBarrier
+                        MseTpsMetrics patternMetrics = (MseTpsMetrics) tpsPatternBarrier
                                 .getMetrics(now - tpsPatternBarrier.getPeriod().toMillis(1));
                         if (patternMetrics == null) {
                             continue;

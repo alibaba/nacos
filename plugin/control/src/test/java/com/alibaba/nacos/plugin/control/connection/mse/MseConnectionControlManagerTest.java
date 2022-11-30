@@ -1,12 +1,10 @@
 package com.alibaba.nacos.plugin.control.connection.mse;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,10 +17,6 @@ import java.util.Map;
 public class MseConnectionControlManagerTest {
     
     ConnectionControlManager connectionControlManager = new MseConnectionControlManager();
-    
-    static {
-        ControlConfigs.getInstance().setConnectionEnabled(true);
-    }
     
     @Test
     public void testPass() {
@@ -37,7 +31,7 @@ public class MseConnectionControlManagerTest {
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCode());
         
     }
     
@@ -55,11 +49,11 @@ public class MseConnectionControlManagerTest {
         
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
-        System.out.println(check.getCheckCode());
+        System.out.println(check.getCode());
         System.out.println(check.getMessage());
         
         Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.DENY_BY_TOTAL_OVER, check.getCheckCode());
+        Assert.assertEquals(ConnectionCheckCode.DENY_BY_TOTAL_OVER, check.getCode());
         
     }
     
@@ -77,11 +71,11 @@ public class MseConnectionControlManagerTest {
         
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
-        System.out.println(check.getCheckCode());
+        System.out.println(check.getCode());
         System.out.println(check.getMessage());
         
         Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.DENY_BY_IP_OVER, check.getCheckCode());
+        Assert.assertEquals(MseConnectionCheckCode.DENY_BY_IP_OVER, check.getCode());
         
     }
     
@@ -103,11 +97,11 @@ public class MseConnectionControlManagerTest {
         
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
-        System.out.println(check.getCheckCode());
+        System.out.println(check.getCode());
         System.out.println(check.getMessage());
         
         Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.DENY_BY_IP_OVER, check.getCheckCode());
+        Assert.assertEquals(MseConnectionCheckCode.DENY_BY_IP_OVER, check.getCode());
         
     }
     
@@ -127,11 +121,11 @@ public class MseConnectionControlManagerTest {
         connectionCheckRequest.setLabels(labels);
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
-        System.out.println(check.getCheckCode());
+        System.out.println(check.getCode());
         System.out.println(check.getMessage());
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.PASS_BY_POST_INTERCEPT, check.getCheckCode());
+        Assert.assertEquals(MseConnectionCheckCode.PASS_BY_POST_INTERCEPT, check.getCode());
         
     }
     
@@ -152,11 +146,11 @@ public class MseConnectionControlManagerTest {
         
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
-        System.out.println(check.getCheckCode());
+        System.out.println(check.getCode());
         System.out.println(check.getMessage());
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.PASS_BY_IP, check.getCheckCode());
+        Assert.assertEquals(MseConnectionCheckCode.PASS_BY_IP, check.getCode());
         
     }
     
@@ -173,8 +167,8 @@ public class MseConnectionControlManagerTest {
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
-        Assert.assertEquals(check.getCheckCode(), ConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
-        System.out.println(check.getCheckCode());
+        Assert.assertEquals(check.getCode(), MseConnectionCheckCode.DENY_BY_PRE_INTERCEPT);
+        System.out.println(check.getCode());
         System.out.println(check.getMessage());
         
     }
@@ -198,7 +192,7 @@ public class MseConnectionControlManagerTest {
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
         
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.PASS_BY_PRE_INTERCEPT, check.getCheckCode());
+        Assert.assertEquals(MseConnectionCheckCode.PASS_BY_PRE_INTERCEPT, check.getCode());
         
     }
 }

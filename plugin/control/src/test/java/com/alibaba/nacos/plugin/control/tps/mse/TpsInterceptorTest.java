@@ -1,31 +1,60 @@
 package com.alibaba.nacos.plugin.control.tps.mse;
 
 import com.alibaba.nacos.plugin.control.tps.MonitorType;
-import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
-import com.alibaba.nacos.plugin.control.tps.mse.key.MonitorKey;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
+import com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.plugin.control.tps.mse.MseRuleDetail.MODEL_FUZZY;
 
 public class TpsInterceptorTest {
     
-    TpsControlManager tpsControlManager = new TpsControlManager();
-    
-    String pointName = "interceptortest";
-    
     @Before
     public void setUp() {
-        //1.register point
-        tpsControlManager.registerTpsPoint(pointName);
-        Assert.assertTrue(tpsControlManager.getPoints().containsKey(pointName));
+    
+    }
+    
+    /**
+     * testPassByMonitor.
+     */
+    @Test
+    public void testPassByPreInterceptor() {
+        String pointName = "interceptortest";
+        
+        //1.register rule
+        MseRuleDetail ruleDetail = new MseRuleDetail();
+        ruleDetail.setMaxCount(1);
+        ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
+        tpsControlRule.setPointName(pointName);
+        tpsControlRule.setPointRule(ruleDetail);
+        
+        MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
+        ruleDetailMonitor.setMaxCount(1);
+        ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
+        ruleDetailMonitor.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleDetailMonitor.setModel(MODEL_FUZZY);
+        ruleDetailMonitor.setPattern("clientIp:*");
+        tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
+        MseTpsBarrier tpsBarrier = new MseTpsBarrier(pointName);
+        tpsBarrier.applyRule(tpsControlRule);
+        
+        //3.apply tps
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        tpsCheckRequest.setCount(2);
+        tpsCheckRequest.setPointName(pointName);
+        tpsCheckRequest.setClientIp("127.0.0.1_pre");
+        for (int i = 0; i < 10; i++) {
+            TpsCheckResponse check = tpsBarrier.applyTps(tpsCheckRequest);
+            Assert.assertTrue(check.isSuccess());
+            Assert.assertEquals(MseTpsResultCode.PASS_BY_PRE_INTERCEPTOR, check.getCode());
+        }
         
     }
     
@@ -33,57 +62,164 @@ public class TpsInterceptorTest {
      * testPassByMonitor.
      */
     @Test
-    public void testPassByMonitor() {
+    public void testDenyByPreInterceptor() {
+        String pointName = "interceptortest";
+        
         //1.register rule
         MseRuleDetail ruleDetail = new MseRuleDetail();
-        ruleDetail.setMaxCount(10000);
+        ruleDetail.setMaxCount(10);
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
-        ruleDetail.setModel(MODEL_FUZZY);
-        ruleDetail.setPattern("test:prefix*");
         MseTpsControlRule tpsControlRule = new MseTpsControlRule();
         tpsControlRule.setPointName(pointName);
         tpsControlRule.setPointRule(ruleDetail);
         
         MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
-        ruleDetailMonitor.setMaxCount(20);
+        ruleDetailMonitor.setMaxCount(10);
         ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
-        ruleDetailMonitor.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleDetailMonitor.setMonitorType(MonitorType.MONITOR.getType());
         ruleDetailMonitor.setModel(MODEL_FUZZY);
-        ruleDetailMonitor.setPattern("test:prefixmonitor*");
+        ruleDetailMonitor.setPattern("clientIp:*");
         tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
-        
-        tpsControlManager.applyTpsRule(pointName, tpsControlRule);
-        Assert.assertTrue(tpsControlManager.getRules().containsKey(pointName));
-        Assert.assertTrue(((MseTpsControlRule) tpsControlManager.getRules().get(pointName)).getMonitorKeyRule()
-                .containsKey("monitorkey"));
+        MseTpsBarrier tpsBarrier = new MseTpsBarrier(pointName);
+        tpsBarrier.applyRule(tpsControlRule);
         
         //3.apply tps
         MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
         tpsCheckRequest.setCount(2);
         tpsCheckRequest.setPointName(pointName);
-        List<MonitorKey> monitorKeyList = new ArrayList<>();
-        monitorKeyList.add(new MonitorKey("prefixmonitor123") {
-            @Override
-            public String getType() {
-                return "test";
-            }
-        });
-        
-        tpsCheckRequest.setMonitorKeys(monitorKeyList);
+        tpsCheckRequest.setClientIp("127.0.0.1_pre_black");
         for (int i = 0; i < 10; i++) {
-            TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
+            TpsCheckResponse check = tpsBarrier.applyTps(tpsCheckRequest);
             Assert.assertTrue(check.isSuccess());
+            Assert.assertEquals(MseTpsResultCode.PASS_BY_PRE_INTERCEPTOR, check.getCode());
         }
         
-        TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
-        Assert.assertFalse(check.isSuccess());
+    }
+    
+    /**
+     * testPassByMonitor.
+     */
+    @Test
+    public void testForbiddenInterceptor() {
+        String pointName = "interceptortest";
         
-        tpsCheckRequest.setClientIp("127.0.0.10");
-        TpsCheckResponse checkInterceptor = tpsControlManager.check(tpsCheckRequest);
-        Assert.assertEquals(TpsResultCode.DENY_BY_PATTERN, checkInterceptor.getCode());
+        //1.register rule
+        MseRuleDetail ruleDetail = new MseRuleDetail();
+        ruleDetail.setMaxCount(10);
+        ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setMonitorType(MonitorType.MONITOR.getType());
+        ruleDetail.setDisabledInterceptors(Sets.newHashSet("testnacosinter"));
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
+        tpsControlRule.setPointName(pointName);
+        tpsControlRule.setPointRule(ruleDetail);
         
-        Assert.assertFalse(checkInterceptor.isSuccess());
+        MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
+        ruleDetailMonitor.setMaxCount(10);
+        ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
+        ruleDetailMonitor.setMonitorType(MonitorType.MONITOR.getType());
+        ruleDetailMonitor.setModel(MODEL_FUZZY);
+        ruleDetailMonitor.setPattern("clientIp:*");
+        tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
+        MseTpsBarrier tpsBarrier = new MseTpsBarrier(pointName);
+        tpsBarrier.applyRule(tpsControlRule);
+        
+        //3.apply tps
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        tpsCheckRequest.setCount(2);
+        tpsCheckRequest.setPointName(pointName);
+        tpsCheckRequest.setClientIp("127.0.0.1_pre_black");
+        for (int i = 0; i < 10; i++) {
+            TpsCheckResponse check = tpsBarrier.applyTps(tpsCheckRequest);
+            if (i < 5) {
+                Assert.assertTrue(check.isSuccess());
+                Assert.assertEquals(TpsResultCode.PASS_BY_POINT, check.getCode());
+            } else {
+                Assert.assertTrue(check.isSuccess());
+                Assert.assertEquals(TpsResultCode.PASS_BY_MONITOR, check.getCode());
+            }
+            
+        }
+        
+    }
+    
+    /**
+     * testPassByMonitor.
+     */
+    @Test
+    public void testPassByPostInterceptor() {
+        String pointName = "interceptortest";
+        
+        //1.register rule
+        MseRuleDetail ruleDetail = new MseRuleDetail();
+        ruleDetail.setMaxCount(0);
+        ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
+        tpsControlRule.setPointName(pointName);
+        tpsControlRule.setPointRule(ruleDetail);
+        
+        MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
+        ruleDetailMonitor.setMaxCount(0);
+        ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
+        ruleDetailMonitor.setMonitorType(MonitorType.INTERCEPT.getType());
+        ruleDetailMonitor.setModel(MODEL_FUZZY);
+        ruleDetailMonitor.setPattern("clientIp:*");
+        tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
+        MseTpsBarrier tpsBarrier = new MseTpsBarrier(pointName);
+        tpsBarrier.applyRule(tpsControlRule);
+        
+        //3.apply tps
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        tpsCheckRequest.setCount(2);
+        tpsCheckRequest.setPointName(pointName);
+        tpsCheckRequest.setClientIp("127.0.0.1_post");
+        for (int i = 0; i < 10; i++) {
+            TpsCheckResponse check = tpsBarrier.applyTps(tpsCheckRequest);
+            Assert.assertTrue(check.isSuccess());
+            Assert.assertEquals(MseTpsResultCode.PASS_BY_POST_INTERCEPTOR, check.getCode());
+        }
+        
+        
+    }
+    
+    /**
+     * testPassByMonitor.
+     */
+    @Test
+    public void testDenyByPostInterceptor() {
+        String pointName = "interceptortest";
+        
+        //1.register rule
+        MseRuleDetail ruleDetail = new MseRuleDetail();
+        ruleDetail.setMaxCount(1000);
+        ruleDetail.setPeriod(TimeUnit.SECONDS);
+        ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
+        MseTpsControlRule tpsControlRule = new MseTpsControlRule();
+        tpsControlRule.setPointName(pointName);
+        tpsControlRule.setPointRule(ruleDetail);
+        
+        MseRuleDetail ruleDetailMonitor = new MseRuleDetail();
+        ruleDetailMonitor.setMaxCount(100);
+        ruleDetailMonitor.setPeriod(TimeUnit.SECONDS);
+        ruleDetailMonitor.setMonitorType(MonitorType.MONITOR.getType());
+        ruleDetailMonitor.setModel(MODEL_FUZZY);
+        ruleDetailMonitor.setPattern("clientIp:*");
+        tpsControlRule.getMonitorKeyRule().put("monitorkey", ruleDetailMonitor);
+        MseTpsBarrier tpsBarrier = new MseTpsBarrier(pointName);
+        tpsBarrier.applyRule(tpsControlRule);
+        
+        //3.apply tps
+        MseTpsCheckRequest tpsCheckRequest = new MseTpsCheckRequest();
+        tpsCheckRequest.setCount(2);
+        tpsCheckRequest.setPointName(pointName);
+        tpsCheckRequest.setClientIp("127.0.0.1_post_black");
+        for (int i = 0; i < 10; i++) {
+            TpsCheckResponse check = tpsBarrier.applyTps(tpsCheckRequest);
+            Assert.assertFalse(check.isSuccess());
+            Assert.assertEquals(MseTpsResultCode.DENY_BY_POST_INTERCEPTOR, check.getCode());
+        }
+        
         
     }
 }
