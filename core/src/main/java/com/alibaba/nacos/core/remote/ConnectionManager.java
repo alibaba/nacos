@@ -190,6 +190,9 @@ public class ConnectionManager {
         return connections;
     }
     
+    /**
+     * init connection ejector.
+     */
     public void initConnectionEjector() {
         String connectionRuntimeEjector = ControlConfigs.getInstance().getConnectionRuntimeEjector();
         Collection<RuntimeConnectionEjector> ejectors = NacosServiceLoader.load(RuntimeConnectionEjector.class);
