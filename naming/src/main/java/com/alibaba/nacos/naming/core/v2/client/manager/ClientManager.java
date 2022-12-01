@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 
@@ -96,8 +97,8 @@ public interface ClientManager {
     /**
      * verify client.
      *
-     * @param clientId client id
+     * @param verifyData verify data from remote responsible server
      * @return true if client is valid, otherwise is false.
      */
-    boolean verifyClient(String clientId);
+    boolean verifyClient(DistroClientVerifyInfo verifyData);
 }

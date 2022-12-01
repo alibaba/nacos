@@ -459,13 +459,13 @@ public class LongPollingService {
         }
         
         void generateResponse(List<String> changedGroups) {
+    
             if (null == changedGroups) {
-                
                 // Tell web container to send http response.
                 asyncContext.complete();
                 return;
             }
-            
+    
             HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
             
             try {
@@ -561,5 +561,9 @@ public class LongPollingService {
     
     public void setRetainIps(Map<String, Long> retainIps) {
         this.retainIps = retainIps;
+    }
+    
+    public int getSubscriberCount() {
+        return allSubs.size();
     }
 }

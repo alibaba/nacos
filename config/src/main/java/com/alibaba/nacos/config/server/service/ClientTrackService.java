@@ -95,12 +95,9 @@ public class ClientTrackService {
      */
     public static Map<String, SubscriberStatus> listSubStatus(String ip) {
         Map<String, SubscriberStatus> status = new HashMap<>(100);
-        
+
+        // record here is non-null
         ClientRecord record = getClientRecord(ip);
-        if (record == null) {
-            return status;
-        }
-        
         for (Map.Entry<String, String> entry : record.getGroupKey2md5Map().entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
@@ -176,8 +173,8 @@ public class ClientTrackService {
             return record;
         }
         ClientRecord clientRecord = new ClientRecord(clientIp);
-        clientRecords.putIfAbsent(clientIp, clientRecord);
-        return clientRecord;
+        record = clientRecords.putIfAbsent(clientIp, clientRecord);
+        return null == record ? clientRecord : record;
     }
     
     public static void refreshClientRecord() {

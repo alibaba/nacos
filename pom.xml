@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.1.1-cotrol-SNAPSHOT</revision>
+        <revision>2.2.0-BETA</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -137,7 +137,7 @@
         <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jackson-core.version>2.12.6</jackson-core.version>
-        <jackson-databind.version>2.12.6.1</jackson-databind.version>
+        <jackson-databind.version>2.12.7.1</jackson-databind.version>
         <jackson.annotations.version>2.12.6</jackson.annotations.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
@@ -145,7 +145,7 @@
         <javatuples.version>1.2</javatuples.version>
         <grpc-java.version>1.30.2</grpc-java.version>
         <proto-google-common-protos.version>1.17.0</proto-google-common-protos.version>
-        <protobuf-java.version>3.16.1</protobuf-java.version>
+        <protobuf-java.version>3.16.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <mockito-all.version>1.10.19</mockito-all.version>
@@ -153,6 +153,7 @@
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.8</jraft-core.version>
         <rpc-grpc-impl.version>1.3.8</rpc-grpc-impl.version>
+        <SnakeYaml.version>1.32</SnakeYaml.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -595,6 +596,7 @@
         <module>sys</module>
         <module>plugin</module>
         <module>plugin-default-impl</module>
+        <module>prometheus</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -700,6 +702,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-prometheus</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-consistency</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -716,6 +723,21 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-control-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-trace-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-datasource-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-custom-environment-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -979,6 +1001,12 @@
                 <artifactId>gson</artifactId>
                 <version>2.9.0</version>
                 <scope>compile</scope>
+            </dependency>
+    
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${SnakeYaml.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

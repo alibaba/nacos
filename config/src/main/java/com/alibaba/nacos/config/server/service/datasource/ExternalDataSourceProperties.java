@@ -14,6 +14,7 @@
 package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -23,7 +24,6 @@ import org.springframework.core.env.Environment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
 
@@ -79,14 +79,16 @@ public class ExternalDataSourceProperties {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
-            poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+            if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
+                poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+            }
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
             HikariDataSource ds = poolProperties.getDataSource();
-            ds.setConnectionTestQuery(TEST_QUERY);
-            ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(10L));
-            ds.setConnectionTimeout(TimeUnit.SECONDS.toMillis(3L));
+            if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
+                ds.setConnectionTestQuery(TEST_QUERY);
+            }
             dataSources.add(ds);
             callback.accept(ds);
         }

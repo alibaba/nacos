@@ -77,7 +77,7 @@ public class NacosRoleServiceImpl {
     private void reload() {
         try {
             Page<RoleInfo> roleInfoPage = rolePersistService
-                    .getRolesByUserName(StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+                    .getRolesByUserNameAndRoleName(StringUtils.EMPTY, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage == null) {
                 return;
             }
@@ -160,7 +160,7 @@ public class NacosRoleServiceImpl {
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = roleInfoMap.get(username);
         if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
-            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
                 if (!Collections.isEmpty(roleInfoList)) {
@@ -171,8 +171,8 @@ public class NacosRoleServiceImpl {
         return roleInfoList;
     }
     
-    public Page<RoleInfo> getRolesFromDatabase(String userName, int pageNo, int pageSize) {
-        Page<RoleInfo> roles = rolePersistService.getRolesByUserName(userName, pageNo, pageSize);
+    public Page<RoleInfo> getRolesFromDatabase(String userName, String role, int pageNo, int pageSize) {
+        Page<RoleInfo> roles = rolePersistService.getRolesByUserNameAndRoleName(userName, role, pageNo, pageSize);
         if (roles == null) {
             return new Page<>();
         }
@@ -278,5 +278,13 @@ public class NacosRoleServiceImpl {
                     .append(resourceName);
         }
         return result.toString();
+    }
+
+    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
+        return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
+    }
+
+    public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
+        return permissionPersistService.findPermissionsLike4Page(role, pageNo, pageSize);
     }
 }

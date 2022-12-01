@@ -37,6 +37,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -75,7 +76,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -126,11 +126,11 @@ public class ClientWorker implements Closeable {
     private int taskPenaltyTime;
     
     private boolean enableRemoteSyncConfig = false;
-
+    
     private static final int MIN_THREAD_NUM = 2;
-
+    
     private static final int THREAD_MULTIPLE = 1;
-
+    
     /**
      * Add listeners for data.
      *
@@ -146,6 +146,7 @@ public class ClientWorker implements Closeable {
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
+            cache.setDiscard(false);
             cache.setSyncWithServer(false);
             agent.notifyListenConfig();
             
@@ -169,6 +170,7 @@ public class ClientWorker implements Closeable {
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
+            cache.setDiscard(false);
             cache.setSyncWithServer(false);
             agent.notifyListenConfig();
         }
@@ -196,6 +198,7 @@ public class ClientWorker implements Closeable {
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
+            cache.setDiscard(false);
             cache.setSyncWithServer(false);
             agent.notifyListenConfig();
         }
@@ -217,6 +220,7 @@ public class ClientWorker implements Closeable {
                 cache.removeListener(listener);
                 if (cache.getListeners().isEmpty()) {
                     cache.setSyncWithServer(false);
+                    cache.setDiscard(true);
                     agent.removeCache(dataId, group);
                 }
             }
@@ -240,6 +244,7 @@ public class ClientWorker implements Closeable {
                 cache.removeListener(listener);
                 if (cache.getListeners().isEmpty()) {
                     cache.setSyncWithServer(false);
+                    cache.setDiscard(true);
                     agent.removeCache(dataId, group);
                 }
             }
@@ -405,7 +410,7 @@ public class ClientWorker implements Closeable {
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ServerListManager serverListManager,
-            final Properties properties) throws NacosException {
+            final NacosClientProperties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
         init(properties);
@@ -424,9 +429,10 @@ public class ClientWorker implements Closeable {
         
     }
     
-    private void refreshContentAndCheck(String groupKey, boolean notify) {
-        if (cacheMap.get() != null && cacheMap.get().containsKey(groupKey)) {
-            CacheData cache = cacheMap.get().get(groupKey);
+    private void refreshContentAndCheck(String groupKey) {
+        CacheData cache = cacheMap.get().get(groupKey);
+        if (cache != null) {
+            boolean notify = !cache.isInitializing();
             refreshContentAndCheck(cache, notify);
         }
     }
@@ -452,7 +458,7 @@ public class ClientWorker implements Closeable {
         }
     }
     
-    private void init(Properties properties) {
+    private void init(NacosClientProperties properties) {
         
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
                 Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
@@ -535,7 +541,7 @@ public class ClientWorker implements Closeable {
          */
         private static final long ALL_SYNC_INTERNAL = 5 * 60 * 1000L;
         
-        public ConfigRpcTransportClient(Properties properties, ServerListManager serverListManager) {
+        public ConfigRpcTransportClient(NacosClientProperties properties, ServerListManager serverListManager) {
             super(properties, serverListManager);
         }
         
@@ -696,7 +702,7 @@ public class ClientWorker implements Closeable {
                             continue;
                         }
                         executeConfigListen();
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         LOGGER.error("[ rpc listen execute ] [rpc listen] exception", e);
                     }
                 }
@@ -733,7 +739,7 @@ public class ClientWorker implements Closeable {
                         }
                     }
                     
-                    if (!CollectionUtils.isEmpty(cache.getListeners())) {
+                    if (!cache.isDiscard()) {
                         //get listen  config
                         if (!cache.isUseLocalConfigInfo()) {
                             List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
@@ -744,7 +750,7 @@ public class ClientWorker implements Closeable {
                             cacheDatas.add(cache);
                             
                         }
-                    } else if (CollectionUtils.isEmpty(cache.getListeners())) {
+                    } else if (cache.isDiscard()) {
                         
                         if (!cache.isUseLocalConfigInfo()) {
                             List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
@@ -779,7 +785,7 @@ public class ClientWorker implements Closeable {
                         RpcClient rpcClient = ensureRpcClient(taskId);
                         ConfigChangeBatchListenResponse configChangeBatchListenResponse = (ConfigChangeBatchListenResponse) requestProxy(
                                 rpcClient, configChangeListenRequest);
-                        if (configChangeBatchListenResponse != null && configChangeBatchListenResponse.isSuccess()) {
+                        if (configChangeBatchListenResponse.isSuccess()) {
                             
                             Set<String> changeKeys = new HashSet<>();
                             //handle changed keys,notify listener
@@ -791,8 +797,7 @@ public class ClientWorker implements Closeable {
                                             .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
                                                     changeConfig.getTenant());
                                     changeKeys.add(changeKey);
-                                    boolean isInitializing = cacheMap.get().get(changeKey).isInitializing();
-                                    refreshContentAndCheck(changeKey, !isInitializing);
+                                    refreshContentAndCheck(changeKey);
                                 }
                                 
                             }
@@ -807,8 +812,8 @@ public class ClientWorker implements Closeable {
                                         if (!cacheData.getListeners().isEmpty()) {
                                             
                                             Long previousTimesStamp = timestampMap.get(groupKey);
-                                            if (previousTimesStamp != null && !cacheData.getLastModifiedTs().compareAndSet(previousTimesStamp,
-                                                    System.currentTimeMillis())) {
+                                            if (previousTimesStamp != null && !cacheData.getLastModifiedTs()
+                                                    .compareAndSet(previousTimesStamp, System.currentTimeMillis())) {
                                                 continue;
                                             }
                                             cacheData.setSyncWithServer(true);
@@ -844,7 +849,7 @@ public class ClientWorker implements Closeable {
                         if (removeSuccess) {
                             for (CacheData cacheData : removeListenCaches) {
                                 synchronized (cacheData) {
-                                    if (cacheData.getListeners().isEmpty()) {
+                                    if (cacheData.isDiscard()) {
                                         ClientWorker.this
                                                 .removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
                                     }
@@ -979,8 +984,8 @@ public class ClientWorker implements Closeable {
                 LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", this.getName(), dataId,
                         group, tenant, response);
                 throw new NacosException(response.getErrorCode(),
-                        "http error, code=" + response.getErrorCode() + ",msg=" + response.getMessage() + ",dataId=" + dataId + ",group=" + group
-                                + ",tenant=" + tenant);
+                        "http error, code=" + response.getErrorCode() + ",msg=" + response.getMessage() + ",dataId="
+                                + dataId + ",group=" + group + ",tenant=" + tenant);
                 
             }
         }
@@ -1012,20 +1017,20 @@ public class ClientWorker implements Closeable {
             if (request instanceof ConfigQueryRequest) {
                 String tenant = ((ConfigQueryRequest) request).getTenant();
                 String group = ((ConfigQueryRequest) request).getGroup();
-                String dataId = ((ConfigQueryRequest) request).getGroup();
+                String dataId = ((ConfigQueryRequest) request).getDataId();
                 return buildResource(tenant, group, dataId);
             }
             if (request instanceof ConfigPublishRequest) {
                 String tenant = ((ConfigPublishRequest) request).getTenant();
                 String group = ((ConfigPublishRequest) request).getGroup();
-                String dataId = ((ConfigPublishRequest) request).getGroup();
+                String dataId = ((ConfigPublishRequest) request).getDataId();
                 return buildResource(tenant, group, dataId);
             }
             
             if (request instanceof ConfigRemoveRequest) {
                 String tenant = ((ConfigRemoveRequest) request).getTenant();
                 String group = ((ConfigRemoveRequest) request).getGroup();
-                String dataId = ((ConfigRemoveRequest) request).getGroup();
+                String dataId = ((ConfigRemoveRequest) request).getDataId();
                 return buildResource(tenant, group, dataId);
             }
             return RequestResource.configBuilder().build();
@@ -1059,7 +1064,7 @@ public class ClientWorker implements Closeable {
                 }
             } catch (Exception e) {
                 LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}",
-                        this.getName(), dataId, group, tenant, "unkonw", e.getMessage());
+                        this.getName(), dataId, group, tenant, "unknown", e.getMessage());
                 return false;
             }
         }

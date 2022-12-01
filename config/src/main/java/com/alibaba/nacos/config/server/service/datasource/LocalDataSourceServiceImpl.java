@@ -30,7 +30,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,7 +56,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private final String password = "nacos";
     
-    private final String derbyBaseDir = "data" + File.separator + "derby-data";
+    private final String derbyBaseDir = "data" + File.separator + Constants.DERBY_BASE_DIR;
     
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
     
@@ -71,7 +70,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     private String healthStatus = "UP";
     
-    @PostConstruct
+    private String dataSourceType = "derby";
+    
     @Override
     public synchronized void init() throws Exception {
         if (PropertyUtil.isUseExternalDB()) {
@@ -79,9 +79,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
         if (!initialize) {
             LogUtil.DEFAULT_LOG.info("use local db service for init");
-            final String jdbcUrl =
-                    "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
-                            + ";create=true";
+            final String jdbcUrl = "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
             initialize(jdbcUrl);
             initialize = true;
         }
@@ -192,6 +190,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     @Override
     public String getHealth() {
         return healthStatus;
+    }
+    
+    @Override
+    public String getDataSourceType() {
+        return dataSourceType;
     }
     
     public void setHealthStatus(String healthStatus) {

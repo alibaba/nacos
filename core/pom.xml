@@ -63,6 +63,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-auth</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-trace-plugin</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>org.springframework.boot</groupId>

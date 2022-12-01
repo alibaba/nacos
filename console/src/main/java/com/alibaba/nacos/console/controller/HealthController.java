@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.naming.controllers.OperatorController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +40,13 @@ public class HealthController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthController.class);
     
-    private final PersistService persistService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
     private final OperatorController apiCommands;
     
     @Autowired
-    public HealthController(PersistService persistService, OperatorController apiCommands) {
-        this.persistService = persistService;
+    public HealthController(ConfigInfoPersistService configInfoPersistService, OperatorController apiCommands) {
+        this.configInfoPersistService = configInfoPersistService;
         this.apiCommands = apiCommands;
     }
     
@@ -90,7 +90,7 @@ public class HealthController {
     private boolean isConfigReadiness() {
         // check db
         try {
-            persistService.configInfoCount("");
+            configInfoPersistService.configInfoCount("");
             return true;
         } catch (Exception e) {
             LOGGER.error("Config health check fail.", e);

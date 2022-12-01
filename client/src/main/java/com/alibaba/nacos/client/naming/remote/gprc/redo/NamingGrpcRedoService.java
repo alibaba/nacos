@@ -278,6 +278,14 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     /**
+     * get Cache service.
+     * @return cache service
+     */
+    public InstanceRedoData getRegisteredInstancesBykey(String combinedServiceName) {
+        return registeredInstances.get(combinedServiceName);
+    }
+    
+    /**
      * Shutdown redo service.
      */
     public void shutdown() {

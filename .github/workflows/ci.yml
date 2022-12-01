@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ develop, v1.x-develop ]
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
   unix:
     runs-on: ${{ matrix.os }}
@@ -18,17 +21,19 @@ jobs:
         java: [8]
     steps:
       - name: Cache Maven Repos
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java }}
+          distribution: 'zulu'
+          architecture: x64
       - name: Check with Maven
         run: mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true
       - name: Build with Maven

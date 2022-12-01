@@ -21,6 +21,8 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 
+import static com.alibaba.nacos.naming.constants.ClientConstants.REVISION;
+
 /**
  * Client factory for {@link ConnectionBasedClient}.
  *
@@ -35,11 +37,17 @@ public class ConnectionBasedClientFactory implements ClientFactory<ConnectionBas
     
     @Override
     public ConnectionBasedClient newClient(String clientId, ClientAttributes attributes) {
-        return new ConnectionBasedClient(clientId, true);
+        long revision = attributes.getClientAttribute(REVISION, 0);
+        ConnectionBasedClient connectionBasedClient = new ConnectionBasedClient(clientId, true, revision);
+        connectionBasedClient.setAttributes(attributes);
+        return connectionBasedClient;
     }
     
     @Override
     public ConnectionBasedClient newSyncedClient(String clientId, ClientAttributes attributes) {
-        return new ConnectionBasedClient(clientId, false);
+        long revision = attributes.getClientAttribute(REVISION, 0);
+        ConnectionBasedClient connectionBasedClient = new ConnectionBasedClient(clientId, false, revision);
+        connectionBasedClient.setAttributes(attributes);
+        return connectionBasedClient;
     }
 }

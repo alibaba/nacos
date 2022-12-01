@@ -16,17 +16,23 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -37,6 +43,8 @@ import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.ServletException;
@@ -65,13 +73,23 @@ public class ConfigServletInner {
     
     private static final int START_LONG_POLLING_VERSION_NUM = 204;
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigServletInner.class);
+    
     private final LongPollingService longPollingService;
     
-    private final PersistService persistService;
+    private  ConfigInfoPersistService configInfoPersistService;
     
-    public ConfigServletInner(LongPollingService longPollingService, PersistService persistService) {
+    private  ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    private  ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    public ConfigServletInner(LongPollingService longPollingService, ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService) {
         this.longPollingService = longPollingService;
-        this.persistService = persistService;
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
     }
     
     /**
@@ -116,14 +134,27 @@ public class ConfigServletInner {
     }
     
     /**
-     * Execute to get config API.
+     * Execute to get config [API V1].
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String tag, String isNotify, String clientIp) throws IOException, ServletException {
+        return doGetConfig(request, response, dataId, group, tenant, tag, isNotify, clientIp, false);
+    }
+    
+    /**
+     * Execute to get config [API V1] or [API V2].
+     */
+    public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
+            String tenant, String tag, String isNotify, String clientIp, boolean isV2)
+            throws IOException, ServletException {
         
         boolean notify = false;
         if (StringUtils.isNotBlank(isNotify)) {
             notify = Boolean.parseBoolean(isNotify);
+        }
+        
+        if (isV2) {
+            response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         }
         
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
@@ -153,6 +184,10 @@ public class ConfigServletInner {
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
                 
+                if (isV2) {
+                    response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+                }
+                
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out;
@@ -160,7 +195,7 @@ public class ConfigServletInner {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
                     if (PropertyUtil.isDirectRead()) {
-                        configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
+                        configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
@@ -175,7 +210,7 @@ public class ConfigServletInner {
                                 lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
@@ -186,7 +221,7 @@ public class ConfigServletInner {
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
+                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
@@ -200,7 +235,7 @@ public class ConfigServletInner {
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
                                 
-                                return get404Result(response);
+                                return get404Result(response, isV2);
                             }
                             isSli = true;
                         }
@@ -215,7 +250,7 @@ public class ConfigServletInner {
                             }
                         }
                         if (PropertyUtil.isDirectRead()) {
-                            configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+                            configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
@@ -229,9 +264,7 @@ public class ConfigServletInner {
                             // no data",
                             // new Object[]{clientIp, groupKey});
                             
-                            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                            response.getWriter().println("config data not exist");
-                            return HttpServletResponse.SC_NOT_FOUND + "";
+                            return get404Result(response, isV2);
                         }
                     }
                 }
@@ -250,10 +283,14 @@ public class ConfigServletInner {
                 }
                 
                 if (PropertyUtil.isDirectRead()) {
-                    Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId,
-                            configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
+                    Pair<String, String> pair = EncryptionHandler
+                            .decryptHandler(dataId, configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
                     out = response.getWriter();
-                    out.print(pair.getSecond());
+                    if (isV2) {
+                        out.print(JacksonUtils.toJson(Result.success(pair.getSecond())));
+                    } else {
+                        out.print(pair.getSecond());
+                    }
                     out.flush();
                     out.close();
                 } else {
@@ -262,7 +299,11 @@ public class ConfigServletInner {
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, fileContent);
                     String decryptContent = pair.getSecond();
                     out = response.getWriter();
-                    out.print(decryptContent);
+                    if (isV2) {
+                        out.print(JacksonUtils.toJson(Result.success(decryptContent)));
+                    } else {
+                        out.print(decryptContent);
+                    }
                     out.flush();
                     out.close();
                 }
@@ -290,15 +331,12 @@ public class ConfigServletInner {
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
                             requestIp, notify && isSli);
             
-            return get404Result(response);
+            return get404Result(response, isV2);
             
         } else {
             
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-            
-            response.setStatus(HttpServletResponse.SC_CONFLICT);
-            response.getWriter().println("requested file is being modified, please try later.");
-            return HttpServletResponse.SC_CONFLICT + "";
+            return get409Result(response, isV2);
             
         }
         
@@ -309,10 +347,27 @@ public class ConfigServletInner {
         ConfigCacheService.releaseReadLock(groupKey);
     }
     
-    private String get404Result(HttpServletResponse response) throws IOException {
+    private String get404Result(HttpServletResponse response, boolean isV2) throws IOException {
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-        response.getWriter().println("config data not exist");
+        PrintWriter writer = response.getWriter();
+        if (isV2) {
+            writer.println(JacksonUtils.toJson(Result.failure(ErrorCode.RESOURCE_NOT_FOUND, "config data not exist")));
+        } else {
+            writer.println("config data not exist");
+        }
         return HttpServletResponse.SC_NOT_FOUND + "";
+    }
+    
+    private String get409Result(HttpServletResponse response, boolean isV2) throws IOException {
+        response.setStatus(HttpServletResponse.SC_CONFLICT);
+        PrintWriter writer = response.getWriter();
+        if (isV2) {
+            writer.println(JacksonUtils.toJson(Result
+                    .failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later.")));
+        } else {
+            writer.println("requested file is being modified, please try later.");
+        }
+        return HttpServletResponse.SC_CONFLICT + "";
     }
     
     /**

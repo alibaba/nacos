@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
@@ -56,27 +57,27 @@ public class StsConfig {
     }
     
     private StsConfig() {
-        String ramRoleName = System.getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
+        String ramRoleName = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
         if (!StringUtils.isBlank(ramRoleName)) {
             setRamRoleName(ramRoleName);
         }
         
-        String timeToRefreshInMillisecond = System.getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
+        String timeToRefreshInMillisecond = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
         if (!StringUtils.isBlank(timeToRefreshInMillisecond)) {
             setTimeToRefreshInMillisecond(Integer.parseInt(timeToRefreshInMillisecond));
         }
         
-        String securityCredentials = System.getProperty(IdentifyConstants.SECURITY_PROPERTY);
+        String securityCredentials = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_PROPERTY);
         if (!StringUtils.isBlank(securityCredentials)) {
             setSecurityCredentials(securityCredentials);
         }
         
-        String securityCredentialsUrl = System.getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
+        String securityCredentialsUrl = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
         if (!StringUtils.isBlank(securityCredentialsUrl)) {
             setSecurityCredentialsUrl(securityCredentialsUrl);
         }
         
-        String cacheSecurityCredentials = System.getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
+        String cacheSecurityCredentials = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
             setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }

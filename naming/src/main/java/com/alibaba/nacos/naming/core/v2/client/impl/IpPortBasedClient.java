@@ -51,6 +51,11 @@ public class IpPortBasedClient extends AbstractClient {
     private HealthCheckTaskV2 healthCheckTaskV2;
     
     public IpPortBasedClient(String clientId, boolean ephemeral) {
+        this(clientId, ephemeral, null);
+    }
+    
+    public IpPortBasedClient(String clientId, boolean ephemeral, Long revision) {
+        super(revision);
         this.ephemeral = ephemeral;
         this.clientId = clientId;
         this.responsibleId = getResponsibleTagFromId();

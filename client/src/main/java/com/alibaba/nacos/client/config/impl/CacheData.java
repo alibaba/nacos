@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -62,7 +63,7 @@ public class CacheData {
     static boolean initSnapshot;
     
     static {
-        initSnapshot = Boolean.valueOf(System.getProperty("nacos.cache.data.init.snapshot", "true"));
+        initSnapshot = NacosClientProperties.PROTOTYPE.getBoolean("nacos.cache.data.init.snapshot", true);
         LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
     }
     
@@ -110,6 +111,11 @@ public class CacheData {
      * if is cache data md5 sync with the server.
      */
     private volatile boolean isSyncWithServer = false;
+    
+    /**
+     * if is cache data is discard,need to remove.
+     */
+    private volatile boolean isDiscard = false;
     
     private String type;
     
@@ -400,6 +406,14 @@ public class CacheData {
     
     public void setSyncWithServer(boolean syncWithServer) {
         isSyncWithServer = syncWithServer;
+    }
+    
+    public boolean isDiscard() {
+        return isDiscard;
+    }
+    
+    public void setDiscard(boolean discard) {
+        isDiscard = discard;
     }
     
     public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group) {

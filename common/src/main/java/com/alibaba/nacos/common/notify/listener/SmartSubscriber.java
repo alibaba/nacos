@@ -30,9 +30,9 @@ import java.util.List;
 public abstract class SmartSubscriber extends Subscriber {
     
     /**
-     * Returns which event type are smartsubscriber interested in.
+     * Returns which event type are smart subscriber interested in.
      *
-     * @return The interestd event types.
+     * @return The interested event types.
      */
     public abstract List<Class<? extends Event>> subscribeTypes();
     

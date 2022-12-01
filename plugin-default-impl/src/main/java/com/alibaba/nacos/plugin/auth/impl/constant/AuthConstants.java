@@ -43,13 +43,13 @@ public class AuthConstants {
     
     public static final String NACOS_USER_KEY = "nacosuser";
     
-    public static final String TOKEN_SECRET_KEY = "token.secret.key";
+    public static final String TOKEN_SECRET_KEY = "nacos.core.auth.plugin.nacos.token.secret.key";
     
     public static final String DEFAULT_TOKEN_SECRET_KEY = "";
     
-    public static final String TOKEN_EXPIRE_SECONDS = "token.expire.seconds";
+    public static final String TOKEN_EXPIRE_SECONDS = "nacos.core.auth.plugin.nacos.token.expire.seconds";
     
-    public static final String DEFAULT_TOKEN_EXPIRE_SECONDS = "18000";
+    public static final Long DEFAULT_TOKEN_EXPIRE_SECONDS = 18_000L;
     
     public static final String NACOS_CORE_AUTH_LDAP_URL = "nacos.core.auth.ldap.url";
     
@@ -60,4 +60,8 @@ public class AuthConstants {
     public static final String NACOS_CORE_AUTH_LDAP_USERDN = "nacos.core.auth.ldap.userDn";
     
     public static final String NACOS_CORE_AUTH_LDAP_PASSWORD = "nacos.core.auth.ldap.password";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_FILTER_PREFIX = "nacos.core.auth.ldap.filter.prefix";
+    
+    public static final String NACOS_CORE_AUTH_CASE_SENSITIVE = "nacos.core.auth.ldap.case.sensitive";
 }
