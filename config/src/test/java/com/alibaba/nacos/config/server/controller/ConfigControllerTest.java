@@ -32,7 +32,6 @@ import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -352,8 +351,7 @@ public class ConfigControllerTest {
     public void testExportConfigV2() throws Exception {
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)
-                .param("exportV2", "true").param("dataId", "test")
-                .param("group", "test").param("tenant", "")
+                .param("exportV2", "true").param("dataId", "test").param("group", "test").param("tenant", "")
                 .param("ids", "1,2");
         
         int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();

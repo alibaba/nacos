@@ -23,7 +23,6 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,9 +50,6 @@ import static org.mockito.Mockito.verify;
 public class ConfigOperationServiceTest {
     
     private ConfigOperationService configOperationService;
-    
-    @Mock
-    private PersistService persistService;
     
     @Mock
     private ConfigInfoPersistService configInfoPersistService;

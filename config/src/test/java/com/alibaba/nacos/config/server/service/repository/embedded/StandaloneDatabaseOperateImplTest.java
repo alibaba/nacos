@@ -69,9 +69,6 @@ public class StandaloneDatabaseOperateImplTest {
     private BiConsumer<Boolean, Throwable> biConsumer;
     
     @Mock
-    private File file;
-    
-    @Mock
     private TransactionTemplate transactionTemplate;
     
     @Before
