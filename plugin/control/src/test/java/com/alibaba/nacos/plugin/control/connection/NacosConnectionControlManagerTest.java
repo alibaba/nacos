@@ -35,18 +35,14 @@ public class NacosConnectionControlManagerTest {
     public void test() {
         
         ConnectionControlRule connectionControlRule = new ConnectionControlRule();
-        connectionControlRule.setCountLimit(30);
-        connectionControlManager.applyConnectionLimitRule(connectionControlRule);
+        
         ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "sdk");
         ConnectionCheckResponse check = connectionControlManager.check(connectionCheckRequest);
-        Assert.assertFalse(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.DENY_BY_TOTAL_OVER, check.getCode());
-        
         connectionControlRule.setCountLimit(40);
         connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         check = connectionControlManager.check(connectionCheckRequest);
         Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.PASS_BY_TOTAL, check.getCode());
+        Assert.assertEquals(ConnectionCheckCode.CHECK_SKIP, check.getCode());
         
     }
     

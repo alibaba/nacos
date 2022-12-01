@@ -58,23 +58,10 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
-        if (isMonitorType()) {
-            boolean overLimit = false;
-            
-            long addResult = rateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
-            if (addResult > this.getMaxCount()) {
-                overLimit = true;
-            }
-            
-            return new TpsCheckResponse(true, overLimit ? TpsResultCode.PASS_BY_MONITOR : TpsResultCode.PASS_BY_POINT,
-                    "success");
-        } else {
-            boolean success = rateCounter
-                    .tryAdd(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount(), this.getMaxCount());
-            return new TpsCheckResponse(success, success ? TpsResultCode.PASS_BY_POINT : TpsResultCode.DENY_BY_POINT,
-                    "success");
-        }
         
+        rateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
+        
+        return new TpsCheckResponse(true, TpsResultCode.PASS_BY_POINT, "success");
     }
     
     long trimTimeStamp(long timeStamp) {
@@ -97,18 +84,12 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         
         TpsMetrics tpsMetrics = new TpsMetrics("", "", timeStamp, super.getPeriod());
         long totalPass = rateCounter.getCount(timeStamp);
-        long totalDenied = rateCounter.getDeniedCount(timeStamp);
-        if (totalPass <= 0 && totalDenied <= 0) {
+        if (totalPass <= 0) {
             return null;
         }
-        tpsMetrics.setCounter(new TpsMetrics.Counter(totalPass, totalDenied));
+        tpsMetrics.setCounter(new TpsMetrics.Counter(totalPass, 0));
         return tpsMetrics;
         
-    }
-    
-    @Override
-    public void rollbackTps(BarrierCheckRequest barrierCheckRequest) {
-        rateCounter.minus(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
     }
     
     /**

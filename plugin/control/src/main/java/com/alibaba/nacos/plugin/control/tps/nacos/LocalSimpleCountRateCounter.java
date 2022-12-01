@@ -58,20 +58,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     public long add(long timestamp, long count) {
         return createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
     }
-    
-    @Override
-    public boolean tryAdd(long timestamp, long count, long upLimit) {
-        SlotCountHolder countHolder = createSlotIfAbsent(timestamp).countHolder;
-        AtomicLong currentCount = countHolder.count;
-        if (upLimit >= 0 && currentCount.longValue() + count > upLimit) {
-            countHolder.interceptedCount.addAndGet(count);
-            return false;
-        } else {
-            currentCount.addAndGet(count);
-            return true;
-        }
-    }
-    
+
     public void minus(long timestamp, long count) {
         AtomicLong currentCount = createSlotIfAbsent(timestamp).countHolder.count;
         currentCount.addAndGet(count * -1);
@@ -80,12 +67,6 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     public long getCount(long timestamp) {
         TpsSlot point = getPoint(timestamp);
         return point == null ? 0L : point.countHolder.count.longValue();
-    }
-    
-    @Override
-    public long getDeniedCount(long timestamp) {
-        TpsSlot point = getPoint(timestamp);
-        return point == null ? 0L : point.countHolder.interceptedCount.longValue();
     }
     
     /**

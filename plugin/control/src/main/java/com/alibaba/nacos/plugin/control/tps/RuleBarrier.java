@@ -107,14 +107,6 @@ public abstract class RuleBarrier {
     public abstract TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest);
     
     /**
-     * rollback tps.
-     *
-     * @param barrierCheckRequest barrierCheckRequest.
-     * @return
-     */
-    public abstract void rollbackTps(BarrierCheckRequest barrierCheckRequest);
-    
-    /**
      * apply rule detail.
      *
      * @param ruleDetail ruleDetail.

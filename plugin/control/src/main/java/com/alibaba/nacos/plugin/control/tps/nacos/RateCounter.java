@@ -55,38 +55,12 @@ public abstract class RateCounter {
     public abstract long add(long timestamp, long count);
     
     /**
-     * add count for the second of timestamp with up limit.
-     *
-     * @param timestamp timestamp.
-     * @param count     count.
-     * @param upLimit   upLimit.
-     * @return
-     */
-    public abstract boolean tryAdd(long timestamp, long count, long upLimit);
-    
-    /**
-     * minus count.
-     *
-     * @param timestamp timestamp.
-     * @param count     count.
-     */
-    public abstract void minus(long timestamp, long count);
-    
-    /**
      * get count of the second of timestamp.
      *
      * @param timestamp timestamp.
      * @return
      */
     public abstract long getCount(long timestamp);
-    
-    /**
-     * get denied count of the second of timestamp.
-     *
-     * @param timestamp timestamp.
-     * @return
-     */
-    public abstract long getDeniedCount(long timestamp);
     
     public String getName() {
         return name;

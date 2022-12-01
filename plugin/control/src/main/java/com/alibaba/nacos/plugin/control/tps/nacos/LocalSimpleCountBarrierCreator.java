@@ -44,6 +44,6 @@ public class LocalSimpleCountBarrierCreator implements RuleBarrierCreator {
     
     @Override
     public String name() {
-        return "localsimplecount";
+        return "localsimplecountor";
     }
 }

@@ -98,7 +98,7 @@ public class ConnectionManagerTest {
     
     @Test
     public void testTraced() {
-        Assert.assertTrue(connectionManager.traced(clientIp));
+        Assert.assertFalse(connectionManager.traced(clientIp));
     }
     
     @Test
