@@ -114,7 +114,13 @@ public class ControlRuleController {
             RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
             
             if (external) {
-                ruleStorageProxy.getExternalStorage().saveTpsRule(pointName, content);
+                if (ruleStorageProxy.getExternalStorage() == null) {
+                    return RestResultUtils.failed(404, false, "external storage not implemented.");
+                    
+                } else {
+                    ruleStorageProxy.getExternalStorage().saveTpsRule(pointName, content);
+                    
+                }
             } else {
                 ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, content);
             }
@@ -182,7 +188,12 @@ public class ControlRuleController {
             ControlManagerCenter.getInstance().getRuleParser().parseConnectionRule(content);
             RuleStorageProxy ruleStorageProxy = ControlManagerCenter.getInstance().getRuleStorageProxy();
             if (external) {
-                ruleStorageProxy.getExternalStorage().saveConnectionRule(content);
+                if (ruleStorageProxy.getExternalStorage() == null) {
+                    return RestResultUtils.failed(404, false, "external storage not implemented.");
+                    
+                } else {
+                    ruleStorageProxy.getExternalStorage().saveConnectionRule(content);
+                }
             } else {
                 ruleStorageProxy.getLocalDiskStorage().saveConnectionRule(content);
             }

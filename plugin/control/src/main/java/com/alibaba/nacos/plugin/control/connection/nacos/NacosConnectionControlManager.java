@@ -71,7 +71,7 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
                         "total count over limit,max allowed count is " + totalCountLimit + ",current count detail is "
                                 + metricsTotalCount.toString());
                 Loggers.CONNECTION.warn("total count over limit,max allowed count is {},current count detail is {}"
-                                + ",detail={},clientIp={},appName={},source={},labels={}", totalCountLimit,
+                                + ",clientIp={},appName={},source={},labels={}", totalCountLimit,
                         metricsTotalCount.toString(), connectionCheckRequest.getClientIp(),
                         connectionCheckRequest.getAppName(), connectionCheckRequest.getSource(),
                         connectionCheckRequest.getLabels());
