@@ -1320,9 +1320,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
             params.addAll(Arrays.asList(tagArr));
             ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_TAGS_RELATION);
-            sqlCountRows = configTagsRelationMapper.findConfigInfoLike4PageCountRows(paramsMap, params.size());
+            sqlCountRows = configTagsRelationMapper.findConfigInfoLike4PageCountRows(paramsMap, tagArr.length);
             sqlFetchRows = configTagsRelationMapper
-                    .findConfigInfoLike4PageFetchRows(paramsMap, params.size(), startRow, pageSize);
+                    .findConfigInfoLike4PageFetchRows(paramsMap, tagArr.length, startRow, pageSize);
         } else {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO);
             sqlCountRows = configInfoMapper.findConfigInfoLike4PageCountRows(paramsMap);
