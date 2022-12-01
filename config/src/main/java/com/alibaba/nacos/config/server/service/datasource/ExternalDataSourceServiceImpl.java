@@ -106,9 +106,9 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-    
+        
         dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
-    
+        
         if (PropertyUtil.isUseExternalDB()) {
             try {
                 reload();
@@ -129,14 +129,16 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         try {
             final List<JdbcTemplate> testJtListNew = new ArrayList<JdbcTemplate>();
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
-    
-            List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties().build(EnvUtil.getEnvironment(), (dataSource) -> {
-                JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                jdbcTemplate.setQueryTimeout(queryTimeout);
-                jdbcTemplate.setDataSource(dataSource);
-                testJtListNew.add(jdbcTemplate);
-                isHealthListNew.add(Boolean.TRUE);
-            });final List<HikariDataSource> dataSourceListOld = dataSourceList;
+            
+            List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
+                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                        JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                        jdbcTemplate.setQueryTimeout(queryTimeout);
+                        jdbcTemplate.setDataSource(dataSource);
+                        testJtListNew.add(jdbcTemplate);
+                        isHealthListNew.add(Boolean.TRUE);
+                    });
+            final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
             dataSourceList = dataSourceListNew;
             testJtList = testJtListNew;
