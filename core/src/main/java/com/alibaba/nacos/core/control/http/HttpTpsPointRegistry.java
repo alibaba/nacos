@@ -1,5 +1,6 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +13,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.alibaba.nacos.core.control.http;
@@ -35,7 +37,6 @@ import java.util.Map;
  * @author liuzunfei
  * @version $Id: RequestHandlerRegistry.java, v 0.1 2020年07月13日 8:24 PM liuzunfei Exp $
  */
-
 @Service
 public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshedEvent> {
     

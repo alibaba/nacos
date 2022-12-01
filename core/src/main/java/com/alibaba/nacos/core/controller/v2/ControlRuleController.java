@@ -1,3 +1,21 @@
+/*
+ *
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.alibaba.nacos.core.controller.v2;
 
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -34,6 +52,11 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * control rule controller.
+ *
+ * @author shiyiyue
+ */
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/controlrule")
 public class ControlRuleController {
@@ -192,7 +215,7 @@ public class ControlRuleController {
     private Map<String, TpsControlRule> getClusterTpsControl(String pointName) {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
-        Map<String, TpsControlRule> clusterResult = new HashMap<>();
+        Map<String, TpsControlRule> clusterResult = new HashMap<>(serverMemberManager.allMembers().size());
         
         for (Member member : serverMemberManager.allMembers()) {
             String url = MessageFormat.format(TPSRULE_URL_PATTERN, member.getAddress(), EnvUtil.getContextPath());
@@ -242,7 +265,7 @@ public class ControlRuleController {
     private Map<String, ConnectionControlRule> getClusterConnectionControl() {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
-        Map<String, ConnectionControlRule> clusterResult = new HashMap<>();
+        Map<String, ConnectionControlRule> clusterResult = new HashMap<>(serverMemberManager.allMembers().size());
         
         for (Member member : serverMemberManager.allMembers()) {
             String url = MessageFormat
@@ -290,13 +313,13 @@ public class ControlRuleController {
     private Map<String, Boolean> reloadClusterConnectionControl(boolean external) {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
-        Map<String, Boolean> clusterResult = new HashMap<>();
+        Map<String, Boolean> clusterResult = new HashMap<>(serverMemberManager.allMembers().size());
         
         for (Member member : serverMemberManager.allMembers()) {
             String url = MessageFormat
                     .format(RELOAD_CONNECTION_RULE_URL_PATTERN, member.getAddress(), EnvUtil.getContextPath());
             Header header = Header.newInstance();
-            Map<String, String> bodyValues = new HashMap<>();
+            Map<String, String> bodyValues = new HashMap<>(2);
             bodyValues.put("external", String.valueOf(external));
             nacosAsyncRestTemplate.postForm(url, header, bodyValues, RestResult.class, new Callback<Boolean>() {
                 
@@ -341,13 +364,13 @@ public class ControlRuleController {
     private Map<String, Boolean> reloadClusterTpsControl(String pointName, boolean external) {
         
         CountDownLatch latch = new CountDownLatch(serverMemberManager.allMembers().size());
-        Map<String, Boolean> clusterResult = new HashMap<>();
+        Map<String, Boolean> clusterResult = new HashMap<>(serverMemberManager.allMembers().size());
         
         for (Member member : serverMemberManager.allMembers()) {
             String url = MessageFormat
                     .format(RELOAD_TPS_RULE_URL_PATTERN, member.getAddress(), EnvUtil.getContextPath());
             Header header = Header.newInstance();
-            Map<String, String> bodyValues = new HashMap<>();
+            Map<String, String> bodyValues = new HashMap<>(2);
             bodyValues.put("pointname", pointName);
             bodyValues.put("external", String.valueOf(external));
             nacosAsyncRestTemplate.postForm(url, header, bodyValues, RestResult.class, new Callback<Void>() {

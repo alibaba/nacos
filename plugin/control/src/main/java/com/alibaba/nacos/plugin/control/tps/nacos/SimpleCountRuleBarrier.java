@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.plugin.control.tps.nacos;
 
 import com.alibaba.nacos.plugin.control.tps.RuleBarrier;
@@ -10,6 +26,12 @@ import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * simple count rule barrier.
+ *
+ * @author shiyiyue
+ */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     RateCounter rateCounter;
@@ -21,6 +43,13 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         this.rateCounter = createSimpleCounter(ruleName, period);
     }
     
+    /**
+     * create rate count.
+     *
+     * @param name   name.
+     * @param period period.
+     * @return
+     */
     public abstract RateCounter createSimpleCounter(String name, TimeUnit period);
     
     public void reCreateRaterCounter(String name, TimeUnit period) {
