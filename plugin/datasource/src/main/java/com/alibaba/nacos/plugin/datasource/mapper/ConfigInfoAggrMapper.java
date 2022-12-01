@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
-import java.util.List;
-
 /**
  * The mapper of config info.
  *
@@ -27,14 +25,14 @@ import java.util.List;
 public interface ConfigInfoAggrMapper extends Mapper {
     
     /**
-     * To delete aggregated data in bulk, you need to specify a list of datum.
+     * To delete aggregated data in bulk, you need to specify a size of datum list.
      * The default sql:
      * DELETE FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=? AND datum_id IN (...)
      *
-     * @param datumList datumList
+     * @param datumSize the size of datum list
      * @return The sql of deleting aggregated data in bulk.
      */
-    String batchRemoveAggr(List<String> datumList);
+    String batchRemoveAggr(int datumSize);
     
     /**
      * Get count of aggregation config info.

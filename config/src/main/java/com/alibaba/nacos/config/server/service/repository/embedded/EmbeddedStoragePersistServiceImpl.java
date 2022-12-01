@@ -751,15 +751,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
             final List<String> datumList) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final StringBuilder datumString = new StringBuilder();
-        for (String datum : datumList) {
-            datumString.append('\'').append(datum).append("',");
-        }
-        datumString.deleteCharAt(datumString.length() - 1);
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList);
-        final Object[] args = new Object[] {dataId, group, tenantTmp};
+        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList.size());
+        final Object[] args = new Object[3 + datumList.size()];
+        args[0] = dataId;
+        args[1] = group;
+        args[2] = tenantTmp;
+        System.arraycopy(datumList.toArray(), 0, args, 3, datumList.size());
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         
         try {

@@ -22,8 +22,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-
 public class ConfigInfoAggrMapperByDerbyTest {
     
     private ConfigInfoAggrMapperByDerby configInfoAggrMapperByDerby;
@@ -35,9 +33,9 @@ public class ConfigInfoAggrMapperByDerbyTest {
     
     @Test
     public void testBatchRemoveAggr() {
-        String sql = configInfoAggrMapperByDerby.batchRemoveAggr(Arrays.asList("1", "2"));
+        String sql = configInfoAggrMapperByDerby.batchRemoveAggr(5);
         Assert.assertEquals(sql, "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
-                + "AND datum_id IN ('1','2')");
+                + "AND datum_id IN (?, ?, ?, ?, ?)");
     }
     
     @Test
