@@ -174,7 +174,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             syncedService.add(singleton);
             InstancePublishInfo instancePublishInfo = instances.get(i);
             if (!instancePublishInfo.equals(client.getInstancePublishInfo(singleton))) {
-                client.addServiceInstance(singleton, instancePublishInfo);
+                client.addServiceInstanceSyncData(singleton, instancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
@@ -213,7 +213,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 result = batchInstancePublishInfo.equals(targetInstanceInfo);
             }
             if (!result) {
-                client.addServiceInstance(service, batchInstancePublishInfo);
+                client.addServiceInstanceSyncData(service, batchInstancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }

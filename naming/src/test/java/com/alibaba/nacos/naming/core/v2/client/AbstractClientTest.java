@@ -57,6 +57,12 @@ public class AbstractClientTest {
     }
     
     @Test
+    public void addServiceInstanceSyncData() {
+        boolean result = abstractClient.addServiceInstanceSyncData(service, instancePublishInfo);
+        Assert.assertTrue(result);
+    }
+    
+    @Test
     public void addServiceSubscriber() {
         Assert.assertTrue(abstractClient.addServiceSubscriber(service, subscriber));
     }

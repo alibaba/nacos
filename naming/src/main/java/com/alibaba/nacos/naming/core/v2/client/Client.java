@@ -59,13 +59,22 @@ public interface Client {
     long getLastUpdatedTime();
     
     /**
-     * Add a new instance for service for current client.
+     * Add a new instance for service for current client with current updateTime.
      *
      * @param service             publish service
      * @param instancePublishInfo instance
      * @return true if add successfully, otherwise false
      */
     boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo);
+    
+    /**
+     * Add a new instance for service for current client from DistroData.
+     *
+     * @param service             publish service
+     * @param instancePublishInfo instance
+     * @return true if add successfully, otherwise false
+     */
+    boolean addServiceInstanceSyncData(Service service, InstancePublishInfo instancePublishInfo);
     
     /**
      * Remove service instance from client.

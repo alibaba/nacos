@@ -71,6 +71,11 @@ public abstract class AbstractClient implements Client {
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         instancePublishInfo.setLastUpdateTime(System.currentTimeMillis());
+        return addServiceInstanceSyncData(service, instancePublishInfo);
+    }
+    
+    @Override
+    public boolean addServiceInstanceSyncData(Service service, InstancePublishInfo instancePublishInfo) {
         if (null == publishers.put(service, instancePublishInfo)) {
             if (instancePublishInfo instanceof BatchInstancePublishInfo) {
                 MetricsMonitor.incrementIpCountWithBatchRegister(instancePublishInfo);
@@ -166,7 +171,7 @@ public abstract class AbstractClient implements Client {
         return data;
     }
     
-    private static BatchInstanceData buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
+    private static void buildBatchInstanceData(BatchInstanceData  batchInstanceData, List<String> batchNamespaces,
             List<String> batchGroupNames, List<String> batchServiceNames, Map.Entry<Service, InstancePublishInfo> entry) {
         batchNamespaces.add(entry.getKey().getNamespace());
         batchGroupNames.add(entry.getKey().getGroup());
@@ -175,7 +180,6 @@ public abstract class AbstractClient implements Client {
         batchInstanceData.setNamespaces(batchNamespaces);
         batchInstanceData.setGroupNames(batchGroupNames);
         batchInstanceData.setServiceNames(batchServiceNames);
-        return batchInstanceData;
     }
     
     @Override
