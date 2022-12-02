@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Commons;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -36,7 +35,6 @@ import javax.servlet.http.HttpServletRequest;
  * @author nkorange
  * @since 1.2.0
  */
-@Order(-2)
 @ControllerAdvice
 public class ConsoleExceptionHandler {
     
