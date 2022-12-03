@@ -32,7 +32,7 @@ public class McpConnection extends AbstractConnection<Mcp.Resources> {
     }
 
     @Override
-    public void push(Mcp.Resources response, WatchedStatus watchedStatus) {
+    public synchronized void push(Mcp.Resources response, WatchedStatus watchedStatus) {
         if (Loggers.MAIN.isDebugEnabled()) {
             Loggers.MAIN.debug("Mcp.Resources: {}", response.toString());
         }
