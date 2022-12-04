@@ -453,8 +453,13 @@ class ConfigurationManagement extends React.Component {
       config_tags: value || [],
       tagLst: value,
     });
-    setParams('tagList', value.join(','));
-    setParams('configTags', value.join(','));
+    if (!value) {
+      setParams('tagList', '');
+      setParams('configTags', '');
+    } else {
+      setParams('tagList', value.join(','));
+      setParams('configTags', value.join(','));
+    }
   }
 
   /**
