@@ -188,4 +188,13 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
     }
     
+    @Override
+    public Integer getRowCounts(String sql, Object[] args) {
+        Integer rowCount = databaseOperate.queryOne(sql, args, Integer.class);
+        if (rowCount == null) {
+            throw new IllegalArgumentException("fetchPageLimit error");
+        }
+        return rowCount;
+    }
+    
 }

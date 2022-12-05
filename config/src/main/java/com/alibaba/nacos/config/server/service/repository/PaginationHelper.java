@@ -43,4 +43,6 @@ public interface PaginationHelper<E> {
             final RowMapper<E> rowMapper);
     
     void updateLimit(final String sql, final Object[] args);
+    
+    Integer getRowCounts(final String sql, final Object[] args);
 }

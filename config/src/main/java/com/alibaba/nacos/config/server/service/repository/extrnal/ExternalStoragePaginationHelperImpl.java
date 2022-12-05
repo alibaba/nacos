@@ -184,6 +184,15 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         }
     }
     
+    @Override
+    public Integer getRowCounts(String sql, Object[] args) {
+        Integer rowCount = jdbcTemplate.queryForObject(sql, args, Integer.class);
+        if (rowCount == null) {
+            throw new IllegalArgumentException("fetchPageLimit error");
+        }
+        return rowCount;
+    }
+    
     public int updateLimitWithResponse(final String sql, final Object[] args) {
         String sqlUpdate = sql;
         

@@ -343,6 +343,20 @@ public interface ConfigInfoPersistService {
             final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
+     * find config info by config detail.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByDetail4Page(final int pageNo, final int pageSize, final String dataId, final String group,
+            final String tenant, final Map<String, Object> configAdvanceInfo);
+    
+    /**
      * Query configuration information based on group.
      *
      * @param pageNo   Page number (must be greater than 0)
@@ -450,6 +464,20 @@ public interface ConfigInfoPersistService {
      * @return {@link Page} with {@link ConfigInfo} generation
      */
     Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
+            final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
+    
+    /**
+     * Query config info by content detail.
+     *
+     * @param pageNo            page number
+     * @param pageSize          page size
+     * @param dataId            data id
+     * @param group             group
+     * @param tenant            tenant
+     * @param configAdvanceInfo advance info
+     * @return {@link Page} with {@link ConfigInfo} generation
+     */
+    Page<ConfigInfo> findConfigInfoByDetailLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**

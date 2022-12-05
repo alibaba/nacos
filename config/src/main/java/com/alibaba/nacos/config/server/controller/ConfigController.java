@@ -370,6 +370,7 @@ public class ConfigController {
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
+            @RequestParam(value = "config_detail", required = false) String configDetail,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
@@ -378,8 +379,15 @@ public class ConfigController {
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        if (StringUtils.isNotBlank(configDetail)) {
+            configAdvanceInfo.put("config_detail", configDetail);
+        }
         try {
-            return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            if (StringUtils.isNotBlank(configDetail)) {
+                return configInfoPersistService.findConfigInfoByDetail4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            } else {
+                return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            }
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);
@@ -397,6 +405,7 @@ public class ConfigController {
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
+            @RequestParam(value = "config_detail", required = false) String configDetail,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
         MetricsMonitor.getFuzzySearchMonitor().incrementAndGet();
         Map<String, Object> configAdvanceInfo = new HashMap<>(50);
@@ -406,8 +415,15 @@ public class ConfigController {
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        if (StringUtils.isNotBlank(configDetail)) {
+            configAdvanceInfo.put("config_detail", configDetail);
+        }
         try {
-            return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            if (StringUtils.isNotBlank(configDetail)) {
+                return configInfoPersistService.findConfigInfoByDetailLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            } else {
+                return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            }
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);

@@ -41,6 +41,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.config.server.utils.ConfigToPropertiesUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
@@ -720,6 +721,80 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
+    public Page<ConfigInfo> findConfigInfoByDetail4Page(int pageNo, int pageSize, String dataId, String group,
+            String tenant, Map<String, Object> configAdvanceInfo) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        final String configDetail = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_detail");
+        String sql = null;
+        String sqlCount = null;
+        List<String> paramList = new ArrayList<>();
+        paramList.add(tenantTmp);
+        Map<String, String> paramsMap = new HashMap<>(16);
+        if (StringUtils.isNotBlank(dataId)) {
+            paramList.add(dataId);
+            paramsMap.put(DATA_ID, DATA_ID);
+        }
+        if (StringUtils.isNotBlank(group)) {
+            paramList.add(group);
+            paramsMap.put(GROUP, GROUP);
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            paramList.add(appName);
+            paramsMap.put(APP_NAME, APP_NAME);
+        }
+        final int startRow = (pageNo - 1) * pageSize;
+        int rowCount = 0;
+        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+        if (StringUtils.isNotBlank(configTags)) {
+            String[] tagArr = configTags.split(",");
+            paramList.addAll(Arrays.asList(tagArr));
+            ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
+                    dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
+            sqlCount = configTagsRelationMapper.findConfigInfo4PageCountRows(paramsMap, tagArr.length);
+            rowCount = helper.getRowCounts(sqlCount, paramList.toArray());
+            sql = configTagsRelationMapper.findConfigInfo4PageFetchRows(paramsMap, tagArr.length, 0, rowCount);
+        } else {
+            ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.CONFIG_INFO);
+            sqlCount = configInfoMapper.findConfigInfo4PageCountRows(paramsMap);
+            rowCount = helper.getRowCounts(sqlCount, paramList.toArray());
+            sql = configInfoMapper.findConfigInfo4PageFetchRows(paramsMap, 0, rowCount);
+        }
+        
+        Page<ConfigInfo> page = helper.fetchPage(sqlCount, sql, paramList.toArray(), 1, rowCount,
+                CONFIG_INFO_ROW_MAPPER);
+    
+        List<ConfigInfo> collect = page.getPageItems().stream()
+                .filter((config -> ConfigToPropertiesUtil.configToProperties(config).containsConfig(configDetail)))
+                .collect(Collectors.toList());
+    
+        rowCount = collect.size();
+        int pageCount = rowCount / pageSize;
+        if (rowCount > pageSize * pageCount) {
+            pageCount++;
+        }
+        page.setPageNumber(pageNo);
+        page.setPagesAvailable(pageCount);
+        page.setTotalCount(rowCount);
+        page.setPageItems(new ArrayList<>());
+        if (pageNo > pageCount) {
+            return page;
+        }
+        collect = collect.subList(pageSize * (pageNo - 1), Math.min(pageSize * pageNo, collect.size()));
+        page.setPageItems(collect);
+    
+        for (ConfigInfo configInfo : page.getPageItems()) {
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
+                    configInfo.getEncryptedDataKey(), configInfo.getContent());
+            configInfo.setContent(pair.getSecond());
+        }
+    
+        return page;
+    }
+    
+    @Override
     public Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
             final String appName) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
@@ -1004,6 +1079,85 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
         return page;
         
+    }
+    
+    @Override
+    public Page<ConfigInfo> findConfigInfoByDetailLike4Page(int pageNo, int pageSize, String dataId, String group,
+            String tenant, Map<String, Object> configAdvanceInfo) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
+        final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+        final String configDetail = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_detail");
+        String sqlCountRows = null;
+        String sqlFetchRows = null;
+        Map<String, String> paramsMap = new HashMap<>(16);
+    
+        List<String> params = new ArrayList<>();
+        params.add(generateLikeArgument(tenantTmp));
+        if (!StringUtils.isBlank(dataId)) {
+            params.add(generateLikeArgument(dataId));
+            paramsMap.put(DATA_ID, DATA_ID);
+        }
+        if (!StringUtils.isBlank(group)) {
+            params.add(generateLikeArgument(group));
+            paramsMap.put(GROUP, GROUP);
+        }
+        if (!StringUtils.isBlank(appName)) {
+            params.add(appName);
+            paramsMap.put(APP_NAME, APP_NAME);
+        }
+        if (!StringUtils.isBlank(content)) {
+            params.add(generateLikeArgument(content));
+            paramsMap.put(CONTENT, CONTENT);
+        }
+        int rowCounts = 0;
+        PaginationHelper<ConfigInfo> helper = createPaginationHelper();
+        if (StringUtils.isNotBlank(configTags)) {
+            String[] tagArr = configTags.split(",");
+            params.addAll(Arrays.asList(tagArr));
+            ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
+                    dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
+            sqlCountRows = configTagsRelationMapper.findConfigInfoLike4PageCountRows(paramsMap, tagArr.length);
+            rowCounts = helper.getRowCounts(sqlCountRows, params.toArray());
+            sqlFetchRows = configTagsRelationMapper.findConfigInfoLike4PageFetchRows(paramsMap, tagArr.length, 0,
+                    rowCounts);
+        } else {
+            ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.CONFIG_INFO);
+            sqlCountRows = configInfoMapper.findConfigInfoLike4PageCountRows(paramsMap);
+            rowCounts = helper.getRowCounts(sqlCountRows, params.toArray());
+            sqlFetchRows = configInfoMapper.findConfigInfoLike4PageFetchRows(paramsMap, 0, rowCounts);
+        }
+        
+        Page<ConfigInfo> page = helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), 1, rowCounts,
+                CONFIG_INFO_ROW_MAPPER);
+    
+        List<ConfigInfo> collect = page.getPageItems().stream()
+                .filter((config -> ConfigToPropertiesUtil.configToProperties(config).containsConfig(configDetail)))
+                .collect(Collectors.toList());
+    
+        rowCounts = collect.size();
+        int pageCount = rowCounts / pageSize;
+        if (rowCounts > pageSize * pageCount) {
+            pageCount++;
+        }
+        page.setPageNumber(pageNo);
+        page.setPagesAvailable(pageCount);
+        page.setTotalCount(rowCounts);
+        page.setPageItems(new ArrayList<>());
+        if (pageNo > pageCount) {
+            return page;
+        }
+        collect = collect.subList(pageSize * (pageNo - 1), Math.min(pageSize * pageNo, collect.size()));
+        page.setPageItems(collect);
+    
+        for (ConfigInfo configInfo : page.getPageItems()) {
+            Pair<String, String> pair = EncryptionHandler.decryptHandler(configInfo.getDataId(),
+                    configInfo.getEncryptedDataKey(), configInfo.getContent());
+            configInfo.setContent(pair.getSecond());
+        }
+        return page;
     }
     
     @Override
