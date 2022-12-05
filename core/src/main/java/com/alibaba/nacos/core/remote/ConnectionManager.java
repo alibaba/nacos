@@ -63,11 +63,10 @@ public class ConnectionManager {
     
     private RuntimeConnectionEjector runtimeConnectionEjector;
     
-    @Autowired
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
-    public ConnectionManager() {
-    
+    public ConnectionManager(ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
+        this.clientConnectionEventListenerRegistry = clientConnectionEventListenerRegistry;
     }
     
     /**

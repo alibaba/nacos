@@ -50,7 +50,7 @@ public class ConnectionManagerTest {
     private ConnectionManager connectionManager;
     
     @Mock
-    private ClientConnectionEventListenerRegistry registry;
+    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     @InjectMocks
     private GrpcConnection connection;
