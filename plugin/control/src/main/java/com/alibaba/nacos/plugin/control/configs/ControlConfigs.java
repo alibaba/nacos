@@ -33,14 +33,20 @@ public class ControlConfigs {
     
     public static ControlConfigs getInstance() {
         if (instance == null) {
-            try {
-                instance = ApplicationUtils.getBean(ControlConfigs.class);
-            } catch (Throwable throwable) {
-                Loggers.CONTROL
-                        .warn("Fail to get control configs bean from spring context,use default constructor instance");
-                instance = new ControlConfigs();
+            synchronized (ControlConfigs.class) {
+                try {
+                    instance = ApplicationUtils.getBean(ControlConfigs.class);
+                } catch (Throwable throwable) {
+                    Loggers.CONTROL
+                            .warn("Fail to get control configs bean from spring context,use default constructor instance",
+                                    throwable);
+                }
+                if (instance == null) {
+                    instance = new ControlConfigs();
+                }
             }
         }
+        
         return instance;
     }
     
