@@ -194,15 +194,21 @@ public class ConnectionManager {
      * init connection ejector.
      */
     public void initConnectionEjector() {
-        String connectionRuntimeEjector = ControlConfigs.getInstance().getConnectionRuntimeEjector();
-        Collection<RuntimeConnectionEjector> ejectors = NacosServiceLoader.load(RuntimeConnectionEjector.class);
-        for (RuntimeConnectionEjector runtimeConnectionEjectorLoad : ejectors) {
-            if (runtimeConnectionEjectorLoad.getName().equalsIgnoreCase(connectionRuntimeEjector)) {
-                Loggers.CONNECTION.info("Found connection runtime ejector for name {}", connectionRuntimeEjector);
-                runtimeConnectionEjectorLoad.setConnectionManager(this);
-                runtimeConnectionEjector = runtimeConnectionEjectorLoad;
+        String connectionRuntimeEjector = null;
+        try {
+            connectionRuntimeEjector = ControlConfigs.getInstance().getConnectionRuntimeEjector();
+            Collection<RuntimeConnectionEjector> ejectors = NacosServiceLoader.load(RuntimeConnectionEjector.class);
+            for (RuntimeConnectionEjector runtimeConnectionEjectorLoad : ejectors) {
+                if (runtimeConnectionEjectorLoad.getName().equalsIgnoreCase(connectionRuntimeEjector)) {
+                    Loggers.CONNECTION.info("Found connection runtime ejector for name {}", connectionRuntimeEjector);
+                    runtimeConnectionEjectorLoad.setConnectionManager(this);
+                    runtimeConnectionEjector = runtimeConnectionEjectorLoad;
+                }
             }
+        } catch (Throwable throwable) {
+            Loggers.CONNECTION.warn("Fail to load  runtime ejector ", throwable);
         }
+        
         if (runtimeConnectionEjector == null) {
             Loggers.CONNECTION
                     .info("Fail to find connection runtime ejector for name {},use default", connectionRuntimeEjector);
