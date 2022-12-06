@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -29,7 +30,9 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
+import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.AsyncContext;
@@ -240,8 +243,6 @@ public class LongPollingService {
         
         String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
-        final String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
-        final String tag = req.getHeader("Vipserver-Tag");
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
         
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
@@ -266,6 +267,11 @@ public class LongPollingService {
             }
         }
         String ip = RequestUtil.getRemoteIp(req);
+        ConnectionCheckResponse connectionCheckResponse = checkLimit(req);
+        if (!connectionCheckResponse.isSuccess()) {
+            generate503Response(req, rsp, connectionCheckResponse.getMessage());
+            return;
+        }
         
         // Must be called by http thread, or send response.
         final AsyncContext asyncContext = req.startAsync();
@@ -273,8 +279,19 @@ public class LongPollingService {
         // AsyncContext.setTimeout() is incorrect, Control by oneself
         asyncContext.setTimeout(0L);
         
+        String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
+        String tag = req.getHeader("Vipserver-Tag");
         ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+    }
+    
+    private ConnectionCheckResponse checkLimit(HttpServletRequest httpServletRequest) {
+        String ip = RequestUtil.getRemoteIp(httpServletRequest);
+        String appName = httpServletRequest.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
+        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(ip, appName, "LongPolling");
+        ConnectionCheckResponse checkResponse = ControlManagerCenter.getInstance().getConnectionControlManager()
+                .check(connectionCheckRequest);
+        return checkResponse;
     }
     
     public static boolean isSupportLongPolling(HttpServletRequest req) {
@@ -518,6 +535,21 @@ public class LongPollingService {
             response.setHeader("Cache-Control", "no-cache,no-store");
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().println(respString);
+        } catch (Exception ex) {
+            PULL_LOG.error(ex.toString(), ex);
+        }
+    }
+    
+    void generate503Response(HttpServletRequest request, HttpServletResponse response, String message) {
+        
+        try {
+            
+            // Disable cache.
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            response.setHeader("Cache-Control", "no-cache,no-store");
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            response.getWriter().println(message);
         } catch (Exception ex) {
             PULL_LOG.error(ex.toString(), ex);
         }

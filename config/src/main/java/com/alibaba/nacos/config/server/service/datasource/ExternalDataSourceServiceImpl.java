@@ -56,7 +56,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
     
     private static final int DB_MASTER_SELECT_THRESHOLD = 1;
-
+    
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
     
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
@@ -106,17 +106,17 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-    
+        
         dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
-    
+        
         if (PropertyUtil.isUseExternalDB()) {
             try {
                 reload();
             } catch (IOException e) {
                 FATAL_LOG.error("[ExternalDataSourceService] datasource reload error", e);
-                throw new RuntimeException(DB_LOAD_ERROR_MSG);
+                throw new RuntimeException(DB_LOAD_ERROR_MSG, e);
             }
-
+            
             if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
                 ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
             }
@@ -129,7 +129,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         try {
             final List<JdbcTemplate> testJtListNew = new ArrayList<JdbcTemplate>();
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
-    
+            
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
                     .build(EnvUtil.getEnvironment(), (dataSource) -> {
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
@@ -138,7 +138,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                         testJtListNew.add(jdbcTemplate);
                         isHealthListNew.add(Boolean.TRUE);
                     });
-    
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
             dataSourceList = dataSourceListNew;

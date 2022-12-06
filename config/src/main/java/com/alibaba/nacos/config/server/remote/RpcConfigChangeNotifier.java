@@ -30,9 +30,10 @@ import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -56,8 +57,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
     
-    @Autowired
-    private TpsMonitorManager tpsMonitorManager;
+    TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
     
     public RpcConfigChangeNotifier() {
         NotifyCenter.registerSubscriber(this);
@@ -65,10 +65,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     @PostConstruct
     private void registerTpsPoint() {
-        
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH));
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_SUCCESS));
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_FAIL));
+        tpsControlManager.registerTpsPoint(POINT_CONFIG_PUSH);
+        tpsControlManager.registerTpsPoint(POINT_CONFIG_PUSH_SUCCESS);
+        tpsControlManager.registerTpsPoint(POINT_CONFIG_PUSH_FAIL);
         
     }
     
@@ -171,18 +170,27 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         @Override
         public void run() {
             tryTimes++;
-            if (!tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH, connectionId, clientIp)) {
+            TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+           
+            tpsCheckRequest.setPointName(POINT_CONFIG_PUSH);
+            if (!tpsControlManager.check(tpsCheckRequest).isSuccess()) {
                 push(this);
             } else {
                 rpcPushService.pushWithCallback(connectionId, notifyRequest, new AbstractPushCallBack(3000L) {
                     @Override
                     public void onSuccess() {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_SUCCESS, connectionId, clientIp);
+                        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+                        
+                        tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_SUCCESS);
+                        tpsControlManager.check(tpsCheckRequest);
                     }
                     
                     @Override
                     public void onFail(Throwable e) {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_FAIL, connectionId, clientIp);
+                        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+                        
+                        tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_FAIL);
+                        tpsControlManager.check(tpsCheckRequest);
                         Loggers.REMOTE_PUSH.warn("Push fail", e);
                         push(RpcPushTask.this);
                     }
@@ -197,10 +205,10 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     private void push(RpcPushTask retryTask) {
         ConfigChangeNotifyRequest notifyRequest = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
-            Loggers.REMOTE_PUSH.warn(
-                    "push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",
-                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
-                    retryTask.connectionId);
+            Loggers.REMOTE_PUSH
+                    .warn("push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",
+                            notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
+                            retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);
         } else if (connectionManager.getConnection(retryTask.connectionId) != null) {
             // first time:delay 0s; second time:delay 2s; third time:delay 4s

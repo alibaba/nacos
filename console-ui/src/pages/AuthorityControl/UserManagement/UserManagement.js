@@ -74,7 +74,7 @@ class UserManagement extends React.Component {
     };
     if (this.state.defaultFuzzySearch) {
       if (params.username && params.username !== '') {
-        params.username = '*' + params.username + '*';
+        params.username = `*${params.username}*`;
       }
     }
     if (params.username && params.username.indexOf('*') !== -1) {
