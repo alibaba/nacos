@@ -63,16 +63,15 @@ class RolesManagement extends React.Component {
   getRoles() {
     this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
-    let username = this.state.username;
-    let role = this.state.role;
+    let { username, role } = this.state;
     let search = 'accurate';
 
     if (this.state.defaultFuzzySearch) {
       if (username && username !== '') {
-        username = '*' + username + '*';
+        username = `*${username}*`;
       }
       if (role && role !== '') {
-        role = '*' + role + '*';
+        role = `*${role}*`;
       }
     }
     if (role && role.indexOf('*') !== -1) {

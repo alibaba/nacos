@@ -74,11 +74,11 @@ class PermissionsManagement extends React.Component {
   getPermissions() {
     this.setState({ loading: true });
     const { pageNo, pageSize } = this.state;
-    let role = this.state.role;
+    let { role } = this.state;
     let search = 'accurate';
     if (this.state.defaultFuzzySearch) {
       if (role && role !== '') {
-        role = '*' + role + '*';
+        role = `*${role}*`;
       }
     }
     if (role && role.indexOf('*') !== -1) {
