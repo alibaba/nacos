@@ -34,7 +34,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,9 +67,9 @@ public class StandaloneDatabaseOperateImplTest {
     @Mock
     private BiConsumer<Boolean, Throwable> biConsumer;
     
-    @Mock
-    private File file;
-    
+    /*   @Mock
+       private File file;
+       */
     @Mock
     private TransactionTemplate transactionTemplate;
     
@@ -78,10 +77,7 @@ public class StandaloneDatabaseOperateImplTest {
     public void setUp() {
         ReflectionTestUtils.setField(operate, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(operate, "transactionTemplate", transactionTemplate);
-        when(file.exists()).thenReturn(true);
-        when(file.isDirectory()).thenReturn(false);
-        when(file.canRead()).thenReturn(true);
-        when(file.getPath()).thenReturn("test");
+        
     }
     
     @Test
@@ -100,7 +96,7 @@ public class StandaloneDatabaseOperateImplTest {
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[]{configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(jdbcTemplate.queryForObject(sql, args, ConfigInfo.class)).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(sql, args, ConfigInfo.class), configInfo);
     }
@@ -112,7 +108,7 @@ public class StandaloneDatabaseOperateImplTest {
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[]{configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(jdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(sql, args, rowMapper), configInfo);
     }
@@ -133,7 +129,7 @@ public class StandaloneDatabaseOperateImplTest {
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[]{configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(tempJdbcTemplate.queryForObject(sql, args, ConfigInfo.class)).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, ConfigInfo.class), configInfo);
     }
@@ -145,7 +141,7 @@ public class StandaloneDatabaseOperateImplTest {
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
-        Object[] args = new Object[]{configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
+        Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
         when(tempJdbcTemplate.queryForObject(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfo);
         Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, rowMapper), configInfo);
     }
@@ -153,7 +149,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryMany1() {
         final String sql = "SELECT * FROM config_info WHERE id >= ? AND id <= ?";
-        final Object[] args = new Object[]{1, 2};
+        final Object[] args = new Object[] {1, 2};
         ConfigInfo configInfo1 = new ConfigInfo();
         configInfo1.setId(1);
         ConfigInfo configInfo2 = new ConfigInfo();
@@ -168,7 +164,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryMany2() {
         final String sql = "SELECT id, data_id, group_id FROM config_info WHERE id >= ? AND id <= ?";
-        final Object[] args = new Object[]{1, 2};
+        final Object[] args = new Object[] {1, 2};
         
         final List<Map<String, Object>> resultList = new ArrayList<>();
         Map<String, Object> map1 = new HashMap<>();
@@ -191,7 +187,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryMany3() {
         String sql = "SELECT data_id FROM config_info WHERE id >= ? AND id <= ?";
-        Object[] args = new Object[]{1, 2};
+        Object[] args = new Object[] {1, 2};
         String dataId1 = "test1";
         String dataId2 = "test2";
         List<String> resultList = new ArrayList<>();
@@ -205,18 +201,18 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryMany4() {
         final String sql = "SELECT data_id FROM config_info WHERE id >= ? AND id <= ?";
-        final Object[] args = new Object[]{1, 2};
+        final Object[] args = new Object[] {1, 2};
         final List<Map<String, Object>> resultList = new ArrayList<>();
         Map<String, Object> map1 = new HashMap<>();
         map1.put("id", 1);
         map1.put("data_id", "test");
         map1.put("group_id", "test");
-    
+        
         final Map<String, Object> map2 = new HashMap<>();
         map1.put("id", 2);
         map1.put("data_id", "test");
         map1.put("group_id", "test");
-    
+        
         resultList.add(map1);
         resultList.add(map2);
         
@@ -227,7 +223,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryMany5() {
         String sql = "SELECT data_id FROM config_info WHERE id >= ? AND id <= ?";
-        Object[] args = new Object[]{1, 2};
+        Object[] args = new Object[] {1, 2};
         String dataId1 = "test1";
         String dataId2 = "test2";
         List<String> resultList = new ArrayList<>();
@@ -241,7 +237,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryMany6() {
         final String sql = "SELECT * FROM config_info WHERE id >= ? AND id <= ?";
-        final Object[] args = new Object[]{1, 2};
+        final Object[] args = new Object[] {1, 2};
         ConfigInfo configInfo1 = new ConfigInfo();
         configInfo1.setId(1);
         ConfigInfo configInfo2 = new ConfigInfo();
@@ -269,7 +265,7 @@ public class StandaloneDatabaseOperateImplTest {
         ModifyRequest modifyRequest1 = new ModifyRequest();
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = ?;";
         modifyRequest1.setSql(sql);
-        Object[] args = new Object[]{1};
+        Object[] args = new Object[] {1};
         modifyRequest1.setArgs(args);
         modifyRequests.add(modifyRequest1);
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
@@ -282,7 +278,7 @@ public class StandaloneDatabaseOperateImplTest {
         ModifyRequest modifyRequest1 = new ModifyRequest();
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = ?;";
         modifyRequest1.setSql(sql);
-        Object[] args = new Object[]{1};
+        Object[] args = new Object[] {1};
         modifyRequest1.setArgs(args);
         modifyRequests.add(modifyRequest1);
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
@@ -295,7 +291,7 @@ public class StandaloneDatabaseOperateImplTest {
         ModifyRequest modifyRequest1 = new ModifyRequest();
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = ?;";
         modifyRequest1.setSql(sql);
-        Object[] args = new Object[]{1};
+        Object[] args = new Object[] {1};
         modifyRequest1.setArgs(args);
         modifyRequests.add(modifyRequest1);
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
@@ -308,7 +304,7 @@ public class StandaloneDatabaseOperateImplTest {
         ModifyRequest modifyRequest1 = new ModifyRequest();
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = ?;";
         modifyRequest1.setSql(sql);
-        Object[] args = new Object[]{1};
+        Object[] args = new Object[] {1};
         modifyRequest1.setArgs(args);
         modifyRequests.add(modifyRequest1);
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
@@ -337,10 +333,10 @@ public class StandaloneDatabaseOperateImplTest {
         ModifyRequest modifyRequest1 = new ModifyRequest();
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = ?;";
         modifyRequest1.setSql(sql);
-        Object[] args = new Object[]{1};
+        Object[] args = new Object[] {1};
         modifyRequest1.setArgs(args);
         modifyRequests.add(modifyRequest1);
-        when(tempJdbcTemplate.batchUpdate(sql)).thenReturn(new int[]{1});
+        when(tempJdbcTemplate.batchUpdate(sql)).thenReturn(new int[] {1});
         Assert.assertTrue(operate.doDataImport(tempJdbcTemplate, modifyRequests));
     }
     
