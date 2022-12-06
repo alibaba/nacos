@@ -628,7 +628,7 @@ public abstract class RpcClient implements Closeable {
     public Response request(Request request, long timeoutMills) throws NacosException {
         int retryTimes = 0;
         Response response;
-        Exception exceptionThrow = null;
+        Throwable exceptionThrow = null;
         long start = System.currentTimeMillis();
         while (retryTimes < rpcClientConfig.retryTimes() && System.currentTimeMillis() < timeoutMills + start) {
             boolean waitReconnect = false;
@@ -661,7 +661,7 @@ public abstract class RpcClient implements Closeable {
                 lastActiveTimeStamp = System.currentTimeMillis();
                 return response;
                 
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 if (waitReconnect) {
                     try {
                         // wait client to reconnect.
@@ -701,8 +701,8 @@ public abstract class RpcClient implements Closeable {
      */
     public void asyncRequest(Request request, RequestCallBack callback) throws NacosException {
         int retryTimes = 0;
-        
-        Exception exceptionToThrow = null;
+    
+        Throwable exceptionToThrow = null;
         long start = System.currentTimeMillis();
         while (retryTimes < rpcClientConfig.retryTimes() && System.currentTimeMillis() < start + callback
                 .getTimeout()) {
@@ -714,7 +714,7 @@ public abstract class RpcClient implements Closeable {
                 }
                 this.currentConnection.asyncRequest(request, callback);
                 return;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 if (waitReconnect) {
                     try {
                         // wait client to reconnect.
