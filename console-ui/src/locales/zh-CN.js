@@ -297,6 +297,8 @@ const I18N_CONF = {
     advancedQuery9: '高级查询',
     app1: '请输入应用名',
     tags: '标签',
+    configDetailLabel: '配置项搜索',
+    configDetailH: '试试 server.port',
     pleaseEnterTag: '请输入标签',
     application: '归属应用',
     operation: '操作',

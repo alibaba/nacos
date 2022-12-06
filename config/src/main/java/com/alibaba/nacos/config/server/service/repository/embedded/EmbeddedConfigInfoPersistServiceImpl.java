@@ -744,7 +744,6 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             paramList.add(appName);
             paramsMap.put(APP_NAME, APP_NAME);
         }
-        final int startRow = (pageNo - 1) * pageSize;
         int rowCount = 0;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         if (StringUtils.isNotBlank(configTags)) {
@@ -762,8 +761,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             rowCount = helper.getRowCounts(sqlCount, paramList.toArray());
             sql = configInfoMapper.findConfigInfo4PageFetchRows(paramsMap, 0, rowCount);
         }
-        
-        Page<ConfigInfo> page = helper.fetchPage(sqlCount, sql, paramList.toArray(), 1, rowCount,
+        Page<ConfigInfo> page = helper.fetchPage(sqlCount, sql, paramList.toArray(), 1, rowCount == 0 ? pageSize : rowCount,
                 CONFIG_INFO_ROW_MAPPER);
     
         List<ConfigInfo> collect = page.getPageItems().stream()
@@ -1130,7 +1128,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             sqlFetchRows = configInfoMapper.findConfigInfoLike4PageFetchRows(paramsMap, 0, rowCounts);
         }
         
-        Page<ConfigInfo> page = helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), 1, rowCounts,
+        Page<ConfigInfo> page = helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), 1, rowCounts == 0 ? pageSize : rowCounts,
                 CONFIG_INFO_ROW_MAPPER);
     
         List<ConfigInfo> collect = page.getPageItems().stream()

@@ -98,6 +98,7 @@ class ConfigurationManagement extends React.Component {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
+      config_detail: getParams('configDetail') || '',
       config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
       tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
@@ -273,6 +274,7 @@ class ConfigurationManagement extends React.Component {
       group: this.group,
       appName: this.appName,
       config_tags: this.state.config_tags.join(','),
+      config_detail: this.state.config_detail,
       pageNo: prePageNo ? prePageNo : pageNo,
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
@@ -440,6 +442,13 @@ class ConfigurationManagement extends React.Component {
     this.setState({ pageSize }, () => this.changePage(1));
   }
 
+  setConfigDetail(value) {
+    this.setState({
+      config_detail: value,
+    });
+    setParams('configDetail', value);
+  }
+
   setAppName(value) {
     this.appName = value;
     this.setState({
@@ -530,6 +539,7 @@ class ConfigurationManagement extends React.Component {
   clear = () => {
     this.setAppName('');
     this.setConfigTags([]);
+    this.setConfigDetail('');
   };
 
   changeAdvancedQuery = () => {
@@ -1265,6 +1275,18 @@ class ConfigurationManagement extends React.Component {
                       }
                     }}
                     hasClear
+                  />
+                </Form.Item>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.configDetailLabel}
+                >
+                  <Input
+                    htmlType={'text'}
+                    placeholder={locale.configDetailH}
+                    style={{ width: 200 }}
+                    value={this.state.config_detail}
+                    onChange={this.setConfigDetail.bind(this)}
                   />
                 </Form.Item>
               </Form>

@@ -790,7 +790,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         }
     
         try {
-            Page<ConfigInfo> page = helper.fetchPage(sqlCount, sql, paramList.toArray(), 1, rowCount,
+            Page<ConfigInfo> page = helper.fetchPage(sqlCount, sql, paramList.toArray(), 1, rowCount == 0 ? pageSize : rowCount,
                     CONFIG_INFO_ROW_MAPPER);
     
             List<ConfigInfo> collect = page.getPageItems().stream()
@@ -1186,7 +1186,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             sqlFetchRows = configInfoMapper.findConfigInfoLike4PageFetchRows(paramsMap, 0, rowCounts);
         }
         try {
-            Page<ConfigInfo> page = helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), 1, rowCounts,
+            Page<ConfigInfo> page = helper.fetchPage(sqlCountRows, sqlFetchRows, params.toArray(), 1, rowCounts == 0 ? pageSize : rowCounts,
                     CONFIG_INFO_ROW_MAPPER);
     
             List<ConfigInfo> collect = page.getPageItems().stream()
