@@ -20,15 +20,19 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -65,6 +69,22 @@ public class ConnectionManagerTest {
     
     private String clientIp = "1.1.1.1";
     
+    static MockedStatic<ControlConfigs> propertyUtilMockedStatic;
+    
+    @BeforeClass
+    public static void setUpClass() {
+        propertyUtilMockedStatic = Mockito.mockStatic(ControlConfigs.class);
+        propertyUtilMockedStatic.when(ControlConfigs::getInstance).thenReturn(new ControlConfigs());
+        
+    }
+    
+    @AfterClass
+    public static void afterClass() {
+        if (propertyUtilMockedStatic != null) {
+            propertyUtilMockedStatic.close();
+        }
+    }
+    
     @Before
     public void setUp() {
         // create base file path
@@ -76,6 +96,7 @@ public class ConnectionManagerTest {
         connectionManager.start();
         Mockito.when(channel.isOpen()).thenReturn(true);
         Mockito.when(channel.isActive()).thenReturn(true);
+        
         connectionMeta.clientIp = clientIp;
         Map<String, String> labels = new HashMap<>();
         labels.put("key", "value");
@@ -89,6 +110,7 @@ public class ConnectionManagerTest {
     @After
     public void tearDown() {
         connectionManager.unregister(connectId);
+        
     }
     
     @Test
