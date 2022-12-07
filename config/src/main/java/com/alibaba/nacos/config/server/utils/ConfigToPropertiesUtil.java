@@ -20,6 +20,8 @@ import com.alibaba.nacos.config.server.exception.ConfigPropertiesException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.ByteArrayInputStream;
@@ -39,6 +41,9 @@ import java.util.Set;
  */
 @SuppressWarnings("unchecked")
 public class ConfigToPropertiesUtil {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigToPropertiesUtil.class);
+
     public static final String TYPE_YAML = "yaml";
     
     public static final String TYPE_PROPERTIES = "properties";
@@ -57,7 +62,7 @@ public class ConfigToPropertiesUtil {
      * @param configInfo configInfo
      * @return configInfo to Properties
      */
-    public static ConfigProperties configToProperties(ConfigInfo configInfo) throws ConfigPropertiesException {
+    public static ConfigProperties configToProperties(ConfigInfo configInfo)  {
         switch (configInfo.getType()) {
             case TYPE_YAML:
                 return yamlToProperties(configInfo);
@@ -104,8 +109,9 @@ public class ConfigToPropertiesUtil {
         try {
             Object obj = objectMapper.readValue(configInfo.getContent(), Object.class);
             travelRootWithResult(obj, properties);
-        } catch (JsonProcessingException e) {
-            throw new ConfigPropertiesException("json to properties fail");
+        } catch (JsonProcessingException | RuntimeException e) {
+            ConfigPropertiesException exception = new ConfigPropertiesException("json to properties fail", e);
+            LOGGER.error("get exception message: {} cause: {}", exception.getMessage(), exception.getCause());
         }
         return properties;
     }
@@ -114,8 +120,9 @@ public class ConfigToPropertiesUtil {
         ConfigProperties properties = new ConfigProperties();
         try (InputStream in = new ByteArrayInputStream(configInfo.getContent().getBytes(StandardCharsets.UTF_8))) {
             properties.loadFromXML(in);
-        } catch (IOException e) {
-            throw new ConfigPropertiesException("xml to properties fail");
+        } catch (IOException | RuntimeException e) {
+            ConfigPropertiesException exception = new ConfigPropertiesException("xml to properties fail", e);
+            LOGGER.error("get exception message: {} cause: {}", exception.getMessage(), exception.getCause());
         }
         return properties;
     }
@@ -124,8 +131,9 @@ public class ConfigToPropertiesUtil {
         ConfigProperties properties = new ConfigProperties();
         try (InputStream in  = new ByteArrayInputStream(configInfo.getContent().getBytes(StandardCharsets.UTF_8))) {
             properties.load(in);
-        } catch (IOException e) {
-            throw new ConfigPropertiesException("properties to properties fail");
+        } catch (IOException | RuntimeException e) {
+            ConfigPropertiesException exception = new ConfigPropertiesException("properties to properties fail", e);
+            LOGGER.error("get exception message: {} cause: {}", exception.getMessage(), exception.getCause());
         }
         return properties;
     }
@@ -137,8 +145,9 @@ public class ConfigToPropertiesUtil {
         try (InputStream in = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))) {
             Object load = yaml.load(in);
             travelRootWithResult(load, properties);
-        } catch (IOException e) {
-            throw new ConfigPropertiesException("yaml to properties fail");
+        } catch (IOException | RuntimeException e) {
+            ConfigPropertiesException exception = new ConfigPropertiesException("yaml to properties fail", e);
+            LOGGER.error("get exception message: {} cause: {}", exception.getMessage(), exception.getCause());
         }
         return properties;
     }
@@ -169,7 +178,11 @@ public class ConfigToPropertiesUtil {
                         result.append(strKey).append(".");
                     }
                     result.append(key);
-                    properties.setProperty(result.toString(), value.toString());
+                    if (value == null) {
+                        properties.setProperty(result.toString(), "");
+                    } else {
+                        properties.setProperty(result.toString(), value.toString());
+                    }
                 }
             });
         } else {
