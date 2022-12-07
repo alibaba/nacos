@@ -28,6 +28,7 @@ import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.model.form.NamespaceForm;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,6 +45,7 @@ import java.util.regex.Pattern;
 
 /**
  * NamespaceControllerV2.
+ *
  * @author dongyafei
  * @date 2022/8/16
  */
@@ -51,7 +53,7 @@ import java.util.regex.Pattern;
 @RestController
 @RequestMapping(path = "/v2/console/namespace")
 public class NamespaceControllerV2 {
-
+    
     private final NamespaceOperationService namespaceOperationService;
     
     public NamespaceControllerV2(NamespaceOperationService namespaceOperationService) {
@@ -79,6 +81,8 @@ public class NamespaceControllerV2 {
      * @return namespace all info
      */
     @GetMapping()
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+            + "namespaces", action = ActionTypes.READ, signType = SignType.CONSOLE)
     public Result<NamespaceAllInfo> getNamespace(@RequestParam("namespaceId") String namespaceId)
             throws NacosException {
         return Result.success(namespaceOperationService.getNamespace(namespaceId));
@@ -91,7 +95,8 @@ public class NamespaceControllerV2 {
      * @return whether create ok
      */
     @PostMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public Result<Boolean> createNamespace(NamespaceForm namespaceForm) throws NacosException {
         
         namespaceForm.validate();
@@ -119,25 +124,28 @@ public class NamespaceControllerV2 {
     /**
      * edit namespace.
      *
-     * @param namespaceForm       namespace params
+     * @param namespaceForm namespace params
      * @return whether edit ok
      */
     @PutMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public Result<Boolean> editNamespace(NamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
-        return Result.success(namespaceOperationService.editNamespace(namespaceForm.getNamespaceId(),
-                namespaceForm.getNamespaceName(), namespaceForm.getNamespaceDesc()));
+        return Result.success(namespaceOperationService
+                .editNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
+                        namespaceForm.getNamespaceDesc()));
     }
     
     /**
      * delete namespace by id.
      *
-     * @param namespaceId   namespace ID
+     * @param namespaceId namespace ID
      * @return whether delete ok
      */
     @DeleteMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "namespaces", action = ActionTypes.WRITE)
+    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX
+            + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public Result<Boolean> deleteNamespace(@RequestParam("namespaceId") String namespaceId) {
         return Result.success(namespaceOperationService.removeNamespace(namespaceId));
     }
