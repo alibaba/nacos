@@ -59,6 +59,7 @@ public class ChooserTest {
         Instance target = getRandomInstance(hosts);
         assertTrue(target.getWeight() > 0);
     }
+    
     // getOneInstanceNotZeroList
     private List<Instance> getOneInstanceNotZeroList() {
         List<Instance> list = new ArrayList<>();
