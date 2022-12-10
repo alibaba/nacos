@@ -67,6 +67,9 @@ public class StandaloneDatabaseOperateImplTest {
     @Mock
     private BiConsumer<Boolean, Throwable> biConsumer;
     
+    /*   @Mock
+       private File file;
+       */
     @Mock
     private TransactionTemplate transactionTemplate;
     
@@ -74,6 +77,7 @@ public class StandaloneDatabaseOperateImplTest {
     public void setUp() {
         ReflectionTestUtils.setField(operate, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(operate, "transactionTemplate", transactionTemplate);
+        
     }
     
     @Test

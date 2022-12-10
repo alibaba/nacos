@@ -74,7 +74,7 @@ class ConfigurationManagement extends React.Component {
     this.deleteDialog = React.createRef();
     this.showcode = React.createRef();
     this.field = new Field(this);
-    this.appName = getParams('appName') || getParams('edasAppId') || '';
+    this.appName = getParams('appName') || '';
     this.preAppName = this.appName;
     this.group = getParams('group') || '';
     this.preGroup = this.group;
@@ -84,6 +84,7 @@ class ConfigurationManagement extends React.Component {
     this.edasAppId = getParams('edasAppId') || '';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppId;
+    this.isAdvance = getParams('isAdvanceQuery') || false;
     this.state = {
       value: '',
       visible: false,
@@ -97,8 +98,8 @@ class ConfigurationManagement extends React.Component {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
-      config_tags: [],
-      tagLst: [],
+      config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
+      tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
       loading: false,
       groupList: [],
@@ -111,7 +112,7 @@ class ConfigurationManagement extends React.Component {
       hasdash: false,
       isCn: true,
       contentList: [],
-      isAdvancedQuery: false,
+      isAdvancedQuery: this.isAdvance,
       isCheckAll: false,
       rowSelection: {
         onChange: this.configDataTableOnChange.bind(this),
@@ -444,6 +445,7 @@ class ConfigurationManagement extends React.Component {
     this.setState({
       appName: value,
     });
+    setParams('appName', value);
   }
 
   setConfigTags(value) {
@@ -451,6 +453,13 @@ class ConfigurationManagement extends React.Component {
       config_tags: value || [],
       tagLst: value,
     });
+    if (!value) {
+      setParams('tagList', '');
+      setParams('configTags', '');
+    } else {
+      setParams('tagList', value.join(','));
+      setParams('configTags', value.join(','));
+    }
   }
 
   /**
@@ -461,6 +470,7 @@ class ConfigurationManagement extends React.Component {
     this.setState({
       group: value || '',
     });
+    setParams('group', value);
   }
 
   handleDefaultFuzzySwitchChange = () => {
@@ -470,9 +480,6 @@ class ConfigurationManagement extends React.Component {
   };
 
   selectAll() {
-    setParams('dataId', this.dataId);
-    setParams('group', this.group);
-    setParams('appName', this.appName);
     this.getData();
   }
 
@@ -520,7 +527,16 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
+  clear = () => {
+    this.setAppName('');
+    this.setConfigTags([]);
+  };
+
   changeAdvancedQuery = () => {
+    setParams('isAdvanceQuery', !this.state.isAdvancedQuery);
+    if (this.state.isAdvancedQuery) {
+      this.clear();
+    }
     this.setState({
       isAdvancedQuery: !this.state.isAdvancedQuery,
     });
@@ -1134,6 +1150,7 @@ class ConfigurationManagement extends React.Component {
                     onChange={dataId => {
                       this.dataId = dataId;
                       this.setState({ dataId });
+                      setParams('dataId', this.dataId);
                     }}
                     onPressEnter={() => this.selectAll()}
                   />
@@ -1244,6 +1261,7 @@ class ConfigurationManagement extends React.Component {
                       const { tagLst } = this.state;
                       if (!tagLst.includes(val)) {
                         this.setState({ tagLst: tagLst.concat(val) });
+                        setParams('tagList', this.state.tagLst.join(','));
                       }
                     }}
                     hasClear

@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.http.HttpStatus;
@@ -72,7 +73,7 @@ public class UtilsAndCommons {
     
     // ********************** Nacos HTTP Context ************************ //
     
-    public static final String NACOS_SERVER_HEADER = "Nacos-Server";
+    public static final String NACOS_SERVER_HEADER = Constants.NACOS_SERVER_HEADER;
     
     public static final String NACOS_VERSION = VersionUtils.version;
     

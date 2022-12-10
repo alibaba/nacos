@@ -27,6 +27,7 @@ import com.alibaba.nacos.core.model.request.LogUpdateRequest;
 import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -57,15 +58,20 @@ public class CoreOpsV2Controller {
         this.idGeneratorManager = idGeneratorManager;
     }
     
-    // Temporarily overpassed the raft operations interface
-    // {
-    //      "groupId": "xxx",
-    //      "command": "transferLeader or doSnapshot or resetRaftCluster or removePeer"
-    //      "value": "ip:{raft_port}"
-    // }
-    
+    /**
+     * Temporarily overpassed the raft operations interface.
+     * <p>
+     *      {
+     *           "groupId": "xxx",
+     *           "command": "transferLeader or doSnapshot or resetRaftCluster or removePeer"
+     *           "value": "ip:{raft_port}"
+     *      }
+     * </p>
+     * @param commands transferLeader or doSnapshot or resetRaftCluster or removePeer
+     * @return {@link RestResult}
+     */
     @PostMapping(value = "/raft")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
+    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
     public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
         return protocolManager.getCpProtocol().execute(commands);
     }
@@ -94,6 +100,7 @@ public class CoreOpsV2Controller {
     }
     
     @PutMapping(value = "/log")
+    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
     public RestResult<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) {
         Loggers.setLogLevel(logUpdateRequest.getLogName(), logUpdateRequest.getLogLevel());
         return RestResultUtils.success();

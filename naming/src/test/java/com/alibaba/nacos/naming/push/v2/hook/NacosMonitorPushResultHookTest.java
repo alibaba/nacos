@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.push.v2.hook;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class NacosMonitorPushResultHookTest {
     private Subscriber subscriber;
     
     @Mock
-    private TpsMonitorManager tpsMonitorManager;
+    private TpsControlManager tpsControlManager;
     
     @Mock
     private ConfigurableApplicationContext context;
@@ -72,7 +72,7 @@ public class NacosMonitorPushResultHookTest {
         when(pushResult.getData()).thenReturn(serviceInfo);
         when(pushResult.getSubscriber()).thenReturn(subscriber);
         ApplicationUtils.injectContext(context);
-        when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
+        when(context.getBean(TpsControlManager.class)).thenReturn(tpsControlManager);
     }
     
     @Test
