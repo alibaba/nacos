@@ -21,6 +21,10 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoMapperByMySql;
+import com.alibaba.nacos.plugin.datasource.impl.mysql.GroupCapacityMapperByMysql;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,6 +54,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -65,12 +70,17 @@ public class GroupCapacityPersistServiceTest {
     @Mock
     private DataSourceService dataSourceService;
     
+    @Mock
+    private MapperManager mapperManager;
+    
     @Before
     public void setUp() {
-        service = new GroupCapacityPersistService();
         ReflectionTestUtils.setField(service, "jdbcTemplate", jdbcTemplate);
         ReflectionTestUtils.setField(service, "dataSourceService", dataSourceService);
+        ReflectionTestUtils.setField(service, "mapperManager", mapperManager);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
+        doReturn(new GroupCapacityMapperByMysql()).when(mapperManager)
+                .findMapper(any(), eq(TableConstant.GROUP_CAPACITY));
     }
     
     @Test
@@ -84,7 +94,7 @@ public class GroupCapacityPersistServiceTest {
         String groupId = "testId";
         when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
         GroupCapacity ret = service.getGroupCapacity(groupId);
-    
+        
         Assert.assertEquals(groupCapacity.getGroup(), ret.getGroup());
     }
     
@@ -105,9 +115,8 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testInsertGroupCapacity() {
-        
-        when(jdbcTemplate.update(any(PreparedStatementCreator.class), argThat(
-                (ArgumentMatcher<GeneratedKeyHolder>) keyHolder -> {
+        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class),
+                argThat((ArgumentMatcher<GeneratedKeyHolder>) keyHolder -> {
                     List<Map<String, Object>> keyList = new ArrayList<>();
                     Map<String, Object> keyMap = new HashMap<>();
                     Number number = 1;
@@ -128,25 +137,26 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testGetClusterUsage() {
+        doReturn(new ConfigInfoMapperByMySql()).when(mapperManager).findMapper(any(), eq(TableConstant.CONFIG_INFO));
         
         List<GroupCapacity> list = new ArrayList<>();
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setId(1L);
         groupCapacity.setUsage(10);
         list.add(groupCapacity);
-    
+        
         String groupId = GroupCapacityPersistService.CLUSTER;
         when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(list);
         Assert.assertEquals(groupCapacity.getUsage().intValue(), service.getClusterUsage());
-    
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class))).thenReturn(new ArrayList<>());
+        
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {groupId}), any(RowMapper.class)))
+                .thenReturn(new ArrayList<>());
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(20);
         Assert.assertEquals(20, service.getClusterUsage());
     }
     
     @Test
     public void testIncrementUsageWithDefaultQuotaLimit() {
-    
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
@@ -159,7 +169,6 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testIncrementUsageWithQuotaLimit() {
-        
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
@@ -177,19 +186,18 @@ public class GroupCapacityPersistServiceTest {
         groupCapacity.setGmtModified(timestamp);
         groupCapacity.setGroup("test3");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
-    
+        
         Assert.assertTrue(service.incrementUsage(groupCapacity));
     }
     
     @Test
     public void testDecrementUsage() {
-        
         GroupCapacity groupCapacity = new GroupCapacity();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         groupCapacity.setGmtModified(timestamp);
         groupCapacity.setGroup("test4");
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenReturn(1);
-    
+        
         Assert.assertTrue(service.decrementUsage(groupCapacity));
     }
     
@@ -219,18 +227,15 @@ public class GroupCapacityPersistServiceTest {
         String group = "test";
         argList.add(group);
         
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer(
-                (Answer<Integer>) invocationOnMock -> {
-                    if (invocationOnMock.getArgument(1).equals(quota)
-                            && invocationOnMock.getArgument(2).equals(maxSize)
-                            && invocationOnMock.getArgument(3).equals(maxAggrCount)
-                            && invocationOnMock.getArgument(4).equals(maxAggrSize)
-                            && invocationOnMock.getArgument(5).equals(timestamp)
-                            && invocationOnMock.getArgument(6).equals(group)) {
-                        return 1;
-                    }
-                    return 0;
-                });
+        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
+            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(2).equals(maxSize)
+                    && invocationOnMock.getArgument(3).equals(maxAggrCount) && invocationOnMock.getArgument(4)
+                    .equals(maxAggrSize) && invocationOnMock.getArgument(5).equals(timestamp) && invocationOnMock
+                    .getArgument(6).equals(group)) {
+                return 1;
+            }
+            return 0;
+        });
         Assert.assertTrue(service.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize));
         timeUtilsMockedStatic.close();
     }
@@ -246,14 +251,12 @@ public class GroupCapacityPersistServiceTest {
         String group = "test2";
         argList.add(group);
         
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer(
-                (Answer<Integer>) invocationOnMock -> {
-                    if (invocationOnMock.getArgument(1).equals(quota)
-                            && invocationOnMock.getArgument(3).equals(group)) {
-                        return 1;
-                    }
-                    return 0;
-                });
+        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
+            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(3).equals(group)) {
+                return 1;
+            }
+            return 0;
+        });
         Assert.assertTrue(service.updateQuota(group, quota));
     }
     
@@ -261,21 +264,19 @@ public class GroupCapacityPersistServiceTest {
     public void testUpdateMaxSize() {
         
         List<Object> argList = CollectionUtils.list();
-    
+        
         Integer maxSize = 3;
         argList.add(maxSize);
-    
+        
         String group = "test3";
         argList.add(group);
-    
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer(
-                (Answer<Integer>) invocationOnMock -> {
-                    if (invocationOnMock.getArgument(1).equals(maxSize)
-                            && invocationOnMock.getArgument(3).equals(group)) {
-                        return 1;
-                    }
-                    return 0;
-                });
+        
+        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
+            if (invocationOnMock.getArgument(1).equals(maxSize) && invocationOnMock.getArgument(3).equals(group)) {
+                return 1;
+            }
+            return 0;
+        });
         Assert.assertTrue(service.updateMaxSize(group, maxSize));
     }
     
@@ -303,7 +304,8 @@ public class GroupCapacityPersistServiceTest {
         long lastId = 1;
         int pageSize = 1;
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenReturn(list);
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class)))
+                .thenReturn(list);
         List<GroupCapacity> ret = service.getCapacityList4CorrectUsage(lastId, pageSize);
         
         Assert.assertEquals(list.size(), ret.size());
@@ -316,5 +318,4 @@ public class GroupCapacityPersistServiceTest {
         when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenReturn(1);
         Assert.assertTrue(service.deleteGroupCapacity("test"));
     }
-    
 }
