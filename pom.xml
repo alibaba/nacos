@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.1.2</revision>
+        <revision>2.2.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -137,7 +137,7 @@
         <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jackson-core.version>2.12.6</jackson-core.version>
-        <jackson-databind.version>2.12.6.1</jackson-databind.version>
+        <jackson-databind.version>2.12.7.1</jackson-databind.version>
         <jackson.annotations.version>2.12.6</jackson.annotations.version>
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
@@ -596,6 +596,7 @@
         <module>sys</module>
         <module>plugin</module>
         <module>plugin-default-impl</module>
+        <module>prometheus</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -701,6 +702,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-prometheus</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-consistency</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -712,6 +718,26 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-encryption-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-control-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-trace-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-datasource-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-custom-environment-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

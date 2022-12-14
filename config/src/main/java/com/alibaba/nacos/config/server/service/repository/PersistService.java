@@ -32,7 +32,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.config.server.model.SubInfo;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 
 import java.io.IOException;
@@ -49,22 +48,21 @@ import java.util.Map;
  * @author leiwen.zh
  * @author klw
  * @since 1.0
+ *
+ * <br> PersistService has been deprecated and will be removed in future versions. It is recommended to use
+ * ConfigInfoPersistService, ConfigInfoTagPersistService, ConfigInfoBetaPersistService, ConfigInfoAggrPersistService,
+ * HistoryConfigInfoPersistService, OtherPersistService
  */
+@Deprecated
 public interface PersistService {
     
     /**
      * constant variables.
      */
     String SPOT = ".";
+    
     Object[] EMPTY_ARRAY = new Object[] {};
-    @SuppressWarnings("checkstyle:linelength")
-    String SQL_FIND_ALL_CONFIG_INFO = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
-
-    String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "SELECT count(1) FROM tenant_info WHERE tenant_id = ?";
-    String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
-
-    String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
-    int QUERY_LIMIT_SIZE = 50;
+    
     String PATTERN_STR = "*";
     
     /**
@@ -85,6 +83,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @param notify            whether to push
      */
+    @Deprecated
     void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
             final Map<String, Object> configAdvanceInfo, final boolean notify);
     
@@ -98,6 +97,7 @@ public interface PersistService {
      * @param time       time
      * @param notify     whether to push
      */
+    @Deprecated
     void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
@@ -111,6 +111,7 @@ public interface PersistService {
      * @param time       time
      * @param notify     whether to push
      */
+    @Deprecated
     void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
@@ -124,6 +125,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @param notify            whether to push
      */
+    @Deprecated
     void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
             final Map<String, Object> configAdvanceInfo, final boolean notify);
     
@@ -138,6 +140,7 @@ public interface PersistService {
      * @param notify            whether to push
      * @return success or not.
      */
+    @Deprecated
     boolean updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
     
@@ -151,6 +154,7 @@ public interface PersistService {
      * @param time       time
      * @param notify     whether to push
      */
+    @Deprecated
     void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
@@ -165,6 +169,7 @@ public interface PersistService {
      * @param notify     whether to push
      * @return success or not.
      */
+    @Deprecated
     boolean updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify);
     
@@ -178,6 +183,7 @@ public interface PersistService {
      * @param time       time
      * @param notify     whether to push
      */
+    @Deprecated
     void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
@@ -192,6 +198,7 @@ public interface PersistService {
      * @param notify     whether to push
      * @return success or not.
      */
+    @Deprecated
     boolean updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify);
     
@@ -205,6 +212,7 @@ public interface PersistService {
      * @param time       time
      * @param notify     whether to push
      */
+    @Deprecated
     void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp, final String srcUser,
             final Timestamp time, final boolean notify);
     
@@ -219,6 +227,7 @@ public interface PersistService {
      * @param notify     whether to push
      * @return success or not.
      */
+    @Deprecated
     boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify);
     
@@ -232,6 +241,7 @@ public interface PersistService {
      * @param time       time
      * @param notify     whether to push
      */
+    @Deprecated
     void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp, final String srcUser,
             final Timestamp time, final boolean notify);
     
@@ -246,6 +256,7 @@ public interface PersistService {
      * @param notify     whether to push
      * @return success or not.
      */
+    @Deprecated
     boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser, final Timestamp time, final boolean notify);
     
@@ -258,6 +269,7 @@ public interface PersistService {
      * @param md5      md5
      * @param lastTime last modified time
      */
+    @Deprecated
     void updateMd5(String dataId, String group, String tenant, String md5, Timestamp lastTime);
     
     /**
@@ -269,6 +281,7 @@ public interface PersistService {
      * @param time              time
      * @param configAdvanceInfo advance info
      */
+    @Deprecated
     void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo);
     
@@ -282,6 +295,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @param notify            whether to push
      */
+    @Deprecated
     void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify);
     
@@ -295,6 +309,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @return success or not.
      */
+    @Deprecated
     boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo);
     
@@ -309,17 +324,11 @@ public interface PersistService {
      * @param notify            whether to push
      * @return success or not.
      */
+    @Deprecated
     boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
             Map<String, Object> configAdvanceInfo, boolean notify);
     
     // ----------------------- config_aggr_info table insert update delete
-    
-    /**
-     * Write to the main table, insert or update.
-     *
-     * @param subInfo sub info
-     */
-    void insertOrUpdateSub(SubInfo subInfo);
     
     /**
      * Delete configuration information, physical deletion.
@@ -330,6 +339,7 @@ public interface PersistService {
      * @param srcIp   remote ip
      * @param srcUser user
      */
+    @Deprecated
     void removeConfigInfo(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser);
     
@@ -342,6 +352,7 @@ public interface PersistService {
      * @return {@link ConfigInfo} list
      * @author klw
      */
+    @Deprecated
     List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser);
     
     /**
@@ -351,6 +362,7 @@ public interface PersistService {
      * @param group  group
      * @param tenant tenant
      */
+    @Deprecated
     void removeConfigInfo4Beta(final String dataId, final String group, final String tenant);
     
     /**
@@ -364,6 +376,7 @@ public interface PersistService {
      * @param content config content
      * @return {@code true} if add success
      */
+    @Deprecated
     boolean addAggrConfigInfo(final String dataId, final String group, String tenant, final String datumId,
             String appName, final String content);
     
@@ -375,6 +388,7 @@ public interface PersistService {
      * @param tenant  tenant
      * @param datumId datum id
      */
+    @Deprecated
     void removeSingleAggrConfigInfo(final String dataId, final String group, final String tenant, final String datumId);
     
     /**
@@ -384,6 +398,7 @@ public interface PersistService {
      * @param group  group
      * @param tenant tenant
      */
+    @Deprecated
     void removeAggrConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
@@ -395,6 +410,7 @@ public interface PersistService {
      * @param datumList datumList
      * @return {@code true} if remove success
      */
+    @Deprecated
     boolean batchRemoveAggr(final String dataId, final String group, final String tenant, final List<String> datumList);
     
     /**
@@ -403,6 +419,7 @@ public interface PersistService {
      * @param startTime start time
      * @param limitSize limit size
      */
+    @Deprecated
     void removeConfigHistory(final Timestamp startTime, final int limitSize);
     
     /**
@@ -419,6 +436,7 @@ public interface PersistService {
      *
      * @return config max id
      */
+    @Deprecated
     long findConfigMaxId();
     
     /**
@@ -432,6 +450,7 @@ public interface PersistService {
      * @param datumMap datumMap
      * @return {@code true} if publish success
      */
+    @Deprecated
     boolean batchPublishAggr(final String dataId, final String group, final String tenant,
             final Map<String, String> datumMap, final String appName);
     
@@ -446,6 +465,7 @@ public interface PersistService {
      * @param datumMap datumMap
      * @return {@code true} if replace success
      */
+    @Deprecated
     boolean replaceAggr(final String dataId, final String group, final String tenant,
             final Map<String, String> datumMap, final String appName);
     
@@ -465,6 +485,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return {@link ConfigInfo4Beta}
      */
+    @Deprecated
     ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant);
     
     /**
@@ -476,30 +497,9 @@ public interface PersistService {
      * @param tag    tag
      * @return {@link ConfigInfo4Tag}
      */
-    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant, final String tag);
-    
-    /**
-     * Query common configuration information based on dataId and group.
-     *
-     * @param dataId  data id
-     * @param group   group
-     * @param tenant  tenant
-     * @param appName app name
-     * @return {@link ConfigInfo}
-     */
-    ConfigInfo findConfigInfoApp(final String dataId, final String group, final String tenant, final String appName);
-    
-    /**
-     * Query configuration information based on dataId and group.
-     *
-     * @param dataId            data id
-     * @param group             group
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link com.alibaba.nacos.config.server.Config}
-     */
-    ConfigInfo findConfigInfoAdvanceInfo(final String dataId, final String group, final String tenant,
-            final Map<String, Object> configAdvanceInfo);
+    @Deprecated
+    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant,
+            final String tag);
     
     /**
      * Query configuration information based on dataId and group.
@@ -508,6 +508,7 @@ public interface PersistService {
      * @param group  group
      * @return {@link ConfigInfoBase}
      */
+    @Deprecated
     ConfigInfoBase findConfigInfoBase(final String dataId, final String group);
     
     /**
@@ -516,6 +517,7 @@ public interface PersistService {
      * @param id id
      * @return {@link ConfigInfo}
      */
+    @Deprecated
     ConfigInfo findConfigInfo(long id);
     
     /**
@@ -526,45 +528,8 @@ public interface PersistService {
      * @param tenant tenant
      * @return config info
      */
+    @Deprecated
     ConfigInfoWrapper findConfigInfo(final String dataId, final String group, final String tenant);
-    
-    /**
-     * Query configuration information based on dataId.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   data id
-     * @param tenant   tenant
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByDataId(final int pageNo, final int pageSize, final String dataId,
-            final String tenant);
-    
-    /**
-     * Query configuration information based on dataId.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   data id
-     * @param tenant   tenant
-     * @param appName  app name
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByDataIdAndApp(final int pageNo, final int pageSize, final String dataId,
-            final String tenant, final String appName);
-    
-    /**
-     * find config info.
-     *
-     * @param pageNo            page number
-     * @param pageSize          page size
-     * @param dataId            data id
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByDataIdAndAdvance(final int pageNo, final int pageSize, final String dataId,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
      * find config info.
@@ -577,58 +542,11 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @return {@link Page} with {@link ConfigInfo} generation
      */
+    @Deprecated
     Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId, final String group,
             final String tenant, final Map<String, Object> configAdvanceInfo);
     
     /**
-     * Query configuration information based on dataId.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   data id
-     * @return {@link Page} with {@link ConfigInfoBase} generation
-     */
-    Page<ConfigInfoBase> findConfigInfoBaseByDataId(final int pageNo, final int pageSize, final String dataId);
-    
-    /**
-     * Query configuration information based on group.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param group    group
-     * @param tenant   tenant
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByGroup(final int pageNo, final int pageSize, final String group,
-            final String tenant);
-    
-    /**
-     * Query configuration information based on group.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param group    group
-     * @param tenant   tenant
-     * @param appName  app name
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByGroupAndApp(final int pageNo, final int pageSize, final String group,
-            final String tenant, final String appName);
-    
-    /**
-     * Query configuration information.
-     *
-     * @param pageNo            page number
-     * @param pageSize          page size
-     * @param group             group
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByGroupAndAdvance(final int pageNo, final int pageSize, final String group,
-            final String tenant, final Map<String, Object> configAdvanceInfo);
-    
-    /**
      * Query configuration information based on group.
      *
      * @param pageNo   Page number (must be greater than 0)
@@ -637,22 +555,11 @@ public interface PersistService {
      * @param appName  app name
      * @return {@link Page} with {@link ConfigInfo} generation
      */
+    @Deprecated
     Page<ConfigInfo> findConfigInfoByApp(final int pageNo, final int pageSize, final String tenant,
             final String appName);
     
     /**
-     * Query configuration information.
-     *
-     * @param pageNo            page number
-     * @param pageSize          page size
-     * @param tenant            tenant
-     * @param configAdvanceInfo advance info
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoByAdvance(final int pageNo, final int pageSize, final String tenant,
-            final Map<String, Object> configAdvanceInfo);
-    
-    /**
      * Query configuration information based on group.
      *
      * @param pageNo   Page number (must be greater than 0)
@@ -660,6 +567,7 @@ public interface PersistService {
      * @param group    group
      * @return {@link Page} with {@link ConfigInfoBase} generation
      */
+    @Deprecated
     Page<ConfigInfoBase> findConfigInfoBaseByGroup(final int pageNo, final int pageSize, final String group);
     
     /**
@@ -667,6 +575,7 @@ public interface PersistService {
      *
      * @return number of configuration items.
      */
+    @Deprecated
     int configInfoCount();
     
     /**
@@ -675,6 +584,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return number of configuration items.
      */
+    @Deprecated
     int configInfoCount(String tenant);
     
     /**
@@ -682,6 +592,7 @@ public interface PersistService {
      *
      * @return number of configuration items..
      */
+    @Deprecated
     int configInfoBetaCount();
     
     /**
@@ -689,6 +600,7 @@ public interface PersistService {
      *
      * @return number of configuration items..
      */
+    @Deprecated
     int configInfoTagCount();
     
     /**
@@ -698,6 +610,7 @@ public interface PersistService {
      * @param pageSize page size
      * @return tenant id list
      */
+    @Deprecated
     List<String> getTenantIdList(int page, int pageSize);
     
     /**
@@ -707,6 +620,7 @@ public interface PersistService {
      * @param pageSize page size
      * @return group id list
      */
+    @Deprecated
     List<String> getGroupIdList(int page, int pageSize);
     
     /**
@@ -717,6 +631,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return count
      */
+    @Deprecated
     int aggrConfigInfoCount(String dataId, String group, String tenant);
     
     /**
@@ -729,30 +644,8 @@ public interface PersistService {
      * @param isIn     search condition
      * @return count
      */
+    @Deprecated
     int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn);
-    
-    /**
-     * Get count of aggregation config info.
-     *
-     * @param dataId   data id
-     * @param group    group
-     * @param tenant   tenant
-     * @param datumIds datum id
-     * @return count
-     */
-    int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds);
-    
-    /**
-     * Get count of aggregation config info.
-     *
-     * @param dataId   data id
-     * @param group    group
-     * @param tenant   tenant
-     * @param datumIds datum id
-     * @return count
-     */
-    int aggrConfigInfoCountNotIn(String dataId, String group, String tenant, List<String> datumIds);
-    
     
     /**
      * Query all configuration information by page.
@@ -762,6 +655,7 @@ public interface PersistService {
      * @param tenant   tenant
      * @return {@link Page} with {@link ConfigInfo} generation
      */
+    @Deprecated
     Page<ConfigInfo> findAllConfigInfo(final int pageNo, final int pageSize, final String tenant);
     
     /**
@@ -772,6 +666,7 @@ public interface PersistService {
      * @param tenant   tenant
      * @return {@link Page} with {@link ConfigKey} generation
      */
+    @Deprecated
     Page<ConfigKey> findAllConfigKey(final int pageNo, final int pageSize, final String tenant);
     
     /**
@@ -785,21 +680,13 @@ public interface PersistService {
     Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize);
     
     /**
-     * Query all configuration information by page for dump task.
-     *
-     * @param pageNo   page number
-     * @param pageSize page size
-     * @return {@link Page} with {@link ConfigInfoWrapper} generation
-     */
-    Page<ConfigInfoWrapper> findAllConfigInfoForDumpAll(final int pageNo, final int pageSize);
-    
-    /**
      * Query all config info.
      *
      * @param lastMaxId last max id
      * @param pageSize  page size
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
+    @Deprecated
     Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize);
     
     /**
@@ -809,6 +696,7 @@ public interface PersistService {
      * @param pageSize page size
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
+    @Deprecated
     Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize);
     
     /**
@@ -818,36 +706,8 @@ public interface PersistService {
      * @param pageSize page sizxe
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
+    @Deprecated
     Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize);
-    
-    
-    /**
-     * Use select in to realize batch query of db records; subQueryLimit specifies the number of conditions in in, with
-     * an upper limit of 20.
-     *
-     * @param dataIds       data id list
-     * @param group         group
-     * @param tenant        tenant
-     * @param subQueryLimit sub query limit
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    List<ConfigInfo> findConfigInfoByBatch(final List<String> dataIds, final String group, final String tenant,
-            int subQueryLimit);
-    
-    /**
-     * Fuzzy query configuration information based on dataId and group.
-     *
-     * @param pageNo   Page number (must be greater than 0)
-     * @param pageSize Page size (must be greater than 0)
-     * @param dataId   Support fuzzy query
-     * @param group    Support fuzzy query
-     * @param tenant   Support fuzzy query
-     * @param appName  app name
-     * @param content  config content
-     * @return {@link Page} with {@link ConfigInfo} generation
-     */
-    Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final String dataId, final String group,
-            final String tenant, final String appName, final String content);
     
     /**
      * Fuzzy query configuration information based on dataId and group.
@@ -858,6 +718,7 @@ public interface PersistService {
      * @param blacklist  Whether to blacklist
      * @return {@link Page} with {@link ConfigInfo} generation
      */
+    @Deprecated
     Page<ConfigInfo> findConfigInfoLike(final int pageNo, final int pageSize, final ConfigKey[] configKeys,
             final boolean blacklist);
     
@@ -872,6 +733,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @return {@link Page} with {@link ConfigInfo} generation
      */
+    @Deprecated
     Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
     
@@ -886,6 +748,7 @@ public interface PersistService {
      * @return {@link Page} with {@link ConfigInfoBase} generation
      * @throws IOException exception
      */
+    @Deprecated
     Page<ConfigInfoBase> findConfigInfoBaseLike(final int pageNo, final int pageSize, final String dataId,
             final String group, final String content) throws IOException;
     
@@ -898,6 +761,7 @@ public interface PersistService {
      * @param datumId datum id
      * @return {@link ConfigInfoAggr}
      */
+    @Deprecated
     ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId);
     
     /**
@@ -908,6 +772,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return {@link ConfigInfoAggr} list
      */
+    @Deprecated
     List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant);
     
     /**
@@ -920,6 +785,7 @@ public interface PersistService {
      * @param pageSize page size
      * @return {@link Page} with {@link ConfigInfoAggr} generation
      */
+    @Deprecated
     Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize);
     
@@ -932,6 +798,7 @@ public interface PersistService {
      * @param blacklist  blacklist
      * @return {@link Page} with {@link ConfigInfoAggr} generation
      */
+    @Deprecated
     Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
             boolean blacklist);
     
@@ -940,6 +807,7 @@ public interface PersistService {
      *
      * @return {@link ConfigInfoChanged} list
      */
+    @Deprecated
     List<ConfigInfoChanged> findAllAggrGroup();
     
     /**
@@ -950,6 +818,7 @@ public interface PersistService {
      * @param content content
      * @return datum keys
      */
+    @Deprecated
     List<String> findDatumIdByContent(String dataId, String groupId, String content);
     
     /**
@@ -959,6 +828,7 @@ public interface PersistService {
      * @param endTime   end time
      * @return {@link ConfigInfoWrapper} list
      */
+    @Deprecated
     List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime);
     
     /**
@@ -975,6 +845,7 @@ public interface PersistService {
      * @param lastMaxId last max id
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
+    @Deprecated
     Page<ConfigInfoWrapper> findChangeConfig(final String dataId, final String group, final String tenant,
             final String appName, final Timestamp startTime, final Timestamp endTime, final int pageNo,
             final int pageSize, final long lastMaxId);
@@ -986,6 +857,7 @@ public interface PersistService {
      * @param endTime   end time
      * @return {@link ConfigInfo} list
      */
+    @Deprecated
     List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime);
     
     /**
@@ -999,6 +871,7 @@ public interface PersistService {
      * @param configAdvanceInfo advance info
      * @return execute sql result
      */
+    @Deprecated
     long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, Map<String, Object> configAdvanceInfo);
     
@@ -1011,6 +884,7 @@ public interface PersistService {
      * @param group    group
      * @param tenant   tenant
      */
+    @Deprecated
     void addConfigTagRelationAtomic(long configId, String tagName, String dataId, String group, String tenant);
     
     /**
@@ -1022,6 +896,7 @@ public interface PersistService {
      * @param group      group
      * @param tenant     tenant
      */
+    @Deprecated
     void addConfigTagsRelation(long configId, String configTags, String dataId, String group, String tenant);
     
     /**
@@ -1029,15 +904,8 @@ public interface PersistService {
      *
      * @param id id
      */
+    @Deprecated
     void removeTagByIdAtomic(long id);
-    
-    /**
-     * Query config tag list.
-     *
-     * @param tenant tenant
-     * @return config tag list
-     */
-    List<String> getConfigTagsByTenant(String tenant);
     
     /**
      * Query tag list.
@@ -1047,6 +915,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return tag list
      */
+    @Deprecated
     List<String> selectTagByConfig(String dataId, String group, String tenant);
     
     /**
@@ -1058,6 +927,7 @@ public interface PersistService {
      * @param srcIp   ip
      * @param srcUser user
      */
+    @Deprecated
     void removeConfigInfoAtomic(final String dataId, final String group, final String tenant, final String srcIp,
             final String srcUser);
     
@@ -1066,6 +936,7 @@ public interface PersistService {
      *
      * @param ids ids
      */
+    @Deprecated
     void removeConfigInfoByIdsAtomic(final String ids);
     
     /**
@@ -1078,6 +949,7 @@ public interface PersistService {
      * @param srcIp   remote ip
      * @param srcUser user
      */
+    @Deprecated
     void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
             final String srcIp, final String srcUser);
     
@@ -1090,6 +962,7 @@ public interface PersistService {
      * @param time              time
      * @param configAdvanceInfo advance info
      */
+    @Deprecated
     void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, Map<String, Object> configAdvanceInfo);
     
@@ -1102,6 +975,7 @@ public interface PersistService {
      * @author klw
      * @date 2019/7/5 16:37
      */
+    @Deprecated
     List<ConfigInfo> findConfigInfosByIds(final String ids);
     
     /**
@@ -1112,6 +986,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return advance info
      */
+    @Deprecated
     ConfigAdvanceInfo findConfigAdvanceInfo(final String dataId, final String group, final String tenant);
     
     /**
@@ -1122,6 +997,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return advance info
      */
+    @Deprecated
     ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant);
     
     /**
@@ -1134,6 +1010,7 @@ public interface PersistService {
      * @param time       time
      * @param ops        ops type
      */
+    @Deprecated
     void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
             String ops);
     
@@ -1147,27 +1024,8 @@ public interface PersistService {
      * @param pageSize size
      * @return {@link Page} with {@link ConfigHistoryInfo} generation
      */
+    @Deprecated
     Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
-    
-    /**
-     * Increase configuration; database atomic operation, minimum sql action, no business encapsulation.
-     *
-     * @param dataId  dataId
-     * @param group   group
-     * @param appName appName
-     * @param date    date
-     */
-    void addConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp date);
-    
-    /**
-     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     *
-     * @param dataId  data Id
-     * @param group   group
-     * @param appName app name
-     * @param time    time
-     */
-    void updateConfigSubAtomic(final String dataId, final String group, final String appName, final Timestamp time);
     
     /**
      * Get history config detail.
@@ -1175,6 +1033,7 @@ public interface PersistService {
      * @param nid nid
      * @return {@link ConfigHistoryInfo}
      */
+    @Deprecated
     ConfigHistoryInfo detailConfigHistory(Long nid);
     
     /**
@@ -1183,6 +1042,7 @@ public interface PersistService {
      * @param id id
      * @return {@link ConfigHistoryInfo}
      */
+    @Deprecated
     ConfigHistoryInfo detailPreviousConfigHistory(Long id);
     
     
@@ -1196,6 +1056,7 @@ public interface PersistService {
      * @param createResoure create resouce
      * @param time          time
      */
+    @Deprecated
     void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResoure,
             final long time);
     
@@ -1207,6 +1068,7 @@ public interface PersistService {
      * @param tenantName tenant name
      * @param tenantDesc tenant description
      */
+    @Deprecated
     void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc);
     
     /**
@@ -1215,6 +1077,7 @@ public interface PersistService {
      * @param kp kp
      * @return {@link TenantInfo} list
      */
+    @Deprecated
     List<TenantInfo> findTenantByKp(String kp);
     
     /**
@@ -1224,6 +1087,7 @@ public interface PersistService {
      * @param tenantId tenant id
      * @return {@link TenantInfo}
      */
+    @Deprecated
     TenantInfo findTenantByKp(String kp, String tenantId);
     
     /**
@@ -1232,6 +1096,7 @@ public interface PersistService {
      * @param kp       kp
      * @param tenantId tenant id
      */
+    @Deprecated
     void removeTenantInfoAtomic(final String kp, final String tenantId);
     
     /**
@@ -1240,6 +1105,7 @@ public interface PersistService {
      * @param list origin data
      * @return {@link ConfigInfo} list
      */
+    @Deprecated
     List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list);
     
     /**
@@ -1248,6 +1114,7 @@ public interface PersistService {
      * @param list origin data
      * @return {@link ConfigInfoWrapper} list
      */
+    @Deprecated
     List<ConfigInfoWrapper> convertChangeConfig(List<Map<String, Object>> list);
     
     /**
@@ -1255,6 +1122,7 @@ public interface PersistService {
      *
      * @return {@link ConfigInfoWrapper} list
      */
+    @Deprecated
     List<ConfigInfoWrapper> listAllGroupKeyMd5();
     
     /**
@@ -1264,6 +1132,7 @@ public interface PersistService {
      * @param pageSize page size
      * @return {@link ConfigInfoWrapper} list
      */
+    @Deprecated
     List<ConfigInfoWrapper> listGroupKeyMd5ByPage(int pageNo, int pageSize);
     
     /**
@@ -1272,6 +1141,7 @@ public interface PersistService {
      * @param s origin string
      * @return fuzzy search Sql
      */
+    @Deprecated
     String generateLikeArgument(String s);
     
     /**
@@ -1282,6 +1152,7 @@ public interface PersistService {
      * @param tenant tenant
      * @return {@link ConfigInfoWrapper}
      */
+    @Deprecated
     ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
@@ -1290,14 +1161,8 @@ public interface PersistService {
      * @param tableName table name
      * @return {@code true} if table exist
      */
+    @Deprecated
     boolean isExistTable(String tableName);
-    
-    /**
-     * complete md5.
-     *
-     * @return {@code true} if success
-     */
-    Boolean completeMd5();
     
     /**
      * query all configuration information according to group, appName, tenant (for export).
@@ -1309,6 +1174,7 @@ public interface PersistService {
      * @param ids     ids
      * @return Collection of ConfigInfo objects
      */
+    @Deprecated
     List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
             final String appName, final List<Long> ids);
     
@@ -1327,6 +1193,7 @@ public interface PersistService {
      * @return map containing the number of affected rows
      * @throws NacosException nacos exception
      */
+    @Deprecated
     Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
             Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
             throws NacosException;
@@ -1337,13 +1204,15 @@ public interface PersistService {
      * @param tenantId tenant Id
      * @return count by tenantId
      */
+    @Deprecated
     int tenantInfoCountByTenantId(String tenantId);
-
+    
     /**
      * Query dataId list by namespace.
      *
      * @param tenantId tenantId
      * @return {@link ConfigInfoBase}
      */
+    @Deprecated
     List<ConfigInfoWrapper> queryConfigInfoByNamespace(final String tenantId);
 }

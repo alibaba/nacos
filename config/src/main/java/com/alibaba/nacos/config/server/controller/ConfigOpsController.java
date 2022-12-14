@@ -26,7 +26,6 @@ import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -61,12 +60,9 @@ public class ConfigOpsController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsController.class);
     
-    protected final PersistService persistService;
-    
     private final DumpService dumpService;
     
-    public ConfigOpsController(PersistService persistService, DumpService dumpService) {
-        this.persistService = persistService;
+    public ConfigOpsController(DumpService dumpService) {
         this.dumpService = dumpService;
     }
     

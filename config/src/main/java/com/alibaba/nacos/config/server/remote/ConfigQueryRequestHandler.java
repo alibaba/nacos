@@ -27,7 +27,9 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -35,7 +37,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.core.remote.control.TpsControl;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.apache.commons.io.FileUtils;
@@ -62,14 +64,22 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     
     private static final int TRY_GET_LOCK_TIMES = 9;
     
-    private final PersistService persistService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
-    public ConfigQueryRequestHandler(PersistService persistService) {
-        this.persistService = persistService;
+    private final ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    private final ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    public ConfigQueryRequestHandler(ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
     }
     
     @Override
-    @TpsControl(pointName = "ConfigQuery", parsers = {ConfigQueryGroupKeyParser.class, ConfigQueryGroupParser.class})
+    @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         
@@ -123,7 +133,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
                     if (PropertyUtil.isDirectRead()) {
-                        configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
+                        configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
@@ -140,7 +150,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 }
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
@@ -150,7 +160,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
+                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
@@ -181,7 +191,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             }
                         }
                         if (PropertyUtil.isDirectRead()) {
-                            configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+                            configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }

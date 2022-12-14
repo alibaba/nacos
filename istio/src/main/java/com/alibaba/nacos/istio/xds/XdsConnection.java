@@ -32,7 +32,7 @@ public class XdsConnection extends AbstractConnection<DiscoveryResponse> {
     }
 
     @Override
-    public void push(DiscoveryResponse response, WatchedStatus watchedStatus) {
+    public synchronized void push(DiscoveryResponse response, WatchedStatus watchedStatus) {
         if (Loggers.MAIN.isDebugEnabled()) {
             Loggers.MAIN.debug("discoveryResponse: {}", response.toString());
         }

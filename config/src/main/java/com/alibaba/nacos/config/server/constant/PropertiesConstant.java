@@ -53,9 +53,18 @@ public class PropertiesConstant {
     
     public static final String INITIAL_EXPANSION_PERCENT = "initialExpansionPercent";
     
-    public static final String SPRING_DATASOURCE_PLATFORM = "spring.datasource.platform";
+    /**
+     * May be removed with the upgrade of springboot version.
+     */
+    public static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
+    
+    public static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
     
     public static final String MYSQL = "mysql";
+    
+    public static final String DERBY = "derby";
+    
+    public static final String EMPTY_DATASOURCE_PLATFORM = "";
     
     public static final String EMBEDDED_STORAGE = "embeddedStorage";
     

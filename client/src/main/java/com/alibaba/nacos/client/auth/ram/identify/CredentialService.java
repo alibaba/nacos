@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = System.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
+            String value = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
@@ -126,25 +127,4 @@ public final class CredentialService implements SpasCredentialLoader {
     public void registerCredentialListener(CredentialListener listener) {
         this.listener = listener;
     }
-    
-    @Deprecated
-    public void setAccessKey(String accessKey) {
-        credentials.setAccessKey(accessKey);
-    }
-    
-    @Deprecated
-    public void setSecretKey(String secretKey) {
-        credentials.setSecretKey(secretKey);
-    }
-    
-    @Deprecated
-    public String getAccessKey() {
-        return credentials.getAccessKey();
-    }
-    
-    @Deprecated
-    public String getSecretKey() {
-        return credentials.getSecretKey();
-    }
-    
 }

@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -62,7 +63,7 @@ public class CacheData {
     static boolean initSnapshot;
     
     static {
-        initSnapshot = Boolean.valueOf(System.getProperty("nacos.cache.data.init.snapshot", "true"));
+        initSnapshot = NacosClientProperties.PROTOTYPE.getBoolean("nacos.cache.data.init.snapshot", true);
         LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
     }
     

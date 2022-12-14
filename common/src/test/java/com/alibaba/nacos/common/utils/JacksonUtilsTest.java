@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -36,7 +37,7 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -434,7 +435,7 @@ public class JacksonUtilsTest {
 
     @Test
     public void testToJsonBytes() {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("string", "你好，中国！");
         map.put("integer", 999);
         RestResult<Map<String, Object>> restResult = new RestResult();
@@ -442,9 +443,8 @@ public class JacksonUtilsTest {
 
         byte[] bytes = JacksonUtils.toJsonBytes(restResult);
         String jsonFromBytes = ByteUtils.toString(bytes);
-        String expectedJson = "{\"code\":0,\"data\":{\"string\":\"你好，中国！\",\"integer\":999}}";
-        Assert.assertEquals(expectedJson, jsonFromBytes);
-
+        Assert.assertTrue(jsonFromBytes.contains("\"code\":0"));
+        Assert.assertTrue(jsonFromBytes.contains("\"data\":{\"string\":\"你好，中国！\",\"integer\":999}"));
         // old `toJsonBytes` method implementation:
         //     public static byte[] toJsonBytes(Object obj) {
         //        try {
@@ -456,7 +456,9 @@ public class JacksonUtilsTest {
 
         // here is a verification to compare with the old implementation
         byte[] bytesFromOldImplementation = ByteUtils.toBytes(JacksonUtils.toJson(restResult));
-        Assert.assertEquals(expectedJson, new String(bytesFromOldImplementation, Charset.forName(Constants.ENCODE)));
+        String jsonFromBytesOldImplementation = new String(bytesFromOldImplementation, Charset.forName(Constants.ENCODE));
+        Assert.assertTrue(jsonFromBytesOldImplementation.contains("\"code\":0"));
+        Assert.assertTrue(jsonFromBytesOldImplementation.contains("\"data\":{\"string\":\"你好，中国！\",\"integer\":999}"));
     }
 
     @Test
@@ -474,6 +476,7 @@ public class JacksonUtilsTest {
         Assert.assertEquals(999, restResult.getData().get("integer"));
     }
     
+    @JsonPropertyOrder({ "aLong", "aInteger", "aBoolean"})
     static class TestOfAtomicObject {
         
         public AtomicLong aLong = new AtomicLong(0);
@@ -558,6 +561,7 @@ public class JacksonUtilsTest {
         }
     }
     
+    @JsonPropertyOrder({ "value", "key" })
     static class TestOfGetter {
         
         public String getKey() {

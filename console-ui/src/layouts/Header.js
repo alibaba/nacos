@@ -75,9 +75,11 @@ class Header extends React.Component {
     }
     return '';
   };
+
   indexAction = () => {
     this.props.history.push('/');
   };
+
   render() {
     const {
       locale = {},

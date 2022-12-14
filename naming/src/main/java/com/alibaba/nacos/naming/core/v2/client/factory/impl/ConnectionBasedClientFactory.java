@@ -38,12 +38,16 @@ public class ConnectionBasedClientFactory implements ClientFactory<ConnectionBas
     @Override
     public ConnectionBasedClient newClient(String clientId, ClientAttributes attributes) {
         long revision = attributes.getClientAttribute(REVISION, 0);
-        return new ConnectionBasedClient(clientId, true, revision);
+        ConnectionBasedClient connectionBasedClient = new ConnectionBasedClient(clientId, true, revision);
+        connectionBasedClient.setAttributes(attributes);
+        return connectionBasedClient;
     }
     
     @Override
     public ConnectionBasedClient newSyncedClient(String clientId, ClientAttributes attributes) {
         long revision = attributes.getClientAttribute(REVISION, 0);
-        return new ConnectionBasedClient(clientId, false, revision);
+        ConnectionBasedClient connectionBasedClient = new ConnectionBasedClient(clientId, false, revision);
+        connectionBasedClient.setAttributes(attributes);
+        return connectionBasedClient;
     }
 }

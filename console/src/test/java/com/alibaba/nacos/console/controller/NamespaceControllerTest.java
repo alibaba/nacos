@@ -16,108 +16,121 @@
 
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.config.server.service.repository.PersistService;
-import org.junit.Assert;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.console.model.Namespace;
+import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import com.alibaba.nacos.console.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.util.Collections;
+import java.util.List;
 
-/**
- * NamespaceController unit test.
- * @ClassName: NamespaceControllerTest
- * @Author: ChenHao26
- * @Date: 2022/8/13 09:32
- * @Description: TODO
- */
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class NamespaceControllerTest {
     
     @InjectMocks
     private NamespaceController namespaceController;
     
-    @Mock(lenient = true)
-    private PersistService persistService;
+    @Mock
+    private CommonPersistService commonPersistService;
     
-    private MockMvc mockmvc;
-    
-    private static final String NAMESPACE_URL = "/v1/console/namespaces";
+    @Mock
+    private NamespaceOperationService namespaceOperationService;
     
     @Before
     public void setUp() {
-        mockmvc = MockMvcBuilders.standaloneSetup(namespaceController).build();
+    
     }
     
     @Test
-    public void getNamespaces() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(NAMESPACE_URL);
-        Assert.assertEquals(200, mockmvc.perform(builder).andReturn().getResponse().getStatus());
+    public void testGetNamespaces() throws Exception {
+        Namespace namespace = new Namespace("", "public");
+        when(namespaceOperationService.getNamespaceList()).thenReturn(Collections.singletonList(namespace));
+        RestResult<List<Namespace>> actual = namespaceController.getNamespaces();
+        assertTrue(actual.ok());
+        assertEquals(200, actual.getCode());
+        assertEquals(namespace, actual.getData().get(0));
     }
     
     @Test
-    public void getNamespaceByNamespaceId() throws Exception {
-        String url = "/v1/console/namespaces";
-        Mockito.when(persistService.findTenantByKp(any(String.class))).thenReturn(null);
-        Mockito.when(persistService.configInfoCount(any(String.class))).thenReturn(0);
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(url)
-                .param("show", "all").param("namespaceId",  "");
-        Assert.assertEquals(200, mockmvc.perform(builder).andReturn().getResponse().getStatus());
+    public void testGetNamespaceByNamespaceId() throws Exception {
+        NamespaceAllInfo namespace = new NamespaceAllInfo("", "public", 0, 0, 0, "");
+        when(namespaceOperationService.getNamespace("")).thenReturn(namespace);
+        assertEquals(namespace, namespaceController.getNamespace(""));
     }
     
     @Test
-    public void createNamespace() throws Exception {
-       
-        try {
-            persistService.insertTenantInfoAtomic(String.valueOf(1), "testId", "name",
-                    "testDesc", "resourceId", 3000L);
-            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(NAMESPACE_URL)
-                    .param("customNamespaceId", "nsId")
-                    .param("namespaceName", "nsService").param("namespaceDesc", "desc");
-            Assert.assertEquals(200, mockmvc.perform(builder).andReturn().getResponse().getStatus());
-        } catch (Exception e) {
-            Assert.assertNull(e);
+    public void testCreateNamespaceWithCustomId() throws Exception {
+        namespaceController.createNamespace("test-Id", "testName", "testDesc");
+        verify(namespaceOperationService).createNamespace("test-Id", "testName", "testDesc");
+    }
+    
+    @Test
+    public void testCreateNamespaceWithIllegalCustomId() throws Exception {
+        assertFalse(namespaceController.createNamespace("test.Id", "testName", "testDesc"));
+        verify(namespaceOperationService, never()).createNamespace("test.Id", "testName", "testDesc");
+    }
+    
+    @Test
+    public void testCreateNamespaceWithLongCustomId() throws Exception {
+        StringBuilder longId = new StringBuilder();
+        for (int i = 0; i < 129; i++) {
+            longId.append("a");
         }
-    
+        assertFalse(namespaceController.createNamespace(longId.toString(), "testName", "testDesc"));
+        verify(namespaceOperationService, never()).createNamespace(longId.toString(), "testName", "testDesc");
     }
     
     @Test
-    public void checkNamespaceIdExist() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(NAMESPACE_URL)
-                .param("checkNamespaceIdExist", "true").param("customNamespaceId", "12");
-        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
-        Assert.assertEquals("false", response.getContentAsString());
-        Mockito.when(persistService.tenantInfoCountByTenantId("")).thenReturn(0);
-        Mockito.when(persistService.tenantInfoCountByTenantId("123")).thenReturn(1);
+    public void testCreateNamespaceWithAutoId() throws Exception {
+        assertFalse(namespaceController.createNamespace("", "testName", "testDesc"));
+        verify(namespaceOperationService)
+                .createNamespace(matches("[A-Za-z\\d]{8}-[A-Za-z\\d]{4}-[A-Za-z\\d]{4}-[A-Za-z\\d]{4}-[A-Za-z\\d]{12}"),
+                        eq("testName"), eq("testDesc"));
     }
     
     @Test
-    public void editNamespace() {
-        try {
-            persistService.updateTenantNameAtomic("1", "testId", "nsShowName", "namespaceDesc");
-            createNamespace();
-            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(NAMESPACE_URL)
-                    .param("namespace", "testId").param("namespaceShowName", "nsShowName")
-                    .param("namespaceDesc", "desc");
-            Assert.assertEquals("true", mockmvc.perform(builder).andReturn().getResponse().getContentAsString());
-        } catch (Exception e) {
-            Assert.assertNull(e);
-        }
+    public void testCreateNamespaceFailure() throws NacosException {
+        when(namespaceOperationService.createNamespace(anyString(), anyString(), anyString()))
+                .thenThrow(new NacosException(500, "test"));
+        assertFalse(namespaceController.createNamespace("", "testName", "testDesc"));
+    }
+    
+    @Test
+    public void testCheckNamespaceIdExist() throws Exception {
+        when(commonPersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+        when(commonPersistService.tenantInfoCountByTenantId("123")).thenReturn(0);
+        assertFalse(namespaceController.checkNamespaceIdExist(""));
+        assertTrue(namespaceController.checkNamespaceIdExist("public"));
+        assertFalse(namespaceController.checkNamespaceIdExist("123"));
+    }
+    
+    @Test
+    public void testEditNamespace() {
+        namespaceController.editNamespace("test-Id", "testName", "testDesc");
+        verify(namespaceOperationService).editNamespace("test-Id", "testName", "testDesc");
     }
     
     @Test
     public void deleteConfig() throws Exception {
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.delete(NAMESPACE_URL)
-                .param("namespaceId", "");
-        Assert.assertEquals("true", mockmvc.perform(builder).andReturn().getResponse().getContentAsString());
+        namespaceController.deleteNamespace("test-Id");
+        verify(namespaceOperationService).removeNamespace("test-Id");
     }
 }

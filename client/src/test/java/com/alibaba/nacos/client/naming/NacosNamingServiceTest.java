@@ -117,6 +117,27 @@ public class NacosNamingServiceTest {
     }
     
     @Test
+    public void testBatchDeRegisterInstance() throws NacosException {
+        Instance instance = new Instance();
+        String serviceName = "service1";
+        String ip = "1.1.1.1";
+        int port = 10000;
+        instance.setServiceName(serviceName);
+        instance.setEphemeral(true);
+        instance.setPort(port);
+        instance.setIp(ip);
+        List<Instance> instanceList = new ArrayList<>();
+        instanceList.add(instance);
+        //when
+        try {
+            client.batchDeregisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof NacosException);
+            Assert.assertTrue(e.getMessage().contains("not found"));
+        }
+    }
+    
+    @Test
     public void testRegisterInstance2() throws NacosException {
         //given
         String serviceName = "service1";

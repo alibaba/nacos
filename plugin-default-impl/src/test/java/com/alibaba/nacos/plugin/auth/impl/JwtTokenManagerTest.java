@@ -16,72 +16,72 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
-import io.jsonwebtoken.lang.Assert;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import io.jsonwebtoken.io.Encoders;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.core.Authentication;
 
-import java.util.Properties;
-
-import static org.mockito.Mockito.when;
+import java.nio.charset.StandardCharsets;
 
 @RunWith(MockitoJUnitRunner.class)
 public class JwtTokenManagerTest {
-    
-    @Mock
-    private AuthConfigs authConfigs;
     
     private JwtTokenManager jwtTokenManager;
     
     @Before
     public void setUp() {
-        Properties properties = new Properties();
-        properties.setProperty(AuthConstants.TOKEN_SECRET_KEY,
-                "SecretKey0123$567890$234567890123456789012345678901234567890123456789");
-        properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
-        when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-        jwtTokenManager = new JwtTokenManager(authConfigs);
-        jwtTokenManager.initProperties();
+        MockEnvironment mockEnvironment = new MockEnvironment();
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Encoders.BASE64.encode(
+                "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
+                        StandardCharsets.UTF_8)));
+        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
+                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+        
+        EnvUtil.setEnvironment(mockEnvironment);
+        
+        jwtTokenManager = new JwtTokenManager();
     }
     
     @Test
-    public void testCreateTokenAndSecretKeyWithoutSpecialSymbol() throws NoSuchFieldException, IllegalAccessException {
-        createToken("SecretKey0123$567890$234567890123456789012345678901234567890123456789");
+    public void testCreateTokenAndSecretKeyWithoutSpecialSymbol() {
+        createToken("SecretKey0123567890234567890123456789012345678901234567890123456789");
     }
     
     @Test
-    public void testCreateTokenAndSecretKeyWithSpecialSymbol() throws NoSuchFieldException, IllegalAccessException {
-        createToken("SecretKey012345678901234567890123456789012345678901234567890123456789");
+    public void testCreateTokenAndSecretKeyWithSpecialSymbol() {
+        createToken("SecretKey01234@#!5678901234567890123456789012345678901234567890123456789");
     }
     
-    private void createToken(String secretKey) throws NoSuchFieldException, IllegalAccessException {
-        Properties properties = new Properties();
-        properties.setProperty(AuthConstants.TOKEN_SECRET_KEY, secretKey);
-        properties.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, "300");
-        when(authConfigs.getAuthPluginProperties(AuthConstants.AUTH_PLUGIN_TYPE)).thenReturn(properties);
-        JwtTokenManager jwtTokenManager = new JwtTokenManager(authConfigs);
-        jwtTokenManager.initProperties();
+    private void createToken(String secretKey) {
+        MockEnvironment mockEnvironment = new MockEnvironment();
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY,
+                Encoders.BASE64.encode(secretKey.getBytes(StandardCharsets.UTF_8)));
+        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
+                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+        
+        EnvUtil.setEnvironment(mockEnvironment);
+        
+        JwtTokenManager jwtTokenManager = new JwtTokenManager();
         String nacosToken = jwtTokenManager.createToken("nacos");
-        Assert.notNull(nacosToken);
+        Assert.assertNotNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);
     }
     
     @Test
-    public void getAuthentication() throws NoSuchFieldException, IllegalAccessException {
+    public void getAuthentication() {
         String nacosToken = jwtTokenManager.createToken("nacos");
         Authentication authentication = jwtTokenManager.getAuthentication(nacosToken);
-        org.junit.Assert.assertNotNull(authentication);
+        Assert.assertNotNull(authentication);
     }
     
     @Test
-    public void getSecretKeyBytes() {
-        byte[] secretKeyBytes = jwtTokenManager.getSecretKeyBytes();
-        org.junit.Assert.assertNotNull(secretKeyBytes);
+    public void testInvalidSecretKey() {
+        Assert.assertThrows(IllegalArgumentException.class, () -> createToken("0123456789ABCDEF0123456789ABCDE"));
     }
-    
 }
