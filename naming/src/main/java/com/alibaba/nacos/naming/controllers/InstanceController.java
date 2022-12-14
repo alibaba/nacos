@@ -315,7 +315,8 @@ public class InstanceController {
         
         Subscriber subscriber = new Subscriber(clientIP + ":" + udpPort, agent, app, clientIP, namespaceId, serviceName,
                 udpPort, clusters);
-        return getInstanceOperator().listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly);
+        return getInstanceOperator().listInstance(namespaceId, serviceName, subscriber, clusters, healthyOnly,
+                true);
     }
     
     /**

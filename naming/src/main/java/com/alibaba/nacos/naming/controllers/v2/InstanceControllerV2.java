@@ -269,6 +269,7 @@ public class InstanceControllerV2 {
             @RequestParam(value = "port", defaultValue = "0") Integer port,
             @RequestParam(value = "healthyOnly", defaultValue = "false") Boolean healthyOnly,
             @RequestParam(value = "app", defaultValue = StringUtils.EMPTY) String app,
+            @RequestParam(value = "enabledOnly", defaultValue = "true") boolean enabledOnly,
             @RequestHeader(value = HttpHeaderConsts.USER_AGENT_HEADER, required = false) String userAgent,
             @RequestHeader(value = HttpHeaderConsts.CLIENT_VERSION_HEADER, required = false) String clientVersion) {
         if (StringUtils.isEmpty(userAgent)) {
@@ -277,7 +278,8 @@ public class InstanceControllerV2 {
         String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, compositeServiceName,
                 port, clusterName);
-        return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly));
+        return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly,
+                enabledOnly));
     }
     
     /**

@@ -88,11 +88,12 @@ public interface InstanceOperator {
      * @param subscriber  subscriber info
      * @param cluster     cluster of instances
      * @param healthOnly  whether only return health instances
+     * @param enabledOnly whether only return enabled instances
      * @return service info
      * @throws Exception exception when list instance failed
      */
     ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
-            boolean healthOnly) throws Exception;
+            boolean healthOnly, boolean enabledOnly) throws Exception;
     
     /**
      * Get instance detail information.

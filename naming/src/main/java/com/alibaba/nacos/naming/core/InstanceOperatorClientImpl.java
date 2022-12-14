@@ -179,7 +179,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     @Override
     public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
-            boolean healthOnly) {
+            boolean healthOnly, boolean enabledOnly) {
         Service service = getService(namespaceId, serviceName, true);
         // For adapt 1.X subscribe logic
         if (subscriber.getPort() > 0 && pushService.canEnablePush(subscriber.getAgent())) {
@@ -190,7 +190,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
         ServiceInfo result = ServiceUtil
-                .selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, healthOnly, true, subscriber.getIp());
+                .selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, healthOnly, enabledOnly, subscriber.getIp());
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;

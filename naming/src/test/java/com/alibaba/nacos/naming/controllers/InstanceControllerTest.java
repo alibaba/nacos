@@ -181,7 +181,7 @@ public class InstanceControllerTest extends BaseTest {
         expected.setHosts(Collections.singletonList(instance));
         when(instanceServiceV2
                 .listInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        any(Subscriber.class), eq(StringUtils.EMPTY), eq(false))).thenReturn(expected);
+                        any(Subscriber.class), eq(StringUtils.EMPTY), eq(false), true)).thenReturn(expected);
         assertEquals(expected, instanceController.list(request));
     }
     

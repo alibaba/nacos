@@ -191,7 +191,7 @@ public class InstanceOperatorClientImplTest {
         when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
         
         Subscriber subscriber = new Subscriber("2.2.2.2", "", "app", "1.1.1.1", "A", "B", 8848);
-        instanceOperatorClient.listInstance("A", "B", subscriber, "C", true);
+        instanceOperatorClient.listInstance("A", "B", subscriber, "C", true, true);
         
         Mockito.verify(clientOperationService).subscribeService(Mockito.any(), Mockito.any(), Mockito.anyString());
     }
