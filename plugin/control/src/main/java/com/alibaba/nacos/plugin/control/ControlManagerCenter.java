@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.ruleactivator.NacosRuleParser;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParser;
+import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.nacos.NacosTpsControlManager;
@@ -44,45 +45,7 @@ public class ControlManagerCenter {
     
     private ConnectionControlManager connectionControlManager;
     
-    private RuleParser ruleParser;
-    
     private RuleStorageProxy ruleStorageProxy;
-    
-    private void initRuleParser() {
-        Collection<RuleParser> ruleParsers = NacosServiceLoader.load(RuleParser.class);
-        String ruleParserName = ControlConfigs.getInstance().getRuleParser();
-        
-        for (RuleParser ruleParserInternal : ruleParsers) {
-            if (ruleParserInternal.getName().equalsIgnoreCase(ruleParserName)) {
-                Loggers.CONTROL.info("Found  rule parser of name={},class={}", ruleParserName,
-                        ruleParserInternal.getClass().getSimpleName());
-                ruleParser = ruleParserInternal;
-                break;
-            }
-        }
-        if (ruleParser == null) {
-            Loggers.CONTROL.warn("Fail to rule parser of name ：" + ruleParserName);
-            ruleParser = new NacosRuleParser();
-        }
-        
-        Collection<ConnectionControlManager> connectionControlManagers = NacosServiceLoader
-                .load(ConnectionControlManager.class);
-        String connectionManagerName = ControlConfigs.getInstance().getConnectionManager();
-        
-        for (ConnectionControlManager connectionControlManagerInternal : connectionControlManagers) {
-            if (connectionControlManagerInternal.getName().equalsIgnoreCase(connectionManagerName)) {
-                Loggers.CONTROL.info("Found  rule parser of name={},class={}", ruleParserName,
-                        connectionControlManagerInternal.getClass().getSimpleName());
-                connectionControlManager = connectionControlManagerInternal;
-                break;
-            }
-        }
-        if (connectionControlManager == null) {
-            Loggers.CONTROL.warn("Fail to rule parser of name ：" + ruleParserName);
-            connectionControlManager = new NacosConnectionControlManager();
-        }
-        
-    }
     
     private void initConnectionManager() {
         
@@ -127,7 +90,6 @@ public class ControlManagerCenter {
     
     private ControlManagerCenter() {
         initTpsControlManager();
-        initRuleParser();
         initConnectionManager();
         ruleStorageProxy = new RuleStorageProxy();
     }
@@ -137,7 +99,7 @@ public class ControlManagerCenter {
     }
     
     public RuleParser getRuleParser() {
-        return ruleParser;
+        return RuleParserProxy.getInstance();
     }
     
     public TpsControlManager getTpsControlManager() {
