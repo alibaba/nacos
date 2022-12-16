@@ -59,6 +59,7 @@ public class SpringValueConfigsInitializer implements ControlConfigsInitializer 
     public void initialize(ControlConfigs controlConfigs) {
         controlConfigs.setTpsManager(tpsManager);
         controlConfigs.setTpsBarrierCreator(tpsBarrierCreator);
+        controlConfigs.setTpsRuleBarrierCreator(tpsRuleBarrierCreator);
         
         controlConfigs.setConnectionRuntimeEjector(connectionRuntimeEjector);
         controlConfigs.setConnectionManager(connectionManager);
