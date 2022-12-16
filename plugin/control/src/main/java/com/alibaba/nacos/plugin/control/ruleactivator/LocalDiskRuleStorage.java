@@ -18,8 +18,6 @@ package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -38,16 +36,30 @@ public class LocalDiskRuleStorage implements RuleStorage {
     
     private static final Logger LOGGER = Loggers.CONTROL;
     
+    private String localRruleBaseDir = defaultBaseDir();
+    
     private File checkTpsBaseDir() {
-        File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "tps" + File.separator);
+        File baseDir = new File(localRruleBaseDir, "data" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
         return baseDir;
     }
     
+    public String getLocalRruleBaseDir() {
+        return localRruleBaseDir;
+    }
+    
+    public void setLocalRruleBaseDir(String localRruleBaseDir) {
+        this.localRruleBaseDir = localRruleBaseDir;
+    }
+    
+    private static String defaultBaseDir() {
+        return LocalDiskRuleStorage.class.getResource("/").getPath();
+    }
+    
     private File getConnectionRuleFile() {
-        File baseDir = new File(EnvUtil.getNacosHome(), "data" + File.separator + "connection" + File.separator);
+        File baseDir = new File(localRruleBaseDir, "data" + File.separator + "connection" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdir();
         }

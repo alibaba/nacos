@@ -35,11 +35,14 @@ public class RuleStorageProxy {
     
     private static final RuleStorageProxy INSTANCE = new RuleStorageProxy();
     
-    private LocalDiskRuleStorage localDiskRuleStorage = new LocalDiskRuleStorage();
+    private LocalDiskRuleStorage localDiskRuleStorage = null;
     
     private ExternalRuleStorage externalRuleStorage = null;
     
+    ControlRuleChangeActivator controlRuleChangeActivator = null;
+    
     public RuleStorageProxy() {
+        
         Collection<ExternalRuleStorage> persistRuleActivators = NacosServiceLoader.load(ExternalRuleStorage.class);
         String rulePersistActivator = ControlConfigs.getInstance().getRuleExternalStorage();
         
@@ -53,6 +56,15 @@ public class RuleStorageProxy {
         if (externalRuleStorage == null && StringUtils.isNotBlank(rulePersistActivator)) {
             LOGGER.error("Fail to found persist rule storage of name ：" + rulePersistActivator);
         }
+        
+        //local disk storage.
+        localDiskRuleStorage = new LocalDiskRuleStorage();
+        if (StringUtils.isNotBlank(ControlConfigs.getInstance().getLocalRuleStorageBaseDir())) {
+            localDiskRuleStorage.setLocalRruleBaseDir(ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
+        }
+        
+        controlRuleChangeActivator = new ControlRuleChangeActivator();
+        
     }
     
     public RuleStorage getLocalDiskStorage() {
