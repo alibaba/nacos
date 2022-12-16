@@ -16,17 +16,15 @@
 
 package com.alibaba.nacos.plugin.control.configs;
 
-import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
+
+import java.util.Collection;
 
 /**
  * control configs params.
  *
  * @author shiyiyue
  */
-@Component
 public class ControlConfigs {
     
     private static ControlConfigs instance = null;
@@ -34,15 +32,13 @@ public class ControlConfigs {
     public static ControlConfigs getInstance() {
         if (instance == null) {
             synchronized (ControlConfigs.class) {
-                try {
-                    instance = ApplicationUtils.getBean(ControlConfigs.class);
-                } catch (Throwable throwable) {
-                    Loggers.CONTROL
-                            .warn("Fail to get control configs bean from spring context,use default constructor instance",
-                                    throwable);
-                }
                 if (instance == null) {
                     instance = new ControlConfigs();
+                    Collection<ControlConfigsInitializer> load = NacosServiceLoader
+                            .load(ControlConfigsInitializer.class);
+                    for (ControlConfigsInitializer controlConfigsInitializer : load) {
+                        controlConfigsInitializer.initialize(instance);
+                    }
                 }
             }
         }
@@ -54,26 +50,21 @@ public class ControlConfigs {
         ControlConfigs.instance = instance;
     }
     
-    @Value("${nacos.plugin.control.tps.barrier.creator:nacos}")
     private String tpsBarrierCreator = "nacos";
     
-    @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
     private String tpsRuleBarrierCreator = "nacos";
     
-    @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
     private String connectionRuntimeEjector = "nacos";
     
-    @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
     
-    @Value("${nacos.plugin.control.tps.manager:nacos}")
     private String tpsManager = "nacos";
     
-    @Value("${nacos.plugin.control.rule.external.storage:}")
     private String ruleExternalStorage = "";
     
-    @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";
+    
+    private String localRuleStorageBaseDir = "";
     
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;
@@ -129,5 +120,13 @@ public class ControlConfigs {
     
     public void setTpsManager(String tpsManager) {
         this.tpsManager = tpsManager;
+    }
+    
+    public String getLocalRuleStorageBaseDir() {
+        return localRuleStorageBaseDir;
+    }
+    
+    public void setLocalRuleStorageBaseDir(String localRuleStorageBaseDir) {
+        this.localRuleStorageBaseDir = localRuleStorageBaseDir;
     }
 }

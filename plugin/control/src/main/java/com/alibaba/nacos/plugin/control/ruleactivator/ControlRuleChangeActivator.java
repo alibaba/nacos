@@ -27,14 +27,12 @@ import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
 import org.slf4j.Logger;
-import org.springframework.stereotype.Component;
 
 /**
  * control rule activator.
- * @author shiyiyue
  *
+ * @author shiyiyue
  */
-@Component
 public class ControlRuleChangeActivator {
     
     private static final Logger LOGGER = Loggers.CONTROL;

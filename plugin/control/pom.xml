@@ -36,10 +36,7 @@
             <artifactId>nacos-common</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-sys</artifactId>
-        </dependency>
+        
     </dependencies>
 
 </project>
