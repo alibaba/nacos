@@ -43,7 +43,7 @@ public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshe
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
         RequestMappingHandlerMapping requestMapping = event.getApplicationContext()
-                .getBean(RequestMappingHandlerMapping.class);
+                .getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMapping.getHandlerMethods();
         for (HandlerMethod handlerMethod : handlerMethods.values()) {
             Method method = handlerMethod.getMethod();
