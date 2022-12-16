@@ -36,6 +36,7 @@
         <module>datasource</module>
         <module>environment</module>
         <module>cleaner</module>
+        <module>control</module>
     </modules>
     <packaging>pom</packaging>
 

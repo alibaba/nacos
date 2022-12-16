@@ -33,65 +33,6 @@ import java.util.Map;
 public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements ConfigTagsRelationMapper {
     
     @Override
-    public String findConfigInfoAdvanceInfo(Map<String, String> params, int tagSize) {
-        final String appName = params.get("appName");
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id WHERE a.data_id=? AND a.group_id=? AND a.tenant_id=? ");
-        sql.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(") ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND a.app_name=? ");
-        }
-        return sql.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByDataIdAndAdvanceCountRows(Map<String, String> params, int tagSize) {
-        final String appName = params.get("appName");
-        StringBuilder sqlCount = new StringBuilder(
-                "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.data_id=? AND a.tenant_id=? ");
-        sqlCount.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sqlCount.append(", ");
-            }
-            sqlCount.append('?');
-        }
-        sqlCount.append(") ");
-        if (StringUtils.isNotBlank(appName)) {
-            sqlCount.append(" AND a.app_name=? ");
-        }
-        return sqlCount.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByDataIdAndAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
-        final String appName = params.get("appName");
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id WHERE a.data_id=? AND a.tenant_id=? ");
-        sql.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(") ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND a.app_name=? ");
-        }
-        return sql + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
     public String findConfigInfo4PageCountRows(final Map<String, String> params, final int tagSize) {
         final String appName = params.get("appName");
         final String dataId = params.get("dataId");
@@ -125,8 +66,9 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         final String dataId = params.get("dataId");
         final String group = params.get("group");
         StringBuilder where = new StringBuilder(" WHERE ");
-        final String sql = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                + "config_tags_relation b ON a.id=b.id";
+        final String sql =
+                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
+                        + "config_tags_relation b ON a.id=b.id";
         
         where.append(" a.tenant_id=? ");
         
@@ -149,47 +91,6 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         }
         where.append(") ");
         return sql + where + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAdvanceCountRows(final Map<String, String> params, int tagSize) {
-        final String appName = params.get("appName");
-        StringBuilder sqlCount = new StringBuilder(
-                "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.group_id=? AND a.tenant_id=? ");
-        sqlCount.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sqlCount.append(", ");
-            }
-            sqlCount.append('?');
-        }
-        sqlCount.append(") ");
-        if (StringUtils.isNotBlank(appName)) {
-            sqlCount.append(" AND a.app_name=? ");
-        }
-        return sqlCount.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByGroupAndAdvanceFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
-        final String appName = params.get("appName");
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id WHERE a.group_id=? AND a.tenant_id=? ");
-        
-        sql.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(") ");
-        
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND a.app_name=? ");
-        }
-        return sql + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override
@@ -227,7 +128,8 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
     }
     
     @Override
-    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize) {
+    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow,
+            int pageSize) {
         final String appName = params.get("appName");
         final String content = params.get("content");
         final String dataId = params.get("dataId");
@@ -259,47 +161,6 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         }
         where.append(") ");
         return sqlFetchRows + where + " LIMIT " + startRow + "," + pageSize;
-    }
-    
-    @Override
-    public String findConfigInfoByAdvanceCountRows(Map<String, String> params, int tagSize) {
-        final String appName = params.get("appName");
-        StringBuilder sqlCount = new StringBuilder(
-                "SELECT count(*) FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id WHERE a.tenant_id=? ");
-        
-        sqlCount.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sqlCount.append(", ");
-            }
-            sqlCount.append('?');
-        }
-        sqlCount.append(") ");
-        
-        if (StringUtils.isNotBlank(appName)) {
-            sqlCount.append(" AND a.app_name=? ");
-        }
-        return sqlCount.toString();
-    }
-    
-    @Override
-    public String findConfigInfoByAdvanceFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
-        final String appName = params.get("appName");
-        StringBuilder sql = new StringBuilder(
-                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id WHERE a.tenant_id=? ");
-        sql.append(" AND b.tag_name IN (");
-        for (int i = 0; i < tagSize; i++) {
-            if (i != 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(") ");
-        if (StringUtils.isNotBlank(appName)) {
-            sql.append(" AND a.app_name=? ");
-        }
-        return sql + " LIMIT " + startRow + "," + pageSize;
     }
     
     @Override

@@ -230,3 +230,6 @@ nacos.istio.mcp.server.enabled=false
 
 ### Distro data load retry delay when load snapshot data failed, default 30 seconds.
 # nacos.core.protocol.distro.data.load.retryDelayMs=30000
+
+### enable to support prometheus service discovery
+#nacos.prometheus.metrics.enabled=true

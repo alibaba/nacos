@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
@@ -26,6 +27,7 @@ import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.GroupCapacityMapper;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -37,7 +39,6 @@ import javax.annotation.PostConstruct;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
@@ -70,7 +71,8 @@ public class GroupCapacityPersistService {
     public void init() {
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
-        this.mapperManager = MapperManager.instance();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     private static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
@@ -122,14 +124,15 @@ public class GroupCapacityPersistService {
             // Note: add "tenant_id = ''" condition.
             sql = groupCapacityMapper.insertIntoSelectByWhere();
         }
-        return insertGroupCapacity(sql, capacity);
+        String[] primaryKeyGeneratedKeys = groupCapacityMapper.getPrimaryKeyGeneratedKeys();
+        return insertGroupCapacity(sql, capacity, primaryKeyGeneratedKeys);
     }
     
-    private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity) {
+    private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity, String[] primaryKeyGeneratedKeys) {
         try {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
             PreparedStatementCreator preparedStatementCreator = connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement ps = connection.prepareStatement(sql, primaryKeyGeneratedKeys);
                 String group = capacity.getGroup();
                 ps.setString(1, group);
                 ps.setInt(2, capacity.getQuota());

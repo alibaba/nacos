@@ -21,7 +21,8 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,11 +38,15 @@ public class ConfigRemoveRequestHandlerTest {
     private ConfigRemoveRequestHandler configRemoveRequestHandler;
 
     @Mock
-    private PersistService persistService;
+    private ConfigInfoPersistService configInfoPersistService;
+    
+    @Mock
+    private ConfigInfoTagPersistService configInfoTagPersistService;
 
     @Before
     public void setUp() throws Exception {
-        configRemoveRequestHandler = new ConfigRemoveRequestHandler(persistService);
+        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
+                configInfoTagPersistService);
         Mockito.mockStatic(ConfigTraceService.class);
     }
 

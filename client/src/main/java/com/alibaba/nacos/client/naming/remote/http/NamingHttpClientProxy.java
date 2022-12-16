@@ -386,7 +386,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 }
             }
         } else {
-            Random random = new Random(System.currentTimeMillis());
+            Random random = new Random();
             int index = random.nextInt(servers.size());
             
             for (int i = 0; i < servers.size(); i++) {

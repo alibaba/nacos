@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -35,7 +37,6 @@ import javax.annotation.PostConstruct;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +69,8 @@ public class TenantCapacityPersistService {
     public void init() {
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
-        this.mapperManager = MapperManager.instance();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     private static final class TenantCapacityRowMapper implements RowMapper<TenantCapacity> {
@@ -110,10 +112,11 @@ public class TenantCapacityPersistService {
         TenantCapacityMapper tenantCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_CAPACITY);
         final String sql = tenantCapacityMapper.insertTenantCapacity();
+        String[] primaryKeyGeneratedKeys = tenantCapacityMapper.getPrimaryKeyGeneratedKeys();
         try {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
             PreparedStatementCreator preparedStatementCreator = connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement ps = connection.prepareStatement(sql, primaryKeyGeneratedKeys);
                 String tenant = tenantCapacity.getTenant();
                 ps.setString(1, tenant);
                 ps.setInt(2, tenantCapacity.getQuota());
