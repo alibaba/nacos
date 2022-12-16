@@ -23,7 +23,6 @@ import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.nacos.NacosConnectionControlManager;
 import com.alibaba.nacos.plugin.control.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.plugin.control.event.TpsControlRuleChangeEvent;
-import com.alibaba.nacos.plugin.control.ruleactivator.NacosRuleParser;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParser;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
 import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
