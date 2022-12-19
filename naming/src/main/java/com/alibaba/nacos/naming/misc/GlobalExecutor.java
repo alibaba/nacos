@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.misc.HttpClientManager.MonitorHealthCheckPool;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collection;
@@ -83,6 +84,10 @@ public class GlobalExecutor {
     private static final ExecutorService PUSH_CALLBACK_EXECUTOR = ExecutorFactory.Managed
             .newSingleExecutorService("Push", new NameThreadFactory("com.alibaba.nacos.naming.push.callback"));
     
+    private static final ScheduledExecutorService MONITOR_HEALTH_CHECK_POOL_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(NamingApp.class),
+                            1, new NameThreadFactory("com.alibaba.nacos.naming.health-check-pool"));
+    
     public static void registerServerStatusUpdater(Runnable runnable) {
         NAMING_TIMER_EXECUTOR.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
     }
@@ -140,4 +145,8 @@ public class GlobalExecutor {
     public static ExecutorService getCallbackExecutor() {
         return PUSH_CALLBACK_EXECUTOR;
     }
+
+	public static ScheduledFuture<?> scheduleMonitorHealthCheckPool(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
+		return MONITOR_HEALTH_CHECK_POOL_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
+	}
 }
