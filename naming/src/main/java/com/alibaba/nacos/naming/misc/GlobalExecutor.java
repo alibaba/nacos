@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.naming.misc.HttpClientManager.MonitorHealthCheckPool;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collection;
