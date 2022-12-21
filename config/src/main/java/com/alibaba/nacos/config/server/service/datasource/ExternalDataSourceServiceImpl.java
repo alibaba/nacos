@@ -19,21 +19,28 @@ package com.alibaba.nacos.config.server.service.datasource;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.init.DataSourceInitializer;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -47,40 +54,40 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  * @author Nacos
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
-    
+
     /**
      * JDBC execute timeout value, unit:second.
      */
     private int queryTimeout = 3;
-    
+
     private static final int TRANSACTION_QUERY_TIMEOUT = 5;
-    
+
     private static final int DB_MASTER_SELECT_THRESHOLD = 1;
-    
+
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
-    
+
     private List<HikariDataSource> dataSourceList = new ArrayList<>();
-    
+
     private JdbcTemplate jt;
-    
+
     private DataSourceTransactionManager tm;
-    
+
     private TransactionTemplate tjt;
-    
+
     private JdbcTemplate testMasterJT;
-    
+
     private JdbcTemplate testMasterWritableJT;
-    
+
     private volatile List<JdbcTemplate> testJtList;
-    
+
     private volatile List<Boolean> isHealthList;
-    
+
     private volatile int masterIndex;
-    
+
     private String dataSourceType = "";
-    
+
     private String defaultDataSourceType = "";
-    
+
     @Override
     public void init() {
         queryTimeout = ConvertUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
@@ -88,27 +95,27 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         // Set the maximum number of records to prevent memory expansion
         jt.setMaxRows(50000);
         jt.setQueryTimeout(queryTimeout);
-        
+
         testMasterJT = new JdbcTemplate();
         testMasterJT.setQueryTimeout(queryTimeout);
-        
+
         testMasterWritableJT = new JdbcTemplate();
         // Prevent the login interface from being too long because the main library is not available
         testMasterWritableJT.setQueryTimeout(1);
-        
+
         //  Database health check
-        
+
         testJtList = new ArrayList<>();
         isHealthList = new ArrayList<>();
-        
+
         tm = new DataSourceTransactionManager();
         tjt = new TransactionTemplate(tm);
-        
+
         // Transaction timeout needs to be distinguished from ordinary operations.
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        
+
         dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
-        
+
         if (PropertyUtil.isUseExternalDB()) {
             try {
                 reload();
@@ -116,28 +123,28 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 FATAL_LOG.error("[ExternalDataSourceService] datasource reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG, e);
             }
-            
+
             if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
                 ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
             }
             ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
-    
+
     @Override
     public synchronized void reload() throws IOException {
         try {
             final List<JdbcTemplate> testJtListNew = new ArrayList<JdbcTemplate>();
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
-            
-            List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
-                    .build(EnvUtil.getEnvironment(), (dataSource) -> {
-                        JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                        jdbcTemplate.setQueryTimeout(queryTimeout);
-                        jdbcTemplate.setDataSource(dataSource);
-                        testJtListNew.add(jdbcTemplate);
-                        isHealthListNew.add(Boolean.TRUE);
-                    });
+
+            List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties().build(
+                EnvUtil.getEnvironment(), (dataSource) -> {
+                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                    jdbcTemplate.setQueryTimeout(queryTimeout);
+                    jdbcTemplate.setDataSource(dataSource);
+                    testJtListNew.add(jdbcTemplate);
+                    isHealthListNew.add(Boolean.TRUE);
+                });
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
             dataSourceList = dataSourceListNew;
@@ -145,7 +152,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             isHealthList = isHealthListNew;
             new SelectMasterTask().run();
             new CheckDbHealthTask().run();
-            
+
             //close old datasource.
             if (dataSourceListOld != null && !dataSourceListOld.isEmpty()) {
                 for (HikariDataSource dataSource : dataSourceListOld) {
@@ -162,15 +169,15 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             throw new IOException(e);
         }
     }
-    
+
     @Override
     public boolean checkMasterWritable() {
-        
+
         testMasterWritableJT.setDataSource(jt.getDataSource());
         // Prevent the login interface from being too long because the main library is not available
         testMasterWritableJT.setQueryTimeout(1);
         String sql = " SELECT @@read_only ";
-        
+
         try {
             Integer result = testMasterWritableJT.queryForObject(sql, Integer.class);
             if (result == null) {
@@ -182,19 +189,19 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;
         }
-        
+
     }
-    
+
     @Override
     public JdbcTemplate getJdbcTemplate() {
         return this.jt;
     }
-    
+
     @Override
     public TransactionTemplate getTransactionTemplate() {
         return this.tjt;
     }
-    
+
     @Override
     public String getCurrentDbUrl() {
         DataSource ds = this.jt.getDataSource();
@@ -204,7 +211,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         HikariDataSource bds = (HikariDataSource) ds;
         return bds.getJdbcUrl();
     }
-    
+
     @Override
     public String getHealth() {
         for (int i = 0; i < isHealthList.size(); i++) {
@@ -218,30 +225,40 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 }
             }
         }
-        
+
         return "UP";
     }
-    
+
     @Override
     public String getDataSourceType() {
         return dataSourceType;
     }
-    
+
     class SelectMasterTask implements Runnable {
-        
+
         @Override
         public void run() {
             if (DEFAULT_LOG.isDebugEnabled()) {
                 DEFAULT_LOG.debug("check master db.");
             }
             boolean isFound = false;
-            
+
             int index = -1;
             for (HikariDataSource ds : dataSourceList) {
                 index++;
                 testMasterJT.setDataSource(ds);
                 testMasterJT.setQueryTimeout(queryTimeout);
                 try {
+                    String initScripts = EnvUtil.getProperty(PropertiesConstant.DATASOURCE_INIT_SCRIPTS, String.class,
+                        null);
+                    if (StringUtils.hasText(initScripts)) {
+                        DataSourceInitializer init = new DataSourceInitializer();
+                        init.setDataSource(ds);
+                        init.setDatabasePopulator(new ResourceDatabasePopulator(
+                            Arrays.stream(initScripts.split(Constants.CONFIG_INIT_SCRIPT_SEPARATOR))
+                                .map(ClassPathResource::new).toArray(ClassPathResource[]::new)));
+                        init.afterPropertiesSet();
+                    }
                     testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         FATAL_LOG.warn("[master-db] {}", ds.getJdbcUrl());
@@ -255,24 +272,24 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     FATAL_LOG.warn("[master-db] master db access error", e);
                 }
             }
-            
+
             if (!isFound) {
                 FATAL_LOG.error("[master-db] master db not found.");
                 MetricsMonitor.getDbException().increment();
             }
         }
     }
-    
+
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     class CheckDbHealthTask implements Runnable {
-        
+
         @Override
         public void run() {
             if (DEFAULT_LOG.isDebugEnabled()) {
                 DEFAULT_LOG.debug("check db health.");
             }
             String sql = "SELECT * FROM config_info_beta WHERE id = 1";
-            
+
             for (int i = 0; i < testJtList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJtList.get(i);
                 try {
@@ -281,13 +298,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                            InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                            InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
-                    
+
                     MetricsMonitor.getDbException().increment();
                 }
             }

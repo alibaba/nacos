@@ -24,6 +24,8 @@ package com.alibaba.nacos.plugin.datasource.constants;
 
 public class DataSourceConstant {
     public static final String MYSQL = "mysql";
+
+    public static final String POSTGRES = "postgres";
     
     public static final String DERBY = "derby";
 }

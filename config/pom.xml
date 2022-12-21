@@ -61,6 +61,10 @@
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
         </dependency>
@@ -125,6 +129,18 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-datasource-plugin</artifactId>
+        </dependency>
+        
+        <!-- test libraries -->
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-database-spring-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <build>

@@ -282,6 +282,8 @@ public class Constants {
     public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
 
     public static final String CONFIG_EXPORT_ITEM_FILE_SEPARATOR = "/";
+
+    public static final String CONFIG_INIT_SCRIPT_SEPARATOR = ",;";
     
     public static final String CONFIG_EXPORT_METADATA = ".meta.yml";
     

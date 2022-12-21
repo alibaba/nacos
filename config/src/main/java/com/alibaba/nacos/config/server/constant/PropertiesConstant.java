@@ -59,6 +59,8 @@ public class PropertiesConstant {
     public static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
     
     public static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
+
+    public static final String DATASOURCE_INIT_SCRIPTS = "spring.sql.init.scripts";
     
     public static final String MYSQL = "mysql";
     

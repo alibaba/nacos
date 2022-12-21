@@ -56,6 +56,10 @@
                 <configuration>
                     <source>8</source>
                     <target>8</target>
+                    <compileSourceRoots>
+                        <compileSourceRoot>src/main/java</compileSourceRoot>
+                        <compileSourceRoot>target/generated-sources/protobuf/java</compileSourceRoot>
+                    </compileSourceRoots>
                 </configuration>
             </plugin>
         </plugins>
