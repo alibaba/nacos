@@ -20,13 +20,11 @@ import com.alibaba.nacos.api.remote.Payload;
 
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 /**
- * payload regitry,Define basic scan behavior request and response.
+ * payload registry,Define basic scan behavior request and response.
  *
  * @author liuzunfei
  * @author hujun
@@ -47,14 +45,9 @@ public class PayloadRegistry {
         if (initialized) {
             return;
         }
-        
-        ServiceLoader<PayloadPackageRegistry> payloadPackages = ServiceLoader.load(PayloadPackageRegistry.class);
-        Set<Class<? extends Payload>> result = new HashSet<>();
-        for (PayloadPackageRegistry payloadPackage : payloadPackages) {
-            result.addAll(payloadPackage.getPackagePayloads());
-        }
-        for (Class<? extends Payload> clazz : result) {
-            register(clazz.getSimpleName(), clazz);
+        ServiceLoader<Payload> payloads = ServiceLoader.load(Payload.class);
+        for (Payload payload : payloads) {
+            register(payload.getClass().getSimpleName(), payload.getClass());
         }
         initialized = true;
     }

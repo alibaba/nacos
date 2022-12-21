@@ -216,7 +216,7 @@ public class ServiceController {
             }
         }
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.replace("services", JacksonUtils.transferToJsonNode(serviceNameMap));
+        result.replace("META-INF/services", JacksonUtils.transferToJsonNode(serviceNameMap));
         result.put("count", totalCount);
         return result;
     }
