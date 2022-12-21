@@ -17,16 +17,14 @@
 package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.remote.Payload;
-import com.alibaba.nacos.common.packagescan.DefaultPackageScan;
+
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 /**
- * payload regitry,Define basic scan behavior request and response.
+ * payload registry,Define basic scan behavior request and response.
  *
  * @author liuzunfei
  * @author hujun
@@ -47,18 +45,9 @@ public class PayloadRegistry {
         if (initialized) {
             return;
         }
-        
-        ServiceLoader<PayloadPackageProvider> payloadPackages = ServiceLoader.load(PayloadPackageProvider.class);
-        Set<String> result = new HashSet<>();
-        for (PayloadPackageProvider payloadPackage : payloadPackages) {
-            result.addAll(payloadPackage.getScanPackage());
-        }
-        for (String pkg : result) {
-            DefaultPackageScan packageScan = new DefaultPackageScan();
-            Set<Class<Payload>> subTypesResponse = packageScan.getSubTypesOf(pkg, Payload.class);
-            for (Class<?> clazz : subTypesResponse) {
-                register(clazz.getSimpleName(), clazz);
-            }
+        ServiceLoader<Payload> payloads = ServiceLoader.load(Payload.class);
+        for (Payload payload : payloads) {
+            register(payload.getClass().getSimpleName(), payload.getClass());
         }
         initialized = true;
     }
