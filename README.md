@@ -118,9 +118,9 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * users-nacos@googlegroups.com: Nacos usage general discussion.
      * dev-nacos@googlegroups.com: Nacos developer discussion (APIs, feature design, etc).
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
-* Join us from DingDing(Group 1: 21708933(full), Group 2: 30438813). 
+* Join us from DingDing(Group 1: 21708933(full), Group 2: 30438813(full), Group 3: 31222241(full), Group 4: 12810027056). 
 
- ![Nacos](https://nacos.io/img/nacos_dingding.jpg)
+ ![Nacos](https://img.alicdn.com/imgextra/i1/O1CN01ULSVXu1DRbANwVC6r_!!6000000000213-2-tps-666-884.png)
 
 ## Enterprise Service
 If you need Nacos enterprise service support, or purchase cloud product services, you can join the discussion by scanning the following DingTalk group. It can also be directly activated and used through the microservice engine (MSE) provided by Alibaba Cloud.
