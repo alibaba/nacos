@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.remote;
 
+import com.alibaba.nacos.api.remote.Payload;
+
 import java.util.Set;
 
 /**
@@ -23,12 +25,13 @@ import java.util.Set;
  *
  * @author hujun
  */
-public interface PayloadPackageProvider {
+public interface PayloadPackageRegistry {
     
     /**
      * get scan package.
+     *
      * @return scan package list
      */
-    Set<String> getScanPackage();
+    Set<Class<? extends Payload>> getPackagePayloads();
     
 }

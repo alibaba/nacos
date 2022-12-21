@@ -15,4 +15,4 @@
 #
 #
 
-com.alibaba.nacos.client.remote.ClientPayloadPackageProvider
+com.alibaba.nacos.client.remote.ClientPayloadPackageRegistry

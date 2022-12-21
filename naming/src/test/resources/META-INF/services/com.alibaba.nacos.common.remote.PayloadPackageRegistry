@@ -15,4 +15,4 @@
 #
 #
 
-com.alibaba.nacos.naming.remote.rpc.NamingPayloadPackageProvider
+com.alibaba.nacos.naming.remote.rpc.NamingPayloadPackageRegistry
