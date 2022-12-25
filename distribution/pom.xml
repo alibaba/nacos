@@ -31,6 +31,13 @@
     <name>nacos-distribution ${project.version}</name>
     <packaging>pom</packaging>
 
+    <properties>
+        <dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
+        <docker.skip>true</docker.skip>
+        <docker.registryAndProject>library</docker.registryAndProject>
+        <docker.tag>${revision}</docker.tag>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -222,6 +229,43 @@
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>dockerfile-maven-plugin</artifactId>
+                        <version>${dockerfile-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>build-docker</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.skip}</skip>
+                                    <repository>${docker.registryAndProject}/${project.artifactId}</repository>
+                                    <tag>${docker.tag}</tag>
+                                    <verbose>true</verbose>
+                                    <googleContainerRegistryEnabled>false</googleContainerRegistryEnabled>
+                                    <contextDirectory>${project.basedir}/</contextDirectory>
+                                    <buildArgs>
+                                        <REVISION>${revision}</REVISION>
+                                    </buildArgs>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>push-docker-image</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>push</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${docker.skip}</skip>
+                                    <repository>${docker.registryAndProject}/${project.artifactId}</repository>
+                                    <tag>${docker.tag}</tag>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
