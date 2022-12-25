@@ -1,20 +1,23 @@
-/*
- Navicat Premium Data Transfer
+--
+-- Copyright 1999-2018 Alibaba Group Holding Ltd.
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+--      http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 
- Source Server         : dev nacos
- Source Server Type    : PostgreSQL
- Source Server Version : 130001 (130001)
- Source Host           : pgm-bp19e5lus9m5ed14ho.pg.rds.aliyuncs.com:1921
- Source Catalog        : nacos
- Source Schema         : public
-
- Target Server Type    : PostgreSQL
- Target Server Version : 130001 (130001)
- File Encoding         : 65001
-
- Date: 21/12/2022 22:13:04
-*/
-
+-- ----------------------------
+--   数据库全名 = nacos_config
+--   表名称 = config_info
+-- ----------------------------
 
 -- ----------------------------
 -- Sequence structure for config_info_aggr_id_seq
@@ -318,7 +321,7 @@ CREATE TABLE IF NOT EXISTS "public"."his_config_info" (
   "gmt_modified" timestamptz(6) NOT NULL DEFAULT '2010-05-05 00:00:00+08'::timestamp with time zone,
   "src_user" text COLLATE "pg_catalog"."default",
   "src_ip" varchar(20) COLLATE "pg_catalog"."default",
-  "op_type" char(10) COLLATE "pg_catalog"."default",
+  "op_type" varchar(10) COLLATE "pg_catalog"."default",
   "tenant_id" varchar(128) COLLATE "pg_catalog"."default" DEFAULT ''::character varying,
   "encrypted_data_key" text COLLATE "pg_catalog"."default" NOT NULL
 )

@@ -28,7 +28,6 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -138,13 +137,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             final List<Boolean> isHealthListNew = new ArrayList<Boolean>();
 
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties().build(
-                EnvUtil.getEnvironment(), (dataSource) -> {
-                    JdbcTemplate jdbcTemplate = new JdbcTemplate();
-                    jdbcTemplate.setQueryTimeout(queryTimeout);
-                    jdbcTemplate.setDataSource(dataSource);
-                    testJtListNew.add(jdbcTemplate);
-                    isHealthListNew.add(Boolean.TRUE);
-                });
+                    EnvUtil.getEnvironment(), (dataSource) -> {
+                            JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                            jdbcTemplate.setQueryTimeout(queryTimeout);
+                            jdbcTemplate.setDataSource(dataSource);
+                            testJtListNew.add(jdbcTemplate);
+                            isHealthListNew.add(Boolean.TRUE);
+                    });
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
             dataSourceList = dataSourceListNew;
@@ -250,13 +249,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 testMasterJT.setQueryTimeout(queryTimeout);
                 try {
                     String initScripts = EnvUtil.getProperty(PropertiesConstant.DATASOURCE_INIT_SCRIPTS, String.class,
-                        null);
+                            null);
                     if (StringUtils.hasText(initScripts)) {
                         DataSourceInitializer init = new DataSourceInitializer();
                         init.setDataSource(ds);
                         init.setDatabasePopulator(new ResourceDatabasePopulator(
-                            Arrays.stream(initScripts.split(Constants.CONFIG_INIT_SCRIPT_SEPARATOR))
-                                .map(ClassPathResource::new).toArray(ClassPathResource[]::new)));
+                                Arrays.stream(initScripts.split(Constants.CONFIG_INIT_SCRIPT_SEPARATOR))
+                                        .map(ClassPathResource::new).toArray(ClassPathResource[]::new)));
                         init.afterPropertiesSet();
                     }
                     testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
@@ -298,10 +297,10 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         FATAL_LOG.error("[db-error] master db {} down.",
-                            InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
                         FATAL_LOG.error("[db-error] slave db {} down.",
-                            InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
+                                InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
 

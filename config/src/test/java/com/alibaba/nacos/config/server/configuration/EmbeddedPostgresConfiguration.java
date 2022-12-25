@@ -18,10 +18,6 @@ package com.alibaba.nacos.config.server.configuration;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.function.Consumer;
-
-import com.alibaba.nacos.config.server.service.datasource.ExternalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalCommonPersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +29,10 @@ import org.springframework.core.env.ConfigurableEnvironment;
 @Configuration
 public class EmbeddedPostgresConfiguration {
 
+    /**
+     * Preparing the environments required for initializing embedded postgres database.
+     * @param environment an instance of {@link ConfigurableEnvironment}
+     */
     public void init(ConfigurableEnvironment environment) {
         System.setProperty("nacos.standalone", "false");
         PropertyUtil.setUseExternalDB(true);

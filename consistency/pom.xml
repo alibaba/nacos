@@ -15,11 +15,11 @@
   ~ limitations under the License.
   -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <artifactId>nacos-consistency</artifactId>
-    
+
     <build>
         <extensions>
             <extension>
@@ -47,24 +47,33 @@
                             <goal>compile</goal>
                             <goal>compile-custom</goal>
                         </goals>
+                        <phase>process-sources</phase>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>compile-generated-sources</id>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <generatedSourcesDirectory>target/generated-sources/protobuf/java</generatedSourcesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <source>8</source>
                     <target>8</target>
-                    <compileSourceRoots>
-                        <compileSourceRoot>src/main/java</compileSourceRoot>
-                        <compileSourceRoot>target/generated-sources/protobuf/java</compileSourceRoot>
-                    </compileSourceRoots>
                 </configuration>
             </plugin>
         </plugins>
     </build>
-    
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -84,7 +93,7 @@
         </dependency>
     </dependencies>
     <modelVersion>4.0.0</modelVersion>
-    
+
     <name>nacos-consistency ${project.version}</name>
     <packaging>jar</packaging>
     <parent>
@@ -93,11 +102,11 @@
         <relativePath>../pom.xml</relativePath>
         <version>${revision}</version>
     </parent>
-    
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-    
+
     <url>http://nacos.io</url>
 
 </project>
