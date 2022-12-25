@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote;
+package com.alibaba.nacos.naming.cluster.remote.request;
 
+import com.alibaba.nacos.api.remote.Payload;
+
+import java.util.HashSet;
 import java.util.Set;
 
 /**
- * package provider.
+ * payload registry.
  *
- * @author hujun
+ * @author shiyiyue
  */
-public interface PayloadPackageProvider {
+public class RequestRegistry {
     
-    /**
-     * get scan package.
-     * @return scan package list
-     */
-    Set<String> getScanPackage();
+    private static Set<Class<? extends Payload>> payloads = registryPayload();
     
+    private static Set<Class<? extends Payload>> registryPayload() {
+        HashSet<Class<? extends Payload>> payloads = new HashSet<>();
+        payloads.add(AbstractClusterRequest.class);
+        payloads.add(DistroDataRequest.class);
+        return payloads;
+    }
+    
+    public static final Set<Class<? extends Payload>> getPayloads() {
+        return payloads;
+    }
 }
