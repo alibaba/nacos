@@ -215,6 +215,31 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}</directory>
+                                            <includes>
+                                                <include>Dockerfile</include>
+                                            </includes>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <configuration>
                             <descriptors>
@@ -247,10 +272,10 @@
                                     <skip>${docker.skip}</skip>
                                     <repository>${docker.registryAndProject}/${project.artifactId}</repository>
                                     <tag>${docker.tag}</tag>
-                                    <dockerfile>${project.basedir}/Dockerfile</dockerfile>
+                                    <dockerfile>${project.build.directory}/Dockerfile</dockerfile>
                                     <verbose>true</verbose>
                                     <googleContainerRegistryEnabled>false</googleContainerRegistryEnabled>
-                                    <contextDirectory>${project.basedir}</contextDirectory>
+                                    <contextDirectory>${project.build.directory}</contextDirectory>
                                     <buildArgs>
                                         <REVISION>${revision}</REVISION>
                                     </buildArgs>

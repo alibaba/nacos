@@ -18,7 +18,7 @@ FROM openjdk:8-jre-slim-buster
 
 RUN mkdir -p /home/nacos
 
-ADD target/nacos-server-*.tar.gz /home/nacos/
+ADD nacos-server-${revision}.tar.gz /home/nacos/
 
 WORKDIR /home/nacos/nacos
 
