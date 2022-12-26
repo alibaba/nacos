@@ -246,11 +246,12 @@ public class LongPollingService {
         int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
         
         // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
-        long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
+        long timeout = -1L;
         if (isFixedPolling()) {
             timeout = Math.max(10000, getFixedPollingInterval());
             // Do nothing but set fix polling timeout.
         } else {
+            timeout = Math.max(10000, Long.parseLong(str) - delayTime);
             long start = System.currentTimeMillis();
             List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
             if (changedGroups.size() > 0) {
