@@ -15,6 +15,6 @@
 
 export BASE_DIR=`cd $(dirname $0)/..; pwd`
 
-"${BASE_DIR}/bin/startup-in-container.sh"
+"${BASE_DIR}/bin/startup.sh"
 
 tail -f "${BASE_DIR}/logs/start.out"
