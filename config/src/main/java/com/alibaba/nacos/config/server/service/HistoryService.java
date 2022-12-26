@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.Page;
@@ -102,10 +103,19 @@ public class HistoryService {
      */
     private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
             String namespaceId) throws AccessException {
-        if (!Objects.equals(configHistoryInfo.getDataId(), dataId) || !Objects
-                .equals(configHistoryInfo.getGroup(), group) || !Objects
-                .equals(configHistoryInfo.getTenant(), namespaceId)) {
-            throw new AccessException("Please check dataId, group or namespaceId.");
+
+        if(!Objects.equals(configHistoryInfo.getDataId(),dataId)){
+            throw new AccessException("Please check dataId");
+        }
+        if(!Objects.equals(configHistoryInfo.getGroup(), group)){
+            throw new AccessException("Please check group ");
+        }
+        if((!StringUtils.isBlank(configHistoryInfo.getTenant()) && !Objects
+                .equals(configHistoryInfo.getTenant(), namespaceId))){
+            throw new AccessException("Please check namespaceId.");
+        }
+        if(StringUtils.isNotEmpty(configHistoryInfo.getTenant()) && StringUtils.isNotEmpty(namespaceId)){
+            throw new AccessException("Please check namespaceId.");
         }
     }
 }
