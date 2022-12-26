@@ -13,19 +13,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-ARG REVISION
 
 FROM openjdk:8-jre-slim-buster
 
 RUN mkdir -p /home/nacos
 
-COPY target/nacos-server-${REVISION} /home/nacos/nacos-config
+ADD target/nacos-server-*.tar.gz /home/nacos/
 
-WORKDIR /home/nacos/nacos-config
+WORKDIR /home/nacos/nacos
 
 # 8848: default web server port
 # 8847: default peer listenning port
 # 8807: default raft port
 EXPOSE 8848 8847 8807
 
-ENTRYPOINT [ "/bin/bash", "/home/nacos/nacos-config/bin/startup-in-container.sh" ]
+ENTRYPOINT [ "/bin/bash", "/home/nacos/nacos/bin/startup-in-container.sh" ]
