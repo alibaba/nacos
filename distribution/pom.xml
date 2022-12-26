@@ -247,9 +247,10 @@
                                     <skip>${docker.skip}</skip>
                                     <repository>${docker.registryAndProject}/${project.artifactId}</repository>
                                     <tag>${docker.tag}</tag>
+                                    <dockerfile>${project.basedir}/Dockerfile</dockerfile>
                                     <verbose>true</verbose>
                                     <googleContainerRegistryEnabled>false</googleContainerRegistryEnabled>
-                                    <contextDirectory>${project.basedir}/</contextDirectory>
+                                    <contextDirectory>${project.basedir}</contextDirectory>
                                     <buildArgs>
                                         <REVISION>${revision}</REVISION>
                                     </buildArgs>
