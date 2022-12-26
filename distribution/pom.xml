@@ -264,7 +264,7 @@
                         <executions>
                             <execution>
                                 <id>build-docker</id>
-                                <phase>pre-integration-test</phase>
+                                <phase>post-site</phase>
                                 <goals>
                                     <goal>build</goal>
                                 </goals>
@@ -283,7 +283,7 @@
                             </execution>
                             <execution>
                                 <id>push-docker-image</id>
-                                <phase>pre-integration-test</phase>
+                                <phase>post-site</phase>
                                 <goals>
                                     <goal>push</goal>
                                 </goals>
