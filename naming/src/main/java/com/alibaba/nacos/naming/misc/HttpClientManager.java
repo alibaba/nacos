@@ -177,49 +177,49 @@ public class HttpClientManager {
         
         @Override
         protected void monitorAndExtension(NHttpClientConnectionManager connectionManager) {
-        	GlobalExecutor.scheduleMonitorHealthCheckPool(new MonitorHealthCheckPool(connectionManager), 60, 60, TimeUnit.SECONDS);
+            GlobalExecutor.scheduleMonitorHealthCheckPool(new MonitorHealthCheckPool(connectionManager), 60, 60, TimeUnit.SECONDS);
         }
     }
     
-    private static class MonitorHealthCheckPool implements Runnable{
-    	private NHttpClientConnectionManager connectionManager;
+    private static class MonitorHealthCheckPool implements Runnable {
+        private NHttpClientConnectionManager connectionManager;
 
-		public MonitorHealthCheckPool(NHttpClientConnectionManager connectionManager) {
-			this.connectionManager = connectionManager;
-		}
+        public MonitorHealthCheckPool(NHttpClientConnectionManager connectionManager) {
+            this.connectionManager = connectionManager;
+        }
 
-		@Override
-		public void run() {
-			closeExpiredAndIdleConnections();
-			monitor();
-		}
+        @Override
+        public void run() {
+            closeExpiredAndIdleConnections();
+            monitor();
+        }
 
-		private void monitor() {
-			try {
-				PoolingNHttpClientConnectionManager manager = (PoolingNHttpClientConnectionManager) connectionManager;
-				// Get the status of each route
-				Set<HttpRoute> routes = manager.getRoutes();
-				if (routes != null && !routes.isEmpty()) {
-					for (HttpRoute httpRoute : routes) {
-						PoolStats stats = manager.getStats(httpRoute);
-						SRV_LOG.debug("connectionManager every route: {}", stats);
-					}
-				}
-				// Get the connection pool status of all routes
-				PoolStats totalStats = manager.getTotalStats();
-				SRV_LOG.debug("connectionManager total status: {}", totalStats);
-			} catch (Exception e) {
-				SRV_LOG.warn("MonitorHealthCheckPool monitor warn", e);
-			}
-		}
+        private void monitor() {
+            try {
+                PoolingNHttpClientConnectionManager manager = (PoolingNHttpClientConnectionManager) connectionManager;
+                // Get the status of each route
+                Set<HttpRoute> routes = manager.getRoutes();
+                if (routes != null && !routes.isEmpty()) {
+                    for (HttpRoute httpRoute : routes) {
+                        PoolStats stats = manager.getStats(httpRoute);
+                        SRV_LOG.debug("connectionManager every route: {}", stats);
+                    }
+                }
+                // Get the connection pool status of all routes
+                PoolStats totalStats = manager.getTotalStats();
+                SRV_LOG.debug("connectionManager total status: {}", totalStats);
+            } catch (Exception e) {
+                SRV_LOG.warn("MonitorHealthCheckPool monitor warn", e);
+            }
+        }
 
-		private void closeExpiredAndIdleConnections() {
-			try {
-				connectionManager.closeExpiredConnections();
-				connectionManager.closeIdleConnections(CON_TIME_OUT_MILLIS * 10, TimeUnit.SECONDS);
-			} catch (Exception e) {
-				SRV_LOG.warn("MonitorHealthCheckPool clean warn", e);
-			}
-		}
+        private void closeExpiredAndIdleConnections() {
+            try {
+                connectionManager.closeExpiredConnections();
+                connectionManager.closeIdleConnections(CON_TIME_OUT_MILLIS * 10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                SRV_LOG.warn("MonitorHealthCheckPool clean warn", e);
+            }
+        }
     }
 }
