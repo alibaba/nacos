@@ -71,7 +71,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             List<Member> members = serverMemberManager.allMembersWithoutSelf();
             refresh(members);
             Loggers.CLUSTER
-                    .warn("[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
+                    .info("[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
                             members);
         } catch (NacosException e) {
             Loggers.CLUSTER.warn("[ClusterRpcClientProxy] fail to refresh cluster rpc client,{} ", e.getMessage());
@@ -120,7 +120,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         String memberClientKey = memberClientKey(member);
         RpcClient client = buildRpcClient(type, labels, memberClientKey);
         if (!client.getConnectionType().equals(type)) {
-            Loggers.CLUSTER.info(",connection type changed,destroy client of member - > : {}", member);
+            Loggers.CLUSTER.info("connection type changed,destroy client of member - > : {}", member);
             RpcClientFactory.destroyClient(memberClientKey);
             client = buildRpcClient(type, labels, memberClientKey);
         }
