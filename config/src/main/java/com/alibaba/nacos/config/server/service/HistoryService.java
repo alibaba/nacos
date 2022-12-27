@@ -103,9 +103,9 @@ public class HistoryService {
     private void checkHistoryInfoPermission(ConfigHistoryInfo configHistoryInfo, String dataId, String group,
             String namespaceId) throws AccessException {
         if (!Objects.equals(configHistoryInfo.getDataId(), dataId) || !Objects
-				.equals(configHistoryInfo.getGroup(), group)
-				|| (!Objects.isNull(configHistoryInfo.getTenant()) && !Objects.equals(configHistoryInfo.getTenant(), namespaceId))) {
-			throw new AccessException("Please check dataId, group or namespaceId.");
-		}
+		.equals(configHistoryInfo.getGroup(), group)
+		|| (!Objects.isNull(configHistoryInfo.getTenant()) && !Objects.equals(configHistoryInfo.getTenant(), namespaceId))) {
+	    throw new AccessException("Please check dataId, group or namespaceId.");
+	}
     }
 }
