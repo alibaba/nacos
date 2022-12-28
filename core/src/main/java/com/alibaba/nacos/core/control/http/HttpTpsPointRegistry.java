@@ -41,11 +41,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshedEvent> {
     
-    private volatile AtomicBoolean isInit=new AtomicBoolean(false);
+    private volatile AtomicBoolean isInit = new AtomicBoolean(false);
     
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        if(!isInit.compareAndSet(false,true)) {
+        if (!isInit.compareAndSet(false, true)) {
             return;
         }
         RequestMappingHandlerMapping requestMapping = event.getApplicationContext()
