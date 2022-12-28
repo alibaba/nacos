@@ -161,7 +161,7 @@ public class HttpClientManager {
         }
     }
     
-    public static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
+    private static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
