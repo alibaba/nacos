@@ -163,6 +163,7 @@ public class ConfigController {
         
         // check tenant
         ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
     
@@ -237,6 +238,7 @@ public class ConfigController {
             throws NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ConfigAllInfo configAllInfo = configInfoPersistService.findConfigAllInfo(dataId, group, tenant);
@@ -269,6 +271,7 @@ public class ConfigController {
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
         // check tenant
         ParamUtils.checkTenant(tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
         ParamUtils.checkParam(tag);
     
@@ -313,6 +316,7 @@ public class ConfigController {
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         ConfigAdvanceInfo configInfo = configInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant);
         return RestResultUtils.success(configInfo);
     }
@@ -353,6 +357,7 @@ public class ConfigController {
     public GroupkeyListenserStatus getListeners(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "tenant", required = false) String tenant,
             @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime) throws Exception {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
@@ -373,6 +378,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
@@ -400,6 +406,7 @@ public class ConfigController {
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         MetricsMonitor.getFuzzySearchMonitor().incrementAndGet();
         Map<String, Object> configAdvanceInfo = new HashMap<>(50);
         if (StringUtils.isNotBlank(appName)) {
@@ -430,6 +437,7 @@ public class ConfigController {
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             configInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
         } catch (Throwable e) {
@@ -454,6 +462,7 @@ public class ConfigController {
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
             @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         try {
             ConfigInfo4Beta ci = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
             

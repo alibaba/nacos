@@ -77,6 +77,7 @@ public class HistoryControllerV2 {
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
         pageSize = Math.min(500, pageSize);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
     }
     

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -61,6 +62,7 @@ public class ListenerController {
         if (collectSampleResult.getLisentersGroupkeyStatus() == null) {
             return gls;
         }
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
         for (Map.Entry<String, String> config : status.entrySet()) {
             if (!StringUtils.isBlank(tenant) && config.getKey().contains(tenant)) {

@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -82,6 +83,7 @@ public class ClientMetricsController {
             @RequestParam(value = "tenant", required = false) String tenant) {
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
                 tenant);
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         Map<String, Object> responseMap = new HashMap<>(3);
         Collection<Member> members = serverMemberManager.allMembers();
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder
@@ -136,6 +138,7 @@ public class ClientMetricsController {
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tenant", required = false) String tenant) {
+        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         Map<String, Object> metrics = new HashMap<>(16);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
