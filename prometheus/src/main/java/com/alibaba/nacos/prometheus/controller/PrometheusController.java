@@ -70,7 +70,7 @@ public class PrometheusController {
             Set<Service> singletons = serviceManager.getSingletons(namespace);
             for (Service service : singletons) {
                 
-                List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace, service.getName());
+                List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace, service.getGroupedServiceName());
                 
                 for (Instance instance : instances) {
                     targetSet.add(instance);
