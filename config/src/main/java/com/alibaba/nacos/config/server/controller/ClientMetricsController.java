@@ -80,10 +80,10 @@ public class ClientMetricsController {
     public ResponseEntity metric(@RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
-            @RequestParam(value = "tenant", required = false) String tenant) {
+            @RequestParam(value = "tenant", required = false) String tenantParam) {
         Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
-                tenant);
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
+                tenantParam);
+        String tenant = NamespaceUtil.processNamespaceParameter(tenantParam);
         Map<String, Object> responseMap = new HashMap<>(3);
         Collection<Member> members = serverMemberManager.allMembers();
         final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder
