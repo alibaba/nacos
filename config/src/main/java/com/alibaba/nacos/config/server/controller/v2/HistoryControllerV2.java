@@ -96,6 +96,7 @@ public class HistoryControllerV2 {
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         ConfigHistoryInfo configHistoryInfo;
         try {
             configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
@@ -121,6 +122,7 @@ public class HistoryControllerV2 {
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         ConfigHistoryInfo configHistoryInfo;
         try {
             configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
