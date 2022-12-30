@@ -29,7 +29,9 @@ public class NamespaceUtil {
     
     private static final String NAMESPACE_NULL_KEY = "null";
 
-    public static final String NAMESPACE_PUBLIC_ID_ENV_NAME = "nacos.core.namespace.defaultid";
+    public static final String NAMESPACE_FILL_PUBLIC_ID_ENV_NAME = "nacos.core.namespace.fill-public-id";
+
+    private static final String NAMESPACE_PUBLIC_ID_ENV_NAME = "nacos.core.namespace.public-id";
     
     /**
      * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.

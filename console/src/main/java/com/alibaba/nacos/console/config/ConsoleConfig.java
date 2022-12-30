@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.config;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
@@ -57,7 +58,7 @@ public class ConsoleConfig {
         methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
         methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
         methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
-        NamespaceUtil.setNamespaceDefaultId(EnvUtil.getProperty(NamespaceUtil.NAMESPACE_PUBLIC_ID_ENV_NAME, ""));
+        NamespaceUtil.setNamespaceDefaultId("true".equals(EnvUtil.getProperty(NamespaceUtil.NAMESPACE_FILL_PUBLIC_ID_ENV_NAME, "false")) ? Constants.DEFAULT_NAMESPACE_ID : "");
     }
     
     @Bean
