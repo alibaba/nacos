@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -34,43 +35,13 @@ import java.util.Map;
  **/
 
 public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInfoMapper {
-    
-    private static final String DATA_ID = "dataId";
-    
-    private static final String GROUP = "group";
-    
-    private static final String APP_NAME = "appName";
-    
-    private static final String CONTENT = "content";
-    
-    private static final String TENANT = "tenant";
-    
-    @Override
-    public String findConfigMaxId() {
-        return "SELECT max(id) FROM config_info";
-    }
-    
-    @Override
-    public String findAllDataIdAndGroup() {
-        return "SELECT DISTINCT data_id, group_id FROM config_info";
-    }
-    
-    @Override
-    public String findConfigInfoByAppCountRows() {
-        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?";
-    }
-    
+
     @Override
     public String findConfigInfoByAppFetchRows(int startRow, int pageSize) {
         return "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND "
                 + "app_name = ?" + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
-    
-    @Override
-    public String configInfoLikeTenantCount() {
-        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?";
-    }
-    
+
     @Override
     public String getTenantIdList(int startRow, int pageSize) {
         return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET " + startRow
@@ -79,7 +50,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     
     @Override
     public String getGroupIdList(int startRow, int pageSize) {
-        return "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET " + startRow
+        return "SELECT group_id FROM config_info WHERE tenant_id ='"+ NamespaceUtil.getNamespaceDefaultId() +"' GROUP BY group_id OFFSET " + startRow
                 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
@@ -101,46 +72,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info WHERE id > ? "
                 + "ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
-    
-    @Override
-    public String findChangeConfig() {
-        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
-                + "gmt_modified > = ? AND gmt_modified <= ?";
-    }
-    
-    @Override
-    public String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime,
-            final Timestamp endTime) {
-        final String tenant = params.get(TENANT);
-        final String dataId = params.get(DATA_ID);
-        final String group = params.get(GROUP);
-        final String appName = params.get(APP_NAME);
-        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
-        String where = " 1=1 ";
-        
-        if (!StringUtils.isBlank(dataId)) {
-            where += " AND data_id LIKE ? ";
-        }
-        if (!StringUtils.isBlank(group)) {
-            where += " AND group_id LIKE ? ";
-        }
-        
-        if (!StringUtils.isBlank(tenant)) {
-            where += " AND tenant_id = ? ";
-        }
-        
-        if (!StringUtils.isBlank(appName)) {
-            where += " AND app_name = ? ";
-        }
-        if (startTime != null) {
-            where += " AND gmt_modified >=? ";
-        }
-        if (endTime != null) {
-            where += " AND gmt_modified <=? ";
-        }
-        return sqlCountRows + where;
-    }
-    
+
     @Override
     public String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime,
             final Timestamp endTime, int startRow, int pageSize, long lastMaxId) {
@@ -214,7 +146,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     @Override
     public String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
-        String where = " 1=1 AND tenant_id='' ";
+        String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
         if (!StringUtils.isBlank(params.get(DATA_ID))) {
             where += " AND data_id LIKE ? ";
         }
@@ -230,7 +162,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     @Override
     public String findConfigInfoBaseLikeFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
-        String where = " 1=1 AND tenant_id='' ";
+        String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
         if (!StringUtils.isBlank(params.get(DATA_ID))) {
             where += " AND data_id LIKE ? ";
         }
@@ -242,27 +174,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         }
         return sqlFetchRows + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
-    
-    @Override
-    public String findConfigInfo4PageCountRows(Map<String, String> params) {
-        final String appName = params.get(APP_NAME);
-        final String dataId = params.get(DATA_ID);
-        final String group = params.get(GROUP);
-        final String sqlCount = "SELECT count(*) FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" tenant_id=? ");
-        if (StringUtils.isNotBlank(dataId)) {
-            where.append(" AND data_id=? ");
-        }
-        if (StringUtils.isNotBlank(group)) {
-            where.append(" AND group_id=? ");
-        }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" AND app_name=? ");
-        }
-        return sqlCount + where;
-    }
-    
+
     @Override
     public String findConfigInfo4PageFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get(APP_NAME);
@@ -288,31 +200,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? " + "AND tenant_id=?" + " OFFSET "
                 + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
-    
-    @Override
-    public String findConfigInfoLike4PageCountRows(Map<String, String> params) {
-        final String appName = params.get("appName");
-        final String content = params.get("content");
-        final String dataId = params.get("dataId");
-        final String group = params.get(GROUP);
-        final String sqlCountRows = "SELECT count(*) FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        where.append(" tenant_id LIKE ? ");
-        if (!StringUtils.isBlank(dataId)) {
-            where.append(" AND data_id LIKE ? ");
-        }
-        if (!StringUtils.isBlank(group)) {
-            where.append(" AND group_id LIKE ? ");
-        }
-        if (!StringUtils.isBlank(appName)) {
-            where.append(" AND app_name = ? ");
-        }
-        if (!StringUtils.isBlank(content)) {
-            where.append(" AND content LIKE ? ");
-        }
-        return sqlCountRows + where;
-    }
-    
+
     @Override
     public String findConfigInfoLike4PageFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String appName = params.get("appName");
@@ -343,48 +231,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
                 + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )"
                 + " g, config_info t  WHERE g.id = t.id ";
     }
-    
-    @Override
-    public String findConfigInfosByIds(int idSize) {
-        StringBuilder sql = new StringBuilder(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
-        sql.append("id IN (");
-        for (int i = 0; i < idSize; i++) {
-            if (i != 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(") ");
-        return sql.toString();
-    }
-    
-    @Override
-    public String removeConfigInfoByIdsAtomic(int size) {
-        StringBuilder sql = new StringBuilder("DELETE FROM config_info WHERE ");
-        sql.append("id IN (");
-        for (int i = 0; i < size; i++) {
-            if (i != 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(") ");
-        return sql.toString();
-    }
-    
-    @Override
-    public String updateConfigInfoAtomicCas() {
-        return "UPDATE config_info SET "
-                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
-                + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
-    }
-    
-    @Override
-    public String getTableName() {
-        return TableConstant.CONFIG_INFO;
-    }
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;

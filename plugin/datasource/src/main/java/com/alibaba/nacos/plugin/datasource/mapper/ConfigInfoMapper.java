@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +30,13 @@ import java.util.Map;
  **/
 
 public interface ConfigInfoMapper extends Mapper {
-    
+
+    String DATA_ID = "dataId";
+    String GROUP = "group";
+    String APP_NAME = "appName";
+    String CONTENT = "content";
+    String TENANT = "tenant";
+
     /**
      * Get the maxId.
      * The default sql:
@@ -35,7 +44,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return the sql of getting the maxId.
      */
-    String findConfigMaxId();
+    default String findConfigMaxId() {
+        return "SELECT max(id) FROM config_info";
+    }
     
     /**
      * Find all dataId and group.
@@ -44,7 +55,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return The sql of finding all dataId and group.
      */
-    String findAllDataIdAndGroup();
+    default String findAllDataIdAndGroup() {
+        return "SELECT DISTINCT data_id, group_id FROM config_info";
+    }
     
     /**
      * Query the count of config_info by tenantId and appName.
@@ -53,7 +66,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return The sql of querying the count of config_info.
      */
-    String findConfigInfoByAppCountRows();
+    default String findConfigInfoByAppCountRows() {
+        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?";
+    }
     
     /**
      * Query configuration information based on group.
@@ -73,7 +88,9 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return The sql of querying the number of configuration items.
      */
-    String configInfoLikeTenantCount();
+    default String configInfoLikeTenantCount() {
+        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?";
+    }
     
     /**
      * Get tenant id list  by page.
@@ -89,7 +106,7 @@ public interface ConfigInfoMapper extends Mapper {
     /**
      * Get group id list  by page.
      * The default sql:
-     * SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT startRow, pageSize
+     * SELECT group_id FROM config_info WHERE tenant_id ='{defaultNamespaceId}' GROUP BY group_id LIMIT startRow, pageSize
      *
      * @param startRow The start index.
      * @param pageSize The size of page.
@@ -143,7 +160,10 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return The sql of querying change config.
      */
-    String findChangeConfig();
+    default String findChangeConfig() {
+        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
+                + "gmt_modified > = ? AND gmt_modified <= ?";
+    }
     
     /**
      * Get the count of config information.
@@ -156,7 +176,37 @@ public interface ConfigInfoMapper extends Mapper {
      * @param endTime   end time
      * @return The sql of getting the count of config information.
      */
-    String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime);
+    default String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime,
+            final Timestamp endTime) {
+        final String tenant = params.get(TENANT);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String appName = params.get(APP_NAME);
+        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
+        String where = " 1=1 ";
+        
+        if (!StringUtils.isBlank(dataId)) {
+            where += " AND data_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(group)) {
+            where += " AND group_id LIKE ? ";
+        }
+        
+        if (!StringUtils.isBlank(tenant)) {
+            where += " AND tenant_id = ? ";
+        }
+        
+        if (!StringUtils.isBlank(appName)) {
+            where += " AND app_name = ? ";
+        }
+        if (startTime != null) {
+            where += " AND gmt_modified >=? ";
+        }
+        if (endTime != null) {
+            where += " AND gmt_modified <=? ";
+        }
+        return sqlCountRows + where;
+    }
     
     /**
      * According to the time period and configuration conditions to query the eligible configuration.
@@ -234,7 +284,24 @@ public interface ConfigInfoMapper extends Mapper {
      * @param params The mpa of dataId, groupId and appName.
      * @return The count of config info.
      */
-    String findConfigInfo4PageCountRows(Map<String, String> params);
+    default String findConfigInfo4PageCountRows(Map<String, String> params) {
+        final String appName = params.get(APP_NAME);
+        final String dataId = params.get(DATA_ID);
+        final String group = params.get(GROUP);
+        final String sqlCount = "SELECT count(*) FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        where.append(" tenant_id=? ");
+        if (StringUtils.isNotBlank(dataId)) {
+            where.append(" AND data_id=? ");
+        }
+        if (StringUtils.isNotBlank(group)) {
+            where.append(" AND group_id=? ");
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            where.append(" AND app_name=? ");
+        }
+        return sqlCount + where;
+    }
     
     /**
      * find config info.
@@ -267,7 +334,28 @@ public interface ConfigInfoMapper extends Mapper {
      * @param params The map of dataId, group, appName, content
      * @return The sql of querying config info count
      */
-    String findConfigInfoLike4PageCountRows(Map<String, String> params);
+    default String findConfigInfoLike4PageCountRows(Map<String, String> params) {
+        final String appName = params.get("appName");
+        final String content = params.get("content");
+        final String dataId = params.get("dataId");
+        final String group = params.get(GROUP);
+        final String sqlCountRows = "SELECT count(*) FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        where.append(" tenant_id LIKE ? ");
+        if (!StringUtils.isBlank(dataId)) {
+            where.append(" AND data_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(group)) {
+            where.append(" AND group_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(appName)) {
+            where.append(" AND app_name = ? ");
+        }
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND content LIKE ? ");
+        }
+        return sqlCountRows + where;
+    }
     
     /**
      * Query config info.
@@ -302,7 +390,19 @@ public interface ConfigInfoMapper extends Mapper {
      * @param idSize the size of ids.
      * @return find ConfigInfo by ids.
      */
-    String findConfigInfosByIds(int idSize);
+    default String findConfigInfosByIds(int idSize) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
+        sql.append("id IN (");
+        for (int i = 0; i < idSize; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append('?');
+        }
+        sql.append(") ");
+        return sql.toString();
+    }
     
     /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -310,7 +410,18 @@ public interface ConfigInfoMapper extends Mapper {
      * @param size The size of ids.
      * @return The sql of removing configuration.
      */
-    String removeConfigInfoByIdsAtomic(int size);
+    default String removeConfigInfoByIdsAtomic(int size) {
+        StringBuilder sql = new StringBuilder("DELETE FROM config_info WHERE ");
+        sql.append("id IN (");
+        for (int i = 0; i < size; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append('?');
+        }
+        sql.append(") ");
+        return sql.toString();
+    }
     
     /**
      * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -320,5 +431,13 @@ public interface ConfigInfoMapper extends Mapper {
      *
      * @return The sql of updating configuration cas.
      */
-    String updateConfigInfoAtomicCas();
+    default String updateConfigInfoAtomicCas() {
+        return "UPDATE config_info SET "
+                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
+                + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
+    }
+    
+    default String getTableName() {
+        return TableConstant.CONFIG_INFO;
+    }
 }
