@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
@@ -47,7 +48,7 @@ public class GroupCapacityMapperByDerby extends AbstractMapper implements GroupC
     @Override
     public String insertIntoSelectByWhere() {
         return "INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count, max_aggr_size, gmt_create,"
-                + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = ''";
+                + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = '"+ NamespaceUtil.getNamespaceDefaultId() +"'";
     }
     
     @Override
@@ -77,7 +78,7 @@ public class GroupCapacityMapperByDerby extends AbstractMapper implements GroupC
     
     @Override
     public String updateUsageByWhere() {
-        return "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = ''),"
+        return "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = '"+ NamespaceUtil.getNamespaceDefaultId() +"'),"
                 + " gmt_modified = ? WHERE group_id= ?";
     }
     

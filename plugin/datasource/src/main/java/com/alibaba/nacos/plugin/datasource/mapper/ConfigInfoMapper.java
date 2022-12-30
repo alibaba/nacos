@@ -89,7 +89,7 @@ public interface ConfigInfoMapper extends Mapper {
     /**
      * Get group id list  by page.
      * The default sql:
-     * SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id LIMIT startRow, pageSize
+     * SELECT group_id FROM config_info WHERE tenant_id ='{defaultNamespaceId}' GROUP BY group_id LIMIT startRow, pageSize
      *
      * @param startRow The start index.
      * @param pageSize The size of page.

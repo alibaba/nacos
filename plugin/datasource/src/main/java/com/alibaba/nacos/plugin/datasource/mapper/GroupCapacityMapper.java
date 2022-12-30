@@ -36,11 +36,11 @@ public interface GroupCapacityMapper extends Mapper {
     /**
      * INSERT INTO SELECT statement. Used to insert query results into a table.
      *
-     * <p>Where condition: group_id=? AND tenant_id = ''
+     * <p>Where condition: group_id=? AND tenant_id = '{defaultNamespaceId}'
      *
      * <p>Example: INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count,
      * max_aggr_size,gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info where group_id=?
-     * AND tenant_id = '';
+     * AND tenant_id = '{defaultNamespaceId}';
      *
      * @return sql.
      */
@@ -108,7 +108,7 @@ public interface GroupCapacityMapper extends Mapper {
     /**
      * used to update usage field.
      *
-     * <p>Where condition: group_id=? AND tenant_id = ''
+     * <p>Where condition: group_id=? AND tenant_id = '{defaultNamespaceId}'
      *
      * <p>Example: UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id
      * =
