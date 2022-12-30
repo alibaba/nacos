@@ -93,7 +93,7 @@ public class NamespaceOperationService {
      */
     public NamespaceAllInfo getNamespace(String namespaceId) throws NacosException {
         // TODO 获取用kp
-        if (StringUtils.isBlank(namespaceId)) {
+        if (StringUtils.isBlank(namespaceId) || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {
             return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
                     configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType(),
                     DEFAULT_NAMESPACE_DESCRIPTION);
