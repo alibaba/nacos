@@ -28,6 +28,8 @@ public class NamespaceUtil {
     private static final String NAMESPACE_PUBLIC_KEY = "public";
     
     private static final String NAMESPACE_NULL_KEY = "null";
+
+    public static final String NAMESPACE_PUBLIC_ID_ENV_NAME = "nacos.core.namespace.defaultid";
     
     /**
      * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
@@ -37,9 +39,27 @@ public class NamespaceUtil {
     public static String processNamespaceParameter(String tenant) {
         if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant) || NAMESPACE_NULL_KEY
                 .equalsIgnoreCase(tenant)) {
-            return "";
+            return getNamespaceDefaultId();
         }
         return tenant.trim();
     }
 
+    /**
+     * Set default namespace id.
+     * Invoke settings at system startup
+     *
+     * @param namespaceDefaultId
+     */
+    public static void setNamespaceDefaultId(String namespaceDefaultId){
+        System.setProperty(NAMESPACE_PUBLIC_ID_ENV_NAME, namespaceDefaultId);
+    }
+
+    /**
+     * Get default namespace id
+     *
+     * @return
+     */
+    public static String getNamespaceDefaultId(){
+        return System.getProperty(NAMESPACE_PUBLIC_ID_ENV_NAME, "");
+    }
 }
