@@ -126,6 +126,7 @@
         
         <!-- dependency version -->
         <spring-boot-dependencies.version>2.6.8</spring-boot-dependencies.version>
+        <spring-security.version>5.7.5</spring-security.version>
         <servlet-api.version>3.0</servlet-api.version>
         <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -624,6 +625,13 @@
     sub-modules will not introduce these dependencies by default -->
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-bom</artifactId>
+                <version>${spring-security.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <!-- Import dependency management from Spring Boot -->
                 <groupId>org.springframework.boot</groupId>
