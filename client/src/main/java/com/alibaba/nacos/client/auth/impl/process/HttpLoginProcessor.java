@@ -19,16 +19,18 @@ package com.alibaba.nacos.client.auth.impl.process;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.constant.RequestUrlConstants;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.url.HttpUrlComponents;
+import com.alibaba.nacos.common.utils.url.HttpUrlComponentsBuilder;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +40,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Login processor for Http.
@@ -63,22 +64,26 @@ public class HttpLoginProcessor implements LoginProcessor {
         String contextPath = ContextPathUtil.normalizeContextPath(
                 properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
         String server = properties.getProperty(NacosAuthLoginConstant.SERVER, StringUtils.EMPTY);
-        String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(server);
-        if (serverAddrArr.length == 1) {
-            server = HTTP_PREFIX + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER
-                    + ParamUtil.getDefaultServerPort();
-        } else {
-            server = HTTP_PREFIX + server;
+        
+        String lowerCaseServer = server.toLowerCase();
+        if (!lowerCaseServer.startsWith(RequestUrlConstants.HTTP_PREFIX) && !lowerCaseServer.startsWith(
+                RequestUrlConstants.HTTPS_PREFIX)) {
+            server = RequestUrlConstants.HTTP_PREFIX + server;
         }
         
-        String url = server + contextPath + LOGIN_URL;
+        HttpUrlComponentsBuilder httpUrlComponentsBuilder = HttpUrlComponentsBuilder.fromHttpUrl(server);
+        if (!httpUrlComponentsBuilder.hasPort()) {
+            httpUrlComponentsBuilder.port(ParamUtil.getDefaultServerPort());
+        }
+        httpUrlComponentsBuilder.addPath(contextPath).addPath(LOGIN_URL);
         
         Map<String, String> params = new HashMap<>(2);
         Map<String, String> bodyMap = new HashMap<>(2);
         params.put(PropertyKeyConst.USERNAME, properties.getProperty(PropertyKeyConst.USERNAME, StringUtils.EMPTY));
         bodyMap.put(PropertyKeyConst.PASSWORD, properties.getProperty(PropertyKeyConst.PASSWORD, StringUtils.EMPTY));
+        HttpUrlComponents httpUrl = httpUrlComponentsBuilder.build();
         try {
-            HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.EMPTY,
+            HttpRestResult<String> restResult = nacosRestTemplate.postForm(httpUrl.toString(), Header.EMPTY,
                     Query.newInstance().initParams(params), bodyMap, String.class);
             if (!restResult.ok()) {
                 SECURITY_LOGGER.error("login failed: {}", JacksonUtils.toJson(restResult));
@@ -99,7 +104,7 @@ public class HttpLoginProcessor implements LoginProcessor {
             return loginIdentityContext;
         } catch (Exception e) {
             SECURITY_LOGGER.error("[NacosClientAuthServiceImpl] login http request failed"
-                    + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", url, params, bodyMap, e.getMessage());
+                    + " url: {}, params: {}, bodyMap: {}, errorMsg: {}", httpUrl, params, bodyMap, e.getMessage());
             return null;
         }
     }
