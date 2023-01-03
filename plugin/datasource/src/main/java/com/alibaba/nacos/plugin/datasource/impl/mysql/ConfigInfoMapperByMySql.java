@@ -124,42 +124,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
                 + "( SELECT id FROM config_info ORDER BY id LIMIT " + startRow + "," + pageSize
                 + " ) g, config_info t WHERE g.id = t.id";
     }
-    
-    @Override
-    public String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
-        String tenant = params.get("tenant");
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sql =
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,"
-                        + "c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        List<Object> paramList = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(ids)) {
-            where.append(" id IN (");
-            for (int i = 0; i < ids.size(); i++) {
-                if (i != 0) {
-                    where.append(", ");
-                }
-                where.append('?');
-                paramList.add(ids.get(i));
-            }
-            where.append(") ");
-        } else {
-            where.append(" tenant_id= ? ");
-            paramList.add(tenantTmp);
-            if (!StringUtils.isBlank(params.get(DATA_ID))) {
-                where.append(" AND data_id LIKE ? ");
-            }
-            if (StringUtils.isNotBlank(params.get(GROUP))) {
-                where.append(" AND group_id= ? ");
-            }
-            if (StringUtils.isNotBlank(params.get(APP_NAME))) {
-                where.append(" AND app_name= ? ");
-            }
-        }
-        return sql + where;
-    }
-    
+
     @Override
     public String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 
@@ -250,7 +251,33 @@ public interface ConfigInfoMapper extends Mapper {
      *                  the value is the key's value.
      * @return Collection of ConfigInfo objects
      */
-    String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params);
+    default String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
+        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified," +
+                "src_user, src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
+        StringBuilder where = new StringBuilder(" WHERE ");
+        if (!CollectionUtils.isEmpty(ids)) {
+            where.append(" id IN (");
+            for (int i = 0; i < ids.size(); i++) {
+                if (i != 0) {
+                    where.append(", ");
+                }
+                where.append('?');
+            }
+            where.append(") ");
+        } else {
+            where.append(" tenant_id = ? ");
+            if (StringUtils.isNotBlank(params.get(DATA_ID))) {
+                where.append(" AND data_id LIKE ? ");
+            }
+            if (StringUtils.isNotBlank(params.get(GROUP))) {
+                where.append(" AND group_id= ? ");
+            }
+            if (StringUtils.isNotBlank(params.get(APP_NAME))) {
+                where.append(" AND app_name= ? ");
+            }
+        }
+        return sql + where;
+    }
     
     /**
      * Get the count of config information.

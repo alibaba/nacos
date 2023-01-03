@@ -113,36 +113,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
                 + "FROM ( SELECT id FROM config_info ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
                 + " ROWS ONLY ) g, config_info t WHERE g.id = t.id";
     }
-    
-    @Override
-    public String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
-        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
-                + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
-        StringBuilder where = new StringBuilder(" WHERE ");
-        if (!CollectionUtils.isEmpty(ids)) {
-            where.append(" id IN (");
-            for (int i = 0; i < ids.size(); i++) {
-                if (i != 0) {
-                    where.append(", ");
-                }
-                where.append('?');
-            }
-            where.append(") ");
-        } else {
-            where.append(" tenant_id = ? ");
-            if (!StringUtils.isEmpty(params.get(DATA_ID))) {
-                where.append(" AND data_id LIKE ? ");
-            }
-            if (StringUtils.isNotEmpty(params.get(GROUP))) {
-                where.append(" AND group_id = ? ");
-            }
-            if (StringUtils.isNotEmpty(params.get(APP_NAME))) {
-                where.append(" AND app_name = ? ");
-            }
-        }
-        return sql + where;
-    }
-    
+
     @Override
     public String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
