@@ -24,8 +24,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import java.util.Arrays;
-
 @RunWith(JUnit4.class)
 public class ConfigInfoAggrMapperByMySqlTest {
     
@@ -38,9 +36,9 @@ public class ConfigInfoAggrMapperByMySqlTest {
     
     @Test
     public void testBatchRemoveAggr() {
-        String sql = configInfoAggrMapperByMySql.batchRemoveAggr(Arrays.asList("1", "2"));
+        String sql = configInfoAggrMapperByMySql.batchRemoveAggr(5);
         Assert.assertEquals(sql, "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
-                + "AND datum_id IN ('1','2')");
+                + "AND datum_id IN (?, ?, ?, ?, ?)");
     }
     
     @Test
