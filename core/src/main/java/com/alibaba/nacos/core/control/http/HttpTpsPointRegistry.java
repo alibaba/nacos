@@ -30,6 +30,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * RequestHandlerRegistry.
@@ -40,8 +41,13 @@ import java.util.Map;
 @Service
 public class HttpTpsPointRegistry implements ApplicationListener<ContextRefreshedEvent> {
     
+    private volatile AtomicBoolean isInit = new AtomicBoolean(false);
+    
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+        if (!isInit.compareAndSet(false, true)) {
+            return;
+        }
         RequestMappingHandlerMapping requestMapping = event.getApplicationContext()
                 .getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMapping.getHandlerMethods();
