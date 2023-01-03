@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.mapper;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 
@@ -288,7 +289,21 @@ public interface ConfigInfoMapper extends Mapper {
      *               the value is the arbitrary object.
      * @return The sql of getting the count of config information.
      */
-    String findConfigInfoBaseLikeCountRows(Map<String, String> params);
+    default String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
+        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
+        String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
+
+        if (!StringUtils.isBlank(params.get(DATA_ID))) {
+            where += " AND data_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(params.get(GROUP))) {
+            where += " AND group_id LIKE ? ";
+        }
+        if (!StringUtils.isBlank(params.get(CONTENT))) {
+            where += " AND content LIKE ? ";
+        }
+        return sqlCountRows + where;
+    }
     
     /**
      * Get the config information.

@@ -126,23 +126,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
 
     @Override
-    public String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
-        final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
-        String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
-        
-        if (!StringUtils.isBlank(params.get(DATA_ID))) {
-            where += " AND data_id LIKE ? ";
-        }
-        if (!StringUtils.isBlank(params.get(GROUP))) {
-            where += " AND group_id LIKE ";
-        }
-        if (!StringUtils.isBlank(params.get(CONTENT))) {
-            where += " AND content LIKE ? ";
-        }
-        return sqlCountRows + where;
-    }
-    
-    @Override
     public String findConfigInfoBaseLikeFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
         String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
