@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.2.0</revision>
+        <revision>2.2.1-RC</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -1023,7 +1023,6 @@
             <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
-
 
 </project>
 

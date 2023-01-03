@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 /**
  * The tenant info mapper. If there is a new non-universal sql, you can add it here.
  *
@@ -23,5 +25,9 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  **/
 
 public interface TenantInfoMapper extends Mapper {
+
+    default String getTableName() {
+        return TableConstant.TENANT_INFO;
+    }
 
 }
