@@ -183,6 +183,9 @@
                                                 <include>
                                                     com/alibaba/nacos/api/**/**
                                                 </include>
+                                                <include>
+                                                    META-INF/**/*.*
+                                                </include>
                                             </includes>
                                         </filter>
                     
@@ -338,6 +341,9 @@
                                             <includes>
                                                 <include>
                                                     com/alibaba/nacos/api/**/**
+                                                </include>
+                                                <include>
+                                                    META-INF/**/*.*
                                                 </include>
                                             </includes>
                                         </filter>

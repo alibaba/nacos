@@ -59,7 +59,7 @@ public class PrometheusController {
     /**
      * Get all service instances.
      *
-     * @throws NacosException   NacosException.
+     * @throws NacosException NacosException.
      */
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_PATH, produces = "application/json; charset=UTF-8")
     public ResponseEntity metric() throws NacosException {
@@ -70,7 +70,8 @@ public class PrometheusController {
             Set<Service> singletons = serviceManager.getSingletons(namespace);
             for (Service service : singletons) {
                 
-                List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace, service.getName());
+                List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace,
+                        service.getGroupedServiceName());
                 
                 for (Instance instance : instances) {
                     targetSet.add(instance);
