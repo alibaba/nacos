@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -40,6 +39,8 @@ import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServerTransportFilter;
 import io.grpc.internal.ServerStream;
+import io.grpc.internal.ServerStreamHelper;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelHelper;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
@@ -159,8 +160,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     }
     
     private Channel getInternalChannel(ServerCall serverCall) {
-        ServerStream serverStream = (ServerStream) ReflectUtils.getFieldValue(serverCall, "stream");
-        return (Channel) ReflectUtils.getFieldValue(serverStream, "channel");
+        ServerStream serverStream = ServerStreamHelper.getServerStream(serverCall);
+        return NettyChannelHelper.getChannel(serverStream);
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
