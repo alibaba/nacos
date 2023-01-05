@@ -94,6 +94,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
 
 </project>
