@@ -73,11 +73,6 @@ public class ConnectionMeta {
     Date createTime;
     
     /**
-     * lastActiveTime.
-     */
-    long lastActiveTime;
-    
-    /**
      * String appName.
      */
     String appName;
@@ -108,7 +103,6 @@ public class ConnectionMeta {
         this.remotePort = remotePort;
         this.localPort = localPort;
         this.createTime = new Date();
-        this.lastActiveTime = System.currentTimeMillis();
         this.labels.putAll(labels);
     }
     
@@ -203,25 +197,7 @@ public class ConnectionMeta {
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
-    
-    /**
-     * Getter method for property <tt>lastActiveTime</tt>.
-     *
-     * @return property value of lastActiveTime
-     */
-    public long getLastActiveTime() {
-        return lastActiveTime;
-    }
-    
-    /**
-     * Setter method for property <tt>lastActiveTime</tt>.
-     *
-     * @param lastActiveTime value to be assigned to property lastActiveTime
-     */
-    public void setLastActiveTime(long lastActiveTime) {
-        this.lastActiveTime = lastActiveTime;
-    }
-    
+
     /**
      * Getter method for property <tt>connectType</tt>.
      *
@@ -297,7 +273,7 @@ public class ConnectionMeta {
         return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp + '\''
                 + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
                 + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
-                + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
+                + createTime + ", appName='" + appName + '\'' + ", tenant='"
                 + tenant + '\'' + ", labels=" + labels + '}';
     }
 }

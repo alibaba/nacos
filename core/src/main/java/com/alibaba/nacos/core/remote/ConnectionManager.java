@@ -228,18 +228,6 @@ public class ConnectionManager {
     }
     
     /**
-     * regresh connection active time.
-     *
-     * @param connectionId connectionId.
-     */
-    public void refreshActiveTime(String connectionId) {
-        Connection connection = connections.get(connectionId);
-        if (connection != null) {
-            connection.freshActiveTime();
-        }
-    }
-    
-    /**
      * Start Task：Expel the connection which active Time expire.
      */
     @PostConstruct

@@ -76,14 +76,7 @@ public abstract class Connection implements Requester {
      * @return if connection or not,check the inner connection is active.
      */
     public abstract boolean isConnected();
-    
-    /**
-     * Update last Active Time to now.
-     */
-    public void freshActiveTime() {
-        metaInfo.setLastActiveTime(System.currentTimeMillis());
-    }
-    
+
     /**
      * Getter method for property <tt>metaInfo</tt>.
      *
