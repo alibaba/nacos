@@ -55,7 +55,7 @@ public class StringPool {
             value = GROUP_KEY_CACHE.get(key);
         }
         
-        return value;
+        return value == null ? key : value;
     }
     
     public static long size() {
