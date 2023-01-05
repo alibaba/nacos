@@ -84,6 +84,8 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final DefaultConnectingIOReactor ioreactor = getIoReactor(AYNC_IO_REACTOR_NAME);
         final RequestConfig defaultConfig = getRequestConfig();
+        final NHttpClientConnectionManager connectionManager = getConnectionManager(originalRequestConfig, ioreactor);
+        monitorAndExtension(connectionManager);
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
                 HttpAsyncClients.custom().addInterceptorLast(new RequestContent(true))
                         .setThreadFactory(new NameThreadFactory(ASYNC_THREAD_NAME))
@@ -91,7 +93,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
                         .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
                         .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
                         .setUserAgent(originalRequestConfig.getUserAgent())
-                        .setConnectionManager(getConnectionManager(originalRequestConfig, ioreactor)).build(),
+                        .setConnectionManager(connectionManager).build(),
                 ioreactor, defaultConfig));
     }
     
@@ -218,4 +220,10 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
      * @return Logger
      */
     protected abstract Logger assignLogger();
+    
+    /**
+     * add some monitor and do some extension. default empty implementation, implemented by subclass
+     */
+    protected void monitorAndExtension(NHttpClientConnectionManager connectionManager) {
+    }
 }
