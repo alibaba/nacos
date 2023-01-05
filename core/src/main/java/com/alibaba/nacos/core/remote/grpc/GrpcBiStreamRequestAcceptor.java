@@ -146,7 +146,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                                 .warn("[{}]Receive response of server request  ,response={}", connectionId, response);
                     }
                     RpcAckCallbackSynchronizer.ackNotify(connectionId, response);
-                    connectionManager.refreshActiveTime(connectionId);
                 } else {
                     Loggers.REMOTE_DIGEST
                             .warn("[{}]Grpc request bi stream,unknown payload receive ,parseObj={}", connectionId,

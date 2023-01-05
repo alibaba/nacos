@@ -78,13 +78,6 @@ public abstract class Connection implements Requester {
     public abstract boolean isConnected();
     
     /**
-     * Update last Active Time to now.
-     */
-    public void freshActiveTime() {
-        metaInfo.setLastActiveTime(System.currentTimeMillis());
-    }
-    
-    /**
      * Getter method for property <tt>metaInfo</tt>.
      *
      * @return property value of metaInfo

@@ -139,16 +139,6 @@ public class ConnectionManagerTest {
     }
     
     @Test
-    public void testRefreshActiveTime() {
-        try {
-            connectionManager.refreshActiveTime(connectId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
-    }
-    
-    @Test
     public void testLoadSingle() throws NacosException {
         Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
         connectionManager.loadSingle(connectId, clientIp);
