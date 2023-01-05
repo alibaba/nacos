@@ -123,6 +123,11 @@ public class NamespaceOperationService {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
                     "namespaceId [" + namespaceId + "] already exist");
         }
+
+        if (namespaceId == DEFAULT_NAMESPACE) {
+            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
+                    "Can't create namespace that namespaceId is [" + DEFAULT_NAMESPACE + "]");
+        }
     
         commonPersistService
                 .insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc, DEFAULT_CREATE_SOURCE,
