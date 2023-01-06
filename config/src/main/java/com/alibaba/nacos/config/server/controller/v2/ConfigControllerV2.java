@@ -141,6 +141,8 @@ public class ConfigControllerV2 {
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
+        //fix issue #9783
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         // check namespaceId
         ParamUtils.checkTenantV2(namespaceId);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
