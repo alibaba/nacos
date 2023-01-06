@@ -106,6 +106,8 @@ public class ConfigControllerV2 {
         // encrypted
         Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
         configForm.setContent(pair.getSecond());
+        //fix issue #9783
+        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         // check param
         ParamUtils.checkTenantV2(configForm.getNamespaceId());
         ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId", configForm.getContent());
