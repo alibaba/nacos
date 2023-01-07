@@ -245,6 +245,14 @@ public class Constants {
     }
     
     /**
+     * The constants in Cluster directory.
+     */
+    public static class Cluster {
+        
+        public static final String CLUSTER_MODULE = "cluster";
+    }
+    
+    /**
      * The constants in exception directory.
      */
     public static class Exception {

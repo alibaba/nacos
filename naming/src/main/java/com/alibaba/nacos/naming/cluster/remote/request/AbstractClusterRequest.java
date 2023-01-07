@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.cluster.remote.request;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 
 /**
@@ -24,11 +25,8 @@ import com.alibaba.nacos.api.remote.request.Request;
  * @author xiweng.yy
  */
 public abstract class AbstractClusterRequest extends Request {
-    
-    private static final String CLUSTER = "cluster";
-    
     @Override
     public String getModule() {
-        return CLUSTER;
+        return Constants.Cluster.CLUSTER_MODULE;
     }
 }
