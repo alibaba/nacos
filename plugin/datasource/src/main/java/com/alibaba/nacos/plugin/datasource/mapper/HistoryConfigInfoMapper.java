@@ -23,7 +23,7 @@ package com.alibaba.nacos.plugin.datasource.mapper;
  **/
 
 public interface HistoryConfigInfoMapper extends Mapper {
-    
+
     /**
      * Delete data before startTime.
      * The default sql:
@@ -32,7 +32,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of deleting data before startTime.
      */
     String removeConfigHistory();
-    
+
     /**
      * Get the number of configurations before the specified time.
      * The default sql:
@@ -41,7 +41,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of getting the number of configurations before the specified time.
      */
     String findConfigHistoryCountByTime();
-    
+
     /**
      * Query deleted config.
      * The default sql:
@@ -50,7 +50,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of querying deleted config.
      */
     String findDeletedConfig();
-    
+
     /**
      * List configuration history change record.
      * The default sql:
@@ -60,7 +60,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of listing configuration history change record.
      */
     String findConfigHistoryFetchRows();
-    
+
     /**
      * Get previous config detail.
      * The default sql:
@@ -70,4 +70,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * @return The sql of getting previous config detail.
      */
     String detailPreviousConfigHistory();
+
+    String findConfigHistory4PageFetchRows(int pageNo, int pageSize);
+
 }
