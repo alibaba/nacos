@@ -81,6 +81,12 @@ public class NamespaceControllerTest {
         namespaceController.createNamespace("test-Id", "testName", "testDesc");
         verify(namespaceOperationService).createNamespace("test-Id", "testName", "testDesc");
     }
+
+    @Test
+    public void testCreateNamespaceWithPublicNamespaceId() throws Exception {
+        assertFalse(namespaceController.createNamespace("public", "testName", "testDesc"));
+        verify(namespaceOperationService, never()).createNamespace("test.Id", "testName", "testDesc");
+    }
     
     @Test
     public void testCreateNamespaceWithIllegalCustomId() throws Exception {
