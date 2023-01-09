@@ -19,16 +19,16 @@ package com.alibaba.nacos.client.auth.impl.process;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
+import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.alibaba.nacos.client.naming.utils.UtilAndComs.webContext;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
@@ -63,11 +64,11 @@ public class HttpLoginProcessor implements LoginProcessor {
         String contextPath = ContextPathUtil.normalizeContextPath(
                 properties.getProperty(PropertyKeyConst.CONTEXT_PATH, webContext));
         String server = properties.getProperty(NacosAuthLoginConstant.SERVER, StringUtils.EMPTY);
-        String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(server);
-        if (serverAddrArr.length == 1) {
-            server = HTTP_PREFIX + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER
-                    + ParamUtil.getDefaultServerPort();
-        } else {
+        
+        if (!server.startsWith(HTTPS_PREFIX) && !server.startsWith(HTTP_PREFIX)) {
+            if (!InternetAddressUtil.containsPort(server)) {
+                server = server + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort();
+            }
             server = HTTP_PREFIX + server;
         }
         
