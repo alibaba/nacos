@@ -47,8 +47,8 @@ public class DiskUtil {
     
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
     
-    public static void saveHeartBeatToDisk(String heartBeatTime) throws IOException {
-        FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime, Constants.ENCODE);
+    public static void saveHeartbeatToDisk(String heartbeatTime) throws IOException {
+        FileUtils.writeStringToFile(heartbeatFile(), heartbeatTime, Constants.ENCODE);
     }
     
     /**
@@ -98,7 +98,7 @@ public class DiskUtil {
     }
     
     public static void removeHeartHeat() {
-        FileUtils.deleteQuietly(heartBeatFile());
+        FileUtils.deleteQuietly(heartbeatFile());
     }
     
     /**
@@ -168,8 +168,8 @@ public class DiskUtil {
         return MD5Utils.md5Hex(getConfig(dataId, group, tenant), Constants.ENCODE);
     }
     
-    public static File heartBeatFile() {
-        return new File(EnvUtil.getNacosHome(), "status" + File.separator + "heartBeat.txt");
+    public static File heartbeatFile() {
+        return new File(EnvUtil.getNacosHome(), "status" + File.separator + "heartbeat.txt");
     }
     
     public static String relativePath(String dataId, String group) {

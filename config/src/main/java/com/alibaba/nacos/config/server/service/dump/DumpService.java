@@ -262,10 +262,10 @@ public abstract class DumpService {
             }
             if (!EnvUtil.getStandaloneMode()) {
                 Runnable heartbeat = () -> {
-                    String heartBeatTime = TimeUtils.getCurrentTime().toString();
+                    String heartbeatTime = TimeUtils.getCurrentTime().toString();
                     // write disk
                     try {
-                        DiskUtil.saveHeartBeatToDisk(heartBeatTime);
+                        DiskUtil.saveHeartbeatToDisk(heartbeatTime);
                     } catch (IOException e) {
                         LogUtil.FATAL_LOG.error("save heartbeat fail" + e.getMessage());
                     }
@@ -300,7 +300,7 @@ public abstract class DumpService {
         Timestamp heartheatLastStamp = null;
         try {
             if (isQuickStart()) {
-                File heartbeatFile = DiskUtil.heartBeatFile();
+                File heartbeatFile = DiskUtil.heartbeatFile();
                 if (heartbeatFile.exists()) {
                     fis = new FileInputStream(heartbeatFile);
                     String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);

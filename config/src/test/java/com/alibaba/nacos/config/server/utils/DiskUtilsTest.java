@@ -40,9 +40,9 @@ public class DiskUtilsTest {
     
     @Test
     public void testSaveHeartBeatToDisk() throws IOException {
-        String heartBeatTime = System.currentTimeMillis() + "";
-        DiskUtil.saveHeartBeatToDisk(heartBeatTime);
-        fileUtils.verify(() -> FileUtils.writeStringToFile(DiskUtil.heartBeatFile(), heartBeatTime, Constants.ENCODE), Mockito.times(1));
+        String heartbeatTime = System.currentTimeMillis() + "";
+        DiskUtil.saveHeartbeatToDisk(heartbeatTime);
+        fileUtils.verify(() -> FileUtils.writeStringToFile(DiskUtil.heartbeatFile(), heartbeatTime, Constants.ENCODE), Mockito.times(1));
     }
 
     @Test
@@ -89,7 +89,7 @@ public class DiskUtilsTest {
 
     @Test
     public void testRemoveHeartHeat() {
-        File targetFile = DiskUtil.heartBeatFile();
+        File targetFile = DiskUtil.heartbeatFile();
         DiskUtil.removeHeartHeat();
         fileUtils.verify(() -> FileUtils.deleteQuietly(targetFile), Mockito.times(1));
     }
@@ -158,9 +158,9 @@ public class DiskUtilsTest {
 
     @Test
     public void testHeartBeatFile() {
-        File file = DiskUtil.heartBeatFile();
+        File file = DiskUtil.heartbeatFile();
         String[] arr = file.getPath().split(File.separator);
-        Assert.assertEquals("heartBeat.txt", arr[arr.length - 1]);
+        Assert.assertEquals("heartbeat.txt", arr[arr.length - 1]);
         Assert.assertEquals("status", arr[arr.length - 2]);
         Assert.assertEquals("nacos", arr[arr.length - 3]);
     }

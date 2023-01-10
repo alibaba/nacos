@@ -65,7 +65,7 @@ public class NamingUtilsTest {
         NamingUtils.checkInstanceIsLegal(instance);
         assertTrue(true);
     
-        // check heartBeatTimeout, heartBeatInterval, ipDeleteTimeout
+        // check heartbeatTimeout, heartbeatInterval, ipDeleteTimeout
         Map<String, String> meta = new HashMap<>();
         meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1");
         meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
@@ -113,7 +113,7 @@ public class NamingUtilsTest {
         
         instanceList.remove(instance);
         
-        // check heartBeatTimeout, heartBeatInterval, ipDeleteTimeout
+        // check heartbeatTimeout, heartbeatInterval, ipDeleteTimeout
         Map<String, String> meta = new HashMap<>();
         meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1");
         meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
