@@ -44,7 +44,7 @@ import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
 import { connect } from 'react-redux';
-import { getConfigs } from '../../../reducers/configuration';
+import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
@@ -58,7 +58,7 @@ const configsTableSelected = new Map();
   state => ({
     configurations: state.configuration.configurations,
   }),
-  { getConfigs }
+  { getConfigs, getConfigsV2 }
 )
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
@@ -285,8 +285,14 @@ class ConfigurationManagement extends React.Component {
     setParams('pageNo', null);
     this.changeParamsBySearchType(params);
     this.setState({ loading: true });
-    this.props
-      .getConfigs(params)
+    let props = null;
+    if (this.state.config_detail && this.state.config_detail !== '') {
+      params.config_detail = this.state.config_detail;
+      props = this.props.getConfigsV2(params);
+    } else {
+      props = this.props.getConfigs(params);
+    }
+    props
       .then(() =>
         this.setState({
           loading: false,

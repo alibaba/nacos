@@ -27,14 +27,19 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,6 +51,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Special controller v2 for soft load client to publish data.
@@ -58,14 +65,19 @@ import java.io.IOException;
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_V2_PATH)
 public class ConfigControllerV2 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigControllerV2.class);
     
     private final ConfigServletInner inner;
     
     private final ConfigOperationService configOperationService;
     
-    public ConfigControllerV2(ConfigServletInner inner, ConfigOperationService configOperationService) {
+    private ConfigInfoPersistService configInfoPersistService;
+    
+    public ConfigControllerV2(ConfigServletInner inner, ConfigOperationService configOperationService,
+            ConfigInfoPersistService configInfoPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
+        this.configInfoPersistService = configInfoPersistService;
     }
     
     /**
@@ -147,5 +159,73 @@ public class ConfigControllerV2 {
         String clientIp = RequestUtil.getRemoteIp(request);
         String srcUser = RequestUtil.getSrcUserName(request);
         return Result.success(configOperationService.deleteConfig(dataId, group, namespaceId, tag, clientIp, srcUser));
+    }
+    
+    /**
+     * Query the configuration information with a specific configuration detail (this interface will take a lot of time).
+     */
+    @GetMapping(params = {"search=accurate", "config_detail"})
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    public Page<ConfigInfo> searchConfigByDetails(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+            @RequestParam(value = "appName", required = false) String appName,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "config_tags", required = false) String configTags,
+            @RequestParam(value = "config_detail") String configDetail,
+            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<>(100);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        if (StringUtils.isNotBlank(configDetail)) {
+            configAdvanceInfo.put("config_detail", configDetail);
+        }
+        try {
+            if (StringUtils.isNotBlank(configDetail)) {
+                return configInfoPersistService.findConfigInfoByDetail4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            } else {
+                return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            }
+        } catch (Exception e) {
+            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
+            LOGGER.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
+    
+    /**
+     * Fuzzy query the configuration information with a specific configuration detail (this interface will take a lot of time).
+     */
+    @GetMapping(params = {"search=blur", "config_detail"})
+    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    public Page<ConfigInfo> fuzzySearchConfigByDetails(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
+            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
+            @RequestParam(value = "config_tags", required = false) String configTags,
+            @RequestParam(value = "config_detail") String configDetail,
+            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<>(50);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        if (StringUtils.isNotBlank(configDetail)) {
+            configAdvanceInfo.put("config_detail", configDetail);
+        }
+        try {
+            if (StringUtils.isNotBlank(configDetail)) {
+                return configInfoPersistService.findConfigInfoByDetailLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            } else {
+                return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+            }
+        } catch (Exception e) {
+            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
+            LOGGER.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
     }
 }

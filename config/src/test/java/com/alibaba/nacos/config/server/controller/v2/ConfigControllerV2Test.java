@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +55,9 @@ public class ConfigControllerV2Test {
     @Mock
     private ConfigOperationService configOperationService;
     
+    @Mock
+    private ConfigInfoPersistService configInfoPersistService;
+    
     private static final String TEST_DATA_ID = "test";
     
     private static final String TEST_GROUP = "test";
@@ -66,7 +70,7 @@ public class ConfigControllerV2Test {
     
     @Before
     public void setUp() {
-        configControllerV2 = new ConfigControllerV2(inner, configOperationService);
+        configControllerV2 = new ConfigControllerV2(inner, configOperationService, configInfoPersistService);
     }
     
     @Test
