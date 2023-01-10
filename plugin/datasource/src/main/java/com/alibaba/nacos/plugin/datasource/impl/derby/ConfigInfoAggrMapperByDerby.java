@@ -21,8 +21,6 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 
-import java.util.List;
-
 /**
  * The derby implementation of ConfigInfoAggrMapper.
  *
@@ -32,14 +30,16 @@ import java.util.List;
 public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements ConfigInfoAggrMapper {
     
     @Override
-    public String batchRemoveAggr(List<String> datumList) {
-        final StringBuilder datumString = new StringBuilder();
-        for (String datum : datumList) {
-            datumString.append('\'').append(datum).append("',");
+    public String batchRemoveAggr(int datumSize) {
+        final StringBuilder placeholderString = new StringBuilder();
+        for (int i = 0; i < datumSize; i++) {
+            if (i != 0) {
+                placeholderString.append(", ");
+            }
+            placeholderString.append('?');
         }
-        datumString.deleteCharAt(datumString.length() - 1);
         return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
-                + datumString + ")";
+                + placeholderString + ")";
     }
     
     @Override

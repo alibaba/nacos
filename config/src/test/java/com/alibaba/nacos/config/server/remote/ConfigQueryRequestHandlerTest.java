@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -38,7 +37,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,9 +51,6 @@ public class ConfigQueryRequestHandlerTest {
     private ConfigQueryRequestHandler configQueryRequestHandler;
     
     @Mock
-    private PersistService persistService;
-    
-    @Mock
     private File file;
     
     @Before
@@ -65,14 +60,14 @@ public class ConfigQueryRequestHandlerTest {
     
     @Test
     public void testHandle() throws NacosException {
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito
+                .mockStatic(ConfigCacheService.class);
         final MockedStatic<FileUtils> fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
         final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
         MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
-    
+        
         propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
         
-        ReflectionTestUtils.setField(configQueryRequestHandler, "persistService", persistService);
         final String groupKey = GroupKey2.getKey("dataId", "group", "");
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
         diskUtilMockedStatic.when(() -> DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any()))
@@ -92,11 +87,10 @@ public class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         Assert.assertEquals(response.getContent(), "content");
-    
+        
         configCacheServiceMockedStatic.close();
         fileUtilsMockedStatic.close();
         diskUtilMockedStatic.close();
         propertyUtilMockedStatic.close();
     }
-    
 }

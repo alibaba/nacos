@@ -60,6 +60,7 @@ public class ChooserTest {
         assertTrue(target.getWeight() > 0);
     }
     
+    // getOneInstanceNotZeroList
     private List<Instance> getOneInstanceNotZeroList() {
         List<Instance> list = new ArrayList<>();
         int size = ThreadLocalRandom.current().nextInt(0, 1000);

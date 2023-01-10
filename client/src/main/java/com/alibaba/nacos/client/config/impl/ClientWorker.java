@@ -115,13 +115,11 @@ public class ClientWorker implements Closeable {
     
     private final ConfigFilterChainManager configFilterChainManager;
     
-    private boolean isHealthServer = true;
-    
     private String uuid = UUID.randomUUID().toString();
     
     private long timeout;
     
-    private ConfigTransportClient agent;
+    private ConfigRpcTransportClient agent;
     
     private int taskPenaltyTime;
     
@@ -294,8 +292,8 @@ public class ClientWorker implements Closeable {
      */
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
             String content, String encryptedDataKey, String casMd5, String type) throws NacosException {
-        return agent
-                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
+        return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
+                type);
     }
     
     /**
@@ -417,8 +415,8 @@ public class ClientWorker implements Closeable {
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
-        ScheduledExecutorService executorService = Executors
-                .newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM), r -> {
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
+                r -> {
                     Thread t = new Thread(r);
                     t.setName("com.alibaba.nacos.client.Worker");
                     t.setDaemon(true);
@@ -463,11 +461,11 @@ public class ClientWorker implements Closeable {
         timeout = Math.max(ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
                 Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
         
-        taskPenaltyTime = ConvertUtils
-                .toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+        taskPenaltyTime = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME),
+                Constants.CONFIG_RETRY_TIME);
         
-        this.enableRemoteSyncConfig = Boolean
-                .parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        this.enableRemoteSyncConfig = Boolean.parseBoolean(
+                properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
     
     private Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
@@ -501,8 +499,8 @@ public class ClientWorker implements Closeable {
             }
             if (ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA.equals(metricsKey.getType())) {
                 String[] configStr = GroupKey.parseKey(metricsKey.getKey());
-                String snapshot = LocalConfigInfoProcessor
-                        .getSnapshot(this.agent.getName(), configStr[0], configStr[1], configStr[2]);
+                String snapshot = LocalConfigInfoProcessor.getSnapshot(this.agent.getName(), configStr[0], configStr[1],
+                        configStr[2]);
                 values.putIfAbsent(metricsKey,
                         snapshot == null ? null : snapshot + ":" + MD5Utils.md5Hex(snapshot, ENCODE));
             }
@@ -520,12 +518,14 @@ public class ClientWorker implements Closeable {
         LOGGER.info("{} do shutdown stop", className);
     }
     
+    /**
+     * check if it has any connectable server endpoint.
+     *
+     * @return true: that means has atleast one connected rpc client. flase: that means does not have any connected rpc
+     * client.
+     */
     public boolean isHealthServer() {
-        return isHealthServer;
-    }
-    
-    private void setHealthServer(boolean isHealthServer) {
-        this.isHealthServer = isHealthServer;
+        return agent.isHealthServer();
     }
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
@@ -605,9 +605,8 @@ public class ClientWorker implements Closeable {
                     LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
                             rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
                             configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
-                    String groupKey = GroupKey
-                            .getKeyTenant(configChangeNotifyRequest.getDataId(), configChangeNotifyRequest.getGroup(),
-                                    configChangeNotifyRequest.getTenant());
+                    String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                     
                     CacheData cacheData = cacheMap.get().get(groupKey);
                     if (cacheData != null) {
@@ -791,11 +790,10 @@ public class ClientWorker implements Closeable {
                             //handle changed keys,notify listener
                             if (!CollectionUtils.isEmpty(configChangeBatchListenResponse.getChangedConfigs())) {
                                 hasChangedKeys = true;
-                                for (ConfigChangeBatchListenResponse.ConfigContext changeConfig : configChangeBatchListenResponse
-                                        .getChangedConfigs()) {
-                                    String changeKey = GroupKey
-                                            .getKeyTenant(changeConfig.getDataId(), changeConfig.getGroup(),
-                                                    changeConfig.getTenant());
+                                for (ConfigChangeBatchListenResponse.ConfigContext changeConfig
+                                        : configChangeBatchListenResponse.getChangedConfigs()) {
+                                    String changeKey = GroupKey.getKeyTenant(changeConfig.getDataId(),
+                                            changeConfig.getGroup(), changeConfig.getTenant());
                                     changeKeys.add(changeKey);
                                     refreshContentAndCheck(changeKey);
                                 }
@@ -804,8 +802,8 @@ public class ClientWorker implements Closeable {
                             
                             //handler content configs
                             for (CacheData cacheData : listenCaches) {
-                                String groupKey = GroupKey
-                                        .getKeyTenant(cacheData.dataId, cacheData.group, cacheData.getTenant());
+                                String groupKey = GroupKey.getKeyTenant(cacheData.dataId, cacheData.group,
+                                        cacheData.getTenant());
                                 if (!changeKeys.contains(groupKey)) {
                                     //sync:cache data md5 = server md5 && cache data md5 = all listeners md5.
                                     synchronized (cacheData) {
@@ -850,8 +848,8 @@ public class ClientWorker implements Closeable {
                             for (CacheData cacheData : removeListenCaches) {
                                 synchronized (cacheData) {
                                     if (cacheData.isDiscard()) {
-                                        ClientWorker.this
-                                                .removeCache(cacheData.dataId, cacheData.group, cacheData.tenant);
+                                        ClientWorker.this.removeCache(cacheData.dataId, cacheData.group,
+                                                cacheData.tenant);
                                     }
                                 }
                             }
@@ -884,8 +882,8 @@ public class ClientWorker implements Closeable {
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
                 
-                RpcClient rpcClient = RpcClientFactory
-                        .createClient(uuid + "_config-" + taskId, getConnectionType(), newLabels);
+                RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
+                        newLabels);
                 if (rpcClient.isWaitInitiated()) {
                     initRpcClientHandler(rpcClient);
                     rpcClient.setTenant(getTenant());
@@ -966,8 +964,8 @@ public class ClientWorker implements Closeable {
                 }
                 configResponse.setConfigType(configType);
                 String encryptedDataKey = response.getEncryptedDataKey();
-                LocalEncryptedDataKeyProcessor
-                        .saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant, encryptedDataKey);
+                LocalEncryptedDataKeyProcessor.saveEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant,
+                        encryptedDataKey);
                 configResponse.setEncryptedDataKey(encryptedDataKey);
                 return configResponse;
             } else if (response.getErrorCode() == ConfigQueryResponse.CONFIG_NOT_FOUND) {
@@ -1074,6 +1072,20 @@ public class ClientWorker implements Closeable {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
             ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
             return response.isSuccess();
+        }
+        
+        /**
+         * check server is health.
+         *
+         * @return
+         */
+        public boolean isHealthServer() {
+            try {
+                return getOneRunningClient().isRunning();
+            } catch (NacosException e) {
+                LOGGER.warn("check server status failed. error={}", e);
+                return false;
+            }
         }
     }
     
