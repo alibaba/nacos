@@ -51,7 +51,7 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     public ConnectionBasedClientManager() {
         GlobalExecutor
-                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
+                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEARTBEAT_INTERVAL,
                         TimeUnit.MILLISECONDS);
     }
     

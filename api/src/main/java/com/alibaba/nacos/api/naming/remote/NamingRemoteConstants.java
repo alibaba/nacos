@@ -40,5 +40,5 @@ public class NamingRemoteConstants {
     
     public static final String FORWARD_INSTANCE = "forwardInstance";
     
-    public static final String FORWARD_HEART_BEAT = "forwardHeartBeat";
+    public static final String FORWARD_HEARTBEAT = "forwardHeartbeat";
 }

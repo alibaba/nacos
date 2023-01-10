@@ -134,7 +134,7 @@ public class ClientBeatCheckTaskV2Test {
     @Test
     public void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
         injectInstance(true, System.currentTimeMillis()).getExtendDatum()
-                .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 800);
+                .put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, 800);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         beatCheckTask.run();
@@ -147,7 +147,7 @@ public class ClientBeatCheckTaskV2Test {
         injectInstance(true, System.currentTimeMillis());
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
-        metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 500L);
+        metadata.getExtendData().put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, 500L);
         String address =
                 IP + InternetAddressUtil.IP_PORT_SPLITER + PORT + InternetAddressUtil.IP_PORT_SPLITER + UtilsAndCommons.DEFAULT_CLUSTER_NAME;
         when(namingMetadataManager.getInstanceMetadata(service, address)).thenReturn(Optional.of(metadata));

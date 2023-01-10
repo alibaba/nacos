@@ -59,15 +59,15 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     private long getTimeout(Service service, InstancePublishInfo instance) {
         Optional<Object> timeout = getTimeoutFromMetadata(service, instance);
         if (!timeout.isPresent()) {
-            timeout = Optional.ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
+            timeout = Optional.ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.HEARTBEAT_TIMEOUT));
         }
-        return timeout.map(ConvertUtils::toLong).orElse(Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+        return timeout.map(ConvertUtils::toLong).orElse(Constants.DEFAULT_HEARTBEAT_TIMEOUT);
     }
     
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
         Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
                 .getInstanceMetadata(service, instance.getMetadataId());
-        return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
+        return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.HEARTBEAT_TIMEOUT));
     }
     
     private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {

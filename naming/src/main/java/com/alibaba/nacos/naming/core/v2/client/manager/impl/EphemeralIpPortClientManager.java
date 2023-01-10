@@ -60,7 +60,7 @@ public class EphemeralIpPortClientManager implements ClientManager {
     public EphemeralIpPortClientManager(DistroMapper distroMapper, SwitchDomain switchDomain) {
         this.distroMapper = distroMapper;
         GlobalExecutor.scheduleExpiredClientCleaner(new ExpiredClientCleaner(this, switchDomain), 0,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL, TimeUnit.MILLISECONDS);
+                Constants.DEFAULT_HEARTBEAT_INTERVAL, TimeUnit.MILLISECONDS);
         clientFactory = ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.EPHEMERAL_IP_PORT);
     }
     

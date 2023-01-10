@@ -254,14 +254,14 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         String metadataId = InstancePublishInfo.genMetadataId(ip, port, cluster);
         Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, metadataId);
         if (metadata.isPresent() && metadata.get().getExtendData()
-                .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
-            return ConvertUtils.toLong(metadata.get().getExtendData().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
+                .containsKey(PreservedMetadataKeys.HEARTBEAT_INTERVAL)) {
+            return ConvertUtils.toLong(metadata.get().getExtendData().get(PreservedMetadataKeys.HEARTBEAT_INTERVAL));
         }
         String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
         Client client = clientManager.getClient(clientId);
         InstancePublishInfo instance = null != client ? client.getInstancePublishInfo(service) : null;
-        if (null != instance && instance.getExtendDatum().containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
-            return ConvertUtils.toLong(instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
+        if (null != instance && instance.getExtendDatum().containsKey(PreservedMetadataKeys.HEARTBEAT_INTERVAL)) {
+            return ConvertUtils.toLong(instance.getExtendDatum().get(PreservedMetadataKeys.HEARTBEAT_INTERVAL));
         }
         return switchDomain.getClientBeatInterval();
     }

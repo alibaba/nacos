@@ -149,7 +149,7 @@ public class HealthCheckTaskInterceptWrapperTest {
     @Test
     public void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
         injectInstance(true, System.currentTimeMillis()).getExtendDatum()
-                .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
+                .put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, 1000);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.SECONDS.sleep(1);
         taskWrapper.run();
@@ -162,7 +162,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         InstancePublishInfo instance = injectInstance(true, System.currentTimeMillis());
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         InstanceMetadata metadata = new InstanceMetadata();
-        metadata.getExtendData().put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000L);
+        metadata.getExtendData().put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, 1000L);
         when(namingMetadataManager.getInstanceMetadata(service, instance.getMetadataId()))
                 .thenReturn(Optional.of(metadata));
         when(globalConfig.isExpireInstance()).thenReturn(true);

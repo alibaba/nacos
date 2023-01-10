@@ -320,8 +320,8 @@ public abstract class AbstractInstanceOperate_ITCase {
         instance.setIp("1.1.1.2");
         instance.setPort(9999);
         Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "3");
-        metadata.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "6");
+        metadata.put(PreservedMetadataKeys.HEARTBEAT_INTERVAL, "3");
+        metadata.put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, "6");
         metadata.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "9");
         instance.setMetadata(metadata);
         

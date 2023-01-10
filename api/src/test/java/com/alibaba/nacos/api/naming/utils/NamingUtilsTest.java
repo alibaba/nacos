@@ -67,8 +67,8 @@ public class NamingUtilsTest {
     
         // check heartbeatTimeout, heartbeatInterval, ipDeleteTimeout
         Map<String, String> meta = new HashMap<>();
-        meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1");
-        meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, "1");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_INTERVAL, "2");
         meta.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "1");
         instance.setMetadata(meta);
         try {
@@ -80,8 +80,8 @@ public class NamingUtilsTest {
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
-        meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "3");
-        meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, "3");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_INTERVAL, "2");
         meta.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "3");
         NamingUtils.checkInstanceIsLegal(instance);
         assertTrue(true);
@@ -115,8 +115,8 @@ public class NamingUtilsTest {
         
         // check heartbeatTimeout, heartbeatInterval, ipDeleteTimeout
         Map<String, String> meta = new HashMap<>();
-        meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1");
-        meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, "1");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_INTERVAL, "2");
         meta.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "1");
         instance.setMetadata(meta);
         instanceList.add(instance);
@@ -131,8 +131,8 @@ public class NamingUtilsTest {
         }
         instanceList.remove(instance);
         
-        meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "3");
-        meta.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "2");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, "3");
+        meta.put(PreservedMetadataKeys.HEARTBEAT_INTERVAL, "2");
         meta.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "3");
         instance.setMetadata(meta);
         instanceList.add(instance);

@@ -213,13 +213,13 @@ public class Instance implements Serializable {
     }
     
     public long getInstanceHeartBeatInterval() {
-        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL,
-                Constants.DEFAULT_HEART_BEAT_INTERVAL);
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEARTBEAT_INTERVAL,
+                Constants.DEFAULT_HEARTBEAT_INTERVAL);
     }
     
     public long getInstanceHeartBeatTimeOut() {
-        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT,
-                Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEARTBEAT_TIMEOUT,
+                Constants.DEFAULT_HEARTBEAT_TIMEOUT);
     }
     
     public long getIpDeleteTimeout() {
