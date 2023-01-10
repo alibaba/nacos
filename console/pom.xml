@@ -26,7 +26,7 @@
     <artifactId>nacos-console</artifactId>
     <packaging>jar</packaging>
     <name>nacos-console ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
