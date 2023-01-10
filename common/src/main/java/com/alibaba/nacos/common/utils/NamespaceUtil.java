@@ -26,13 +26,12 @@ package com.alibaba.nacos.common.utils;
 public class NamespaceUtil {
     
     private static final String NAMESPACE_PUBLIC_KEY = "public";
-    
+
+    // public id，默认值为 ""
+    private static String NAMESPACE_PUBLIC_ID_DEFAULT = "";
+
     private static final String NAMESPACE_NULL_KEY = "null";
 
-    public static final String NAMESPACE_FILL_PUBLIC_ID_ENV_NAME = "nacos.core.namespace.fill-public-id";
-
-    private static final String NAMESPACE_PUBLIC_ID_ENV_NAME = "nacos.core.namespace.public-id";
-    
     /**
      * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
      * @param tenant namespace(tenant) id
@@ -53,7 +52,7 @@ public class NamespaceUtil {
      * @param namespaceDefaultId
      */
     public static void setNamespaceDefaultId(String namespaceDefaultId){
-        System.setProperty(NAMESPACE_PUBLIC_ID_ENV_NAME, namespaceDefaultId);
+        NAMESPACE_PUBLIC_ID_DEFAULT = namespaceDefaultId;
     }
 
     /**
@@ -62,6 +61,6 @@ public class NamespaceUtil {
      * @return
      */
     public static String getNamespaceDefaultId(){
-        return System.getProperty(NAMESPACE_PUBLIC_ID_ENV_NAME, "");
+        return NAMESPACE_PUBLIC_ID_DEFAULT;
     }
 }
