@@ -278,9 +278,6 @@ class ConfigurationManagement extends React.Component {
       pageSize: prePageSize ? prePageSize : this.state.pageSize,
       tenant: this.tenant,
     };
-    if (this.state.config_detail && this.state.config_detail !== '') {
-      params.config_detail = this.state.config_detail;
-    }
     setParams('pageSize', null);
     setParams('pageNo', null);
     this.changeParamsBySearchType(params);
