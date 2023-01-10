@@ -26,7 +26,7 @@
     
     <artifactId>nacos-datasource-plugin</artifactId>
     <name>nacos-datasource-plugin ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     
     <dependencies>
         <dependency>
