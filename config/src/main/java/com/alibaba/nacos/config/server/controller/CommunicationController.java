@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -75,7 +74,6 @@ public class CommunicationController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "tag", required = false) String tag) {
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         dataId = dataId.trim();
         group = group.trim();
         String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
@@ -96,7 +94,6 @@ public class CommunicationController {
     @GetMapping("/configWatchers")
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
         // long polling listeners.
         SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);

@@ -72,7 +72,6 @@ public class HistoryController {
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "pageNo", required = false) Integer pageNo,
             @RequestParam(value = "pageSize", required = false) Integer pageSize, ModelMap modelMap) {
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         pageNo = null == pageNo ? 1 : pageNo;
         pageSize = null == pageSize ? 100 : pageSize;
         pageSize = Math.min(500, pageSize);
@@ -96,7 +95,6 @@ public class HistoryController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("nid") Long nid) throws AccessException {
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getConfigHistoryInfo(dataId, group, tenant, nid);
     }
     
@@ -117,7 +115,6 @@ public class HistoryController {
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam("id") Long id) throws AccessException {
-        tenant = NamespaceUtil.processNamespaceParameter(tenant);
         return historyService.getPreviousConfigHistoryInfo(dataId, group, tenant, id);
     }
     
