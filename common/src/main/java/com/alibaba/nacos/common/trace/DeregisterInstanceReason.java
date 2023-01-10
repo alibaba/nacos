@@ -35,7 +35,7 @@ public enum DeregisterInstanceReason {
      */
     SYNCED_DISCONNECTED,
     /**
-     * Instance heart beat timeout expire.
+     * Instance heartbeat timeout expire.
      */
     HEARTBEAT_EXPIRE,
    

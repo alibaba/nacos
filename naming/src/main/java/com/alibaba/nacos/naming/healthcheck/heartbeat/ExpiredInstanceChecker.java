@@ -56,7 +56,7 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
     
     private boolean isExpireInstance(Service service, HealthCheckInstancePublishInfo instance) {
         long deleteTimeout = getTimeout(service, instance);
-        return System.currentTimeMillis() - instance.getLastHeartBeatTime() > deleteTimeout;
+        return System.currentTimeMillis() - instance.getLastHeartbeatTime() > deleteTimeout;
     }
     
     private long getTimeout(Service service, InstancePublishInfo instance) {

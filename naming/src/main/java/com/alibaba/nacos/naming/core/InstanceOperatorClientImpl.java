@@ -249,7 +249,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     }
     
     @Override
-    public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
+    public long getHeartbeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
         Service service = getService(namespaceId, serviceName, true);
         String metadataId = InstancePublishInfo.genMetadataId(ip, port, cluster);
         Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, metadataId);

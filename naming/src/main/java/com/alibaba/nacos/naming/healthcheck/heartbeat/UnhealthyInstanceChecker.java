@@ -53,7 +53,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
     
     private boolean isUnhealthy(Service service, HealthCheckInstancePublishInfo instance) {
         long beatTimeout = getTimeout(service, instance);
-        return System.currentTimeMillis() - instance.getLastHeartBeatTime() > beatTimeout;
+        return System.currentTimeMillis() - instance.getLastHeartbeatTime() > beatTimeout;
     }
     
     private long getTimeout(Service service, InstancePublishInfo instance) {
@@ -75,7 +75,7 @@ public class UnhealthyInstanceChecker implements InstanceBeatChecker {
         Loggers.EVT_LOG
                 .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),
                         instance.getPort(), instance.getCluster(), service.getName(), UtilsAndCommons.LOCALHOST_SITE,
-                        instance.getLastHeartBeatTime());
+                        instance.getLastHeartbeatTime());
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
         NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),

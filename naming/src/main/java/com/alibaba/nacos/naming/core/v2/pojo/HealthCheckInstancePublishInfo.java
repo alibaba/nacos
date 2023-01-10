@@ -30,7 +30,7 @@ public class HealthCheckInstancePublishInfo extends InstancePublishInfo {
     
     private static final long serialVersionUID = 5424801693490263492L;
     
-    private long lastHeartBeatTime = System.currentTimeMillis();
+    private long lastHeartbeatTime = System.currentTimeMillis();
     
     private HealthCheckStatus healthCheckStatus;
     
@@ -41,12 +41,12 @@ public class HealthCheckInstancePublishInfo extends InstancePublishInfo {
         super(ip, port);
     }
     
-    public long getLastHeartBeatTime() {
-        return lastHeartBeatTime;
+    public long getLastHeartbeatTime() {
+        return lastHeartbeatTime;
     }
     
-    public void setLastHeartBeatTime(long lastHeartBeatTime) {
-        this.lastHeartBeatTime = lastHeartBeatTime;
+    public void setLastHeartbeatTime(long lastHeartbeatTime) {
+        this.lastHeartbeatTime = lastHeartbeatTime;
     }
     
     public void initHealthCheck() {

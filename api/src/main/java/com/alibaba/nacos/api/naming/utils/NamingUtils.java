@@ -130,18 +130,18 @@ public class NamingUtils {
      * <p>Check instance param about keep alive.</p>
      *
      * <pre>
-     * heart beat timeout must > heart beat interval
-     * ip delete timeout must  > heart beat interval
+     * heartbeat timeout must > heartbeat interval
+     * ip delete timeout must  > heartbeat interval
      * </pre>
      *
      * @param instance need checked instance
      * @throws NacosException if check failed, throw exception
      */
     public static void checkInstanceIsLegal(Instance instance) throws NacosException {
-        if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
-                || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
+        if (instance.getInstanceHeartbeatTimeOut() < instance.getInstanceHeartbeatInterval()
+                || instance.getIpDeleteTimeout() < instance.getInstanceHeartbeatInterval()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
+                    "Instance 'heartbeat interval' must less than 'heartbeat timeout' and 'ip delete timeout'.");
         }
         if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,

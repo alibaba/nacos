@@ -123,7 +123,7 @@ public class ClientBeatCheckTaskV2Test {
     }
     
     @Test
-    public void testRunHealthyInstanceWithHeartBeat() {
+    public void testRunHealthyInstanceWithHeartbeat() {
         injectInstance(true, System.currentTimeMillis());
         when(globalConfig.isExpireInstance()).thenReturn(true);
         beatCheckTask.run();
@@ -161,7 +161,7 @@ public class ClientBeatCheckTaskV2Test {
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
         HealthCheckInstancePublishInfo instance = new HealthCheckInstancePublishInfo(IP, PORT);
         instance.setHealthy(healthy);
-        instance.setLastHeartBeatTime(heartbeatTime);
+        instance.setLastHeartbeatTime(heartbeatTime);
         instance.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         client.addServiceInstance(service, instance);

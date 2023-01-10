@@ -212,7 +212,7 @@ public class InstanceOperatorClientImplTest {
     }
     
     @Test
-    public void testGetHeartBeatInterval() {
+    public void testGetHeartbeatInterval() {
         InstanceMetadata instanceMetadata = new InstanceMetadata();
         Map<String, Object> map = new HashMap<>(2);
         instanceMetadata.setExtendData(map);
@@ -221,7 +221,7 @@ public class InstanceOperatorClientImplTest {
         
         when(switchDomain.getClientBeatInterval()).thenReturn(100L);
         
-        long interval = instanceOperatorClient.getHeartBeatInterval("A", "C", "1.1.1.1", 8848, "D");
+        long interval = instanceOperatorClient.getHeartbeatInterval("A", "C", "1.1.1.1", 8848, "D");
         
         Assert.assertEquals(100L, interval);
     }

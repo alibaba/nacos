@@ -19,11 +19,11 @@ package com.alibaba.nacos.core.remote.event;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
- * Remoting connection heart beat event.
+ * Remoting connection heartbeat event.
  *
  * @author xiweng.yy
  */
-public class RemotingHeartBeatEvent extends Event {
+public class RemotingHeartbeatEvent extends Event {
     
     private final String connectionId;
     
@@ -31,7 +31,7 @@ public class RemotingHeartBeatEvent extends Event {
     
     private final String clientVersion;
     
-    public RemotingHeartBeatEvent(String connectionId, String clientIp, String clientVersion) {
+    public RemotingHeartbeatEvent(String connectionId, String clientIp, String clientVersion) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.clientVersion = clientVersion;

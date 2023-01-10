@@ -77,7 +77,7 @@ public class NamingUtilsTest {
         } catch (Exception e) {
             assertTrue(e instanceof NacosException);
             assertEquals(
-                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+                    "Instance 'heartbeat interval' must less than 'heartbeat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
         meta.put(PreservedMetadataKeys.HEARTBEAT_TIMEOUT, "3");
@@ -126,7 +126,7 @@ public class NamingUtilsTest {
         } catch (Exception e) {
             assertTrue(e instanceof NacosException);
             assertEquals(
-                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+                    "Instance 'heartbeat interval' must less than 'heartbeat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
         instanceList.remove(instance);

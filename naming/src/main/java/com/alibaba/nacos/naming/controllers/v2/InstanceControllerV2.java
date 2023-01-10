@@ -361,7 +361,7 @@ public class InstanceControllerV2 {
                 .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, builder);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
-                instanceServiceV2.getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
+                instanceServiceV2.getHeartbeatInterval(namespaceId, serviceName, ip, port, clusterName));
         result.put(SwitchEntry.LIGHT_BEAT_ENABLED, switchDomain.isLightBeatEnabled());
         return result;
     }

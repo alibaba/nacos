@@ -38,7 +38,7 @@ public class ClientBeatUpdateTask extends AbstractExecuteTask {
     public void run() {
         long currentTime = System.currentTimeMillis();
         for (InstancePublishInfo each : client.getAllInstancePublishInfo()) {
-            ((HealthCheckInstancePublishInfo) each).setLastHeartBeatTime(currentTime);
+            ((HealthCheckInstancePublishInfo) each).setLastHeartbeatTime(currentTime);
         }
         client.setLastUpdatedTime();
     }

@@ -126,16 +126,16 @@ public interface InstanceOperator {
             BeatInfoInstanceBuilder builder) throws NacosException;
     
     /**
-     * Get heart beat interval for specified instance.
+     * Get heartbeat interval for specified instance.
      *
      * @param namespaceId namespace
      * @param serviceName grouped service name group@@service
      * @param ip          ip of instance
      * @param port        port of instance
      * @param cluster     cluster of instance
-     * @return heart beat interval
+     * @return heartbeat interval
      */
-    long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster);
+    long getHeartbeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster);
     
     /**
      * List all instances whatever status they are.

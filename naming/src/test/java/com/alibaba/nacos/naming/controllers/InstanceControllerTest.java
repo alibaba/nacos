@@ -211,7 +211,7 @@ public class InstanceControllerTest extends BaseTest {
                 .handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
                         eq("1.1.1.1"), eq(3306), eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME), any(), any()))
                 .thenReturn(200);
-        when(instanceServiceV2.getHeartBeatInterval(eq(Constants.DEFAULT_NAMESPACE_ID),
+        when(instanceServiceV2.getHeartbeatInterval(eq(Constants.DEFAULT_NAMESPACE_ID),
                 eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), eq("1.1.1.1"), eq(3306),
                 eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME))).thenReturn(10000L);
         ObjectNode actual = instanceController.beat(request);

@@ -39,7 +39,7 @@ public class DiskUtilsTest {
     }
     
     @Test
-    public void testSaveHeartBeatToDisk() throws IOException {
+    public void testSaveHeartbeatToDisk() throws IOException {
         String heartbeatTime = System.currentTimeMillis() + "";
         DiskUtil.saveHeartbeatToDisk(heartbeatTime);
         fileUtils.verify(() -> FileUtils.writeStringToFile(DiskUtil.heartbeatFile(), heartbeatTime, Constants.ENCODE), Mockito.times(1));
@@ -157,7 +157,7 @@ public class DiskUtilsTest {
     }
 
     @Test
-    public void testHeartBeatFile() {
+    public void testHeartbeatFile() {
         File file = DiskUtil.heartbeatFile();
         String[] arr = file.getPath().split(File.separator);
         Assert.assertEquals("heartbeat.txt", arr[arr.length - 1]);

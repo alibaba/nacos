@@ -212,12 +212,12 @@ public class Instance implements Serializable {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
     
-    public long getInstanceHeartBeatInterval() {
+    public long getInstanceHeartbeatInterval() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEARTBEAT_INTERVAL,
                 Constants.DEFAULT_HEARTBEAT_INTERVAL);
     }
     
-    public long getInstanceHeartBeatTimeOut() {
+    public long getInstanceHeartbeatTimeOut() {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEARTBEAT_TIMEOUT,
                 Constants.DEFAULT_HEARTBEAT_TIMEOUT);
     }

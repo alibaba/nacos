@@ -23,7 +23,7 @@ package com.alibaba.nacos.common.trace;
  */
 public enum HealthCheckType {
     /**
-     * Instance heart beat timeout.
+     * Instance heartbeat timeout.
      */
     CLIENT_BEAT("client_beat"),
     /**

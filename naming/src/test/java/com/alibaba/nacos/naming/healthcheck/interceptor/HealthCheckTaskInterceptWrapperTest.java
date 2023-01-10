@@ -138,7 +138,7 @@ public class HealthCheckTaskInterceptWrapperTest {
     }
     
     @Test
-    public void testRunHealthyInstanceWithHeartBeat() {
+    public void testRunHealthyInstanceWithHeartbeat() {
         injectInstance(true, System.currentTimeMillis());
         when(globalConfig.isExpireInstance()).thenReturn(true);
         taskWrapper.run();
@@ -176,7 +176,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         HealthCheckInstancePublishInfo instance = new HealthCheckInstancePublishInfo(IP, PORT);
         instance.setHealthy(healthy);
-        instance.setLastHeartBeatTime(heartbeatTime);
+        instance.setLastHeartbeatTime(heartbeatTime);
         client.addServiceInstance(service, instance);
         return instance;
     }
