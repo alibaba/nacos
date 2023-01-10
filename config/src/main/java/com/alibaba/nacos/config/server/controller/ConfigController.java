@@ -389,7 +389,6 @@ public class ConfigController {
         }
     }
     
-    
     /**
      * Fuzzy query configuration information. Fuzzy queries based only on content are not allowed, that is, both dataId
      * and group are NULL, but content is not NULL. In this case, all configurations are returned.
@@ -417,7 +416,6 @@ public class ConfigController {
             throw new RuntimeException(errorMsg, e);
         }
     }
-    
     
     /**
      * Execute to remove beta operation.
