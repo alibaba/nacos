@@ -112,6 +112,7 @@
                     <plugin>
                         <groupId>org.springframework.boot</groupId>
                         <artifactId>spring-boot-maven-plugin</artifactId>
+                        <version>${spring-boot-dependencies.version}</version>
                         <configuration>
                             <mainClass>com.alibaba.nacos.Nacos</mainClass>
                             <layout>ZIP</layout>
