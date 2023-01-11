@@ -77,6 +77,7 @@ public class HistoryControllerV2 {
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
         pageSize = Math.min(500, pageSize);
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
     }
     
@@ -97,6 +98,7 @@ public class HistoryControllerV2 {
             @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
+            namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
             configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
@@ -122,6 +124,7 @@ public class HistoryControllerV2 {
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
+            namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
             configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
