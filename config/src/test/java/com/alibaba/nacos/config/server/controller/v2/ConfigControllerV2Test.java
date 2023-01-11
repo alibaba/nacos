@@ -256,7 +256,6 @@ public class ConfigControllerV2Test {
         assertEquals(response.getErrorMessage(),
                 "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
                 + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
-        
         when(authConfigs.isAuthEnabled()).thenReturn(false);
     }
 }
