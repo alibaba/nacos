@@ -164,13 +164,14 @@ public class ConfigControllerV2 {
     /**
      * Query the configuration information with a specific configuration detail (this interface will take a lot of time).
      */
-    @GetMapping(params = {"search=accurate", "config_detail"})
+    @GetMapping("/searchDetail")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public Page<ConfigInfo> searchConfigByDetails(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam(value = "config_detail") String configDetail,
+            @RequestParam(value = "search", defaultValue = "blur", required = false) String search,
             @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
@@ -183,44 +184,10 @@ public class ConfigControllerV2 {
             configAdvanceInfo.put("config_detail", configDetail);
         }
         try {
-            if (StringUtils.isNotBlank(configDetail)) {
-                return configInfoPersistService.findConfigInfoByDetail4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
-            } else {
-                return configInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
-            }
-        } catch (Exception e) {
-            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
-            LOGGER.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
-        }
-    }
-    
-    /**
-     * Fuzzy query the configuration information with a specific configuration detail (this interface will take a lot of time).
-     */
-    @GetMapping(params = {"search=blur", "config_detail"})
-    @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Page<ConfigInfo> fuzzySearchConfigByDetails(@RequestParam("dataId") String dataId,
-            @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "config_tags", required = false) String configTags,
-            @RequestParam(value = "config_detail") String configDetail,
-            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
-        Map<String, Object> configAdvanceInfo = new HashMap<>(50);
-        if (StringUtils.isNotBlank(appName)) {
-            configAdvanceInfo.put("appName", appName);
-        }
-        if (StringUtils.isNotBlank(configTags)) {
-            configAdvanceInfo.put("config_tags", configTags);
-        }
-        if (StringUtils.isNotBlank(configDetail)) {
-            configAdvanceInfo.put("config_detail", configDetail);
-        }
-        try {
-            if (StringUtils.isNotBlank(configDetail)) {
+            if (Constants.CONFIG_SEARCH_BLUR.equals(search)) {
                 return configInfoPersistService.findConfigInfoByDetailLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
             } else {
-                return configInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+                return configInfoPersistService.findConfigInfoByDetail4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
             }
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;

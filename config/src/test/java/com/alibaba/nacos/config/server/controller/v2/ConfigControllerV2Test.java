@@ -18,23 +18,42 @@ package com.alibaba.nacos.config.server.controller.v2;
 
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.core.auth.AuthFilter;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -47,13 +66,24 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigControllerV2Test {
     
+    @InjectMocks
+    private AuthFilter authFilter;
+    
+    @Mock
+    private AuthConfigs authConfigs;
+    
     private ConfigControllerV2 configControllerV2;
+    
+    private MockMvc mockmvc;
     
     @Mock
     private ConfigServletInner inner;
     
     @Mock
     private ConfigOperationService configOperationService;
+    
+    @Mock
+    private ServletContext servletContext;
     
     @Mock
     private ConfigInfoPersistService configInfoPersistService;
@@ -70,7 +100,11 @@ public class ConfigControllerV2Test {
     
     @Before
     public void setUp() {
+        EnvUtil.setEnvironment(new StandardEnvironment());
+        when(servletContext.getContextPath()).thenReturn("/nacos");
         configControllerV2 = new ConfigControllerV2(inner, configOperationService, configInfoPersistService);
+        mockmvc = MockMvcBuilders.standaloneSetup(configControllerV2).addFilter(authFilter).build();
+        when(authConfigs.isAuthEnabled()).thenReturn(false);
     }
     
     @Test
@@ -138,5 +172,91 @@ public class ConfigControllerV2Test {
     
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());
+    }
+    
+    @Test
+    public void testGetConfigByDetail() throws Exception {
+        List<ConfigInfo> configInfoList = new ArrayList<>();
+        ConfigInfo configInfo = new ConfigInfo("test", "test", "test");
+        configInfoList.add(configInfo);
+    
+        Page<ConfigInfo> page = new Page<>();
+        page.setTotalCount(15);
+        page.setPageNumber(1);
+        page.setPagesAvailable(2);
+        page.setPageItems(configInfoList);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(8);
+        configAdvanceInfo.put("config_detail", "server.port");
+        
+        when(configInfoPersistService.findConfigInfoByDetail4Page(1, 10, "test", "test", "", configAdvanceInfo))
+                .thenReturn(page);
+    
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
+                .param("search", "accurate").param("dataId", "test").param("group", "test")
+                .param("appName", "").param("tenant", "").param("config_tags", "")
+                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+    
+        JsonNode pageItemsNode = JacksonUtils.toObj(actualValue).get("pageItems");
+        List resultList = JacksonUtils.toObj(pageItemsNode.toString(), List.class);
+        ConfigInfo resConfigInfo = JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigInfo.class);
+    
+        Assert.assertEquals(configInfoList.size(), resultList.size());
+        Assert.assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
+        Assert.assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
+        Assert.assertEquals(configInfo.getContent(), resConfigInfo.getContent());
+    }
+    
+    @Test
+    public void testFuzzyGetConfigByDetail() throws Exception {
+        List<ConfigInfo> configInfoList = new ArrayList<>();
+        ConfigInfo configInfo = new ConfigInfo("test", "test", "test");
+        configInfoList.add(configInfo);
+        
+        Page<ConfigInfo> page = new Page<>();
+        page.setTotalCount(15);
+        page.setPageNumber(1);
+        page.setPagesAvailable(2);
+        page.setPageItems(configInfoList);
+        Map<String, Object> configAdvanceInfo = new HashMap<>(8);
+        configAdvanceInfo.put("config_detail", "server.port");
+        
+        when(configInfoPersistService.findConfigInfoByDetailLike4Page(1, 10, "test", "test", "", configAdvanceInfo))
+                .thenReturn(page);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
+                .param("search", "blur").param("dataId", "test").param("group", "test")
+                .param("appName", "").param("tenant", "").param("config_tags", "")
+                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        
+        JsonNode pageItemsNode = JacksonUtils.toObj(actualValue).get("pageItems");
+        List resultList = JacksonUtils.toObj(pageItemsNode.toString(), List.class);
+        ConfigInfo resConfigInfo = JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigInfo.class);
+        
+        Assert.assertEquals(configInfoList.size(), resultList.size());
+        Assert.assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
+        Assert.assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
+        Assert.assertEquals(configInfo.getContent(), resConfigInfo.getContent());
+    }
+    
+    @Test
+    public void testGetConfigAuthFilter() throws Exception {
+        when(authConfigs.isAuthEnabled()).thenReturn(true);
+    
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
+                .param("search", "accurate").param("dataId", "test").param("group", "test")
+                .param("appName", "").param("tenant", "").param("config_tags", "")
+                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        
+        assertEquals(response.getStatus(), HttpServletResponse.SC_FORBIDDEN);
+        assertEquals(response.getErrorMessage(),
+                "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
+                + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");
+        
+        when(authConfigs.isAuthEnabled()).thenReturn(false);
     }
 }

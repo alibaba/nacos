@@ -753,6 +753,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         final String configDetail = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_detail");
+        if (configDetail == null) {
+            return findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+        }
         String sql = null;
         String sqlCount = null;
         List<String> paramList = new ArrayList<>();
@@ -1144,6 +1147,9 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         final String configDetail = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_detail");
+        if (configDetail == null) {
+            return findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant, configAdvanceInfo);
+        }
         String sqlCountRows = null;
         String sqlFetchRows = null;
         Map<String, String> paramsMap = new HashMap<>(16);

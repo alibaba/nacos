@@ -27,7 +27,9 @@ const getConfigs = params => dispatch =>
     .then(data => dispatch({ type: GET_CONFIGURATION, data }));
 
 const getConfigsV2 = params => dispatch =>
-  request.get('v2/cs/config', { params }).then(data => dispatch({ type: GET_CONFIGURATION, data }));
+  request
+    .get('v2/cs/config/searchDetail', { params })
+    .then(data => dispatch({ type: GET_CONFIGURATION, data }));
 
 export default (state = initialState, action) => {
   switch (action.type) {
