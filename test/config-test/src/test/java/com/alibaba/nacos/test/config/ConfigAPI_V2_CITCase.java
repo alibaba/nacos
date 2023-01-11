@@ -81,7 +81,7 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
     
     @Before
     public void setUp() throws Exception {
-        String url = String.format("http://localhost:%d/", port);
+        String url = String.format("http://127.0.0.1:%d/", port);
         this.base = new URL(url);
     }
     
@@ -120,6 +120,8 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new RuntimeException("Fail to get config");
             }
+        } else {
+            Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         }
         JsonNode json = JacksonUtils.toObj(response.getBody());
         return json.get("data").asText();
