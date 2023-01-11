@@ -300,6 +300,8 @@ const I18N_CONF = {
     advancedQuery9: 'Advanced Query',
     app1: 'Enter App Name\n',
     tags: 'Tags',
+    configDetailLabel: 'DetailSearch',
+    configDetailH: 'try server.port',
     pleaseEnterTag: 'Enter Tag',
     application: 'Application',
     operation: 'Operation',

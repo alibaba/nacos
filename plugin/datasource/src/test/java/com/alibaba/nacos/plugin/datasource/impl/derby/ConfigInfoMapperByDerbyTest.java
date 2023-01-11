@@ -191,7 +191,7 @@ public class ConfigInfoMapperByDerbyTest {
     public void testFindConfigInfoLike4PageFetchRows() {
         String sql = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(new HashMap<>(), 0, 5);
         Assert.assertEquals(sql,
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
+                "SELECT id,data_id,group_id,tenant_id,app_name,type,content,encrypted_data_key FROM config_info "
                         + "WHERE  tenant_id LIKE ?  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
     }
     

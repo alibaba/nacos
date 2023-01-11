@@ -44,7 +44,7 @@ import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
 import { connect } from 'react-redux';
-import { getConfigs } from '../../../reducers/configuration';
+import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
@@ -58,7 +58,7 @@ const configsTableSelected = new Map();
   state => ({
     configurations: state.configuration.configurations,
   }),
-  { getConfigs }
+  { getConfigs, getConfigsV2 }
 )
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
@@ -98,6 +98,7 @@ class ConfigurationManagement extends React.Component {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
+      config_detail: getParams('configDetail') || '',
       config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
       tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
@@ -281,8 +282,14 @@ class ConfigurationManagement extends React.Component {
     setParams('pageNo', null);
     this.changeParamsBySearchType(params);
     this.setState({ loading: true });
-    this.props
-      .getConfigs(params)
+    let props = null;
+    if (this.state.config_detail && this.state.config_detail !== '') {
+      params.config_detail = this.state.config_detail;
+      props = this.props.getConfigsV2(params);
+    } else {
+      props = this.props.getConfigs(params);
+    }
+    props
       .then(() =>
         this.setState({
           loading: false,
@@ -440,6 +447,13 @@ class ConfigurationManagement extends React.Component {
     this.setState({ pageSize }, () => this.changePage(1));
   }
 
+  setConfigDetail(value) {
+    this.setState({
+      config_detail: value,
+    });
+    setParams('configDetail', value);
+  }
+
   setAppName(value) {
     this.appName = value;
     this.setState({
@@ -530,6 +544,7 @@ class ConfigurationManagement extends React.Component {
   clear = () => {
     this.setAppName('');
     this.setConfigTags([]);
+    this.setConfigDetail('');
   };
 
   changeAdvancedQuery = () => {
@@ -1265,6 +1280,18 @@ class ConfigurationManagement extends React.Component {
                       }
                     }}
                     hasClear
+                  />
+                </Form.Item>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.configDetailLabel}
+                >
+                  <Input
+                    htmlType={'text'}
+                    placeholder={locale.configDetailH}
+                    style={{ width: 200 }}
+                    value={this.state.config_detail}
+                    onChange={this.setConfigDetail.bind(this)}
                   />
                 </Form.Item>
               </Form>
