@@ -58,8 +58,6 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
     
     private static final String CONTENT = randomContent();
     
-    private static String NACOS_HOME;
-    
     private final String DATA_ID = "nacos.example";
     
     private final String GROUP = "DEFAULT_GROUP";
@@ -71,14 +69,14 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
     
     @BeforeClass
     public static void beforeClass() {
-        NACOS_HOME = ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_V2_CITCase.class.getSimpleName());
-        System.out.println(NACOS_HOME);
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_V2_CITCase.class.getSimpleName());
     }
     
     
     @AfterClass
+    @BeforeClass
     public static void cleanClientCache() throws Exception {
-        DiskUtils.deleteDirThenMkdir(NACOS_HOME);
+        ConfigCleanUtils.cleanClientCache();
     }
     
     @Before
