@@ -52,6 +52,8 @@ import static com.alibaba.nacos.test.config.ConfigAPI_V2_CITCase.CONTEXT_PATH;
 @FixMethodOrder(MethodSorters.JVM)
 public class ConfigAPI_V2_CITCase extends HttpClient4Test {
     
+    public static final long TIME_OUT = 5000;
+    
     public static final String CONTEXT_PATH = "/nacos";
     
     private static final String CONFIG_V2_CONTROLLER_PATH = CONTEXT_PATH + Constants.CONFIG_CONTROLLER_V2_PATH;
@@ -88,9 +90,12 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
     @Test
     public void test() throws Exception {
         publishConfig();
+        Thread.sleep(TIME_OUT);
         String config = getConfig(true);
         Assert.assertEquals(config, CONTENT);
+        Thread.sleep(TIME_OUT);
         deleteConfig();
+        Thread.sleep(TIME_OUT);
         boolean thrown = false;
         try {
             getConfig(false);
