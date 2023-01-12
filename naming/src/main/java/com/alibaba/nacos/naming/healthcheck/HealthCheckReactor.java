@@ -37,7 +37,7 @@ public class HealthCheckReactor {
     
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
 
-    private static ConcurrentHashMap<String, String> futureMapLock = new ConcurrentHashMap<>();
+    private static Map<String, String> futureMapLock = new ConcurrentHashMap<>();
 
     /**
      * Schedule health check task for v2.
