@@ -36,7 +36,9 @@ import java.util.concurrent.TimeUnit;
 public class HealthCheckReactor {
     
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
-    
+
+    private static ConcurrentHashMap<String, String> futureMapLock = new ConcurrentHashMap<>();
+
     /**
      * Schedule health check task for v2.
      *
@@ -57,8 +59,12 @@ public class HealthCheckReactor {
         Runnable wrapperTask =
                 task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
                         : task;
-        futureMap.computeIfAbsent(task.taskKey(),
-                k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
+        //Avoid the same task being calculated twice
+        if (futureMapLock.putIfAbsent(task.taskKey(), task.taskKey()) == null) {
+            futureMap.computeIfAbsent(task.taskKey(),
+                    k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
+            futureMapLock.remove(task.taskKey());
+        }
     }
     
     /**
