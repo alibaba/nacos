@@ -52,7 +52,7 @@ public class NamespaceUtil {
      * @param namespaceDefaultId 参数不能为 null
      */
     public static void setNamespaceDefaultId(String namespaceDefaultId) {
-        namespaceDefaultId = namespaceDefaultId;
+        NamespaceUtil.namespaceDefaultId = namespaceDefaultId;
     }
     
     /**
@@ -61,6 +61,6 @@ public class NamespaceUtil {
      * @return namespace id
      */
     public static String getNamespaceDefaultId() {
-        return namespaceDefaultId;
+        return NamespaceUtil.namespaceDefaultId;
     }
 }
