@@ -52,7 +52,8 @@ public interface GroupCapacityMapper extends Mapper {
      */
     default String insertIntoSelectByWhere() {
         return "INSERT INTO group_capacity (group_id, quota,usage, max_size, max_aggr_count, max_aggr_size, gmt_create,"
-                + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = '"+ NamespaceUtil.getNamespaceDefaultId() +"'";
+                + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = '"
+                + NamespaceUtil.getNamespaceDefaultId() + "'";
     }
     
     /**
@@ -64,7 +65,7 @@ public interface GroupCapacityMapper extends Mapper {
      * AND
      * quota = 0;
      *
-     * @return
+     * @return sql.
      */
     default String incrementUsageByWhereQuotaEqualZero() {
         return "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0";
@@ -79,7 +80,7 @@ public interface GroupCapacityMapper extends Mapper {
      * quota
      * AND quota != 0;
      *
-     * @return
+     * @return sql.
      */
     default String incrementUsageByWhereQuotaNotEqualZero() {
         return "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0";
@@ -92,7 +93,7 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Example: UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?;
      *
-     * @return
+     * @return sql.
      */
     default String incrementUsageByWhere() {
         return "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?";
@@ -106,7 +107,7 @@ public interface GroupCapacityMapper extends Mapper {
      * <p>Example: UPDATE group_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE group_id = ? AND `usage` >
      * 0;
      *
-     * @return
+     * @return sql.
      */
     default String decrementUsageByWhere() {
         return "UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0";
@@ -118,7 +119,7 @@ public interface GroupCapacityMapper extends Mapper {
      * <p>Example: UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE
      * group_id = ?;
      *
-     * @return
+     * @return sql.
      */
     default String updateUsage() {
         return "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?";
@@ -133,10 +134,11 @@ public interface GroupCapacityMapper extends Mapper {
      * =
      * ''), gmt_modified = ? WHERE group_id= ?;
      *
-     * @return
+     * @return sql.
      */
     default String updateUsageByWhere() {
-        return "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = '"+ NamespaceUtil.getNamespaceDefaultId() +"'),"
+        return "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = '"
+                + NamespaceUtil.getNamespaceDefaultId() + "'),"
                 + " gmt_modified = ? WHERE group_id= ?";
     }
     
@@ -145,7 +147,7 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Example: SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?;
      *
-     * @return
+     * @return sql.
      */
     String selectGroupInfoBySize();
 

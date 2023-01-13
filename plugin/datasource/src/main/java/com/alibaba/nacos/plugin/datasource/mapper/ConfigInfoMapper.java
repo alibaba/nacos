@@ -34,9 +34,13 @@ import java.util.Map;
 public interface ConfigInfoMapper extends Mapper {
 
     String DATA_ID = "dataId";
+    
     String GROUP = "group";
+    
     String APP_NAME = "appName";
+    
     String CONTENT = "content";
+    
     String TENANT = "tenant";
 
     /**
@@ -253,8 +257,8 @@ public interface ConfigInfoMapper extends Mapper {
      * @return Collection of ConfigInfo objects
      */
     default String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
-        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified," +
-                "src_user, src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
+        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,"
+                + "src_user, src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         if (!CollectionUtils.isEmpty(ids)) {
             where.append(" id IN (");
@@ -291,7 +295,9 @@ public interface ConfigInfoMapper extends Mapper {
      */
     default String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
-        String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
+        String where = " 1=1 AND tenant_id='"
+                + NamespaceUtil.getNamespaceDefaultId()
+                + "' ";
 
         if (!StringUtils.isBlank(params.get(DATA_ID))) {
             where += " AND data_id LIKE ? ";

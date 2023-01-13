@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
-import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +47,8 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     
     @Override
     public String getGroupIdList(int startRow, int pageSize) {
-        return "SELECT group_id FROM config_info WHERE tenant_id ='"+ NamespaceUtil.getNamespaceDefaultId() +"' GROUP BY group_id OFFSET " + startRow
+        return "SELECT group_id FROM config_info WHERE tenant_id =' " + NamespaceUtil.getNamespaceDefaultId()
+                + "' GROUP BY group_id OFFSET " + startRow
                 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
@@ -117,7 +115,9 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     @Override
     public String findConfigInfoBaseLikeFetchRows(Map<String, String> params, int startRow, int pageSize) {
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
-        String where = " 1=1 AND tenant_id='"+ NamespaceUtil.getNamespaceDefaultId() +"' ";
+        String where = " 1=1 AND tenant_id='"
+                + NamespaceUtil.getNamespaceDefaultId()
+                + "' ";
         if (!StringUtils.isBlank(params.get(DATA_ID))) {
             where += " AND data_id LIKE ? ";
         }

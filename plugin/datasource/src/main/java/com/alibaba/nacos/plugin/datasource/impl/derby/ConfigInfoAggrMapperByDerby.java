@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 
