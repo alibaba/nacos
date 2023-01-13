@@ -28,7 +28,7 @@ public class NamespaceUtil {
     private static final String NAMESPACE_PUBLIC_KEY = "public";
     
     // public id，默认值为 ""
-    private static String NAMESPACE_PUBLIC_ID_DEFAULT = "";
+    public static String namespaceDefaultId = "";
     
     private static final String NAMESPACE_NULL_KEY = "null";
     
@@ -47,20 +47,20 @@ public class NamespaceUtil {
     }
     
     /**
-     * Set default namespace id. Invoke settings at system startup
+     * Set default namespace id. Invoke settings at system startup.
      *
-     * @param namespaceDefaultId
+     * @param namespaceDefaultId 参数不能为 null
      */
     public static void setNamespaceDefaultId(String namespaceDefaultId) {
-        NAMESPACE_PUBLIC_ID_DEFAULT = namespaceDefaultId;
+        namespaceDefaultId = namespaceDefaultId;
     }
     
     /**
-     * Get default namespace id
+     * Get default namespace id.
      *
-     * @return
+     * @return namespace id
      */
     public static String getNamespaceDefaultId() {
-        return NAMESPACE_PUBLIC_ID_DEFAULT;
+        return namespaceDefaultId;
     }
 }
