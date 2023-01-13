@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -132,15 +131,12 @@ public class ConfigControllerV2Test {
         MockHttpServletRequest request = new MockHttpServletRequest();
         
         when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
-                anyString())).thenAnswer(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                if (invocation.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID)) {
-                    return true;
-                }
-                return false;
-            }
-        });
+                anyString())).thenAnswer((Answer<Boolean>) invocation -> {
+                    if (invocation.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID)) {
+                        return true;
+                    }
+                    return false;
+                });
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
