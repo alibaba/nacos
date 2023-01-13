@@ -598,7 +598,7 @@ class ConfigurationManagement extends React.Component {
     if (newVersion) {
       this.openUri('v1/cs/configs', {
         exportV2: 'true',
-        tenant: '',
+        tenant: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -608,7 +608,7 @@ class ConfigurationManagement extends React.Component {
     } else {
       this.openUri('v1/cs/configs', {
         export: 'true',
-        tenant: '',
+        tenant: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
