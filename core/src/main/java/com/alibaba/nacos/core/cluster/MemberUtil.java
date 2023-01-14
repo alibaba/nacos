@@ -257,7 +257,7 @@ public class MemberUtil {
      *
      * @param actual   actual member
      * @param expected expected member
-     * @return true if all content is same, otherwise false
+     * @return true if one content is different, otherwise false
      */
     public static boolean isBasicInfoChanged(Member actual, Member expected) {
         if (null == expected) {
