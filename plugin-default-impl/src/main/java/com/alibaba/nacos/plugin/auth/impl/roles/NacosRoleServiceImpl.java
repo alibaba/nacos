@@ -19,10 +19,6 @@ package com.alibaba.nacos.plugin.auth.impl.roles;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -30,6 +26,11 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import io.jsonwebtoken.lang.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,17 +113,17 @@ public class NacosRoleServiceImpl {
      * <p>Note if the user has many roles, this method returns true if any one role of the user has the desired
      * permission.
      *
-     * @param username   user info
+     * @param nacosUser   user info
      * @param permission permission to auth
      * @return true if granted, false otherwise
      */
-    public boolean hasPermission(String username, Permission permission) {
+    public boolean hasPermission(NacosUser nacosUser, Permission permission) {
         //update password
         if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource().getName())) {
             return true;
         }
         
-        List<RoleInfo> roleInfoList = getRoles(username);
+        List<RoleInfo> roleInfoList = getRoles(nacosUser.getUserName());
         if (Collections.isEmpty(roleInfoList)) {
             return false;
         }
@@ -130,6 +131,7 @@ public class NacosRoleServiceImpl {
         // Global admin pass:
         for (RoleInfo roleInfo : roleInfoList) {
             if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
+                nacosUser.setGlobalAdmin(true);
                 return true;
             }
         }
