@@ -46,7 +46,7 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements Hi
 
     @Override
     public String findConfigHistoryFetchRows() {
-        return "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+        return  "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";
     }
 
@@ -54,7 +54,7 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements Hi
     public String pageFindConfigHistoryFetchRows(int pageNo, int pageSize) {
         final int offset = (pageNo - 1) * pageSize;
         final int limit = pageSize;
-        return "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+        return  "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  LIMIT " + offset + "," + limit;
     }
 
