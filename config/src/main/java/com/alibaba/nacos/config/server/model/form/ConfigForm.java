@@ -38,7 +38,7 @@ public class ConfigForm implements Serializable {
     
     private String group;
     
-    private String namespaceId;
+    private String namespaceId = StringUtils.EMPTY;
     
     private String content;
     

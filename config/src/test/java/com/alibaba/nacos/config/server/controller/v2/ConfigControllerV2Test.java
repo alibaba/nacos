@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -60,6 +61,8 @@ public class ConfigControllerV2Test {
     
     private static final String TEST_NAMESPACE_ID = "";
     
+    private static final String TEST_NAMESPACE_ID_PUBLIC = "public";
+    
     private static final String TEST_TAG = "";
     
     private static final String TEST_CONTENT = "test config";
@@ -86,9 +89,8 @@ public class ConfigControllerV2Test {
         
         configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
-        verify(inner)
-                .doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
-                        eq(null), anyString(), eq(true));
+        verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID),
+                eq(TEST_TAG), eq(null), anyString(), eq(true));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
         String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);
@@ -107,9 +109,8 @@ public class ConfigControllerV2Test {
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService
-                .publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString()))
-                .thenReturn(true);
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
+                anyString())).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
@@ -120,18 +121,62 @@ public class ConfigControllerV2Test {
     }
     
     @Test
+    public void testPublishConfigWhenNameSpaceIsPublic() throws Exception {
+        
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroup(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID_PUBLIC);
+        configForm.setContent(TEST_CONTENT);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
+                anyString())).thenAnswer((Answer<Boolean>) invocation -> {
+                    if (invocation.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID)) {
+                        return true;
+                    }
+                    return false;
+                });
+        
+        Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
+        
+        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
+        assertEquals(true, booleanResult.getData());
+    }
+    
+    @Test
+    public void testDeleteConfigWhenNameSpaceIsPublic() throws Exception {
+        
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        
+        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
+                any(), any())).thenReturn(true);
+        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID_PUBLIC, TEST_TAG);
+        
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID),
+                eq(TEST_TAG), any(), any());
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
+        assertEquals(true, booleanResult.getData());
+    }
+    
+    @Test
     public void testDeleteConfig() throws Exception {
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService
-                .deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any())).thenReturn(true);
-    
-        Result<Boolean> booleanResult = configControllerV2
-                .deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
-    
-        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any());
-    
+        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
+                any(), any())).thenReturn(true);
+        
+        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID, TEST_TAG);
+        
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID),
+                eq(TEST_TAG), any(), any());
+        
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
         assertEquals(true, booleanResult.getData());
     }

@@ -38,10 +38,11 @@ public class ConfigCleanUtils {
      *
      * @param caseName test case name
      */
-    public static void changeToNewTestNacosHome(String caseName) {
+    public static String changeToNewTestNacosHome(String caseName) {
         String userHome = System.getProperty("user.home");
         String testNacosHome = userHome + File.separator + "nacos" + File.separator + caseName;
         System.setProperty("nacos.home", testNacosHome);
+        return testNacosHome;
     }
     
 }
