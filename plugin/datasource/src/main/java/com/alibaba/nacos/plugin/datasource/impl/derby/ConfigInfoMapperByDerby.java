@@ -41,13 +41,14 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
 
     @Override
     public String getTenantIdList(int startRow, int pageSize) {
-        return "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET " + startRow
+        return "SELECT tenant_id FROM config_info WHERE tenant_id != '" + NamespaceUtil.getNamespaceDefaultId()
+                + "' GROUP BY tenant_id OFFSET " + startRow
                 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }
     
     @Override
     public String getGroupIdList(int startRow, int pageSize) {
-        return "SELECT group_id FROM config_info WHERE tenant_id =' " + NamespaceUtil.getNamespaceDefaultId()
+        return "SELECT group_id FROM config_info WHERE tenant_id ='" + NamespaceUtil.getNamespaceDefaultId()
                 + "' GROUP BY group_id OFFSET " + startRow
                 + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
     }

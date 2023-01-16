@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import org.junit.Assert;
@@ -70,7 +71,8 @@ public class ConfigInfoMapperByMySqlTest {
     public void testGetTenantIdList() {
         String sql = configInfoMapperByMySql.getTenantIdList(0, 5);
         Assert.assertEquals(sql,
-                "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT 0,5");
+                "SELECT tenant_id FROM config_info WHERE tenant_id != '"
+                        + NamespaceUtil.getNamespaceDefaultId() + "' GROUP BY tenant_id LIMIT 0,5");
     }
     
     @Test
