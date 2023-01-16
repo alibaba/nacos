@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.console.config;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
