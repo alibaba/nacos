@@ -35,7 +35,7 @@ public interface ConfigInfoBetaMapper extends Mapper {
      */
     default String updateConfigInfo4BetaCas() {
         return "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
-                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')";
     }
     
     /**

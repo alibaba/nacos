@@ -51,7 +51,7 @@ public interface ConfigInfoMapper extends Mapper {
      * @return the sql of getting the maxId.
      */
     default String findConfigMaxId() {
-        return "SELECT max(id) FROM config_info";
+        return "SELECT MAX(id) FROM config_info";
     }
     
     /**
@@ -167,8 +167,8 @@ public interface ConfigInfoMapper extends Mapper {
      * @return The sql of querying change config.
      */
     default String findChangeConfig() {
-        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info WHERE "
-                + "gmt_modified > = ? AND gmt_modified <= ?";
+        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info WHERE "
+                + "gmt_modified >= ? AND gmt_modified <= ?";
     }
     
     /**
@@ -258,7 +258,7 @@ public interface ConfigInfoMapper extends Mapper {
      */
     default String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
         String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,"
-                + "src_user, src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
+                + "src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         if (!CollectionUtils.isEmpty(ids)) {
             where.append(" id IN (");

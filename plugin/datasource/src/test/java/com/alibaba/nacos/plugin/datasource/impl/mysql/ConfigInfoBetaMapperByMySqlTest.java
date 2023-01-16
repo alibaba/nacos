@@ -36,7 +36,7 @@ public class ConfigInfoBetaMapperByMySqlTest {
         String sql = configInfoBetaMapperByMySql.updateConfigInfo4BetaCas();
         Assert.assertEquals(sql,
                 "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? or md5 is null or md5 = '')");
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')");
     }
     
     @Test
