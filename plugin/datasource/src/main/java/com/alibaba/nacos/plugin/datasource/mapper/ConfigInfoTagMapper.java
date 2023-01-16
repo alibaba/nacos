@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 /**
  * The config tag info mapper.
  *
@@ -32,7 +34,10 @@ public interface ConfigInfoTagMapper extends Mapper {
      *
      * @return The sql of updating tag configuration information.
      */
-    String updateConfigInfo4TagCas();
+    default String updateConfigInfo4TagCas() {
+        return "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
+    }
     
     /**
      * Query all tag config info for dump task.
@@ -46,4 +51,13 @@ public interface ConfigInfoTagMapper extends Mapper {
      * @return The sql of querying all tag config info for dump task.
      */
     String findAllConfigInfoTagForDumpAllFetchRows(int startRow, int pageSize);
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.CONFIG_INFO_TAG;
+    }
 }

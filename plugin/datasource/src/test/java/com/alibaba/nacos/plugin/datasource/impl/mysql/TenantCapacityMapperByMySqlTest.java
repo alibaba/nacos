@@ -47,7 +47,7 @@ public class TenantCapacityMapperByMySqlTest {
     public void testIncrementUsageWithDefaultQuotaLimit() {
         String sql = tenantCapacityMapperByMySql.incrementUsageWithDefaultQuotaLimit();
         Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` <"
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
                         + " ? AND quota = 0");
     }
     
@@ -55,7 +55,7 @@ public class TenantCapacityMapperByMySqlTest {
     public void testIncrementUsageWithQuotaLimit() {
         String sql = tenantCapacityMapperByMySql.incrementUsageWithQuotaLimit();
         Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` < "
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
                         + "quota AND quota != 0");
     }
     
@@ -63,21 +63,21 @@ public class TenantCapacityMapperByMySqlTest {
     public void testIncrementUsage() {
         String sql = tenantCapacityMapperByMySql.incrementUsage();
         Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE tenant_id = ?");
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?");
     }
     
     @Test
     public void testDecrementUsage() {
         String sql = tenantCapacityMapperByMySql.decrementUsage();
         Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE tenant_id = ? AND `usage` > 0");
+                "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0");
     }
     
     @Test
     public void testCorrectUsage() {
         String sql = tenantCapacityMapperByMySql.correctUsage();
         Assert.assertEquals(sql,
-                "UPDATE tenant_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
+                "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
                         + "gmt_modified = ? WHERE tenant_id = ?");
     }
     
@@ -91,7 +91,7 @@ public class TenantCapacityMapperByMySqlTest {
     public void testInsertTenantCapacity() {
         String sql = tenantCapacityMapperByMySql.insertTenantCapacity();
         Assert.assertEquals(sql,
-                "INSERT INTO tenant_capacity (tenant_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size, "
+                "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;");
     }
 }
