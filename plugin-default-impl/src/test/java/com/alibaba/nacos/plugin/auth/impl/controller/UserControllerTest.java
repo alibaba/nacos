@@ -25,7 +25,6 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import io.jsonwebtoken.io.Encoders;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
@@ -71,7 +71,7 @@ public class UserControllerTest {
         injectObject("authManager", authManager);
         
         MockEnvironment mockEnvironment = new MockEnvironment();
-        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Encoders.BASE64.encode(
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
                 "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
                         StandardCharsets.UTF_8)));
         mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,

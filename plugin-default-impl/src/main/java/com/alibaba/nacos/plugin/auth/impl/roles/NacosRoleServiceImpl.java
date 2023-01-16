@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.Page;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import io.jsonwebtoken.lang.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -124,7 +124,7 @@ public class NacosRoleServiceImpl {
         }
         
         List<RoleInfo> roleInfoList = getRoles(nacosUser.getUserName());
-        if (Collections.isEmpty(roleInfoList)) {
+        if (CollectionUtils.isEmpty(roleInfoList)) {
             return false;
         }
         
@@ -144,7 +144,7 @@ public class NacosRoleServiceImpl {
         // For other roles, use a pattern match to decide if pass or not.
         for (RoleInfo roleInfo : roleInfoList) {
             List<PermissionInfo> permissionInfoList = getPermissions(roleInfo.getRole());
-            if (Collections.isEmpty(permissionInfoList)) {
+            if (CollectionUtils.isEmpty(permissionInfoList)) {
                 continue;
             }
             for (PermissionInfo permissionInfo : permissionInfoList) {
@@ -165,7 +165,7 @@ public class NacosRoleServiceImpl {
             Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
-                if (!Collections.isEmpty(roleInfoList)) {
+                if (!CollectionUtils.isEmpty(roleInfoList)) {
                     roleInfoMap.put(username, roleInfoList);
                 }
             }
@@ -188,7 +188,7 @@ public class NacosRoleServiceImpl {
                     Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
                 permissionInfoList = permissionInfoPage.getPageItems();
-                if (!Collections.isEmpty(permissionInfoList)) {
+                if (!CollectionUtils.isEmpty(permissionInfoList)) {
                     permissionInfoMap.put(role, permissionInfoList);
                 }
             }
