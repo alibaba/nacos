@@ -150,7 +150,12 @@ public interface GroupCapacityMapper extends Mapper {
      * @return sql.
      */
     String selectGroupInfoBySize();
-
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.GROUP_CAPACITY;
     }

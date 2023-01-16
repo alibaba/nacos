@@ -51,7 +51,12 @@ public interface ConfigInfoTagMapper extends Mapper {
      * @return The sql of querying all tag config info for dump task.
      */
     String findAllConfigInfoTagForDumpAllFetchRows(int startRow, int pageSize);
-
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.CONFIG_INFO_TAG;
     }

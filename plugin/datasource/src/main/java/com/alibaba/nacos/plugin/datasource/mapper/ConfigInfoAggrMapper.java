@@ -109,7 +109,12 @@ public interface ConfigInfoAggrMapper extends Mapper {
     default String findAllAggrGroupByDistinct() {
         return "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
     }
-
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.CONFIG_INFO_AGGR;
     }

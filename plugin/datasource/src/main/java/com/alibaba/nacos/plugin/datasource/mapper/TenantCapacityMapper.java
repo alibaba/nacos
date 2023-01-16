@@ -105,6 +105,11 @@ public interface TenantCapacityMapper extends Mapper {
                 + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?";
     }
     
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.TENANT_CAPACITY;
     }

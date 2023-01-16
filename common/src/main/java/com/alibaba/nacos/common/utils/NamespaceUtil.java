@@ -27,7 +27,9 @@ public class NamespaceUtil {
     
     private static final String NAMESPACE_PUBLIC_KEY = "public";
     
-    // public id，默认值为 ""
+    /**
+     * public id，默认值为 "".
+     */
     public static String namespaceDefaultId = "";
     
     private static final String NAMESPACE_NULL_KEY = "null";

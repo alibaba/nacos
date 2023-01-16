@@ -485,6 +485,11 @@ public interface ConfigInfoMapper extends Mapper {
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
     }
     
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.CONFIG_INFO;
     }

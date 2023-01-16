@@ -84,6 +84,11 @@ public interface HistoryConfigInfoMapper extends Mapper {
                 + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)";
     }
     
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.HIS_CONFIG_INFO;
     }

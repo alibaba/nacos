@@ -49,7 +49,12 @@ public interface ConfigInfoBetaMapper extends Mapper {
      * @return The sql of querying all beta config info for dump task.
      */
     String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize);
-
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.CONFIG_INFO_BETA;
     }

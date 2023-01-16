@@ -25,7 +25,12 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
  **/
 
 public interface TenantInfoMapper extends Mapper {
-
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.TENANT_INFO;
     }

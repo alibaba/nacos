@@ -137,7 +137,12 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @return The sql of querying config info.
      */
     String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
-
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
     default String getTableName() {
         return TableConstant.CONFIG_TAGS_RELATION;
     }
