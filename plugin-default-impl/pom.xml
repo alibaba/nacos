@@ -28,7 +28,7 @@
     <artifactId>nacos-plugin-default-impl</artifactId>
     <packaging>jar</packaging>
     <name>nacos-plugin-default-impl ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
 
     <dependencies>
         <dependency>

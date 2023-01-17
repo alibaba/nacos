@@ -50,7 +50,7 @@ public class HistoryConfigInfoMapperByDerbyTest {
         String sql = historyConfigInfoMapperByDerby.findDeletedConfig();
         Assert.assertEquals(sql,
                 "SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND "
-                        + "gmt_modified >=? AND gmt_modified <= ?");
+                        + "gmt_modified >= ? AND gmt_modified <= ?");
     }
     
     @Test

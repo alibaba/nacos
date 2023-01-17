@@ -74,4 +74,10 @@ public interface GrpcClientConfig extends RpcClientConfig {
      */
     int channelKeepAlive();
     
+    /**
+     * get channelKeepAliveTimeout.
+     *
+     * @return channelKeepAliveTimeout
+     */
+    long channelKeepAliveTimeout();
 }

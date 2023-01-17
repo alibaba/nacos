@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 
@@ -33,7 +32,7 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements Hi
     public String removeConfigHistory() {
         return "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?";
     }
-
+    
     @Override
     public String findConfigHistoryCountByTime() {
         return "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?";
