@@ -77,7 +77,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
      * SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified
      * FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?) limit pageSize offset (pageNo-1)*pageSize
      *
-     * @return The sql of getting previous config detail.
+     * @return The sql of getting previous config page.
      */
     String findConfigHistory4PageFetchRows(int pageNo, int pageSize);
 
