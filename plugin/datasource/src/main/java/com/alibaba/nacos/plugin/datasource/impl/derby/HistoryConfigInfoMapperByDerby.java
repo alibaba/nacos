@@ -58,6 +58,14 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements Hi
     }
 
     @Override
+    public String findConfigHistory4PageFetchRows(int pageNo, int pageSize) {
+        final StringBuilder builder = new StringBuilder();
+        builder.append(findConfigHistoryFetchRows());
+        builder.append(" limit " + pageSize + " offset " + (pageNo - 1) * pageSize);
+        return builder.toString();
+    }
+
+    @Override
     public String getTableName() {
         return TableConstant.HIS_CONFIG_INFO;
     }
@@ -67,11 +75,4 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements Hi
         return DataSourceConstant.DERBY;
     }
 
-    @Override
-    public String findConfigHistory4PageFetchRows(int pageNo, int pageSize) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(findConfigHistoryFetchRows());
-        builder.append(" limit " + pageSize + " offset " + (pageNo - 1) * pageSize);
-        return builder.toString();
-    }
 }

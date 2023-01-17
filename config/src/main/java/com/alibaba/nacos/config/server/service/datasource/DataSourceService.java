@@ -27,61 +27,61 @@ import org.springframework.transaction.support.TransactionTemplate;
  * @author Nacos
  */
 public interface DataSourceService {
-    
+
     /**
      * Initialize the relevant resource information.
      *
      * @throws Exception exception.
      */
     void init() throws Exception;
-    
+
     /**
      * Reload.
      *
      * @throws IOException exception.
      */
     void reload() throws IOException;
-    
+
     /**
      * Check master db.
      *
      * @return is master.
      */
     boolean checkMasterWritable();
-    
+
     /**
      * Get jdbc template.
      *
      * @return JdbcTemplate.
      */
     JdbcTemplate getJdbcTemplate();
-    
+
     /**
      * Get transaction template.
      *
      * @return TransactionTemplate.
      */
     TransactionTemplate getTransactionTemplate();
-    
+
     /**
      * Get current db url.
      *
      * @return database url
      */
     String getCurrentDbUrl();
-    
+
     /**
      * Get heath information.
      *
      * @return heath info.
      */
     String getHealth();
-    
+
     /**
      * Get current db type.
      *
-     * @return
+     * @return string
      */
     String getDataSourceType();
-    
+
 }

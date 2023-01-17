@@ -46,22 +46,22 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class CapacityService {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityService.class);
-    
+
     private static final Integer ZERO = 0;
-    
+
     private static final int INIT_PAGE_SIZE = 500;
-    
+
     @Autowired
     private GroupCapacityPersistService groupCapacityPersistService;
-    
+
     @Autowired
     private TenantCapacityPersistService tenantCapacityPersistService;
-    
+
     @Autowired
     private ConfigInfoPersistService configInfoPersistService;
-    
+
     /**
      * Init.
      */
@@ -76,15 +76,15 @@ public class CapacityService {
             correctUsage();
             watch.stop();
             LOGGER.info("[capacityManagement] end correct usage, cost: {}s", watch.getTotalTimeSeconds());
-            
+
         }, PropertyUtil.getCorrectUsageDelay(), PropertyUtil.getCorrectUsageDelay(), TimeUnit.SECONDS);
     }
-    
+
     public void correctUsage() {
         correctGroupUsage();
         correctTenantUsage();
     }
-    
+
     /**
      * Correct the usage of group capacity.
      */
@@ -111,15 +111,15 @@ public class CapacityService {
             }
         }
     }
-    
+
     public void correctGroupUsage(String group) {
         groupCapacityPersistService.correctUsage(group, TimeUtils.getCurrentTime());
     }
-    
+
     public void correctTenantUsage(String tenant) {
         tenantCapacityPersistService.correctUsage(tenant, TimeUtils.getCurrentTime());
     }
-    
+
     /**
      * Correct the usage of group capacity.
      */
@@ -143,12 +143,12 @@ public class CapacityService {
             }
         }
     }
-    
+
     public void initAllCapacity() {
         initAllCapacity(false);
         initAllCapacity(true);
     }
-    
+
     private void initAllCapacity(boolean isTenant) {
         int page = 1;
         while (true) {
@@ -177,7 +177,7 @@ public class CapacityService {
             ++page;
         }
     }
-    
+
     /**
      * To Cluster. 1.If the capacity information does not exist, initialize the capacity information. 2.Update capacity
      * usage, plus or minus one.
@@ -194,12 +194,12 @@ public class CapacityService {
         return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
                 ignoreQuotaLimit);
     }
-    
+
     public boolean updateClusterUsage(CounterMode counterMode) {
         return updateGroupUsage(counterMode, GroupCapacityPersistService.CLUSTER, PropertyUtil.getDefaultClusterQuota(),
                 false);
     }
-    
+
     /**
      * It is used for counting when the limit check function of capacity management is turned off. 1.If the capacity
      * information does not exist, initialize the capacity information. 2.Update capacity usage, plus or minus one.
@@ -216,11 +216,11 @@ public class CapacityService {
         }
         return updateGroupUsage(counterMode, group, PropertyUtil.getDefaultGroupQuota(), ignoreQuotaLimit);
     }
-    
+
     public boolean updateGroupUsage(CounterMode counterMode, String group) {
         return updateGroupUsage(counterMode, group, PropertyUtil.getDefaultGroupQuota(), false);
     }
-    
+
     private boolean updateGroupUsage(CounterMode counterMode, String group, int defaultQuota,
             boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
@@ -239,11 +239,11 @@ public class CapacityService {
         }
         return groupCapacityPersistService.decrementUsage(groupCapacity);
     }
-    
+
     public GroupCapacity getGroupCapacity(String group) {
         return groupCapacityPersistService.getGroupCapacity(group);
     }
-    
+
     /**
      * Initialize the capacity information of the group. If the quota is reached, the capacity will be automatically
      * expanded to reduce the operation and maintenance cost.
@@ -254,7 +254,7 @@ public class CapacityService {
     public boolean initGroupCapacity(String group) {
         return initGroupCapacity(group, null, null, null, null);
     }
-    
+
     /**
      * Initialize the capacity information of the group. If the quota is reached, the capacity will be automatically
      * expanded to reduce the operation and maintenance cost.
@@ -274,7 +274,7 @@ public class CapacityService {
         }
         return insertSuccess;
     }
-    
+
     /**
      * Expand capacity automatically.
      *
@@ -304,21 +304,21 @@ public class CapacityService {
             }
         }
     }
-    
+
     private int getDefaultQuota(boolean isTenant) {
         if (isTenant) {
             return PropertyUtil.getDefaultTenantQuota();
         }
         return PropertyUtil.getDefaultGroupQuota();
     }
-    
+
     public Capacity getCapacity(String group, String tenant) {
         if (tenant != null) {
             return getTenantCapacity(tenant);
         }
         return getGroupCapacity(group);
     }
-    
+
     public Capacity getCapacityWithDefault(String group, String tenant) {
         Capacity capacity;
         boolean isTenant = StringUtils.isNotBlank(tenant);
@@ -356,7 +356,7 @@ public class CapacityService {
         }
         return capacity;
     }
-    
+
     /**
      * Init capacity.
      *
@@ -374,11 +374,11 @@ public class CapacityService {
         // Group can expand capacity automatically.
         return initGroupCapacity(group);
     }
-    
+
     private boolean insertGroupCapacity(String group) {
         return insertGroupCapacity(group, null, null, null, null);
     }
-    
+
     private boolean insertGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         try {
@@ -389,7 +389,7 @@ public class CapacityService {
             // In order to update the default quota, only the Nacos configuration needs to be modified,
             // and most of the data in the table need not be updated.
             groupCapacity.setQuota(quota == null ? ZERO : quota);
-            
+
             // When adding new data, maxsize = 0 means that the size is the default value.
             // In order to update the default size, you only need to modify the Nacos configuration without updating most of the data in the table.
             groupCapacity.setMaxSize(maxSize == null ? ZERO : maxSize);
@@ -404,7 +404,7 @@ public class CapacityService {
         }
         return false;
     }
-    
+
     /**
      * It is used for counting when the limit check function of capacity management is turned off. 1.If the capacity
      * information does not exist, initialize the capacity information. 2.Update capacity usage, plus or minus one.
@@ -422,7 +422,7 @@ public class CapacityService {
         }
         return updateTenantUsage(counterMode, tenant, ignoreQuotaLimit);
     }
-    
+
     private boolean updateTenantUsage(CounterMode counterMode, String tenant, boolean ignoreQuotaLimit) {
         final Timestamp now = TimeUtils.getCurrentTime();
         TenantCapacity tenantCapacity = new TenantCapacity();
@@ -440,11 +440,11 @@ public class CapacityService {
         }
         return tenantCapacityPersistService.decrementUsage(tenantCapacity);
     }
-    
+
     public boolean updateTenantUsage(CounterMode counterMode, String tenant) {
         return updateTenantUsage(counterMode, tenant, false);
     }
-    
+
     /**
      * Initialize the capacity information of the tenant. If the quota is reached, the capacity will be automatically
      * expanded to reduce the operation and maintenance cos.
@@ -455,7 +455,7 @@ public class CapacityService {
     public boolean initTenantCapacity(String tenant) {
         return initTenantCapacity(tenant, null, null, null, null);
     }
-    
+
     /**
      * Initialize the capacity information of the tenant. If the quota is reached, the capacity will be automatically
      * expanded to reduce the operation and maintenance cost
@@ -465,7 +465,7 @@ public class CapacityService {
      * @param maxSize      maxSize int value.
      * @param maxAggrCount maxAggrCount int value.
      * @param maxAggrSize  maxAggrSize int value.
-     * @return
+     * @return boolean
      */
     public boolean initTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
@@ -476,11 +476,11 @@ public class CapacityService {
         autoExpansion(null, tenant);
         return insertSuccess;
     }
-    
+
     private boolean insertTenantCapacity(String tenant) {
         return insertTenantCapacity(tenant, null, null, null, null);
     }
-    
+
     private boolean insertTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         try {
@@ -491,7 +491,7 @@ public class CapacityService {
             // In order to update the default quota, only the Nacos configuration needs to be modified,
             // and most of the data in the table need not be updated.
             tenantCapacity.setQuota(quota == null ? ZERO : quota);
-            
+
             // When adding new data, maxsize = 0 means that the size is the default value.
             // In order to update the default size, you only need to modify the Nacos configuration without updating most of the data in the table.
             tenantCapacity.setMaxSize(maxSize == null ? ZERO : maxSize);
@@ -506,11 +506,11 @@ public class CapacityService {
         }
         return false;
     }
-    
+
     public TenantCapacity getTenantCapacity(String tenant) {
         return tenantCapacityPersistService.getTenantCapacity(tenant);
     }
-    
+
     /**
      * Support for API interface, Tenant: initialize if the record does not exist, and update the capacity quota or
      * content size directly if it exists.
