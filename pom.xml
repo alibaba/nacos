@@ -136,6 +136,7 @@
         <httpasyncclient.version>4.1.3</httpasyncclient.version>
         <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
+        <postgres.version>42.5.1</postgres.version>
         <jackson-core.version>2.12.6</jackson-core.version>
         <jackson-databind.version>2.12.7.1</jackson-databind.version>
         <jackson.annotations.version>2.12.6</jackson.annotations.version>
@@ -841,6 +842,12 @@
                 <groupId>org.apache.derby</groupId>
                 <artifactId>derby</artifactId>
                 <version>${derby.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgres.version}</version>
             </dependency>
             
             <!-- JRaft -->

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.derby;
+package com.alibaba.nacos.plugin.datasource.impl.postgres;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -24,16 +24,15 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import java.util.Map;
 
 /**
- * The derby implementation of ConfigTagsRelationMapper.
+ * The postgres implementation of {@link ConfigTagsRelationMapper}.
  *
- * @author hyx
- **/
+ * @author zhanjunjie
+ */
 
-public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implements ConfigTagsRelationMapper {
+public class ConfigTagsRelationMapperByPostgreSql extends AbstractMapper implements ConfigTagsRelationMapper {
 
     @Override
-    public String findConfigInfo4PageFetchRows(final Map<String, String> params, int tagSize, int startRow,
-                                               int pageSize) {
+    public String findConfigInfo4PageFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get(APP_NAME);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
@@ -62,20 +61,18 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
             where.append('?');
         }
         where.append(") ");
-        return sql + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sql + where + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
-    public String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow,
-                                                   int pageSize) {
+    public String findConfigInfoLike4PageFetchRows(Map<String, String> params, int tagSize, int startRow, int pageSize) {
         final String appName = params.get(APP_NAME);
         final String content = params.get(CONTENT);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
         StringBuilder where = new StringBuilder(" WHERE ");
-        final String sqlFetchRows =
-                "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id ";
+        final String sqlFetchRows = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content "
+                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id ";
 
         where.append(" a.tenant_id LIKE ? ");
         if (!StringUtils.isBlank(dataId)) {
@@ -99,11 +96,11 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
             where.append('?');
         }
         where.append(") ");
-        return sqlFetchRows + where + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
+        return sqlFetchRows + where + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
     public String getDataSource() {
-        return DataSourceConstant.DERBY;
+        return DataSourceConstant.POSTGRES;
     }
 }

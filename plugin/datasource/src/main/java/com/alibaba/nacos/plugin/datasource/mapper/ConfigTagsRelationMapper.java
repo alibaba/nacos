@@ -28,7 +28,15 @@ import java.util.Map;
  **/
 
 public interface ConfigTagsRelationMapper extends Mapper {
-    
+
+    String DATA_ID = "dataId";
+
+    String GROUP = "group";
+
+    String APP_NAME = "appName";
+
+    String CONTENT = "content";
+
     /**
      * Get the count of config info.
      * The default sql:
@@ -68,7 +76,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
         where.append(") ");
         return sqlCount + where;
     }
-    
+
     /**
      * Find config info.
      * The default sql:
@@ -82,7 +90,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @return The sql of finding config info.
      */
     String findConfigInfo4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
-    
+
     /**
      * Get the count of config information by config tags relation.
      * The default sql:
@@ -123,7 +131,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
         where.append(") ");
         return sqlCountRows + where;
     }
-    
+
     /**
      * Query config info.
      * The default sql:
@@ -137,7 +145,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @return The sql of querying config info.
      */
     String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
-    
+
     /**
      * 获取返回表名.
      *

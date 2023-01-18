@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.postgres;
 
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -26,51 +26,51 @@ import java.sql.Timestamp;
 import java.util.Map;
 
 /**
- * The mysql implementation of ConfigInfoMapper.
+ * The postgres implementation of {@link ConfigInfoMapper}.
  *
- * @author hyx
- **/
+ * @author zhanjunjie
+ */
 
-public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInfoMapper {
+public class ConfigInfoMapperByPostgreSql extends AbstractMapper implements ConfigInfoMapper {
 
     @Override
     public String findConfigInfoByAppFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info"
-                + " WHERE tenant_id LIKE ? AND app_name= ?" + " LIMIT " + startRow + "," + pageSize;
+                + " WHERE tenant_id LIKE ? AND app_name= ?" + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
     public String getTenantIdList(int startRow, int pageSize) {
         return "SELECT tenant_id FROM config_info WHERE tenant_id != '" + NamespaceUtil.getNamespaceDefaultId()
-                + "' GROUP BY tenant_id LIMIT " + startRow + ","
-                + pageSize;
+                + "' GROUP BY tenant_id LIMIT " + pageSize + " OFFSET "
+                + startRow;
     }
 
     @Override
     public String getGroupIdList(int startRow, int pageSize) {
         return "SELECT group_id FROM config_info WHERE tenant_id ='" + NamespaceUtil.getNamespaceDefaultId()
-                + "' GROUP BY group_id LIMIT " + startRow + ","
-                + pageSize;
+                + "' GROUP BY group_id LIMIT " + pageSize + " OFFSET "
+                + startRow;
     }
 
     @Override
     public String findAllConfigKey(int startRow, int pageSize) {
-        return " SELECT data_id,group_id,app_name  FROM ( "
-                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT " + startRow + "," + pageSize
-                + " )" + " g, config_info t WHERE g.id = t.id  ";
+        return "SELECT data_id,group_id,app_name  FROM ( "
+                + " SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT " + pageSize + " OFFSET " + startRow
+                + " )" + " g, config_info t WHERE g.id = t.id";
     }
 
     @Override
     public String findAllConfigInfoBaseFetchRows(int startRow, int pageSize) {
         return "SELECT t.id,data_id,group_id,content,md5"
-                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
+                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT " + pageSize + " OFFSET " + startRow + ") "
                 + " g, config_info t  WHERE g.id = t.id ";
     }
 
     @Override
     public String findAllConfigInfoFragment(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize;
+                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
@@ -80,7 +80,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
         final String appName = params.get(APP_NAME);
-        final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ";
         String where = " 1=1 ";
         if (!StringUtils.isBlank(dataId)) {
@@ -90,7 +89,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
             where += " AND group_id LIKE ? ";
         }
 
-        if (!StringUtils.isBlank(tenantTmp)) {
+        if (!StringUtils.isBlank(tenant)) {
             where += " AND tenant_id = ? ";
         }
 
@@ -103,13 +102,13 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         if (endTime != null) {
             where += " AND gmt_modified <=? ";
         }
-        return sqlFetchRows + where + " AND id > " + lastMaxId + " ORDER BY id ASC" + " LIMIT " + startRow + "," + pageSize;
+        return sqlFetchRows + where + " AND id > " + lastMaxId + " ORDER BY id ASC" + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
     public String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize) {
         return "SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM "
-                + "( SELECT id FROM config_info ORDER BY id LIMIT " + startRow + "," + pageSize
+                + "( SELECT id FROM config_info ORDER BY id LIMIT " + pageSize + " OFFSET " + startRow
                 + " ) g, config_info t WHERE g.id = t.id";
     }
 
@@ -126,7 +125,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         if (!StringUtils.isBlank(params.get(CONTENT))) {
             where += " AND content LIKE ? ";
         }
-        return sqlFetchRows + where + " LIMIT " + startRow + "," + pageSize;
+        return sqlFetchRows + where + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
@@ -146,13 +145,13 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
         }
-        return sql + where + " LIMIT " + startRow + "," + pageSize;
+        return sql + where + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
     public String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize) {
         return "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?" + " LIMIT "
-                + startRow + "," + pageSize;
+                + pageSize + " OFFSET " + startRow;
     }
 
     @Override
@@ -176,19 +175,19 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
         }
-        return sqlFetchRows + where + " LIMIT " + startRow + "," + pageSize;
+        return sqlFetchRows + where + " LIMIT " + pageSize + " OFFSET " + startRow;
     }
 
     @Override
     public String findAllConfigInfoFetchRows(int startRow, int pageSize) {
         return "SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-                + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
-                + " g, config_info t  WHERE g.id = t.id ";
+                + " FROM (SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT " + pageSize + " OFFSET " + startRow + ")"
+                + " g, config_info t  WHERE g.id = t.id";
     }
 
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.POSTGRES;
     }
 
 }

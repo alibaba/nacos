@@ -33,3 +33,13 @@ com.alibaba.nacos.plugin.datasource.impl.derby.HistoryConfigInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantInfoMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.TenantCapacityMapperByDerby
 com.alibaba.nacos.plugin.datasource.impl.derby.GroupCapacityMapperByDerby
+
+com.alibaba.nacos.plugin.datasource.impl.postgres.ConfigInfoAggrMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.ConfigInfoBetaMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.ConfigInfoMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.ConfigInfoTagMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.ConfigTagsRelationMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.HistoryConfigInfoMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.TenantInfoMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.TenantCapacityMapperByPostgreSql
+com.alibaba.nacos.plugin.datasource.impl.postgres.GroupCapacityMapperByPostgreSql
