@@ -60,6 +60,8 @@ public class HistoryControllerV2Test {
     
     private static final String TEST_NAMESPACE_ID = "";
     
+    private static final String TEST_NAMESPACE_ID_PUBLIC = "public";
+    
     private static final String TEST_CONTENT = "test config";
     
     @Before
@@ -87,8 +89,8 @@ public class HistoryControllerV2Test {
         
         when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10)).thenReturn(page);
         
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV2
-                .listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10);
+        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV2.listConfigHistory(TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID, 1, 10);
         
         verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10);
         
@@ -97,6 +99,70 @@ public class HistoryControllerV2Test {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), pageResult.getCode());
         assertEquals(configHistoryInfoList.size(), resultList.size());
+        assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
+        
+    }
+    
+    @Test
+    public void testListConfigHistoryWhenNameSpaceIsPublic() throws Exception {
+        
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setDataId(TEST_DATA_ID);
+        configHistoryInfo.setGroup(TEST_GROUP);
+        configHistoryInfo.setContent(TEST_CONTENT);
+        configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        List<ConfigHistoryInfo> configHistoryInfoList = new ArrayList<>();
+        configHistoryInfoList.add(configHistoryInfo);
+        
+        Page<ConfigHistoryInfo> page = new Page<>();
+        page.setTotalCount(15);
+        page.setPageNumber(1);
+        page.setPagesAvailable(2);
+        page.setPageItems(configHistoryInfoList);
+        
+        when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10)).thenReturn(page);
+        
+        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV2.listConfigHistory(TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID_PUBLIC, 1, 10);
+        
+        verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10);
+        
+        List<ConfigHistoryInfo> resultList = pageResult.getData().getPageItems();
+        ConfigHistoryInfo resConfigHistoryInfo = resultList.get(0);
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), pageResult.getCode());
+        assertEquals(configHistoryInfoList.size(), resultList.size());
+        assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
+        
+    }
+    
+    @Test
+    public void testGetConfigHistoryInfoWhenNameSpaceIsPublic() throws Exception {
+        
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setDataId(TEST_DATA_ID);
+        configHistoryInfo.setGroup(TEST_GROUP);
+        configHistoryInfo.setContent(TEST_CONTENT);
+        configHistoryInfo.setTenant(TEST_NAMESPACE_ID);
+        configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
+                configHistoryInfo);
+        
+        Result<ConfigHistoryInfo> result = historyControllerV2.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID_PUBLIC, 1L);
+        
+        verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
+        
+        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
         assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
         assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
@@ -114,10 +180,11 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
+                configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV2
-                .getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
+        Result<ConfigHistoryInfo> result = historyControllerV2.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
         
@@ -141,10 +208,39 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
+                configHistoryInfo);
+        
+        Result<ConfigHistoryInfo> result = historyControllerV2.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID, 1L);
+        
+        verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
+        
+        ConfigHistoryInfo resConfigHistoryInfo = result.getData();
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(configHistoryInfo.getDataId(), resConfigHistoryInfo.getDataId());
+        assertEquals(configHistoryInfo.getGroup(), resConfigHistoryInfo.getGroup());
+        assertEquals(configHistoryInfo.getContent(), resConfigHistoryInfo.getContent());
+        
+    }
     
-        Result<ConfigHistoryInfo> result = historyControllerV2
-                .getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
+    @Test
+    public void testGetPreviousConfigHistoryInfoWhenNameSpaceIsPublic() throws Exception {
+        
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setDataId(TEST_DATA_ID);
+        configHistoryInfo.setGroup(TEST_GROUP);
+        configHistoryInfo.setContent(TEST_CONTENT);
+        configHistoryInfo.setTenant(TEST_NAMESPACE_ID);
+        configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
+        configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
+        
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
+                configHistoryInfo);
+        
+        Result<ConfigHistoryInfo> result = historyControllerV2.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
+                TEST_NAMESPACE_ID_PUBLIC, 1L);
         
         verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
         
@@ -168,6 +264,27 @@ public class HistoryControllerV2Test {
         when(historyService.getConfigListByNamespace("test")).thenReturn(configInfoWrappers);
         Result<List<ConfigInfoWrapper>> result = historyControllerV2.getConfigsByTenant("test");
         verify(historyService).getConfigListByNamespace("test");
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
+        List<ConfigInfoWrapper> actualList = result.getData();
+        assertEquals(configInfoWrappers.size(), actualList.size());
+        ConfigInfoWrapper actualConfigInfoWrapper = actualList.get(0);
+        assertEquals(configInfoWrapper.getDataId(), actualConfigInfoWrapper.getDataId());
+        assertEquals(configInfoWrapper.getGroup(), actualConfigInfoWrapper.getGroup());
+        assertEquals(configInfoWrapper.getContent(), actualConfigInfoWrapper.getContent());
+    }
+    
+    @Test
+    public void testGetConfigListByNamespaceWhenIsPublic() throws NacosApiException {
+        ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
+        configInfoWrapper.setDataId("test");
+        configInfoWrapper.setGroup("test");
+        configInfoWrapper.setContent("test");
+        List<ConfigInfoWrapper> configInfoWrappers = Collections.singletonList(configInfoWrapper);
+        
+        when(historyService.getConfigListByNamespace(TEST_NAMESPACE_ID)).thenReturn(configInfoWrappers);
+        Result<List<ConfigInfoWrapper>> result = historyControllerV2.getConfigsByTenant(TEST_NAMESPACE_ID_PUBLIC);
+        verify(historyService).getConfigListByNamespace(TEST_NAMESPACE_ID);
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         List<ConfigInfoWrapper> actualList = result.getData();

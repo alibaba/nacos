@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 /**
  * The mapper of config info.
  *
@@ -32,8 +34,18 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @param datumSize the size of datum list
      * @return The sql of deleting aggregated data in bulk.
      */
-    String batchRemoveAggr(int datumSize);
-    
+    default String batchRemoveAggr(int datumSize) {
+        final StringBuilder placeholderString = new StringBuilder();
+        for (int i = 0; i < datumSize; i++) {
+            if (i != 0) {
+                placeholderString.append(", ");
+            }
+            placeholderString.append('?');
+        }
+        return "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
+                + placeholderString + ")";
+    }
+
     /**
      * Get count of aggregation config info.
      * The default sql:
@@ -43,7 +55,24 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @param isIn search condition
      * @return The sql of getting count of aggregation config info.
      */
-    String aggrConfigInfoCount(int size, boolean isIn);
+    default String aggrConfigInfoCount(int size, boolean isIn) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id");
+        if (isIn) {
+            sql.append(" IN (");
+        } else {
+            sql.append(" NOT IN (");
+        }
+        for (int i = 0; i < size; i++) {
+            if (i > 0) {
+                sql.append(", ");
+            }
+            sql.append('?');
+        }
+        sql.append(')');
+
+        return sql.toString();
+    }
     
     /**
      * Find all data before aggregation under a dataId. It is guaranteed not to return NULL.
@@ -53,7 +82,10 @@ public interface ConfigInfoAggrMapper extends Mapper {
      *
      * @return The sql of finding all data before aggregation under a dataId.
      */
-    String findConfigInfoAggrIsOrdered();
+    default String findConfigInfoAggrIsOrdered() {
+        return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id = ? AND "
+                + "group_id = ? AND tenant_id = ? ORDER BY datum_id";
+    }
     
     /**
      * Query aggregation config info.
@@ -74,5 +106,16 @@ public interface ConfigInfoAggrMapper extends Mapper {
      *
      * @return The sql of finding all aggregated data sets.
      */
-    String findAllAggrGroupByDistinct();
+    default String findAllAggrGroupByDistinct() {
+        return "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
+    }
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.CONFIG_INFO_AGGR;
+    }
 }

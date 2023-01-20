@@ -47,7 +47,7 @@ public class GroupCapacityMapperByMysqlTest {
     public void testInsertIntoSelect() {
         String sql = groupCapacityMapperByMysql.insertIntoSelect();
         Assert.assertEquals(sql,
-                "INSERT INTO group_capacity (group_id, quota, `usage`, `max_size`, max_aggr_count, max_aggr_size,gmt_create,"
+                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,gmt_create,"
                         + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info");
     }
     
@@ -55,7 +55,7 @@ public class GroupCapacityMapperByMysqlTest {
     public void testInsertIntoSelectByWhere() {
         String sql = groupCapacityMapperByMysql.insertIntoSelectByWhere();
         Assert.assertEquals(sql,
-                "INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count, max_aggr_size, gmt_create,"
+                "INSERT INTO group_capacity (group_id, quota,usage, max_size, max_aggr_count, max_aggr_size, gmt_create,"
                         + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = ''");
     }
     
@@ -63,42 +63,42 @@ public class GroupCapacityMapperByMysqlTest {
     public void testIncrementUsageByWhereQuotaEqualZero() {
         String sql = groupCapacityMapperByMysql.incrementUsageByWhereQuotaEqualZero();
         Assert.assertEquals(sql,
-                "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` < ? AND quota = 0");
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0");
     }
     
     @Test
     public void testIncrementUsageByWhereQuotaNotEqualZero() {
         String sql = groupCapacityMapperByMysql.incrementUsageByWhereQuotaNotEqualZero();
         Assert.assertEquals(sql,
-                "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ? AND `usage` < quota AND quota != 0");
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0");
     }
     
     @Test
     public void testIncrementUsageByWhere() {
         String sql = groupCapacityMapperByMysql.incrementUsageByWhere();
         Assert.assertEquals(sql,
-                "UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?");
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?");
     }
     
     @Test
     public void testDecrementUsageByWhere() {
         String sql = groupCapacityMapperByMysql.decrementUsageByWhere();
         Assert.assertEquals(sql,
-                "UPDATE group_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE group_id = ? AND `usage` > 0");
+                "UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0");
     }
     
     @Test
     public void testUpdateUsage() {
         String sql = groupCapacityMapperByMysql.updateUsage();
         Assert.assertEquals(sql,
-                "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?");
+                "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?");
     }
     
     @Test
     public void testUpdateUsageByWhere() {
         String sql = groupCapacityMapperByMysql.updateUsageByWhere();
         Assert.assertEquals(sql,
-                "UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = ''),"
+                "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = ''),"
                         + " gmt_modified = ? WHERE group_id= ?");
     }
     

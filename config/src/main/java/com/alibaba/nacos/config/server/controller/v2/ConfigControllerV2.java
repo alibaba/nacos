@@ -106,6 +106,8 @@ public class ConfigControllerV2 {
         // encrypted
         Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
         configForm.setContent(pair.getSecond());
+        //fix issue #9783
+        configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         // check param
         ParamUtils.checkTenantV2(configForm.getNamespaceId());
         ParamUtils.checkParam(configForm.getDataId(), configForm.getGroup(), "datumId", configForm.getContent());
@@ -139,6 +141,8 @@ public class ConfigControllerV2 {
             @RequestParam("group") String group,
             @RequestParam(value = "namespaceId", required = false, defaultValue = StringUtils.EMPTY) String namespaceId,
             @RequestParam(value = "tag", required = false) String tag) throws NacosException {
+        //fix issue #9783
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         // check namespaceId
         ParamUtils.checkTenantV2(namespaceId);
         ParamUtils.checkParam(dataId, group, "datumId", "rm");
