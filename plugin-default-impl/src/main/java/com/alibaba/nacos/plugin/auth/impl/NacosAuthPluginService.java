@@ -17,11 +17,10 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.impl.users.User;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
@@ -39,8 +38,6 @@ import java.util.List;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
-    
-    private static final String USER_IDENTITY_PARAM_KEY = "user";
     
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
@@ -67,8 +64,8 @@ public class NacosAuthPluginService implements AuthPluginService {
     @Override
     public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         checkNacosAuthManager();
-        User user = nacosAuthManager.login(identityContext);
-        identityContext.setParameter(USER_IDENTITY_PARAM_KEY, user);
+        NacosUser user = nacosAuthManager.login(identityContext);
+        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, user);
         identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
                 user.getUserName());
         return true;
@@ -76,8 +73,9 @@ public class NacosAuthPluginService implements AuthPluginService {
     
     @Override
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
-        NacosUser user = (NacosUser) identityContext.getParameter(USER_IDENTITY_PARAM_KEY);
+        NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
         nacosAuthManager.auth(permission, user);
+        
         return true;
     }
     
