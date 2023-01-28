@@ -26,31 +26,23 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.jsonwebtoken.io.Encoders;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
-import org.springframework.mock.web.MockHttpSession;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserControllerTest {
-    
-    @Mock(lenient = true)
-    JwtTokenManager jwtTokenManager;
     
     @Mock
     private HttpServletRequest request;
@@ -100,15 +92,6 @@ public class UserControllerTest {
         assertTrue(actualString.contains("\"accessToken\":\"1234567890\""));
         assertTrue(actualString.contains("\"tokenTtl\":18000"));
         assertTrue(actualString.contains("\"globalAdmin\":true"));
-    }
-    
-    @Test
-    public void testSessionExpiredThrowHttpSessionRequiredException() throws IOException {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
-        when(request.getSession()).thenReturn(new MockHttpSession());
-        Object o = userController.updateUser("nacos", "qwe12345", response, request);
-        Assert.assertNull(o);
-        verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), eq("session expired!"));
     }
     
     private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
