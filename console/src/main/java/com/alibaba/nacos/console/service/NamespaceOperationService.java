@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
@@ -70,7 +71,7 @@ public class NamespaceOperationService {
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = commonPersistService.findTenantByKp(DEFAULT_KP);
         
-        Namespace namespace0 = new Namespace("", DEFAULT_NAMESPACE, DEFAULT_QUOTA,
+        Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA,
                 configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
         List<Namespace> namespaceList = new ArrayList<>();
         namespaceList.add(namespace0);
@@ -92,7 +93,7 @@ public class NamespaceOperationService {
      */
     public NamespaceAllInfo getNamespace(String namespaceId) throws NacosException {
         // TODO 获取用kp
-        if (StringUtils.isBlank(namespaceId)) {
+        if (StringUtils.isBlank(namespaceId) || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {
             return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
                     configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType(),
                     DEFAULT_NAMESPACE_DESCRIPTION);

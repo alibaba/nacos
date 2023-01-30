@@ -26,6 +26,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +42,7 @@ import java.util.List;
 
 /**
  * NacosRoleServiceImpl Test.
+ *
  * @ClassName: NacosRoleServiceImplTest
  * @Author: ChenHao26
  * @Date: 2022/8/16 17:31
@@ -73,11 +75,11 @@ public class NacosRoleServiceImplTest {
         Field authConfigsFile = nacosRoleServiceClass.getDeclaredField("authConfigs");
         authConfigsFile.setAccessible(true);
         authConfigsFile.set(nacosRoleService, authConfigs);
-    
+        
         Field rolePersistServiceFile = nacosRoleServiceClass.getDeclaredField("rolePersistService");
         rolePersistServiceFile.setAccessible(true);
         rolePersistServiceFile.set(nacosRoleService, rolePersistService);
-    
+        
         Field userDetailsServiceField = nacosRoleServiceClass.getDeclaredField("userDetailsService");
         userDetailsServiceField.setAccessible(true);
         userDetailsServiceField.set(nacosRoleService, userDetailsService);
@@ -99,14 +101,16 @@ public class NacosRoleServiceImplTest {
         Permission permission = new Permission();
         permission.setAction("rw");
         permission.setResource(Resource.EMPTY_RESOURCE);
-        boolean res = nacosRoleService.hasPermission("nacos", permission);
+        NacosUser nacosUser = new NacosUser();
+        nacosUser.setUserName("nacos");
+        boolean res = nacosRoleService.hasPermission(nacosUser, permission);
         Assert.assertFalse(res);
-    
+        
         Permission permission2 = new Permission();
         permission2.setAction("rw");
         Resource resource = new Resource("public", "group", AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, "rw", null);
         permission2.setResource(resource);
-        boolean res2 = nacosRoleService.hasPermission("nacos", permission2);
+        boolean res2 = nacosRoleService.hasPermission(nacosUser, permission2);
         Assert.assertTrue(res2);
     }
     
@@ -118,7 +122,8 @@ public class NacosRoleServiceImplTest {
     
     @Test
     public void getRolesFromDatabase() {
-        Page<RoleInfo> roleInfoPage = nacosRoleService.getRolesFromDatabase("nacos", "ROLE_ADMIN", 1, Integer.MAX_VALUE);
+        Page<RoleInfo> roleInfoPage = nacosRoleService.getRolesFromDatabase("nacos", "ROLE_ADMIN", 1,
+                Integer.MAX_VALUE);
         Assert.assertEquals(roleInfoPage.getTotalCount(), 0);
     }
     
@@ -169,7 +174,7 @@ public class NacosRoleServiceImplTest {
     public void addPermission() {
         try {
             nacosRoleService.addPermission("role-admin", "", "rw");
-        }  catch (Exception e) {
+        } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("role role-admin not found!"));
         }
     }
