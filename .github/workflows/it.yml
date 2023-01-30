@@ -13,7 +13,7 @@ permissions:
   contents: read # to fetch code (actions/checkout)
 
 jobs:
-  unix:
+  deploy-docker-image:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
