@@ -103,5 +103,4 @@ public class PrometheusControllerTest {
         assertEquals(testInstanceList.size(), JacksonUtils.toObj(response.getContentAsString()).size());
     }
     
-    
 }
