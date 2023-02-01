@@ -20,6 +20,7 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +39,13 @@ public class NacosJwtParser {
     private final Key key;
     
     public NacosJwtParser(String base64edKey) {
-        byte[] decode = Base64.getDecoder().decode(base64edKey);
+        byte[] decode;
+        try {
+            decode = Base64.getDecoder().decode(base64edKey);
+        } catch (IllegalArgumentException e) {
+            decode = base64edKey.getBytes(StandardCharsets.US_ASCII);
+        }
+        
         int bitLength = decode.length << 3;
         if (bitLength < 256) {
             String msg = "The specified key byte array is " + bitLength + " bits which "
