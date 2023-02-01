@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import io.grpc.Context;
@@ -78,6 +79,7 @@ public class GrpcBiStreamRequestAcceptorTest {
     
     @Before
     public void setUp() throws IOException {
+        PayloadRegistry.init();
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
         Server mockServer = InProcessServerBuilder
