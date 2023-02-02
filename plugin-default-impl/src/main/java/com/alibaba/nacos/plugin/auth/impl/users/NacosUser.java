@@ -28,6 +28,13 @@ public class NacosUser extends User {
     
     private boolean globalAdmin = false;
     
+    public NacosUser() {
+    }
+    
+    public NacosUser(String userName) {
+        setUserName(userName);
+    }
+    
     public String getToken() {
         return token;
     }
