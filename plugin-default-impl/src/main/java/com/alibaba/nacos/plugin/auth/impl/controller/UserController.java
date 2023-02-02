@@ -27,7 +27,7 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
@@ -73,6 +73,7 @@ public class UserController {
     private JwtTokenManager jwtTokenManager;
     
     @Autowired
+    @Deprecated
     private AuthenticationManager authenticationManager;
     
     @Autowired
@@ -85,7 +86,7 @@ public class UserController {
     private AuthConfigs authConfigs;
     
     @Autowired
-    private NacosAuthManager authManager;
+    private IAuthenticationManager iAuthenticationManager;
     
     /**
      * Create a new user.
@@ -225,14 +226,14 @@ public class UserController {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            NacosUser user = authManager.login(request);
+            NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenValidityInSeconds());
-            result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+            result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }

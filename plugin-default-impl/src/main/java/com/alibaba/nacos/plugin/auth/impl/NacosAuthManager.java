@@ -44,6 +44,7 @@ import java.util.List;
  * @since 1.2.0
  */
 @Component
+@Deprecated
 public class NacosAuthManager {
     
     @Autowired

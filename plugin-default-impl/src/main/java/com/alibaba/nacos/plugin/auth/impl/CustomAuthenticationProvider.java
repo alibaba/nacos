@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
  * @author wfnuser
  */
 @Component
+@Deprecated
 public class CustomAuthenticationProvider implements AuthenticationProvider {
     
     @Autowired
