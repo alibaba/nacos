@@ -29,7 +29,7 @@
     <packaging>jar</packaging>
     <name>nacos-plugin-default-impl ${project.version}</name>
     <url>https://nacos.io</url>
-
+    
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
@@ -45,27 +45,13 @@
             <artifactId>nacos-sys</artifactId>
             <scope>provided</scope>
         </dependency>
-    
+        
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-config</artifactId>
             <scope>provided</scope>
         </dependency>
-    
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <scope>runtime</scope>
-        </dependency>
+        
         <dependency>
             <groupId>org.springframework.ldap</groupId>
             <artifactId>spring-ldap-core</artifactId>
