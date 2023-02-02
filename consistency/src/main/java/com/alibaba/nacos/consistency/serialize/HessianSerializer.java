@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * hessian serializer.
+ * Serializer implement by hessian.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
