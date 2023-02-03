@@ -16,11 +16,16 @@
 
 package com.alibaba.nacos.plugin.auth.impl.jwt;
 
-import junit.framework.TestCase;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * NacosJwtParserTest.
@@ -28,7 +33,8 @@ import java.util.Base64;
  * @author Weizhan▪Yun
  * @date 2023/2/1 16:32
  */
-public class NacosJwtParserTest extends TestCase {
+@RunWith(MockitoJUnitRunner.class)
+public class NacosJwtParserTest {
     
     @Test
     public void testParseWithOriginKey() {

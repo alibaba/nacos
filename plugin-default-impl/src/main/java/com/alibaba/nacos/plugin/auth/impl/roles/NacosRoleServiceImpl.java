@@ -77,8 +77,8 @@ public class NacosRoleServiceImpl {
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
-            Page<RoleInfo> roleInfoPage = rolePersistService
-                    .getRolesByUserNameAndRoleName(StringUtils.EMPTY, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(StringUtils.EMPTY,
+                    StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage == null) {
                 return;
             }
@@ -94,8 +94,8 @@ public class NacosRoleServiceImpl {
             
             Map<String, List<PermissionInfo>> tmpPermissionInfoMap = new ConcurrentHashMap<>(16);
             for (String role : tmpRoleSet) {
-                Page<PermissionInfo> permissionInfoPage = permissionPersistService
-                        .getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+                Page<PermissionInfo> permissionInfoPage = permissionPersistService.getPermissions(role, DEFAULT_PAGE_NO,
+                        Integer.MAX_VALUE);
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
             
@@ -113,7 +113,7 @@ public class NacosRoleServiceImpl {
      * <p>Note if the user has many roles, this method returns true if any one role of the user has the desired
      * permission.
      *
-     * @param nacosUser   user info
+     * @param nacosUser  user info
      * @param permission permission to auth
      * @return true if granted, false otherwise
      */
@@ -150,8 +150,8 @@ public class NacosRoleServiceImpl {
             for (PermissionInfo permissionInfo : permissionInfoList) {
                 String permissionResource = permissionInfo.getResource().replaceAll("\\*", ".*");
                 String permissionAction = permissionInfo.getAction();
-                if (permissionAction.contains(permission.getAction()) && Pattern
-                        .matches(permissionResource, joinResource(permission.getResource()))) {
+                if (permissionAction.contains(permission.getAction()) && Pattern.matches(permissionResource,
+                        joinResource(permission.getResource()))) {
                     return true;
                 }
             }
@@ -162,7 +162,8 @@ public class NacosRoleServiceImpl {
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = roleInfoMap.get(username);
         if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
-            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, StringUtils.EMPTY, DEFAULT_PAGE_NO,
+                    Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
                 if (!CollectionUtils.isEmpty(roleInfoList)) {
@@ -281,12 +282,24 @@ public class NacosRoleServiceImpl {
         }
         return result.toString();
     }
-
+    
     public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
         return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
     }
-
+    
     public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
         return permissionPersistService.findPermissionsLike4Page(role, pageNo, pageSize);
+    }
+    
+    /**
+     * check if user has admin role.
+     *
+     * @param userName user name
+     * @return true if user has admin role.
+     */
+    public boolean hasGlobalAdminRole(String userName) {
+        List<RoleInfo> roles = getRoles(userName);
+        
+        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
 }
