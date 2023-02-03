@@ -66,6 +66,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.times;
@@ -223,6 +226,66 @@ public class NamingGrpcClientProxyTest {
         }));
     }
     
+    @Test(expected = NacosException.class)
+    public void testBatchDeregisterServiceWithEmptyInstances() throws NacosException {
+        client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, Collections.EMPTY_LIST);
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testBatchDeregisterServiceWithoutCacheData() throws NacosException {
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testBatchDeregisterServiceNotBatchData() throws NacosException {
+        client.registerService(SERVICE_NAME, GROUP_NAME, instance);
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+    }
+    
+    @Test(expected = NacosException.class)
+    public void testBatchDeregisterServiceWithEmptyBatchData() throws NacosException {
+        try {
+            client.batchRegisterService(SERVICE_NAME, GROUP_NAME, Collections.EMPTY_LIST);
+        } catch (Exception ignored) {
+        }
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+    }
+    
+    @Test
+    public void testBatchDeregisterService() throws NacosException {
+        try {
+            List<Instance> instanceList = new ArrayList<>();
+            instance.setHealthy(true);
+            instanceList.add(instance);
+            instanceList.add(new Instance());
+            client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        } catch (Exception ignored) {
+        }
+        response = new BatchInstanceResponse();
+        when(this.rpcClient.request(any())).thenReturn(response);
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof BatchInstanceRequest) {
+                BatchInstanceRequest request1 = (BatchInstanceRequest) request;
+                request1.setRequestId("1");
+                return request1.getInstances().size() == 1 && request1.getType().equals(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+    
     @Test
     public void testUpdateInstance() throws Exception {
         //TODO thrown.expect(UnsupportedOperationException.class);
@@ -256,7 +319,7 @@ public class NamingGrpcClientProxyTest {
     @Test
     public void testDeleteService() throws Exception {
         //TODO thrown.expect(UnsupportedOperationException.class);
-        Assert.assertFalse(client.deleteService(SERVICE_NAME, GROUP_NAME));
+        assertFalse(client.deleteService(SERVICE_NAME, GROUP_NAME));
     }
     
     @Test
@@ -308,6 +371,17 @@ public class NamingGrpcClientProxyTest {
             }
             return false;
         }));
+    }
+    
+    @Test
+    public void testIsSubscribed() throws NacosException {
+        SubscribeServiceResponse res = new SubscribeServiceResponse();
+        ServiceInfo info = new ServiceInfo(GROUP_NAME + "@@" + SERVICE_NAME + "@@" + CLUSTERS);
+        res.setServiceInfo(info);
+        when(this.rpcClient.request(any())).thenReturn(res);
+        assertFalse(client.isSubscribed(SERVICE_NAME, GROUP_NAME, CLUSTERS));
+        client.subscribe(SERVICE_NAME, GROUP_NAME, CLUSTERS);
+        assertTrue(client.isSubscribed(SERVICE_NAME, GROUP_NAME, CLUSTERS));
     }
     
     @Test

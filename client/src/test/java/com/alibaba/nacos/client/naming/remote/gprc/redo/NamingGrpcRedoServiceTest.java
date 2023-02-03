@@ -101,6 +101,7 @@ public class NamingGrpcRedoServiceTest {
         assertEquals(instance, actual.get());
         assertFalse(actual.isRegistered());
         assertFalse(actual.isUnregistering());
+        assertTrue(actual.isExpectedRegistered());
     }
     
     @Test
@@ -135,6 +136,17 @@ public class NamingGrpcRedoServiceTest {
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         redoService.instanceDeregister(SERVICE, GROUP);
         InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
+        assertTrue(actual.isUnregistering());
+        assertFalse(actual.isExpectedRegistered());
+    }
+    
+    @Test
+    public void testInstanceDeregistered() {
+        ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
+        redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
+        redoService.instanceDeregistered(SERVICE, GROUP);
+        InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
+        assertFalse(actual.isRegistered());
         assertTrue(actual.isUnregistering());
     }
     
@@ -193,6 +205,14 @@ public class NamingGrpcRedoServiceTest {
         redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
         SubscriberRedoData actual = subscribes.entrySet().iterator().next().getValue();
         assertTrue(actual.isUnregistering());
+    }
+    
+    @Test
+    public void testIsSubscriberRegistered() {
+        assertFalse(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
+        assertTrue(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
     }
     
     @Test
