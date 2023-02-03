@@ -153,7 +153,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                             instances));
         }
         String combinedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-        InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesBykey(combinedServiceName);
+        InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesByKey(combinedServiceName);
         if (!(instanceRedoData instanceof BatchInstanceRedoData)) {
             throw new NacosException(NacosException.INVALID_PARAM, String.format(
                     "[Batch deRegistration] batch deRegister is not BatchInstanceRedoData type , instances: %s,",
@@ -231,7 +231,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
         requestToServer(request, Response.class);
-        redoService.removeInstanceForRedo(serviceName, groupName);
+        redoService.instanceDeregistered(serviceName, groupName);
     }
     
     @Override
