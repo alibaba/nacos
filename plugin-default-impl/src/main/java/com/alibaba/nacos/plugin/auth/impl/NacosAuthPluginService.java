@@ -17,11 +17,14 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
@@ -39,6 +42,9 @@ import java.util.List;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
     
+    @Deprecated
+    private static final String USER_IDENTITY_PARAM_KEY = "user";
+    
     private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
         {
             add(AuthConstants.AUTHORIZATION_HEADER);
@@ -48,7 +54,7 @@ public class NacosAuthPluginService implements AuthPluginService {
         }
     };
     
-    private NacosAuthManager nacosAuthManager;
+    protected IAuthenticationManager authenticationManager;
     
     @Override
     public Collection<String> identityNames() {
@@ -64,17 +70,34 @@ public class NacosAuthPluginService implements AuthPluginService {
     @Override
     public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         checkNacosAuthManager();
-        NacosUser user = nacosAuthManager.login(identityContext);
-        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, user);
+        String token = resolveToken(identityContext);
+        NacosUser nacosUser;
+        if (StringUtils.isNotBlank(token)) {
+            nacosUser = authenticationManager.authenticate(token);
+        } else {
+            String userName = (String) identityContext.getParameter(AuthConstants.PARAM_USERNAME);
+            String password = (String) identityContext.getParameter(AuthConstants.PARAM_PASSWORD);
+            nacosUser = authenticationManager.authenticate(userName, password);
+        }
+        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
         identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
-                user.getUserName());
+                nacosUser.getUserName());
         return true;
+    }
+    
+    private String resolveToken(IdentityContext identityContext) {
+        String bearerToken = identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
+            return bearerToken.substring(AuthConstants.TOKEN_PREFIX.length());
+        }
+        
+        return identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
     }
     
     @Override
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
         NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
-        nacosAuthManager.auth(permission, user);
+        authenticationManager.authorize(permission, user);
         
         return true;
     }
@@ -84,9 +107,9 @@ public class NacosAuthPluginService implements AuthPluginService {
         return AuthConstants.AUTH_PLUGIN_TYPE;
     }
     
-    private void checkNacosAuthManager() {
-        if (null == nacosAuthManager) {
-            nacosAuthManager = ApplicationUtils.getBean(NacosAuthManager.class);
+    protected void checkNacosAuthManager() {
+        if (null == authenticationManager) {
+            authenticationManager = ApplicationUtils.getBean(DefaultAuthenticationManager.class);
         }
     }
 }

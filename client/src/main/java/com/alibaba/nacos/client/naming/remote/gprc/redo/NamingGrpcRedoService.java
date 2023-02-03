@@ -132,7 +132,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         synchronized (registeredInstances) {
             InstanceRedoData redoData = registeredInstances.get(key);
             if (null != redoData) {
-                redoData.setRegistered(true);
+                redoData.registered();
             }
         }
     }
@@ -149,6 +149,23 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
             InstanceRedoData redoData = registeredInstances.get(key);
             if (null != redoData) {
                 redoData.setUnregistering(true);
+                redoData.setExpectedRegistered(false);
+            }
+        }
+    }
+    
+    /**
+     * Instance deregister finished, mark unregistered status.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     */
+    public void instanceDeregistered(String serviceName, String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
+        synchronized (registeredInstances) {
+            InstanceRedoData redoData = registeredInstances.get(key);
+            if (null != redoData) {
+                redoData.unregistered();
             }
         }
     }
@@ -281,7 +298,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * get Cache service.
      * @return cache service
      */
-    public InstanceRedoData getRegisteredInstancesBykey(String combinedServiceName) {
+    public InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName) {
         return registeredInstances.get(combinedServiceName);
     }
     

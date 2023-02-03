@@ -79,6 +79,7 @@ public class GrpcBiStreamRequestAcceptorTest {
     
     @Before
     public void setUp() throws IOException {
+        PayloadRegistry.init();
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
         Server mockServer = InProcessServerBuilder
