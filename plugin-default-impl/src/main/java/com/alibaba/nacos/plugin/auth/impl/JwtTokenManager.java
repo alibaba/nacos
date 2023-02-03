@@ -81,6 +81,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
      * @param authentication auth info
      * @return token
      */
+    @Deprecated
     public String createToken(Authentication authentication) {
         return createToken(authentication.getName());
     }
@@ -101,6 +102,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
      * @param token token
      * @return auth info
      */
+    @Deprecated
     public Authentication getAuthentication(String token) throws AccessException {
         NacosUser nacosUser = jwtParser.parse(token);
         
@@ -116,7 +118,11 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
      * @param token token
      */
     public void validateToken(String token) throws AccessException {
-        jwtParser.parse(token);
+        parseToken(token);
+    }
+    
+    public NacosUser parseToken(String token) throws AccessException {
+        return jwtParser.parse(token);
     }
     
     public long getTokenValidityInSeconds() {

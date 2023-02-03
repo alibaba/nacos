@@ -33,6 +33,7 @@ import java.io.IOException;
  * @author wfnuser
  */
 @Component
+@Deprecated
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(JwtAuthenticationEntryPoint.class);

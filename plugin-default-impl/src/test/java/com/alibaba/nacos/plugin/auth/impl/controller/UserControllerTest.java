@@ -19,7 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
@@ -54,7 +54,7 @@ public class UserControllerTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private NacosAuthManager authManager;
+    private IAuthenticationManager authenticationManager;
     
     private UserController userController;
     
@@ -68,7 +68,7 @@ public class UserControllerTest {
         user.setGlobalAdmin(true);
         user.setToken("1234567890");
         injectObject("authConfigs", authConfigs);
-        injectObject("authManager", authManager);
+        injectObject("iAuthenticationManager", authenticationManager);
         
         MockEnvironment mockEnvironment = new MockEnvironment();
         mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
@@ -84,7 +84,8 @@ public class UserControllerTest {
     
     @Test
     public void testLoginWithAuthedUser() throws AccessException {
-        when(authManager.login(request)).thenReturn(user);
+        when(authenticationManager.authenticate(request)).thenReturn(user);
+        when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         Object actual = userController.login("nacos", "nacos", response, request);
         assertTrue(actual instanceof JsonNode);

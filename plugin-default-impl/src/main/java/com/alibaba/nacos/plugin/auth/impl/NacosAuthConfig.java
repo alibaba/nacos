@@ -19,11 +19,17 @@ package com.alibaba.nacos.plugin.auth.impl;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.AuthenticationNamagerDelegator;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.filter.JwtAuthenticationTokenFilter;
+import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
@@ -147,5 +153,20 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+    
+    @Bean
+    @Primary
+    public IAuthenticationManager authenticationManager(
+            ObjectProvider<LdapAuthenticationManager> ldapAuthenticatoinManagerObjectProvider,
+            ObjectProvider<DefaultAuthenticationManager> defaultAuthenticationManagers, AuthConfigs authConfigs) {
+        return new AuthenticationNamagerDelegator(defaultAuthenticationManagers,
+                ldapAuthenticatoinManagerObjectProvider, authConfigs);
+    }
+    
+    @Bean
+    public IAuthenticationManager defaultAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
+            JwtTokenManager jwtTokenManager, NacosRoleServiceImpl roleService) {
+        return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);
     }
 }

@@ -35,6 +35,11 @@ public class NacosUser extends User {
         setUserName(userName);
     }
     
+    public NacosUser(String userName, String token) {
+        setUserName(userName);
+        this.token = token;
+    }
+    
     public String getToken() {
         return token;
     }
