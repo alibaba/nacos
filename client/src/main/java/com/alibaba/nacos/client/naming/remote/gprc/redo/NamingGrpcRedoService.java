@@ -177,8 +177,12 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      */
     public void removeInstanceForRedo(String serviceName, String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
         synchronized (registeredInstances) {
-            registeredInstances.remove(NamingUtils.getGroupedName(serviceName, groupName));
+            InstanceRedoData redoData = registeredInstances.get(key);
+            if (null != redoData && !redoData.isExpectedRegistered()) {
+                registeredInstances.remove(key);
+            }
         }
     }
     
