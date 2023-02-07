@@ -248,6 +248,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
             SubscriberRedoData redoData = subscribes.get(key);
             if (null != redoData) {
                 redoData.setUnregistering(true);
+                redoData.setExpectedRegistered(false);
             }
         }
     }
