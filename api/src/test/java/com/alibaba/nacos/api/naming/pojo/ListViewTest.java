@@ -22,17 +22,18 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class ListViewTest {
     
     @Test
     public void testToString() {
-        ListView<String> listView = new ListView<>();
         List<String> data = new LinkedList<>();
         data.add("1");
         data.add("2");
         data.add("3");
+        ListView<String> listView = new ListView<>();
         listView.setData(data);
         listView.setCount(data.size());
         String actual = listView.toString();

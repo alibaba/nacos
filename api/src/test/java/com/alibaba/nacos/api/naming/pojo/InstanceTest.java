@@ -83,7 +83,10 @@ public class InstanceTest {
     
     @Test
     public void testJsonDeserialize() throws JsonProcessingException {
-        String json = "{\"instanceId\":\"id\",\"ip\":\"1.1.1.1\",\"port\":1000,\"weight\":100.0,\"healthy\":false,\"enabled\":false,\"ephemeral\":false,\"clusterName\":\"cluster\",\"serviceName\":\"group@@serviceName\",\"metadata\":{\"a\":\"b\"},\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}";
+        String json = "{\"instanceId\":\"id\",\"ip\":\"1.1.1.1\",\"port\":1000,\"weight\":100.0,\"healthy\":false,"
+                + "\"enabled\":false,\"ephemeral\":false,\"clusterName\":\"cluster\","
+                + "\"serviceName\":\"group@@serviceName\",\"metadata\":{\"a\":\"b\"},\"instanceHeartBeatInterval\":5000,"
+                + "\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000}";
         Instance instance = mapper.readValue(json, Instance.class);
         checkInstance(instance);
     }

@@ -92,7 +92,9 @@ public class ClusterTest {
     
     @Test
     public void testJsonDeserialize() throws JsonProcessingException {
-        String json = "{\"serviceName\":\"group@@service\",\"name\":\"cluster\",\"healthChecker\":{\"type\":\"HTTP\",\"path\":\"\",\"headers\":\"\",\"expectedResponseCode\":200},\"defaultPort\":81,\"defaultCheckPort\":82,\"useIPPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";
+        String json = "{\"serviceName\":\"group@@service\",\"name\":\"cluster\","
+                + "\"healthChecker\":{\"type\":\"HTTP\",\"path\":\"\",\"headers\":\"\",\"expectedResponseCode\":200},"
+                + "\"defaultPort\":81,\"defaultCheckPort\":82,\"useIPPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";
         Cluster actual = mapper.readValue(json, Cluster.class);
         assertEquals("cluster", actual.getName());
         assertEquals("group@@service", actual.getServiceName());
