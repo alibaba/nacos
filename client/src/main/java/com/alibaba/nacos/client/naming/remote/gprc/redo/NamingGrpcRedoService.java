@@ -276,8 +276,12 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param cluster     cluster
      */
     public void removeSubscriberForRedo(String serviceName, String groupName, String cluster) {
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
-            subscribes.remove(ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster));
+            SubscriberRedoData redoData = subscribes.get(key);
+            if (null != redoData && !redoData.isExpectedRegistered()) {
+                subscribes.remove(key);
+            }
         }
     }
     
