@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl;
+package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
@@ -24,6 +24,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtParser;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +35,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * JWT token manager.
@@ -42,7 +44,7 @@ import java.util.List;
  * @author nkorange
  */
 @Component
-public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
+public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> implements TokenManager {
     
     @Deprecated
     private static final String AUTHORITIES_KEY = "auth";
@@ -127,6 +129,15 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
     
     public long getTokenValidityInSeconds() {
         return tokenValidityInSeconds;
+    }
+    
+    @Override
+    public long getTokenTtlInSeconds(String token) throws AccessException {
+        return jwtParser.getExpireTimeInSeconds(token) - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+    }
+    
+    public long getExpiredTimeInSeconds(String token) throws AccessException {
+        return jwtParser.getExpireTimeInSeconds(token);
     }
     
     @Override

@@ -26,6 +26,7 @@ import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
@@ -66,7 +67,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     private final Environment env;
     
-    private final JwtTokenManager tokenProvider;
+    private final TokenManagerDelegate tokenProvider;
     
     private final AuthConfigs authConfigs;
     
@@ -76,7 +77,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     private final ControllerMethodsCache methodsCache;
     
-    public NacosAuthConfig(Environment env, JwtTokenManager tokenProvider, AuthConfigs authConfigs,
+    public NacosAuthConfig(Environment env, TokenManagerDelegate tokenProvider, AuthConfigs authConfigs,
             NacosUserDetailsServiceImpl userDetailsService,
             ObjectProvider<LdapAuthenticationProvider> ldapAuthenticationProvider,
             ControllerMethodsCache methodsCache) {
@@ -166,7 +167,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     @Bean
     public IAuthenticationManager defaultAuthenticationManager(NacosUserDetailsServiceImpl userDetailsService,
-            JwtTokenManager jwtTokenManager, NacosRoleServiceImpl roleService) {
+            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService) {
         return new DefaultAuthenticationManager(userDetailsService, jwtTokenManager, roleService);
     }
 }
