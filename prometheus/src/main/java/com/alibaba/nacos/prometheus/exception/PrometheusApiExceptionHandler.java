@@ -17,8 +17,8 @@
 package com.alibaba.nacos.prometheus.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.model.v2.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * Exception Handler for Prometheus API.
+ *
  * @author karsonto
  * @date 2023/02/01
  */
@@ -38,14 +39,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @ResponseBody
 public class PrometheusApiExceptionHandler {
     
-    ArrayNode emptyArrayNode = JacksonUtils.createEmptyArrayNode();
-    
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusApiExceptionHandler.class);
     
     @ExceptionHandler(NacosException.class)
-    public ResponseEntity  handleNacosException(NacosException e) {
+    public ResponseEntity<Result<String>> handleNacosException(NacosException e) {
         LOGGER.error("got exception. {}", e.getErrMsg());
-        return ResponseEntity.ok().body(emptyArrayNode.toString());
+        return ResponseEntity.status(e.getErrCode()).body(Result.failure(ErrorCode.SERVER_ERROR, e.getErrMsg()));
     }
-
+    
 }
