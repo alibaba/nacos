@@ -17,7 +17,6 @@
 package com.alibaba.nacos.prometheus.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +43,7 @@ public class PrometheusApiExceptionHandler {
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<Result<String>> handleNacosException(NacosException e) {
         LOGGER.error("got exception. {}", e.getErrMsg());
-        return ResponseEntity.status(e.getErrCode()).body(Result.failure(ErrorCode.SERVER_ERROR, e.getErrMsg()));
+        return ResponseEntity.internalServerError().body(Result.failure(e.getErrMsg()));
     }
     
 }
