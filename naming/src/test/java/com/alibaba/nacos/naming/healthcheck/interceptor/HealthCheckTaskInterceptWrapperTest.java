@@ -151,7 +151,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         injectInstance(true, System.currentTimeMillis()).getExtendDatum()
                 .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
         when(globalConfig.isExpireInstance()).thenReturn(true);
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.MILLISECONDS.sleep(1100);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
         assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
