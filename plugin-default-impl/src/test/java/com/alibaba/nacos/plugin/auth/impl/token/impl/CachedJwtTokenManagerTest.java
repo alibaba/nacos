@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * CachedJwtTokenManagerTest.
  *
- * @author majorhe
+ * @author Majorhe
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CachedJwtTokenManagerTest {
