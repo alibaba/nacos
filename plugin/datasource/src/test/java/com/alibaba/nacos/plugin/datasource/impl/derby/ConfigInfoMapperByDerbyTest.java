@@ -38,7 +38,7 @@ public class ConfigInfoMapperByDerbyTest {
     @Test
     public void testFindConfigMaxId() {
         String sql = configInfoMapperByDerby.findConfigMaxId();
-        Assert.assertEquals(sql, "SELECT max(id) FROM config_info");
+        Assert.assertEquals(sql, "SELECT MAX(id) FROM config_info");
     }
     
     @Test
@@ -108,8 +108,8 @@ public class ConfigInfoMapperByDerbyTest {
     public void testFindChangeConfig() {
         String sql = configInfoMapperByDerby.findChangeConfig();
         Assert.assertEquals(sql,
-                "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified FROM config_info "
-                        + "WHERE gmt_modified > = ? AND gmt_modified <= ?");
+                "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info "
+                        + "WHERE gmt_modified >= ? AND gmt_modified <= ?");
     }
     
     @Test

@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 import java.util.Map;
 
 /**
@@ -36,7 +39,35 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @param tagSize the tags name size.
      * @return The sql of get config info.
      */
-    String findConfigInfo4PageCountRows(final Map<String, String> params, int tagSize);
+    default String findConfigInfo4PageCountRows(final Map<String, String> params, int tagSize) {
+        final String appName = params.get("appName");
+        final String dataId = params.get("dataId");
+        final String group = params.get("group");
+        StringBuilder where = new StringBuilder(" WHERE ");
+        final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
+
+        where.append(" a.tenant_id=? ");
+
+        if (StringUtils.isNotBlank(dataId)) {
+            where.append(" AND a.data_id=? ");
+        }
+        if (StringUtils.isNotBlank(group)) {
+            where.append(" AND a.group_id=? ");
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            where.append(" AND a.app_name=? ");
+        }
+
+        where.append(" AND b.tag_name IN (");
+        for (int i = 0; i < tagSize; i++) {
+            if (i != 0) {
+                where.append(", ");
+            }
+            where.append('?');
+        }
+        where.append(") ");
+        return sqlCount + where;
+    }
     
     /**
      * Find config info.
@@ -61,7 +92,37 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @param tagSize the tags name size.
      * @return The sql of getting the count of config information.
      */
-    String findConfigInfoLike4PageCountRows(final Map<String, String> params, int tagSize);
+    default String findConfigInfoLike4PageCountRows(final Map<String, String> params, int tagSize) {
+        final String appName = params.get("appName");
+        final String content = params.get("content");
+        final String dataId = params.get("dataId");
+        final String group = params.get("group");
+        StringBuilder where = new StringBuilder(" WHERE ");
+        final String sqlCountRows = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id ";
+        where.append(" a.tenant_id LIKE ? ");
+        if (!StringUtils.isBlank(dataId)) {
+            where.append(" AND a.data_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(group)) {
+            where.append(" AND a.group_id LIKE ? ");
+        }
+        if (!StringUtils.isBlank(appName)) {
+            where.append(" AND a.app_name = ? ");
+        }
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND a.content LIKE ? ");
+        }
+
+        where.append(" AND b.tag_name IN (");
+        for (int i = 0; i < tagSize; i++) {
+            if (i != 0) {
+                where.append(", ");
+            }
+            where.append('?');
+        }
+        where.append(") ");
+        return sqlCountRows + where;
+    }
     
     /**
      * Query config info.
@@ -76,4 +137,13 @@ public interface ConfigTagsRelationMapper extends Mapper {
      * @return The sql of querying config info.
      */
     String findConfigInfoLike4PageFetchRows(final Map<String, String> params, int tagSize, int startRow, int pageSize);
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.CONFIG_TAGS_RELATION;
+    }
 }

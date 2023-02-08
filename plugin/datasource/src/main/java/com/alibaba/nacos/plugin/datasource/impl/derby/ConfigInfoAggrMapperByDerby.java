@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -32,76 +31,8 @@ import java.util.List;
  *
  * @author hyx
  **/
-
 public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements ConfigInfoAggrMapper {
-    
-    @Override
-    public MapperResult batchRemoveAggr(MapperContext context) {
-        final List<String> datumList = (List<String>) context.get("datum_id");
-        final String dataId = (String) context.get("data_id");
-        final String group = (String) context.get("group_id");
-        final String tenantTmp = (String) context.get("tenant_id");
-        
-        List<Object> paramList = new ArrayList<>();
-        paramList.add(dataId);
-        paramList.add(group);
-        paramList.add(tenantTmp);
-        
-        final StringBuilder placeholderString = new StringBuilder();
-        for (int i = 0; i < datumList.size(); i++) {
-            if (i != 0) {
-                placeholderString.append(", ");
-            }
-            placeholderString.append('?');
-            paramList.add(datumList.get(i));
-        }
-        String sql = "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id IN ("
-                + placeholderString + ")";
-        return new MapperResult(sql, paramList);
-    }
-    
-    @Override
-    public MapperResult aggrConfigInfoCount(MapperContext context) {
-        final List<String> datumIds = (List<String>) context.get("datum_id");
-        final Boolean isIn = (Boolean) context.get("isIn");
-        final String dataId = (String) context.get("data_id");
-        final String group = (String) context.get("group_id");
-        final String tenantTmp = (String) context.get("tenant_id");
-    
-        List<Object> paramList = CollectionUtils.list(dataId, group, tenantTmp);
-        paramList.addAll(datumIds);
-        
-        StringBuilder sql = new StringBuilder(
-                "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND datum_id");
-        if (isIn) {
-            sql.append(" IN (");
-        } else {
-            sql.append(" NOT IN (");
-        }
-        for (int i = 0; i < datumIds.size(); i++) {
-            if (i > 0) {
-                sql.append(", ");
-            }
-            sql.append('?');
-        }
-        sql.append(')');
-    
-        return new MapperResult(sql.toString(), paramList);
-    }
-    
-    @Override
-    public MapperResult findConfigInfoAggrIsOrdered(MapperContext context) {
-        final String dataId = (String) context.get("data_id");
-        final String groupId = (String) context.get("group_id");
-        final String tenantId = (String) context.get("tenant_id");
-    
-        String sql = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id = ? AND "
-                + "group_id = ? AND tenant_id = ? ORDER BY datum_id";
-        List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
-    
-        return new MapperResult(sql, paramList);
-    }
-    
+
     @Override
     public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
         final Integer startRow = (Integer) context.get("startRow");
@@ -116,17 +47,7 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
         List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
         return new MapperResult(sql, paramList);
     }
-    
-    @Override
-    public String findAllAggrGroupByDistinct() {
-        return "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr";
-    }
-    
-    @Override
-    public String getTableName() {
-        return TableConstant.CONFIG_INFO_AGGR;
-    }
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;

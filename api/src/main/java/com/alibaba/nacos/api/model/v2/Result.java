@@ -75,7 +75,7 @@ public class Result<T> implements Serializable {
      * @return Result
      */
     public static Result<String> failure(String message) {
-        return Result.failure(ErrorCode.SERVER_ERROR, message);
+        return new Result<>(ErrorCode.SERVER_ERROR.getCode(), message);
     }
     
     /**

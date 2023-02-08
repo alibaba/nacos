@@ -21,10 +21,10 @@ import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.Objects;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implementation of health checker for HTTP.
@@ -99,10 +99,6 @@ public class Http extends AbstractHealthChecker {
         }
         
         final Http other = (Http) obj;
-        
-        if (!StringUtils.equals(type, other.getType())) {
-            return false;
-        }
         
         if (!StringUtils.equals(path, other.getPath())) {
             return false;
