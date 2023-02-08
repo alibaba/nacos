@@ -20,20 +20,65 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import org.springframework.security.core.Authentication;
 
+/**
+ * Token Manager Interface.
+ *
+ * @author majorhe
+ */
 public interface TokenManager {
     
+    /**
+     * Create token.
+     *
+     * @param authentication auth info
+     * @return token
+     */
     String createToken(Authentication authentication) throws AccessException;
     
+    /**
+     * Create token.
+     *
+     * @param userName auth info
+     * @return token
+     */
     String createToken(String userName) throws AccessException;
     
+    /**
+     * Get auth Info.
+     *
+     * @param token token
+     * @return auth info
+     */
     Authentication getAuthentication(String token) throws AccessException;
     
+    /**
+     * validate token.
+     *
+     * @param token token
+     */
     void validateToken(String token) throws AccessException;
     
+    /**
+     * parse token.
+     *
+     * @param token token
+     * @return nacos user object
+     */
     NacosUser parseToken(String token) throws AccessException;
     
+    /**
+     * validate token.
+     *
+     * @return  token validity in seconds
+     */
     long getTokenValidityInSeconds() throws AccessException;
     
+    /**
+     * validate token.
+     *
+     * @param token token
+     * @return token ttl in seconds
+     */
     long getTokenTtlInSeconds(String token) throws AccessException;
     
 }

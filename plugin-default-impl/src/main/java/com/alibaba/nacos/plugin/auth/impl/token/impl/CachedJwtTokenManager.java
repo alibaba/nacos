@@ -38,10 +38,14 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class CachedJwtTokenManager implements TokenManager {
     
-    //key: token string, value: token entity
+    /**
+     * key: token string, value: token entity.
+     */
     private volatile Map<String, TokenEntity> tokenMap = new ConcurrentHashMap<>(1024);
     
-    //key: username, value: token entity. cache token created by self.
+    /**
+     * key: username, value: token entity. cache token created by self.
+     */
     private volatile Map<String, TokenEntity> userMap = new ConcurrentHashMap<>(128);
     
     @Autowired

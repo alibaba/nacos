@@ -140,7 +140,7 @@ public final class NacosSignatureAlgorithm {
      *
      * @param jwt complete jwt string
      * @param key for signature
-     * @return object for payload
+     * @return expire time in seconds
      * @throws AccessException access exception
      */
     public static long getExpiredTimeInSeconds(String jwt, Key key) throws AccessException {
@@ -169,7 +169,7 @@ public final class NacosSignatureAlgorithm {
      * @param payload   payload of jwt
      * @param signature signature of jwt
      * @param key       for signature
-     * @return object for payload
+     * @return expire time in seconds
      * @throws AccessException access exception
      */
     public long getExpireTimeInSeconds(String header, String payload, String signature, Key key)
