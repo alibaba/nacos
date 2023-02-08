@@ -49,6 +49,7 @@ import static com.alibaba.nacos.test.naming.PrometheusAPI_ITCase.CONTEXT_PATH;
 
 /**
  * @author karsonto
+ * @date 2023/02/08
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=" + CONTEXT_PATH,
