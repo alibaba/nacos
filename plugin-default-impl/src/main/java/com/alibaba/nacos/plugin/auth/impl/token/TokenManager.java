@@ -32,6 +32,7 @@ public interface TokenManager {
      *
      * @param authentication auth info
      * @return token
+     * @throws AccessException access exception
      */
     String createToken(Authentication authentication) throws AccessException;
     
@@ -40,6 +41,7 @@ public interface TokenManager {
      *
      * @param userName auth info
      * @return token
+     * @throws AccessException access exception
      */
     String createToken(String userName) throws AccessException;
     
@@ -48,6 +50,7 @@ public interface TokenManager {
      *
      * @param token token
      * @return auth info
+     * @throws AccessException access exception
      */
     Authentication getAuthentication(String token) throws AccessException;
     
@@ -55,6 +58,7 @@ public interface TokenManager {
      * validate token.
      *
      * @param token token
+     * @throws AccessException access exception
      */
     void validateToken(String token) throws AccessException;
     
@@ -63,6 +67,7 @@ public interface TokenManager {
      *
      * @param token token
      * @return nacos user object
+     * @throws AccessException access exception
      */
     NacosUser parseToken(String token) throws AccessException;
     
@@ -70,6 +75,7 @@ public interface TokenManager {
      * validate token.
      *
      * @return  token validity in seconds
+     * @throws AccessException access exception
      */
     long getTokenValidityInSeconds() throws AccessException;
     
@@ -78,6 +84,7 @@ public interface TokenManager {
      *
      * @param token token
      * @return token ttl in seconds
+     * @throws AccessException access exception
      */
     long getTokenTtlInSeconds(String token) throws AccessException;
     

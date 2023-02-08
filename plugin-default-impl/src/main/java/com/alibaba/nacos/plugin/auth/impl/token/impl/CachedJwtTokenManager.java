@@ -69,12 +69,6 @@ public class CachedJwtTokenManager implements TokenManager {
         users.forEach(e -> userMap.remove(e));
     }
     
-    /**
-     * Create token.
-     *
-     * @param authentication auth info
-     * @return token
-     */
     @Override
     public String createToken(Authentication authentication) throws AccessException {
         return createToken(authentication.getName());
@@ -85,6 +79,7 @@ public class CachedJwtTokenManager implements TokenManager {
      *
      * @param username auth info
      * @return token
+     * @throws AccessException access exception
      */
     public String createToken(String username) throws AccessException {
         if (userMap.containsKey(username)) {
@@ -109,6 +104,7 @@ public class CachedJwtTokenManager implements TokenManager {
      *
      * @param token token
      * @return auth info
+     * @throws AccessException access exception
      */
     public Authentication getAuthentication(String token) throws AccessException {
         if (!tokenMap.containsKey(token)) {
@@ -121,6 +117,7 @@ public class CachedJwtTokenManager implements TokenManager {
      * validate token.
      *
      * @param token token
+     * @throws AccessException access exception
      */
     public void validateToken(String token) throws AccessException {
         if (!tokenMap.containsKey(token)) {
