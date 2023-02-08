@@ -44,11 +44,8 @@ public class ConfigChangeHandler {
         this.parserList = new LinkedList<>();
         
         Collection<ConfigChangeParser> loader = NacosServiceLoader.load(ConfigChangeParser.class);
-        Iterator<ConfigChangeParser> itr = loader.iterator();
-        while (itr.hasNext()) {
-            this.parserList.add(itr.next());
-        }
-        
+        this.parserList.addAll(loader);
+
         this.parserList.add(new PropertiesChangeParser());
         this.parserList.add(new YmlChangeParser());
     }
