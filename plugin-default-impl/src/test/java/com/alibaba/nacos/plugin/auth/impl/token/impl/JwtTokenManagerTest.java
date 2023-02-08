@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl;
+package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtParser;
-import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -87,6 +86,16 @@ public class JwtTokenManagerTest {
     @Test
     public void testInvalidSecretKey() {
         Assert.assertThrows(IllegalArgumentException.class, () -> createToken("0123456789ABCDEF0123456789ABCDE"));
+    }
+    
+    @Test
+    public void testGetTokenTtlInSeconds() throws AccessException {
+        Assert.assertTrue(jwtTokenManager.getTokenTtlInSeconds(jwtTokenManager.createToken("nacos")) > 0);
+    }
+    
+    @Test
+    public void testGetExpiredTimeInSeconds() throws AccessException {
+        Assert.assertTrue(jwtTokenManager.getExpiredTimeInSeconds(jwtTokenManager.createToken("nacos")) > 0);
     }
     
     @Test
