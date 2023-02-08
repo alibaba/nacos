@@ -156,6 +156,7 @@ public class NamingGrpcRedoServiceTest {
         assertTrue(registeredInstances.isEmpty());
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         assertFalse(registeredInstances.isEmpty());
+        redoService.instanceDeregister(SERVICE, GROUP);
         redoService.removeInstanceForRedo(SERVICE, GROUP);
         assertTrue(registeredInstances.isEmpty());
     }
@@ -221,6 +222,7 @@ public class NamingGrpcRedoServiceTest {
         assertTrue(subscribes.isEmpty());
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertFalse(subscribes.isEmpty());
+        redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
         redoService.removeSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertTrue(subscribes.isEmpty());
     }
