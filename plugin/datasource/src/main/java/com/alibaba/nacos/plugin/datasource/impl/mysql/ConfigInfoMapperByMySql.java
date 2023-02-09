@@ -144,6 +144,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         final String appName = params.get(APP_NAME);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
+        final String content = params.get(CONTENT);
         final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
@@ -155,6 +156,9 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         }
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
+        }
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND content LIKE ? ");
         }
         return sql + where + " LIMIT " + startRow + "," + pageSize;
     }
