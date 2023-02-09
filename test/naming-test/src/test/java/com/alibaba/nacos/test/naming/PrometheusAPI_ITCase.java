@@ -19,6 +19,7 @@ package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.prometheus.api.ApiConstants;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -107,6 +109,11 @@ public class PrometheusAPI_ITCase extends HttpClient4Test {
         Assert.assertEquals(targets, INSTANCE_IP + ":" + INSTANCE_PORT);
         
         
+    }
+    
+    @After
+    public void tearDown() throws NacosException {
+        namingService.shutDown();
     }
     
     
