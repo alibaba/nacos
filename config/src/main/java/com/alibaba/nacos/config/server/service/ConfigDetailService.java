@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.controller.v2.ConfigControllerV2;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -30,6 +31,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * config detail service.
@@ -39,7 +41,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  */
 @Service
 public class ConfigDetailService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigControllerV2.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigDetailService.class);
     
     private ConfigInfoPersistService configInfoPersistService;
     
@@ -47,7 +49,9 @@ public class ConfigDetailService {
     
     private ScheduledExecutorService clientEventExecutor;
     
-    private static final long TIMEOUT = 5000L;
+    private static final long OFFER_TIMEOUT = 2000L;
+    
+    private static final long WAIT_TIMEOUT = 4000L;
     
     private static final int MAX_THREAD = 2;
     
@@ -98,8 +102,8 @@ public class ConfigDetailService {
         Page<ConfigInfo> result = null;
         try {
             synchronized (searchEvent) {
-                eventLinkedBlockingQueue.add(searchEvent);
-                searchEvent.wait();
+                eventLinkedBlockingQueue.offer(searchEvent, OFFER_TIMEOUT, TimeUnit.MILLISECONDS);
+                searchEvent.wait(WAIT_TIMEOUT);
                 result = searchEvent.getResponse();
             }
         } catch (RuntimeException e) {
