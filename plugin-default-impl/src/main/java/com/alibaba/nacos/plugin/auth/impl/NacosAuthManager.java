@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -48,7 +49,7 @@ import java.util.List;
 public class NacosAuthManager {
     
     @Autowired
-    private JwtTokenManager tokenManager;
+    private TokenManagerDelegate tokenManager;
     
     @Autowired
     private AuthenticationManager authenticationManager;
