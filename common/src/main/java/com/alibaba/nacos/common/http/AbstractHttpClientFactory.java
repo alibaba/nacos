@@ -63,7 +63,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     private static final String ASYNC_THREAD_NAME = "nacos-http-async-client";
     
-    private static final String AYNC_IO_REACTOR_NAME = ASYNC_THREAD_NAME + "#I/O Reactor";
+    private static final String ASYNC_IO_REACTOR_NAME = ASYNC_THREAD_NAME + "#I/O Reactor";
     
     @Override
     public NacosRestTemplate createNacosRestTemplate() {
@@ -82,7 +82,7 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     @Override
     public NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
-        final DefaultConnectingIOReactor ioreactor = getIoReactor(AYNC_IO_REACTOR_NAME);
+        final DefaultConnectingIOReactor ioreactor = getIoReactor(ASYNC_IO_REACTOR_NAME);
         final RequestConfig defaultConfig = getRequestConfig();
         final NHttpClientConnectionManager connectionManager = getConnectionManager(originalRequestConfig, ioreactor);
         monitorAndExtension(connectionManager);
