@@ -135,6 +135,54 @@ public final class NacosSignatureAlgorithm {
         throw new AccessException("token expired!");
     }
     
+    /**
+     * get jwt expire time in seconds.
+     *
+     * @param jwt complete jwt string
+     * @param key for signature
+     * @return expire time in seconds
+     * @throws AccessException access exception
+     */
+    public static long getExpiredTimeInSeconds(String jwt, Key key) throws AccessException {
+        if (StringUtils.isBlank(jwt)) {
+            throw new AccessException("user not found!");
+        }
+        String[] split = jwt.split("\\.");
+        if (split.length != JWT_PARTS) {
+            throw new AccessException("token invalid!");
+        }
+        String header = split[HEADER_POSITION];
+        String payload = split[PAYLOAD_POSITION];
+        String signature = split[SIGNATURE_POSITION];
+        
+        NacosSignatureAlgorithm signatureAlgorithm = MAP.get(header);
+        if (signatureAlgorithm == null) {
+            throw new AccessException("unsupported signature algorithm");
+        }
+        return signatureAlgorithm.getExpireTimeInSeconds(header, payload, signature, key);
+    }
+    
+    /**
+     * get jwt expire time in seconds.
+     *
+     * @param header    header of jwt
+     * @param payload   payload of jwt
+     * @param signature signature of jwt
+     * @param key       for signature
+     * @return expire time in seconds
+     * @throws AccessException access exception
+     */
+    public long getExpireTimeInSeconds(String header, String payload, String signature, Key key)
+            throws AccessException {
+        Mac macInstance = getMacInstance(key);
+        byte[] bytes = macInstance.doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
+        if (!URL_BASE64_ENCODER.encodeToString(bytes).equals(signature)) {
+            throw new AccessException("Invalid signature");
+        }
+        NacosJwtPayload nacosJwtPayload = JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
+        return nacosJwtPayload.getExp();
+    }
+    
     private NacosSignatureAlgorithm(String alg, String jcaName, String header) {
         this.algorithm = alg;
         this.jcaName = jcaName;
