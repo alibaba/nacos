@@ -78,6 +78,10 @@ public class NacosJwtParser {
         return NacosSignatureAlgorithm.verify(token, key);
     }
     
+    public long getExpireTimeInSeconds(String token) throws AccessException {
+        return NacosSignatureAlgorithm.getExpiredTimeInSeconds(token, key);
+    }
+    
     public class JwtBuilder {
         
         private final NacosJwtPayload nacosJwtPayload = new NacosJwtPayload();

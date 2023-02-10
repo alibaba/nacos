@@ -18,10 +18,10 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -55,6 +56,9 @@ public class UserControllerTest {
     
     @Mock
     private IAuthenticationManager authenticationManager;
+    
+    @Mock
+    private TokenManagerDelegate tokenManagerDelegate;
     
     private UserController userController;
     
@@ -76,10 +80,9 @@ public class UserControllerTest {
                         StandardCharsets.UTF_8)));
         mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
-    
+        
         EnvUtil.setEnvironment(mockEnvironment);
-        JwtTokenManager jwtTokenManager = new JwtTokenManager();
-        injectObject("jwtTokenManager", jwtTokenManager);
+        injectObject("jwtTokenManager", tokenManagerDelegate);
     }
     
     @Test
@@ -87,6 +90,7 @@ public class UserControllerTest {
         when(authenticationManager.authenticate(request)).thenReturn(user);
         when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
+        when(tokenManagerDelegate.getTokenTtlInSeconds(anyString())).thenReturn(18000L);
         Object actual = userController.login("nacos", "nacos", response, request);
         assertTrue(actual instanceof JsonNode);
         String actualString = actual.toString();
