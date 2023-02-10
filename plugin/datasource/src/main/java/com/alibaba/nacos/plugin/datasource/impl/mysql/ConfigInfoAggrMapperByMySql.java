@@ -16,9 +16,14 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+
+import java.util.List;
 
 /**
  * The mysql implementation of ConfigInfoAggrMapper.
@@ -28,9 +33,17 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements ConfigInfoAggrMapper {
     
     @Override
-    public String findConfigInfoAggrByPageFetchRows(int startRow, int pageSize) {
-        return "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id= ? AND "
+    public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
+        Integer startRow = (Integer) context.get("startRow");
+        Integer pageSize = (Integer) context.get("pageSize");
+        String dataId = (String) context.get("data_id");
+        String groupId = (String) context.get("group_id");
+        String tenantId = (String) context.get("tenant_id");
+        
+        String sql = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id= ? AND "
                 + "group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT " + startRow + "," + pageSize;
+        List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
+        return new MapperResult(sql, paramList);
     }
     
     @Override
