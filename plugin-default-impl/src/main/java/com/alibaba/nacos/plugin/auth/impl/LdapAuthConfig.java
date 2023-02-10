@@ -40,39 +40,47 @@ import org.springframework.ldap.core.support.LdapContextSource;
 @Configuration(proxyBeanMethods = false)
 @EnableAutoConfiguration(exclude = LdapAutoConfiguration.class)
 public class LdapAuthConfig {
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_URL + ":ldap://localhost:389}"))
     private String ldapUrl;
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_BASEDC + ":dc=example,dc=org}"))
     private String ldapBaseDc;
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_TIMEOUT + ":3000}"))
     private String ldapTimeOut;
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_USERDN + ":cn=admin,dc=example,dc=org}"))
     private String userDn;
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_PASSWORD + ":password}"))
     private String password;
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_LDAP_FILTER_PREFIX + ":uid}"))
     private String filterPrefix;
-    
+
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_CASE_SENSITIVE + ":true}"))
     private boolean caseSensitive;
-    
+
+    /**
+     * LDAP Ignore partial result exception {@link LdapTemplate#setIgnorePartialResultException(boolean)}.
+     */
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION + ":false}"))
+    private boolean ignorePartialResultException;
+
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate(LdapContextSource ldapContextSource) {
-        return new LdapTemplate(ldapContextSource);
+        LdapTemplate ldapTemplate = new LdapTemplate(ldapContextSource);
+        ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
+        return ldapTemplate;
     }
-    
+
     @Bean
     public LdapContextSource ldapContextSource() {
         return new NacosLdapContextSource(ldapUrl, ldapBaseDc, userDn, password, ldapTimeOut);
     }
-    
+
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapTemplate ldapTemplate,
@@ -80,7 +88,7 @@ public class LdapAuthConfig {
         return new LdapAuthenticationProvider(ldapTemplate, userDetailsService, nacosRoleService, filterPrefix,
                 caseSensitive);
     }
-    
+
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public IAuthenticationManager ldapAuthenticatoinManager(LdapTemplate ldapTemplate,
@@ -89,5 +97,5 @@ public class LdapAuthConfig {
         return new LdapAuthenticationManager(ldapTemplate, userDetailsService, jwtTokenManager, roleService,
                 filterPrefix, caseSensitive);
     }
-    
+
 }
