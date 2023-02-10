@@ -29,7 +29,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * config detail service.
@@ -46,8 +45,6 @@ public class ConfigDetailService {
     private BlockingQueue<SearchEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<>();
     
     private ScheduledExecutorService clientEventExecutor;
-    
-    private static final long OFFER_TIMEOUT = 2000L;
     
     private static final long WAIT_TIMEOUT = 4000L;
     
@@ -100,19 +97,22 @@ public class ConfigDetailService {
         Page<ConfigInfo> result = null;
         try {
             synchronized (searchEvent) {
-                eventLinkedBlockingQueue.offer(searchEvent, OFFER_TIMEOUT, TimeUnit.MILLISECONDS);
+                boolean offer = eventLinkedBlockingQueue.offer(searchEvent);
+                if (!offer) {
+                    throw new RuntimeException("config detail event offer fail.");
+                }
                 searchEvent.wait(WAIT_TIMEOUT);
                 result = searchEvent.getResponse();
             }
         } catch (RuntimeException e) {
-            LOGGER.error("config detail block queue add error: {}", e.getMessage());
+            LOGGER.error("config detail block queue add error: {}.", e.getMessage());
             throw e;
         } catch (InterruptedException e) {
-            LOGGER.error("get config detail timeout: {}", e.getMessage());
+            LOGGER.error("get config detail timeout: {}.", e.getMessage());
             throw new RuntimeException(e);
         }
         if (result == null) {
-            throw new RuntimeException("config detail has no result");
+            throw new RuntimeException("config detail has no result.");
         }
         return result;
     }
