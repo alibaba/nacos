@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
+ *
  * @since 0.9.0
  */
 public class LogbackNacosLogging extends AbstractNacosLogging {

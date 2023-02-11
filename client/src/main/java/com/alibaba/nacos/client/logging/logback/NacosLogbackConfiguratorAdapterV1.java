@@ -37,6 +37,11 @@ import java.util.List;
  */
 public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator implements NacosLogbackConfigurator {
     
+    /**
+     * ensure that Nacos configuration does not affect user configuration savepoints.
+     *
+     * @param eventList safe data
+     */
     @Override
     public void registerSafeConfiguration(List<SaxEvent> eventList) {
     }
@@ -79,7 +84,6 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
             if (in != null) {
                 try {
                     in.close();
-                    
                 } catch (IOException ioe) {
                     String errMsg = "Could not close input stream";
                     addError(errMsg, ioe);
@@ -88,4 +92,5 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
             }
         }
     }
+    
 }
