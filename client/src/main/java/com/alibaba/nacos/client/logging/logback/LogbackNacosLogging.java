@@ -41,6 +41,19 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
     
     private static final String NACOS_LOGBACK_LOCATION = "classpath:nacos-logback.xml";
     
+    private Integer userVersion = 2;
+    
+    /**
+     * logback use 'ch.qos.logback.core.model.Model' since 1.3.0, set logback version during initialization.
+     */
+    public LogbackNacosLogging() {
+        try {
+            Class.forName("ch.qos.logback.core.model.Model");
+        } catch (ClassNotFoundException e) {
+            userVersion = 1;
+        }
+    }
+    
     @Override
     public void loadConfiguration() {
         LoggerContext loggerContext = loadConfigurationOnStart();
@@ -65,7 +78,7 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             Collection<NacosLogbackConfigurator> nacosLogbackConfigurators = NacosServiceLoader.load(
                     NacosLogbackConfigurator.class);
             NacosLogbackConfigurator nacosLogbackConfigurator = nacosLogbackConfigurators.stream()
-                    .sorted((j1, j2) -> j2.getVersion() - j1.getVersion()).collect(Collectors.toList()).get(0);
+                    .filter(c -> c.getVersion() == userVersion).collect(Collectors.toList()).get(0);
             nacosLogbackConfigurator.setContext(loggerContext);
             nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
             return loggerContext;
