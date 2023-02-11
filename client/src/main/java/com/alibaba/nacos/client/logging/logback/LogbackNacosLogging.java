@@ -47,7 +47,7 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             addListener(loggerContext);
         }
     }
-    
+
     private boolean hasListener(LoggerContext loggerContext) {
         for (LoggerContextListener loggerContextListener : loggerContext.getCopyOfListenerList()) {
             if (loggerContextListener instanceof NacosLoggerContextListener) {
@@ -56,7 +56,7 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
         }
         return false;
     }
-    
+
     private LoggerContext loadConfigurationOnStart() {
         String location = getLocation(NACOS_LOGBACK_LOCATION);
         try {
@@ -72,35 +72,34 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
         }
     }
-    
+
     class NacosLoggerContextListener implements LoggerContextListener {
-        
         @Override
         public boolean isResetResistant() {
             return true;
         }
-        
+
         @Override
         public void onReset(LoggerContext context) {
             loadConfigurationOnStart();
         }
-        
+
         @Override
         public void onStart(LoggerContext context) {
-        
+
         }
-        
+
         @Override
         public void onStop(LoggerContext context) {
-        
+
         }
-        
+
         @Override
         public void onLevelChange(Logger logger, Level level) {
-        
+
         }
     }
-    
+
     private void addListener(LoggerContext loggerContext) {
         loggerContext.addListener(new NacosLoggerContextListener());
     }
