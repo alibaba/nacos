@@ -19,7 +19,7 @@ package com.alibaba.nacos.common.log;
 import java.net.URL;
 
 /**
- * logback configurator.
+ * logback configurator interface,different version can adapter this.
  * @author hujun
  */
 public interface NacosLogbackConfigurator {

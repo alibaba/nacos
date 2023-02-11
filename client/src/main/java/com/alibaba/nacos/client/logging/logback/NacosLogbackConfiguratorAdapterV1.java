@@ -30,10 +30,22 @@ import java.net.URLConnection;
 import java.util.List;
 
 /**
- * nacos logback configurator.
- * @author hujun
+ * ensure that Nacos configuration does not affect user configuration savepoints and  scanning url.
+ *
+ * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
+ * @see <a href="https://github.com/alibaba/nacos/issues/6999">#6999</a>
  */
 public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator implements NacosLogbackConfigurator {
+    
+    @Override
+    public void registerSafeConfiguration(List<SaxEvent> eventList) {
+    }
+    
+    @Override
+    public void addInstanceRules(RuleStore rs) {
+        super.addInstanceRules(rs);
+        rs.addRule(new ElementSelector("configuration/nacosClientProperty"), new NacosClientPropertyAction());
+    }
     
     @Override
     public int getVersion() {
@@ -45,6 +57,12 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
         super.setContext((Context) loggerContext);
     }
     
+    /**
+     * ensure that Nacos configuration does not affect user configuration scanning url.
+     *
+     * @param url config url
+     * @throws Exception e
+     */
     @Override
     public void configure(URL url) throws Exception {
         InputStream in = null;
@@ -69,15 +87,5 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
                 }
             }
         }
-    }
-    
-    @Override
-    public void registerSafeConfiguration(List<SaxEvent> eventList) {
-    }
-    
-    @Override
-    public void addInstanceRules(RuleStore rs) {
-        super.addInstanceRules(rs);
-        rs.addRule(new ElementSelector("configuration/nacosClientProperty"), new NacosClientPropertyAction());
     }
 }
