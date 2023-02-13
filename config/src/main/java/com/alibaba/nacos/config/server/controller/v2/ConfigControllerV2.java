@@ -176,7 +176,7 @@ public class ConfigControllerV2 {
             @RequestParam(value = "config_tags", required = false) String configTags,
             @RequestParam(value = "config_detail") String configDetail,
             @RequestParam(value = "search", defaultValue = "blur", required = false) String search,
-            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) {
+            @RequestParam("pageNo") int pageNo, @RequestParam("pageSize") int pageSize) throws NacosException {
         Map<String, Object> configAdvanceInfo = new HashMap<>(100);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
@@ -192,7 +192,7 @@ public class ConfigControllerV2 {
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             LOGGER.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            throw e;
         }
     }
 }

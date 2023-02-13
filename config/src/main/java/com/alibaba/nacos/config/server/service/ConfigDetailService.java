@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -40,29 +43,56 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class ConfigDetailService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigDetailService.class);
     
-    private ConfigInfoPersistService configInfoPersistService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
-    private BlockingQueue<SearchEvent> eventLinkedBlockingQueue = new LinkedBlockingQueue<>();
+    private BlockingQueue<SearchEvent> eventLinkedBlockingQueue;
     
     private ScheduledExecutorService clientEventExecutor;
     
-    private static final long WAIT_TIMEOUT = 4000L;
+    /**
+     * the max_capacity of eventLinkedBlockingQueue may be controlled by the properties {@link PropertiesConstant#SEARCH_MAX_CAPACITY}.
+     */
+    private static int maxCapacity = 100;
     
-    private static final int MAX_THREAD = 2;
+    /**
+     * the wait_timeout of search config business may be controlled by the properties {@link PropertiesConstant#SEARCH_WAIT_TIMEOUT}.
+     */
+    private static long waitTimeout = 5000L;
+    
+    /**
+     * the max_thread of clientEventExecutor may be controlled by the properties {@link PropertiesConstant#SEARCH_MAX_THREAD}.
+     */
+    private static int maxThread = 5;
     
     public ConfigDetailService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
+        loadSetting();
         initWorker();
     }
     
+    private void loadSetting() {
+        setMaxCapacity(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_CAPACITY,
+                String.valueOf(getMaxCapacity()))));
+        setMaxThread(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_THREAD,
+                String.valueOf(getMaxThread()))));
+        setWaitTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_WAIT_TIMEOUT,
+                String.valueOf(getWaitTimeout()))));
+    }
+    
+    /**
+     * init worker thread.
+     */
     private void initWorker() {
-        clientEventExecutor = new ScheduledThreadPoolExecutor(MAX_THREAD, r -> {
+        this.eventLinkedBlockingQueue = new LinkedBlockingQueue<>(maxCapacity);
+        
+        clientEventExecutor = new ScheduledThreadPoolExecutor(maxThread, r -> {
             Thread t = new Thread(r);
             t.setName("com.alibaba.nacos.config.search.worker");
             t.setDaemon(true);
             return t;
         });
-        for (int i = 0; i < MAX_THREAD; i++) {
+        
+        for (int i = 0; i < maxThread; i++) {
             clientEventExecutor.submit(() -> {
                 while (true) {
                     try {
@@ -79,7 +109,7 @@ public class ConfigDetailService {
                             event.setResponse(result);
                             event.notifyAll();
                         }
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                         LOGGER.error("catch search worker error: {}", e.getMessage());
                     }
                 }
@@ -91,7 +121,7 @@ public class ConfigDetailService {
      * block thread and use workerThread to search config.
      */
     public Page<ConfigInfo> findConfigInfoPage(String search, int pageNo, int pageSize, String dataId, String group,
-            String tenant, Map<String, Object> configAdvanceInfo) {
+            String tenant, Map<String, Object> configAdvanceInfo) throws NacosException {
         SearchEvent searchEvent = new SearchEvent(search, pageNo, pageSize, dataId, group, tenant,
                 configAdvanceInfo);
         Page<ConfigInfo> result = null;
@@ -101,20 +131,44 @@ public class ConfigDetailService {
                 if (!offer) {
                     throw new RuntimeException("config detail event offer fail.");
                 }
-                searchEvent.wait(WAIT_TIMEOUT);
+                searchEvent.wait(waitTimeout);
                 result = searchEvent.getResponse();
             }
         } catch (RuntimeException e) {
             LOGGER.error("config detail block queue add error: {}.", e.getMessage());
-            throw e;
+            throw new NacosException(503, "server limit match!");
         } catch (InterruptedException e) {
             LOGGER.error("get config detail timeout: {}.", e.getMessage());
-            throw new RuntimeException(e);
+            throw new NacosException(503, "server limit match!");
         }
         if (result == null) {
-            throw new RuntimeException("config detail has no result.");
+            throw new NacosException(503, "server limit match!");
         }
         return result;
+    }
+    
+    public static int getMaxCapacity() {
+        return maxCapacity;
+    }
+    
+    public static void setMaxCapacity(int maxCapacity) {
+        ConfigDetailService.maxCapacity = maxCapacity;
+    }
+    
+    public static long getWaitTimeout() {
+        return waitTimeout;
+    }
+    
+    public static void setWaitTimeout(long waitTimeout) {
+        ConfigDetailService.waitTimeout = waitTimeout;
+    }
+    
+    public static int getMaxThread() {
+        return maxThread;
+    }
+    
+    public static void setMaxThread(int maxThread) {
+        ConfigDetailService.maxThread = maxThread;
     }
     
     public static class SearchEvent {
