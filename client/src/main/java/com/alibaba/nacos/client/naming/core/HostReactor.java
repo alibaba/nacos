@@ -190,6 +190,7 @@ public class HostReactor implements Closeable {
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime() + ", new-t: "
                         + serviceInfo.getLastRefTime());
+                return oldService;
             }
             
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
