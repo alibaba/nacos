@@ -99,7 +99,6 @@ public class GrpcBiStreamRequestAcceptorTest {
         grpcCleanupRule.register(mockServer.start());
         streamStub = BiRequestStreamGrpc.newStub(grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
         Mockito.doReturn(true).when(connectionManager).traced(Mockito.any());
-        PayloadRegistry.init();
     }
     
     @Test
