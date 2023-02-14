@@ -373,6 +373,9 @@
                     <dataFile>${project.build.directory}/coverage-reports/jacoco-unit.exec</dataFile>
                     <output>file</output>
                     <append>true</append>
+                    <excludes>
+                        <exclude>**/grpc/auto/**</exclude>
+                    </excludes>
                 </configuration>
                 <executions>
                     <execution>

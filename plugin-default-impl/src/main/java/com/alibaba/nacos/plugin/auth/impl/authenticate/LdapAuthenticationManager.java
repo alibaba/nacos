@@ -19,10 +19,10 @@ package com.alibaba.nacos.plugin.auth.impl.authenticate;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
@@ -46,7 +46,7 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
     private final LdapTemplate ldapTemplate;
     
     public LdapAuthenticationManager(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            JwtTokenManager jwtTokenManager, NacosRoleServiceImpl roleService, String filterPrefix,
+            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService, String filterPrefix,
             boolean caseSensitive) {
         super(userDetailsService, jwtTokenManager, roleService);
         this.ldapTemplate = ldapTemplate;
