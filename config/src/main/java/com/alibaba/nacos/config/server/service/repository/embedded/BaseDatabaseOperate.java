@@ -32,6 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
@@ -213,18 +214,24 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[] {null};
             Object[][] args = new Object[][] {null};
+            AtomicInteger rows = new AtomicInteger(0);
             try {
                 contexts.forEach(pair -> {
                     errSql[0] = pair.getSql();
                     args[0] = pair.getArgs();
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
-                    jdbcTemplate.update(pair.getSql(), pair.getArgs());
+                    int update = jdbcTemplate.update(pair.getSql(), pair.getArgs());
+                    rows.set(update);
                 });
                 if (consumer != null) {
-                    consumer.accept(Boolean.TRUE, null);
+                    if (rows.get() > 0) {
+                        consumer.accept(Boolean.TRUE, null);
+                        return Boolean.TRUE;
+                    }
+                    consumer.accept(Boolean.FALSE, null);
                 }
-                return Boolean.TRUE;
+                return Boolean.FALSE;
             } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 if (consumer != null) {
