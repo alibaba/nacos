@@ -471,6 +471,9 @@ class NewConfig extends React.Component {
       >
         <h1>{locale.newListing}</h1>
         <Form className="new-config-form" field={this.field} {...formItemLayout}>
+          <Form.Item label={locale.namespace} required>
+            <p>{this.tenant}</p>
+          </Form.Item>
           <FormItem label={'Data ID'} required>
             <Input
               {...init('dataId', {
