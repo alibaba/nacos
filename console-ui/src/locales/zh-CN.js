@@ -260,6 +260,7 @@ const I18N_CONF = {
     operator: '操作人',
     sourceIp: '来源 IP',
     back: '返回',
+    namespace: '命名空间',
   },
   DashboardCard: {
     importantReminder0: '重要提醒',
@@ -381,6 +382,7 @@ const I18N_CONF = {
     confirmSyanx: '配置信息可能有语法错误, 确定提交吗?',
     dataIdExists: '配置已存在, 试试别的dataid和group的组合吧',
     dataRequired: '数据不能为空, 提交失败',
+    namespace: '命名空间',
   },
   CloneDialog: {
     terminate: '终止克隆',
@@ -442,6 +444,7 @@ const I18N_CONF = {
     dialogCurrentArea: '当前值',
     dialogOriginalArea: '原始值',
     publishFailed403: '发布失败,请检查是否有权限',
+    namespace: '命名空间',
   },
   EditorNameSpace: {
     notice: '提示',
@@ -539,6 +542,7 @@ const I18N_CONF = {
     groupInput: '请输入Group',
     namespaceSelect: '请选择命名空间',
     configNotFind: '未查询到指定配置,请重新选择',
+    namespace: '命名空间',
   },
   ConfigRollback: {
     rollBack: '回滚配置',
@@ -556,6 +560,7 @@ const I18N_CONF = {
     update: '更新',
     insert: '插入',
     additionalRollbackMessage: '此操作将删除以下配置！',
+    namespace: '命名空间',
   },
   UserManagement: {
     userManagement: '用户管理',
