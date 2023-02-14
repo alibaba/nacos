@@ -30,6 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -214,7 +215,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         return transactionTemplate.execute(status -> {
             String[] errSql = new String[] {null};
             Object[][] args = new Object[][] {null};
-            AtomicInteger rows = new AtomicInteger(0);
+            List<Boolean> listResult = new ArrayList<>(contexts.size());
             try {
                 contexts.forEach(pair -> {
                     errSql[0] = pair.getSql();
@@ -222,10 +223,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
                     int update = jdbcTemplate.update(pair.getSql(), pair.getArgs());
-                    rows.set(update);
+                    listResult.add(update > 0);
                 });
                 if (consumer != null) {
-                    if (rows.get() > 0) {
+                    if (!listResult.stream().anyMatch(e -> !e)) {
                         consumer.accept(Boolean.TRUE, null);
                         return Boolean.TRUE;
                     }
