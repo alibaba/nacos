@@ -27,9 +27,9 @@ import java.util.List;
  * @date 2010-5-6
  */
 public class Page<E> implements Serializable {
-    
-    static final long serialVersionUID = -1L;
-    
+
+    static final long serialVersionUID = 1234544030560484292L;
+
     /**
      * totalCount.
      */
@@ -48,7 +48,7 @@ public class Page<E> implements Serializable {
     /**
      * pageItems.
      */
-    private List<E> pageItems = new ArrayList<E>();
+    private List<E> pageItems = new ArrayList<>();
     
     public void setPageNumber(int pageNumber) {
         this.pageNumber = pageNumber;

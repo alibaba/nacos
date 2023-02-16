@@ -16,13 +16,19 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +36,10 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -38,6 +47,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PushExecutorRpcImplTest {
@@ -51,19 +61,34 @@ public class PushExecutorRpcImplTest {
     private Subscriber subscriber;
     
     @Mock
-    private PushCallBack pushCallBack;
+    private NamingPushCallback pushCallBack;
+    
+    @Mock
+    private SelectorManager selectorManager;
+    
+    @Mock
+    private ConfigurableApplicationContext context;
     
     private PushDataWrapper pushData;
     
     private PushExecutorRpcImpl pushExecutor;
     
+    private ServiceMetadata serviceMetadata;
+    
     @Before
     public void setUp() throws Exception {
-        pushData = new PushDataWrapper(new ServiceInfo("G@@S"));
+        EnvUtil.setEnvironment(new MockEnvironment());
+        serviceMetadata = new ServiceMetadata();
+        pushData = new PushDataWrapper(serviceMetadata, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorRpcImpl(pushService);
+        EnvUtil.setEnvironment(new MockEnvironment());
         doAnswer(new CallbackAnswer()).when(pushService)
                 .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
                         eq(GlobalExecutor.getCallbackExecutor()));
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
+        when(selectorManager.select(any(), any(), any()))
+                .then((Answer<List<Instance>>) invocationOnMock -> invocationOnMock.getArgument(2));
     }
     
     @Test
@@ -83,7 +108,7 @@ public class PushExecutorRpcImplTest {
         @Override
         public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
             NotifySubscriberRequest pushRequest = invocationOnMock.getArgument(1);
-            assertEquals(pushData.getOriginalData(), pushRequest.getServiceInfo());
+            assertEquals(pushData.getOriginalData().toString(), pushRequest.getServiceInfo().toString());
             PushCallBack callBack = invocationOnMock.getArgument(2);
             callBack.onSuccess();
             return null;

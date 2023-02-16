@@ -30,7 +30,7 @@ import java.util.List;
 @Service
 public class RequestFilters {
     
-    List<AbstractRequestFilter> filters = new ArrayList<AbstractRequestFilter>();
+    List<AbstractRequestFilter> filters = new ArrayList<>();
     
     public void registerFilter(AbstractRequestFilter requestFilter) {
         filters.add(requestFilter);

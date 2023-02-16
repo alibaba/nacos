@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import org.slf4j.Logger;
 
@@ -41,8 +42,12 @@ public class JvmUtil {
     
     private static final Logger LOGGER = LogUtils.logger(JvmUtil.class);
     
+    private static final String IS_MULTI_INSTANCE_PROPERTY = "isMultiInstance";
+    
+    private static final String DEFAULT_IS_MULTI_INSTANCE = "false";
+    
     static {
-        String multiDeploy = System.getProperty("isMultiInstance", "false");
+        String multiDeploy = NacosClientProperties.PROTOTYPE.getProperty(IS_MULTI_INSTANCE_PROPERTY, DEFAULT_IS_MULTI_INSTANCE);
         if (TRUE.equals(multiDeploy)) {
             isMultiInstance = true;
         }

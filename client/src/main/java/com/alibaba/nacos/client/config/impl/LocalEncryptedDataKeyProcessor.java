@@ -29,7 +29,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * 密文数据密钥（EncryptedDataKey）的本地快照、容灾目录相关.
+ * Encrypted data key (EncryptedDataKey) local snapshot, disaster recovery directory related.
  *
  * @author luyanbo(RobberPhex)
  */
@@ -37,8 +37,22 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     
     private static final Logger LOGGER = LogUtils.logger(LocalEncryptedDataKeyProcessor.class);
     
+    private static final String FAILOVER_CHILD_1 = "encrypted-data-key";
+    
+    private static final String FAILOVER_CHILD_2 = "failover";
+    
+    private static final String FAILOVER_CHILD_3 = "failover-tenant";
+    
+    private static final String SNAPSHOT_CHILD_1 = "encrypted-data-key";
+    
+    private static final String SNAPSHOT_CHILD_2 = "snapshot";
+    
+    private static final String SNAPSHOT_CHILD_3 = "snapshot-tenant";
+    
+    private static final String SUFFIX = "_nacos";
+    
     /**
-     * 获取容灾配置的 EncryptedDataKey。NULL表示没有本地文件或抛出异常.
+     * Obtain the EncryptedDataKey of the disaster recovery configuration. NULL means there is no local file or an exception is thrown.
      */
     public static String getEncryptDataKeyFailover(String envName, String dataId, String group, String tenant) {
         File file = getEncryptDataKeyFailoverFile(envName, dataId, group, tenant);
@@ -55,7 +69,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     /**
-     * 获取本地缓存文件的 EncryptedDataKey。NULL表示没有本地文件或抛出异常.
+     * Get the EncryptedDataKey of the locally cached file. NULL means there is no local file or an exception is thrown.
      */
     public static String getEncryptDataKeySnapshot(String envName, String dataId, String group, String tenant) {
         if (!SnapShotSwitch.getIsSnapShot()) {
@@ -75,7 +89,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     /**
-     * 保存 encryptDataKey 的snapshot。如果内容为NULL，则删除snapshot.
+     * Save the snapshot of encryptDataKey. If the content is NULL, delete the snapshot.
      */
     public static void saveEncryptDataKeySnapshot(String envName, String dataId, String group, String tenant,
             String encryptDataKey) {
@@ -110,13 +124,13 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeyFailoverFile(String envName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
-        tmp = new File(tmp, "encrypted-data-key");
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
+        tmp = new File(tmp, FAILOVER_CHILD_1);
         
         if (StringUtils.isBlank(tenant)) {
-            tmp = new File(tmp, "failover");
+            tmp = new File(tmp, FAILOVER_CHILD_2);
         } else {
-            tmp = new File(tmp, "failover-tenant");
+            tmp = new File(tmp, FAILOVER_CHILD_3);
             tmp = new File(tmp, tenant);
         }
         
@@ -124,13 +138,13 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeySnapshotFile(String envName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
-        tmp = new File(tmp, "encrypted-data-key");
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
+        tmp = new File(tmp, SNAPSHOT_CHILD_1);
         
         if (StringUtils.isBlank(tenant)) {
-            tmp = new File(tmp, "snapshot");
+            tmp = new File(tmp, SNAPSHOT_CHILD_2);
         } else {
-            tmp = new File(tmp, "snapshot-tenant");
+            tmp = new File(tmp, SNAPSHOT_CHILD_3);
             tmp = new File(tmp, tenant);
         }
         

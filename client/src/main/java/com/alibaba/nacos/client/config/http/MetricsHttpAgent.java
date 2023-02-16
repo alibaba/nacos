@@ -21,7 +21,7 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import io.prometheus.client.Histogram;
 
-import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -30,6 +30,14 @@ import java.util.Map;
  * @author Nacos
  */
 public class MetricsHttpAgent implements HttpAgent {
+    
+    private static final String GET = "GET";
+    
+    private static final String POST = "POST";
+    
+    private static final String DELETE = "DELETE";
+    
+    private static final String DEFAULT_CODE = "NA";
     
     private final HttpAgent httpAgent;
     
@@ -45,14 +53,14 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
+        Date start = new Date();
+        Histogram.Child histogram = MetricsMonitor.getConfigRequestMonitor(GET, path, DEFAULT_CODE);
         HttpRestResult<String> result;
         try {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
-        } catch (IOException e) {
-            throw e;
+            histogram = MetricsMonitor.getConfigRequestMonitor(GET, path, String.valueOf(result.getCode()));
         } finally {
-            timer.observeDuration();
+            histogram.observe(System.currentTimeMillis() - start.getTime());
         }
         
         return result;
@@ -61,14 +69,14 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
+        Date start = new Date();
+        Histogram.Child histogram = MetricsMonitor.getConfigRequestMonitor(GET, path, DEFAULT_CODE);
         HttpRestResult<String> result;
         try {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
-        } catch (IOException e) {
-            throw e;
+            histogram = MetricsMonitor.getConfigRequestMonitor(GET, path, String.valueOf(result.getCode()));
         } finally {
-            timer.observeDuration();
+            histogram.observe(System.currentTimeMillis() - start.getTime());
         }
         
         return result;
@@ -77,14 +85,14 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
+        Date start = new Date();
+        Histogram.Child histogram = MetricsMonitor.getConfigRequestMonitor(GET, path, DEFAULT_CODE);
         HttpRestResult<String> result;
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
-        } catch (IOException e) {
-            throw e;
+            histogram = MetricsMonitor.getConfigRequestMonitor(GET, path, String.valueOf(result.getCode()));
         } finally {
-            timer.observeDuration();
+            histogram.observe(System.currentTimeMillis() - start.getTime());
         }
         
         return result;

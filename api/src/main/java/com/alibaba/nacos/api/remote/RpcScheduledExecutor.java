@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.remote;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * rpc scheduler executor .
@@ -35,9 +36,13 @@ public class RpcScheduledExecutor extends ScheduledThreadPoolExecutor {
     
     public RpcScheduledExecutor(int corePoolSize, final String threadName) {
         super(corePoolSize, new ThreadFactory() {
+            private AtomicLong index = new AtomicLong();
+            
             @Override
             public Thread newThread(Runnable r) {
-                return new Thread(r, threadName);
+                Thread thread = new Thread(r, threadName + "." + index.getAndIncrement());
+                thread.setDaemon(true);
+                return thread;
             }
         });
     }

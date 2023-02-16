@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.remote.request.Request;
 
+import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
+
 /**
  * Uniform remote request of naming module.
  *
@@ -42,7 +44,7 @@ public abstract class AbstractNamingRequest extends Request {
     
     @Override
     public String getModule() {
-        return "naming";
+        return NAMING_MODULE;
     }
     
     public String getNamespace() {

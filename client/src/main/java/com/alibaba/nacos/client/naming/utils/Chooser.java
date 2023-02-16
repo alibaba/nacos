@@ -63,10 +63,14 @@ public class Chooser<K, T> {
             return ref.items.get(index);
         }
         
-        if (index >= 0 && index < ref.weights.length) {
+        if (index < ref.weights.length) {
             if (random < ref.weights[index]) {
                 return ref.items.get(index);
             }
+        }
+        
+        if (ref.weights.length == 0) {
+            throw new IllegalStateException("Cumulative Weight wrong , the array length is equal to 0.");
         }
         
         /* This should never happen, but it ensures we will return a correct
@@ -80,7 +84,7 @@ public class Chooser<K, T> {
     }
     
     public Chooser(K uniqueKey, List<Pair<T>> pairs) {
-        Ref<T> ref = new Ref<T>(pairs);
+        Ref<T> ref = new Ref<>(pairs);
         ref.refresh();
         this.uniqueKey = uniqueKey;
         this.ref = ref;
@@ -100,7 +104,7 @@ public class Chooser<K, T> {
      * @param itemsWithWeight items with weight
      */
     public void refresh(List<Pair<T>> itemsWithWeight) {
-        Ref<T> newRef = new Ref<T>(itemsWithWeight);
+        Ref<T> newRef = new Ref<>(itemsWithWeight);
         newRef.refresh();
         newRef.poller = this.ref.poller.refresh(newRef.items);
         this.ref = newRef;
@@ -108,16 +112,18 @@ public class Chooser<K, T> {
     
     public class Ref<T> {
         
-        private List<Pair<T>> itemsWithWeight = new ArrayList<Pair<T>>();
+        private List<Pair<T>> itemsWithWeight = new ArrayList<>();
         
-        private final List<T> items = new ArrayList<T>();
+        private final List<T> items = new ArrayList<>();
         
-        private Poller<T> poller = new GenericPoller<T>(items);
+        private Poller<T> poller = new GenericPoller<>(items);
         
         private double[] weights;
         
         public Ref(List<Pair<T>> itemsWithWeight) {
-            this.itemsWithWeight = itemsWithWeight;
+            if (itemsWithWeight != null) {
+                this.itemsWithWeight = itemsWithWeight;
+            }
         }
         
         /**
@@ -125,7 +131,7 @@ public class Chooser<K, T> {
          */
         public void refresh() {
             Double originWeightSum = (double) 0;
-            
+            int size = 0;
             for (Pair<T> item : itemsWithWeight) {
                 
                 double weight = item.weight();
@@ -142,9 +148,12 @@ public class Chooser<K, T> {
                     weight = 1.0D;
                 }
                 originWeightSum += weight;
+                size++;
             }
             
-            double[] exactWeights = new double[items.size()];
+            weights = new double[size];
+            double exactWeight;
+            double randomRange = 0D;
             int index = 0;
             for (Pair<T> item : itemsWithWeight) {
                 double singleWeight = item.weight();
@@ -152,14 +161,10 @@ public class Chooser<K, T> {
                 if (singleWeight <= 0) {
                     continue;
                 }
-                exactWeights[index++] = singleWeight / originWeightSum;
-            }
-            
-            weights = new double[items.size()];
-            double randomRange = 0D;
-            for (int i = 0; i < index; i++) {
-                weights[i] = randomRange + exactWeights[i];
-                randomRange += exactWeights[i];
+                
+                exactWeight = singleWeight / originWeightSum;
+                weights[index] = randomRange + exactWeight;
+                randomRange = weights[index++];
             }
             
             double doublePrecisionDelta = 0.0001;

@@ -20,10 +20,10 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 /**
- * ConfigPubishResponse.
+ * ConfigRemoveResponse.
  *
  * @author liuzunfei
- * @version $Id: ConfigPubishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
+ * @version $Id: ConfigRemoveResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
  */
 public class ConfigRemoveResponse extends Response {
     

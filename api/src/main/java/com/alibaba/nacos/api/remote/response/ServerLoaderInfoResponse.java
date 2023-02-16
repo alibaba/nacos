@@ -29,7 +29,7 @@ public class ServerLoaderInfoResponse extends Response {
     
     String address;
     
-    Map<String, String> loaderMetrics = new HashMap<String, String>();
+    Map<String, String> loaderMetrics = new HashMap<>();
     
     public String getMetricsValue(String key) {
         return loaderMetrics.get(key);

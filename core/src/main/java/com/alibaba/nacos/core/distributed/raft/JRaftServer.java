@@ -19,9 +19,11 @@ package com.alibaba.nacos.core.distributed.raft;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ConvertUtils;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.consistency.ProtoMessageUtil;
 import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -63,7 +65,6 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.cli.CliClientServiceImpl;
 import com.alipay.sofa.jraft.util.BytesUtil;
 import com.alipay.sofa.jraft.util.Endpoint;
-import com.google.common.base.Joiner;
 import com.google.protobuf.Message;
 import org.springframework.util.CollectionUtils;
 
@@ -104,15 +105,6 @@ import java.util.function.BiConsumer;
 public class JRaftServer {
     
     // Existential life cycle
-    
-    static {
-        // Set bolt buffer
-        // System.getProperties().setProperty("bolt.channel_write_buf_low_water_mark", String.valueOf(64 * 1024 * 1024));
-        // System.getProperties().setProperty("bolt.channel_write_buf_high_water_mark", String.valueOf(256 * 1024 * 1024));
-        
-        System.getProperties().setProperty("bolt.netty.buffer.low.watermark", String.valueOf(128 * 1024 * 1024));
-        System.getProperties().setProperty("bolt.netty.buffer.high.watermark", String.valueOf(256 * 1024 * 1024));
-    }
     
     private RpcServer rpcServer;
     
@@ -165,7 +157,7 @@ public class JRaftServer {
         RaftExecutor.init(config);
         
         final String self = config.getSelfMember();
-        String[] info = IPUtil.splitIPPortStr(self);
+        String[] info = InternetAddressUtil.splitIPPortStr(self);
         selfIp = info[0];
         selfPort = Integer.parseInt(info[1]);
         localPeerId = PeerId.parsePeer(self);
@@ -306,10 +298,9 @@ public class JRaftServer {
                         return;
                     }
                     MetricsMonitor.raftReadIndexFailed();
-                    Loggers.RAFT.error("ReadIndex has error : {}", status.getErrorMsg());
-                    future.completeExceptionally(new ConsistencyException(
-                            "The conformance protocol is temporarily unavailable for reading, " + status
-                                    .getErrorMsg()));
+                    Loggers.RAFT.error("ReadIndex has error : {}, go to Leader read.", status.getErrorMsg());
+                    MetricsMonitor.raftReadFromLeader();
+                    readFromLeader(request, future);
                 }
             });
             return future;
@@ -323,24 +314,7 @@ public class JRaftServer {
     }
     
     public void readFromLeader(final ReadRequest request, final CompletableFuture<Response> future) {
-        commit(request.getGroup(), request, future).whenComplete(new BiConsumer<Response, Throwable>() {
-            @Override
-            public void accept(Response response, Throwable throwable) {
-                if (Objects.nonNull(throwable)) {
-                    future.completeExceptionally(
-                            new ConsistencyException("The conformance protocol is temporarily unavailable for reading",
-                                    throwable));
-                    return;
-                }
-                if (response.getSuccess()) {
-                    future.complete(response);
-                } else {
-                    future.completeExceptionally(new ConsistencyException(
-                            "The conformance protocol is temporarily unavailable for reading, " + response
-                                    .getErrMsg()));
-                }
-            }
-        });
+        commit(request.getGroup(), request, future);
     }
     
     public CompletableFuture<Response> commit(final String group, final Message data,
@@ -374,16 +348,20 @@ public class JRaftServer {
      * @return join success
      */
     void registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
-        for (; ; ) {
-            List<PeerId> peerIds = cliService.getPeers(groupId, conf);
-            if (peerIds.contains(selfIp)) {
-                return;
+        while (!isShutdown) {
+            try {
+                List<PeerId> peerIds = cliService.getPeers(groupId, conf);
+                if (peerIds.contains(selfIp)) {
+                    return;
+                }
+                Status status = cliService.addPeer(groupId, conf, selfIp);
+                if (status.isOk()) {
+                    return;
+                }
+                Loggers.RAFT.warn("Failed to join the cluster, retry...");
+            } catch (Exception e) {
+                Loggers.RAFT.error("Failed to join the cluster, retry...", e);
             }
-            Status status = cliService.addPeer(groupId, conf, selfIp);
-            if (status.isOk()) {
-                return;
-            }
-            Loggers.RAFT.warn("Failed to join the cluster, retry...");
             ThreadUtils.sleep(1_000L);
         }
     }
@@ -424,7 +402,19 @@ public class JRaftServer {
             closure.setResponse(nacosStatus.getResponse());
             closure.run(nacosStatus);
         }));
-        task.setData(ByteBuffer.wrap(data.toByteArray()));
+        
+        // add request type field at the head of task data.
+        byte[] requestTypeFieldBytes = new byte[2];
+        requestTypeFieldBytes[0] = ProtoMessageUtil.REQUEST_TYPE_FIELD_TAG;
+        if (data instanceof ReadRequest) {
+            requestTypeFieldBytes[1] = ProtoMessageUtil.REQUEST_TYPE_READ;
+        } else {
+            requestTypeFieldBytes[1] = ProtoMessageUtil.REQUEST_TYPE_WRITE;
+        }
+        
+        byte[] dataBytes = data.toByteArray();
+        task.setData((ByteBuffer) ByteBuffer.allocate(requestTypeFieldBytes.length + dataBytes.length)
+                .put(requestTypeFieldBytes).put(dataBytes).position(0));
         node.apply(task);
     }
     
@@ -439,6 +429,11 @@ public class JRaftServer {
                     if (Objects.nonNull(ex)) {
                         closure.setThrowable(ex);
                         closure.run(new Status(RaftError.UNKNOWN, ex.getMessage()));
+                        return;
+                    }
+                    if (!((Response)o).getSuccess()) {
+                        closure.setThrowable(new IllegalStateException(((Response) o).getErrMsg()));
+                        closure.run(new Status(RaftError.UNKNOWN, ((Response) o).getErrMsg()));
                         return;
                     }
                     closure.setResponse((Response) o);
@@ -473,7 +468,7 @@ public class JRaftServer {
                 Map<String, String> params = new HashMap<>();
                 params.put(JRaftConstants.GROUP_ID, group);
                 params.put(JRaftConstants.COMMAND_NAME, JRaftConstants.REMOVE_PEERS);
-                params.put(JRaftConstants.COMMAND_VALUE, Joiner.on(",").join(waitRemove));
+                params.put(JRaftConstants.COMMAND_VALUE, StringUtils.join(waitRemove, StringUtils.COMMA));
                 RestResult<String> result = maintainService.execute(params);
                 if (result.ok()) {
                     successCnt.incrementAndGet();

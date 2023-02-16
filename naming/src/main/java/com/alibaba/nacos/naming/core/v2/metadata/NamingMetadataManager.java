@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
+import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import org.springframework.stereotype.Component;
 
@@ -48,11 +49,13 @@ public class NamingMetadataManager extends SmartSubscriber {
     
     private ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
     
+    private static final int INITIAL_CAPACITY = 1;
+    
     public NamingMetadataManager() {
         serviceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         instanceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         expiredMetadataInfos = new ConcurrentHashSet<>();
-        NotifyCenter.registerSubscriber(this);
+        NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
     
     /**
@@ -66,7 +69,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     }
     
     /**
-     * Whether instance metadata metadata for instance of {@link Service}.
+     * Whether instance metadata for instance of {@link Service}.
      *
      * @param service    service
      * @param metadataId instance metadata id
@@ -79,7 +82,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     /**
      * Get service metadata for {@link Service}, which is the original metadata object.
      *
-     * <p>This method should use only query, can't modified metadata.
+     * <p>This method should use only query, can't modify metadata.
      *
      * @param service service
      * @return service metadata
@@ -91,7 +94,7 @@ public class NamingMetadataManager extends SmartSubscriber {
     /**
      * Get instance metadata for instance of {@link Service}, which is the original metadata object.
      *
-     * <p>This method should use only query, can't modified metadata.
+     * <p>This method should use only query, can't modify metadata.
      *
      * @param service    service
      * @param metadataId instance metadata id
@@ -125,7 +128,7 @@ public class NamingMetadataManager extends SmartSubscriber {
      */
     public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
         if (!instanceMetadataMap.containsKey(service)) {
-            instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(1));
+            instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(INITIAL_CAPACITY));
         }
         instanceMetadataMap.get(service).put(metadataId, instanceMetadata);
     }
@@ -148,9 +151,11 @@ public class NamingMetadataManager extends SmartSubscriber {
      */
     public void removeInstanceMetadata(Service service, String metadataId) {
         ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService = instanceMetadataMap.get(service);
-        instanceMetadataMapForService.remove(metadataId);
-        if (instanceMetadataMapForService.isEmpty()) {
-            serviceMetadataMap.remove(service);
+        if (null != instanceMetadataMapForService) {
+            instanceMetadataMapForService.remove(metadataId);
+            if (instanceMetadataMapForService.isEmpty()) {
+                serviceMetadataMap.remove(service);
+            }
         }
         expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, metadataId));
     }

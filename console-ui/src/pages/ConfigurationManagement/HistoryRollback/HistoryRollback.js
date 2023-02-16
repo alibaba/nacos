@@ -16,11 +16,22 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
+import {
+  ConfigProvider,
+  Field,
+  Form,
+  Loading,
+  Pagination,
+  Select,
+  Table,
+  Message,
+} from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import { getParams, setParams, request } from '@/globalLib';
 
 import './index.scss';
+import DiffEditorDialog from '../../../components/DiffEditorDialog';
+import QueryResult from '../../../components/QueryResult';
 
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
@@ -59,6 +70,7 @@ class HistoryRollback extends React.Component {
       selectValue: [],
       loading: false,
     };
+    this.diffEditorDialog = React.createRef();
   }
 
   componentDidMount() {
@@ -87,24 +99,22 @@ class HistoryRollback extends React.Component {
         group: '',
         dataId: '',
       });
-      setParams({
-        group: '',
-        dataId: '',
-      });
+      setParams('historyGroup', '');
+      setParams('historyDataId', '');
     }
-
     this.getData();
+    this.getConfigList();
   }
 
   getData(pageNo = 1) {
     const self = this;
     this.serverId = getParams('serverId') || '';
-    if (!this.dataId) return false;
+    if (!this.state.dataId) return false;
     request({
       beforeSend() {
         self.openLoading();
       },
-      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      url: `v1/cs/history?search=accurate&dataId=${this.state.dataId}&group=${this.state.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(data) {
         if (data != null) {
           self.setState({
@@ -131,6 +141,10 @@ class HistoryRollback extends React.Component {
         <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>
           {locale.rollback}
         </a>
+        <span style={{ marginRight: 5 }}>|</span>
+        <a style={{ marginRight: 5 }} onClick={this.goCompare.bind(this, record)}>
+          {locale.compare}
+        </a>
       </div>
     );
   }
@@ -149,18 +163,20 @@ class HistoryRollback extends React.Component {
   }
 
   selectAll() {
-    this.dataId = this.field.getValue('dataId');
-    this.group = this.field.getValue('group');
-    if (!this.dataId || !this.group) {
+    const { locale = {} } = this.props;
+    if (!this.state.dataId) {
+      Message.error(locale.dataIdCanNotBeEmpty);
       return false;
     }
-    if (this.dataId !== this.preDataId) {
-      setParams('dataId', this.dataId);
-      this.preDataId = this.dataId;
+    if (!this.state.group) {
+      Message.error(locale.groupCanNotBeEmpty);
+      return false;
     }
-    if (this.group !== this.preGroup) {
-      setParams('group', this.preGroup);
-      this.preGroup = this.group;
+    if (this.state.dataId !== this.preDataId) {
+      this.preDataId = this.state.dataId;
+    }
+    if (this.state.group !== this.preGroup) {
+      this.preGroup = this.state.group;
     }
     this.getData();
   }
@@ -194,6 +210,71 @@ class HistoryRollback extends React.Component {
     );
   }
 
+  goCompare(record) {
+    let tenant = getParams('namespace') || '';
+    let serverId = getParams('serverId') || 'center';
+    this.getConfig(-1, tenant, serverId, this.dataId, this.group).then(lasted => {
+      this.getHistoryConfig(record.id, this.dataId, this.group).then(selected => {
+        this.diffEditorDialog.current.getInstance().openDialog(selected.content, lasted.content);
+      });
+    });
+  }
+
+  /**
+   * 获取最新版本配置
+   * @param id
+   * @param tenant
+   * @param serverId
+   * @param dataId
+   * @param group
+   * @returns {Promise<unknown>}
+   */
+  getConfig(id, tenant, serverId, dataId, group) {
+    return new Promise((resolve, reject) => {
+      const { locale = {} } = this.props;
+      const self = this;
+      this.tenant = tenant;
+      this.serverId = tenant;
+      const url = `v1/cs/configs?show=all&dataId=${dataId}&group=${group}`;
+      request({
+        url,
+        beforeSend() {
+          self.openLoading();
+        },
+        success(result) {
+          if (result != null) {
+            resolve(result);
+          }
+        },
+        complete() {
+          self.closeLoading();
+        },
+      });
+    });
+  }
+
+  /**
+   * 获取历史版本配置数据
+   * @param nid
+   * @param dataId
+   * @param group
+   * @returns {Promise<unknown>}
+   */
+  getHistoryConfig(nid, dataId, group) {
+    return new Promise((resolve, reject) => {
+      const { locale = {} } = this.props;
+      const self = this;
+      request({
+        url: `v1/cs/history?dataId=${dataId}&group=${group}&nid=${nid}`,
+        success(result) {
+          if (result != null) {
+            resolve(result);
+          }
+        },
+      });
+    });
+  }
+
   goRollBack(record) {
     this.serverId = getParams('serverId') || 'center';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
@@ -204,12 +285,41 @@ class HistoryRollback extends React.Component {
     );
   }
 
+  getConfigList() {
+    const { locale = {} } = this.props;
+    this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
+    const self = this;
+    request({
+      url: `v1/cs/history/configs?tenant=${this.tenant}`,
+      success(result) {
+        if (result != null) {
+          const dataIdList = [];
+          const groupList = [];
+          for (let i = 0; i < result.length; i++) {
+            dataIdList.push({
+              value: result[i].dataId,
+              label: result[i].dataId,
+            });
+            groupList.push({
+              value: result[i].group,
+              label: result[i].group,
+            });
+          }
+          self.setState({
+            dataIds: dataIdList,
+            groups: groupList,
+          });
+        }
+      },
+    });
+  }
+
   render() {
     const { locale = {} } = this.props;
     const { init } = this.field;
     this.init = init;
     return (
-      <div style={{ padding: 10 }}>
+      <div>
         <Loading
           shape="flower"
           style={{ position: 'relative', width: '100%' }}
@@ -223,35 +333,58 @@ class HistoryRollback extends React.Component {
           />
           <div>
             <Form inline field={this.field}>
-              <Form.Item label="Data ID:" required>
-                <Input
-                  placeholder={locale.dataId}
+              <Form.Item label="Data ID" required>
+                <Select
                   style={{ width: 200 }}
-                  {...this.init('dataId', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.dataIdCanNotBeEmpty,
-                      },
-                    ],
-                  })}
+                  size="medium"
+                  hasArrow
+                  mode="single"
+                  placeholder={locale.dataId}
+                  dataSource={this.state.dataIds}
+                  hasClear
+                  showSearch
+                  value={this.state.dataId}
+                  onChange={val => {
+                    if (!val) {
+                      val = '';
+                    }
+                    this.setState({ dataId: val });
+                    setParams('historyDataId', val);
+                  }}
+                  onSearch={val => {
+                    const { dataIds } = this.state;
+                    if (!dataIds.includes(val)) {
+                      this.setState({ dataIds: dataIds.concat(val) });
+                    }
+                  }}
                 />
               </Form.Item>
               <Form.Item label="Group:" required>
-                <Input
-                  placeholder={locale.group}
+                <Select
                   style={{ width: 200 }}
-                  {...this.init('group', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.groupCanNotBeEmpty,
-                      },
-                    ],
-                  })}
+                  size="medium"
+                  hasArrow
+                  mode="single"
+                  placeholder={locale.group}
+                  dataSource={this.state.groups}
+                  value={this.state.group}
+                  hasClear
+                  showSearch
+                  onChange={val => {
+                    if (!val) {
+                      val = '';
+                    }
+                    this.setState({ group: val });
+                    setParams('historyGroup', val);
+                  }}
+                  onSearch={val => {
+                    const { groups } = this.state;
+                    if (!groups.includes(val)) {
+                      this.setState({ groups: groups.concat(val) });
+                    }
+                  }}
                 />
               </Form.Item>
-
               <Form.Item label="">
                 <Form.Submit
                   validate
@@ -272,14 +405,10 @@ class HistoryRollback extends React.Component {
                 lineHeight: '30px',
                 padding: 0,
                 margin: 0,
-                paddingLeft: 10,
-                borderLeft: '3px solid #09c',
                 fontSize: 16,
               }}
             >
-              {locale.queryResult}
-              <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-              {locale.articleMeet}
+              <QueryResult total={this.state.total} />
             </h3>
           </div>
           <div>
@@ -314,6 +443,12 @@ class HistoryRollback extends React.Component {
             />
             ,
           </div>
+          <DiffEditorDialog
+            ref={this.diffEditorDialog}
+            title={locale.historyCompareTitle}
+            currentArea={locale.historyCompareSelectedVersion}
+            originalArea={locale.historyCompareLastVersion}
+          />
         </Loading>
       </div>
     );

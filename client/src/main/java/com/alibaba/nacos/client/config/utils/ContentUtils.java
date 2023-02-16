@@ -27,6 +27,8 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  */
 public class ContentUtils {
     
+    private static final int SHOW_CONTENT_SIZE = 100;
+    
     /**
      * Verify increment pub content.
      *
@@ -36,15 +38,15 @@ public class ContentUtils {
     public static void verifyIncrementPubContent(String content) {
         
         if (content == null || content.length() == 0) {
-            throw new IllegalArgumentException("发布/删除内容不能为空");
+            throw new IllegalArgumentException("publish/delete content can not be null");
         }
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             if (c == '\r' || c == '\n') {
-                throw new IllegalArgumentException("发布/删除内容不能包含回车和换行");
+                throw new IllegalArgumentException("publish/delete content can not contain return and linefeed");
             }
             if (c == Constants.WORD_SEPARATOR.charAt(0)) {
-                throw new IllegalArgumentException("发布/删除内容不能包含(char)2");
+                throw new IllegalArgumentException("publish/delete content can not contain(char)2");
             }
         }
     }
@@ -52,7 +54,7 @@ public class ContentUtils {
     public static String getContentIdentity(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
-            throw new IllegalArgumentException("内容没有包含分隔符");
+            throw new IllegalArgumentException("content does not contain separator");
         }
         return content.substring(0, index);
     }
@@ -60,7 +62,7 @@ public class ContentUtils {
     public static String getContent(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
-            throw new IllegalArgumentException("内容没有包含分隔符");
+            throw new IllegalArgumentException("content does not contain separator");
         }
         return content.substring(index + 1);
     }
@@ -80,6 +82,4 @@ public class ContentUtils {
             return content.substring(0, SHOW_CONTENT_SIZE) + "...";
         }
     }
-    
-    private static final int SHOW_CONTENT_SIZE = 100;
 }

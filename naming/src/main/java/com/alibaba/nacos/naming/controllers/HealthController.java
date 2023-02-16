@@ -22,22 +22,19 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.HealthOperator;
-import com.alibaba.nacos.naming.core.HealthOperatorV1Impl;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -50,6 +47,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.naming.constants.RequestConstant.HEALTHY_KEY;
+import static com.alibaba.nacos.naming.constants.RequestConstant.IP_KEY;
+import static com.alibaba.nacos.naming.constants.RequestConstant.PORT_KEY;
+import static com.alibaba.nacos.naming.constants.RequestConstant.VALID_KEY;
+
 /**
  * Health status related operation controller.
  *
@@ -58,17 +60,11 @@ import java.util.Map;
  * @since 0.8.0
  */
 @RestController("namingHealthController")
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/health")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
 public class HealthController {
     
     @Autowired
-    private HealthOperatorV1Impl healthOperatorV1;
-    
-    @Autowired
     private HealthOperatorV2Impl healthOperatorV2;
-    
-    @Autowired
-    private UpgradeJudgement upgradeJudgement;
     
     /**
      * Just a health check.
@@ -91,22 +87,22 @@ public class HealthController {
      */
     @CanDistro
     @PutMapping(value = {"", "/instance"})
-    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
+    @Secured(action = ActionTypes.WRITE)
     public ResponseEntity update(HttpServletRequest request) throws NacosException {
-        String healthyString = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
+        String healthyString = WebUtils.optional(request, HEALTHY_KEY, StringUtils.EMPTY);
         if (StringUtils.isBlank(healthyString)) {
-            healthyString = WebUtils.optional(request, "valid", StringUtils.EMPTY);
+            healthyString = WebUtils.optional(request, VALID_KEY, StringUtils.EMPTY);
         }
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
-        boolean health = BooleanUtils.toBoolean(healthyString);
+        boolean health = ConvertUtils.toBoolean(healthyString);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils
                 .optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        String ip = WebUtils.required(request, "ip");
-        int port = Integer.parseInt(WebUtils.required(request, "port"));
+        String ip = WebUtils.required(request, IP_KEY);
+        int port = Integer.parseInt(WebUtils.required(request, PORT_KEY));
         getHealthOperator()
                 .updateHealthStatusForPersistentInstance(namespaceId, serviceName, clusterName, ip, port, health);
         return ResponseEntity.ok("ok");
@@ -133,6 +129,6 @@ public class HealthController {
     }
     
     private HealthOperator getHealthOperator() {
-        return upgradeJudgement.isUseGrpcFeatures() ? healthOperatorV2 : healthOperatorV1;
+        return healthOperatorV2;
     }
 }

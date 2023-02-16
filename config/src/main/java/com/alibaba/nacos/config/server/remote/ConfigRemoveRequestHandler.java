@@ -21,18 +21,19 @@ import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
-import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.remote.RequestHandler;
-import com.alibaba.nacos.core.remote.control.TpsControl;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
@@ -46,15 +47,19 @@ import java.sql.Timestamp;
 @Component
 public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveRequest, ConfigRemoveResponse> {
     
-    private final PersistService persistService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
-    public ConfigRemoveRequestHandler(PersistService persistService) {
-        this.persistService = persistService;
+    private final ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    public ConfigRemoveRequestHandler(ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
     }
     
     @Override
     @TpsControl(pointName = "ConfigRemove")
-    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public ConfigRemoveResponse handle(ConfigRemoveRequest configRemoveRequest, RequestMeta meta)
             throws NacosException {
         // check tenant
@@ -70,9 +75,9 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             
             String clientIp = meta.getClientIp();
             if (StringUtils.isBlank(tag)) {
-                persistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
+                configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
-                persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
+                configInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();
             ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,

@@ -34,7 +34,7 @@ import java.util.ServiceLoader;
  */
 public class ConfigFilterChainManager implements IConfigFilterChain {
     
-    private final List<IConfigFilter> filters = new ArrayList<IConfigFilter>();
+    private final List<IConfigFilter> filters = new ArrayList<>();
     
     public ConfigFilterChainManager(Properties properties) {
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
@@ -51,7 +51,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
      * @return this
      */
     public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
-        // 根据order大小顺序插入
+        // ordered by order value
         int i = 0;
         while (i < this.filters.size()) {
             IConfigFilter currentValue = this.filters.get(i);

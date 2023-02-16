@@ -16,16 +16,21 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 
@@ -51,15 +56,22 @@ public class EphemeralIpPortClientManagerTest {
     private SwitchDomain switchDomain;
     
     @Mock
-    private ClientSyncAttributes attributes;
+    private ClientAttributes attributes;
     
     EphemeralIpPortClientManager ephemeralIpPortClientManager;
+    
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        EnvUtil.setEnvironment(new MockEnvironment());
+    }
     
     @Before
     public void setUp() throws Exception {
         ephemeralIpPortClientManager = new EphemeralIpPortClientManager(distroMapper, switchDomain);
         when(client.getClientId()).thenReturn(ephemeralIpPortId);
+        when(client.getRevision()).thenReturn(1320L);
         ephemeralIpPortClientManager.clientConnected(client);
+        when(attributes.getClientAttribute(ClientConstants.REVISION, 0)).thenReturn(5120);
         ephemeralIpPortClientManager.syncClientConnected(syncedClientId, attributes);
     }
     
@@ -83,5 +95,19 @@ public class EphemeralIpPortClientManagerTest {
         assertTrue(ephemeralIpPortClientManager.contains(syncedClientId));
         String unUsedClientId = "127.0.0.1:8888#true";
         assertFalse(ephemeralIpPortClientManager.contains(unUsedClientId));
+    }
+    
+    @Test
+    public void testVerifyClient0() {
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 0)));
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 0)));
+    }
+    
+    @Test
+    public void testVerifyClient() {
+        assertFalse(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1)));
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1320)));
+        assertFalse(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 1)));
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 5120)));
     }
 }

@@ -20,20 +20,24 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * RpcClientFactory.to support muti client for diffrent modules of usage.
+ * RpcClientFactory.to support multi client for different modules of usage.
  *
  * @author liuzunfei
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
  */
 public class RpcClientFactory {
     
-    static Map<String, RpcClient> clientMap = new HashMap<String, RpcClient>();
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
+    
+    private static final Map<String, RpcClient> CLIENT_MAP = new ConcurrentHashMap<>();
     
     /**
      * get all client.
@@ -41,8 +45,7 @@ public class RpcClientFactory {
      * @return client collection.
      */
     public static Set<Map.Entry<String, RpcClient>> getAllClientEntries() {
-        Set<Map.Entry<String, RpcClient>> entries = clientMap.entrySet();
-        return entries;
+        return CLIENT_MAP.entrySet();
     }
     
     /**
@@ -51,15 +54,14 @@ public class RpcClientFactory {
      * @param clientName client name.
      */
     public static void destroyClient(String clientName) throws NacosException {
-        RpcClient rpcClient = clientMap.remove(clientName);
+        RpcClient rpcClient = CLIENT_MAP.remove(clientName);
         if (rpcClient != null) {
             rpcClient.shutdown();
         }
     }
     
     public static RpcClient getClient(String clientName) {
-        
-        return clientMap.get(clientName);
+        return CLIENT_MAP.get(clientName);
     }
     
     /**
@@ -70,23 +72,34 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
-        String clientNameInner = clientName;
-        synchronized (clientMap) {
-            if (clientMap.get(clientNameInner) == null) {
-                RpcClient moduleClient = null;
-                if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcSdkClient(clientNameInner);
-                    
-                }
-                if (moduleClient == null) {
-                    throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
-                }
-                moduleClient.labels(labels);
-                clientMap.put(clientNameInner, moduleClient);
-                return moduleClient;
-            }
-            return clientMap.get(clientNameInner);
+        return createClient(clientName, connectionType, null, null, labels);
+    }
+    
+    /**
+     * create a rpc client.
+     *
+     * @param clientName         client name.
+     * @param connectionType     client type.
+     * @param threadPoolCoreSize grpc thread pool core size
+     * @param threadPoolMaxSize  grpc thread pool max size
+     * @return rpc client.
+     */
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize, Map<String, String> labels) {
+        if (!ConnectionType.GRPC.equals(connectionType)) {
+            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
+        
+        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
+            LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
+            try {
+                return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels);
+            } catch (Throwable throwable) {
+                LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
+                throw throwable;
+            }
+            
+        });
     }
     
     /**
@@ -98,23 +111,27 @@ public class RpcClientFactory {
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Map<String, String> labels) {
-        String clientNameInner = clientName;
-        synchronized (clientMap) {
-            if (clientMap.get(clientNameInner) == null) {
-                RpcClient moduleClient = null;
-                if (ConnectionType.GRPC.equals(connectionType)) {
-                    moduleClient = new GrpcClusterClient(clientNameInner);
-                    
-                }
-                if (moduleClient == null) {
-                    throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
-                }
-                moduleClient.labels(labels);
-                clientMap.put(clientNameInner, moduleClient);
-                return moduleClient;
-            }
-            return clientMap.get(clientNameInner);
+        return createClusterClient(clientName, connectionType, null, null, labels);
+    }
+    
+    /**
+     * create a rpc client.
+     *
+     * @param clientName         client name.
+     * @param connectionType     client type.
+     * @param threadPoolCoreSize grpc thread pool core size
+     * @param threadPoolMaxSize  grpc thread pool max size
+     * @return rpc client.
+     */
+    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
+            Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
+        if (!ConnectionType.GRPC.equals(connectionType)) {
+            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
+        
+        return CLIENT_MAP.computeIfAbsent(clientName,
+                clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize,
+                        labels));
     }
     
 }

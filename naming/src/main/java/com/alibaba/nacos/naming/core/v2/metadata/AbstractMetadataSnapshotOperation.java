@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
-import com.alibaba.nacos.common.utils.Objects;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.Writer;
@@ -27,6 +26,7 @@ import com.alipay.sofa.jraft.util.CRC64;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.Checksum;
 

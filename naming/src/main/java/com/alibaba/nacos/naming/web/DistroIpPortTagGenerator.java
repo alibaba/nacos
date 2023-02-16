@@ -17,7 +17,7 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
@@ -56,6 +56,6 @@ public class DistroIpPortTagGenerator implements DistroTagGenerator {
             ip = ip.trim();
         }
         port = StringUtils.isBlank(port) ? "0" : port.trim();
-        return ip + IPUtil.IP_PORT_SPLITER + port;
+        return ip + InternetAddressUtil.IP_PORT_SPLITER + port;
     }
 }

@@ -31,19 +31,25 @@ public class EnvUtil {
     
     public static final Logger LOGGER = LogUtils.logger(EnvUtil.class);
     
+    private static String selfAmoryTag;
+    
+    private static String selfVipserverTag;
+    
+    private static String selfLocationTag;
+    
     public static void setSelfEnv(Map<String, List<String>> headers) {
         if (headers != null) {
-            List<String> amorayTagTmp = headers.get(Constants.AMORY_TAG);
-            if (amorayTagTmp == null) {
-                if (selfAmorayTag != null) {
-                    selfAmorayTag = null;
+            List<String> amoryTagTmp = headers.get(Constants.AMORY_TAG);
+            if (amoryTagTmp == null) {
+                if (selfAmoryTag != null) {
+                    selfAmoryTag = null;
                     LOGGER.warn("selfAmoryTag:null");
                 }
             } else {
-                String amorayTagTmpStr = listToString(amorayTagTmp);
-                if (!amorayTagTmpStr.equals(selfAmorayTag)) {
-                    selfAmorayTag = amorayTagTmpStr;
-                    LOGGER.warn("selfAmoryTag:{}", selfAmorayTag);
+                String amoryTagTmpStr = listToString(amoryTagTmp);
+                if (!amoryTagTmpStr.equals(selfAmoryTag)) {
+                    selfAmoryTag = amoryTagTmpStr;
+                    LOGGER.warn("selfAmoryTag:{}", selfAmoryTag);
                 }
             }
             
@@ -76,8 +82,8 @@ public class EnvUtil {
         }
     }
     
-    public static String getSelfAmorayTag() {
-        return selfAmorayTag;
+    public static String getSelfAmoryTag() {
+        return selfAmoryTag;
     }
     
     public static String getSelfVipserverTag() {
@@ -95,15 +101,8 @@ public class EnvUtil {
         StringBuilder result = new StringBuilder();
         for (String string : list) {
             result.append(string);
-            result.append(",");
+            result.append(',');
         }
-        return result.toString().substring(0, result.length() - 1);
+        return result.substring(0, result.length() - 1);
     }
-    
-    private static String selfAmorayTag;
-    
-    private static String selfVipserverTag;
-    
-    private static String selfLocationTag;
-    
 }

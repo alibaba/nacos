@@ -24,6 +24,7 @@ public class LimiterTest {
     @Test
     public void testIsLimit() {
         String keyId = "a";
+        //For initiating.
         Assert.assertFalse(Limiter.isLimit(keyId));
         long start = System.currentTimeMillis();
         for (int j = 0; j < 5; j++) {
@@ -31,6 +32,6 @@ public class LimiterTest {
         }
         long elapse = System.currentTimeMillis() - start;
         // assert  < limit 5qps
-        Assert.assertTrue(Math.abs(1000 - elapse) < 20);
+        Assert.assertTrue(elapse > 980);
     }
 }

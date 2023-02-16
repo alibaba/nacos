@@ -86,7 +86,7 @@ public class RestResult<T> implements Serializable {
     }
     
     public static <T> ResResultBuilder<T> builder() {
-        return new ResResultBuilder<T>();
+        return new ResResultBuilder<>();
     }
     
     public static final class ResResultBuilder<T> {
@@ -121,7 +121,7 @@ public class RestResult<T> implements Serializable {
          * @return result
          */
         public RestResult<T> build() {
-            RestResult<T> restResult = new RestResult<T>();
+            RestResult<T> restResult = new RestResult<>();
             restResult.setCode(code);
             restResult.setMessage(errMsg);
             restResult.setData(data);

@@ -26,7 +26,6 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -39,32 +38,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class NamingExample {
     
-    public static void main(String[] args) throws NacosException {
+    public static void main(String[] args) throws NacosException, InterruptedException {
         
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", System.getProperty("serverAddr"));
-        properties.setProperty("namespace", System.getProperty("namespace"));
+        properties.setProperty("serverAddr", System.getProperty("serverAddr", "localhost"));
+        properties.setProperty("namespace", System.getProperty("namespace", "public"));
         
         NamingService naming = NamingFactory.createNamingService(properties);
         
         naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
         
-        naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-        
-        System.out.println(naming.getAllInstances("nacos.test.3"));
-        
-        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-        
-        System.out.println(naming.getAllInstances("nacos.test.3"));
+        System.out.println("instances after register: " + naming.getAllInstances("nacos.test.3"));
         
         Executor executor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(),
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setName("test-thread");
-                        return thread;
-                    }
+                runnable -> {
+                    Thread thread = new Thread(runnable);
+                    thread.setName("test-thread");
+                    return thread;
                 });
         
         naming.subscribe("nacos.test.3", new AbstractEventListener() {
@@ -78,9 +68,17 @@ public class NamingExample {
             
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent) event).getServiceName());
-                System.out.println(((NamingEvent) event).getInstances());
+                System.out.println("serviceName: " + ((NamingEvent) event).getServiceName());
+                System.out.println("instances from event: " + ((NamingEvent) event).getInstances());
             }
         });
+    
+        naming.deregisterInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
+        
+        Thread.sleep(1000);
+    
+        System.out.println("instances after deregister: " + naming.getAllInstances("nacos.test.3"));
+        
+        Thread.sleep(1000);
     }
 }

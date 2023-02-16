@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.trace.event.naming.HealthStateChangeTraceEvent;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
@@ -59,7 +60,7 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
         HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client.getInstancePublishInfo(service);
         if (instance.getIp().equals(ip) && instance.getPort() == port) {
             if (Loggers.EVT_LOG.isDebugEnabled()) {
-                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
+                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo);
             }
             instance.setLastHeartBeatTime(System.currentTimeMillis());
             if (!instance.isHealthy()) {
@@ -68,6 +69,9 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
                         rsInfo.getServiceName(), ip, port, rsInfo.getCluster(), UtilsAndCommons.LOCALHOST_SITE);
                 NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
                 NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
+                NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
+                        service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
+                        instance.getPort(), true, "client_beat"));
             }
         }
     }

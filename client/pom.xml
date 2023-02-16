@@ -29,7 +29,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-client ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -65,6 +65,16 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
             <optional>true</optional>
+        </dependency>
+    
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-auth-plugin</artifactId>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-encryption-plugin</artifactId>
         </dependency>
         
         <dependency>
@@ -103,36 +113,15 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpasyncclient</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.reflections</groupId>
-            <artifactId>reflections</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>net.jcip</groupId>
-            <artifactId>jcip-annotations</artifactId>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
         
         <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
-    
     </dependencies>
     
     <build>
@@ -156,7 +145,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.2.4</version>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
@@ -170,25 +159,59 @@
                                     <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
                                     <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <minimizeJar>false</minimizeJar>
+                                    <minimizeJar>true</minimizeJar>
+                                    <filters>
+                                        <filter>
+                                            <artifact>*:*</artifact>
+                                            <excludes>
+                                                <exclude>META-INF/*.SF</exclude>
+                                                <exclude>META-INF/*.DSA</exclude>
+                                                <exclude>META-INF/*.RSA</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>io.grpc:grpc-netty-shaded</artifact>
+                                            <excludes>
+                                                <exclude>
+                                                    META-INF/native/*.*
+                                                </exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>com.alibaba.nacos:nacos-api</artifact>
+                                            <includes>
+                                                <include>
+                                                    com/alibaba/nacos/api/**/**
+                                                </include>
+                                                <include>
+                                                    META-INF/**/*.*
+                                                </include>
+                                            </includes>
+                                        </filter>
+                    
+                                    </filters>
                                     <createSourcesJar>true</createSourcesJar>
                                     <shadeSourcesContent>true</shadeSourcesContent>
                     
                                     <artifactSet>
                                         <includes>
-                                            <include>io.grpc:*</include>
-                                            <include>io.opencensus:*</include>
-                                            <include>io.perfmark:*</include>
-                                            <include>com.google.guava:guava</include>
-                                            <include>com.google.guava:failureaccess</include>
-                                            <include>com.google.errorprone:error_prone_annotations</include>
-                                            <include>com.google.j2objc:j2objc-annotations</include>
-                                            <include>com.google.code.gson:gson</include>
-                                            <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.alibaba.nacos:nacos-api</include>
                                             <include>com.alibaba.nacos:nacos-common</include>
-                                            <include>org.checkerframework:checker-qual</include>
+                                            <include>org.conscrypt:conscrypt-openjdk</include>
+                                            <include>org.mortbay.jetty.alpn:alpn-boot</include>
+                                            <include>org.eclipse.jetty.npn:npn-api</include>
+                                            <include>org.reflections:reflections</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>io.grpc:*</include>
+                                            <include>io.opencensus:*</include>
+                                            <include>org.javassist:*</include>
+                                            <include>io.perfmark:perfmark-api</include>
+                                            <include>com.google.*:*</include>
+                                            <include>javax.annotation:javax.annotation-api</include>
+                                            <include>org.checkerframework:*</include>
+                                            <include>org.codehaus.mojo:*</include>
                                         </includes>
+                    
                                     </artifactSet>
                     
                                     <relocations>
@@ -213,6 +236,12 @@
                                             <pattern>com.google</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
                                         </relocation>
+                        
+                                        <relocation>
+                                            <pattern>javax.annotation</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
+                                        </relocation>
+                        
                                         <relocation>
                                             <pattern>io.perfmark</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
@@ -238,7 +267,6 @@
                                             <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
                                         </relocation>
                     
-                    
                                     </relocations>
                                     <transformers>
                                         <transformer
@@ -247,6 +275,21 @@
                                             implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     
                                     </transformers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pure-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>pure</classifier>
                                 </configuration>
                             </execution>
                         </executions>
@@ -261,7 +304,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.1</version>
+                        <version>3.2.4</version>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
@@ -275,29 +318,63 @@
                                     <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
                                     <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                                     <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <minimizeJar>false</minimizeJar>
+                                    <minimizeJar>true</minimizeJar>
+                                    <filters>
+                                        <filter>
+                                            <artifact>*:*</artifact>
+                                            <excludes>
+                                                <exclude>META-INF/*.SF</exclude>
+                                                <exclude>META-INF/*.DSA</exclude>
+                                                <exclude>META-INF/*.RSA</exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>io.grpc:grpc-netty-shaded</artifact>
+                                            <excludes>
+                                                <exclude>
+                                                    META-INF/native/*.*
+                                                </exclude>
+                                            </excludes>
+                                        </filter>
+                                        <filter>
+                                            <artifact>com.alibaba.nacos:nacos-api</artifact>
+                                            <includes>
+                                                <include>
+                                                    com/alibaba/nacos/api/**/**
+                                                </include>
+                                                <include>
+                                                    META-INF/**/*.*
+                                                </include>
+                                            </includes>
+                                        </filter>
+                                       
+                                    </filters>
                                     <createSourcesJar>true</createSourcesJar>
                                     <shadeSourcesContent>true</shadeSourcesContent>
-                                
+                                  
                                     <artifactSet>
                                         <includes>
-                                            <include>io.grpc:*</include>
-                                            <include>io.opencensus:*</include>
-                                            <include>io.perfmark:*</include>
-                                            <include>com.google.guava:guava</include>
-                                            <include>com.google.guava:failureaccess</include>
-                                            <include>com.google.errorprone:error_prone_annotations</include>
-                                            <include>com.google.j2objc:j2objc-annotations</include>
-                                            <include>com.google.code.gson:gson</include>
-                                            <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.alibaba.nacos:nacos-api</include>
                                             <include>com.alibaba.nacos:nacos-common</include>
-                                            <include>org.checkerframework:checker-qual</include>
+                                            <include>org.conscrypt:conscrypt-openjdk</include>
+                                            <include>org.mortbay.jetty.alpn:alpn-boot</include>
+                                            <include>org.eclipse.jetty.npn:npn-api</include>
+                                            <include>org.reflections:reflections</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>io.grpc:*</include>
+                                            <include>io.opencensus:*</include>
+                                            <include>org.javassist:*</include>
+                                            <include>io.perfmark:perfmark-api</include>
+                                            <include>com.google.*:*</include>
+                                            <include>javax.annotation:javax.annotation-api</include>
+                                            <include>org.checkerframework:*</include>
+                                            <include>org.codehaus.mojo:*</include>
                                         </includes>
+                                        
                                     </artifactSet>
-                                
+    
                                     <relocations>
-                                    
+        
                                         <relocation>
                                             <pattern>io.grpc</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
@@ -313,11 +390,17 @@
                                                 <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
                                             </includes>
                                         </relocation>
-                                    
+    
                                         <relocation>
                                             <pattern>com.google</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
                                         </relocation>
+    
+                                        <relocation>
+                                            <pattern>javax.annotation</pattern>
+                                            <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
+                                        </relocation>
+    
                                         <relocation>
                                             <pattern>io.perfmark</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
@@ -342,16 +425,30 @@
                                             <pattern>org.example</pattern>
                                             <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
                                         </relocation>
-                                
-                                
+    
                                     </relocations>
                                     <transformers>
                                         <transformer
                                             implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
                                         <transformer
                                             implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                
+    
                                     </transformers>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>pure-jar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>pure</classifier>
                                 </configuration>
                             </execution>
                         </executions>

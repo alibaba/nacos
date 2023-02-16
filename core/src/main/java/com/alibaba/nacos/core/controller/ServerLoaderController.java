@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.remote.request.ServerReloadRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
@@ -36,9 +35,9 @@ import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.RemoteUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,20 +68,37 @@ public class ServerLoaderController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderController.class);
     
-    @Autowired
-    private ConnectionManager connectionManager;
+    private static final String X_REAL_IP = "X-Real-IP";
     
-    @Autowired
-    private ServerMemberManager serverMemberManager;
+    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
     
-    @Autowired
-    private ClusterRpcClientProxy clusterRpcClientProxy;
+    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
     
-    @Autowired
-    private ServerReloaderRequestHandler serverReloaderRequestHandler;
+    private static final String SUCCESS_RESULT = "Ok";
     
-    @Autowired
-    private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
+    private static final String FAIL_RESULT = "Fail";
+    
+    private static final String SDK_CONNECTION_COUNT_METRIC = "sdkConCount";
+    
+    private final ConnectionManager connectionManager;
+    
+    private final ServerMemberManager serverMemberManager;
+    
+    private final ClusterRpcClientProxy clusterRpcClientProxy;
+    
+    private final ServerReloaderRequestHandler serverReloaderRequestHandler;
+    
+    private final ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
+    
+    public ServerLoaderController(ConnectionManager connectionManager, ServerMemberManager serverMemberManager,
+            ClusterRpcClientProxy clusterRpcClientProxy, ServerReloaderRequestHandler serverReloaderRequestHandler,
+            ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler) {
+        this.connectionManager = connectionManager;
+        this.serverMemberManager = serverMemberManager;
+        this.clusterRpcClientProxy = clusterRpcClientProxy;
+        this.serverReloaderRequestHandler = serverReloaderRequestHandler;
+        this.serverLoaderInfoRequestHandler = serverLoaderInfoRequestHandler;
+    }
     
     /**
      * Get current clients.
@@ -91,7 +107,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/current")
-    public ResponseEntity currentClients() {
+    public ResponseEntity<Map<String, Connection>> currentClients() {
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
         return ResponseEntity.ok().body(stringConnectionMap);
     }
@@ -103,9 +119,8 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadCurrent")
-    public ResponseEntity reloadCount(@RequestParam Integer count,
+    public ResponseEntity<String> reloadCount(@RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
-        Map<String, String> responseMap = new HashMap<>(3);
         connectionManager.loadCount(count, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
@@ -117,26 +132,26 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/smartReloadCluster")
-    public ResponseEntity smartReload(HttpServletRequest request,
+    public ResponseEntity<String> smartReload(HttpServletRequest request,
             @RequestParam(value = "loaderFactor", required = false) String loaderFactorStr,
             @RequestParam(value = "force", required = false) String force) {
         
         LOGGER.info("Smart reload request receive,requestIp={}", getRemoteIp(request));
         
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
-        Object avgString = (Object) serverLoadMetrics.get("avg");
+        Object avgString = serverLoadMetrics.get("avg");
         List<ServerLoaderMetrics> details = (List<ServerLoaderMetrics>) serverLoadMetrics.get("detail");
-        int avg = Integer.valueOf(avgString.toString());
+        int avg = Integer.parseInt(avgString.toString());
         float loaderFactor =
-                StringUtils.isBlank(loaderFactorStr) ? RemoteUtils.LOADER_FACTOR : Float.valueOf(loaderFactorStr);
+                StringUtils.isBlank(loaderFactorStr) ? RemoteUtils.LOADER_FACTOR : Float.parseFloat(loaderFactorStr);
         int overLimitCount = (int) (avg * (1 + loaderFactor));
         int lowLimitCount = (int) (avg * (1 - loaderFactor));
         
-        List<ServerLoaderMetrics> overLimitServer = new ArrayList<ServerLoaderMetrics>();
-        List<ServerLoaderMetrics> lowLimitServer = new ArrayList<ServerLoaderMetrics>();
+        List<ServerLoaderMetrics> overLimitServer = new ArrayList<>();
+        List<ServerLoaderMetrics> lowLimitServer = new ArrayList<>();
         
         for (ServerLoaderMetrics metrics : details) {
-            int sdkCount = Integer.valueOf(metrics.getMetric().get("sdkConCount"));
+            int sdkCount = Integer.parseInt(metrics.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             if (sdkCount > overLimitCount) {
                 overLimitServer.add(metrics);
             }
@@ -147,8 +162,8 @@ public class ServerLoaderController {
         
         // desc by sdkConCount
         overLimitServer.sort((o1, o2) -> {
-            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get("sdkConCount"));
-            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get("sdkConCount"));
+            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             return sdkCount1.compareTo(sdkCount2) * -1;
         });
         
@@ -156,8 +171,8 @@ public class ServerLoaderController {
         
         //asc by sdkConCount
         lowLimitServer.sort((o1, o2) -> {
-            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get("sdkConCount"));
-            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get("sdkConCount"));
+            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             return sdkCount1.compareTo(sdkCount2);
         });
         
@@ -216,7 +231,7 @@ public class ServerLoaderController {
             }
         }
         
-        return ResponseEntity.ok().body(result.get() ? "Ok" : "Fail");
+        return ResponseEntity.ok().body(result.get() ? SUCCESS_RESULT : FAIL_RESULT);
     }
     
     
@@ -227,9 +242,8 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadClient")
-    public ResponseEntity reloadSingle(@RequestParam String connectionId,
+    public ResponseEntity<String> reloadSingle(@RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
-        Map<String, String> responseMap = new HashMap<>(3);
         connectionManager.loadSingle(connectionId, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
@@ -241,7 +255,7 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/cluster")
-    public ResponseEntity loaderMetrics() {
+    public ResponseEntity<Map<String, Object>> loaderMetrics() {
         
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
         
@@ -250,7 +264,7 @@ public class ServerLoaderController {
     
     private Map<String, Object> getServerLoadMetrics() {
         
-        List<ServerLoaderMetrics> responseList = new LinkedList<ServerLoaderMetrics>();
+        List<ServerLoaderMetrics> responseList = new LinkedList<>();
         
         // default include self.
         int memberSize = serverMemberManager.allMembersWithoutSelf().size();
@@ -321,7 +335,7 @@ public class ServerLoaderController {
             String sdkConCountStr = serverLoaderMetrics.getMetric().get("sdkConCount");
             
             if (StringUtils.isNotBlank(sdkConCountStr)) {
-                int sdkConCount = Integer.valueOf(sdkConCountStr);
+                int sdkConCount = Integer.parseInt(sdkConCountStr);
                 if (max == 0 || max < sdkConCount) {
                     max = sdkConCount;
                 }
@@ -331,7 +345,7 @@ public class ServerLoaderController {
                 total += sdkConCount;
             }
         }
-        Map<String, Object> responseMap = new HashMap<>(3);
+        Map<String, Object> responseMap = new HashMap<>(9);
         responseList.sort(Comparator.comparing(ServerLoaderMetrics::getAddress));
         responseMap.put("detail", responseList);
         responseMap.put("memberCount", serverMemberManager.allMembers().size());
@@ -391,17 +405,10 @@ public class ServerLoaderController {
     
     private static String getRemoteIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (!org.apache.commons.lang3.StringUtils.isBlank(xForwardedFor)) {
+        if (!StringUtils.isBlank(xForwardedFor)) {
             return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
         }
         String nginxHeader = request.getHeader(X_REAL_IP);
-        return org.apache.commons.lang3.StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
+        return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
     }
-    
-    private static final String X_REAL_IP = "X-Real-IP";
-    
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
-    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
 }

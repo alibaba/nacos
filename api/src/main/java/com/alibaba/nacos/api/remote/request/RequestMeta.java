@@ -33,7 +33,7 @@ public class RequestMeta {
     
     private String clientVersion = "";
     
-    private Map<String, String> labels = new HashMap<String, String>();
+    private Map<String, String> labels = new HashMap<>();
 
     /**
      * Getter method for property <tt>clientVersion</tt>.

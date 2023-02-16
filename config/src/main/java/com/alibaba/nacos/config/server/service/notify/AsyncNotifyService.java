@@ -42,7 +42,7 @@ import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,8 +65,23 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class AsyncNotifyService {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncNotifyService.class);
+    
+    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
+    
+    private static final int MIN_RETRY_INTERVAL = 500;
+    
+    private static final int INCREASE_STEPS = 1000;
+    
+    private static final int MAX_COUNT = 6;
+    
     @Autowired
     private DumpService dumpService;
+    
+    @Autowired
+    private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
+    
+    private ServerMemberManager memberManager;
     
     @Autowired
     public AsyncNotifyService(ServerMemberManager memberManager) {
@@ -88,11 +103,14 @@ public class AsyncNotifyService {
                     String group = evt.group;
                     String tenant = evt.tenant;
                     String tag = evt.tag;
+                    
+                    MetricsMonitor.incrementConfigChangeCount(tenant, group, dataId);
+                    
                     Collection<Member> ipList = memberManager.allMembers();
                     
                     // In fact, any type of queue here can be
-                    Queue<NotifySingleTask> httpQueue = new LinkedList<NotifySingleTask>();
-                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<NotifySingleRpcTask>();
+                    Queue<NotifySingleTask> httpQueue = new LinkedList<>();
+                    Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<>();
                     
                     for (Member member : ipList) {
                         if (!MemberUtil.isSupportedLongCon(member)) {
@@ -119,15 +137,6 @@ public class AsyncNotifyService {
             }
         });
     }
-    
-    private final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientManager.getNacosAsyncRestTemplate();
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(AsyncNotifyService.class);
-    
-    @Autowired
-    private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
-    
-    private ServerMemberManager memberManager;
     
     class AsyncTask implements Runnable {
         
@@ -261,7 +270,7 @@ public class AsyncNotifyService {
     
     private void asyncTaskExecute(NotifySingleTask task) {
         int delay = getDelayTime(task);
-        Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
+        Queue<NotifySingleTask> queue = new LinkedList<>();
         queue.add(task);
         AsyncTask asyncTask = new AsyncTask(nacosAsyncRestTemplate, queue);
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
@@ -269,7 +278,7 @@ public class AsyncNotifyService {
     
     private void asyncTaskExecute(NotifySingleRpcTask task) {
         int delay = getDelayTime(task);
-        Queue<NotifySingleRpcTask> queue = new LinkedList<NotifySingleRpcTask>();
+        Queue<NotifySingleRpcTask> queue = new LinkedList<>();
         queue.add(task);
         AsyncRpcTask asyncTask = new AsyncRpcTask(queue);
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
@@ -315,7 +324,7 @@ public class AsyncNotifyService {
             
             long delayed = System.currentTimeMillis() - task.getLastModified();
             LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.target, task.getDataId(),
-                    task.getGroup(), task.getLastModified(), ex.toString());
+                    task.getGroup(), task.getLastModified(), ex);
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
                             InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, task.target);
@@ -390,7 +399,7 @@ public class AsyncNotifyService {
         public void onException(Throwable ex) {
             long delayed = System.currentTimeMillis() - task.getLastModified();
             LOGGER.error("[notify-exception] target:{} dataId:{} group:{} ts:{} ex:{}", task.member.getAddress(),
-                    task.getDataId(), task.getGroup(), task.getLastModified(), ex.toString());
+                    task.getDataId(), task.getGroup(), task.getLastModified(), ex);
             ConfigTraceService
                     .logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
                             InetUtils.getSelfIP(), ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
@@ -409,7 +418,7 @@ public class AsyncNotifyService {
         
         private String target;
         
-        public String url;
+        private String url;
         
         private boolean isBeta;
         
@@ -452,7 +461,6 @@ public class AsyncNotifyService {
                 url = url + "&tag=" + tag;
             }
             failCount = 0;
-            // this.executor = executor;
         }
         
         @Override
@@ -486,11 +494,4 @@ public class AsyncNotifyService {
         }
         return delay;
     }
-    
-    private static final int MIN_RETRY_INTERVAL = 500;
-    
-    private static final int INCREASE_STEPS = 1000;
-    
-    private static final int MAX_COUNT = 6;
-    
 }

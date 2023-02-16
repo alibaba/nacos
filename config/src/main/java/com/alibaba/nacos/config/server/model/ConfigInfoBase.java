@@ -32,7 +32,7 @@ import java.io.Serializable;
  */
 public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> {
     
-    static final long serialVersionUID = -1L;
+    static final long serialVersionUID = 265316491795790798L;
     
     @JsonSerialize(using = ToStringSerializer.class)
     private long id;
@@ -44,6 +44,8 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     private String content;
     
     private String md5;
+    
+    private String encryptedDataKey;
     
     public ConfigInfoBase() {
     
@@ -100,6 +102,14 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
     
     public void dump(PrintWriter writer) {
         writer.write(this.content);
+    }
+    
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
     }
     
     @Override

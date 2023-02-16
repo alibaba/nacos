@@ -31,18 +31,13 @@
     <packaging>jar</packaging>
 
     <name>nacos-example ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>

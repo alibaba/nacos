@@ -65,7 +65,7 @@ public enum ConfigType {
     
     private final String type;
     
-    private static final Map<String, ConfigType> LOCAL_MAP = new HashMap<String, ConfigType>();
+    private static final Map<String, ConfigType> LOCAL_MAP = new HashMap<>();
     
     static {
         for (ConfigType configType : values()) {
@@ -95,6 +95,6 @@ public enum ConfigType {
         if (StringUtils.isBlank(type)) {
             return false;
         }
-        return null != LOCAL_MAP.get(type) ? true : false;
+        return null != LOCAL_MAP.get(type);
     }
 }

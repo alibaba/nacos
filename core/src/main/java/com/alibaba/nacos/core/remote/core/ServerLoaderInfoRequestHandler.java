@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -47,13 +46,12 @@ public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderI
     public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta) throws NacosException {
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
         serverLoaderInfoResponse.putMetricsValue("conCount", String.valueOf(connectionManager.currentClientsCount()));
-        Map<String, String> filter = new HashMap<String, String>(2);
+        Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         serverLoaderInfoResponse
                 .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
-        serverLoaderInfoResponse.putMetricsValue("limitRule", JacksonUtils.toJson(connectionManager.getConnectionLimitRule()));
         serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
-        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCPU()));
+        serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCpu()));
         
         return serverLoaderInfoResponse;
     }

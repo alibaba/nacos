@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.executor;
 
+import com.alibaba.nacos.common.JustForTest;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -66,7 +68,7 @@ public final class ExecutorFactory {
     public static ThreadPoolExecutor newCustomerThreadExecutor(final int coreThreads, final int maxThreads,
             final long keepAliveTimeMs, final ThreadFactory threadFactory) {
         return new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(), threadFactory);
+                new LinkedBlockingQueue<>(), threadFactory);
     }
     
     public static final class Managed {
@@ -164,15 +166,20 @@ public final class ExecutorFactory {
          * @param coreThreads     core thread number
          * @param maxThreads      max thread number
          * @param keepAliveTimeMs keep alive time milliseconds
-         * @param threadFactory   thread facotry
+         * @param threadFactory   thread factory
          * @return new custom executor service
          */
         public static ThreadPoolExecutor newCustomerThreadExecutor(final String group, final int coreThreads,
                 final int maxThreads, final long keepAliveTimeMs, final ThreadFactory threadFactory) {
             ThreadPoolExecutor executor = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTimeMs,
-                    TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+                    TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
             THREAD_POOL_MANAGER.register(DEFAULT_NAMESPACE, group, executor);
             return executor;
+        }
+    
+        @JustForTest
+        public static ThreadPoolManager getThreadPoolManager() {
+            return THREAD_POOL_MANAGER;
         }
     }
 }

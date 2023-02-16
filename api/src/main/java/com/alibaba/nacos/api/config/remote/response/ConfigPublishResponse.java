@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  * ConfigPublishResponse.
  *
  * @author liuzunfei
- * @version $Id: ConfigPubishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
+ * @version $Id: ConfigPublishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
  */
 public class ConfigPublishResponse extends Response {
     
@@ -45,10 +45,11 @@ public class ConfigPublishResponse extends Response {
      *
      * @return response.
      */
-    public static ConfigPublishResponse buildFailResponse(String errorMsg) {
+    public static ConfigPublishResponse buildFailResponse(int errorCode, String errorMsg) {
         ConfigPublishResponse configPublishResponse = new ConfigPublishResponse();
         configPublishResponse.setResultCode(ResponseCode.FAIL.getCode());
         configPublishResponse.setMessage(errorMsg);
+        configPublishResponse.setErrorCode(errorCode);
         return configPublishResponse;
     }
 }

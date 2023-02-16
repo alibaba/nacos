@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.cluster;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -35,7 +35,7 @@ import java.util.Optional;
 @Service
 public class ServerStatusManager {
     
-    @Resource(name = "consistencyDelegate")
+    @Resource(name = "persistentConsistencyServiceDelegate")
     private ConsistencyService consistencyService;
     
     private final SwitchDomain switchDomain;

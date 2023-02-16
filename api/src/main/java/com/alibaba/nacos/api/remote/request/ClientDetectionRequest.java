@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
+
 /**
  * client active detection request from server.
  *
@@ -26,7 +28,7 @@ public class ClientDetectionRequest extends ServerRequest {
     
     @Override
     public String getModule() {
-        return "internal";
+        return INTERNAL_MODULE;
     }
     
 }

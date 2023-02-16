@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,10 +58,11 @@ public class HealthCheckTaskV2Test {
     @Before
     public void setUp() {
         ApplicationUtils.injectContext(context);
-        when(ApplicationUtils.getBean(SwitchDomain.class)).thenReturn(switchDomain);
+        when(context.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(switchDomain.getTcpHealthParams()).thenReturn(new SwitchDomain.TcpHealthParams());
-        when(ApplicationUtils.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
+        when(context.getBean(NamingMetadataManager.class)).thenReturn(new NamingMetadataManager());
         healthCheckTaskV2 = new HealthCheckTaskV2(ipPortBasedClient);
+        EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test

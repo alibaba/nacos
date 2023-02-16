@@ -21,18 +21,15 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckerFactory;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
+import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.NumberUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ClusterOperator;
-import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.NamingResourceParser;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,19 +42,12 @@ import javax.servlet.http.HttpServletRequest;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)
 public class ClusterController {
-    
-    private final UpgradeJudgement upgradeJudgement;
-    
-    private final ClusterOperatorV1Impl clusterOperatorV1;
     
     private final ClusterOperatorV2Impl clusterOperatorV2;
     
-    public ClusterController(UpgradeJudgement upgradeJudgement, ClusterOperatorV1Impl clusterOperatorV1,
-            ClusterOperatorV2Impl clusterOperatorV2) {
-        this.upgradeJudgement = upgradeJudgement;
-        this.clusterOperatorV1 = clusterOperatorV1;
+    public ClusterController(ClusterOperatorV2Impl clusterOperatorV2) {
         this.clusterOperatorV2 = clusterOperatorV2;
     }
     
@@ -69,7 +59,7 @@ public class ClusterController {
      * @throws Exception if failed
      */
     @PutMapping
-    @Secured(action = ActionTypes.WRITE, parser = NamingResourceParser.class)
+    @Secured(action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils
                 .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -78,7 +68,7 @@ public class ClusterController {
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         clusterMetadata.setHealthyCheckPort(NumberUtils.toInt(WebUtils.required(request, "checkPort")));
         clusterMetadata.setUseInstancePortForCheck(
-                BooleanUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
+                ConvertUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
         AbstractHealthChecker healthChecker = HealthCheckerFactory
                 .deserialize(WebUtils.required(request, "healthChecker"));
         clusterMetadata.setHealthChecker(healthChecker);
@@ -88,8 +78,8 @@ public class ClusterController {
         judgeClusterOperator().updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
         return "ok";
     }
- 
+    
     private ClusterOperator judgeClusterOperator() {
-        return upgradeJudgement.isUseGrpcFeatures() ? clusterOperatorV2 : clusterOperatorV1;
+        return clusterOperatorV2;
     }
 }

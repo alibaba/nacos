@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.request.Request;
 
 /**
@@ -27,6 +28,6 @@ public abstract class AbstractConfigRequest extends Request {
 
     @Override
     public String getModule() {
-        return "config";
+        return Constants.Config.CONFIG_MODULE;
     }
 }

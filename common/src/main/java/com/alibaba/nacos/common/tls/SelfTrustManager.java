@@ -61,7 +61,7 @@ public final class SelfTrustManager {
     
     /**
      * Returns the result of calling {@link #buildSecureTrustManager} if {@code needAuth} is enable and {@code
-     * trustCertPath} exists. Returns the {@link trustAll} otherwise.
+     * trustCertPath} exists. Returns the {@link #trustAll} otherwise.
      *
      * @param needAuth      whether need client auth
      * @param trustCertPath trust certificate path

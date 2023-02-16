@@ -94,13 +94,10 @@ public class ClientTrackService {
      * Groupkey ->  SubscriberStatus.
      */
     public static Map<String, SubscriberStatus> listSubStatus(String ip) {
-        Map<String, SubscriberStatus> status = new HashMap<String, SubscriberStatus>(100);
-        
+        Map<String, SubscriberStatus> status = new HashMap<>(100);
+
+        // record here is non-null
         ClientRecord record = getClientRecord(ip);
-        if (record == null) {
-            return status;
-        }
-        
         for (Map.Entry<String, String> entry : record.getGroupKey2md5Map().entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
@@ -117,7 +114,7 @@ public class ClientTrackService {
      * Ip ->  SubscriberStatus.
      */
     public static Map<String, SubscriberStatus> listSubsByGroup(String groupKey) {
-        Map<String, SubscriberStatus> subs = new HashMap<String, SubscriberStatus>(100);
+        Map<String, SubscriberStatus> subs = new HashMap<>(100);
         
         for (ClientRecord clientRec : clientRecords.values()) {
             String clientMd5 = clientRec.getGroupKey2md5Map().get(groupKey);
@@ -137,7 +134,7 @@ public class ClientTrackService {
      * groupKey -> isUptodate.
      */
     public static Map<String, Boolean> isClientUptodate(String ip) {
-        Map<String, Boolean> result = new HashMap<String, Boolean>(100);
+        Map<String, Boolean> result = new HashMap<>(100);
         for (Map.Entry<String, String> entry : getClientRecord(ip).getGroupKey2md5Map().entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
@@ -152,7 +149,7 @@ public class ClientTrackService {
      * IP -> isUptodate.
      */
     public static Map<String, Boolean> listSubscriberByGroup(String groupKey) {
-        Map<String, Boolean> subs = new HashMap<String, Boolean>(100);
+        Map<String, Boolean> subs = new HashMap<>(100);
         
         for (ClientRecord clientRec : clientRecords.values()) {
             String clientMd5 = clientRec.getGroupKey2md5Map().get(groupKey);
@@ -176,18 +173,18 @@ public class ClientTrackService {
             return record;
         }
         ClientRecord clientRecord = new ClientRecord(clientIp);
-        clientRecords.putIfAbsent(clientIp, clientRecord);
-        return clientRecord;
+        record = clientRecords.putIfAbsent(clientIp, clientRecord);
+        return null == record ? clientRecord : record;
     }
     
     public static void refreshClientRecord() {
-        clientRecords = new ConcurrentHashMap<String, ClientRecord>(50);
+        clientRecords = new ConcurrentHashMap<>(50);
     }
     
     /**
      * All of client records, adding or deleting.
      */
-    static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<String, ClientRecord>();
+    static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<>();
 }
 
 

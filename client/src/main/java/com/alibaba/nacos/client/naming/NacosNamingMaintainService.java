@@ -25,15 +25,23 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * Nacos naming maintain service.
@@ -48,6 +56,12 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     
     private NamingHttpClientProxy serverProxy;
     
+    private ServerListManager serverListManager;
+    
+    private SecurityProxy securityProxy;
+    
+    private ScheduledExecutorService executorService;
+    
     public NacosNamingMaintainService(String serverList) throws NacosException {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
@@ -59,14 +73,30 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     private void init(Properties properties) throws NacosException {
-        ValidatorUtils.checkInitParam(properties);
-        namespace = InitUtils.initNamespaceForNaming(properties);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ValidatorUtils.checkInitParam(nacosClientProperties);
+        namespace = InitUtils.initNamespaceForNaming(nacosClientProperties);
         InitUtils.initSerialization();
-        InitUtils.initWebRootContext(properties);
-        ServerListManager serverListManager = new ServerListManager(properties);
-        SecurityProxy securityProxy = new SecurityProxy(properties,
+        InitUtils.initWebRootContext(nacosClientProperties);
+        serverListManager = new ServerListManager(nacosClientProperties, namespace);
+        securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
-        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties, null);
+        initSecurityProxy(properties);
+        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, nacosClientProperties);
+    }
+    
+    private void initSecurityProxy(Properties properties) {
+        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.naming.maintainService.security");
+            t.setDaemon(true);
+            return t;
+        });
+        this.securityProxy.login(properties);
+        this.executorService
+                .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
+                        TimeUnit.MILLISECONDS);
+        
     }
     
     @Override
@@ -167,6 +197,11 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     
     @Override
     public void shutDown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        serverListManager.shutdown();
         serverProxy.shutdown();
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
     }
 }

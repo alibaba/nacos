@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -51,7 +51,7 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private static final int DEFAULT_UPDATE_CACHE_TIME_MULTIPLE = 6;
     
-    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
+    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<>();
     
     private final ServiceInfoHolder serviceInfoHolder;
     
@@ -61,8 +61,11 @@ public class ServiceInfoUpdateService implements Closeable {
     
     private final InstancesChangeNotifier changeNotifier;
     
-    public ServiceInfoUpdateService(Properties properties, ServiceInfoHolder serviceInfoHolder,
+    private final boolean asyncQuerySubscribeService;
+    
+    public ServiceInfoUpdateService(NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder,
             NamingClientProxy namingClientProxy, InstancesChangeNotifier changeNotifier) {
+        this.asyncQuerySubscribeService = isAsyncQueryForSubscribeService(properties);
         this.executor = new ScheduledThreadPoolExecutor(initPollingThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.naming.updater"));
         this.serviceInfoHolder = serviceInfoHolder;
@@ -70,7 +73,14 @@ public class ServiceInfoUpdateService implements Closeable {
         this.changeNotifier = changeNotifier;
     }
     
-    private int initPollingThreadCount(Properties properties) {
+    private boolean isAsyncQueryForSubscribeService(NacosClientProperties properties) {
+        if (properties == null || !properties.containsKey(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE)) {
+            return false;
+        }
+        return ConvertUtils.toBoolean(properties.getProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE), false);
+    }
+    
+    private int initPollingThreadCount(NacosClientProperties properties) {
         if (properties == null) {
             return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
         }
@@ -86,6 +96,9 @@ public class ServiceInfoUpdateService implements Closeable {
      * @param clusters    clusters
      */
     public void scheduleUpdateIfAbsent(String serviceName, String groupName, String clusters) {
+        if (!asyncQuerySubscribeService) {
+            return;
+        }
         String serviceKey = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
         if (futureMap.get(serviceKey) != null) {
             return;
@@ -136,6 +149,8 @@ public class ServiceInfoUpdateService implements Closeable {
         
         long lastRefTime = Long.MAX_VALUE;
         
+        private boolean isCancel;
+        
         private final String serviceName;
         
         private final String groupName;
@@ -145,7 +160,7 @@ public class ServiceInfoUpdateService implements Closeable {
         private final String groupedServiceName;
         
         private final String serviceKey;
-    
+        
         /**
          * the fail situation. 1:can't connect to server 2:serviceInfo's hosts is empty
          */
@@ -164,9 +179,10 @@ public class ServiceInfoUpdateService implements Closeable {
             long delayTime = DEFAULT_DELAY;
             
             try {
-                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(serviceKey)) {
-                    NAMING_LOGGER
-                            .info("update task is stopped, service:" + groupedServiceName + ", clusters:" + clusters);
+                if (!changeNotifier.isSubscribed(groupName, serviceName, clusters) && !futureMap.containsKey(
+                        serviceKey)) {
+                    NAMING_LOGGER.info("update task is stopped, service:{}, clusters:{}", groupedServiceName, clusters);
+                    isCancel = true;
                     return;
                 }
                 
@@ -190,14 +206,32 @@ public class ServiceInfoUpdateService implements Closeable {
                 // TODO multiple time can be configured.
                 delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
                 resetFailCount();
+            } catch (NacosException e) {
+                handleNacosException(e);
             } catch (Throwable e) {
-                incFailCount();
-                NAMING_LOGGER.warn("[NA] failed to update serviceName: " + groupedServiceName, e);
+                handleUnknownException(e);
             } finally {
-                executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60), TimeUnit.MILLISECONDS);
+                if (!isCancel) {
+                    executor.schedule(this, Math.min(delayTime << failCount, DEFAULT_DELAY * 60),
+                            TimeUnit.MILLISECONDS);
+                }
             }
         }
-    
+        
+        private void handleNacosException(NacosException e) {
+            incFailCount();
+            int errorCode = e.getErrCode();
+            if (NacosException.SERVER_ERROR == errorCode) {
+                handleUnknownException(e);
+            }
+            NAMING_LOGGER.warn("Can't update serviceName: {}, reason: {}", groupedServiceName, e.getErrMsg());
+        }
+        
+        private void handleUnknownException(Throwable throwable) {
+            incFailCount();
+            NAMING_LOGGER.warn("[NA] failed to update serviceName: {}", groupedServiceName, throwable);
+        }
+        
         private void incFailCount() {
             int limit = 6;
             if (failCount == limit) {
@@ -205,7 +239,7 @@ public class ServiceInfoUpdateService implements Closeable {
             }
             failCount++;
         }
-    
+        
         private void resetFailCount() {
             failCount = 0;
         }

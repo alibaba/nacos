@@ -63,13 +63,6 @@ public @interface NacosConfigurationProperties {
     String dataId();
     
     /**
-     * set config type is yaml this method is deprecated, we support you use {@link #type()} to set config type.
-     *
-     * @return default value <code>false</code>
-     */
-    @Deprecated boolean yaml() default false;
-    
-    /**
      * config style.
      *
      * @return default value is {@link ConfigType#UNSET}

@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.remote.Requester;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.util.Map;
 
@@ -96,7 +95,7 @@ public abstract class Connection implements Requester {
     
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "Connection{" + "traced=" + traced + ", abilities=" + abilities + ", metaInfo=" + metaInfo + '}';
     }
 }
 

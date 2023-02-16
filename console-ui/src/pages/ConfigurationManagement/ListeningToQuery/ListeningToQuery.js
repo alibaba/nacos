@@ -29,6 +29,7 @@ import {
   Select,
   Table,
 } from '@alifd/next';
+import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
 
@@ -198,15 +199,19 @@ class ListeningToQuery extends React.Component {
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
-                <FormItem label={`${locale.queryDimension}:`}>
+                <FormItem label={`${locale.queryDimension}`}>
                   <Select
                     dataSource={selectDataSource}
                     style={{ width: 200 }}
                     {...this.init('type')}
+                    onChange={value => {
+                      this.field.setValue('type', value);
+                      this.queryTrackQuery();
+                    }}
                   />
                 </FormItem>
                 <FormItem
-                  label="Data ID:"
+                  label="Data ID"
                   style={{
                     display: this.getValue('type') === 0 ? '' : 'none',
                   }}
@@ -226,7 +231,7 @@ class ListeningToQuery extends React.Component {
                   />
                 </FormItem>
                 <FormItem
-                  label="Group:"
+                  label="Group"
                   style={{
                     display: this.getValue('type') === 0 ? '' : 'none',
                   }}
@@ -271,21 +276,7 @@ class ListeningToQuery extends React.Component {
             </Col>
           </Row>
           <div style={{ position: 'relative' }}>
-            <h3
-              style={{
-                height: 28,
-                lineHeight: '28px',
-                paddingLeft: 10,
-                borderLeft: '3px solid #09c',
-                margin: 0,
-                marginBottom: 10,
-                fontSize: 16,
-              }}
-            >
-              {locale.queryResultsQuery}
-              <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-              {locale.articleMeetRequirementsConfiguration}
-            </h3>
+            <QueryResult total={this.state.total} />
           </div>
           <Row style={{ padding: 0 }}>
             <Col span="24" style={{ padding: 0 }}>

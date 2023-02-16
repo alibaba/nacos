@@ -31,7 +31,7 @@ import java.util.List;
 @Service
 public class ClientConnectionEventListenerRegistry {
     
-    final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<ClientConnectionEventListener>();
+    final List<ClientConnectionEventListener> clientConnectionEventListeners = new ArrayList<>();
     
     /**
      * notify where a new client connected.

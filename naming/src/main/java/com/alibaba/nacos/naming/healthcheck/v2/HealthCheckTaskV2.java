@@ -29,7 +29,7 @@ import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2D
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.apache.commons.lang3.RandomUtils;
+import com.alibaba.nacos.common.utils.RandomUtils;
 
 import java.util.Optional;
 
@@ -42,13 +42,17 @@ import java.util.Optional;
  */
 public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealthCheckTask {
     
+    private static final int LOWER_CHECK_RT = 2000;
+    
+    private static final int UPPER_RANDOM_CHECK_RT = 5000;
+    
+    private static SwitchDomain switchDomain;
+    
+    private static NamingMetadataManager metadataManager;
+    
     private final IpPortBasedClient client;
     
     private final String taskId;
-    
-    private final SwitchDomain switchDomain;
-    
-    private final NamingMetadataManager metadataManager;
     
     private long checkRtNormalized = -1;
     
@@ -67,15 +71,28 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     public HealthCheckTaskV2(IpPortBasedClient client) {
         this.client = client;
         this.taskId = client.getResponsibleId();
-        this.switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
-        this.metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
+    }
+    
+    private void initIfNecessary() {
+        if (switchDomain == null) {
+            switchDomain = ApplicationUtils.getBean(SwitchDomain.class);
+        }
+        if (metadataManager == null) {
+            metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
+        }
         initCheckRT();
     }
     
     private void initCheckRT() {
+        if (-1 != checkRtNormalized) {
+            return;
+        }
         // first check time delay
-        checkRtNormalized =
-                2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
+        if (null != switchDomain) {
+            checkRtNormalized = LOWER_CHECK_RT + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
+        } else {
+            checkRtNormalized = LOWER_CHECK_RT + RandomUtils.nextInt(0, UPPER_RANDOM_CHECK_RT);
+        }
         checkRtBest = Long.MAX_VALUE;
         checkRtWorst = 0L;
     }
@@ -92,6 +109,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     @Override
     public void doHealthCheck() {
         try {
+            initIfNecessary();
             for (Service each : client.getAllPublishedService()) {
                 if (switchDomain.isHealthCheckEnabled(each.getGroupedServiceName())) {
                     InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(each);
@@ -106,6 +124,7 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
             Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}", client.getClientId(), e);
         } finally {
             if (!cancelled) {
+                initCheckRT();
                 HealthCheckReactor.scheduleCheck(this);
                 // worst == 0 means never checked
                 if (this.getCheckRtWorst() > 0) {
@@ -133,7 +152,12 @@ public class HealthCheckTaskV2 extends AbstractExecuteTask implements NacosHealt
     @Override
     public void afterIntercept() {
         if (!cancelled) {
-            HealthCheckReactor.scheduleCheck(this);
+            try {
+                initIfNecessary();
+            } finally {
+                initCheckRT();
+                HealthCheckReactor.scheduleCheck(this);
+            }
         }
     }
     

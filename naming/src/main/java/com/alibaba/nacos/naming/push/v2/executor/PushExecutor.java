@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
-import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
+import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
 
 /**
  * Nacos naming push executor for v2.
@@ -44,5 +44,5 @@ public interface PushExecutor {
      * @param data       push data
      * @param callBack   callback
      */
-    void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, PushCallBack callBack);
+    void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, NamingPushCallback callBack);
 }

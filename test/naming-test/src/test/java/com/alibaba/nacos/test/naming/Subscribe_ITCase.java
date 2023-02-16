@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -262,5 +263,50 @@ public class Subscribe_ITCase extends NamingBase {
         // server will remove duplicate subscriber by ip port service app and so on
         Assert.assertEquals(1, body.get("subscribers").size());
     }
-
+    
+    @Test
+    public void subscribeSameServiceForTwoNamingService() throws Exception {
+        Properties properties1 = new Properties();
+        properties1.setProperty("serverAddr", "127.0.0.1" + ":" + port);
+        properties1.setProperty("namespace", "ns-001");
+        final NamingService naming1 = NamingFactory.createNamingService(properties1);
+        Properties properties2 = new Properties();
+        properties2.setProperty("serverAddr", "127.0.0.1" + ":" + port);
+        properties2.setProperty("namespace", "ns-002");
+        final NamingService naming2 = NamingFactory.createNamingService(properties2);
+        
+        final ConcurrentHashSet<Instance> concurrentHashSet1 = new ConcurrentHashSet();
+        final String serviceName = randomDomainName();
+        
+        naming1.subscribe(serviceName, new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println("Event from naming1: " + ((NamingEvent) event).getServiceName());
+                System.out.println("Event from naming1: " + ((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
+            }
+        });
+        naming2.subscribe(serviceName, new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println("Event from naming2: " + ((NamingEvent) event).getServiceName());
+                System.out.println("Event from naming2: " + ((NamingEvent) event).getInstances());
+                concurrentHashSet1.addAll(((NamingEvent) event).getInstances());
+            }
+        });
+    
+        naming1.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+        
+        while (instances.isEmpty()) {
+            Thread.sleep(1000L);
+        }
+        
+        try {
+            Assert.assertTrue(verifyInstanceList(instances, naming1.getAllInstances(serviceName)));
+            Assert.assertEquals(0, concurrentHashSet1.size());
+        } finally {
+            naming1.shutDown();
+            naming2.shutDown();
+        }
+    }
 }

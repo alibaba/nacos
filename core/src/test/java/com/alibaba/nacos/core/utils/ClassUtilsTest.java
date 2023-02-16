@@ -16,20 +16,44 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.google.common.reflect.TypeToken;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
+/**
+ *
+ * {@link ClassUtils} unit tests.
+ */
 public class ClassUtilsTest {
     
     @Test
     public void testGeneric() {
-        GenericType<List<String>> genericType = new GenericType<List<String>>() {
-        };
-        Assert.assertEquals(genericType.getType(), new TypeToken<java.util.List<java.lang.String>>() {
-        }.getType());
+        Type type = new GenericType<List<String>>() {
+        }.getType();
+        Assert.assertEquals("java.util.List<java.lang.String>", type.getTypeName());
+        Assert.assertTrue(type instanceof ParameterizedType);
     }
     
+    @Test
+    public void testFindClassByName() {
+        Class clazz = ClassUtils.findClassByName("java.lang.Integer");
+        Assert.assertEquals("java.lang.Integer", clazz.getName());
+    }
+    
+    @Test
+    public void testGetName() {
+        final String name = "java.lang.Integer";
+        Integer val = 1;
+        Assert.assertEquals(name, ClassUtils.getName(val));
+        Assert.assertEquals(name, ClassUtils.getName(Integer.class));
+        
+        Assert.assertEquals(name, ClassUtils.getCanonicalName(val));
+        Assert.assertEquals(name, ClassUtils.getCanonicalName(Integer.class));
+        
+        Assert.assertEquals("Integer", ClassUtils.getSimplaName(val));
+        Assert.assertEquals("Integer", ClassUtils.getSimplaName(Integer.class));
+    }
 }

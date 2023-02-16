@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Service operator.
@@ -76,13 +75,10 @@ public interface ServiceOperator {
      * @param namespaceId namespace id of services
      * @param groupName   group name of services
      * @param selector    selector
-     * @param pageSize    page size
-     * @param pageNo      page number
      * @return services name list
      * @throws NacosException nacos exception during query
      */
-    List<String> listService(String namespaceId, String groupName, String selector, int pageSize, int pageNo)
-            throws NacosException;
+    Collection<String> listService(String namespaceId, String groupName, String selector) throws NacosException;
     
     /**
      * list All service namespace.
@@ -94,11 +90,10 @@ public interface ServiceOperator {
     /**
      * Search service name in namespace according to expr.
      *
-     * @param namespaceId     namespace id
-     * @param expr            search expr
-     * @param responsibleOnly only search responsible service, will deprecated after v2.0.
+     * @param namespaceId namespace id
+     * @param expr        search expr
      * @return service name collection of match expr
      * @throws NacosException nacos exception during query
      */
-    Collection<String> searchServiceName(String namespaceId, String expr, @Deprecated boolean responsibleOnly) throws NacosException;
+    Collection<String> searchServiceName(String namespaceId, String expr) throws NacosException;
 }

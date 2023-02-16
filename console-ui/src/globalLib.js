@@ -497,12 +497,12 @@ const request = (function(_global) {
     try {
       token = JSON.parse(localStorage.token);
     } catch (e) {
-      console.log('Token Erro', localStorage.token, e);
+      console.log('Token Error', localStorage.token, e);
       goLogin();
     }
     const { accessToken = '' } = token;
-    const [url, paramsStr = ''] = config.url.split('?');
-    const params = paramsStr.split('&');
+    const [url, paramsStr] = config.url.split('?');
+    const params = paramsStr ? paramsStr.split('&') : [];
     params.push(`accessToken=${accessToken}`);
 
     return $.ajax(

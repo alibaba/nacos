@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
@@ -24,7 +24,9 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  *
  * @author xiweng.yy
  */
-public class DistroConfig {
+public class DistroConfig extends AbstractDynamicConfig {
+    
+    private static final String DISTRO = "Distro";
     
     private static final DistroConfig INSTANCE = new DistroConfig();
     
@@ -40,15 +42,15 @@ public class DistroConfig {
     
     private long loadDataRetryDelayMillis = DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS;
     
+    private long loadDataTimeoutMillis = DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS;
+    
     private DistroConfig() {
-        try {
-            getDistroConfigFromEnv();
-        } catch (Exception e) {
-            Loggers.CORE.warn("Get Distro config from env failed, will use default value", e);
-        }
+        super(DISTRO);
+        resetConfig();
     }
     
-    private void getDistroConfigFromEnv() {
+    @Override
+    protected void getConfigFromEnv() {
         syncDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS, Long.class,
                 DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS);
         syncTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS, Long.class,
@@ -61,6 +63,8 @@ public class DistroConfig {
                 DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS);
         loadDataRetryDelayMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS, Long.class,
                 DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
+        loadDataTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS, Long.class,
+                DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
     }
     
     public static DistroConfig getInstance() {
@@ -113,5 +117,21 @@ public class DistroConfig {
     
     public void setLoadDataRetryDelayMillis(long loadDataRetryDelayMillis) {
         this.loadDataRetryDelayMillis = loadDataRetryDelayMillis;
+    }
+    
+    public long getLoadDataTimeoutMillis() {
+        return loadDataTimeoutMillis;
+    }
+    
+    public void setLoadDataTimeoutMillis(long loadDataTimeoutMillis) {
+        this.loadDataTimeoutMillis = loadDataTimeoutMillis;
+    }
+    
+    @Override
+    protected String printConfig() {
+        return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis=" + syncTimeoutMillis
+                + ", syncRetryDelayMillis=" + syncRetryDelayMillis + ", verifyIntervalMillis=" + verifyIntervalMillis
+                + ", verifyTimeoutMillis=" + verifyTimeoutMillis + ", loadDataRetryDelayMillis="
+                + loadDataRetryDelayMillis + '}';
     }
 }

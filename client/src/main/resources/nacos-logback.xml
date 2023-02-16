@@ -15,19 +15,23 @@
   ~ limitations under the License.
   -->
 
-<configuration debug="false" scan="true" scanPeriod="30 seconds" packagingData="true">
-    <contextName>nacos</contextName>
+<configuration debug="false" scan="false"  packagingData="true">
+    <nacosClientProperty scope="context" name="logPath" source="JM.LOG.PATH"/>
+    <nacosClientProperty scope="context" name="logRetainCount" source="JM.LOG.RETAIN.COUNT" defaultValue="7"/>
+    <nacosClientProperty scope="context" name="logFileSize" source="JM.LOG.FILE.SIZE" defaultValue="10MB"/>
+    <nacosClientProperty scope="context" name="nacosConfigLogLevel" source="com.alibaba.nacos.config.log.level" defaultValue="info"/>
+    
     
     <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${JM.LOG.PATH}/nacos/config.log</file>
+        <file>${logPath}/nacos/config.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${JM.LOG.PATH}/nacos/config.log.%i</fileNamePattern>
-            <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
+            <fileNamePattern>${logPath}/nacos/config.log.%i</fileNamePattern>
+            <maxIndex>${logRetainCount}</maxIndex>
         </rollingPolicy>
         
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
+            <maxFileSize>${logFileSize}</maxFileSize>
         </triggeringPolicy>
         
         <encoder>
@@ -36,15 +40,15 @@
     </appender>
     
     <appender name="NAMING_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${JM.LOG.PATH}/nacos/naming.log</file>
+        <file>${logPath}/nacos/naming.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${JM.LOG.PATH}/nacos/naming.log.%i</fileNamePattern>
-            <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
+            <fileNamePattern>${logPath}/nacos/naming.log.%i</fileNamePattern>
+            <maxIndex>${logRetainCount}</maxIndex>
         </rollingPolicy>
         
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
+            <maxFileSize>${logFileSize}</maxFileSize>
         </triggeringPolicy>
         
         <encoder>
@@ -53,15 +57,15 @@
     </appender>
     
     <appender name="REMOTE_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${JM.LOG.PATH}/nacos/remote.log</file>
+        <file>${logPath}/nacos/remote.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${JM.LOG.PATH}/nacos/remote.log.%i</fileNamePattern>
-            <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
+            <fileNamePattern>${logPath}/nacos/remote.log.%i</fileNamePattern>
+            <maxIndex>${logRetainCount}</maxIndex>
         </rollingPolicy>
         
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
+            <maxFileSize>${logFileSize}</maxFileSize>
         </triggeringPolicy>
         
         <encoder>
@@ -70,24 +74,28 @@
     </appender>
     
     
-    <logger name="com.alibaba.nacos.client" level="${com.alibaba.nacos.config.log.level:-info}"
+    <logger name="com.alibaba.nacos.client" level="${nacosConfigLogLevel}"
         additivity="false">
         <appender-ref ref="CONFIG_LOG_FILE"/>
     </logger>
     
     
-    <Logger name="com.alibaba.nacos.common.remote.client" level="${com.alibaba.nacos.log.level:-info}"
+    <Logger name="com.alibaba.nacos.common.remote.client" level="${nacosConfigLogLevel}"
         additivity="false">
         <appender-ref ref="REMOTE_LOG_FILE"/>
     </Logger>
     
+    <Logger name="com.alibaba.nacos.shaded.io.grpc" level="${nacosConfigLogLevel}"
+        additivity="false">
+        <appender-ref ref="REMOTE_LOG_FILE"/>
+    </Logger>
     
-    <logger name="com.alibaba.nacos.client.config" level="${com.alibaba.nacos.config.log.level:-info}"
+    <logger name="com.alibaba.nacos.client.config" level="${nacosConfigLogLevel}"
         additivity="false">
         <appender-ref ref="CONFIG_LOG_FILE"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.client.naming" level="${com.alibaba.nacos.naming.log.level:-info}"
+    <logger name="com.alibaba.nacos.client.naming" level="${nacosConfigLogLevel}"
         additivity="false">
         <appender-ref ref="NAMING_LOG_FILE"/>
     </logger>

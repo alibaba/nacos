@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.naming.core.v2.client.impl;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.misc.ClientConfig;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ConnectionBasedClientTest {
@@ -32,7 +35,7 @@ public class ConnectionBasedClientTest {
     
     @Before
     public void setUp() throws Exception {
-        connectionBasedClient = new ConnectionBasedClient(connectionId, isNative);
+        connectionBasedClient = new ConnectionBasedClient(connectionId, isNative, null);
     }
     
     @Test
@@ -43,7 +46,30 @@ public class ConnectionBasedClientTest {
     @Test
     public void testIsExpire() {
         connectionBasedClient.setLastRenewTime();
-        long mustExpireTime = connectionBasedClient.getLastRenewTime() + 2 * Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        long mustExpireTime =
+                connectionBasedClient.getLastRenewTime() + 2 * ClientConfig.getInstance().getClientExpiredTime();
         assertTrue(connectionBasedClient.isExpire(mustExpireTime));
+    }
+    
+    @Test
+    public void testRecalculateRevision() {
+        assertEquals(0, connectionBasedClient.getRevision());
+        connectionBasedClient.recalculateRevision();
+        assertEquals(1, connectionBasedClient.getRevision());
+    }
+    
+    @Test
+    public void testRecalculateRevisionAsync() throws InterruptedException {
+        assertEquals(0, connectionBasedClient.getRevision());
+        for (int i = 0; i < 10; i++) {
+            Thread thread = new Thread(() -> {
+                for (int j = 0; j < 10; j++) {
+                    connectionBasedClient.recalculateRevision();
+                }
+            });
+            thread.start();
+        }
+        TimeUnit.SECONDS.sleep(1);
+        assertEquals(100, connectionBasedClient.getRevision());
     }
 }

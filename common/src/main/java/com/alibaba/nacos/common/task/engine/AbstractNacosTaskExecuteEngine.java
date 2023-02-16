@@ -33,7 +33,7 @@ public abstract class AbstractNacosTaskExecuteEngine<T extends NacosTask> implem
     
     private final Logger log;
     
-    private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<Object, NacosTaskProcessor>();
+    private final ConcurrentHashMap<Object, NacosTaskProcessor> taskProcessors = new ConcurrentHashMap<>();
     
     private NacosTaskProcessor defaultTaskProcessor;
     

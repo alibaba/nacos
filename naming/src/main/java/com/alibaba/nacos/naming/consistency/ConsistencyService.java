@@ -28,7 +28,7 @@ import java.util.Optional;
  * User should not be aware of what consistency protocol is being used.
  *
  * <p>In this way, we also provide space for user to extend the underlying consistency protocols, as long as they obey
- * ourconsistency baseline.
+ * our consistency baseline.
  *
  * @author nkorange
  * @since 1.0.0

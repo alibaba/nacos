@@ -32,6 +32,7 @@ import { connect } from 'react-redux';
 import { getSubscribers, removeSubscribers } from '../../../reducers/subscribers';
 import { getParams } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
+import PageTitle from '../../../components/PageTitle';
 
 import './SubscriberList.scss';
 
@@ -135,18 +136,11 @@ class SubscriberList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <div style={{ marginTop: -15 }}>
-            <RegionGroup
-              setNowNameSpace={this.setNowNameSpace}
-              namespaceCallBack={this.switchNamespace}
-            />
-          </div>
-          <h3 className="page-title">
-            <span className="title-item">{subscriberList}</span>
-            <span className="title-item">|</span>
-            <span className="title-item">{nowNamespaceName}</span>
-            <span className="title-item">{nowNamespaceId}</span>
-          </h3>
+          <PageTitle title={subscriberList} desc={nowNamespaceId} nameSpace />
+          <RegionGroup
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.switchNamespace}
+          />
           <Row
             className="demo-row"
             style={{

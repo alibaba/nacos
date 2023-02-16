@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.api.ability;
 
-import com.alibaba.nacos.api.config.ServerConfigAbility;
-import com.alibaba.nacos.api.naming.ServerNamingAbility;
+import com.alibaba.nacos.api.config.ability.ServerConfigAbility;
+import com.alibaba.nacos.api.naming.ability.ServerNamingAbility;
+import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -29,6 +30,8 @@ import java.util.Objects;
  * @version $Id: ServerAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerAbilities implements Serializable {
+    
+    private static final long serialVersionUID = -2120543002911304171L;
     
     private ServerRemoteAbility remoteAbility = new ServerRemoteAbility();
     

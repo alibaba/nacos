@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import org.junit.Assert;
@@ -54,7 +55,7 @@ public class CacheDataTest {
         Assert.assertEquals(0, cacheData1.getTaskId());
         Assert.assertFalse(cacheData1.isSyncWithServer());
         Assert.assertFalse(cacheData1.isUseLocalConfigInfo());
-        Assert.assertEquals(0, cacheData1.getLastModifiedTs());
+        Assert.assertEquals(0, cacheData1.getLastModifiedTs().intValue());
         Assert.assertEquals(0, cacheData1.getLocalConfigInfoVersion());
         
         cacheData1.setInitializing(false);
@@ -73,15 +74,14 @@ public class CacheDataTest {
         
         Assert.assertEquals(123, cacheData1.getTaskId());
         Assert.assertTrue(cacheData1.isSyncWithServer());
-        //TODO FIX getType
-        // Assert.assertFalse("123",cacheData1.getType());
+        Assert.assertEquals("123", cacheData1.getType());
         Assert.assertTrue(cacheData1.isUseLocalConfigInfo());
-        Assert.assertEquals(timeStamp, cacheData1.getLastModifiedTs());
+        Assert.assertEquals(timeStamp, cacheData1.getLastModifiedTs().longValue());
         Assert.assertEquals(timeStamp, cacheData1.getLocalConfigInfoVersion());
     }
     
     @Test
-    public void testListener() {
+    public void testListener() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         final CacheData cacheData1 = new CacheData(filter, "name1", "key", "group", "tenant");
         
@@ -105,7 +105,7 @@ public class CacheDataTest {
     }
     
     @Test
-    public void testCheckListenerMd5() {
+    public void testCheckListenerMd5() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         final CacheData data = new CacheData(filter, "name1", "key", "group", "tenant");
         final List<String> list = new ArrayList<>();

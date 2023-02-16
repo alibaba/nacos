@@ -16,40 +16,33 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.auth.common.ActionTypes;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.cluster.Member;
-import com.alibaba.nacos.core.cluster.NodeState;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Operation for operators.
@@ -57,16 +50,11 @@ import java.util.List;
  * @author nkorange
  */
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
+@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+        UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
     
     private final SwitchManager switchManager;
-    
-    private final ServerListManager serverListManager;
-    
-    private final ServiceManager serviceManager;
-    
-    private final ServerMemberManager memberManager;
     
     private final ServerStatusManager serverStatusManager;
     
@@ -74,19 +62,16 @@ public class OperatorController {
     
     private final DistroMapper distroMapper;
     
-    private final RaftCore raftCore;
+    private final ClientManager clientManager;
     
-    public OperatorController(SwitchManager switchManager, ServerListManager serverListManager,
-            ServiceManager serviceManager, ServerMemberManager memberManager, ServerStatusManager serverStatusManager,
-            SwitchDomain switchDomain, DistroMapper distroMapper, RaftCore raftCore) {
+    public OperatorController(SwitchManager switchManager, ServerStatusManager serverStatusManager,
+            SwitchDomain switchDomain, DistroMapper distroMapper,
+            ClientManager clientManager) {
         this.switchManager = switchManager;
-        this.serverListManager = serverListManager;
-        this.serviceManager = serviceManager;
-        this.memberManager = memberManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
         this.distroMapper = distroMapper;
-        this.raftCore = raftCore;
+        this.clientManager = clientManager;
     }
     
     /**
@@ -166,93 +151,54 @@ public class OperatorController {
         if (onlyStatus) {
             return result;
         }
-        int responsibleDomCount = serviceManager.getResponsibleServiceCount();
-        int responsibleIpCount = serviceManager.getResponsibleInstanceCount();
+        Collection<String> allClientId = clientManager.allClientId();
+        int connectionBasedClient = 0;
+        int ephemeralIpPortClient = 0;
+        int persistentIpPortClient = 0;
+        int responsibleClientCount = 0;
+        int responsibleIpCount = 0;
+        for (String clientId : allClientId) {
+            if (clientId.contains(IpPortBasedClient.ID_DELIMITER)) {
+                if (clientId.endsWith(ClientConstants.PERSISTENT_SUFFIX)) {
+                    persistentIpPortClient += 1;
+                } else {
+                    ephemeralIpPortClient += 1;
+                }
+            } else {
+                connectionBasedClient += 1;
+            }
+            Client client = clientManager.getClient(clientId);
+            if (clientManager.isResponsibleClient(client)) {
+                responsibleClientCount += 1;
+                responsibleIpCount += client.getAllPublishedService().size();
+            }
+        }
         result.put("serviceCount", MetricsMonitor.getDomCountMonitor().get());
         result.put("instanceCount", MetricsMonitor.getIpCountMonitor().get());
         result.put("subscribeCount", MetricsMonitor.getSubscriberCount().get());
-        result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
-        result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIpCount);
-        result.put("cpu", EnvUtil.getCPU());
+        result.put("clientCount", allClientId.size());
+        result.put("connectionBasedClientCount", connectionBasedClient);
+        result.put("ephemeralIpPortClientCount", ephemeralIpPortClient);
+        result.put("persistentIpPortClientCount", persistentIpPortClient);
+        result.put("responsibleClientCount", responsibleClientCount);
+        result.put("cpu", EnvUtil.getCpu());
         result.put("load", EnvUtil.getLoad());
         result.put("mem", EnvUtil.getMem());
-        return result;
-    }
-    
-    @GetMapping("/distro/server")
-    public ObjectNode getResponsibleServer4Service(
-            @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-            @RequestParam String serviceName) {
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new IllegalArgumentException("service not found");
-        }
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        result.put("responsibleServer", distroMapper.mapSrv(serviceName));
         return result;
     }
     
     @GetMapping("/distro/client")
     public ObjectNode getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        String tag = ip + IPUtil.IP_PORT_SPLITER + port;
+        String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
         result.put("responsibleServer", distroMapper.mapSrv(tag));
         return result;
-    }
-    
-    /**
-     * This interface will be removed in a future release.
-     *
-     * @param healthy whether only query health server.
-     * @return "ok"
-     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
-     */
-    @GetMapping("/servers")
-    public ObjectNode getHealthyServerList(@RequestParam(required = false) boolean healthy) {
-        
-        ObjectNode result = JacksonUtils.createEmptyJsonNode();
-        if (healthy) {
-            List<Member> healthyMember = memberManager.allMembers().stream()
-                    .filter(member -> member.getState() == NodeState.UP)
-                    .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-            result.replace("servers", JacksonUtils.transferToJsonNode(healthyMember));
-        } else {
-            result.replace("servers", JacksonUtils.transferToJsonNode(memberManager.allMembers()));
-        }
-        
-        return result;
-    }
-    
-    /**
-     * This interface will be removed in a future release.
-     *
-     * @param serverStatus server status
-     * @return "ok"
-     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
-     */
-    @Deprecated
-    @RequestMapping("/server/status")
-    public String serverStatus(@RequestParam String serverStatus) {
-        serverListManager.onReceiveServerStatus(serverStatus);
-        return "ok";
     }
     
     @PutMapping("/log")
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);
         return "ok";
-    }
-    
-    /**
-     * This interface will be removed in a future release.
-     *
-     * @return {@link JsonNode}
-     * @deprecated 1.3.0 This function will be deleted sometime after version 1.3.0
-     */
-    @Deprecated
-    @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
-    public JsonNode getClusterStates() {
-        return JacksonUtils.transferToJsonNode(serviceManager.getMySelfClusterState());
     }
 }

@@ -61,7 +61,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
      */
     public void putAdditionalParam(String key, String value) {
         if (additionMap == null) {
-            additionMap = new HashMap<String, String>(2);
+            additionMap = new HashMap<>(2);
         }
         additionMap.put(key, value);
     }

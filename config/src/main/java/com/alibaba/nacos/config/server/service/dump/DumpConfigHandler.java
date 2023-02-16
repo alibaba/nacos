@@ -46,8 +46,9 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
         final String content = event.getContent();
         final String type = event.getType();
         final long lastModified = event.getLastModifiedTs();
+        final String encryptedDataKey = event.getEncryptedDataKey();
         if (event.isBeta()) {
-            boolean result = false;
+            boolean result;
             if (event.isRemove()) {
                 result = ConfigCacheService.removeBeta(dataId, group, namespaceId);
                 if (result) {
@@ -57,7 +58,8 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
                 return result;
             } else {
                 result = ConfigCacheService
-                        .dumpBeta(dataId, group, namespaceId, content, lastModified, event.getBetaIps());
+                        .dumpBeta(dataId, group, namespaceId, content, lastModified, event.getBetaIps(),
+                                encryptedDataKey);
                 if (result) {
                     ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
                             ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,
@@ -82,7 +84,8 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
             
             boolean result;
             if (!event.isRemove()) {
-                result = ConfigCacheService.dump(dataId, group, namespaceId, content, lastModified, type);
+                result = ConfigCacheService
+                        .dump(dataId, group, namespaceId, content, lastModified, type, encryptedDataKey);
                 
                 if (result) {
                     ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
@@ -102,7 +105,8 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
             //
             boolean result;
             if (!event.isRemove()) {
-                result = ConfigCacheService.dumpTag(dataId, group, namespaceId, event.getTag(), content, lastModified);
+                result = ConfigCacheService
+                        .dumpTag(dataId, group, namespaceId, event.getTag(), content, lastModified, encryptedDataKey);
                 if (result) {
                     ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
                             ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,

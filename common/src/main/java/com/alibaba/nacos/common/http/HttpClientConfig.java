@@ -156,7 +156,7 @@ public class HttpClientConfig {
         
         private TimeUnit connTimeToLiveTimeUnit = TimeUnit.MILLISECONDS;
         
-        private int connectionRequestTimeout = -1;
+        private int connectionRequestTimeout = 5000;
         
         private int maxRedirects = 50;
         

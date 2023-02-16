@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.naming.controllers.OperatorController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,13 +40,13 @@ public class HealthController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthController.class);
     
-    private final PersistService persistService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
     private final OperatorController apiCommands;
     
     @Autowired
-    public HealthController(PersistService persistService, OperatorController apiCommands) {
-        this.persistService = persistService;
+    public HealthController(ConfigInfoPersistService configInfoPersistService, OperatorController apiCommands) {
+        this.configInfoPersistService = configInfoPersistService;
         this.apiCommands = apiCommands;
     }
     
@@ -56,7 +57,7 @@ public class HealthController {
      * Nacos is in broken states.
      */
     @GetMapping("/liveness")
-    public ResponseEntity liveness() {
+    public ResponseEntity<String> liveness() {
         return ResponseEntity.ok().body("OK");
     }
     
@@ -67,7 +68,7 @@ public class HealthController {
      * ready.
      */
     @GetMapping("/readiness")
-    public ResponseEntity readiness(HttpServletRequest request) {
+    public ResponseEntity<String> readiness(HttpServletRequest request) {
         boolean isConfigReadiness = isConfigReadiness();
         boolean isNamingReadiness = isNamingReadiness(request);
         
@@ -76,20 +77,20 @@ public class HealthController {
         }
         
         if (!isConfigReadiness && !isNamingReadiness) {
-            return ResponseEntity.status(500).body("Config and Naming are not in readiness");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Config and Naming are not in readiness");
         }
         
         if (!isConfigReadiness) {
-            return ResponseEntity.status(500).body("Config is not in readiness");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Config is not in readiness");
         }
         
-        return ResponseEntity.status(500).body("Naming is not in readiness");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Naming is not in readiness");
     }
     
     private boolean isConfigReadiness() {
         // check db
         try {
-            persistService.configInfoCount("");
+            configInfoPersistService.configInfoCount("");
             return true;
         } catch (Exception e) {
             LOGGER.error("Config health check fail.", e);

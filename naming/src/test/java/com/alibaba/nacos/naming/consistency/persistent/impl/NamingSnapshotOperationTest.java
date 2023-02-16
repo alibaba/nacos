@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,6 +37,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+
 @RunWith(MockitoJUnitRunner.class)
 public class NamingSnapshotOperationTest {
     
@@ -49,21 +51,23 @@ public class NamingSnapshotOperationTest {
     @Mock
     private KvStorage storage;
     
-    private final String tmpDir = Paths.get(EnvUtil.getNacosTmpDir(), "rocks_test").toString();
-    
     private final String snapshotDir = Paths.get(EnvUtil.getNacosTmpDir(), "rocks_snapshot_test").toString();
     
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     
+    private boolean isSnapshoted = false;
+    
     @Before
-    public void init() {
-        DiskUtils.deleteQuietly(Paths.get(EnvUtil.getNacosTmpDir()));
+    public void init() throws Exception {
+        doAnswer(invocationOnMock -> {
+            isSnapshoted = true;
+            return null;
+        }).when(storage).doSnapshot(any(String.class));
     }
     
     @After
     public void after() {
         storage.shutdown();
-        DiskUtils.deleteQuietly(Paths.get(EnvUtil.getNacosTmpDir()));
     }
     
     @Test
@@ -78,6 +82,7 @@ public class NamingSnapshotOperationTest {
             latch.countDown();
         });
         latch.await(10, TimeUnit.SECONDS);
+        Assert.assertTrue(isSnapshoted);
         Assert.assertTrue(result.get());
         
         final Reader reader = new Reader(snapshotDir, writer.listFiles());

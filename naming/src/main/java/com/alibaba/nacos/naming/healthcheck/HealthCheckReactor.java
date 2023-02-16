@@ -38,17 +38,6 @@ public class HealthCheckReactor {
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
     
     /**
-     * Schedule health check task.
-     *
-     * @param task health check task
-     * @return scheduled future
-     */
-    public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
-        task.setStartTime(System.currentTimeMillis());
-        return GlobalExecutor.scheduleNamingHealth(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
-    }
-    
-    /**
      * Schedule health check task for v2.
      *
      * @param task health check task
@@ -69,7 +58,7 @@ public class HealthCheckReactor {
                 task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
                         : task;
         futureMap.computeIfAbsent(task.taskKey(),
-                k -> GlobalExecutor.scheduleNamingHealth(task, 5000, 5000, TimeUnit.MILLISECONDS));
+                k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
     }
     
     /**

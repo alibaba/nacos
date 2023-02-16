@@ -18,24 +18,20 @@ package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,105 +40,7 @@ import java.util.stream.Collectors;
  *
  * @author xiweng.yy
  */
-public class ServiceUtil {
-    
-    /**
-     * Select service name with group name.
-     *
-     * @param services  service map
-     * @param groupName group name
-     * @return service names with group name
-     */
-    public static Map<String, Service> selectServiceWithGroupName(Map<String, Service> services, String groupName) {
-        if (null == services || services.isEmpty()) {
-            return new HashMap<>(0);
-        }
-        Map<String, Service> result = new HashMap<>(services.size());
-        String groupKey = groupName + Constants.SERVICE_INFO_SPLITER;
-        for (Map.Entry<String, Service> each : services.entrySet()) {
-            if (each.getKey().startsWith(groupKey)) {
-                result.put(each.getKey(), each.getValue());
-            }
-        }
-        return result;
-    }
-    
-    /**
-     * Select service name by selector.
-     *
-     * @param serviceMap     service name list
-     * @param selectorString selector serialize string
-     * @return service names filter by group name
-     */
-    public static Map<String, Service> selectServiceBySelector(Map<String, Service> serviceMap, String selectorString) {
-        Map<String, Service> result = serviceMap;
-        if (StringUtils.isNotBlank(selectorString)) {
-            
-            JsonNode selectorJson = JacksonUtils.toObj(selectorString);
-            
-            SelectorType selectorType = SelectorType.valueOf(selectorJson.get("type").asText());
-            String expression = selectorJson.get("expression").asText();
-            
-            if (SelectorType.label.equals(selectorType) && StringUtils.isNotBlank(expression)) {
-                expression = StringUtils.deleteWhitespace(expression);
-                // Now we only support the following expression:
-                // INSTANCE.metadata.xxx = 'yyy' or
-                // SERVICE.metadata.xxx = 'yyy'
-                String[] terms = expression.split("=");
-                String[] factors = terms[0].split("\\.");
-                switch (factors[0]) {
-                    case "INSTANCE":
-                        result = filterInstanceMetadata(serviceMap, factors[factors.length - 1],
-                                terms[1].replace("'", ""));
-                        break;
-                    case "SERVICE":
-                        result = filterServiceMetadata(serviceMap, factors[factors.length - 1],
-                                terms[1].replace("'", ""));
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        return result;
-    }
-    
-    private static Map<String, Service> filterInstanceMetadata(Map<String, Service> serviceMap, String key,
-            String value) {
-        Map<String, Service> result = new HashMap<>(serviceMap.size());
-        for (Map.Entry<String, Service> each : serviceMap.entrySet()) {
-            for (Instance address : each.getValue().allIPs()) {
-                if (address.getMetadata() != null && value.equals(address.getMetadata().get(key))) {
-                    result.put(each.getKey(), each.getValue());
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-    
-    private static Map<String, Service> filterServiceMetadata(Map<String, Service> serviceMap, String key,
-            String value) {
-        Map<String, Service> result = new HashMap<>(serviceMap.size());
-        for (Map.Entry<String, Service> each : serviceMap.entrySet()) {
-            if (value.equals(each.getValue().getMetadata().get(key))) {
-                result.put(each.getKey(), each.getValue());
-            }
-        }
-        return result;
-    }
-    
-    /**
-     * Page service name.
-     *
-     * @param pageNo     page number
-     * @param pageSize   size per page
-     * @param serviceMap service source map
-     * @return service name list by paged
-     */
-    public static List<String> pageServiceName(int pageNo, int pageSize, Map<String, Service> serviceMap) {
-        return pageServiceName(pageNo, pageSize, serviceMap.keySet());
-    }
+public final class ServiceUtil {
     
     /**
      * Page service name.
@@ -250,13 +148,11 @@ public class ServiceUtil {
      *
      * @param serviceInfo     original service info
      * @param serviceMetadata service meta info
-     * @param cluster         cluster of instances
+     * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-                                                                   ServiceMetadata serviceMetadata,
-                                                                   String cluster) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, false, false);
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), false, false, subscriber.getIp());
     }
 
     /**
@@ -266,13 +162,13 @@ public class ServiceUtil {
      * @param serviceMetadata service meta info
      * @param healthyOnly     whether only select instance which healthy
      * @param enableOnly      whether only select instance which enabled
+     * @param subscriber subscriber
      * @return new service info
      */
     public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-                                                                   ServiceMetadata serviceMetadata,
-                                                                   boolean healthyOnly,
-                                                                   boolean enableOnly) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, StringUtils.EMPTY, healthyOnly, enableOnly);
+            ServiceMetadata serviceMetadata, boolean healthyOnly, boolean enableOnly, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), healthyOnly,
+                enableOnly, subscriber.getIp());
     }
 
     /**
@@ -283,23 +179,37 @@ public class ServiceUtil {
      * @param cluster         cluster of instances
      * @param healthyOnly     whether only select instance which healthy
      * @param enableOnly      whether only select instance which enabled
+     * @param subscriberIp subscriber ip address
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-                                                                   ServiceMetadata serviceMetadata,
-                                                                   String cluster,
-                                                                   boolean healthyOnly,
-                                                                   boolean enableOnly) {
+    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, String cluster,
+            boolean healthyOnly, boolean enableOnly, String subscriberIp) {
         InstancesFilter filter = (filteredResult, allInstances, healthyCount) -> {
             if (serviceMetadata == null) {
                 return;
             }
-            // TODO: filter ips using selector
+            allInstances = filteredResult.getHosts();
+            int originalTotal = allInstances.size();
+            // filter ips using selector
+            SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
+            allInstances = selectorManager.select(serviceMetadata.getSelector(), subscriberIp, allInstances);
+            filteredResult.setHosts(allInstances);
+            
+            // will re-compute healthCount
+            long newHealthyCount = healthyCount;
+            if (originalTotal != allInstances.size()) {
+                for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
+                    if (allInstance.isHealthy()) {
+                        newHealthyCount++;
+                    }
+                }
+            }
+            
             float threshold = serviceMetadata.getProtectThreshold();
             if (threshold < 0) {
                 threshold = 0F;
             }
-            if ((float) healthyCount / allInstances.size() <= threshold) {
+            if ((float) newHealthyCount / allInstances.size() <= threshold) {
                 Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", filteredResult.getName());
                 filteredResult.setReachProtectionThreshold(true);
                 List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = allInstances.stream()

@@ -142,4 +142,24 @@ public class CacheItem {
     public SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
     
     public String type;
+    
+    public String encryptedDataKey = Constants.NULL;
+    
+    public String encryptedDataKeyBeta = Constants.NULL;
+    
+    public String getEncryptedDataKey() {
+        return encryptedDataKey;
+    }
+    
+    public void setEncryptedDataKey(String encryptedDataKey) {
+        this.encryptedDataKey = encryptedDataKey;
+    }
+    
+    public String getEncryptedDataKeyBeta() {
+        return encryptedDataKeyBeta;
+    }
+    
+    public void setEncryptedDataKeyBeta(String encryptedDataKeyBeta) {
+        this.encryptedDataKeyBeta = encryptedDataKeyBeta;
+    }
 }

@@ -20,7 +20,6 @@ import {
   Button,
   Field,
   Tag,
-  Icon,
   Collapse,
   Form,
   Grid,
@@ -28,10 +27,13 @@ import {
   Loading,
   Pagination,
   Table,
+  Dialog,
   ConfigProvider,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
+import axios from 'axios';
+import PageTitle from '../../../components/PageTitle';
 
 import './ClusterNodeList.scss';
 
@@ -102,6 +104,39 @@ class ClusterNodeList extends React.Component {
     });
   }
 
+  leave(nodes) {
+    this.openLoading();
+    axios
+      .post('v1/core/cluster/server/leave', nodes)
+      .then(() => {
+        this.queryClusterStateList();
+        this.closeLoading();
+      })
+      .catch(() => {
+        this.queryClusterStateList();
+        this.closeLoading();
+      });
+  }
+
+  showLeaveDialog(value) {
+    const { locale = {} } = this.props;
+    Dialog.confirm({
+      title: locale.confirm,
+      content: locale.confirmTxt,
+      onOk: () => this.leave([value]),
+      onCancel: () => {},
+    });
+  }
+
+  renderCol(value, index, record) {
+    const { locale = {} } = this.props;
+    return (
+      <Button onClick={this.showLeaveDialog.bind(this, value)} type="primary" warning>
+        {locale.leave}
+      </Button>
+    );
+  }
+
   getQueryLater = () => {
     setTimeout(() => this.queryClusterStateList());
   };
@@ -131,18 +166,11 @@ class ClusterNodeList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <div style={{ marginTop: -15 }}>
-            <RegionGroup
-              setNowNameSpace={this.setNowNameSpace}
-              namespaceCallBack={this.getQueryLater}
-            />
-          </div>
-          <h3 className="page-title">
-            <span className="title-item">{clusterNodeList}</span>
-            <span className="title-item">|</span>
-            <span className="title-item">{nowNamespaceName}</span>
-            <span className="title-item">{nowNamespaceId}</span>
-          </h3>
+          <PageTitle title={clusterNodeList} desc={nowNamespaceId} nameSpace />
+          <RegionGroup
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.getQueryLater}
+          />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
@@ -176,9 +204,9 @@ class ClusterNodeList extends React.Component {
               <Table
                 dataSource={this.state.dataSource}
                 locale={{ empty: pubNoData }}
-                getRowProps={row => this.rowColor(row)}
+                rowProps={row => this.rowColor(row)}
               >
-                <Column title={locale.nodeIp} dataIndex="address" width="30%" />
+                <Column title={locale.nodeIp} dataIndex="address" width="20%" />
                 <Column
                   title={locale.nodeState}
                   dataIndex="state"
@@ -215,12 +243,12 @@ class ClusterNodeList extends React.Component {
                 <Column
                   title={locale.extendInfo}
                   dataIndex="extendInfo"
-                  width="50%"
+                  width="30%"
                   cell={function(value, index, record) {
                     function showCollapse() {
                       const collapse = (
                         <Collapse>
-                          <Panel title="节点元数据">
+                          <Panel title={locale.extendInfo}>
                             <ul>
                               <li>
                                 <pre>{JSON.stringify(value, null, 4)}</pre>
@@ -234,6 +262,12 @@ class ClusterNodeList extends React.Component {
 
                     return showCollapse();
                   }}
+                />
+                <Column
+                  title={locale.operation}
+                  dataIndex="address"
+                  width="20%"
+                  cell={this.renderCol.bind(this)}
                 />
               </Table>
             </Col>

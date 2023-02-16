@@ -44,6 +44,11 @@ module.exports = {
         text: 'COMMUNITY',
         link: 'https://nacos.io/en-us/community',
       },
+      {
+        key: 'enterprise',
+        text: 'ENTERPRISE EDITION',
+        link: 'https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0',
+      },
       // {
       //   text: 'ALI-SUPPORT',
       //   href: 'https://developer.aliyun.com/opensource/project/nacos',
@@ -103,6 +108,11 @@ module.exports = {
         key: 'community',
         text: '社区',
         link: 'https://nacos.io/zh-cn/community/index.html',
+      },
+      {
+        key: 'enterprise',
+        text: 'Nacos企业版',
+        link: 'https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0',
       },
       // {
       //   text: '阿里开发者中心',

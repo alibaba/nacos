@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -68,7 +69,7 @@ public class ClientOperationServiceProxyTest {
     }
     
     @Test
-    public void testChooseEphemeralClientOperationService() {
+    public void testChooseEphemeralClientOperationService() throws NacosException {
         // Test register.
         clientOperationServiceProxy.registerInstance(service, ephemeralInstance, ephemeralIpPortId);
         verify(ephemeralClientOperationServiceImpl).registerInstance(service, ephemeralInstance, ephemeralIpPortId);
@@ -90,7 +91,7 @@ public class ClientOperationServiceProxyTest {
     }
     
     @Test
-    public void testChoosePersistentClientOperationService() {
+    public void testChoosePersistentClientOperationService() throws NacosException {
         clientOperationServiceProxy.registerInstance(service, persistentInstance, persistentIpPortId);
         verify(persistentClientOperationServiceImpl).registerInstance(service, persistentInstance, persistentIpPortId);
         verify(ephemeralClientOperationServiceImpl, never())

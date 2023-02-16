@@ -35,6 +35,8 @@ import java.util.Objects;
  */
 public class ReuseUploadFileHttpServletRequest extends StandardMultipartHttpServletRequest implements ReuseHttpRequest {
     
+    private static final String DEFAULT_FILE_NAME = "file";
+    
     private final HttpServletRequest request;
     
     private Map<String, String[]> stringMap;
@@ -66,10 +68,10 @@ public class ReuseUploadFileHttpServletRequest extends StandardMultipartHttpServ
     
     @Override
     public Object getBody() throws Exception {
-        MultipartFile target = super.getFile("file");
+        MultipartFile target = super.getFile(DEFAULT_FILE_NAME);
         if (Objects.nonNull(target)) {
             MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
-            parts.add("file", target.getResource());
+            parts.add(DEFAULT_FILE_NAME, target.getResource());
             return parts;
         } else {
             // The content-type for the configuration publication might be "multipart/form-data"

@@ -29,7 +29,11 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT = "endpoint";
     
+    public static final String ENDPOINT_QUERY_PARAMS = "endpointQueryParams";
+    
     public static final String ENDPOINT_PORT = "endpointPort";
+    
+    public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";
     
@@ -61,6 +65,8 @@ public class PropertyKeyConst {
     
     public static final String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
     
+    public static final String NAMING_CACHE_REGISTRY_DIR = "namingCacheRegistryDir";
+    
     public static final String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
     
     public static final String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
@@ -69,7 +75,7 @@ public class PropertyKeyConst {
     
     public static final String NAMING_PUSH_EMPTY_PROTECTION = "namingPushEmptyProtection";
     
-    public static final String PUSH_RECEIVER_UDP_PORT = "push.receiver.udp.port";
+    public static final String NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE = "namingAsyncQuerySubscribeService";
     
     /**
      * Get the key value of some variable value from the system property.

@@ -613,8 +613,7 @@ private static final long serialVersionUID = 0L;
         Metadata, Metadata.Builder, MetadataOrBuilder>
         getMetadataFieldBuilder() {
       if (metadataBuilder_ == null) {
-        metadataBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            Metadata, Metadata.Builder, MetadataOrBuilder>(
+        metadataBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<>(
                 getMetadata(),
                 getParentForChildren(),
                 isClean());
@@ -730,8 +729,7 @@ private static final long serialVersionUID = 0L;
         com.google.protobuf.Any, com.google.protobuf.Any.Builder, com.google.protobuf.AnyOrBuilder> 
         getBodyFieldBuilder() {
       if (bodyBuilder_ == null) {
-        bodyBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-            com.google.protobuf.Any, com.google.protobuf.Any.Builder, com.google.protobuf.AnyOrBuilder>(
+        bodyBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<>(
                 getBody(),
                 getParentForChildren(),
                 isClean());

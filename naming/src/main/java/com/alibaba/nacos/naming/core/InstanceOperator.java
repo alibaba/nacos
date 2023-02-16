@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -116,11 +117,13 @@ public interface InstanceOperator {
      * @param port        port of instance
      * @param cluster     cluster of instance
      * @param clientBeat  client beat info
+     * @param builder     client beat instance builder, will be used when current instance is not exist and clientBeat
+     *                    exist
      * @return result code
      * @throws NacosException nacos exception when service non-exist and client beat info is null
      */
-    int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat)
-            throws NacosException;
+    int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster, RsInfo clientBeat,
+            BeatInfoInstanceBuilder builder) throws NacosException;
     
     /**
      * Get heart beat interval for specified instance.
@@ -147,9 +150,9 @@ public interface InstanceOperator {
     /**
      * Batch update metadata of instances.
      *
-     * @param namespaceId namespace Id of instances
+     * @param namespaceId           namespace Id of instances
      * @param instanceOperationInfo instance operation info
-     * @param metadata updated metadata
+     * @param metadata              updated metadata
      * @return updated instance
      * @throws NacosException nacos exception during update
      */
@@ -159,9 +162,9 @@ public interface InstanceOperator {
     /**
      * Batch delete metadata of instances.
      *
-     * @param namespaceId namespace Id of instances
+     * @param namespaceId           namespace Id of instances
      * @param instanceOperationInfo instance operation info
-     * @param metadata delete metadata
+     * @param metadata              delete metadata
      * @return updated instance
      * @throws NacosException nacos exception during update
      */

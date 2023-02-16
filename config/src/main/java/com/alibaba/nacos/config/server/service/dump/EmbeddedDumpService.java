@@ -22,7 +22,12 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -64,13 +69,17 @@ public class EmbeddedDumpService extends DumpService {
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param persistService  {@link PersistService}
      * @param memberManager   {@link ServerMemberManager}
      * @param protocolManager {@link ProtocolManager}
      */
-    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager,
+    public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
+            CommonPersistService commonPersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoAggrPersistService configInfoAggrPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager,
             ProtocolManager protocolManager) {
-        super(persistService, memberManager);
+        super(configInfoPersistService, commonPersistService, historyConfigInfoPersistService,
+                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
         this.protocolManager = protocolManager;
     }
     

@@ -69,11 +69,6 @@ public class DistroMapper extends MemberChangeListener {
         this.healthyList = MemberUtil.simpleMembers(memberManager.allMembers());
     }
     
-    public boolean responsible(Cluster cluster, Instance instance) {
-        return switchDomain.isHealthCheckEnabled(cluster.getServiceName()) && !cluster.getHealthCheckTask()
-                .isCancelled() && responsible(cluster.getServiceName()) && cluster.contains(instance);
-    }
-    
     /**
      * Judge whether current server is responsible for input tag.
      *
@@ -92,8 +87,9 @@ public class DistroMapper extends MemberChangeListener {
             return false;
         }
         
-        int index = servers.indexOf(EnvUtil.getLocalAddress());
-        int lastIndex = servers.lastIndexOf(EnvUtil.getLocalAddress());
+        String localAddress = EnvUtil.getLocalAddress();
+        int index = servers.indexOf(localAddress);
+        int lastIndex = servers.lastIndexOf(localAddress);
         if (lastIndex < 0 || index < 0) {
             return true;
         }

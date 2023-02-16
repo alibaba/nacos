@@ -98,9 +98,13 @@ public class DistroLoadDataTask implements Runnable {
             return false;
         }
         for (Member each : memberManager.allMembersWithoutSelf()) {
+            long startTime = System.currentTimeMillis();
             try {
                 Loggers.DISTRO.info("[DISTRO-INIT] load snapshot {} from {}", resourceType, each.getAddress());
                 DistroData distroData = transportAgent.getDatumSnapshot(each.getAddress());
+                Loggers.DISTRO.info("[DISTRO-INIT] it took {} ms to load snapshot {} from {} and snapshot size is {}.",
+                        System.currentTimeMillis() - startTime, resourceType, each.getAddress(),
+                        getDistroDataLength(distroData));
                 boolean result = dataProcessor.processSnapshot(distroData);
                 Loggers.DISTRO
                         .info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(),
@@ -114,6 +118,10 @@ public class DistroLoadDataTask implements Runnable {
             }
         }
         return false;
+    }
+    
+    private static int getDistroDataLength(DistroData distroData) {
+        return distroData != null && distroData.getContent() != null ? distroData.getContent().length : 0;
     }
     
     private boolean checkCompleted() {

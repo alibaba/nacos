@@ -38,8 +38,10 @@ public class Query {
     
     private Map<String, Object> params;
     
+    private static final String DEFAULT_ENC = "UTF-8";
+    
     public Query() {
-        params = new LinkedHashMap<String, Object>();
+        params = new LinkedHashMap<>();
     }
     
     public static Query newInstance() {
@@ -104,10 +106,10 @@ public class Query {
         for (Map.Entry<String, Object> entry : entrySet) {
             try {
                 if (null != entry.getValue()) {
-                    urlBuilder.append(entry.getKey()).append("=")
-                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), "UTF-8"));
+                    urlBuilder.append(entry.getKey()).append('=')
+                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), DEFAULT_ENC));
                     if (i > 1) {
-                        urlBuilder.append("&");
+                        urlBuilder.append('&');
                     }
                 }
                 i--;

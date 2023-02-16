@@ -17,8 +17,12 @@
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
+import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactory;
+import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
@@ -31,7 +35,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Supplier;
 
 /**
  * The manager of {@code IpPortBasedClient} and persistence.
@@ -42,19 +45,32 @@ import java.util.function.Supplier;
 @Component("persistentIpPortClientManager")
 public class PersistentIpPortClientManager implements ClientManager {
     
+    private final ClientFactory<IpPortBasedClient> clientFactory;
+    
     private ConcurrentMap<String, IpPortBasedClient> clients = new ConcurrentHashMap<>();
     
+    public PersistentIpPortClientManager() {
+        clientFactory = ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.PERSISTENT_IP_PORT);
+    }
+    
     @Override
-    public boolean clientConnected(Client client) {
-        Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
-        if (!clients.containsKey(client.getClientId())) {
-            clients.putIfAbsent(client.getClientId(), (IpPortBasedClient) client);
-        }
+    public boolean clientConnected(String clientId, ClientAttributes attributes) {
+        return clientConnected(clientFactory.newClient(clientId, attributes));
+    }
+    
+    @Override
+    public boolean clientConnected(final Client client) {
+        clients.computeIfAbsent(client.getClientId(), s -> {
+            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
+            IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
+            ipPortBasedClient.init();
+            return ipPortBasedClient;
+        });
         return true;
     }
     
     @Override
-    public boolean syncClientConnected(String clientId, ClientSyncAttributes attributes) {
+    public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         throw new UnsupportedOperationException("");
     }
     
@@ -65,7 +81,7 @@ public class PersistentIpPortClientManager implements ClientManager {
         if (null == client) {
             return true;
         }
-        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client));
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsibleClient(client)));
         client.release();
         return true;
     }
@@ -78,19 +94,6 @@ public class PersistentIpPortClientManager implements ClientManager {
     @Override
     public boolean contains(String clientId) {
         return clients.containsKey(clientId);
-    }
-    
-    /**
-     * Compute and do operation new client when client not exist.
-     *
-     * @param clientId clientId
-     * @param supplier operation
-     * @return Client saved in manager
-     */
-    public Client computeIfAbsent(final String clientId, final Supplier<IpPortBasedClient> supplier) {
-        clients.computeIfAbsent(clientId, s -> supplier.get());
-        Loggers.SRV_LOG.info("Client connection {} connect", clientId);
-        return getClient(clientId);
     }
     
     @Override
@@ -112,7 +115,7 @@ public class PersistentIpPortClientManager implements ClientManager {
     }
     
     @Override
-    public boolean verifyClient(String clientId) {
+    public boolean verifyClient(DistroClientVerifyInfo verifyData) {
         throw new UnsupportedOperationException("");
     }
     

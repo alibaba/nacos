@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.List;
@@ -31,8 +31,20 @@ public class ParamUtils {
     
     private static final char[] VALID_CHARS = new char[] {'_', '-', '.', ':'};
     
+    private static final String CONTENT_INVALID_MSG = "content invalid";
+    
+    private static final String DATAID_INVALID_MSG = "dataId invalid";
+    
+    private static final String TENANT_INVALID_MSG = "tenant invalid";
+    
+    private static final String BETAIPS_INVALID_MSG = "betaIps invalid";
+    
+    private static final String GROUP_INVALID_MSG = "group invalid";
+    
+    private static final String DATUMID_INVALID_MSG = "datumId invalid";
+    
     /**
-     * 白名单的方式检查, 合法的参数只能包含字母、数字、以及validChars中的字符, 并且不能为空.
+     * Check the whitelist method, the legal parameters can only contain letters, numbers, and characters in validChars, and cannot be empty.
      *
      * @param param parameter
      * @return true if valid
@@ -71,10 +83,10 @@ public class ParamUtils {
     public static void checkTdg(String tenant, String dataId, String group) throws NacosException {
         checkTenant(tenant);
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "dataId invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
         if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "group invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
     
@@ -87,10 +99,10 @@ public class ParamUtils {
      */
     public static void checkKeyParam(String dataId, String group) throws NacosException {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "dataId invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
         if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "group invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
     
@@ -104,13 +116,13 @@ public class ParamUtils {
      */
     public static void checkKeyParam(String dataId, String group, String datumId) throws NacosException {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "dataId invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
         if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "group invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
         if (StringUtils.isBlank(datumId) || !ParamUtils.isValid(datumId)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "datumId invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATUMID_INVALID_MSG);
         }
     }
     
@@ -127,11 +139,11 @@ public class ParamUtils {
         }
         for (String dataId : dataIds) {
             if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
-                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "dataId invalid");
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
             }
         }
         if (StringUtils.isBlank(group) || !ParamUtils.isValid(group)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "group invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
     
@@ -146,7 +158,7 @@ public class ParamUtils {
     public static void checkParam(String dataId, String group, String content) throws NacosException {
         checkKeyParam(dataId, group);
         if (StringUtils.isBlank(content)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "content invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);
         }
     }
     
@@ -162,7 +174,7 @@ public class ParamUtils {
     public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
         checkKeyParam(dataId, group, datumId);
         if (StringUtils.isBlank(content)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "content invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);
         }
     }
     
@@ -174,7 +186,7 @@ public class ParamUtils {
      */
     public static void checkTenant(String tenant) throws NacosException {
         if (StringUtils.isBlank(tenant) || !ParamUtils.isValid(tenant)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "tenant invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, TENANT_INVALID_MSG);
         }
     }
     
@@ -186,12 +198,12 @@ public class ParamUtils {
      */
     public static void checkBetaIps(String betaIps) throws NacosException {
         if (StringUtils.isBlank(betaIps)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "betaIps invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, BETAIPS_INVALID_MSG);
         }
         String[] ipsArr = betaIps.split(",");
         for (String ip : ipsArr) {
-            if (!IPUtil.isIP(ip)) {
-                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "betaIps invalid");
+            if (!InternetAddressUtil.isIP(ip)) {
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, BETAIPS_INVALID_MSG);
             }
         }
     }
@@ -204,7 +216,7 @@ public class ParamUtils {
      */
     public static void checkContent(String content) throws NacosException {
         if (StringUtils.isBlank(content)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "content invalid");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);
         }
     }
 }

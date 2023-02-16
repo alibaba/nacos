@@ -20,11 +20,11 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.base.Objects;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Implementation of health checker for HTTP.
@@ -76,7 +76,7 @@ public class Http extends AbstractHealthChecker {
         if (StringUtils.isBlank(headers)) {
             return Collections.emptyMap();
         }
-        final Map<String, String> headerMap = new HashMap<String, String>(16);
+        final Map<String, String> headerMap = new HashMap<>(16);
         for (final String s : headers.split(Constants.NAMING_HTTP_HEADER_SPLITTER)) {
             final String[] splits = s.split(":");
             if (splits.length != 2) {
@@ -89,7 +89,7 @@ public class Http extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(path, headers, expectedResponseCode);
+        return Objects.hash(path, headers, expectedResponseCode);
     }
     
     @Override
@@ -99,10 +99,6 @@ public class Http extends AbstractHealthChecker {
         }
         
         final Http other = (Http) obj;
-        
-        if (!StringUtils.equals(type, other.getType())) {
-            return false;
-        }
         
         if (!StringUtils.equals(path, other.getPath())) {
             return false;

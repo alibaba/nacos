@@ -54,4 +54,10 @@ public class AbstractHealthCheckerTest {
         assertEquals("", actual.getTestValue());
         assertEquals(TestChecker.TYPE, actual.getType());
     }
+    
+    @Test
+    public void testClone() throws CloneNotSupportedException {
+        AbstractHealthChecker none = new AbstractHealthChecker.None().clone();
+        assertEquals(AbstractHealthChecker.None.class, none.getClass());
+    }
 }

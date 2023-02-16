@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.api.ability;
 
-import com.alibaba.nacos.api.config.ClientConfigAbility;
-import com.alibaba.nacos.api.naming.ClientNamingAbility;
+import com.alibaba.nacos.api.config.ability.ClientConfigAbility;
+import com.alibaba.nacos.api.naming.ability.ClientNamingAbility;
+import com.alibaba.nacos.api.remote.ability.ClientRemoteAbility;
+
+import java.io.Serializable;
 
 /**
  * abilities of nacos client.
@@ -25,7 +28,9 @@ import com.alibaba.nacos.api.naming.ClientNamingAbility;
  * @author liuzunfei
  * @version $Id: ClientAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
-public class ClientAbilities {
+public class ClientAbilities implements Serializable {
+    
+    private static final long serialVersionUID = -3590789441404549261L;
     
     private ClientRemoteAbility remoteAbility = new ClientRemoteAbility();
     

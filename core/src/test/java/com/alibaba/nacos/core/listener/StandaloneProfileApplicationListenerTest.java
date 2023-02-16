@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
-import org.apache.commons.lang3.ArrayUtils;
+import com.alibaba.nacos.common.utils.ArrayUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;

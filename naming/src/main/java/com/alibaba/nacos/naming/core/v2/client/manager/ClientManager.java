@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.client.ClientSyncAttributes;
+import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 
 import java.util.Collection;
 
@@ -27,6 +28,15 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public interface ClientManager {
+    
+    /**
+     * New client connected.
+     *
+     * @param clientId new client id
+     * @param attributes client attributes, which can help create client
+     * @return true if add successfully, otherwise false
+     */
+    boolean clientConnected(String clientId, ClientAttributes attributes);
     
     /**
      * New client connected.
@@ -43,7 +53,7 @@ public interface ClientManager {
      * @param attributes client sync attributes, which can help create sync client
      * @return true if add successfully, otherwise false
      */
-    boolean syncClientConnected(String clientId, ClientSyncAttributes attributes);
+    boolean syncClientConnected(String clientId, ClientAttributes attributes);
     
     /**
      * Client disconnected.
@@ -87,8 +97,8 @@ public interface ClientManager {
     /**
      * verify client.
      *
-     * @param clientId client id
+     * @param verifyData verify data from remote responsible server
      * @return true if client is valid, otherwise is false.
      */
-    boolean verifyClient(String clientId);
+    boolean verifyClient(DistroClientVerifyInfo verifyData);
 }

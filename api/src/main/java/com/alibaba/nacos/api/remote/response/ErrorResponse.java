@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.api.remote.response;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+
 /**
  * UnKnowResponse.
  *
@@ -23,5 +26,38 @@ package com.alibaba.nacos.api.remote.response;
  * @version $Id: UnKnowResponse.java, v 0.1 2020年07月16日 9:47 PM liuzunfei Exp $
  */
 public class ErrorResponse extends Response {
+    
+    /**
+     * build an error response.
+     *
+     * @param errorCode errorCode
+     * @param msg msg
+     * @return response
+     */
+    public static Response build(int errorCode, String msg) {
+        ErrorResponse response = new ErrorResponse();
+        response.setErrorInfo(errorCode, msg);
+        return response;
+    }
+    
+    /**
+     * build an error response.
+     *
+     * @param exception exception
+     * @return response
+     */
+    public static Response build(Throwable exception) {
+        int errorCode;
+        if (exception instanceof NacosException) {
+            errorCode = ((NacosException) exception).getErrCode();
+        } else if (exception instanceof NacosRuntimeException) {
+            errorCode = ((NacosRuntimeException) exception).getErrCode();
+        } else {
+            errorCode = ResponseCode.FAIL.getCode();
+        }
+        ErrorResponse response = new ErrorResponse();
+        response.setErrorInfo(errorCode, exception.getMessage());
+        return response;
+    }
     
 }

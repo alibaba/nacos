@@ -37,7 +37,7 @@ public class ThreadTaskQueueMonitorTask implements Runnable {
     @Override
     public void run() {
         int size = ConfigExecutor.asyncNotifyQueueSize();
-        int notifierClientSize = ConfigExecutor.asyncCofigChangeClientNotifyQueueSize();
+        int notifierClientSize = ConfigExecutor.asyncConfigChangeClientNotifyQueueSize();
         MEMORY_LOG.info("toNotifyTaskSize = {}", size);
         MEMORY_LOG.info("toClientNotifyTaskSize = {}", notifierClientSize);
         MetricsMonitor.getNotifyTaskMonitor().set(size);

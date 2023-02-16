@@ -16,12 +16,15 @@
 
 package com.alibaba.nacos.core.distributed.raft;
 
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.raft.utils.FailoverClosure;
 import com.alipay.sofa.jraft.CliService;
+import com.alipay.sofa.jraft.Node;
+import com.alipay.sofa.jraft.RaftGroupService;
 import com.alipay.sofa.jraft.core.NodeImpl;
 import com.alipay.sofa.jraft.core.State;
 import com.alipay.sofa.jraft.error.RemotingException;
@@ -111,6 +114,18 @@ public class JRaftServerTest {
     
     private ReadRequest readRequest;
     
+    @Mock
+    private Node node;
+
+    @Mock
+    private RequestProcessor requestProcessor;
+
+    @Mock
+    private RaftGroupService raftGroupService;
+
+    @Mock
+    private NacosStateMachine nacosStateMachine;
+    
     @Before
     public void before() throws NoSuchFieldException, IllegalAccessException {
         initPeersAndConfiguration();
@@ -129,7 +144,7 @@ public class JRaftServerTest {
         server.init(config);
         
         Map<String, JRaftServer.RaftGroupTuple> map = new HashMap<>();
-        map.put("test_nacos", new JRaftServer.RaftGroupTuple());
+        map.put("test_nacos", new JRaftServer.RaftGroupTuple(node, requestProcessor, raftGroupService, nacosStateMachine));
         server.mockMultiRaftGroup(map);
         
         mockcliClientService();

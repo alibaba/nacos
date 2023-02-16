@@ -18,6 +18,8 @@ package com.alibaba.nacos.api.exception.runtime;
 
 import java.lang.reflect.Type;
 
+import static com.alibaba.nacos.api.common.Constants.Exception.DESERIALIZE_ERROR_CODE;
+
 /**
  * Nacos deserialization exception.
  *
@@ -25,40 +27,40 @@ import java.lang.reflect.Type;
  */
 public class NacosDeserializationException extends NacosRuntimeException {
     
-    public static final int ERROR_CODE = 101;
-    
     private static final long serialVersionUID = -2742350751684273728L;
     
     private static final String DEFAULT_MSG = "Nacos deserialize failed. ";
     
     private static final String MSG_FOR_SPECIFIED_CLASS = "Nacos deserialize for class [%s] failed. ";
     
+    private static final String ERROR_MSG_FOR_SPECIFIED_CLASS = "Nacos deserialize for class [%s] failed, cause error[%s]. ";
+    
     private Class<?> targetClass;
     
     public NacosDeserializationException() {
-        super(ERROR_CODE);
+        super(DESERIALIZE_ERROR_CODE);
     }
     
     public NacosDeserializationException(Class<?> targetClass) {
-        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetClass.getName()));
+        super(DESERIALIZE_ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetClass.getName()));
         this.targetClass = targetClass;
     }
     
     public NacosDeserializationException(Type targetType) {
-        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetType.toString()));
+        super(DESERIALIZE_ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetType.toString()));
     }
     
     public NacosDeserializationException(Throwable throwable) {
-        super(ERROR_CODE, DEFAULT_MSG, throwable);
+        super(DESERIALIZE_ERROR_CODE, DEFAULT_MSG, throwable);
     }
     
     public NacosDeserializationException(Class<?> targetClass, Throwable throwable) {
-        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetClass.getName()), throwable);
+        super(DESERIALIZE_ERROR_CODE, String.format(ERROR_MSG_FOR_SPECIFIED_CLASS, targetClass.getName(), throwable.getMessage()), throwable);
         this.targetClass = targetClass;
     }
     
     public NacosDeserializationException(Type targetType, Throwable throwable) {
-        super(ERROR_CODE, String.format(MSG_FOR_SPECIFIED_CLASS, targetType.toString()), throwable);
+        super(DESERIALIZE_ERROR_CODE, String.format(ERROR_MSG_FOR_SPECIFIED_CLASS, targetType.toString(), throwable.getMessage()), throwable);
     }
     
     public Class<?> getTargetClass() {

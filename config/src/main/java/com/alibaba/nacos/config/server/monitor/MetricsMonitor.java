@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
+import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
+import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -33,19 +35,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MetricsMonitor {
     
+    private static final String METER_REGISTRY = NacosMeterRegistryCenter.CONFIG_STABLE_REGISTRY;
+    
     private static AtomicInteger getConfig = new AtomicInteger();
     
     private static AtomicInteger publish = new AtomicInteger();
     
     /**
-     * task for notify config change to sub client of http long polling..
+     * task for notify config change to sub client of http long polling.
      */
     private static AtomicInteger longPolling = new AtomicInteger();
     
     private static AtomicInteger configCount = new AtomicInteger();
     
     /**
-     * task for ntify config change to cluster server.
+     * task for notify config change to cluster server.
      */
     private static AtomicInteger notifyTask = new AtomicInteger();
     
@@ -56,42 +60,74 @@ public class MetricsMonitor {
     
     private static AtomicInteger dumpTask = new AtomicInteger();
     
-    static {
-        List<Tag> tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
-        tags.add(new ImmutableTag("name", "getConfig"));
-        Metrics.gauge("nacos_monitor", tags, getConfig);
-        
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
-        tags.add(new ImmutableTag("name", "publish"));
-        Metrics.gauge("nacos_monitor", tags, publish);
-        
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
-        tags.add(new ImmutableTag("name", "longPolling"));
-        Metrics.gauge("nacos_monitor", tags, longPolling);
-        
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
-        tags.add(new ImmutableTag("name", "configCount"));
-        Metrics.gauge("nacos_monitor", tags, configCount);
-        
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
-        tags.add(new ImmutableTag("name", "notifyTask"));
-        Metrics.gauge("nacos_monitor", tags, notifyTask);
+    /**
+     * config fuzzy search count.
+     */
+    private static AtomicInteger fuzzySearch = new AtomicInteger();
     
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+    /**
+     * version -> client config subscriber count.
+     */
+    private static ConcurrentHashMap<String, AtomicInteger> configSubscriber = new ConcurrentHashMap<>();
+    
+    /**
+     * config change count.
+     */
+    private static TopnCounterMetricsContainer configChangeCount = new TopnCounterMetricsContainer();
+    
+    static {
+        ImmutableTag immutableTag = new ImmutableTag("module", "config");
+        
+        List<Tag> tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "getConfig"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, getConfig);
+        
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "publish"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, publish);
+        
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "longPolling"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, longPolling);
+        
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "configCount"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, configCount);
+        
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "notifyTask"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, notifyTask);
+    
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyClientTask"));
-        Metrics.gauge("nacos_monitor", tags, notifyClientTask);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, notifyClientTask);
         
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "dumpTask"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, dumpTask);
+    
+        tags = new ArrayList<>();
+        tags.add(immutableTag);
+        tags.add(new ImmutableTag("name", "fuzzySearch"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, fuzzySearch);
         
-        Metrics.gauge("nacos_monitor", tags, dumpTask);
+        configSubscriber.put("v1", new AtomicInteger(0));
+        configSubscriber.put("v2", new AtomicInteger(0));
+        
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v1"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_config_subscriber", tags, configSubscriber.get("v1"));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v2"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_config_subscriber", tags, configSubscriber.get("v2"));
     }
     
     public static AtomicInteger getConfigMonitor() {
@@ -122,28 +158,59 @@ public class MetricsMonitor {
         return dumpTask;
     }
     
+    public static AtomicInteger getFuzzySearchMonitor() {
+        return fuzzySearch;
+    }
+    
+    public static AtomicInteger getConfigSubscriberMonitor(String version) {
+        return configSubscriber.get(version);
+    }
+    
+    public static TopnCounterMetricsContainer getConfigChangeCount() {
+        return configChangeCount;
+    }
+    
+    public static Timer getReadConfigRtTimer() {
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRt");
+    }
+    
+    public static Timer getReadConfigRpcRtTimer() {
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "readConfigRpcRt");
+    }
+    
+    public static Timer getWriteConfigRtTimer() {
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRt");
+    }
+    
+    public static Timer getWriteConfigRpcRtTimer() {
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "writeConfigRpcRt");
+    }
+    
     public static Timer getNotifyRtTimer() {
-        return Metrics.timer("nacos_timer", "module", "config", "name", "notifyRt");
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "notifyRt");
     }
     
     public static Counter getIllegalArgumentException() {
-        return Metrics.counter("nacos_exception", "module", "config", "name", "illegalArgument");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "illegalArgument");
     }
     
     public static Counter getNacosException() {
-        return Metrics.counter("nacos_exception", "module", "config", "name", "nacos");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "nacos");
     }
     
     public static Counter getDbException() {
-        return Metrics.counter("nacos_exception", "module", "config", "name", "db");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "db");
     }
     
     public static Counter getConfigNotifyException() {
-        return Metrics.counter("nacos_exception", "module", "config", "name", "configNotify");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "configNotify");
     }
     
     public static Counter getUnhealthException() {
-        return Metrics.counter("nacos_exception", "module", "config", "name", "unhealth");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "unhealth");
     }
     
+    public static void incrementConfigChangeCount(String tenant, String group, String dataId) {
+        configChangeCount.increment(tenant + "@" + group + "@" + dataId);
+    }
 }

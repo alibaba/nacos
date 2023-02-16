@@ -16,11 +16,36 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class MetricsMonitorTest {
+    
+    @Mock
+    private ConfigurableApplicationContext context;
+    
+    @Before
+    public void setUp() {
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
+        // add simple meterRegistry.
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY)
+                .add(new SimpleMeterRegistry());
+        
+        MetricsMonitor.resetPush();
+    }
     
     @Test
     public void testGetTotalPush() {

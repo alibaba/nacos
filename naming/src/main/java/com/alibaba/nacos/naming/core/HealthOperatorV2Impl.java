@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
@@ -72,7 +72,7 @@ public class HealthOperatorV2Impl implements HealthOperator {
         if (!HealthCheckType.NONE.name().equals(clusterMetadata.getHealthyCheckType())) {
             throwHealthCheckerException(fullServiceName, clusterName);
         }
-        String clientId = IpPortBasedClient.getClientId(ip + IPUtil.IP_PORT_SPLITER + port, false);
+        String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, false);
         Client client = clientManager.getClient(clientId);
         if (null == client) {
             return;

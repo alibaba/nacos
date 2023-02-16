@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.ByteUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;

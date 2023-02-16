@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -58,19 +60,14 @@ public class WatchFileCenter {
      */
     private static final int MAX_WATCH_FILE_JOB = Integer.getInteger("nacos.watch-file.max-dirs", 16);
     
-    private static final Map<String, WatchDirJob> MANAGER = new HashMap<String, WatchDirJob>(MAX_WATCH_FILE_JOB);
+    private static final Map<String, WatchDirJob> MANAGER = new HashMap<>(MAX_WATCH_FILE_JOB);
     
     private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
     
     private static final AtomicBoolean CLOSED = new AtomicBoolean(false);
     
     static {
-        ThreadUtils.addShutdownHook(new Runnable() {
-            @Override
-            public void run() {
-                shutdown();
-            }
-        });
+        ThreadUtils.addShutdownHook(WatchFileCenter::shutdown);
     }
     
     /**
@@ -133,7 +130,7 @@ public class WatchFileCenter {
             try {
                 entry.getValue().shutdown();
             } catch (Throwable e) {
-                LOGGER.error("[WatchFileCenter] shutdown has error : {}", e);
+                LOGGER.error("[WatchFileCenter] shutdown has error : ", e);
             }
         }
         MANAGER.clear();
@@ -159,15 +156,15 @@ public class WatchFileCenter {
     
     private static class WatchDirJob extends Thread {
         
-        private ExecutorService callBackExecutor;
+        private final ExecutorService callBackExecutor;
         
         private final String paths;
         
-        private WatchService watchService;
+        private final WatchService watchService;
         
         private volatile boolean watch = true;
         
-        private Set<FileWatcher> watchers = new ConcurrentHashSet<>();
+        private final Set<FileWatcher> watchers = new ConcurrentHashSet<>();
         
         public WatchDirJob(String paths) throws NacosException {
             setName(paths);
@@ -177,8 +174,8 @@ public class WatchFileCenter {
                 throw new IllegalArgumentException("Must be a file directory : " + paths);
             }
             
-            this.callBackExecutor = ExecutorFactory
-                    .newSingleExecutorService(new NameThreadFactory("com.alibaba.nacos.sys.file.watch-" + paths));
+            this.callBackExecutor = ExecutorFactory.newSingleExecutorService(
+                    new NameThreadFactory("com.alibaba.nacos.sys.file.watch-" + paths));
             
             try {
                 WatchService service = FILE_SYSTEM.newWatchService();
@@ -196,12 +193,19 @@ public class WatchFileCenter {
         
         void shutdown() {
             watch = false;
+            
+            //fix issue[https://github.com/alibaba/nacos/issues/9393]
+            try {
+                watchService.close();
+            } catch (IOException ignore) {
+            }
+            
             ThreadUtils.shutdownThreadPool(this.callBackExecutor);
         }
         
         @Override
         public void run() {
-            while (watch) {
+            while (watch && !this.isInterrupted()) {
                 try {
                     final WatchKey watchKey = watchService.take();
                     final List<WatchEvent<?>> events = watchKey.pollEvents();
@@ -212,25 +216,22 @@ public class WatchFileCenter {
                     if (events.isEmpty()) {
                         continue;
                     }
-                    callBackExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            for (WatchEvent<?> event : events) {
-                                WatchEvent.Kind<?> kind = event.kind();
-                                
-                                // Since the OS's event cache may be overflow, a backstop is needed
-                                if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
-                                    eventOverflow();
-                                } else {
-                                    eventProcess(event.context());
-                                }
+                    callBackExecutor.execute(() -> {
+                        for (WatchEvent<?> event : events) {
+                            WatchEvent.Kind<?> kind = event.kind();
+                            
+                            // Since the OS's event cache may be overflow, a backstop is needed
+                            if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
+                                eventOverflow();
+                            } else {
+                                eventProcess(event.context());
                             }
                         }
                     });
-                } catch (InterruptedException ignore) {
+                } catch (InterruptedException | ClosedWatchServiceException ignore) {
                     Thread.interrupted();
                 } catch (Throwable ex) {
-                    LOGGER.error("An exception occurred during file listening : {}", ex);
+                    LOGGER.error("An exception occurred during file listening : ", ex);
                 }
             }
         }
@@ -240,18 +241,13 @@ public class WatchFileCenter {
             final String str = String.valueOf(context);
             for (final FileWatcher watcher : watchers) {
                 if (watcher.interest(str)) {
-                    Runnable job = new Runnable() {
-                        @Override
-                        public void run() {
-                            watcher.onChange(fileChangeEvent);
-                        }
-                    };
+                    Runnable job = () -> watcher.onChange(fileChangeEvent);
                     Executor executor = watcher.executor();
                     if (executor == null) {
                         try {
                             job.run();
                         } catch (Throwable ex) {
-                            LOGGER.error("File change event callback error : {}", ex);
+                            LOGGER.error("File change event callback error : ", ex);
                         }
                     } else {
                         executor.execute(job);

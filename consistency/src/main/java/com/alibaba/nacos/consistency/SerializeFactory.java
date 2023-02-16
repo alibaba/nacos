@@ -31,7 +31,7 @@ public class SerializeFactory {
     
     public static final String HESSIAN_INDEX = "Hessian".toLowerCase();
     
-    private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
+    private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<>(4);
     
     public static String defaultSerializer = HESSIAN_INDEX;
     

@@ -16,27 +16,24 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
-import com.alibaba.nacos.api.exception.runtime.NacosSerializationException;
 import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
-import com.alibaba.nacos.api.remote.PayloadRegistry;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.exception.RemoteException;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.UnsafeByteOperations;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * gRPC utils, use to parse request and response.
@@ -45,45 +42,6 @@ import java.nio.charset.Charset;
  * @version $Id: GrpcUtils.java, v 0.1 2020年08月09日 1:43 PM liuzunfei Exp $
  */
 public class GrpcUtils {
-    
-    static ObjectMapper mapper = new ObjectMapper();
-    
-    static {
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
-    
-    /**
-     * Object to json string.
-     *
-     * @param obj obj
-     * @return json string
-     * @throws NacosSerializationException if transfer failed
-     */
-    private static String toJson(Object obj) {
-        try {
-            return mapper.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            throw new NacosSerializationException(obj.getClass(), e);
-        }
-    }
-    
-    /**
-     * Json string deserialize to Object.
-     *
-     * @param json json string
-     * @param cls  class of object
-     * @param <T>  General type
-     * @return object
-     * @throws NacosDeserializationException if deserialize failed
-     */
-    public static <T> T toObj(String json, Class<T> cls) {
-        try {
-            return mapper.readValue(json, cls);
-        } catch (IOException e) {
-            throw new NacosDeserializationException(cls, e);
-        }
-    }
     
     /**
      * convert request to payload.
@@ -103,12 +61,10 @@ public class GrpcUtils {
         payloadBuilder.setMetadata(metaBuilder.build());
         
         // request body .
-        request.clearHeaders();
-        String jsonString = toJson(request);
-        Payload payload = payloadBuilder
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
+        byte[] jsonBytes = convertRequestToByte(request);
+        return payloadBuilder
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .build();
-        return payload;
         
     }
     
@@ -122,15 +78,14 @@ public class GrpcUtils {
         
         Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
                 .setClientIp(NetUtils.localIP()).putAllHeaders(request.getHeaders()).build();
-        request.clearHeaders();
-        String jsonString = toJson(request);
+        
+        byte[] jsonBytes = convertRequestToByte(request);
         
         Payload.Builder builder = Payload.newBuilder();
         
-        Payload payload = builder
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
+        return builder
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(newMeta).build();
-        return payload;
         
     }
     
@@ -141,13 +96,20 @@ public class GrpcUtils {
      * @return payload.
      */
     public static Payload convert(Response response) {
-        String jsonString = toJson(response);
+        byte[] jsonBytes = JacksonUtils.toJsonBytes(response);
         
         Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
-        Payload payload = Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(ByteString.copyFrom(jsonString, Charset.forName(Constants.ENCODE))))
+        return Payload.newBuilder()
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(metaBuilder.build()).build();
-        return payload;
+    }
+    
+    private static byte[] convertRequestToByte(Request request) {
+        Map<String, String> requestHeaders = new HashMap<>(request.getHeaders());
+        request.clearHeaders();
+        byte[] jsonBytes = JacksonUtils.toJsonBytes(request);
+        request.putAllHeader(requestHeaders);
+        return jsonBytes;
     }
     
     /**
@@ -159,7 +121,9 @@ public class GrpcUtils {
     public static Object parse(Payload payload) {
         Class classType = PayloadRegistry.getClassByType(payload.getMetadata().getType());
         if (classType != null) {
-            Object obj = toObj(payload.getBody().getValue().toString(Charset.forName(Constants.ENCODE)), classType);
+            ByteString byteString = payload.getBody().getValue();
+            ByteBuffer byteBuffer = byteString.asReadOnlyByteBuffer();
+            Object obj = JacksonUtils.toObj(new ByteBufferBackedInputStream(byteBuffer), classType);
             if (obj instanceof Request) {
                 ((Request) obj).putAllHeader(payload.getMetadata().getHeadersMap());
             }

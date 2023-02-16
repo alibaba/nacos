@@ -37,6 +37,8 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * * Created with IntelliJ IDEA. User: dingjoey Date: 13-12-12 Time: 21:12 client api && sdk api 请求日志打点逻辑
@@ -110,8 +112,11 @@ public class RequestLogAspect {
         final String md5 =
                 request.getContent() == null ? null : MD5Utils.md5Hex(request.getContent(), Constants.ENCODE);
         MetricsMonitor.getPublishMonitor().incrementAndGet();
-        return logClientRequestRpc("publish", pjp, request, meta, request.getDataId(), request.getGroup(),
-                request.getTenant(), md5);
+        AtomicLong rtHolder = new AtomicLong();
+        Object retVal = logClientRequestRpc("publish", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), md5, rtHolder);
+        MetricsMonitor.getWriteConfigRpcRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
+        return retVal;
     }
     
     /**
@@ -122,7 +127,10 @@ public class RequestLogAspect {
             HttpServletResponse response, String dataId, String group, String tenant, String content) throws Throwable {
         final String md5 = content == null ? null : MD5Utils.md5Hex(content, Constants.ENCODE);
         MetricsMonitor.getPublishMonitor().incrementAndGet();
-        return logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5);
+        AtomicLong rtHolder = new AtomicLong();
+        Object retVal = logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5, rtHolder);
+        MetricsMonitor.getWriteConfigRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
+        return retVal;
     }
     
     /**
@@ -131,7 +139,7 @@ public class RequestLogAspect {
     @Around(CLIENT_INTERFACE_REMOVE_ALL_CONFIG)
     public Object interfaceRemoveAll(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
             String dataId, String group, String tenant) throws Throwable {
-        return logClientRequest("remove", pjp, request, response, dataId, group, tenant, null);
+        return logClientRequest("remove", pjp, request, response, dataId, group, tenant, null, null);
     }
     
     /**
@@ -141,7 +149,7 @@ public class RequestLogAspect {
     public Object interfaceRemoveAllRpc(ProceedingJoinPoint pjp, ConfigRemoveRequest request, RequestMeta meta)
             throws Throwable {
         return logClientRequestRpc("remove", pjp, request, meta, request.getDataId(), request.getGroup(),
-                request.getTenant(), null);
+                request.getTenant(), null, null);
     }
     
     /**
@@ -153,7 +161,10 @@ public class RequestLogAspect {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final String md5 = ConfigCacheService.getContentMd5(groupKey);
         MetricsMonitor.getConfigMonitor().incrementAndGet();
-        return logClientRequest("get", pjp, request, response, dataId, group, tenant, md5);
+        AtomicLong rtHolder = new AtomicLong();
+        Object retVal = logClientRequest("get", pjp, request, response, dataId, group, tenant, md5, rtHolder);
+        MetricsMonitor.getReadConfigRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
+        return retVal;
     }
     
     /**
@@ -165,20 +176,26 @@ public class RequestLogAspect {
         final String groupKey = GroupKey2.getKey(request.getDataId(), request.getGroup(), request.getTenant());
         final String md5 = ConfigCacheService.getContentMd5(groupKey);
         MetricsMonitor.getConfigMonitor().incrementAndGet();
-        return logClientRequestRpc("get", pjp, request, meta, request.getDataId(), request.getGroup(),
-                request.getTenant(), md5);
+        AtomicLong rtHolder = new AtomicLong();
+        Object retVal = logClientRequestRpc("get", pjp, request, meta, request.getDataId(), request.getGroup(),
+                request.getTenant(), md5, rtHolder);
+        MetricsMonitor.getReadConfigRpcRtTimer().record(rtHolder.get(), TimeUnit.MILLISECONDS);
+        return retVal;
     }
     
     /**
      * Client api request log rt | status | requestIp | opType | dataId | group | datumId | md5.
      */
     private Object logClientRequest(String requestType, ProceedingJoinPoint pjp, HttpServletRequest request,
-            HttpServletResponse response, String dataId, String group, String tenant, String md5) throws Throwable {
+            HttpServletResponse response, String dataId, String group, String tenant, String md5, AtomicLong rtHolder) throws Throwable {
         final String requestIp = RequestUtil.getRemoteIp(request);
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         final long st = System.currentTimeMillis();
         Object retVal = pjp.proceed();
         final long rt = System.currentTimeMillis() - st;
+        if (rtHolder != null) {
+            rtHolder.set(rt);
+        }
         // rt | status | requestIp | opType | dataId | group | datumId | md5 |
         // appName
         LogUtil.CLIENT_LOG
@@ -191,12 +208,15 @@ public class RequestLogAspect {
      * Client api request log rt | status | requestIp | opType | dataId | group | datumId | md5.
      */
     private Object logClientRequestRpc(String requestType, ProceedingJoinPoint pjp, Request request, RequestMeta meta,
-            String dataId, String group, String tenant, String md5) throws Throwable {
+            String dataId, String group, String tenant, String md5, AtomicLong rtHolder) throws Throwable {
         final String requestIp = meta.getClientIp();
         String appName = request.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         final long st = System.currentTimeMillis();
         Response retVal = (Response) pjp.proceed();
         final long rt = System.currentTimeMillis() - st;
+        if (rtHolder != null) {
+            rtHolder.set(rt);
+        }
         // rt | status | requestIp | opType | dataId | group | datumId | md5 |
         // appName
         LogUtil.CLIENT_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt,
@@ -224,5 +244,4 @@ public class RequestLogAspect {
                 request.isListen(), "", "", appName);
         return retVal;
     }
-    
 }

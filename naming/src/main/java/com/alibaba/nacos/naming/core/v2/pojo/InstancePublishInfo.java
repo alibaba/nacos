@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
-import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -115,10 +115,15 @@ public class InstancePublishInfo implements Serializable {
     
     @Override
     public String toString() {
-        return "InstancePublishInfo{" + "ip='" + ip + '\'' + ", port=" + port + ", healthy=" + healthy + '}';
+        return "InstancePublishInfo{"
+                + "ip='" + ip + '\''
+                + ", port=" + port
+                + ", healthy=" + healthy
+                + ", cluster='" + cluster + '\''
+                + '}';
     }
     
     public static String genMetadataId(String ip, int port, String cluster) {
-        return ip + IPUtil.IP_PORT_SPLITER + port + IPUtil.IP_PORT_SPLITER + cluster;
+        return ip + InternetAddressUtil.IP_PORT_SPLITER + port + InternetAddressUtil.IP_PORT_SPLITER + cluster;
     }
 }

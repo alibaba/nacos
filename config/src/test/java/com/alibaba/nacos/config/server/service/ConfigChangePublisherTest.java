@@ -22,12 +22,20 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ConfigChangePublisherTest {
+    
+    @Before
+    public void startUP() {
+        EnvUtil.setIsStandalone(true);
+        PropertyUtil.setEmbeddedStorage(true);
+    }
     
     @Test
     public void testConfigChangeNotify() throws InterruptedException {
@@ -84,6 +92,12 @@ public class ConfigChangePublisherTest {
         Thread.sleep(2000);
         Assert.assertNotNull(reference.get());
         reference.set(null);
+    
     }
     
+    @After
+    public void tearDown() {
+        EnvUtil.setIsStandalone(true);
+        PropertyUtil.setEmbeddedStorage(true);
+    }
 }

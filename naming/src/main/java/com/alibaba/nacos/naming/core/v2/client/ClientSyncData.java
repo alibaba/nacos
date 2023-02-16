@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client;
 
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 
 import java.io.Serializable;
@@ -32,7 +33,7 @@ public class ClientSyncData implements Serializable {
     
     private String clientId;
     
-    private ClientSyncAttributes attributes;
+    private ClientAttributes attributes;
     
     private List<String> namespaces;
     
@@ -42,17 +43,21 @@ public class ClientSyncData implements Serializable {
     
     private List<InstancePublishInfo> instancePublishInfos;
     
+    private BatchInstanceData batchInstanceData;
+    
     public ClientSyncData() {
     }
     
     public ClientSyncData(String clientId, List<String> namespaces, List<String> groupNames, List<String> serviceNames,
-            List<InstancePublishInfo> instancePublishInfos) {
+            List<InstancePublishInfo> instancePublishInfos,
+            BatchInstanceData batchInstanceData) {
         this.clientId = clientId;
         this.namespaces = namespaces;
         this.groupNames = groupNames;
         this.serviceNames = serviceNames;
         this.instancePublishInfos = instancePublishInfos;
-        this.attributes = new ClientSyncAttributes();
+        this.batchInstanceData = batchInstanceData;
+        this.attributes = new ClientAttributes();
     }
     
     public String getClientId() {
@@ -95,11 +100,19 @@ public class ClientSyncData implements Serializable {
         this.instancePublishInfos = instancePublishInfos;
     }
     
-    public ClientSyncAttributes getAttributes() {
+    public ClientAttributes getAttributes() {
         return attributes;
     }
     
-    public void setAttributes(ClientSyncAttributes attributes) {
+    public void setAttributes(ClientAttributes attributes) {
         this.attributes = attributes;
+    }
+    
+    public BatchInstanceData getBatchInstanceData() {
+        return batchInstanceData;
+    }
+    
+    public void setBatchInstanceData(BatchInstanceData batchInstanceData) {
+        this.batchInstanceData = batchInstanceData;
     }
 }

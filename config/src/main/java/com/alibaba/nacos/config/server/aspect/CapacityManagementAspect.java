@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -33,7 +32,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static com.alibaba.nacos.config.server.constant.Constants.LIMIT_ERROR_CODE;
 
 /**
  * Capacity management aspect: batch write and update but don't process it.
@@ -58,7 +59,7 @@ public class CapacityManagementAspect {
     private CapacityService capacityService;
     
     @Autowired
-    private PersistService persistService;
+    private ConfigInfoPersistService configInfoPersistService;
     
     /**
      * Need to judge the size of content whether to exceed the limitation.
@@ -75,7 +76,7 @@ public class CapacityManagementAspect {
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 // do capacity management limitation check for writing or updating config_info table.
-                if (persistService.findConfigInfo(dataId, group, tenant) == null) {
+                if (configInfoPersistService.findConfigInfo(dataId, group, tenant) == null) {
                     // Write operation.
                     return do4Insert(pjp, request, response, group, tenant, content);
                 }
@@ -152,7 +153,7 @@ public class CapacityManagementAspect {
             return pjp.proceed();
         }
         LOGGER.info("[capacityManagement] aroundDeleteConfig");
-        ConfigInfo configInfo = persistService.findConfigInfo(dataId, group, tenant);
+        ConfigInfo configInfo = configInfoPersistService.findConfigInfo(dataId, group, tenant);
         if (configInfo == null) {
             return pjp.proceed();
         }
@@ -193,10 +194,10 @@ public class CapacityManagementAspect {
     private void correctUsage(String group, String tenant, boolean hasTenant) {
         try {
             if (hasTenant) {
-                LOGGER.info("主动修正usage, tenant: {}", tenant);
+                LOGGER.info("[capacityManagement] correct usage, tenant: {}", tenant);
                 capacityService.correctTenantUsage(tenant);
             } else {
-                LOGGER.info("主动修正usage, group: {}", group);
+                LOGGER.info("[capacityManagement] correct usage, group: {}", group);
                 capacityService.correctGroupUsage(group);
             }
         } catch (Exception e) {
@@ -264,7 +265,7 @@ public class CapacityManagementAspect {
      */
     private int getCurrentSize(String content) {
         try {
-            return content.getBytes(Charset.forName(Constants.ENCODE)).length;
+            return content.getBytes(StandardCharsets.UTF_8).length;
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] getCurrentSize ", e);
         }
@@ -428,10 +429,10 @@ public class CapacityManagementAspect {
         /**
          * over limit.
          */
-        OVER_CLUSTER_QUOTA("超过集群配置个数上限", 429),
-        OVER_GROUP_QUOTA("超过该Group配置个数上限", 429),
-        OVER_TENANT_QUOTA("超过该租户配置个数上限", 429),
-        OVER_MAX_SIZE("超过配置的内容大小上限", 429);
+        OVER_CLUSTER_QUOTA("超过集群配置个数上限", LIMIT_ERROR_CODE),
+        OVER_GROUP_QUOTA("超过该Group配置个数上限", LIMIT_ERROR_CODE),
+        OVER_TENANT_QUOTA("超过该租户配置个数上限", LIMIT_ERROR_CODE),
+        OVER_MAX_SIZE("超过配置的内容大小上限", LIMIT_ERROR_CODE);
         
         public final String description;
         

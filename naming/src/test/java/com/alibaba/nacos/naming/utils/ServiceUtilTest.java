@@ -16,25 +16,21 @@
 
 package com.alibaba.nacos.naming.utils;
 
-import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class ServiceUtilTest {
     
     @Test
-    public void testPageServiceName() {
-        Map<String, Service> input = new HashMap<>();
-        input.put("Group@@Service", new Service());
-        input.put("Service", new Service());
-        List<String> actual = ServiceUtil.pageServiceName(1, 20, input);
-        assertEquals(2, actual.size());
-        assertEquals("Service", actual.get(0));
-        assertEquals("Service", actual.get(1));
+    public void testSelectInstances() {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setGroupName("groupName");
+        serviceInfo.setName("serviceName");
+        serviceInfo.setChecksum("checkSum");
+        serviceInfo.setAllIPs(false);
+        ServiceInfo cluster = ServiceUtil.selectInstances(serviceInfo, "cluster");
+        assertNotNull(cluster);
     }
 }

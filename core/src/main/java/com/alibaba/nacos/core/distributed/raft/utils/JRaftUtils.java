@@ -25,12 +25,10 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.raft.JRaftServer;
-import com.alibaba.nacos.core.distributed.raft.processor.NacosGetRequestProcessor;
-import com.alibaba.nacos.core.distributed.raft.processor.NacosLogProcessor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosReadRequestProcessor;
 import com.alibaba.nacos.core.distributed.raft.processor.NacosWriteRequestProcessor;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.RouteTable;
@@ -72,18 +70,13 @@ public class JRaftUtils {
         MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
         registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
         registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
-    
+        
         registry.registerResponseInstance(WriteRequest.class.getName(), Response.getDefaultInstance());
         registry.registerResponseInstance(ReadRequest.class.getName(), Response.getDefaultInstance());
         
         final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
-        
-        // Deprecated
-        rpcServer.registerProcessor(new NacosLogProcessor(server, SerializeFactory.getDefault()));
-        // Deprecated
-        rpcServer.registerProcessor(new NacosGetRequestProcessor(server, SerializeFactory.getDefault()));
         
         rpcServer.registerProcessor(new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
         rpcServer.registerProcessor(new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
@@ -110,7 +103,7 @@ public class JRaftUtils {
         copy.setRaftMetaUri(metaDataUri);
         copy.setSnapshotUri(snapshotUri);
     }
-
+    
     public static List<String> toStrings(List<PeerId> peerIds) {
         return peerIds.stream().map(peerId -> peerId.getEndpoint().toString()).collect(Collectors.toList());
     }

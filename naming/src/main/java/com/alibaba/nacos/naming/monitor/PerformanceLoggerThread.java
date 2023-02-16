@@ -16,18 +16,17 @@
 
 package com.alibaba.nacos.naming.monitor;
 
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,15 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class PerformanceLoggerThread {
-    
-    @Autowired
-    private ServiceManager serviceManager;
-    
-    @Autowired
-    private RaftCore raftCore;
-    
-    @Autowired
-    private ClusterVersionJudgement versionJudgement;
     
     private static final long PERIOD = 60;
     
@@ -75,23 +65,6 @@ public class PerformanceLoggerThread {
     public void collectMetrics() {
         MetricsMonitor.getDomCountMonitor().set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
         MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
-        metricsRaftLeader();
-    }
-    
-    /**
-     * Will deprecated after v1.4.x
-     */
-    @Deprecated
-    private void metricsRaftLeader() {
-        if (!versionJudgement.allMemberIsNewVersion()) {
-            if (raftCore.isLeader()) {
-                MetricsMonitor.getLeaderStatusMonitor().set(1);
-            } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
-                MetricsMonitor.getLeaderStatusMonitor().set(0);
-            } else {
-                MetricsMonitor.getLeaderStatusMonitor().set(2);
-            }
-        }
     }
     
     class PerformanceLogTask implements Runnable {
@@ -105,6 +78,7 @@ public class PerformanceLoggerThread {
                 if (logCount == 0) {
                     Loggers.PERFORMANCE_LOG
                             .info("PERFORMANCE:|serviceCount|ipCount|subscribeCount|maxPushCost|avgPushCost|totalPushCount|failPushCount");
+                    Loggers.PERFORMANCE_LOG.info("DISTRO:|V1SyncDone|V1SyncFail|V2SyncDone|V2SyncFail|V2VerifyFail|");
                 }
                 int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
                 int ipCount = MetricsMonitor.getIpCountMonitor().get();
@@ -118,6 +92,7 @@ public class PerformanceLoggerThread {
                                 avgPushCost, totalPushCount, failPushCount);
                 Loggers.PERFORMANCE_LOG
                         .info("Task worker status: \n" + NamingExecuteTaskDispatcher.getInstance().workersStatus());
+                printDistroMonitor();
                 logCount++;
                 MetricsMonitor.getTotalPushCountForAvg().set(0);
                 MetricsMonitor.getTotalPushCostForAvg().set(0);
@@ -126,6 +101,20 @@ public class PerformanceLoggerThread {
                 Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }
             
+        }
+        
+        private void printDistroMonitor() {
+            Optional<DistroRecord> v2Record = DistroRecordsHolder.getInstance()
+                    .getRecordIfExist(DistroClientDataProcessor.TYPE);
+            long v2SyncDone = 0;
+            long v2SyncFail = 0;
+            int v2VerifyFail = 0;
+            if (v2Record.isPresent()) {
+                v2SyncDone = v2Record.get().getSuccessfulSyncCount();
+                v2SyncFail = v2Record.get().getFailedSyncCount();
+                v2VerifyFail = v2Record.get().getFailedVerifyCount();
+            }
+            Loggers.PERFORMANCE_LOG.info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
     

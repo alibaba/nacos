@@ -83,14 +83,14 @@ public class Balancer {
             return null;
         }
         NAMING_LOGGER.debug("new Chooser");
-        List<Pair<Instance>> hostsWithWeight = new ArrayList<Pair<Instance>>();
+        List<Pair<Instance>> hostsWithWeight = new ArrayList<>();
         for (Instance host : hosts) {
             if (host.isHealthy()) {
                 hostsWithWeight.add(new Pair<Instance>(host, host.getWeight()));
             }
         }
         NAMING_LOGGER.debug("for (Host host : hosts)");
-        Chooser<String, Instance> vipChooser = new Chooser<String, Instance>("www.taobao.com");
+        Chooser<String, Instance> vipChooser = new Chooser<>("www.taobao.com");
         vipChooser.refresh(hostsWithWeight);
         NAMING_LOGGER.debug("vipChooser.refresh");
         return vipChooser.randomWithWeight();

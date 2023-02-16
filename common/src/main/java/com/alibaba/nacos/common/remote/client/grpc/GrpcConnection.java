@@ -71,15 +71,14 @@ public class GrpcConnection extends Connection {
     public Response request(Request request, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
-        Payload grpcResponse = null;
+        Payload grpcResponse;
         try {
             grpcResponse = requestFuture.get(timeouts, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
-        
-        Response response = (Response) GrpcUtils.parse(grpcResponse);
-        return response;
+    
+        return (Response) GrpcUtils.parse(grpcResponse);
     }
     
     @Override

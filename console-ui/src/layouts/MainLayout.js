@@ -51,12 +51,15 @@ class MainLayout extends React.Component {
 
   navTo(url) {
     const { search } = this.props.location;
-    this.props.history.push([url, search].join(''));
+    let urlSearchParams = new URLSearchParams(search);
+    urlSearchParams.set('namespace', window.nownamespace);
+    urlSearchParams.set('namespaceShowName', window.namespaceShowName);
+    this.props.history.push([url, '?', urlSearchParams.toString()].join(''));
   }
 
   isCurrentPath(url) {
     const { location } = this.props;
-    return url === location.pathname ? 'current-path' : undefined;
+    return url === location.pathname ? 'current-path next-selected' : undefined;
   }
 
   defaultOpenKeys() {
@@ -83,60 +86,70 @@ class MainLayout extends React.Component {
     const { locale = {}, version, functionMode } = this.props;
     const MenuData = getMenuData(functionMode);
     return (
-      <>
+      <section
+        className="next-shell next-shell-desktop next-shell-brand"
+        style={{ minHeight: '100vh' }}
+      >
         <Header />
-        <div className="main-container">
-          <div className="left-panel">
-            {this.isShowGoBack() ? (
-              <div className="go-back" onClick={() => this.goBack()}>
-                <Icon type="arrow-left" />
+        <section className="next-shell-sub-main">
+          <div className="main-container next-shell-main">
+            <div className="left-panel next-aside-navigation">
+              <div
+                className="next-shell-navigation next-shell-mini next-shell-aside"
+                style={{ padding: 0 }}
+              >
+                {this.isShowGoBack() ? (
+                  <div className="go-back" onClick={() => this.goBack()}>
+                    <Icon type="arrow-left" />
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="nav-title">
+                      {locale.nacosName}
+                      <span>{version}</span>
+                    </h1>
+                    <Menu
+                      defaultOpenKeys={this.defaultOpenKeys()}
+                      className="next-nav next-normal next-active next-right next-no-arrow next-nav-embeddable"
+                      openMode="single"
+                    >
+                      {MenuData.map((subMenu, idx) => {
+                        if (subMenu.children) {
+                          return (
+                            <SubMenu key={String(idx)} label={locale[subMenu.key]}>
+                              {subMenu.children.map((item, i) => (
+                                <Item
+                                  key={[idx, i].join('-')}
+                                  onClick={() => this.navTo(item.url)}
+                                  className={this.isCurrentPath(item.url)}
+                                >
+                                  {locale[item.key]}
+                                </Item>
+                              ))}
+                            </SubMenu>
+                          );
+                        }
+                        return (
+                          <Item
+                            key={String(idx)}
+                            className={['first-menu', this.isCurrentPath(subMenu.url)]
+                              .filter(c => c)
+                              .join(' ')}
+                            onClick={() => this.navTo(subMenu.url)}
+                          >
+                            {locale[subMenu.key]}
+                          </Item>
+                        );
+                      })}
+                    </Menu>
+                  </>
+                )}
               </div>
-            ) : (
-              <>
-                <h1 className="nav-title">
-                  {locale.nacosName}
-                  <span>{version}</span>
-                </h1>
-                <Menu
-                  defaultOpenKeys={this.defaultOpenKeys()}
-                  className="nav-menu"
-                  openMode="single"
-                >
-                  {MenuData.map((subMenu, idx) => {
-                    if (subMenu.children) {
-                      return (
-                        <SubMenu key={String(idx)} label={locale[subMenu.key]}>
-                          {subMenu.children.map((item, i) => (
-                            <Item
-                              key={[idx, i].join('-')}
-                              onClick={() => this.navTo(item.url)}
-                              className={this.isCurrentPath(item.url)}
-                            >
-                              {locale[item.key]}
-                            </Item>
-                          ))}
-                        </SubMenu>
-                      );
-                    }
-                    return (
-                      <Item
-                        key={idx}
-                        className={['first-menu', this.isCurrentPath(subMenu.url)]
-                          .filter(c => c)
-                          .join(' ')}
-                        onClick={() => this.navTo(subMenu.url)}
-                      >
-                        {locale[subMenu.key]}
-                      </Item>
-                    );
-                  })}
-                </Menu>
-              </>
-            )}
+            </div>
+            <div className="right-panel next-shell-sub-main">{this.props.children}</div>
           </div>
-          <div className="right-panel">{this.props.children}</div>
-        </div>
-      </>
+        </section>
+      </section>
     );
   }
 }

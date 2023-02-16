@@ -16,15 +16,19 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
+import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -34,6 +38,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Nacos
  */
 public class MetricsMonitor {
+    
+    private static final String METER_REGISTRY = NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY;
     
     private static final MetricsMonitor INSTANCE = new MetricsMonitor();
     
@@ -63,6 +69,29 @@ public class MetricsMonitor {
     
     private final AtomicInteger failedPush = new AtomicInteger();
     
+    private final AtomicInteger emptyPush = new AtomicInteger();
+    
+    private final AtomicInteger serviceSubscribedEventQueueSize = new AtomicInteger();
+    
+    private final AtomicInteger serviceChangedEventQueueSize = new AtomicInteger();
+    
+    private final AtomicInteger pushPendingTaskCount = new AtomicInteger();
+    
+    /**
+     * version -> naming subscriber count.
+     */
+    private final ConcurrentHashMap<String, AtomicInteger> namingSubscriber = new ConcurrentHashMap<>();
+    
+    /**
+     * version -> naming publisher count.
+     */
+    private final ConcurrentHashMap<String, AtomicInteger> namingPublisher = new ConcurrentHashMap<>();
+    
+    /**
+     * topn service change count.
+     */
+    private final TopnCounterMetricsContainer serviceChangeCount = new TopnCounterMetricsContainer();
+    
     private MetricsMonitor() {
         for (Field each : MetricsMonitor.class.getDeclaredFields()) {
             if (Number.class.isAssignableFrom(each.getType())) {
@@ -74,13 +103,35 @@ public class MetricsMonitor {
                 }
             }
         }
+        
+        namingSubscriber.put("v1", new AtomicInteger(0));
+        namingSubscriber.put("v2", new AtomicInteger(0));
+        
+        List<Tag> tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v1"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags, namingSubscriber.get("v1"));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v2"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags, namingSubscriber.get("v2"));
+    
+        namingPublisher.put("v1", new AtomicInteger(0));
+        namingPublisher.put("v2", new AtomicInteger(0));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v1"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags, namingPublisher.get("v1"));
+    
+        tags = new ArrayList<>();
+        tags.add(new ImmutableTag("version", "v2"));
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags, namingPublisher.get("v2"));
     }
     
     private <T extends Number> void registerToMetrics(String name, T number) {
         List<Tag> tags = new ArrayList<>();
         tags.add(new ImmutableTag("module", "naming"));
         tags.add(new ImmutableTag("name", name));
-        Metrics.gauge("nacos_monitor", tags, number);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, number);
     }
     
     public static AtomicInteger getMysqlHealthCheckMonitor() {
@@ -127,12 +178,40 @@ public class MetricsMonitor {
         return INSTANCE.failedPush;
     }
     
+    public static AtomicInteger getEmptyPushMonitor() {
+        return INSTANCE.emptyPush;
+    }
+    
     public static AtomicInteger getTotalPushCountForAvg() {
         return INSTANCE.totalPushCountForAvg;
     }
     
+    public static AtomicInteger getServiceSubscribedEventQueueSize() {
+        return INSTANCE.serviceSubscribedEventQueueSize;
+    }
+    
+    public static AtomicInteger getServiceChangedEventQueueSize() {
+        return INSTANCE.serviceChangedEventQueueSize;
+    }
+    
+    public static AtomicInteger getPushPendingTaskCount() {
+        return INSTANCE.pushPendingTaskCount;
+    }
+    
     public static AtomicLong getTotalPushCostForAvg() {
         return INSTANCE.totalPushCostForAvg;
+    }
+    
+    public static AtomicInteger getNamingSubscriber(String version) {
+        return INSTANCE.namingSubscriber.get(version);
+    }
+    
+    public static AtomicInteger getNamingPublisher(String version) {
+        return INSTANCE.namingPublisher.get(version);
+    }
+    
+    public static TopnCounterMetricsContainer getServiceChangeCount() {
+        return INSTANCE.serviceChangeCount;
     }
     
     public static void compareAndSetMaxPushCost(long newCost) {
@@ -152,6 +231,10 @@ public class MetricsMonitor {
         INSTANCE.failedPush.incrementAndGet();
     }
     
+    public static void incrementEmptyPush() {
+        INSTANCE.emptyPush.incrementAndGet();
+    }
+    
     public static void incrementInstanceCount() {
         INSTANCE.ipCount.incrementAndGet();
     }
@@ -168,12 +251,36 @@ public class MetricsMonitor {
         INSTANCE.subscriberCount.decrementAndGet();
     }
     
+    public static void incrementServiceChangeCount(String namespace, String group, String name) {
+        INSTANCE.serviceChangeCount.increment(namespace + "@" + group + "@" + name);
+    }
+    
     public static Counter getDiskException() {
-        return Metrics.counter("nacos_exception", "module", "naming", "name", "disk");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name", "disk");
     }
     
     public static Counter getLeaderSendBeatFailedException() {
-        return Metrics.counter("nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+    }
+    
+    /**
+     * increment IpCount when use batchRegister instance.
+     * @param instancePublishInfo must be BatchInstancePublishInfo
+     */
+    public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        getIpCountMonitor().addAndGet(instancePublishInfos.size());
+    }
+    
+    /**
+     * decrement IpCount when use batchRegister instance.
+     * @param instancePublishInfo must be BatchInstancePublishInfo
+     */
+    public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
+        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
+        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
+        getIpCountMonitor().addAndGet(-1 * instancePublishInfos.size());
     }
     
     /**
@@ -192,6 +299,7 @@ public class MetricsMonitor {
     public static void resetPush() {
         getTotalPushMonitor().set(0);
         getFailedPushMonitor().set(0);
+        getEmptyPushMonitor().set(0);
         getTotalPushCostForAvg().set(0);
         getTotalPushCountForAvg().set(0);
         getMaxPushCostMonitor().set(-1);

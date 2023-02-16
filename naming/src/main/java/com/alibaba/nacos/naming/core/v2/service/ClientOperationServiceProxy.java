@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.service;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -23,13 +24,19 @@ import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationSer
 import com.alibaba.nacos.naming.core.v2.service.impl.PersistentClientOperationServiceImpl;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 /**
  * Implementation of external exposure.
  *
+ * <p>Depends on {@link com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl namingSubscriberServiceV2Impl}
+ * having listen on related {@link com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent.ServiceChangedEvent events}.
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@DependsOn("namingSubscriberServiceV2Impl")
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
 public class ClientOperationServiceProxy implements ClientOperationService {
@@ -45,9 +52,15 @@ public class ClientOperationServiceProxy implements ClientOperationService {
     }
     
     @Override
-    public void registerInstance(Service service, Instance instance, String clientId) {
+    public void registerInstance(Service service, Instance instance, String clientId) throws NacosException {
         final ClientOperationService operationService = chooseClientOperationService(instance);
         operationService.registerInstance(service, instance, clientId);
+    }
+    
+    @Override
+    public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
+        final ClientOperationService operationService = chooseClientOperationService(instances.get(0));
+        operationService.batchRegisterInstance(service, instances, clientId);
     }
     
     @Override

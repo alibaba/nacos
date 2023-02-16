@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
+
 /**
  * ConnectResetRequest.
  *
@@ -30,7 +32,7 @@ public class ConnectResetRequest extends ServerRequest {
     
     @Override
     public String getModule() {
-        return "internal";
+        return INTERNAL_MODULE;
     }
     
     /**

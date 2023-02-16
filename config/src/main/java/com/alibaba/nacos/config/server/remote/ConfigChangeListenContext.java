@@ -39,12 +39,12 @@ public class ConfigChangeListenContext {
     /**
      * groupKey-> connection set.
      */
-    private ConcurrentHashMap<String, HashSet<String>> groupKeyContext = new ConcurrentHashMap<String, HashSet<String>>();
+    private ConcurrentHashMap<String, HashSet<String>> groupKeyContext = new ConcurrentHashMap<>();
     
     /**
      * connectionId-> group key set.
      */
-    private ConcurrentHashMap<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<String, HashMap<String, String>>();
+    private ConcurrentHashMap<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<>();
     
     /**
      * add listen.
@@ -56,7 +56,7 @@ public class ConfigChangeListenContext {
         // 1.add groupKeyContext
         Set<String> listenClients = groupKeyContext.get(groupKey);
         if (listenClients == null) {
-            groupKeyContext.putIfAbsent(groupKey, new HashSet<String>());
+            groupKeyContext.putIfAbsent(groupKey, new HashSet<>());
             listenClients = groupKeyContext.get(groupKey);
         }
         listenClients.add(connectionId);
@@ -64,7 +64,7 @@ public class ConfigChangeListenContext {
         // 2.add connectionIdContext
         HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys == null) {
-            connectionIdContext.putIfAbsent(connectionId, new HashMap<String, String>(16));
+            connectionIdContext.putIfAbsent(connectionId, new HashMap<>(16));
             groupKeys = connectionIdContext.get(connectionId);
         }
         groupKeys.put(groupKey, md5);
@@ -105,7 +105,7 @@ public class ConfigChangeListenContext {
         
         HashSet<String> strings = groupKeyContext.get(groupKey);
         if (CollectionUtils.isNotEmpty(strings)) {
-            Set<String> listenConnections = new HashSet<String>();
+            Set<String> listenConnections = new HashSet<>();
             safeCopy(strings, listenConnections);
             return listenConnections;
         }
@@ -134,19 +134,20 @@ public class ConfigChangeListenContext {
         
         Map<String, String> listenKeys = getListenKeys(connectionId);
         
-        if (listenKeys != null) {
-            for (Map.Entry<String, String> groupKey : listenKeys.entrySet()) {
-                
-                Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
-                if (CollectionUtils.isNotEmpty(connectionIds)) {
-                    connectionIds.remove(connectionId);
-                } else {
-                    groupKeyContext.remove(groupKey.getKey());
-                }
-                
-            }
+        if (listenKeys == null) {
+            connectionIdContext.remove(connectionId);
+            return;
         }
-        
+        for (Map.Entry<String, String> groupKey : listenKeys.entrySet()) {
+
+            Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
+            if (CollectionUtils.isNotEmpty(connectionIds)) {
+                connectionIds.remove(connectionId);
+            } else {
+                groupKeyContext.remove(groupKey.getKey());
+            }
+
+        }
         connectionIdContext.remove(connectionId);
     }
     
@@ -158,7 +159,7 @@ public class ConfigChangeListenContext {
      */
     public synchronized Map<String, String> getListenKeys(String connectionId) {
         HashMap<String, String> stringStringHashMap = connectionIdContext.get(connectionId);
-        return stringStringHashMap == null ? null : new HashMap<String, String>(stringStringHashMap);
+        return stringStringHashMap == null ? null : new HashMap<>(stringStringHashMap);
     }
     
     /**
@@ -170,6 +171,15 @@ public class ConfigChangeListenContext {
     public String getListenKeyMd5(String connectionId, String groupKey) {
         Map<String, String> groupKeyContexts = connectionIdContext.get(connectionId);
         return groupKeyContexts == null ? null : groupKeyContexts.get(groupKey);
+    }
+    
+    /**
+     * get connection count.
+     *
+     * @return count of long connections.
+     */
+    public int getConnectionCount() {
+        return connectionIdContext.size();
     }
     
 }

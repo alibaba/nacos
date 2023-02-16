@@ -28,10 +28,12 @@ import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcPushService;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
-import com.alibaba.nacos.core.remote.control.TpsMonitorPoint;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -55,8 +57,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     private static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
     
-    @Autowired
-    private TpsMonitorManager tpsMonitorManager;
+    TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
     
     public RpcConfigChangeNotifier() {
         NotifyCenter.registerSubscriber(this);
@@ -64,10 +65,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
     
     @PostConstruct
     private void registerTpsPoint() {
-        
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH));
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_SUCCESS));
-        tpsMonitorManager.registerTpsControlPoint(new TpsMonitorPoint(POINT_CONFIG_PUSH_FAIL));
+        tpsControlManager.registerTpsPoint(POINT_CONFIG_PUSH);
+        tpsControlManager.registerTpsPoint(POINT_CONFIG_PUSH_SUCCESS);
+        tpsControlManager.registerTpsPoint(POINT_CONFIG_PUSH_FAIL);
         
     }
     
@@ -89,34 +89,35 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             List<String> betaIps, String tag) {
         
         Set<String> listeners = configChangeListenContext.getListeners(groupKey);
-        if (!CollectionUtils.isEmpty(listeners)) {
-            int notifyClientCount = 0;
-            for (final String client : listeners) {
-                Connection connection = connectionManager.getConnection(client);
-                if (connection == null) {
-                    continue;
-                }
-                
-                //beta ips check.
-                String clientIp = connection.getMetaInfo().getClientIp();
-                String clientTag = connection.getMetaInfo().getTag();
-                if (isBeta && betaIps != null && !betaIps.contains(clientIp)) {
-                    continue;
-                }
-                //tag check
-                if (StringUtils.isNotBlank(tag) && !tag.equals(clientTag)) {
-                    continue;
-                }
-                
-                ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
-                
-                RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp,
-                        connection.getMetaInfo().getAppName());
-                push(rpcPushRetryTask);
-                notifyClientCount++;
-            }
-            Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyClientCount, groupKey);
+        if (CollectionUtils.isEmpty(listeners)) {
+            return;
         }
+        int notifyClientCount = 0;
+        for (final String client : listeners) {
+            Connection connection = connectionManager.getConnection(client);
+            if (connection == null) {
+                continue;
+            }
+            
+            ConnectionMeta metaInfo = connection.getMetaInfo();
+            //beta ips check.
+            String clientIp = metaInfo.getClientIp();
+            String clientTag = metaInfo.getTag();
+            if (isBeta && betaIps != null && !betaIps.contains(clientIp)) {
+                continue;
+            }
+            //tag check
+            if (StringUtils.isNotBlank(tag) && !tag.equals(clientTag)) {
+                continue;
+            }
+            
+            ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
+            
+            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp, metaInfo.getAppName());
+            push(rpcPushRetryTask);
+            notifyClientCount++;
+        }
+        Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyClientCount, groupKey);
     }
     
     @Override
@@ -169,18 +170,27 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         @Override
         public void run() {
             tryTimes++;
-            if (!tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH, connectionId, clientIp)) {
+            TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+           
+            tpsCheckRequest.setPointName(POINT_CONFIG_PUSH);
+            if (!tpsControlManager.check(tpsCheckRequest).isSuccess()) {
                 push(this);
             } else {
                 rpcPushService.pushWithCallback(connectionId, notifyRequest, new AbstractPushCallBack(3000L) {
                     @Override
                     public void onSuccess() {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_SUCCESS, connectionId, clientIp);
+                        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+                        
+                        tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_SUCCESS);
+                        tpsControlManager.check(tpsCheckRequest);
                     }
                     
                     @Override
                     public void onFail(Throwable e) {
-                        tpsMonitorManager.applyTpsForClientIp(POINT_CONFIG_PUSH_FAIL, connectionId, clientIp);
+                        TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
+                        
+                        tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_FAIL);
+                        tpsControlManager.check(tpsCheckRequest);
                         Loggers.REMOTE_PUSH.warn("Push fail", e);
                         push(RpcPushTask.this);
                     }
@@ -200,13 +210,12 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                             notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
                             retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);
-            return;
         } else if (connectionManager.getConnection(retryTask.connectionId) != null) {
-            // first time :delay 0s; sencond time:delay 2s  ;third time :delay 4s
+            // first time:delay 0s; second time:delay 2s; third time:delay 4s
             ConfigExecutor.getClientConfigNotifierServiceExecutor()
                     .schedule(retryTask, retryTask.tryTimes * 2, TimeUnit.SECONDS);
         } else {
-            // client is already offline,ingnore task.
+            // client is already offline, ignore task.
         }
         
     }

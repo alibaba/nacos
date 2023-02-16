@@ -172,7 +172,7 @@
 
 ## 0.2.1-release(Sept 28, 2018)
 
-* FIx deregister last instance failed error.
+* Fix deregister last instance failed error.
 * Fix url pattern error.
 * Fully integrate with and seamlessly support Spring framework, Spring Boot and Spring Cloud
 * Separate nacos-api from nacos client implementation

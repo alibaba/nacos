@@ -16,16 +16,8 @@
 
 package com.alibaba.nacos.naming.cluster.transport;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.stereotype.Component;
-
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.pojo.Record;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
+import org.springframework.stereotype.Component;
 
 /**
  * Use Jackson to serialize data.
@@ -35,6 +27,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 @Component
 public class JacksonSerializer implements Serializer {
     
+    private static final String TIMESTAMP_KEY = "timestamp";
+    
+    private static final String KEY = "key";
+    
+    private static final String VALUE = "value";
+    
     @Override
     public <T> byte[] serialize(T data) {
         return JacksonUtils.toJsonBytes(data);
@@ -43,26 +41,5 @@ public class JacksonSerializer implements Serializer {
     @Override
     public <T> T deserialize(byte[] data, Class<T> clazz) {
         return JacksonUtils.toObj(data, clazz);
-    }
-    
-    @Override
-    public <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
-        Map<String, Datum<T>> resultMap;
-        try {
-            resultMap = JacksonUtils.toObj(data, new TypeReference<Map<String, Datum<T>>>() {
-            });
-        } catch (Exception e) {
-            Map<String, JsonNode> dataMap = JacksonUtils.toObj(data, new TypeReference<Map<String, JsonNode>>() {
-            });
-            resultMap = new HashMap<>(dataMap.size());
-            for (Map.Entry<String, JsonNode> entry : dataMap.entrySet()) {
-                Datum<T> datum = new Datum<>();
-                datum.timestamp.set(entry.getValue().get("timestamp").asLong());
-                datum.key = entry.getValue().get("key").asText();
-                datum.value = JacksonUtils.toObj(entry.getValue().get("value").toString(), clazz);
-                resultMap.put(entry.getKey(), datum);
-            }
-        }
-        return resultMap;
     }
 }

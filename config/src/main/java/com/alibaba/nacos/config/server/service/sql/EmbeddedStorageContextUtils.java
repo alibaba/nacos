@@ -92,7 +92,7 @@ public class EmbeddedStorageContextUtils {
             ConfigDumpEvent event = ConfigDumpEvent.builder().remove(false).namespaceId(configInfo.getTenant())
                     .dataId(configInfo.getDataId()).group(configInfo.getGroup()).isBeta(false)
                     .content(configInfo.getContent()).type(configInfo.getType()).handleIp(srcIp)
-                    .lastModifiedTs(time.getTime()).build();
+                    .lastModifiedTs(time.getTime()).encryptedDataKey(configInfo.getEncryptedDataKey()).build();
             
             Map<String, String> extendInfo = new HashMap<>(2);
             extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));
@@ -114,7 +114,7 @@ public class EmbeddedStorageContextUtils {
             ConfigDumpEvent event = ConfigDumpEvent.builder().remove(false).namespaceId(configInfo.getTenant())
                     .dataId(configInfo.getDataId()).group(configInfo.getGroup()).isBeta(true).betaIps(betaIps)
                     .content(configInfo.getContent()).type(configInfo.getType()).handleIp(srcIp)
-                    .lastModifiedTs(time.getTime()).build();
+                    .lastModifiedTs(time.getTime()).encryptedDataKey(configInfo.getEncryptedDataKey()).build();
             
             Map<String, String> extendInfo = new HashMap<>(2);
             extendInfo.put(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT, JacksonUtils.toJson(event));

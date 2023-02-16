@@ -38,6 +38,7 @@ class EditServiceDialog extends React.Component {
       editService: {},
       editServiceDialogVisible: false,
       errors: { name: {}, protectThreshold: {} },
+      selectorTypes: [],
     };
     this.show = this.show.bind(this);
   }
@@ -49,6 +50,9 @@ class EditServiceDialog extends React.Component {
       editService.metadataText = JSON.stringify(metadata, null, '\t');
     }
     this.setState({ editService, editServiceDialogVisible: true, isCreate: !name });
+
+    // query selector types
+    this.getSelectorTypes();
   }
 
   hide() {
@@ -129,9 +133,25 @@ class EditServiceDialog extends React.Component {
     wrapperCol: { span: 14 },
   });
 
+  getSelectorTypes() {
+    request({
+      method: 'GET',
+      url: 'v1/ns/service/selector/types',
+      success: response => {
+        if (response.code !== 200) {
+          Message.error(response.message);
+          return;
+        }
+        this.setState({
+          selectorTypes: response.data,
+        });
+      },
+    });
+  }
+
   render() {
     const { locale = {} } = this.props;
-    const { isCreate, editService, editServiceDialogVisible, errors } = this.state;
+    const { isCreate, editService, editServiceDialogVisible, errors, selectorTypes } = this.state;
     const {
       name,
       protectThreshold,
@@ -153,7 +173,7 @@ class EditServiceDialog extends React.Component {
           <Form.Item
             required={isCreate}
             {...formItemLayout}
-            label={`${locale.serviceName}:`}
+            label={`${locale.serviceName}`}
             {...errors.name}
           >
             {!isCreate ? (
@@ -165,7 +185,7 @@ class EditServiceDialog extends React.Component {
           <Form.Item
             required
             {...formItemLayout}
-            label={`${locale.protectThreshold}:`}
+            label={`${locale.protectThreshold}`}
             {...errors.protectThreshold}
           >
             <Input
@@ -173,7 +193,7 @@ class EditServiceDialog extends React.Component {
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item {...formItemLayout} label={`${locale.groupName}:`}>
+          <Form.Item {...formItemLayout} label={`${locale.groupName}`}>
             <Input
               defaultValue={groupName}
               placeholder="DEFAULT_GROUP"
@@ -181,7 +201,7 @@ class EditServiceDialog extends React.Component {
               onChange={groupName => this.onChangeCluster({ groupName })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.metadata}`} {...formItemLayout}>
             <MonacoEditor
               language="json"
               width={'100%'}
@@ -190,18 +210,19 @@ class EditServiceDialog extends React.Component {
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.type}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.type}`} {...formItemLayout}>
             <Select
               className="full-width"
               defaultValue={selector.type}
               onChange={type => this.onChangeCluster({ selector: { ...selector, type } })}
             >
-              <Select.Option value="label">{locale.typeLabel}</Select.Option>
-              <Select.Option value="none">{locale.typeNone}</Select.Option>
+              {selectorTypes.map(selectorType => (
+                <Select.Option value={selectorType}>{selectorType}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
-          {selector.type === 'label' && (
-            <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
+          {selector.type !== 'none' && (
+            <Form.Item label={`${locale.selector}`} {...formItemLayout}>
               <Input.TextArea
                 value={selector.expression}
                 onChange={expression =>
