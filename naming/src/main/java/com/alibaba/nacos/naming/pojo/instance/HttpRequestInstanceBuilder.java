@@ -18,8 +18,10 @@ package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
+import com.alibaba.nacos.api.naming.spi.generator.IdGenerator;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -29,6 +31,8 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
+
+import static com.alibaba.nacos.api.common.Constants.*;
 
 /**
  * Http instance builder.
@@ -139,11 +143,17 @@ public class HttpRequestInstanceBuilder {
     }
     
     /**
-     * TODO use spi and metadata info to generate instanceId.
+     * use spi and metadata info to generate instanceId.
      */
     private void setInstanceId(Instance instance) {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
+        IdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
                 instance.getClusterName(), instance.getIp(), instance.getPort());
+        String instanceIdGenerator = instance.getMetadata().get(PreservedMetadataKeys.INSTANCE_ID_GENERATOR);
+        if (SNOWFLAKE_INSTANCE_ID_GENERATOR.equalsIgnoreCase(instanceIdGenerator)) {
+            idGenerator = new SnowFlakeInstanceIdGenerator(instance.getServiceName(),
+                    instance.getClusterName(), instance.getPort());
+        }
+
         instance.setInstanceId(idGenerator.generateInstanceId());
     }
 }
