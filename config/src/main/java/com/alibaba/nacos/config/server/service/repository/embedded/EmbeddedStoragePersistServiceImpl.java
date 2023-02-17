@@ -416,10 +416,26 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            final String sql = configInfoBetaMapper.updateConfigInfo4BetaCas();
-            
-            final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
-                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, configInfo.getMd5()};
+    
+            MapperContext context = new MapperContext();
+            context.putUpdateParameter("content", configInfo.getContent());
+            context.putUpdateParameter("md5", md5);
+            context.putUpdateParameter("beta_ips", betaIps);
+            context.putUpdateParameter("src_ip", srcIp);
+            context.putUpdateParameter("src_user", srcUser);
+            context.putUpdateParameter("gmt_modified", time);
+            context.putUpdateParameter("app_name", appNameTmp);
+    
+            context.putWhereParameter("data_id", configInfo.getDataId());
+            context.putWhereParameter("group_id", configInfo.getGroup());
+            context.putWhereParameter("tenant_id", tenantTmp);
+            context.putWhereParameter("md5", configInfo.getMd5());
+    
+            MapperResult mapperResult = configInfoBetaMapper.updateConfigInfo4BetaCas(context);
+    
+            final String sql = mapperResult.getSql();
+            List<Object> paramList = mapperResult.getParamList();
+            final Object[] args = paramList.toArray();
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -1185,11 +1201,18 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final int startRow = (pageNo - 1) * pageSize;
         ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
         String sqlCountRows = configInfoBetaMapper.count(null);
-        String sqlFetchRows = configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(startRow, pageSize);
+    
+        MapperContext context = new MapperContext();
+        context.setStartRow(startRow);
+        context.setPageSize(pageSize);
+        
+        MapperResult mapperResult = configInfoBetaMapper
+                .findAllConfigInfoBetaForDumpAllFetchRows(context);
+        
+        String sqlFetchRows = mapperResult.getSql();
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
                 CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
-        
     }
     
     @Override

@@ -27,9 +27,13 @@ import java.util.Map;
 
 public class MapperContext {
     
-    private Map<String, Object> whereParamMap;
+    private final Map<String, Object> whereParamMap;
     
-    private Map<String, Object> updateParamMap;
+    private final Map<String, Object> updateParamMap;
+    
+    private int startRow;
+    
+    private int pageSize;
     
     public MapperContext() {
         this.whereParamMap = new HashMap<>();
@@ -89,5 +93,21 @@ public class MapperContext {
     @Override
     public String toString() {
         return "MapperContext{" + "whereParamMap=" + whereParamMap + '}';
+    }
+    
+    public int getStartRow() {
+        return startRow;
+    }
+    
+    public void setStartRow(int startRow) {
+        this.startRow = startRow;
+    }
+    
+    public int getPageSize() {
+        return pageSize;
+    }
+    
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
 }
