@@ -52,17 +52,21 @@ public class ConfigDetailService {
     /**
      * the max_capacity of eventLinkedBlockingQueue may be controlled by the properties {@link PropertiesConstant#SEARCH_MAX_CAPACITY}.
      */
-    private static int maxCapacity = 100;
+    private static int maxCapacity = 8;
+    
+    private static final int MAX_CAPACITY = 40;
     
     /**
      * the wait_timeout of search config business may be controlled by the properties {@link PropertiesConstant#SEARCH_WAIT_TIMEOUT}.
      */
-    private static long waitTimeout = 5000L;
+    private static long waitTimeout = 8000L;
     
     /**
      * the max_thread of clientEventExecutor may be controlled by the properties {@link PropertiesConstant#SEARCH_MAX_THREAD}.
      */
     private static int maxThread = 5;
+    
+    private static final int MAX_THREAD = 20;
     
     public ConfigDetailService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
@@ -71,10 +75,10 @@ public class ConfigDetailService {
     }
     
     private void loadSetting() {
-        setMaxCapacity(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_CAPACITY,
-                String.valueOf(getMaxCapacity()))));
-        setMaxThread(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_THREAD,
-                String.valueOf(getMaxThread()))));
+        setMaxCapacity(Math.min(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_CAPACITY,
+                String.valueOf(getMaxCapacity()))), MAX_CAPACITY));
+        setMaxThread(Math.min(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_MAX_THREAD,
+                String.valueOf(getMaxThread()))), MAX_THREAD));
         setWaitTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.SEARCH_WAIT_TIMEOUT,
                 String.valueOf(getWaitTimeout()))));
     }
