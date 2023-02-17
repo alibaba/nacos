@@ -262,6 +262,7 @@ const I18N_CONF = {
     sourceIp: 'Source IP',
     configureContent: 'Configuration Content',
     back: 'Back',
+    namespace: 'Namespace',
   },
   DashboardCard: {
     importantReminder0: 'Important reminder',
@@ -385,6 +386,7 @@ const I18N_CONF = {
     confirmSyanx: 'The configuration information may has a syntax error. Are you sure to submit?',
     dataIdExists: 'Configuration already exists. Enter a new Data ID and Group name.',
     dataRequired: 'Data cannot be empty, submission failed',
+    namespace: 'Namespace',
   },
   CloneDialog: {
     terminate: 'Terminate',
@@ -446,6 +448,7 @@ const I18N_CONF = {
     dialogCurrentArea: 'Current Value',
     dialogOriginalArea: 'Original Value',
     publishFailed403: 'Publish failed. No operation permission',
+    namespace: 'Namespace',
   },
   EditorNameSpace: {
     notice: 'Notice',
@@ -544,6 +547,7 @@ const I18N_CONF = {
     groupInput: 'Please Enter Group',
     namespaceSelect: 'Please Select namespace',
     configNotFind: 'The Configuration is not found, Please select again',
+    namespace: 'Namespace',
   },
   ConfigRollback: {
     rollBack: 'Roll Back',
@@ -561,6 +565,7 @@ const I18N_CONF = {
     update: 'Update',
     insert: 'Insert',
     additionalRollbackMessage: 'This operation will delete the below config!',
+    namespace: 'Namespace',
   },
   UserManagement: {
     userManagement: 'User Management',

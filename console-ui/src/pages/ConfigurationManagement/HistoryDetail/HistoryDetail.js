@@ -113,6 +113,9 @@ class HistoryDetail extends React.Component {
       <div>
         <h1>{locale.historyDetails}</h1>
         <Form field={this.field}>
+          <Form.Item label={locale.namespace} required {...formItemLayout}>
+            <p>{this.tenant}</p>
+          </Form.Item>
           <Form.Item label="Data ID" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>
