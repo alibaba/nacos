@@ -37,13 +37,7 @@ import java.lang.reflect.Method;
  * @author shiyiyue
  */
 public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
-    
-    private static final String X_REAL_IP = "X-Real-IP";
-    
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
-    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
