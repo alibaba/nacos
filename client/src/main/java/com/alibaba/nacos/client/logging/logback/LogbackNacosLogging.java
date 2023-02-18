@@ -23,6 +23,7 @@ import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.utils.ResourceUtils;
+import org.slf4j.LoggerFactory;
 import org.slf4j.impl.StaticLoggerBinder;
 
 /**
@@ -57,7 +58,7 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
     private LoggerContext loadConfigurationOnStart() {
         String location = getLocation(NACOS_LOGBACK_LOCATION);
         try {
-            LoggerContext loggerContext = (LoggerContext) StaticLoggerBinder.getSingleton().getLoggerFactory();
+            LoggerContext loggerContext = this.getLoggerContext();
             NacosJoranConfigurator configurator = new NacosJoranConfigurator();
             configurator.setContext(loggerContext);
             configurator.doNacosConfigure(ResourceUtils.getResourceUrl(location));
@@ -65,6 +66,17 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
         } catch (Exception e) {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
         }
+    }
+    
+    private LoggerContext getLoggerContext() {
+        LoggerContext loggerContext;
+        try {
+            // such as logback 1.3 and later which target slf4j-api 2.x, do not ship with StaticLoggerBinder
+            loggerContext = (LoggerContext) StaticLoggerBinder.getSingleton().getLoggerFactory();
+        } catch (Exception e) {
+            loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        }
+        return loggerContext;
     }
 
     class NacosLoggerContextListener implements LoggerContextListener {
