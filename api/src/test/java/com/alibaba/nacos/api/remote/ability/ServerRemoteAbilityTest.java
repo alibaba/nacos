@@ -51,14 +51,15 @@ public class ServerRemoteAbilityTest {
     public void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerRemoteAbility();
         String json = mapper.writeValueAsString(serverAbilities);
-        assertEquals("{\"supportRemoteConnection\":false}", json);
+        assertEquals("{\"supportRemoteConnection\":false,\"grpcReportEnabled\":true}", json);
     }
     
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"supportRemoteConnection\":true}";
+        String json = "{\"supportRemoteConnection\":true,\"grpcReportEnabled\":true}";
         ServerRemoteAbility abilities = mapper.readValue(json, ServerRemoteAbility.class);
         assertTrue(abilities.isSupportRemoteConnection());
+        assertTrue(abilities.isGrpcReportEnabled());
     }
     
     @Test
@@ -71,6 +72,10 @@ public class ServerRemoteAbilityTest {
         assertEquals(serverAbilities, test);
         assertEquals(serverAbilities.hashCode(), test.hashCode());
         test.setSupportRemoteConnection(true);
+        assertNotEquals(serverAbilities, test);
+        assertNotEquals(serverAbilities.hashCode(), test.hashCode());
+        test.setSupportRemoteConnection(false);
+        test.setGrpcReportEnabled(false);
         assertNotEquals(serverAbilities, test);
         assertNotEquals(serverAbilities.hashCode(), test.hashCode());
     }
