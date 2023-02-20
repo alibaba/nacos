@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.cluster.remote.request;
 
 import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 
 /**

@@ -47,10 +47,10 @@ public class ConfigInfoAggrMapperByDerbyTest {
         argList.addAll(datumList);
     
         MapperContext context = new MapperContext();
-        context.put("datum_id", datumList);
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
+        context.putWhereParameter("datum_id", datumList);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
         
         MapperResult result = configInfoAggrMapperByDerby.batchRemoveAggr(context);
         String sql = result.getSql();
@@ -71,11 +71,11 @@ public class ConfigInfoAggrMapperByDerbyTest {
         argList.addAll(datumIds);
     
         MapperContext context = new MapperContext();
-        context.put("datum_id", datumIds);
-        context.put("isIn", true);
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
+        context.putWhereParameter("datum_id", datumIds);
+        context.putWhereParameter("isIn", true);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByDerby.aggrConfigInfoCount(context);
         String sql = mapperResult.getSql();
@@ -94,9 +94,9 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String tenantId = "tenant-id";
     
         MapperContext context = new MapperContext();
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByDerby.findConfigInfoAggrIsOrdered(context);
         String sql = mapperResult.getSql();
@@ -116,11 +116,11 @@ public class ConfigInfoAggrMapperByDerbyTest {
         Integer pageSize = 5;
     
         MapperContext context = new MapperContext();
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
-        context.put("startRow", startRow);
-        context.put("pageSize", pageSize);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter("startRow", startRow);
+        context.putWhereParameter("pageSize", pageSize);
         
         MapperResult mapperResult = configInfoAggrMapperByDerby.findConfigInfoAggrByPageFetchRows(context);
         String sql = mapperResult.getSql();
