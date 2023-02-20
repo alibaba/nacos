@@ -93,22 +93,6 @@
             <artifactId>logback-core</artifactId>
             <optional>true</optional>
         </dependency>
-    
-        <dependency>
-            <groupId>com.alibaba.nacos</groupId>
-            <artifactId>logback-adpater</artifactId>
-            <version>1.0.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         
         <dependency>
             <artifactId>commons-codec</artifactId>
