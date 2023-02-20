@@ -18,7 +18,6 @@
 
 package com.alibaba.nacos.core.control.http;
 
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
@@ -38,13 +37,7 @@ import java.lang.reflect.Method;
  * @author shiyiyue
  */
 public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
-    
-    private static final String X_REAL_IP = "X-Real-IP";
-    
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
-    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
@@ -79,15 +72,6 @@ public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
         }
         
         return true;
-    }
-    
-    private static String getRemoteIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (!StringUtils.isBlank(xForwardedFor)) {
-            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
-        }
-        String nginxHeader = request.getHeader(X_REAL_IP);
-        return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
     }
     
     void generate503Response(HttpServletRequest request, HttpServletResponse response, String message) {
