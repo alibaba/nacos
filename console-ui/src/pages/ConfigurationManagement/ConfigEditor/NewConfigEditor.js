@@ -92,6 +92,7 @@ class ConfigEditor extends React.Component {
   componentDidMount() {
     const isNewConfig = !getParams('dataId');
     const group = getParams('group').trim();
+    this.tenant = getParams('namespace') || '';
     this.setState({ isNewConfig }, () => {
       if (!isNewConfig) {
         this.changeForm(
@@ -493,6 +494,9 @@ class ConfigEditor extends React.Component {
             </Tab>
           )}
           <Form className="new-config-form" {...formItemLayout}>
+            <Form.Item label={locale.namespace} required>
+              <p>{this.tenant}</p>
+            </Form.Item>
             <Form.Item label="Data ID" required {...dataIdError}>
               <Input
                 value={form.dataId}

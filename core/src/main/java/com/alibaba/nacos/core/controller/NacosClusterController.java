@@ -101,6 +101,7 @@ public class NacosClusterController {
      * @param node {@link Member}
      * @return {@link RestResult}
      */
+    @Deprecated
     @PostMapping(value = {"/report"})
     public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.cluster.remote.request;
 
 import com.alibaba.nacos.api.remote.Payload;
+import com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest;
 
 import java.util.HashSet;
 import java.util.Set;

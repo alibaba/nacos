@@ -42,10 +42,10 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @return The sql of deleting aggregated data in bulk.
      */
     default MapperResult batchRemoveAggr(MapperContext context) {
-        final List<String> datumList = (List<String>) context.get("datum_id");
-        final String dataId = (String) context.get("data_id");
-        final String group = (String) context.get("group_id");
-        final String tenantTmp = (String) context.get("tenant_id");
+        final List<String> datumList = (List<String>) context.getWhereParameter("datum_id");
+        final String dataId = (String) context.getWhereParameter("data_id");
+        final String group = (String) context.getWhereParameter("group_id");
+        final String tenantTmp = (String) context.getWhereParameter("tenant_id");
     
         List<Object> paramList = new ArrayList<>();
         paramList.add(dataId);
@@ -76,11 +76,11 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @return The sql of getting count of aggregation config info.
      */
     default MapperResult aggrConfigInfoCount(MapperContext context) {
-        List<String> datumIds = (List<String>) context.get("datum_id");
-        Boolean isIn = (Boolean) context.get("isIn");
-        String dataId = (String) context.get("data_id");
-        String group = (String) context.get("group_id");
-        String tenantTmp = (String) context.get("tenant_id");
+        List<String> datumIds = (List<String>) context.getWhereParameter("datum_id");
+        Boolean isIn = (Boolean) context.getWhereParameter("isIn");
+        String dataId = (String) context.getWhereParameter("data_id");
+        String group = (String) context.getWhereParameter("group_id");
+        String tenantTmp = (String) context.getWhereParameter("tenant_id");
     
         List<Object> paramList = CollectionUtils.list(dataId, group, tenantTmp);
         paramList.addAll(datumIds);
@@ -113,9 +113,9 @@ public interface ConfigInfoAggrMapper extends Mapper {
      * @return The sql of finding all data before aggregation under a dataId.
      */
     default MapperResult findConfigInfoAggrIsOrdered(MapperContext context) {
-        String dataId = (String) context.get("data_id");
-        String groupId = (String) context.get("group_id");
-        String tenantId = (String) context.get("tenant_id");
+        String dataId = (String) context.getWhereParameter("data_id");
+        String groupId = (String) context.getWhereParameter("group_id");
+        String tenantId = (String) context.getWhereParameter("tenant_id");
     
         String sql = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM "
                 + "config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY datum_id";
