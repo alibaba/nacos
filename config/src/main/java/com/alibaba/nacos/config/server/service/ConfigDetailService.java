@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -52,9 +52,9 @@ public class ConfigDetailService {
     /**
      * the max_capacity of eventLinkedBlockingQueue may be controlled by the properties {@link PropertiesConstant#SEARCH_MAX_CAPACITY}.
      */
-    private static int maxCapacity = 8;
+    private static int maxCapacity = 4;
     
-    private static final int MAX_CAPACITY = 40;
+    private static final int MAX_CAPACITY = 32;
     
     /**
      * the wait_timeout of search config business may be controlled by the properties {@link PropertiesConstant#SEARCH_WAIT_TIMEOUT}.
@@ -64,9 +64,9 @@ public class ConfigDetailService {
     /**
      * the max_thread of clientEventExecutor may be controlled by the properties {@link PropertiesConstant#SEARCH_MAX_THREAD}.
      */
-    private static int maxThread = 5;
+    private static int maxThread = 2;
     
-    private static final int MAX_THREAD = 20;
+    private static final int MAX_THREAD = 16;
     
     public ConfigDetailService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
@@ -125,7 +125,7 @@ public class ConfigDetailService {
      * block thread and use workerThread to search config.
      */
     public Page<ConfigInfo> findConfigInfoPage(String search, int pageNo, int pageSize, String dataId, String group,
-            String tenant, Map<String, Object> configAdvanceInfo) throws NacosException {
+            String tenant, Map<String, Object> configAdvanceInfo) throws NacosRuntimeException {
         SearchEvent searchEvent = new SearchEvent(search, pageNo, pageSize, dataId, group, tenant,
                 configAdvanceInfo);
         Page<ConfigInfo> result = null;
@@ -133,20 +133,17 @@ public class ConfigDetailService {
             synchronized (searchEvent) {
                 boolean offer = eventLinkedBlockingQueue.offer(searchEvent);
                 if (!offer) {
-                    throw new RuntimeException("config detail event offer fail.");
+                    throw new NacosRuntimeException(503, "server limit match.");
                 }
                 searchEvent.wait(waitTimeout);
                 result = searchEvent.getResponse();
             }
-        } catch (RuntimeException e) {
-            LOGGER.error("config detail block queue add error: {}.", e.getMessage());
-            throw new NacosException(503, "server limit match!");
         } catch (InterruptedException e) {
             LOGGER.error("get config detail timeout: {}.", e.getMessage());
-            throw new NacosException(503, "server limit match!");
+            throw new NacosRuntimeException(503, "server limit match.");
         }
         if (result == null) {
-            throw new NacosException(503, "server limit match!");
+            throw new NacosRuntimeException(503, "server limit match.");
         }
         return result;
     }
