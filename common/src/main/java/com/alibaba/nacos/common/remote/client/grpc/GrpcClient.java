@@ -26,23 +26,33 @@ import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.LoggerUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
+import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
+import io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider;
+import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -120,7 +130,12 @@ public abstract class GrpcClient extends RpcClient {
         this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
                 .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
-    
+
+    public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels, TlsConfig tlsConfig) {
+        this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize).setTlsConfig(tlsConfig)
+                .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
+    }
+
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
         // Thread name will use String.format, ipv6 maybe contain special word %, so handle it first.
         serverIp = serverIp.replaceAll("%", "-");
@@ -132,7 +147,7 @@ public abstract class GrpcClient extends RpcClient {
         grpcExecutor.allowCoreThreadTimeOut(true);
         return grpcExecutor;
     }
-    
+
     @Override
     public void shutdown() throws NacosException {
         super.shutdown();
@@ -160,12 +175,12 @@ public abstract class GrpcClient extends RpcClient {
      * @return if server check success,return a non-null channel.
      */
     private ManagedChannel createNewManagedChannel(String serverIp, int serverPort) {
-        ManagedChannelBuilder<?> managedChannelBuilder = ManagedChannelBuilder.forAddress(serverIp, serverPort)
+        ManagedChannelBuilder<?> managedChannelBuilder = buildChannel(serverIp, serverPort, buildSslContext())
                 .executor(grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .maxInboundMessageSize(clientConfig.maxInboundMessageSize())
                 .keepAliveTime(clientConfig.channelKeepAlive(), TimeUnit.MILLISECONDS)
-                .keepAliveTimeout(clientConfig.channelKeepAliveTimeout(), TimeUnit.MILLISECONDS).usePlaintext();
+                .keepAliveTimeout(clientConfig.channelKeepAliveTimeout(), TimeUnit.MILLISECONDS);
         return managedChannelBuilder.build();
     }
     
@@ -304,7 +319,7 @@ public abstract class GrpcClient extends RpcClient {
             ManagedChannel managedChannel = createNewManagedChannel(serverInfo.getServerIp(), port);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
             if (newChannelStubTemp != null) {
-                
+
                 Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
                 if (response == null || !(response instanceof ServerCheckResponse)) {
                     shuntDownChannel(managedChannel);
@@ -340,7 +355,56 @@ public abstract class GrpcClient extends RpcClient {
         }
         return null;
     }
-    
+
+    private ManagedChannelBuilder buildChannel(String serverIp, int port, Optional<SslContext> sslContext) {
+        if (sslContext.isPresent()) {
+            return NettyChannelBuilder.forAddress(serverIp, port)
+                    .negotiationType(NegotiationType.TLS)
+                    .sslContext(sslContext.get());
+
+        } else {
+            return ManagedChannelBuilder
+                    .forAddress(serverIp, port).usePlaintext();
+        }
+    }
+
+    private Optional<SslContext> buildSslContext() {
+        TlsConfig tlsConfig = clientConfig.tlsConfig();
+        if (!tlsConfig.getEnableTls()) {
+            return Optional.absent();
+        }
+        try {
+            SslContextBuilder builder = GrpcSslContexts.forClient();
+            builder.sslProvider(SslProvider.OPENSSL);
+            if (StringUtils.isNotBlank(tlsConfig.getProtocols())) {
+                builder.protocols(tlsConfig.getProtocols().split(","));
+            }
+            if (StringUtils.isNotBlank(tlsConfig.getCiphers())) {
+                builder.ciphers(Arrays.asList(tlsConfig.getCiphers().split(",")));
+            }
+            if (tlsConfig.getTrustAll()) {
+                builder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+            } else {
+                if (StringUtils.isBlank(tlsConfig.getTrustCollectionCertFile())) {
+                    throw new IllegalArgumentException("trustCollectionChainFile must be not null");
+                }
+                Resource resource = resourceLoader.getResource(tlsConfig.getTrustCollectionCertFile());
+                builder.trustManager(resource.getInputStream());
+            }
+
+            if (tlsConfig.getMutualAuthEnable()) {
+                if (StringUtils.isBlank(tlsConfig.getCertChainFile()) || StringUtils.isBlank(tlsConfig.getCertPrivateKey())) {
+                    throw new IllegalArgumentException("client certChainFile or privateKeyFile must be not null");
+                }
+                Resource certChainFile = resourceLoader.getResource(tlsConfig.getCertChainFile());
+                Resource privateKey = resourceLoader.getResource(tlsConfig.getCertPrivateKey());
+                builder.keyManager(certChainFile.getInputStream(), privateKey.getInputStream(), tlsConfig.getPassword());
+            }
+            return Optional.of(builder.build());
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to build SslContext", e);
+        }
+    }
 }
 
 

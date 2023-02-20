@@ -60,7 +60,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     private long healthCheckTimeOut;
     
     private Map<String, String> labels;
-    
+
+    private TlsConfig tlsConfig = new TlsConfig();
+
     /**
      * constructor.
      *
@@ -88,6 +90,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         this.channelKeepAliveTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT,
                 builder.channelKeepAliveTimeout);
         this.labels = builder.labels;
+        if (Objects.nonNull(builder.tlsConfig)) {
+            this.tlsConfig = builder.tlsConfig;
+        }
     }
     
     private int loadIntegerConfig(String key, int builderValue) {
@@ -157,17 +162,26 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     public long channelKeepAliveTimeout() {
         return channelKeepAliveTimeout;
     }
-    
+
+    @Override
+    public TlsConfig tlsConfig() {
+        return tlsConfig;
+    }
+
+    public void setTlsConfig(TlsConfig tlsConfig) {
+        this.tlsConfig = tlsConfig;
+    }
+
     @Override
     public int healthCheckRetryTimes() {
         return healthCheckRetryTimes;
     }
-    
+
     @Override
     public long healthCheckTimeOut() {
         return healthCheckTimeOut;
     }
-    
+
     @Override
     public Map<String, String> labels() {
         return this.labels;
@@ -208,7 +222,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         private long healthCheckTimeOut = 3000L;
         
         private Map<String, String> labels = new HashMap<>();
-        
+
+        private TlsConfig tlsConfig = new TlsConfig();
+
         private Builder() {
         }
         
@@ -219,6 +235,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @return Builder
          */
         public Builder fromProperties(Properties properties) {
+            if (Objects.isNull(this.tlsConfig)) {
+                this.tlsConfig = new TlsConfig();
+            }
             if (properties.contains(GrpcConstants.GRPC_NAME)) {
                 this.name = properties.getProperty(GrpcConstants.GRPC_NAME);
             }
@@ -271,7 +290,44 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.channelKeepAliveTimeout = Integer.parseInt(
                         properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-            
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS)) {
+                this.tlsConfig.setEnableTls(Boolean.parseBoolean(
+                        properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS)));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH)) {
+                this.tlsConfig.setMutualAuthEnable(Boolean.parseBoolean(
+                        properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH)));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROTOCOLS)) {
+                this.tlsConfig.setProtocols(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROTOCOLS);
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CIPHERS)) {
+                this.tlsConfig.setCiphers(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CIPHERS));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH)) {
+                this.tlsConfig.setTrustCollectionCertFile(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH)) {
+                this.tlsConfig.setCertChainFile(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY)) {
+                this.tlsConfig.setCertPrivateKey(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL)) {
+                this.tlsConfig.setTrustAll(Boolean.parseBoolean(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL)));
+            }
+
+            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_PWD)) {
+                this.tlsConfig.setPassword(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_PWD));
+            }
             return this;
         }
         
@@ -401,7 +457,18 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             this.labels.putAll(labels);
             return this;
         }
-        
+
+        /**
+         * set tlsConfig.
+         *
+         * @param tlsConfig tls of client.
+         * @return
+         */
+        public Builder setTlsConfig(TlsConfig tlsConfig) {
+            this.tlsConfig = tlsConfig;
+            return this;
+        }
+
         /**
          * build GrpcClientConfig.
          */
@@ -409,5 +476,5 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             return new DefaultGrpcClientConfig(this);
         }
     }
-    
+
 }

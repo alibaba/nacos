@@ -65,10 +65,15 @@ public class GrpcClusterClient extends GrpcClient {
      * @param labels             .
      */
     public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-            Map<String, String> labels) {
-        super(name, threadPoolCoreSize, threadPoolMaxSize, labels);
+                             Map<String, String> labels) {
+        this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
-    
+
+    public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
+                             Map<String, String> labels, TlsConfig tlsConfig) {
+        super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
+    }
+
     @Override
     public int rpcPortOffset() {
         return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,

@@ -77,7 +77,22 @@ public interface GrpcClientConfig extends RpcClientConfig {
     /**
      * get channelKeepAliveTimeout.
      *
-     * @return channelKeepAliveTimeout
+     * @return channelKeepAliveTimeout.
      */
     long channelKeepAliveTimeout();
+
+    /**
+     *  getTlsConfig.
+     *
+     * @return TlsConfig.
+     */
+    TlsConfig tlsConfig();
+
+    /**
+     *Set TlsConfig.
+     *
+     * @param tlsConfig tlsConfig of client.
+     */
+    void setTlsConfig(TlsConfig tlsConfig);
+
 }
