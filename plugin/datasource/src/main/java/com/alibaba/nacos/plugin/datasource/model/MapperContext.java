@@ -27,30 +27,57 @@ import java.util.Map;
 
 public class MapperContext {
     
-    private Map<String, Object> paramMap;
+    private final Map<String, Object> whereParamMap;
+    
+    private final Map<String, Object> updateParamMap;
+    
+    private int startRow;
+    
+    private int pageSize;
     
     public MapperContext() {
-        this.paramMap = new HashMap<>();
+        this.whereParamMap = new HashMap<>();
+        this.updateParamMap = new HashMap<>();
     }
     
     /**
-     * Returns the value to which the key is mapped.
+     * Returns the value to which the key is mapped, it will return the WHERE parameter in the SQL statement.
      *
      * @param key The key whose associated value is to be returned
      * @return The value to which the key is mapped
      */
-    public Object get(String key) {
-        return paramMap.get(key);
+    public Object getWhereParameter(String key) {
+        return whereParamMap.get(key);
     }
     
     /**
-     * Associates the value with the key in this map.
+     * Associates the value with the key in this map, it will contain the WHERE parameter in the SQL statement.
      *
      * @param key Key with which the value is to be associated
      * @param value Value to be associated with the specified key
      */
-    public void put(String key, Object value) {
-        this.paramMap.put(key, value);
+    public void putWhereParameter(String key, Object value) {
+        this.whereParamMap.put(key, value);
+    }
+    
+    /**
+     * Returns the value to which the key is mapped, it will return the UPDATE parameter in the SQL statement.
+     *
+     * @param key The key whose associated value is to be returned
+     * @return The value to which the key is mapped
+     */
+    public Object getUpdateParameter(String key) {
+        return updateParamMap.get(key);
+    }
+    
+    /**
+     * Associates the value with the key in this map, it will contain the UPDATE parameter in the SQL statement.
+     *
+     * @param key Key with which the value is to be associated
+     * @param value Value to be associated with the specified key
+     */
+    public void putUpdateParameter(String key, Object value) {
+        this.updateParamMap.put(key, value);
     }
     
     @Override
@@ -65,6 +92,22 @@ public class MapperContext {
     
     @Override
     public String toString() {
-        return "MapperContext{" + "paramMap=" + paramMap + '}';
+        return "MapperContext{" + "whereParamMap=" + whereParamMap + '}';
+    }
+    
+    public int getStartRow() {
+        return startRow;
+    }
+    
+    public void setStartRow(int startRow) {
+        this.startRow = startRow;
+    }
+    
+    public int getPageSize() {
+        return pageSize;
+    }
+    
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
 }

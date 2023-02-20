@@ -51,10 +51,10 @@ public class ConfigInfoAggrMapperByMySqlTest {
         argList.addAll(datumList);
     
         MapperContext context = new MapperContext();
-        context.put("datum_id", datumList);
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
+        context.putWhereParameter("datum_id", datumList);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByMySql.batchRemoveAggr(context);
         String sql = mapperResult.getSql();
@@ -77,11 +77,11 @@ public class ConfigInfoAggrMapperByMySqlTest {
         argList.addAll(datumIds);
     
         MapperContext context = new MapperContext();
-        context.put("datum_id", datumIds);
-        context.put("isIn", true);
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
+        context.putWhereParameter("datum_id", datumIds);
+        context.putWhereParameter("isIn", true);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
         MapperResult mapperResult = configInfoAggrMapperByMySql.aggrConfigInfoCount(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
@@ -99,9 +99,9 @@ public class ConfigInfoAggrMapperByMySqlTest {
         String tenantId = "tenant-id";
         
         MapperContext context = new MapperContext();
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByMySql.findConfigInfoAggrIsOrdered(context);
         String sql = mapperResult.getSql();
@@ -121,11 +121,11 @@ public class ConfigInfoAggrMapperByMySqlTest {
         Integer pageSize = 5;
         
         MapperContext context = new MapperContext();
-        context.put("data_id", dataId);
-        context.put("group_id", groupId);
-        context.put("tenant_id", tenantId);
-        context.put("startRow", startRow);
-        context.put("pageSize", pageSize);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", groupId);
+        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter("startRow", startRow);
+        context.putWhereParameter("pageSize", pageSize);
         
         MapperResult mapperResult = configInfoAggrMapperByMySql.findConfigInfoAggrByPageFetchRows(context);
         String sql = mapperResult.getSql();

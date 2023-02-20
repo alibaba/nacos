@@ -236,10 +236,10 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 TableConstant.CONFIG_INFO_AGGR);
     
         MapperContext context = new MapperContext();
-        context.put("datum_id", datumList);
-        context.put("data_id", dataId);
-        context.put("group_id", group);
-        context.put("tenant_id", tenantTmp);
+        context.putWhereParameter("datum_id", datumList);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", group);
+        context.putWhereParameter("tenant_id", tenantTmp);
         
         MapperResult mapperResult = configInfoAggrMapper.batchRemoveAggr(context);
         
@@ -281,11 +281,11 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 TableConstant.CONFIG_INFO_AGGR);
         
         MapperContext context = new MapperContext();
-        context.put("datum_id", datumIds);
-        context.put("isIn", true);
-        context.put("data_id", dataId);
-        context.put("group_id", group);
-        context.put("tenant_id", tenantTmp);
+        context.putWhereParameter("datum_id", datumIds);
+        context.putWhereParameter("isIn", true);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", group);
+        context.putWhereParameter("tenant_id", tenantTmp);
         
         MapperResult mapperResult = configInfoAggrMapper.aggrConfigInfoCount(context);
         
@@ -320,9 +320,9 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 TableConstant.CONFIG_INFO_AGGR);
         
         MapperContext context = new MapperContext();
-        context.put("data_id", dataId);
-        context.put("group_id", group);
-        context.put("tenant_id", tenantTmp);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", group);
+        context.putWhereParameter("tenant_id", tenantTmp);
         
         MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrIsOrdered(context);
         String sql = mapperResult.getSql();
@@ -343,11 +343,11 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         
         MapperContext context = new MapperContext();
-        context.put("data_id", dataId);
-        context.put("group_id", group);
-        context.put("tenant_id", tenantTmp);
-        context.put("startRow", startRow);
-        context.put("pageSize", pageSize);
+        context.putWhereParameter("data_id", dataId);
+        context.putWhereParameter("group_id", group);
+        context.putWhereParameter("tenant_id", tenantTmp);
+        context.putWhereParameter("startRow", startRow);
+        context.putWhereParameter("pageSize", pageSize);
         MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
         String sqlFetchRows = mapperResult.getSql();
         Object[] sqlFetchArgs = mapperResult.getParamList().toArray();
