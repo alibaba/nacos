@@ -36,12 +36,7 @@
         <module>core-test</module>
     </modules>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <dependencies>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -109,6 +104,5 @@
             <artifactId>httpmime</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 </project>
