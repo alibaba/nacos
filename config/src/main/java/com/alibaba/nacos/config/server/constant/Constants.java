@@ -290,4 +290,8 @@ public class Constants {
     public static final int LIMIT_ERROR_CODE = 429;
     
     public static final String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
+    
+    public static final String CONFIG_SEARCH_BLUR = "blur";
+    
+    public static final String CONFIG_SEARCH_ACCURATE = "accurate";
 }
