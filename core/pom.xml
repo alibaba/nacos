@@ -32,18 +32,6 @@
 
     <name>nacos-core ${project.version}</name>
     <url>https://nacos.io</url>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -58,7 +46,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-consistency</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-auth</artifactId>
@@ -67,7 +55,7 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-trace-plugin</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
@@ -122,7 +110,7 @@
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
         </dependency>
- 
+
         <!-- JRaft dependency start -->
         <dependency>
             <groupId>com.alipay.sofa</groupId>
@@ -159,13 +147,13 @@
             <artifactId>micrometer-registry-elastic</artifactId>
         </dependency>
         <!--   micrometer end    -->
-        
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>protoc-gen-grpc-java</artifactId>
             <type>pom</type>
         </dependency>
-    
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-testing</artifactId>

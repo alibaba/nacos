@@ -25,7 +25,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    
+
     <artifactId>nacos-plugin</artifactId>
     <name>nacos-plugin ${project.version}</name>
     <url>https://nacos.io</url>

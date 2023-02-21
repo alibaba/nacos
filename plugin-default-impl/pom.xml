@@ -24,12 +24,12 @@
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    
+
     <artifactId>nacos-plugin-default-impl</artifactId>
     <packaging>jar</packaging>
     <name>nacos-plugin-default-impl ${project.version}</name>
     <url>https://nacos.io</url>
-    
+
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
@@ -39,19 +39,19 @@
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-common</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-sys</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-config</artifactId>
             <scope>provided</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>org.springframework.ldap</groupId>
             <artifactId>spring-ldap-core</artifactId>
