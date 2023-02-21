@@ -163,6 +163,14 @@
                                         </excludes>
                                     </filter>
                                     <filter>
+                                        <artifact>com.google.*:*</artifact>
+                                        <excludes>
+                                            <exclude>
+                                                google/**/*.proto
+                                            </exclude>
+                                        </excludes>
+                                    </filter>
+                                    <filter>
                                         <artifact>com.alibaba.nacos:nacos-api</artifact>
                                         <includes>
                                             <include>
