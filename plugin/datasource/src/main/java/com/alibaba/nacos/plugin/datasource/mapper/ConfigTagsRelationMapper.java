@@ -43,6 +43,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
         final String appName = params.get("appName");
         final String dataId = params.get("dataId");
         final String group = params.get("group");
+        final String content = params.get("content");
         StringBuilder where = new StringBuilder(" WHERE ");
         final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
 
@@ -57,7 +58,9 @@ public interface ConfigTagsRelationMapper extends Mapper {
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND a.app_name=? ");
         }
-
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND a.content LIKE ? ");
+        }
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagSize; i++) {
             if (i != 0) {
