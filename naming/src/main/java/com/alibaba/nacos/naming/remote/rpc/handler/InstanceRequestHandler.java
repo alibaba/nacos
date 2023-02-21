@@ -17,9 +17,12 @@
 package com.alibaba.nacos.naming.remote.rpc.handler;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
+import com.alibaba.nacos.api.naming.spi.generator.IdGenerator;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -29,8 +32,12 @@ import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.naming.pojo.instance.DefaultInstanceIdGenerator;
+import com.alibaba.nacos.naming.pojo.instance.SnowFlakeInstanceIdGenerator;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
+
+import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR;
 
 /**
  * Instance request handler.
@@ -64,6 +71,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     
     private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
             throws NacosException {
+        generateInstanceId(request, meta);
         clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
         NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
                 meta.getClientIp(), true, service.getNamespace(), service.getGroup(), service.getName(),
@@ -72,11 +80,25 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     }
     
     private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
+        generateInstanceId(request, meta);
         clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
         NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
                 meta.getClientIp(), true, DeregisterInstanceReason.REQUEST, service.getNamespace(),
                 service.getGroup(), service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
+    }
+
+    private void generateInstanceId(InstanceRequest request, RequestMeta meta){
+        Instance instance = request.getInstance();
+        IdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
+                instance.getClusterName(), instance.getIp(), instance.getPort());
+        String instanceIdGenerator = instance.getMetadata().get(PreservedMetadataKeys.INSTANCE_ID_GENERATOR);
+        if (SNOWFLAKE_INSTANCE_ID_GENERATOR.equalsIgnoreCase(instanceIdGenerator)) {
+            idGenerator = new SnowFlakeInstanceIdGenerator(instance.getServiceName(),
+                    instance.getClusterName(), instance.getPort());
+        }
+
+        instance.setInstanceId(idGenerator.generateInstanceId());
     }
     
 }
