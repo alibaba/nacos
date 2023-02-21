@@ -72,12 +72,6 @@
             <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>protoc-gen-grpc-java</artifactId>
-            <type>pom</type>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/io.envoyproxy.controlplane/api -->
-        <dependency>
             <groupId>io.envoyproxy.controlplane</groupId>
             <artifactId>api</artifactId>
             <version>0.1.27</version>

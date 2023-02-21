@@ -962,12 +962,6 @@
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
-                <artifactId>protoc-gen-grpc-java</artifactId>
-                <version>${grpc-java.version}</version>
-                <type>pom</type>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
                 <artifactId>grpc-testing</artifactId>
                 <version>${grpc-java.version}</version>
                 <scope>test</scope>

@@ -146,12 +146,6 @@
 
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>protoc-gen-grpc-java</artifactId>
-            <type>pom</type>
-        </dependency>
-
-        <dependency>
-            <groupId>io.grpc</groupId>
             <artifactId>grpc-testing</artifactId>
         </dependency>
         <dependency>
