@@ -269,7 +269,7 @@ public final class CollectionUtils {
     }
     
     /**
-     * Return an set containing all input parameters.
+     * Return a set containing all input parameters.
      *
      * @param elements elements element array
      * @return set containing all input parameters
