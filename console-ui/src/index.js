@@ -55,8 +55,6 @@ import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
 
 import './index.scss';
-import '@alifd/theme-design-pro/variables.css';
-import '@alifd/theme-design-pro/dist/next.var.css';
 import PropTypes from 'prop-types';
 
 module.hot && module.hot.accept();
