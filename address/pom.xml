@@ -21,14 +21,14 @@
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
-
+    
     <modelVersion>4.0.0</modelVersion>
     <artifactId>nacos-address</artifactId>
     <packaging>jar</packaging>
-
+    
     <name>nacos-address ${project.version}</name>
     <url>https://nacos.io</url>
-
+    
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -46,7 +46,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
+    
     <build>
         <resources>
             <resource>
@@ -54,7 +54,7 @@
             </resource>
         </resources>
     </build>
-
+    
     <reporting>
         <plugins>
             <plugin>
@@ -63,7 +63,7 @@
             </plugin>
         </plugins>
     </reporting>
-
+    
     <profiles>
         <profile>
             <id>release-address</id>

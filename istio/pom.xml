@@ -21,14 +21,14 @@
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
-
+    
     <modelVersion>4.0.0</modelVersion>
     <artifactId>nacos-istio</artifactId>
     <packaging>jar</packaging>
-
+    
     <name>nacos-istio ${project.version}</name>
     <url>https://nacos.io</url>
-
+    
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -50,7 +50,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-core</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
@@ -77,6 +77,7 @@
             <version>0.1.27</version>
         </dependency>
     </dependencies>
+    
 
     <build>
         <extensions>

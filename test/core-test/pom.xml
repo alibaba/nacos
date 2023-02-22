@@ -26,9 +26,9 @@
     <modelVersion>4.0.0</modelVersion>
     <name>nacos-core-test ${project.version}</name>
     <url>https://nacos.io</url>
-
+    
     <artifactId>core-test</artifactId>
-
+    
     <build>
         <plugins>
             <plugin>

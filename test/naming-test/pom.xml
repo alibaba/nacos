@@ -26,9 +26,9 @@
     <modelVersion>4.0.0</modelVersion>
     <name>nacos-naming-test ${project.version}</name>
     <url>https://nacos.io</url>
-
+    
     <artifactId>naming-test</artifactId>
-
+    
     <build>
         <plugins>
             <plugin>

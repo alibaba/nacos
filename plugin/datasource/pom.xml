@@ -23,11 +23,11 @@
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
+    
     <artifactId>nacos-datasource-plugin</artifactId>
     <name>nacos-datasource-plugin ${project.version}</name>
     <url>https://nacos.io</url>
-
+    
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
