@@ -278,7 +278,7 @@ public final class CollectionUtils {
         if (elements == null) {
             throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
         } else {
-            return new LinkedHashSet(Arrays.asList(elements));
+            return new LinkedHashSet<>(Arrays.asList(elements));
         }
     }
     
