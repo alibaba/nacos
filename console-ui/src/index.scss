@@ -1258,3 +1258,15 @@ form.vertical-margin-lg .form-group {
 .row-bg-red {
   background-color: #ffece4;
 }
+
+
+// 引用主题变量
+@import "~@alifd/theme-design-pro/variables.scss";
+
+$adv-icon-font-path: "http://at.alicdn.com/t/font_1533967_slipq25tezj.woff2" !default;
+$icon-font-path: $adv-icon-font-path;
+
+// 引用基础主题
+@import "~@alifd/next/index.scss";
+
+@import "~@alifd/theme-design-pro/icons.scss";
