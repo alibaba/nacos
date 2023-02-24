@@ -158,9 +158,6 @@
                                             <exclude>
                                                 META-INF/native/*.*
                                             </exclude>
-                                            <exclude>
-                                                META-INF/native-image/**
-                                            </exclude>
                                         </excludes>
                                     </filter>
                                     <filter>
