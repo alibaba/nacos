@@ -88,7 +88,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
 
-    private void generateInstanceId(InstanceRequest request, RequestMeta meta){
+    private void generateInstanceId(InstanceRequest request, RequestMeta meta) {
         Instance instance = request.getInstance();
         IdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
                 instance.getClusterName(), instance.getIp(), instance.getPort());

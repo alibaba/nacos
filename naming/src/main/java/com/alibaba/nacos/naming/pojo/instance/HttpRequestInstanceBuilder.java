@@ -32,7 +32,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 
-import static com.alibaba.nacos.api.common.Constants.*;
+import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR;
 
 /**
  * Http instance builder.
