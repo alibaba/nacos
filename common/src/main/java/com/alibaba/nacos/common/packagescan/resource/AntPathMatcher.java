@@ -249,11 +249,11 @@ public class AntPathMatcher implements PathMatcher {
             if (!fullMatch) {
                 return true;
             }
-            if (pattIdxStart == pattIdxEnd && pattDirs[pattIdxStart].equals("*") && path.endsWith(this.pathSeparator)) {
+            if (pattIdxStart == pattIdxEnd && "*".equals(pattDirs[pattIdxStart]) && path.endsWith(this.pathSeparator)) {
                 return true;
             }
             for (int i = pattIdxStart; i <= pattIdxEnd; i++) {
-                if (!pattDirs[i].equals("**")) {
+                if (!"**".equals(pattDirs[i])) {
                     return false;
                 }
             }
@@ -269,7 +269,7 @@ public class AntPathMatcher implements PathMatcher {
         // up to last '**'
         while (pattIdxStart <= pattIdxEnd && pathIdxStart <= pathIdxEnd) {
             String pattDir = pattDirs[pattIdxEnd];
-            if (pattDir.equals("**")) {
+            if ("**".equals(pattDir)) {
                 break;
             }
             if (!matchStrings(pattDir, pathDirs[pathIdxEnd], uriTemplateVariables)) {
@@ -281,7 +281,7 @@ public class AntPathMatcher implements PathMatcher {
         if (pathIdxStart > pathIdxEnd) {
             // String is exhausted
             for (int i = pattIdxStart; i <= pattIdxEnd; i++) {
-                if (!pattDirs[i].equals("**")) {
+                if (!"**".equals(pattDirs[i])) {
                     return false;
                 }
             }
@@ -291,7 +291,7 @@ public class AntPathMatcher implements PathMatcher {
         while (pattIdxStart != pattIdxEnd && pathIdxStart <= pathIdxEnd) {
             int patIdxTmp = -1;
             for (int i = pattIdxStart + 1; i <= pattIdxEnd; i++) {
-                if (pattDirs[i].equals("**")) {
+                if ("**".equals(pattDirs[i])) {
                     patIdxTmp = i;
                     break;
                 }
@@ -329,7 +329,7 @@ public class AntPathMatcher implements PathMatcher {
         }
 
         for (int i = pattIdxStart; i <= pattIdxEnd; i++) {
-            if (!pattDirs[i].equals("**")) {
+            if (!"**".equals(pattDirs[i])) {
                 return false;
             }
         }
@@ -584,7 +584,7 @@ public class AntPathMatcher implements PathMatcher {
         }
 
         int starDotPos1 = pattern1.indexOf("*.");
-        if (pattern1ContainsUriVar || starDotPos1 == -1 || this.pathSeparator.equals(".")) {
+        if (pattern1ContainsUriVar || starDotPos1 == -1 || ".".equals(this.pathSeparator)) {
             // simply concatenate the two patterns
             return concat(pattern1, pattern2);
         }
@@ -593,8 +593,8 @@ public class AntPathMatcher implements PathMatcher {
         int dotPos2 = pattern2.indexOf('.');
         String file2 = (dotPos2 == -1 ? pattern2 : pattern2.substring(0, dotPos2));
         String ext2 = (dotPos2 == -1 ? "" : pattern2.substring(dotPos2));
-        boolean ext1All = (ext1.equals(".*") || ext1.isEmpty());
-        boolean ext2All = (ext2.equals(".*") || ext2.isEmpty());
+        boolean ext1All = (".*".equals(ext1) || ext1.isEmpty());
+        boolean ext2All = (".*".equals(ext2) || ext2.isEmpty());
         if (!ext1All && !ext2All) {
             throw new IllegalArgumentException("Cannot combine patterns: " + pattern1 + " vs " + pattern2);
         }
@@ -853,7 +853,7 @@ public class AntPathMatcher implements PathMatcher {
                 this.pattern = pattern;
                 if (this.pattern != null) {
                     initCounters();
-                    this.catchAllPattern = this.pattern.equals("/**");
+                    this.catchAllPattern = "/**".equals(this.pattern);
                     this.prefixPattern = !this.catchAllPattern && this.pattern.endsWith("/**");
                 }
                 if (this.uriVars == 0) {
@@ -872,7 +872,7 @@ public class AntPathMatcher implements PathMatcher {
                             if (pos + 1 < this.pattern.length() && this.pattern.charAt(pos + 1) == '*') {
                                 this.doubleWildcards++;
                                 pos += 2;
-                            } else if (pos > 0 && !this.pattern.substring(pos - 1).equals(".*")) {
+                            } else if (pos > 0 && !".*".equals(this.pattern.substring(pos - 1))) {
                                 this.singleWildcards++;
                                 pos++;
                             } else {
