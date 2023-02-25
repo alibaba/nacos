@@ -1,18 +1,17 @@
 package com.alibaba.nacos.naming.pojo.instance;
 
-import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.anyObject;
 
 /**
  * Created by chenwenshun on 2023/2/24.
@@ -22,7 +21,6 @@ public class SnowFlakeInstanceIdGeneratorTest {
 
     @Mock
     MockEnvironment env;
-
 
     @Test
     public void testGenerateInstanceId() {
