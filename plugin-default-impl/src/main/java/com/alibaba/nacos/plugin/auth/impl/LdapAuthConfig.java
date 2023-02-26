@@ -62,10 +62,18 @@ public class LdapAuthConfig {
     @Value(("${" + AuthConstants.NACOS_CORE_AUTH_CASE_SENSITIVE + ":true}"))
     private boolean caseSensitive;
     
+    /**
+     * LDAP Ignore partial result exception {@link LdapTemplate#setIgnorePartialResultException(boolean)}.
+     */
+    @Value(("${" + AuthConstants.NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION + ":false}"))
+    private boolean ignorePartialResultException;
+    
     @Bean
     @Conditional(ConditionOnLdapAuth.class)
     public LdapTemplate ldapTemplate(LdapContextSource ldapContextSource) {
-        return new LdapTemplate(ldapContextSource);
+        LdapTemplate ldapTemplate = new LdapTemplate(ldapContextSource);
+        ldapTemplate.setIgnorePartialResultException(ignorePartialResultException);
+        return ldapTemplate;
     }
     
     @Bean

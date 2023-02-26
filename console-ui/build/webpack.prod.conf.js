@@ -27,7 +27,8 @@ cssLoader.use.push({
   options: {
     modifyVars: {
       '$icon-font-path': '"../console-ui/public/icons/icon-font"',
-      '$font-custom-path': '"../console-ui/public/fonts/"'
+      '$font-custom-path': '"../console-ui/public/fonts/"',
+      '$adv-icon-font-path': '"../console-ui/public/fonts/font_1533967_slipq25tezj"',
     }
   }
 })

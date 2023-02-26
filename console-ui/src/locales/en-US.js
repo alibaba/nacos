@@ -302,6 +302,8 @@ const I18N_CONF = {
     app1: 'Enter App Name\n',
     tags: 'Tags',
     pleaseEnterTag: 'Enter Tag',
+    configDetailLabel: 'DetailSearch',
+    configDetailH: 'search config detail',
     application: 'Application',
     operation: 'Operation',
     export: 'Export query results',
