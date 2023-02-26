@@ -29,27 +29,69 @@ import org.springframework.stereotype.Component;
 @Component
 public class GrpcServerConfig {
 
-    private Boolean enableSsl = false;
+    /**
+     * ssl provider,default OPENSSL,JDK,OPENSSL_REFCNT.
+     */
+    private String sslProvider = "OPENSSL";
 
-    private Boolean mutualAuthEnable = false;
+    /**
+     *  whether to enables tls.
+     */
+    private Boolean enableTls = false;
 
+    /**
+     *  open tls and plain protocol.
+     */
     private Boolean compatibility = true;
 
-    private Boolean trustCertAll = false;
-
-    private String certificateChainFile;
-
+    /**
+     *   private key.
+     */
     private String privateKeyFile;
 
-    private String trustCertCollectionFile;
+    /**
+     * cert file.
+     */
+    private String certificateChainFile;
 
-    private boolean nativeTransport;
-
+    /**
+     * tls version: TLSv1.1,TLSv1.2,TLSv1.3.
+     * if want to support multi protocol, use comma  seperated. like TLSv1.1,TLSv1.2,TLSv1.3.
+     */
     private String protocols;
 
+    /**
+     * cipherList,  same of usage protocols.
+     */
     private String ciphers;
 
+    /**
+     * read certPrivateKey file when need password.
+     */
     private String password;
+
+    /**
+     * whether to enable mutual auth.
+     */
+    private Boolean mutualAuthEnable = false;
+
+    /**
+     * ignore certificate valid that trust all client.
+     */
+    private Boolean trustCertAll = false;
+
+    /**
+     *  if enable mutual auth please merge all cert file to one file.
+     */
+    private String trustCertCollectionFile;
+
+    public String getSslProvider() {
+        return sslProvider;
+    }
+
+    public void setSslProvider(String sslProvider) {
+        this.sslProvider = sslProvider;
+    }
 
     public Boolean getCompatibility() {
         return compatibility;
@@ -75,12 +117,12 @@ public class GrpcServerConfig {
         this.password = password;
     }
 
-    public Boolean getEnableSsl() {
-        return enableSsl;
+    public Boolean getEnableTls() {
+        return enableTls;
     }
 
-    public void setEnableSsl(Boolean enableSsl) {
-        this.enableSsl = enableSsl;
+    public void setEnableTls(Boolean enableTls) {
+        this.enableTls = enableTls;
     }
 
     public Boolean getMutualAuthEnable() {
@@ -113,14 +155,6 @@ public class GrpcServerConfig {
 
     public void setPrivateKeyFile(String privateKeyFile) {
         this.privateKeyFile = privateKeyFile;
-    }
-
-    public boolean isNativeTransport() {
-        return nativeTransport;
-    }
-
-    public void setNativeTransport(boolean nativeTransport) {
-        this.nativeTransport = nativeTransport;
     }
 
     public String getProtocols() {

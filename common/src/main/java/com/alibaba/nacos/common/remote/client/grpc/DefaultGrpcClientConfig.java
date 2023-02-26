@@ -235,9 +235,6 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @return Builder
          */
         public Builder fromProperties(Properties properties) {
-            if (Objects.isNull(this.tlsConfig)) {
-                this.tlsConfig = new TlsConfig();
-            }
             if (properties.contains(GrpcConstants.GRPC_NAME)) {
                 this.name = properties.getProperty(GrpcConstants.GRPC_NAME);
             }
@@ -290,44 +287,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.channelKeepAliveTimeout = Integer.parseInt(
                         properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS)) {
-                this.tlsConfig.setEnableTls(Boolean.parseBoolean(
-                        properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS)));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH)) {
-                this.tlsConfig.setMutualAuthEnable(Boolean.parseBoolean(
-                        properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH)));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROTOCOLS)) {
-                this.tlsConfig.setProtocols(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROTOCOLS);
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CIPHERS)) {
-                this.tlsConfig.setCiphers(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CIPHERS));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH)) {
-                this.tlsConfig.setTrustCollectionCertFile(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH)) {
-                this.tlsConfig.setCertChainFile(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY)) {
-                this.tlsConfig.setCertPrivateKey(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL)) {
-                this.tlsConfig.setTrustAll(Boolean.parseBoolean(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL)));
-            }
-
-            if (properties.contains(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_PWD)) {
-                this.tlsConfig.setPassword(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_PWD));
-            }
+            this.tlsConfig = TlsConfig.properties(properties);
             return this;
         }
         

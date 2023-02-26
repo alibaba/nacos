@@ -34,6 +34,7 @@ import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.base.Optional;
@@ -47,7 +48,6 @@ import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
@@ -369,13 +369,14 @@ public abstract class GrpcClient extends RpcClient {
     }
 
     private Optional<SslContext> buildSslContext() {
+
         TlsConfig tlsConfig = clientConfig.tlsConfig();
         if (!tlsConfig.getEnableTls()) {
             return Optional.absent();
         }
         try {
             SslContextBuilder builder = GrpcSslContexts.forClient();
-            builder.sslProvider(SslProvider.OPENSSL);
+            builder.sslProvider(TlsTypeResolve.getSslProvider(tlsConfig.getSslProvider()));
             if (StringUtils.isNotBlank(tlsConfig.getProtocols())) {
                 builder.protocols(tlsConfig.getProtocols().split(","));
             }

@@ -15,26 +15,25 @@
  */
 
 
-package com.alibaba.nacos.test.config;
+package com.alibaba.nacos.test.client;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.grpc.TlsConfig;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.*;
-import org.junit.runner.OrderWith;
+import com.alibaba.nacos.test.ConfigCleanUtils;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runner.manipulation.Alphanumeric;
-import org.junit.runners.MethodSorters;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -49,25 +48,25 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author githubcheng2978
  */
 @RunWith(SpringRunner.class)
+@TestConfiguration
 @SpringBootTest(classes = {Nacos.class},
         properties = {
-                "nacos.standalone=true",
-                "server.port=9610",
-                "nacos.remote.server.grpc.tls.enableSSL=true",
+                "server.servlet.context-path=/nacos",
+                "nacos.remote.server.grpc.tls.compatibility=false",
+                "nacos.remote.server.grpc.tls.enableTls=true",
                 "nacos.remote.server.grpc.tls.certificateChainFile=server-cert.pem",
                 "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem",
-                "nacos.remote.server.grpc.tlstrustCertCollectionFile"},
+        },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigIntegrationV3Test {
-
+public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
 
     public static AtomicInteger increment = new AtomicInteger(100);
+    @LocalServerPort
+    private int port;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV3Test.class.getSimpleName());
-        EnvUtil.setPort(9610);
-
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV1ServerNonCompatibility_CITCase.class.getSimpleName());
     }
 
     @BeforeClass
@@ -77,57 +76,47 @@ public class ConfigIntegrationV3Test {
     }
 
     @Test
-    public void test_e_TlsServerAndPlainClient() throws Exception {
-        RpcClient client = RpcClientFactory.createClient("testTlsServerAndPlainClient", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), null);
+    public void test_a_TlsServer() throws Exception {
+        RpcClient client = RpcClientFactory.createClient("testTlsServer", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), null);
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
+        serverInfo.setServerPort(port);
 
-        serverInfo.setServerPort(EnvUtil.getPort());
         Connection connection = client.connectToServer(serverInfo);
-        ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
-
-        String content = UUID.randomUUID().toString();
-
-        configPublishRequest.setContent(content);
-        configPublishRequest.setGroup("test-group" + increment.getAndIncrement());
-        configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
-        configPublishRequest.setRequestId(content);
-        Response response = connection.request(configPublishRequest, TimeUnit.SECONDS.toMillis(3));
-        Assert.assertTrue(response.isSuccess());
-        connection.close();
-
+        Assert.assertNull(connection);
     }
 
+
     @Test
-    public void test_f_ServerTlsTrustAll() throws Exception {
+    public void test_b_ServerTlsTrustAll() throws Exception {
 
         TlsConfig tlsConfig = new TlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustAll(true);
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
+        serverInfo.setServerPort(port);
 
-        serverInfo.setServerPort(EnvUtil.getPort());
-        RpcClient clientTrustAll = RpcClientFactory.createClient("testServerTlsTrustAll", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
-        Connection connectionTrustAll = clientTrustAll.connectToServer(serverInfo);
+        RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
+        Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
         String content = UUID.randomUUID().toString();
         configPublishRequest.setContent(content);
         configPublishRequest.setGroup("test-group" + increment.getAndIncrement());
         configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
-        Response response = connectionTrustAll.request(configPublishRequest, TimeUnit.SECONDS.toMillis(3));
-        Assert.assertTrue(response.isSuccess());
-        connectionTrustAll.close();
 
+        Response response = connectionTrustCa.request(configPublishRequest, TimeUnit.SECONDS.toMillis(3));
+        Assert.assertTrue(response.isSuccess());
+        connectionTrustCa.close();
     }
 
     @Test
-    public void test_g_ServerTlsTrustCa() throws Exception {
+    public void test_c_ServerTlsTrustCa() throws Exception {
 
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
+        serverInfo.setServerPort(port);
 
-        serverInfo.setServerPort(EnvUtil.getPort());
         TlsConfig tlsConfig = new TlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("ca-cert.pem");

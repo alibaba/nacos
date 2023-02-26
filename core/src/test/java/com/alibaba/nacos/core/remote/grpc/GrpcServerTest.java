@@ -51,7 +51,7 @@ public class GrpcServerTest {
     public void testGrpcSdkServer() throws Exception {
         BaseGrpcServer grpcSdkServer = new GrpcSdkServer();
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
-        when(grpcServerConfig.getEnableSsl()).thenReturn(false);
+        when(grpcServerConfig.getEnableTls()).thenReturn(false);
         grpcSdkServer.start();
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
         Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1000);
@@ -62,7 +62,7 @@ public class GrpcServerTest {
     public void testGrpcClusterServer() throws Exception {
         BaseGrpcServer grpcSdkServer = new GrpcClusterServer();
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
-        when(grpcServerConfig.getEnableSsl()).thenReturn(false);
+        when(grpcServerConfig.getEnableTls()).thenReturn(false);
         grpcSdkServer.start();
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
         Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1001);
@@ -82,7 +82,7 @@ public class GrpcServerTest {
                 return 100;
             }
         };
-        when(grpcServerConfig.getEnableSsl()).thenReturn(true);
+        when(grpcServerConfig.getEnableTls()).thenReturn(true);
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
 
@@ -108,7 +108,7 @@ public class GrpcServerTest {
             }
         };
 
-        when(grpcServerConfig.getEnableSsl()).thenReturn(true);
+        when(grpcServerConfig.getEnableTls()).thenReturn(true);
         when(grpcServerConfig.getTrustCertAll()).thenReturn(true);
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
@@ -132,7 +132,7 @@ public class GrpcServerTest {
                 return 100;
             }
         };
-        when(grpcServerConfig.getEnableSsl()).thenReturn(true);
+        when(grpcServerConfig.getEnableTls()).thenReturn(true);
         when(grpcServerConfig.getMutualAuthEnable()).thenReturn(true);
         when(grpcServerConfig.getTrustCertAll()).thenReturn(true);
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
