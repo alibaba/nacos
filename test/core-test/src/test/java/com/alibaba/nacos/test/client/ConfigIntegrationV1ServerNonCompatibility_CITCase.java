@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
                 "server.servlet.context-path=/nacos",
                 "nacos.remote.server.grpc.tls.compatibility=false",
                 "nacos.remote.server.grpc.tls.enableTls=true",
-                "nacos.remote.server.grpc.tls.certificateChainFile=server-cert.pem",
+                "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
                 "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem",
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)

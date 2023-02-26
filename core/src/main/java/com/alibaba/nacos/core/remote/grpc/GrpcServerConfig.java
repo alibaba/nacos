@@ -52,7 +52,7 @@ public class GrpcServerConfig {
     /**
      * cert file.
      */
-    private String certificateChainFile;
+    private String certChainFile;
 
     /**
      * tls version: TLSv1.1,TLSv1.2,TLSv1.3.
@@ -83,7 +83,7 @@ public class GrpcServerConfig {
     /**
      *  if enable mutual auth please merge all cert file to one file.
      */
-    private String trustCertCollectionFile;
+    private String trustCollectionCertFile;
 
     public String getSslProvider() {
         return sslProvider;
@@ -133,20 +133,20 @@ public class GrpcServerConfig {
         this.mutualAuthEnable = mutualAuthEnable;
     }
 
-    public String getCertificateChainFile() {
-        return certificateChainFile;
+    public String getTrustCollectionCertFile() {
+        return trustCollectionCertFile;
     }
 
-    public String getTrustCertCollectionFile() {
-        return trustCertCollectionFile;
+    public void setTrustCollectionCertFile(String trustCollectionCertFile) {
+        this.trustCollectionCertFile = trustCollectionCertFile;
     }
 
-    public void setTrustCertCollectionFile(String trustCertCollectionFile) {
-        this.trustCertCollectionFile = trustCertCollectionFile;
+    public String getCertChainFile() {
+        return certChainFile;
     }
 
-    public void setCertificateChainFile(String certificateChainFile) {
-        this.certificateChainFile = certificateChainFile;
+    public void setCertChainFile(String certChainFile) {
+        this.certChainFile = certChainFile;
     }
 
     public String getPrivateKeyFile() {

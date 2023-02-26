@@ -52,9 +52,9 @@ import java.util.concurrent.atomic.AtomicInteger;
                 "nacos.remote.server.grpc.tls.enableTls=true",
                 "nacos.remote.server.grpc.tls.mutualAuthEnable=true",
                 "nacos.remote.server.grpc.tls.compatibility=false",
-                "nacos.remote.server.grpc.tls.certificateChainFile=server-cert.pem",
+                "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
                 "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem",
-                "nacos.remote.server.grpc.tls.trustCertCollectionFile=ca-cert.pem",
+                "nacos.remote.server.grpc.tls.trustCollectionCertFile=ca-cert.pem",
 
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)

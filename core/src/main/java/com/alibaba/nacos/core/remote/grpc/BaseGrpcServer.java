@@ -169,10 +169,10 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
 
     private SslContextBuilder getSslContextBuilder() {
 
-        if (StringUtils.isBlank(grpcServerConfig.getCertificateChainFile()) || StringUtils.isBlank(grpcServerConfig.getPrivateKeyFile())) {
-            throw new IllegalArgumentException("Server certificateChainFile or privateKeyFile must be not null");
+        if (StringUtils.isBlank(grpcServerConfig.getCertChainFile()) || StringUtils.isBlank(grpcServerConfig.getPrivateKeyFile())) {
+            throw new IllegalArgumentException("Server certChainFile or privateKeyFile must be not null");
         }
-        InputStream certificateChainFile = getInputStream(grpcServerConfig.getCertificateChainFile(), "CertificateChainFile");
+        InputStream certificateChainFile = getInputStream(grpcServerConfig.getCertChainFile(), "certChainFile");
         InputStream privateKeyFile = getInputStream(grpcServerConfig.getPrivateKeyFile(), "privateKeyFile");
         SslContextBuilder sslClientContextBuilder = SslContextBuilder.forServer(certificateChainFile, privateKeyFile, grpcServerConfig.getPassword());
 
@@ -188,11 +188,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             if (grpcServerConfig.getTrustCertAll()) {
                 sslClientContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
             } else {
-                if (StringUtils.isBlank(grpcServerConfig.getTrustCertCollectionFile())) {
-                    throw new IllegalArgumentException("enable mutual auth,trustCertCollectionFile must be not null");
+                if (StringUtils.isBlank(grpcServerConfig.getTrustCollectionCertFile())) {
+                    throw new IllegalArgumentException("enable mutual auth,trustCollectionCertFile must be not null");
                 }
 
-                InputStream clientCert = getInputStream(grpcServerConfig.getTrustCertCollectionFile(), "TrustCertCollectionFile");
+                InputStream clientCert = getInputStream(grpcServerConfig.getTrustCollectionCertFile(), "trustCollectionCertFile");
                 sslClientContextBuilder.trustManager(clientCert);
             }
             sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);

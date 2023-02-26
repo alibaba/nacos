@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         properties = {
                 "nacos.standalone=true",
                 "nacos.remote.server.grpc.tls.enableTls=true",
-                "nacos.remote.server.grpc.tls.certificateChainFile=server-cert.pem",
+                "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
                 "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem"
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
