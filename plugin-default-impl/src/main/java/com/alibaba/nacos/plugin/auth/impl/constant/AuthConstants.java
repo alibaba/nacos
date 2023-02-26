@@ -67,6 +67,11 @@ public class AuthConstants {
     
     public static final String NACOS_CORE_AUTH_CASE_SENSITIVE = "nacos.core.auth.ldap.case.sensitive";
     
+    /**
+     * LDAP Ignore partial result exception.
+     */
+    public static final String NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION = "nacos.core.auth.ldap.ignore.partial.result.exception";
+    
     @Deprecated
     public static final String LDAP_DEFAULT_PASSWORD = "nacos";
     

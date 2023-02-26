@@ -60,32 +60,29 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
             throw new AccessException("user not found!");
         }
         
-        if (!username.startsWith(AuthConstants.LDAP_PREFIX)) {
-            try {
-                return super.authenticate(username, rawPassword);
-            } catch (AccessException ignored) {
-                if (Loggers.AUTH.isWarnEnabled()) {
-                    Loggers.AUTH.warn("try login with ladp, user: {}", username);
-                }
-            }
-        } else {
-            username = username.substring(AuthConstants.LDAP_PREFIX.length());
-        }
-        
         if (!caseSensitive) {
             username = username.toLowerCase();
         }
         
-        UserDetails userDetails = null;
         try {
-            if (ldapLogin(username, rawPassword)) {
-                userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
+            return super.authenticate(username, rawPassword);
+        } catch (AccessException | UsernameNotFoundException ignored) {
+            if (Loggers.AUTH.isWarnEnabled()) {
+                Loggers.AUTH.warn("try login with LDAP, user: {}", username);
             }
+        }
+        
+        UserDetails userDetails;
+        try {
+            if (!ldapLogin(username, rawPassword)) {
+                throw new AccessException("LDAP login failed.");
+            }
+            userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
-            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username,
-                    AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            String ldapUsername = AuthConstants.LDAP_PREFIX + username;
+            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
             User user = new User();
-            user.setUsername(AuthConstants.LDAP_PREFIX + username);
+            user.setUsername(ldapUsername);
             user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
             userDetails = new NacosUserDetails(user);
         } catch (Exception e) {

@@ -77,7 +77,7 @@ public class AuthenticationNamagerDelegator implements IAuthenticationManager {
     }
     
     private IAuthenticationManager getManager() {
-        if (AuthSystemTypes.NACOS.name().equals(authConfigs.getNacosAuthSystemType())) {
+        if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             return ldapAuthenticatoinManager.getIfAvailable();
         }
         
