@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,12 +45,12 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos",
-        "nacos.remote.server.grpc.tls.enableTls=true",
-        "nacos.remote.server.grpc.tls.mutualAuthEnable=true",
-        "nacos.remote.server.grpc.tls.compatibility=false",
-        "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
-        "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem",
-        "nacos.remote.server.grpc.tls.trustCollectionCertFile=ca-cert.pem",
+        GrpcServerTlsConfig.PREFIX+".enableTls=true",
+        GrpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
+        GrpcServerTlsConfig.PREFIX+".compatibility=false",
+        GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+        GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
+        GrpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
 
 },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -62,11 +63,11 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
     @Test
     public void testMutualAuth() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS,"true");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH,"client-cert.pem");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY,"client-key.pem");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_ENABLE,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_CERT_CHAIN_PATH,"client-cert.pem");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_CERT_KEY,"client-key.pem");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_MUTUAL_AUTH,"true");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -94,8 +95,8 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
     @Test(expected = NacosException.class)
     public void testMutualAuthClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS,"true");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_ENABLE,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -114,8 +115,8 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
     @Test(expected = NacosException.class)
     public void testMutualAuthClientTrustALl() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS,"true");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_ENABLE,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_TRUST_ALL,"true");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);

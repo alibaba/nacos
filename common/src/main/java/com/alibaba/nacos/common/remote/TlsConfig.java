@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.client.grpc;
-
-import java.util.Properties;
+package com.alibaba.nacos.common.remote;
 
 /**
- * gRPC config for sdk.
+ * gRPC config.
  *
  * @author githubcheng2978
  */
 public class TlsConfig {
-
     /**
      * ssl provider,default OPENSSL,JDK,OPENSSL_REFCNT.
      */
@@ -59,7 +56,7 @@ public class TlsConfig {
     /**
      * read certPrivateKey file when need password.
      */
-    private String password;
+    private String certPrivateKeyPassword;
 
     /**
      * mutualAuth,if true,need provider certPrivateKey and certChainFile.
@@ -124,12 +121,12 @@ public class TlsConfig {
         this.trustCollectionCertFile = trustCollectionCertFile;
     }
 
-    public String getPassword() {
-        return password;
+    public String getCertPrivateKeyPassword() {
+        return certPrivateKeyPassword;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setCertPrivateKeyPassword(String certPrivateKeyPassword) {
+        this.certPrivateKeyPassword = certPrivateKeyPassword;
     }
 
     public String getCertPrivateKey() {
@@ -154,61 +151,6 @@ public class TlsConfig {
 
     public void setSslProvider(String sslProvider) {
         this.sslProvider = sslProvider;
-    }
-
-    /**
-     *  get tls config from properties.
-     * @param properties  Properties.
-     * @return tls of config.
-     */
-    public static TlsConfig properties(Properties properties) {
-        TlsConfig tlsConfig = new TlsConfig();
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS)) {
-            tlsConfig.setEnableTls(Boolean.parseBoolean(
-                    properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS)));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROVIDER)) {
-            tlsConfig.setSslProvider(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROVIDER));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH)) {
-            tlsConfig.setMutualAuthEnable(Boolean.parseBoolean(
-                    properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH)));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROTOCOLS)) {
-            tlsConfig.setProtocols(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROTOCOLS);
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CIPHERS)) {
-            tlsConfig.setCiphers(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CIPHERS));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH)) {
-            tlsConfig.setTrustCollectionCertFile(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH)) {
-            tlsConfig.setCertChainFile(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY)) {
-            tlsConfig.setCertPrivateKey(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL)) {
-            tlsConfig.setTrustAll(Boolean.parseBoolean(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL)));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_PWD)) {
-            tlsConfig.setPassword(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_PWD));
-        }
-
-        if (properties.containsKey(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROVIDER)) {
-            tlsConfig.setSslProvider(properties.getProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROVIDER));
-        }
-        return tlsConfig;
     }
 
 }

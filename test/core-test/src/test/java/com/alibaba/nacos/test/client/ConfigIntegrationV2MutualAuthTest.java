@@ -24,7 +24,8 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.grpc.TlsConfig;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientTlsConfig;
+import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
 import com.alibaba.nacos.test.ConfigCleanUtils;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -47,12 +48,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {Nacos.class},
         properties = {
                 "nacos.standalone=true",
-                "nacos.remote.server.grpc.tls.mutualAuthEnable=true",
-                "nacos.remote.server.grpc.tls.compatibility=false",
-                "nacos.remote.server.grpc.tls.enableTls=true",
-                "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
-                "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem",
-                "nacos.remote.server.grpc.tls.trustCollectionCertFile=ca-cert.pem",
+                GrpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
+                GrpcServerTlsConfig.PREFIX+".compatibility=false",
+                GrpcServerTlsConfig.PREFIX+".enableTls=true",
+                GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+                GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
+                GrpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
 
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -77,7 +78,7 @@ public class ConfigIntegrationV2MutualAuthTest {
     @Test
     public void test_d_MutualAuth() throws Exception {
 
-        TlsConfig tlsConfig = new TlsConfig();
+        GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setMutualAuthEnable(true);
         tlsConfig.setCertChainFile("client-cert.pem");
@@ -106,7 +107,7 @@ public class ConfigIntegrationV2MutualAuthTest {
     @Test
     public void test_e_ServerMutualAuthOnly() throws Exception {
 
-        TlsConfig tlsConfig = new TlsConfig();
+        GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);

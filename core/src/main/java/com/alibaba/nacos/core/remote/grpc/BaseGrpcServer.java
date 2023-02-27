@@ -17,11 +17,11 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.Payload;
-import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.packagescan.resource.DefaultResourceLoader;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
 import com.alibaba.nacos.common.remote.ConnectionType;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
@@ -38,6 +38,8 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;
+import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
+
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.protobuf.ProtoUtils;
@@ -45,9 +47,9 @@ import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.util.Arrays;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -61,9 +63,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class BaseGrpcServer extends BaseRpcServer {
 
     private Server server;
-
-    @Autowired
-    private GrpcServerConfig grpcServerConfig;
 
     private final ResourceLoader resourceLoader = new DefaultResourceLoader();
 
@@ -81,21 +80,17 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         return ConnectionType.GRPC;
     }
 
-    @JustForTest
-    public void setGrpcServerConfig(GrpcServerConfig grpcServerConfig) {
-        this.grpcServerConfig = grpcServerConfig;
-    }
-
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         addServices(handlerRegistry, new GrpcConnectionInterceptor());
         NettyServerBuilder builder = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor());
+
         if (grpcServerConfig.getEnableTls()) {
             if (grpcServerConfig.getCompatibility()) {
-                builder.protocolNegotiator(new OptionalTlsProtocolNegotiator(getSslContextBuilder().build()));
+                builder.protocolNegotiator(new OptionalTlsProtocolNegotiator(getSslContextBuilder()));
             } else {
-                builder.sslContext(getSslContextBuilder().build());
+                builder.sslContext(getSslContextBuilder());
             }
         }
 
@@ -167,37 +162,50 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
 
     }
 
-    private SslContextBuilder getSslContextBuilder() {
-
-        if (StringUtils.isBlank(grpcServerConfig.getCertChainFile()) || StringUtils.isBlank(grpcServerConfig.getPrivateKeyFile())) {
-            throw new IllegalArgumentException("Server certChainFile or privateKeyFile must be not null");
+    @Override
+    public void shutdownServer() {
+        if (server != null) {
+            server.shutdownNow();
         }
-        InputStream certificateChainFile = getInputStream(grpcServerConfig.getCertChainFile(), "certChainFile");
-        InputStream privateKeyFile = getInputStream(grpcServerConfig.getPrivateKeyFile(), "privateKeyFile");
-        SslContextBuilder sslClientContextBuilder = SslContextBuilder.forServer(certificateChainFile, privateKeyFile, grpcServerConfig.getPassword());
+    }
 
-        if (StringUtils.isNotBlank(grpcServerConfig.getProtocols())) {
-            sslClientContextBuilder.protocols(grpcServerConfig.getProtocols().split(","));
-        }
-
-        if (StringUtils.isNotBlank(grpcServerConfig.getCiphers())) {
-            sslClientContextBuilder.ciphers(Arrays.asList(grpcServerConfig.getCiphers().split(",")));
-        }
-        if (grpcServerConfig.getMutualAuthEnable()) {
-            // trust all certificate
-            if (grpcServerConfig.getTrustCertAll()) {
-                sslClientContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-            } else {
-                if (StringUtils.isBlank(grpcServerConfig.getTrustCollectionCertFile())) {
-                    throw new IllegalArgumentException("enable mutual auth,trustCollectionCertFile must be not null");
-                }
-
-                InputStream clientCert = getInputStream(grpcServerConfig.getTrustCollectionCertFile(), "trustCollectionCertFile");
-                sslClientContextBuilder.trustManager(clientCert);
+    private SslContext getSslContextBuilder() {
+        try {
+            if (StringUtils.isBlank(grpcServerConfig.getCertChainFile()) || StringUtils.isBlank(grpcServerConfig.getCertPrivateKey())) {
+                throw new IllegalArgumentException("Server certChainFile or certPrivateKey must be not null");
             }
-            sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);
+            InputStream certificateChainFile = getInputStream(grpcServerConfig.getCertChainFile(), "certChainFile");
+            InputStream privateKeyFile = getInputStream(grpcServerConfig.getCertPrivateKey(), "certPrivateKey");
+            SslContextBuilder sslClientContextBuilder = SslContextBuilder.forServer(certificateChainFile, privateKeyFile,
+                    grpcServerConfig.getCertPrivateKeyPassword());
+
+            if (StringUtils.isNotBlank(grpcServerConfig.getProtocols())) {
+                sslClientContextBuilder.protocols(grpcServerConfig.getProtocols().split(","));
+            }
+
+            if (StringUtils.isNotBlank(grpcServerConfig.getCiphers())) {
+                sslClientContextBuilder.ciphers(Arrays.asList(grpcServerConfig.getCiphers().split(",")));
+            }
+            if (grpcServerConfig.getMutualAuthEnable()) {
+                // trust all certificate
+                if (grpcServerConfig.getTrustAll()) {
+                    sslClientContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+                } else {
+                    if (StringUtils.isBlank(grpcServerConfig.getTrustCollectionCertFile())) {
+                        throw new IllegalArgumentException("enable mutual auth,trustCollectionCertFile must be not null");
+                    }
+
+                    InputStream clientCert = getInputStream(grpcServerConfig.getTrustCollectionCertFile(), "trustCollectionCertFile");
+                    sslClientContextBuilder.trustManager(clientCert);
+                }
+                sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);
+            }
+            SslContextBuilder configure = GrpcSslContexts.configure(sslClientContextBuilder,
+                    TlsTypeResolve.getSslProvider(grpcServerConfig.getSslProvider()));
+            return configure.build();
+        } catch (SSLException e) {
+            throw new RuntimeException(e);
         }
-        return GrpcSslContexts.configure(sslClientContextBuilder, TlsTypeResolve.getSslProvider(grpcServerConfig.getSslProvider()));
     }
 
     private InputStream getInputStream(String path, String config) {
@@ -206,13 +214,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             return resource.getInputStream();
         } catch (IOException e) {
             throw new RuntimeException(config + " load fail", e);
-        }
-    }
-
-    @Override
-    public void shutdownServer() {
-        if (server != null) {
-            server.shutdownNow();
         }
     }
 

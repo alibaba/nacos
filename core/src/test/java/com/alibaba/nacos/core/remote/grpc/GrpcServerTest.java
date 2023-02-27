@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class GrpcServerTest {
 
-    private final GrpcServerConfig grpcServerConfig = mock(GrpcServerConfig.class);
+    private final GrpcServerTlsConfig grpcServerConfig = mock(GrpcServerTlsConfig.class);
 
     @Before
     public void setUp() {
@@ -86,7 +86,7 @@ public class GrpcServerTest {
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
 
-        when(grpcServerConfig.getPrivateKeyFile()).thenReturn("server-key.pem");
+        when(grpcServerConfig.getCertPrivateKey()).thenReturn("server-key.pem");
         when(grpcServerConfig.getCertChainFile()).thenReturn("server-cert.pem");
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
         grpcSdkServer.start();
@@ -109,10 +109,10 @@ public class GrpcServerTest {
         };
 
         when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getTrustCertAll()).thenReturn(true);
+        when(grpcServerConfig.getTrustAll()).thenReturn(true);
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        when(grpcServerConfig.getPrivateKeyFile()).thenReturn("server-key.pem");
+        when(grpcServerConfig.getCertPrivateKey()).thenReturn("server-key.pem");
         when(grpcServerConfig.getCertChainFile()).thenReturn("server-cert.pem");
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
         grpcSdkServer.start();
@@ -134,11 +134,11 @@ public class GrpcServerTest {
         };
         when(grpcServerConfig.getEnableTls()).thenReturn(true);
         when(grpcServerConfig.getMutualAuthEnable()).thenReturn(true);
-        when(grpcServerConfig.getTrustCertAll()).thenReturn(true);
+        when(grpcServerConfig.getEnableTls()).thenReturn(true);
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
 
-        when(grpcServerConfig.getPrivateKeyFile()).thenReturn("server-key.pem");
+        when(grpcServerConfig.getCertPrivateKey()).thenReturn("server-key.pem");
         when(grpcServerConfig.getCertChainFile()).thenReturn("server-cert.pem");
         when(grpcServerConfig.getTrustCollectionCertFile()).thenReturn("ca-cert.pem");
 

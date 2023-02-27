@@ -61,7 +61,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
     private Map<String, String> labels;
 
-    private TlsConfig tlsConfig = new TlsConfig();
+    private GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
 
     /**
      * constructor.
@@ -164,11 +164,11 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     }
 
     @Override
-    public TlsConfig tlsConfig() {
+    public GrpcClientTlsConfig tlsConfig() {
         return tlsConfig;
     }
 
-    public void setTlsConfig(TlsConfig tlsConfig) {
+    public void setTlsConfig(GrpcClientTlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
     }
 
@@ -223,7 +223,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         
         private Map<String, String> labels = new HashMap<>();
 
-        private TlsConfig tlsConfig = new TlsConfig();
+        private GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
 
         private Builder() {
         }
@@ -287,7 +287,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.channelKeepAliveTimeout = Integer.parseInt(
                         properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-            this.tlsConfig = TlsConfig.properties(properties);
+            this.tlsConfig = GrpcClientTlsConfig.properties(properties);
             return this;
         }
         
@@ -424,7 +424,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @param tlsConfig tls of client.
          * @return
          */
-        public Builder setTlsConfig(TlsConfig tlsConfig) {
+        public Builder setTlsConfig(GrpcClientTlsConfig tlsConfig) {
             this.tlsConfig = tlsConfig;
             return this;
         }

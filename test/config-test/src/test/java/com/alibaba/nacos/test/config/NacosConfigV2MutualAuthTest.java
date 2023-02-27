@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -49,12 +50,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {Nacos.class},
         properties = {
                 "nacos.standalone=true",
-                "nacos.remote.server.grpc.tls.enableTls=true",
-                "nacos.remote.server.grpc.tls.mutualAuthEnable=true",
-                "nacos.remote.server.grpc.tls.compatibility=false",
-                "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
-                "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem",
-                "nacos.remote.server.grpc.tls.trustCollectionCertFile=ca-cert.pem",
+                GrpcServerTlsConfig.PREFIX+".enableTls=true",
+                GrpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
+                GrpcServerTlsConfig.PREFIX+".compatibility=false",
+                GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+                GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
+                GrpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
 
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -77,11 +78,11 @@ public class NacosConfigV2MutualAuthTest {
     @Test
     public void test_d_MutualAuth() throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS, "true");
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_MUTUAL_AUTH,"true");
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_KEY,"client-key.pem");
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH,"client-cert.pem");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_ENABLE, "true");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_MUTUAL_AUTH,"true");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_CERT_KEY,"client-key.pem");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_CERT_CHAIN_PATH,"client-cert.pem");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();
@@ -108,8 +109,8 @@ public class NacosConfigV2MutualAuthTest {
     public void test_d_MutualAuthButClientNot() throws Exception {
 
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS, "true");
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH,"client-cert.pem");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_ENABLE, "true");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_TRUST_CHAIN_PATH,"client-cert.pem");
 
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);

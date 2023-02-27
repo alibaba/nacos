@@ -20,17 +20,11 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
-import com.alibaba.nacos.api.naming.NamingMaintainFactory;
-import com.alibaba.nacos.api.naming.NamingMaintainService;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.api.selector.ExpressionSelector;
-import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
-import org.junit.After;
+import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,10 +45,10 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos",
-        "nacos.remote.server.grpc.tls.enableTls=true",
-        "nacos.remote.server.grpc.tls.compatibility=false",
-        "nacos.remote.server.grpc.tls.certificateChainFile=server-cert.pem",
-        "nacos.remote.server.grpc.tls.certChainFile=server-key.pem",
+        GrpcServerTlsConfig.PREFIX+".enableTls=true",
+        GrpcServerTlsConfig.PREFIX+".compatibility=false",
+        GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+        GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
 },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NamingTlsServiceTls_ITCase {
@@ -110,8 +104,8 @@ public class NamingTlsServiceTls_ITCase {
     @Test
     public void TlsServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS,"true");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_ALL,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_ENABLE,"true");
+        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_TRUST_ALL,"true");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);

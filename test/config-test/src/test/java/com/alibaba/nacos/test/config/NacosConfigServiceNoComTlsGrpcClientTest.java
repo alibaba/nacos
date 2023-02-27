@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -48,10 +49,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {Nacos.class},
         properties = {
                 "nacos.standalone=true",
-                "nacos.remote.server.grpc.tls.enableTls=true",
-                "nacos.remote.server.grpc.tls.compatibility=false",
-                "nacos.remote.server.grpc.tls.certChainFile=server-cert.pem",
-                "nacos.remote.server.grpc.tls.privateKeyFile=server-key.pem"},
+                GrpcServerTlsConfig.PREFIX+".enableTls=true",
+                GrpcServerTlsConfig.PREFIX+".compatibility=false",
+                GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+                GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceNoComTlsGrpcClientTest {
 
@@ -72,9 +73,9 @@ public class NacosConfigServiceNoComTlsGrpcClientTest {
     @Test
     public void test_e_TlsServerAndTlsClient() throws Exception {
         Properties properties = new Properties();
-        properties.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS, "true");
-        properties.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_PROVIDER, "openssl");
-        properties.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH, "ca-cert.pem");
+        properties.put(GrpcConstants.GRPC_CLIENT_TLS_ENABLE, "true");
+        properties.put(GrpcConstants.GRPC_CLIENT_TLS_PROVIDER, "openssl");
+        properties.put(GrpcConstants.GRPC_CLIENT_TLS_TRUST_CHAIN_PATH, "ca-cert.pem");
         properties.put("serverAddr", "127.0.0.1");
         ConfigService configService = new NacosConfigService(properties);
         String content = UUID.randomUUID().toString();
@@ -100,7 +101,7 @@ public class NacosConfigServiceNoComTlsGrpcClientTest {
     @Test
     public void test_e_TlsServerAndPlainClient()  throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_ENABLE_TLS, "false");
+        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();

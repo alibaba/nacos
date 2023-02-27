@@ -80,33 +80,34 @@ public class GrpcConstants {
     public static final String GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT = NACOS_CLIENT_GRPC + ".channel.keep.alive.timeout";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS = NACOS_CLIENT_GRPC + ".enable.tls";
+    public static final String GRPC_CLIENT_TLS_ENABLE = NACOS_CLIENT_GRPC + ".tls.enable";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_PROVIDER = NACOS_CLIENT_GRPC + ".tls.enable.provider";
+    public static final String GRPC_CLIENT_TLS_PROVIDER = NACOS_CLIENT_GRPC + ".tls.provider";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_MUTUAL_AUTH = NACOS_CLIENT_GRPC + ".tls.enable.mutualAuth";
+    public static final String GRPC_CLIENT_MUTUAL_AUTH = NACOS_CLIENT_GRPC + ".tls.mutualAuth";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_PROTOCOLS = NACOS_CLIENT_GRPC + ".tls.protocols";
+    public static final String GRPC_CLIENT_TLS_PROTOCOLS = NACOS_CLIENT_GRPC + ".tls.protocols";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_CIPHERS = NACOS_CLIENT_GRPC + ".tls.ciphers";
+    public static final String GRPC_CLIENT_TLS_CIPHERS = NACOS_CLIENT_GRPC + ".tls.ciphers";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_CERT_CHAIN_PATH = NACOS_CLIENT_GRPC + ".tls.certChainFile";
+    public static final String GRPC_CLIENT_TLS_CERT_CHAIN_PATH = NACOS_CLIENT_GRPC + ".tls.certChainFile";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_CERT_KEY = NACOS_CLIENT_GRPC + ".tls.certPrivateKey";
+    public static final String GRPC_CLIENT_TLS_CERT_KEY = NACOS_CLIENT_GRPC + ".tls.certPrivateKey";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_TRUST_CHAIN_PATH = NACOS_CLIENT_GRPC + ".tls.trustCollectionChainPath";
+    public static final String GRPC_CLIENT_TLS_TRUST_PWD = NACOS_CLIENT_GRPC + ".tls.certPrivateKeyPassword";
 
     @GRpcConfigLabel
-    public static final String GRPC_CLIENT_ENABLE_TLS_TRUST_ALL = NACOS_CLIENT_GRPC + ".tls.trustAll";
+    public static final String GRPC_CLIENT_TLS_TRUST_CHAIN_PATH = NACOS_CLIENT_GRPC + ".tls.trustCollectionChainPath";
 
-    public static final String GRPC_CLIENT_ENABLE_TLS_TRUST_PWD = NACOS_CLIENT_GRPC + ".tls.password";
+    @GRpcConfigLabel
+    public static final String GRPC_CLIENT_TLS_TRUST_ALL = NACOS_CLIENT_GRPC + ".tls.trustAll";
 
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
     

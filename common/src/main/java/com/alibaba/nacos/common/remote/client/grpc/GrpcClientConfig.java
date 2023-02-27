@@ -86,13 +86,13 @@ public interface GrpcClientConfig extends RpcClientConfig {
      *
      * @return TlsConfig.
      */
-    TlsConfig tlsConfig();
+    GrpcClientTlsConfig tlsConfig();
 
     /**
      *Set TlsConfig.
      *
      * @param tlsConfig tlsConfig of client.
      */
-    void setTlsConfig(TlsConfig tlsConfig);
+    void setTlsConfig(GrpcClientTlsConfig tlsConfig);
 
 }
