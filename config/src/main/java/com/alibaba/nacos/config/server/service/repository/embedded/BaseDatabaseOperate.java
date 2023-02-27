@@ -28,6 +28,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
@@ -217,9 +218,13 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                 contexts.forEach(pair -> {
                     errSql[0] = pair.getSql();
                     args[0] = pair.getArgs();
+                    boolean rollBackOnUpdateFail = pair.isRollBackOnUpdateFail();
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
                     LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
-                    jdbcTemplate.update(pair.getSql(), pair.getArgs());
+                    int row = jdbcTemplate.update(pair.getSql(), pair.getArgs());
+                    if (rollBackOnUpdateFail && row < 1) {
+                        throw new IllegalTransactionStateException("Illegal transaction");
+                    }
                 });
                 if (consumer != null) {
                     consumer.accept(Boolean.TRUE, null);
@@ -234,7 +239,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
             } catch (CannotGetJdbcConnectionException e) {
                 FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                 throw e;
-            } catch (DataAccessException e) {
+            } catch (DataAccessException | IllegalTransactionStateException e) {
                 FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0], args[0],
                         ExceptionUtil.getAllExceptionMsg(e));
                 throw e;
