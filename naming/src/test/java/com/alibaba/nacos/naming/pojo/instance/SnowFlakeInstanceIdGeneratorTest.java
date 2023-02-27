@@ -29,7 +29,7 @@ public class SnowFlakeInstanceIdGeneratorTest {
         SnowFlakeInstanceIdGenerator idGenerator = new SnowFlakeInstanceIdGenerator("hello-service",
                 "clusterName", 8080);
         String instanceId = idGenerator.generateInstanceId();
-        Assert.assertNotNull(instanceId);
+        Assert.assertTrue(instanceId.endsWith("#8080#clusterName#hello-service"));
     }
 
 }

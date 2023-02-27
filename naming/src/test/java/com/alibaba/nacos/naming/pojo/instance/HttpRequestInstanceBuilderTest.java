@@ -21,12 +21,15 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
+import org.springframework.util.Assert;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -34,6 +37,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +54,9 @@ public class HttpRequestInstanceBuilderTest {
     
     @Mock
     private HttpServletRequest request;
+
+    @Mock
+    MockEnvironment env;
     
     private HttpRequestInstanceBuilder builder;
     
@@ -111,5 +120,18 @@ public class HttpRequestInstanceBuilderTest {
     public void testBuildWithIllegalWeight() throws NacosException {
         when(request.getParameter("weight")).thenReturn("10001");
         Instance actual = builder.setRequest(request).build();
+    }
+
+    @Test
+    public void testBuildWithMetadata() throws NacosException {
+        EnvUtil.setEnvironment(env);
+        when(env.getProperty(anyString(), anyObject(), any())).thenReturn(-1);
+        when(request.getParameter(CommonParams.CLUSTER_NAME)).thenReturn("cluster");
+        when(request.getParameter("metadata")).thenReturn("{\n"
+                + "        \"preserved.register.source\": \"SPRING_CLOUD\",\n"
+                + "        \"preserved.instance.id.generator\": \"snowflake\"\n"
+                + "      }");
+        Instance instance = builder.setRequest(request).build();
+        Assert.isTrue(instance.getInstanceId().endsWith("#" + PORT + "#" + "cluster" + "#" + SERVICE), "instanceId error!");
     }
 }
