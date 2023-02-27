@@ -585,7 +585,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 clusterRpcClientProxy =  ApplicationUtils.getBean(ClusterRpcClientProxy.class);
             }
             if (!clusterRpcClientProxy.isRunning(target)) {
-                MemberUtil.onFail(ServerMemberManager.this, target, new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + target));
+                MemberUtil.onFail(ServerMemberManager.this, target,
+                        new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + target));
                 return;
             }
             
