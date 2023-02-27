@@ -59,6 +59,7 @@ public class EmbeddedStorageContextUtils {
     /**
      * Add sql context.
      *
+     * @param rollbackOnUpdateFail  roll back when update fail
      * @param sql  sql
      * @param args argument list
      */
