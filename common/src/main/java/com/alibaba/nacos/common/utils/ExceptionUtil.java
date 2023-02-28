@@ -27,6 +27,9 @@ import java.util.Objects;
  * @since 1.2.0
  */
 public class ExceptionUtil {
+
+    private ExceptionUtil() {
+    }
     
     /**
      * Represents an empty exception, that is, no exception occurs, only a constant.
