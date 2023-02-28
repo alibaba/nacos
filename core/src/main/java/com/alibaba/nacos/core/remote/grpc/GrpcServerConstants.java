@@ -93,10 +93,10 @@ final class GrpcServerConstants {
         
         static final int DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE = 10 * 1024 * 1024;
         
-        static final long DEFAULT_GRPC_KEEP_ALIVE_TIME = GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIME_NANOS;
+        static final long DEFAULT_GRPC_KEEP_ALIVE_TIME = TimeUnit.NANOSECONDS.toMillis(GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIME_NANOS);
         
-        static final long DEFAULT_GRPC_KEEP_ALIVE_TIMEOUT = GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIMEOUT_NANOS;
+        static final long DEFAULT_GRPC_KEEP_ALIVE_TIMEOUT = TimeUnit.NANOSECONDS.toMillis(GrpcUtil.DEFAULT_SERVER_KEEPALIVE_TIMEOUT_NANOS);
         
-        static final long DEFAULT_GRPC_PERMIT_KEEP_ALIVE_TIME = TimeUnit.MINUTES.toNanos(5L);
+        static final long DEFAULT_GRPC_PERMIT_KEEP_ALIVE_TIME = TimeUnit.MINUTES.toMillis(5L);
     }
 }
