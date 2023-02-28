@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.naming.cluster.remote.request;
-
-import com.alibaba.nacos.api.remote.request.Request;
+package com.alibaba.nacos.common.log;
 
 /**
- * Cluster request.
- *
- * @author xiweng.yy
+ * nacos logback properties.
+ * @author hujun
  */
-public abstract class AbstractClusterRequest extends Request {
-    
-    private static final String CLUSTER = "cluster";
-    
-    @Override
-    public String getModule() {
-        return CLUSTER;
-    }
+public interface NacosLogbackProperties {
+    /**
+     * get value.
+     *
+     * @param source       source
+     * @param defaultValue defaultValue
+     * @return value
+     */
+    String getValue(String source, String defaultValue);
 }

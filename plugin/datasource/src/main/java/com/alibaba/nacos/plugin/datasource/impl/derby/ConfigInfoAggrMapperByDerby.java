@@ -34,11 +34,11 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
 
     @Override
     public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
-        final Integer startRow = (Integer) context.get("startRow");
-        final Integer pageSize = (Integer) context.get("pageSize");
-        final String dataId = (String) context.get("data_id");
-        final String groupId = (String) context.get("group_id");
-        final String tenantId = (String) context.get("tenant_id");
+        final Integer startRow = (Integer) context.getWhereParameter("startRow");
+        final Integer pageSize = (Integer) context.getWhereParameter("pageSize");
+        final String dataId = (String) context.getWhereParameter("data_id");
+        final String groupId = (String) context.getWhereParameter("group_id");
+        final String tenantId = (String) context.getWhereParameter("tenant_id");
         
         String sql = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND "
                 + "group_id=? AND tenant_id=? ORDER BY datum_id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
