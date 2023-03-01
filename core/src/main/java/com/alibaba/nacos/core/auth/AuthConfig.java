@@ -37,10 +37,10 @@ public class AuthConfig {
         registration.addUrlPatterns("/*");
         registration.setName("authFilter");
         registration.setOrder(6);
-        
+
         return registration;
     }
-
+    
     @Bean
     public AuthFilter authFilter(AuthConfigs authConfigs, ControllerMethodsCache methodsCache) {
         return new AuthFilter(authConfigs, methodsCache);
