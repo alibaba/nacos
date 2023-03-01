@@ -34,14 +34,12 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
           architecture: x64
-      - name: Print maven version
-        run: mvn -version
       - name: Test Config
-        run: mvn clean package -Pcit-test -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvn clean package -Pcit-test
       - name: Clean Env
-        run: mvn clean -Premove-test-data -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvn clean -Premove-test-data
       - name: Test Naming
-        run: mvn clean package -Pnit-test -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvn clean package -Pnit-test
       - name: Clean Env
-        run: mvn clean -Premove-test-data -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvn clean -Premove-test-data
 
