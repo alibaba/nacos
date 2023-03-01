@@ -34,12 +34,14 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
           architecture: x64
+      - name: Print maven version
+        run: mvn -version
       - name: Check with Maven
-        run: mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true
+        run: mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: Build with Maven
-        run: mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U
+        run: mvn -Prelease-nacos -Dmaven.test.skip=true clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: Test With Maven
-        run: mvn -Prelease-nacos clean test -DtrimStackTrace=false
+        run: mvn -Prelease-nacos clean test -DtrimStackTrace=false -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: Codecov
         uses: codecov/codecov-action@v3.1.0
         with:
