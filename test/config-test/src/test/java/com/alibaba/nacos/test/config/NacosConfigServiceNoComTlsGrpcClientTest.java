@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
-import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -49,10 +49,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {Nacos.class},
         properties = {
                 "nacos.standalone=true",
-                GrpcServerTlsConfig.PREFIX+".enableTls=true",
-                GrpcServerTlsConfig.PREFIX+".compatibility=false",
-                GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"},
+                RpcServerTlsConfig.PREFIX+".enableTls=true",
+                RpcServerTlsConfig.PREFIX+".compatibility=false",
+                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceNoComTlsGrpcClientTest {
 

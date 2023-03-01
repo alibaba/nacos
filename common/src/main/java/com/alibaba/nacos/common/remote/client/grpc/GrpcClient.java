@@ -134,7 +134,7 @@ public abstract class GrpcClient extends RpcClient {
                 .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
 
-    public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels, GrpcClientTlsConfig tlsConfig) {
+    public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize).setTlsConfig(tlsConfig)
                 .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
@@ -375,7 +375,7 @@ public abstract class GrpcClient extends RpcClient {
 
     private Optional<SslContext> buildSslContext() {
 
-        GrpcClientTlsConfig tlsConfig = clientConfig.tlsConfig();
+        RpcClientTlsConfig tlsConfig = clientConfig.tlsConfig();
         if (!tlsConfig.getEnableTls()) {
             return Optional.absent();
         }

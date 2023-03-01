@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
-import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,12 +45,12 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos",
-        GrpcServerTlsConfig.PREFIX+".enableTls=true",
-        GrpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
-        GrpcServerTlsConfig.PREFIX+".compatibility=false",
-        GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-        GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
-        GrpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
+        RpcServerTlsConfig.PREFIX+".enableTls=true",
+        RpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
+        RpcServerTlsConfig.PREFIX+".compatibility=false",
+        RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+        RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
+        RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
 
 },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)

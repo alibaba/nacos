@@ -24,8 +24,8 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcClientTlsConfig;
-import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
+import com.alibaba.nacos.common.remote.client.grpc.RpcClientTlsConfig;
+import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.test.ConfigCleanUtils;
 import org.junit.*;
@@ -49,9 +49,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {Nacos.class},
         properties = {
                 "nacos.standalone=true",
-                GrpcServerTlsConfig.PREFIX+".enableTls=true",
-                GrpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                GrpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"
+                RpcServerTlsConfig.PREFIX+".enableTls=true",
+                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV3Test {
@@ -97,7 +97,7 @@ public class ConfigIntegrationV3Test {
     @Test
     public void test_f_ServerTlsTrustAll() throws Exception {
 
-        GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustAll(true);
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
@@ -123,7 +123,7 @@ public class ConfigIntegrationV3Test {
         serverInfo.setServerIp("127.0.0.1");
 
         serverInfo.setServerPort(EnvUtil.getPort());
-        GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("ca-cert.pem");
         RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);

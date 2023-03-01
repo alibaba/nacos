@@ -25,15 +25,15 @@ import java.util.Properties;
  *
  * @author githubcheng2978
  */
-public class GrpcClientTlsConfig extends TlsConfig {
+public class RpcClientTlsConfig extends TlsConfig {
 
     /**
      *  get tls config from properties.
      * @param properties  Properties.
      * @return tls of config.
      */
-    public static GrpcClientTlsConfig properties(Properties properties) {
-        GrpcClientTlsConfig tlsConfig = new GrpcClientTlsConfig();
+    public static RpcClientTlsConfig properties(Properties properties) {
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         if (properties.containsKey(GrpcConstants.GRPC_CLIENT_TLS_ENABLE)) {
             tlsConfig.setEnableTls(Boolean.parseBoolean(
                     properties.getProperty(GrpcConstants.GRPC_CLIENT_TLS_ENABLE)));

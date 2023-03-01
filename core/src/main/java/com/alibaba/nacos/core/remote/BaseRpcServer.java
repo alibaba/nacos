@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.remote.grpc.GrpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,10 +41,10 @@ public abstract class BaseRpcServer {
     }
 
     @Autowired
-    protected GrpcServerTlsConfig grpcServerConfig;
+    protected RpcServerTlsConfig grpcServerConfig;
 
     @JustForTest
-    public void setGrpcServerConfig(GrpcServerTlsConfig grpcServerConfig) {
+    public void setGrpcServerConfig(RpcServerTlsConfig grpcServerConfig) {
         this.grpcServerConfig = grpcServerConfig;
     }
 

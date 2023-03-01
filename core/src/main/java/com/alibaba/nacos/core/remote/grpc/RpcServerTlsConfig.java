@@ -26,11 +26,11 @@ import org.springframework.stereotype.Component;
  * @author githubcheng2978.
  */
 
-@ConfigurationProperties(prefix = GrpcServerTlsConfig.PREFIX)
+@ConfigurationProperties(prefix = RpcServerTlsConfig.PREFIX)
 @Component
-public class GrpcServerTlsConfig extends TlsConfig {
+public class RpcServerTlsConfig extends TlsConfig {
 
-    public static final  String PREFIX = "nacos.remote.server.grpc.tls";
+    public static final  String PREFIX = "nacos.remote.server.rpc.tls";
 
     private Boolean compatibility = true;
 

@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.grpc.RpcClientTlsConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -48,7 +48,7 @@ public class RpcClientFactoryTest {
     RpcClient rpcClient;
 
     @Mock(lenient = true)
-    GrpcClientTlsConfig tlsConfig;
+    RpcClientTlsConfig tlsConfig;
 
     @BeforeClass
     public static void setUpBeforeClass() throws NoSuchFieldException, IllegalAccessException {

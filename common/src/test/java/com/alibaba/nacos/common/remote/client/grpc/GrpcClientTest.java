@@ -40,7 +40,7 @@ public class GrpcClientTest {
     protected GrpcClient grpcClient;
 
     @Mock(lenient = true)
-    GrpcClientTlsConfig tlsConfig;
+    RpcClientTlsConfig tlsConfig;
 
     protected Method createNewManagedChannelMethod;
 

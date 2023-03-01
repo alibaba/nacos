@@ -70,7 +70,7 @@ public class GrpcClusterClient extends GrpcClient {
     }
 
     public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-                             Map<String, String> labels, GrpcClientTlsConfig tlsConfig) {
+                             Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
     }
 

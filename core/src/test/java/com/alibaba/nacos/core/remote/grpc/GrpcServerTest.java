@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class GrpcServerTest {
 
-    private final GrpcServerTlsConfig grpcServerConfig = mock(GrpcServerTlsConfig.class);
+    private final RpcServerTlsConfig grpcServerConfig = mock(RpcServerTlsConfig.class);
 
     @Before
     public void setUp() {

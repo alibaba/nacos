@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.grpc.RpcClientTlsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +77,7 @@ public class RpcClientFactory {
     }
 
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
-                                         GrpcClientTlsConfig tlsConfig) {
+                                         RpcClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
 
     }
@@ -99,7 +99,7 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                         Integer threadPoolMaxSize, Map<String, String> labels, GrpcClientTlsConfig tlsConfig) {
+                                         Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
 
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
@@ -130,7 +130,7 @@ public class RpcClientFactory {
     }
 
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Map<String, String> labels, GrpcClientTlsConfig tlsConfig) {
+                                                Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         return createClusterClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
 
@@ -160,7 +160,7 @@ public class RpcClientFactory {
      */
 
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                                Integer threadPoolMaxSize, Map<String, String> labels, GrpcClientTlsConfig tlsConfig) {
+                                                Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
