@@ -34,6 +34,8 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
           architecture: x64
+      - name: Print maven version
+        run: mvn -version
       - name: Test Config
         run: mvn clean package -Pcit-test -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: Clean Env
