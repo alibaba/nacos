@@ -37,7 +37,7 @@ public class AuthConfig {
         registration.addUrlPatterns("/*");
         registration.setName("authFilter");
         registration.setOrder(6);
-
+        
         return registration;
     }
 
