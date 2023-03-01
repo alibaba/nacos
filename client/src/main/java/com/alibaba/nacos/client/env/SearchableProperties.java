@@ -108,6 +108,25 @@ class SearchableProperties implements NacosClientProperties {
     }
     
     @Override
+    public String getPropertyFrom(SourceType source, String key) {
+        if (source == null) {
+            return this.getProperty(key);
+        }
+        switch (source) {
+            case JVM:
+                return JVM_ARGS_PROPERTY_SOURCE.getProperty(key);
+            case ENV:
+                return SYSTEM_ENV_PROPERTY_SOURCE.getProperty(key);
+            case PROPERTIES:
+                return this.propertiesPropertySource.getProperty(key);
+            case DEFAULT_SETTING:
+                return DEFAULT_SETTING_PROPERTY_SOURCE.getProperty(key);
+            default:
+                return this.getProperty(key);
+        }
+    }
+    
+    @Override
     public Boolean getBoolean(String key) {
         return getBoolean(key, null);
     }

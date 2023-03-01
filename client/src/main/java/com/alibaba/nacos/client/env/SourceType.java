@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.env;
 
-enum SourceType {
+public enum SourceType {
     /**
      * get value from properties.
      */
