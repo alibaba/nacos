@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
@@ -211,40 +212,50 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
      */
     default Boolean update(TransactionTemplate transactionTemplate, JdbcTemplate jdbcTemplate,
             List<ModifyRequest> contexts, BiConsumer<Boolean, Throwable> consumer) {
-        return transactionTemplate.execute(status -> {
-            String[] errSql = new String[] {null};
-            Object[][] args = new Object[][] {null};
-            try {
-                contexts.forEach(pair -> {
-                    errSql[0] = pair.getSql();
-                    args[0] = pair.getArgs();
-                    boolean rollBackOnUpdateFail = pair.isRollBackOnUpdateFail();
-                    LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
-                    LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
-                    int row = jdbcTemplate.update(pair.getSql(), pair.getArgs());
-                    if (rollBackOnUpdateFail && row < 1) {
-                        throw new IllegalTransactionStateException("Illegal transaction");
+        boolean updateResult = Boolean.FALSE;
+        try {
+            updateResult = transactionTemplate.execute(status -> {
+                String[] errSql = new String[] {null};
+                Object[][] args = new Object[][] {null};
+                try {
+                    contexts.forEach(pair -> {
+                        errSql[0] = pair.getSql();
+                        args[0] = pair.getArgs();
+                        boolean rollBackOnUpdateFail = pair.isRollBackOnUpdateFail();
+                        LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
+                        LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
+                        int row = jdbcTemplate.update(pair.getSql(), pair.getArgs());
+                        if (rollBackOnUpdateFail && row < 1) {
+                            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "SQL update affected {} rows ", row);
+                            throw new IllegalTransactionStateException("Illegal transaction");
+                        }
+                    });
+                    if (consumer != null) {
+                        consumer.accept(Boolean.TRUE, null);
                     }
-                });
-                if (consumer != null) {
-                    consumer.accept(Boolean.TRUE, null);
+                    return Boolean.TRUE;
+                } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
+                    FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
+                    if (consumer != null) {
+                        consumer.accept(Boolean.FALSE, e);
+                    }
+                    return Boolean.FALSE;
+                } catch (CannotGetJdbcConnectionException e) {
+                    FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
+                    throw e;
+                } catch (DataAccessException e) {
+                    FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0],
+                            args[0], ExceptionUtil.getAllExceptionMsg(e));
+                    throw e;
                 }
-                return Boolean.TRUE;
-            } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
-                FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
-                if (consumer != null) {
-                    consumer.accept(Boolean.FALSE, e);
-                }
-                return Boolean.FALSE;
-            } catch (CannotGetJdbcConnectionException e) {
-                FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
-                throw e;
-            } catch (DataAccessException | IllegalTransactionStateException e) {
-                FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0], args[0],
-                        ExceptionUtil.getAllExceptionMsg(e));
-                throw e;
+            });
+        } catch (IllegalTransactionStateException e) {
+            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "Roll back transaction for {} ", e.getMessage());
+            if (consumer != null) {
+                consumer.accept(Boolean.FALSE, e);
             }
-        });
+        }
+        return updateResult;
     }
     
     /**
