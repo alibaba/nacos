@@ -16,7 +16,7 @@
   -->
 
 <configuration debug="false" scan="false"  packagingData="true">
-    <nacosClientProperty scope="context" name="logPath" source="JM.LOG.PATH"/>
+    <nacosClientProperty scope="context" name="logPath" source="JM.LOG.PATH" defaultValue="${user.home}/logs"/>
     <nacosClientProperty scope="context" name="logRetainCount" source="JM.LOG.RETAIN.COUNT" defaultValue="7"/>
     <nacosClientProperty scope="context" name="logFileSize" source="JM.LOG.FILE.SIZE" defaultValue="10MB"/>
     <nacosClientProperty scope="context" name="nacosConfigLogLevel" source="com.alibaba.nacos.config.log.level" defaultValue="info"/>
