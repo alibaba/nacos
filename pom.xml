@@ -121,7 +121,7 @@
         <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
         <maven-assembly-plugin.version>3.0.0</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
-        <maven-flatten-version>1.1.0</maven-flatten-version>
+        <maven-easyj-version>1.1.5</maven-easyj-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
@@ -171,6 +171,9 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot-dependencies.version}</version>
+                    <configuration>
+                        <attach>false</attach>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -350,6 +353,7 @@
                         <exclude>**/gogo.proto</exclude>
                         <exclude>**/any.proto</exclude>
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
+                        <exclude>.flattened-pom.xml</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -419,29 +423,24 @@
                 <version>${maven-assembly-plugin.version}</version>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-                <version>${maven-flatten-version}</version>
+                <groupId>icu.easyj.maven.plugins</groupId>
+                <artifactId>easyj-maven-plugin</artifactId>
+                <version>${maven-easyj-version}</version>
                 <configuration>
-                    <updatePomFile>true</updatePomFile>
-                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
-                    <pomElements>
-                        <dependencies>expand</dependencies>
-                    </pomElements>
+                    <simplifiedPomFileName>.flattened-pom.xml</simplifiedPomFileName>
+                    <useTabIndent>true</useTabIndent>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>flatten</id>
-                        <phase>process-resources</phase>
+                        <id>flatten-pom</id>
                         <goals>
-                            <goal>flatten</goal>
+                            <goal>simplify-pom</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>flatten.clean</id>
-                        <phase>clean</phase>
+                        <id>clean-flattened-pom</id>
                         <goals>
-                            <goal>clean</goal>
+                            <goal>clean-simplify-pom</goal>
                         </goals>
                     </execution>
                 </executions>
