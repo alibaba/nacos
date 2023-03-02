@@ -33,7 +33,7 @@ public class ModifyRequest implements Serializable {
     
     private String sql;
     
-    private boolean rollBackOnUpdateFail = Boolean.TRUE;
+    private boolean rollBackOnUpdateFail = Boolean.FALSE;
     
     private Object[] args;
     

@@ -224,7 +224,7 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
                         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
                         int row = jdbcTemplate.update(pair.getSql(), pair.getArgs());
-                        if (rollBackOnUpdateFail && row < 1) {
+                        if (!rollBackOnUpdateFail && row < 1) {
                             LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "SQL update affected {} rows ", row);
                             throw new IllegalTransactionStateException("Illegal transaction");
                         }
