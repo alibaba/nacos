@@ -438,7 +438,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
         final String sql = configTagsRelationMapper.delete(Arrays.asList("id"));
         final Object[] args = new Object[] {id};
-        EmbeddedStorageContextUtils.addSqlContext( sql, args);
+        EmbeddedStorageContextUtils.addSqlContext(sql, args);
     }
     
     @Override
