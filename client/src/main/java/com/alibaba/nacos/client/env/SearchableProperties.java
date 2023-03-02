@@ -22,20 +22,17 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
- * Searchable NacosClientProperties.
- * the SearchableProperties that it can be specified search order by
- * nacos.env.first
+ * Searchable NacosClientProperties. the SearchableProperties that it can be specified search order by nacos.env.first
+ *
  * @author onewe
  */
 class SearchableProperties implements NacosClientProperties {
@@ -48,10 +45,41 @@ class SearchableProperties implements NacosClientProperties {
     
     private static final DefaultSettingPropertySource DEFAULT_SETTING_PROPERTY_SOURCE = new DefaultSettingPropertySource();
     
-    private static final List<SourceType> DEFAULT_ORDER = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM,
-            SourceType.ENV, SourceType.DEFAULT_SETTING);
+    private static final List<SourceType> SEARCH_ORDER;
     
     private static final CompositeConverter CONVERTER = new CompositeConverter();
+    
+    static {
+        List<SourceType> initOrder = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV,
+                SourceType.DEFAULT_SETTING);
+        
+        String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
+        if (StringUtils.isBlank(firstEnv)) {
+            firstEnv = SYSTEM_ENV_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
+        }
+        
+        if (StringUtils.isNotBlank(firstEnv)) {
+            try {
+                final SourceType sourceType = SourceType.valueOf(firstEnv.toUpperCase());
+                if (!sourceType.equals(SourceType.PROPERTIES) && !sourceType.equals(SourceType.DEFAULT_SETTING)) {
+                    final int index = initOrder.indexOf(sourceType);
+                    final SourceType replacedSourceType = initOrder.set(0, sourceType);
+                    initOrder.set(index, replacedSourceType);
+                }
+            } catch (Exception e) {
+                LOGGER.warn("first source type parse error, it will be used default order!", e);
+            }
+        }
+        SEARCH_ORDER = initOrder;
+        StringBuilder orderInfo = new StringBuilder("properties search order:");
+        for (int i = 0; i < SEARCH_ORDER.size(); i++) {
+            orderInfo.append(SEARCH_ORDER.get(i).toString());
+            if (i < SEARCH_ORDER.size() - 1) {
+                orderInfo.append("->");
+            }
+        }
+        LOGGER.debug(orderInfo.toString());
+    }
     
     static final SearchableProperties INSTANCE = new SearchableProperties();
     
@@ -65,8 +93,8 @@ class SearchableProperties implements NacosClientProperties {
     
     private SearchableProperties(PropertiesPropertySource propertiesPropertySource) {
         this.propertiesPropertySource = propertiesPropertySource;
-        this.propertySources = build(propertiesPropertySource,
-                JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE, DEFAULT_SETTING_PROPERTY_SOURCE);
+        this.propertySources = build(propertiesPropertySource, JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE,
+                DEFAULT_SETTING_PROPERTY_SOURCE);
     }
     
     @Override
@@ -122,8 +150,7 @@ class SearchableProperties implements NacosClientProperties {
     @Override
     public Properties asProperties() {
         Properties properties = new Properties();
-        final ListIterator<AbstractPropertySource> iterator = propertySources.listIterator(
-                propertySources.size());
+        final ListIterator<AbstractPropertySource> iterator = propertySources.listIterator(propertySources.size());
         while (iterator.hasPrevious()) {
             final AbstractPropertySource previous = iterator.previous();
             properties.putAll(previous.asProperties());
@@ -166,60 +193,9 @@ class SearchableProperties implements NacosClientProperties {
     }
     
     private List<AbstractPropertySource> build(AbstractPropertySource... propertySources) {
-    
-        String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
-        if (StringUtils.isBlank(firstEnv)) {
-            firstEnv = SYSTEM_ENV_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
-        }
-        
-        if (StringUtils.isBlank(firstEnv)) {
-            return sortPropertySourceDefaultOrder(propertySources);
-        }
-        
-        try {
-            final SourceType sourceType = SourceType.valueOf(firstEnv.toUpperCase());
-            if (SourceType.DEFAULT_SETTING.equals(sourceType) || SourceType.PROPERTIES.equals(sourceType)) {
-                return sortPropertySourceDefaultOrder(propertySources);
-            }
-            return sortPropertySource(sourceType, propertySources);
-        } catch (Exception e) {
-            LOGGER.error("first source type parse error, it will be used default order!", e);
-            return sortPropertySourceDefaultOrder(propertySources);
-        }
-    }
-    
-    private List<AbstractPropertySource> sortPropertySourceDefaultOrder(
-            AbstractPropertySource... propertySources) {
         final Map<SourceType, AbstractPropertySource> sourceMap = Arrays.stream(propertySources)
                 .collect(Collectors.toMap(AbstractPropertySource::getType, propertySource -> propertySource));
-        final List<AbstractPropertySource> collect = DEFAULT_ORDER.stream().map(sourceMap::get)
-                .collect(Collectors.toList());
-        LOGGER.info("properties search order:PROPERTIES->JVM->ENV->DEFAULT_SETTING");
-        return collect;
-    }
-    
-    private List<AbstractPropertySource> sortPropertySource(SourceType firstType,
-            AbstractPropertySource... propertySources) {
-        List<SourceType> tempList = new ArrayList<>(4);
-        tempList.add(firstType);
-        
-        final Map<SourceType, AbstractPropertySource> sourceMap = Arrays.stream(propertySources)
-                .collect(Collectors.toMap(AbstractPropertySource::getType, propertySource -> propertySource));
-        final List<AbstractPropertySource> collect = DEFAULT_ORDER.stream()
-                .filter(sourceType -> !sourceType.equals(firstType)).collect(() -> tempList, List::add, List::addAll)
-                .stream().map(sourceMap::get).filter(Objects::nonNull).collect(Collectors.toList());
-        
-        StringBuilder orderInfo = new StringBuilder("properties search order:");
-        for (int i = 0; i < collect.size(); i++) {
-            final AbstractPropertySource abstractPropertySource = collect.get(i);
-            orderInfo.append(abstractPropertySource.getType().toString());
-            if (i < collect.size() - 1) {
-                orderInfo.append("->");
-            }
-        }
-        LOGGER.info(orderInfo.toString());
-        
-        return collect;
+        return SEARCH_ORDER.stream().map(sourceMap::get).collect(Collectors.toList());
     }
     
     @Override
