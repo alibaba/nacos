@@ -69,14 +69,14 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> {
         this.tokenValidityInSeconds = EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, Long.class,
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS);
         
-        String encodedSecretKey = EnvUtil.getProperty(AuthConstants.TOKEN_SECRET_KEY,
-                AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
+        String encodedSecretKey = EnvUtil
+                .getProperty(AuthConstants.TOKEN_SECRET_KEY, AuthConstants.DEFAULT_TOKEN_SECRET_KEY);
         try {
             this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(encodedSecretKey));
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                    "the length of  must great than or equal 32 bytes; And the secret key  must be encoded by base64",
-                    e);
+                    "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
+                            + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
         }
         
         this.jwtParser = Jwts.parserBuilder().setSigningKey(secretKey).build();
