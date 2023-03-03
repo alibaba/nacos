@@ -1794,7 +1794,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 use, effect, type, schema, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
                 configInfo.getMd5()};
         
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextUtils.addSqlContext(true, sql, args);
     }
     
     @Override
