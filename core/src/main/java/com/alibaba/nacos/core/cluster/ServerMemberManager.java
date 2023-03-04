@@ -66,6 +66,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARAM;
+
 /**
  * Cluster node management in Nacos.
  *
@@ -583,6 +585,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                 clusterRpcClientProxy =  ApplicationUtils.getBean(ClusterRpcClientProxy.class);
             }
             if (!clusterRpcClientProxy.isRunning(target)) {
+                MemberUtil.onFail(ServerMemberManager.this, target,
+                        new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + target));
                 return;
             }
             
