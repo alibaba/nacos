@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;

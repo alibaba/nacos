@@ -22,8 +22,9 @@ import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
+import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
-import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -77,7 +78,7 @@ public class NacosConfigServiceComTlsGrpcClientTest {
     @Test
     public void test_e_TlsServerAndPlainClient()  throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(GrpcConstants.GRPC_CLIENT_TLS_ENABLE, "false");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();

@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import io.grpc.ManagedChannel;
 import org.junit.After;
 import org.junit.Assert;

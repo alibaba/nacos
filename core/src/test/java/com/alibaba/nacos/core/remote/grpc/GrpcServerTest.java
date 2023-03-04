@@ -18,6 +18,7 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;

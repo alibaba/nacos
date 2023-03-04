@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.grpc;
+package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
 import org.springframework.boot.context.properties.ConfigurationProperties;

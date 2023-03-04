@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;

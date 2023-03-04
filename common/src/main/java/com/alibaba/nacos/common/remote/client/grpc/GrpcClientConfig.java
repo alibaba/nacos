@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 
 /**
  * GrpcCleint config. Use to collect and init Grpc client configuration.

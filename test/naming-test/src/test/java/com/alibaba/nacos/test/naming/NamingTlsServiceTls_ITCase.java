@@ -22,8 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
-import com.alibaba.nacos.core.remote.grpc.RpcServerTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcConstants;
+import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -104,8 +104,8 @@ public class NamingTlsServiceTls_ITCase {
     @Test
     public void TlsServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(GrpcConstants.GRPC_CLIENT_TLS_TRUST_ALL,"true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL,"true");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);

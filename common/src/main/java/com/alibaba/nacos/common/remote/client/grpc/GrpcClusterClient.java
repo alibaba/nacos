@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 
 import java.util.Map;
 import java.util.Properties;

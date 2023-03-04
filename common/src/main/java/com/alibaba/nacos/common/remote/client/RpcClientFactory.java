@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
-import com.alibaba.nacos.common.remote.client.grpc.RpcClientTlsConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
