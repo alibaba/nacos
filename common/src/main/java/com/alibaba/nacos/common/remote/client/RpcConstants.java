@@ -61,7 +61,7 @@ public class RpcConstants {
     public static final String RPC_CLIENT_TLS_TRUST_PWD = NACOS_CLIENT_RPC + ".tls.certPrivateKeyPassword";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_CHAIN_PATH = NACOS_CLIENT_RPC + ".tls.trustCollectionChainPath";
+    public static final String RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH = NACOS_CLIENT_RPC + ".tls.trustCollectionChainPath";
 
     @RpcConfigLabel
     public static final String RPC_CLIENT_TLS_TRUST_ALL = NACOS_CLIENT_RPC + ".tls.trustAll";

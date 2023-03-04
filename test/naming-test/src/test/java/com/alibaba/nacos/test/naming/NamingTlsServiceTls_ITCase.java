@@ -77,8 +77,8 @@ public class NamingTlsServiceTls_ITCase {
     @Test
     public void TlsServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty("nacos.remote.client.grpc.enable.tls","true");
-        System.setProperty("nacos.remote.client.grpc.tls.trustCollectionChainPath","ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -88,8 +88,10 @@ public class NamingTlsServiceTls_ITCase {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
-        namingService.registerInstance(serviceName, instance);
+        instance.setMetadata(map);
         try {
+            TimeUnit.SECONDS.sleep(1L);
+            namingService.registerInstance(serviceName, instance);
             TimeUnit.SECONDS.sleep(3L);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -115,6 +117,7 @@ public class NamingTlsServiceTls_ITCase {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
+        instance.setMetadata(map);
         namingService.registerInstance(serviceName, instance);
         try {
             TimeUnit.SECONDS.sleep(3L);

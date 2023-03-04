@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.After;
@@ -82,7 +81,7 @@ public class NacosConfigV2MutualAuthTest {
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         propertiesfalse.put(RpcConstants.RPC_CLIENT_MUTUAL_AUTH,"true");
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"client-key.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"client-cert.pem");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
@@ -111,7 +110,7 @@ public class NacosConfigV2MutualAuthTest {
 
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_CHAIN_PATH,"client-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"client-cert.pem");
 
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);

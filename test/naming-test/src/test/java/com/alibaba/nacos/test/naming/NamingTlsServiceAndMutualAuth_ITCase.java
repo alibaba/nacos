@@ -64,7 +64,7 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
     public void testMutualAuth() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"client-cert.pem");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"client-key.pem");
         System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH,"true");
@@ -96,7 +96,7 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
     public void testMutualAuthClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_CHAIN_PATH,"ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);

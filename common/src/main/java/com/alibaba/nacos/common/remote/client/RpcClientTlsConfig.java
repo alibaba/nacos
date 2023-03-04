@@ -56,8 +56,8 @@ public class RpcClientTlsConfig extends TlsConfig {
             tlsConfig.setCiphers(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_CIPHERS));
         }
 
-        if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_CHAIN_PATH)) {
-            tlsConfig.setTrustCollectionCertFile(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_CHAIN_PATH));
+        if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH)) {
+            tlsConfig.setTrustCollectionCertFile(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH)) {
