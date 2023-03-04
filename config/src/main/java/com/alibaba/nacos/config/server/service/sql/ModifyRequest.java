@@ -33,6 +33,8 @@ public class ModifyRequest implements Serializable {
     
     private String sql;
     
+    private boolean rollBackOnUpdateFail = Boolean.FALSE;
+    
     private Object[] args;
     
     public ModifyRequest() {
@@ -64,6 +66,14 @@ public class ModifyRequest implements Serializable {
     
     public void setArgs(Object[] args) {
         this.args = args;
+    }
+    
+    public boolean isRollBackOnUpdateFail() {
+        return rollBackOnUpdateFail;
+    }
+    
+    public void setRollBackOnUpdateFail(boolean rollBackOnUpdateFail) {
+        this.rollBackOnUpdateFail = rollBackOnUpdateFail;
     }
     
     @Override
