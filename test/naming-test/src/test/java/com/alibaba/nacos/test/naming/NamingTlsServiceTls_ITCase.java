@@ -25,8 +25,10 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import org.junit.Assert;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -43,6 +45,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @date .
  **/
 @RunWith(SpringRunner.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos",
         RpcServerTlsConfig.PREFIX+".enableTls=true",
@@ -58,7 +61,7 @@ public class NamingTlsServiceTls_ITCase {
     private int port;
 
     @Test(expected = NacosException.class)
-    public void TlsServerAndPlainClient() throws NacosException {
+    public void Tls_a_ServerAndPlainClient() throws NacosException {
 
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
@@ -75,7 +78,7 @@ public class NamingTlsServiceTls_ITCase {
     }
 
     @Test
-    public void TlsServerAndTlsClientTrustCa() throws NacosException {
+    public void Tls_b_ServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
@@ -104,7 +107,7 @@ public class NamingTlsServiceTls_ITCase {
     }
 
     @Test
-    public void TlsServerAndTlsClientAll() throws NacosException {
+    public void Tls_c_ServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL,"true");
