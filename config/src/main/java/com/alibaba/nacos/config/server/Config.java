@@ -26,7 +26,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @author Nacos
  */
 @EnableScheduling
-@SpringBootApplication(scanBasePackages = {"com.alibaba.nacos.config.server", "com.alibaba.nacos.core"})
+@SpringBootApplication(scanBasePackages = {
+        "com.alibaba.nacos.config.server",
+        "com.alibaba.nacos.core"})
 public class Config {
     
     public static void main(String[] args) {

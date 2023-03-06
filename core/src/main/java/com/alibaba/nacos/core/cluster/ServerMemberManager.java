@@ -16,7 +16,11 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.api.ability.ServerAbilities;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest;
+import com.alibaba.nacos.auth.util.AuthHeaderUtil;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -30,19 +34,24 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
+import com.alibaba.nacos.core.ability.ServerAbilityInitializerHolder;
 import com.alibaba.nacos.core.cluster.lookup.LookupFactory;
+import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
@@ -56,6 +65,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+
+import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARAM;
 
 /**
  * Cluster node management in Nacos.
@@ -81,6 +92,20 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     private final NacosAsyncRestTemplate asyncRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(Loggers.CORE);
     
+    private static final int DEFAULT_SERVER_PORT = 8848;
+    
+    private static final String SERVER_PORT_PROPERTY = "server.port";
+    
+    private static final String SPRING_MANAGEMENT_CONTEXT_NAMESPACE = "management";
+    
+    private static final String MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY = "nacos.member-change-event.queue.size";
+    
+    private static final int DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE = 128;
+    
+    private static boolean isUseAddressServer = false;
+    
+    private static final long DEFAULT_TASK_DELAY_TIME = 5_000L;
+    
     /**
      * Cluster node list.
      */
@@ -89,7 +114,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     /**
      * Is this node in the cluster list.
      */
-    private volatile boolean isInIpList = true;
+    private static volatile boolean isInIpList = true;
     
     /**
      * port.
@@ -124,16 +149,19 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     public ServerMemberManager(ServletContext servletContext) throws Exception {
         this.serverList = new ConcurrentSkipListMap<>();
         EnvUtil.setContextPath(servletContext.getContextPath());
-        
         init();
     }
     
     protected void init() throws NacosException {
         Loggers.CORE.info("Nacos-related cluster resource initialization");
-        this.port = EnvUtil.getProperty("server.port", Integer.class, 8848);
+        this.port = EnvUtil.getProperty(SERVER_PORT_PROPERTY, Integer.class, DEFAULT_SERVER_PORT);
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
+        
+        // init abilities.
+        this.self.setAbilities(initMemberAbilities());
+        
         serverList.put(self.getAddress(), self);
         
         // register NodeChangeEvent publisher to NotifyManager
@@ -149,20 +177,19 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         Loggers.CORE.info("The cluster resource is initialized");
     }
     
-    private void initAndStartLookup() throws NacosException {
-        this.lookup = LookupFactory.createLookUp(this);
-        this.lookup.start();
-    }
-    
-    public void switchLookup(String name) throws NacosException {
-        this.lookup = LookupFactory.switchLookup(name, this);
-        this.lookup.start();
+    private ServerAbilities initMemberAbilities() {
+        ServerAbilities serverAbilities = new ServerAbilities();
+        for (ServerAbilityInitializer each : ServerAbilityInitializerHolder.getInstance().getInitializers()) {
+            each.initialize(serverAbilities);
+        }
+        return serverAbilities;
     }
     
     private void registerClusterEvent() {
         // Register node change events
         NotifyCenter.registerToPublisher(MembersChangeEvent.class,
-                EnvUtil.getProperty("nacos.member-change-event.queue.size", Integer.class, 128));
+                EnvUtil.getProperty(MEMBER_CHANGE_EVENT_QUEUE_SIZE_PROPERTY, Integer.class,
+                        DEFAULT_MEMBER_CHANGE_EVENT_QUEUE_SIZE));
         
         // The address information of this node needs to be dynamically modified
         // when registering the IP change of this node
@@ -191,17 +218,40 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         });
     }
     
+    private void initAndStartLookup() throws NacosException {
+        this.lookup = LookupFactory.createLookUp(this);
+        isUseAddressServer = this.lookup.useAddressServer();
+        this.lookup.start();
+    }
+    
+    /**
+     * switch look up.
+     *
+     * @param name look up name.
+     * @throws NacosException exception.
+     */
+    public void switchLookup(String name) throws NacosException {
+        this.lookup = LookupFactory.switchLookup(name, this);
+        isUseAddressServer = this.lookup.useAddressServer();
+        this.lookup.start();
+    }
+    
+    public static boolean isUseAddressServer() {
+        return isUseAddressServer;
+    }
+    
     /**
      * member information update.
      *
      * @param newMember {@link Member}
-     * @return update is successw
+     * @return update is success
      */
     public boolean update(Member newMember) {
         Loggers.CLUSTER.debug("member information update : {}", newMember);
         
         String address = newMember.getAddress();
         if (!serverList.containsKey(address)) {
+            Loggers.CLUSTER.warn("address {} want to update Member, but not in member list!", newMember.getAddress());
             return false;
         }
         
@@ -214,7 +264,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             MemberUtil.copy(newMember, member);
             if (isPublishChangeEvent) {
                 // member basic data changes and all listeners need to be notified
-                notifyMemberChange();
+                notifyMemberChange(member);
             }
             return member;
         });
@@ -222,28 +272,46 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return true;
     }
     
-    void notifyMemberChange() {
-        NotifyCenter.publishEvent(MembersChangeEvent.builder().members(allMembers()).build());
+    void notifyMemberChange(Member member) {
+        NotifyCenter.publishEvent(MembersChangeEvent.builder().trigger(member).members(allMembers()).build());
     }
     
     /**
      * Whether the node exists within the cluster.
      *
      * @param address ip:port
-     * @return is exist
+     * @return is exists
      */
     public boolean hasMember(String address) {
         boolean result = serverList.containsKey(address);
-        if (!result) {
-            // If only IP information is passed in, a fuzzy match is required
-            for (Map.Entry<String, Member> entry : serverList.entrySet()) {
-                if (StringUtils.contains(entry.getKey(), address)) {
-                    result = true;
-                    break;
-                }
+        if (result) {
+            return true;
+        }
+        
+        // If only IP information is passed in, a fuzzy match is required
+        for (Map.Entry<String, Member> entry : serverList.entrySet()) {
+            if (StringUtils.contains(entry.getKey(), address)) {
+                result = true;
+                break;
             }
         }
         return result;
+    }
+    
+    public List<String> getServerListUnhealth() {
+        List<String> unhealthyMembers = new ArrayList<>();
+        for (Member member : this.allMembers()) {
+            NodeState state = member.getState();
+            if (state.equals(NodeState.DOWN)) {
+                unhealthyMembers.add(member.getAddress());
+            }
+            
+        }
+        return unhealthyMembers;
+    }
+    
+    public MemberLookup getLookup() {
+        return lookup;
     }
     
     public Member getSelf() {
@@ -305,12 +373,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         for (Member member : members) {
             final String address = member.getAddress();
             
-            if (!serverList.containsKey(address)) {
+            Member existMember = serverList.get(address);
+            if (existMember == null) {
                 hasChange = true;
+                tmpMap.put(address, member);
+            } else {
+                //to keep extendInfo and abilities that report dynamically.
+                tmpMap.put(address, existMember);
             }
             
-            // Ensure that the node is created only once
-            tmpMap.put(address, member);
             if (NodeState.UP.equals(member.getState())) {
                 tmpAddressInfo.add(address);
             }
@@ -321,15 +392,18 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         
         Collection<Member> finalMembers = allMembers();
         
-        Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
-        
         // Persist the current cluster node information to cluster.conf
         // <important> need to put the event publication into a synchronized block to ensure
         // that the event publication is sequential
         if (hasChange) {
+            Loggers.CLUSTER.warn("[serverlist] updated to : {}", finalMembers);
             MemberUtil.syncToFile(finalMembers);
             Event event = MembersChangeEvent.builder().members(finalMembers).build();
             NotifyCenter.publishEvent(event);
+        } else {
+            if (Loggers.CLUSTER.isDebugEnabled()) {
+                Loggers.CLUSTER.debug("[serverlist] not updated, is still : {}", finalMembers);
+            }
         }
         
         return hasChange;
@@ -379,9 +453,15 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
+        String serverNamespace = event.getApplicationContext().getServerNamespace();
+        if (SPRING_MANAGEMENT_CONTEXT_NAMESPACE.equals(serverNamespace)) {
+            // ignore
+            // fix#issue https://github.com/alibaba/nacos/issues/7230
+            return;
+        }
         getSelf().setState(NodeState.UP);
         if (!EnvUtil.getStandaloneMode()) {
-            GlobalExecutor.scheduleByCommon(this.infoReportTask, 5_000L);
+            GlobalExecutor.scheduleByCommon(this.infoReportTask, DEFAULT_TASK_DELAY_TIME);
         }
         EnvUtil.setPort(event.getWebServer().getPort());
         EnvUtil.setLocalAddress(this.localAddress);
@@ -424,7 +504,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         return Collections.unmodifiableMap(serverList);
     }
     
-    public boolean isInIpList() {
+    public static boolean isInIpList() {
         return isInIpList;
     }
     
@@ -437,6 +517,8 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         };
         
         private int cursor = 0;
+    
+        private ClusterRpcClientProxy clusterRpcClientProxy;
         
         @Override
         protected void executeBody() {
@@ -450,57 +532,104 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Member target = members.get(cursor);
             
             Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
-            
+    
+            if (target.getAbilities().getRemoteAbility().isGrpcReportEnabled()) {
+                reportByGrpc(target);
+            } else {
+                reportByHttp(target);
+            }
+        }
+        
+        private void reportByHttp(Member target) {
             final String url = HttpUtils
                     .buildUrl(false, target.getAddress(), EnvUtil.getContextPath(), Commons.NACOS_CORE_CONTEXT,
                             "/cluster/report");
+    
+            try {
+                Header header = Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version);
+                AuthHeaderUtil.addIdentityToHeader(header);
+                asyncRestTemplate
+                        .post(url, header, Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
+                            @Override
+                            public void onReceive(RestResult<String> result) {
+                                if (result.ok()) {
+                                    handleReportResult(result.getData(), target);
+                                } else {
+                                    Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
+                                            target.getAddress(), result);
+                                    MemberUtil.onFail(ServerMemberManager.this, target);
+                                }
+                            }
+                    
+                            @Override
+                            public void onError(Throwable throwable) {
+                                Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
+                                        target.getAddress(), ExceptionUtil.getAllExceptionMsg(throwable));
+                                MemberUtil.onFail(ServerMemberManager.this, target, throwable);
+                            }
+                    
+                            @Override
+                            public void onCancel() {
+                        
+                            }
+                        });
+            } catch (Throwable ex) {
+                Loggers.CLUSTER.error("failed to report new info to target node by http : {}, error : {}", target.getAddress(),
+                        ExceptionUtil.getAllExceptionMsg(ex));
+            }
+        }
+        
+        private void reportByGrpc(Member target) {
+            //Todo  circular reference
+            if (Objects.isNull(clusterRpcClientProxy)) {
+                clusterRpcClientProxy =  ApplicationUtils.getBean(ClusterRpcClientProxy.class);
+            }
+            if (!clusterRpcClientProxy.isRunning(target)) {
+                MemberUtil.onFail(ServerMemberManager.this, target,
+                        new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + target));
+                return;
+            }
+            
+            MemberReportRequest memberReportRequest = new MemberReportRequest(getSelf());
             
             try {
-                asyncRestTemplate
-                        .post(url, Header.newInstance().addParam(Constants.NACOS_SERVER_HEADER, VersionUtils.version),
-                                Query.EMPTY, getSelf(), reference.getType(), new Callback<String>() {
-                                    @Override
-                                    public void onReceive(RestResult<String> result) {
-                                        if (result.getCode() == HttpStatus.NOT_IMPLEMENTED.value()
-                                                || result.getCode() == HttpStatus.NOT_FOUND.value()) {
-                                            Loggers.CLUSTER
-                                                    .warn("{} version is too low, it is recommended to upgrade the version : {}",
-                                                            target, VersionUtils.version);
-                                            return;
-                                        }
-                                        if (result.ok()) {
-                                            MemberUtil.onSuccess(ServerMemberManager.this, target);
-                                        } else {
-                                            Loggers.CLUSTER
-                                                    .warn("failed to report new info to target node : {}, result : {}",
-                                                            target.getAddress(), result);
-                                            MemberUtil.onFail(ServerMemberManager.this, target);
-                                        }
-                                    }
-                                    
-                                    @Override
-                                    public void onError(Throwable throwable) {
-                                        Loggers.CLUSTER
-                                                .error("failed to report new info to target node : {}, error : {}",
-                                                        target.getAddress(),
-                                                        ExceptionUtil.getAllExceptionMsg(throwable));
-                                        MemberUtil.onFail(ServerMemberManager.this, target, throwable);
-                                    }
-                                    
-                                    @Override
-                                    public void onCancel() {
-                                    
-                                    }
-                                });
-            } catch (Throwable ex) {
-                Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}", target.getAddress(),
-                        ExceptionUtil.getAllExceptionMsg(ex));
+                MemberReportResponse response = (MemberReportResponse) clusterRpcClientProxy.sendRequest(target, memberReportRequest);
+                if (response.getResultCode() == ResponseCode.SUCCESS.getCode()) {
+                    MemberUtil.onSuccess(ServerMemberManager.this, target, response.getNode());
+                } else {
+                    MemberUtil.onFail(ServerMemberManager.this, target);
+                }
+            } catch (NacosException e) {
+                if (e.getErrCode() == NacosException.NO_HANDLER) {
+                    target.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
+                }
+                Loggers.CLUSTER.error("failed to report new info to target node by grpc : {}, error : {}", target.getAddress(),
+                        ExceptionUtil.getAllExceptionMsg(e));
             }
         }
         
         @Override
         protected void after() {
             GlobalExecutor.scheduleByCommon(this, 2_000L);
+        }
+        
+        private void handleReportResult(String reportResult, Member target) {
+            if (isBooleanResult(reportResult)) {
+                MemberUtil.onSuccess(ServerMemberManager.this, target);
+                return;
+            }
+            try {
+                Member member = JacksonUtils.toObj(reportResult, Member.class);
+                MemberUtil.onSuccess(ServerMemberManager.this, target, member);
+            } catch (Exception e) {
+                Loggers.CLUSTER.warn("Receive invalid report result from target {}, context {}", target.getAddress(),
+                        reportResult);
+                MemberUtil.onSuccess(ServerMemberManager.this, target);
+            }
+        }
+        
+        private boolean isBooleanResult(String reportResult) {
+            return Boolean.TRUE.toString().equals(reportResult) || Boolean.FALSE.toString().equals(reportResult);
         }
     }
     

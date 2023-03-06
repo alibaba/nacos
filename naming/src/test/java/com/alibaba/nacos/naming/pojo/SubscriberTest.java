@@ -26,7 +26,7 @@ public class SubscriberTest {
     
     @Test
     public void subscriberBeanTest() {
-        Subscriber subscriber = new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test");
+        Subscriber subscriber = new Subscriber("127.0.0.1:8080", "agent", "app", "127.0.0.1", "public", "test", 0);
         subscriber.setAddrStr("127.0.0.1:8080");
         subscriber.setIp("127.0.0.1");
         subscriber.setApp("app");

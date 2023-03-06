@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -59,23 +58,28 @@ public class TimerContext {
     public static void end(final String name, final Logger logger, final String level) {
         Map<String, Long> record = TIME_RECORD.get();
         long contextTime = System.currentTimeMillis() - record.remove(name);
-        if (StringUtils.equals(level, LoggerUtils.DEBUG)) {
-            LoggerUtils.printIfDebugEnabled(logger, "{} cost time : {} ms", name, contextTime);
-        }
-        if (StringUtils.equals(level, LoggerUtils.INFO)) {
-            LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", name, contextTime);
-        }
-        if (StringUtils.equals(level, LoggerUtils.TRACE)) {
-            LoggerUtils.printIfTraceEnabled(logger, "{} cost time : {} ms", name, contextTime);
-        }
-        if (StringUtils.equals(level, LoggerUtils.ERROR)) {
-            LoggerUtils.printIfErrorEnabled(logger, "{} cost time : {} ms", name, contextTime);
-        }
-        if (StringUtils.equals(level, LoggerUtils.WARN)) {
-            LoggerUtils.printIfWarnEnabled(logger, "{} cost time : {} ms", name, contextTime);
-        }
         if (record.isEmpty()) {
             TIME_RECORD.remove();
+        }
+        switch (level) {
+            case LoggerUtils.DEBUG:
+                LoggerUtils.printIfDebugEnabled(logger, "{} cost time : {} ms", name, contextTime);
+                break;
+            case LoggerUtils.INFO:
+                LoggerUtils.printIfInfoEnabled(logger, "{} cost time : {} ms", name, contextTime);
+                break;
+            case LoggerUtils.TRACE:
+                LoggerUtils.printIfTraceEnabled(logger, "{} cost time : {} ms", name, contextTime);
+                break;
+            case LoggerUtils.ERROR:
+                LoggerUtils.printIfErrorEnabled(logger, "{} cost time : {} ms", name, contextTime);
+                break;
+            case LoggerUtils.WARN:
+                LoggerUtils.printIfWarnEnabled(logger, "{} cost time : {} ms", name, contextTime);
+                break;
+            default:
+                LoggerUtils.printIfErrorEnabled(logger, "level not found , {} cost time : {} ms", name, contextTime);
+                break;
         }
     }
     

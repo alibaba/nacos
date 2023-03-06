@@ -29,7 +29,7 @@ public class GenericPoller<T> implements Poller<T> {
     
     private final AtomicInteger index = new AtomicInteger(0);
     
-    private List<T> items = new ArrayList<T>();
+    private List<T> items = new ArrayList<>();
     
     public GenericPoller(List<T> items) {
         this.items = items;
@@ -42,6 +42,6 @@ public class GenericPoller<T> implements Poller<T> {
     
     @Override
     public Poller<T> refresh(List<T> items) {
-        return new GenericPoller<T>(items);
+        return new GenericPoller<>(items);
     }
 }

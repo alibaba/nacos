@@ -24,6 +24,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * JDk http client response implement.
@@ -49,7 +51,9 @@ public class JdkHttpClientResponse implements HttpClientResponse {
         if (this.responseHeader == null) {
             this.responseHeader = Header.newInstance();
         }
-        this.responseHeader.setOriginalResponseHeader(conn.getHeaderFields());
+        for (Map.Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
+            this.responseHeader.addOriginalResponseHeader(entry.getKey(), entry.getValue());
+        }
         return this.responseHeader;
     }
     

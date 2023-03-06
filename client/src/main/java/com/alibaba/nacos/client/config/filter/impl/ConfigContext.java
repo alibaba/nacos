@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class ConfigContext implements IConfigContext {
     
-    private final Map<String, Object> param = new HashMap<String, Object>();
+    private final Map<String, Object> param = new HashMap<>();
     
     @Override
     public Object getParameter(String key) {

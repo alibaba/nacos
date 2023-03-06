@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -39,7 +38,13 @@ public class ServiceInfo {
     @JsonIgnore
     private String jsonFromServer = EMPTY;
     
+    private static final String EMPTY = "";
+    
+    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
+    
     public static final String SPLITER = "@@";
+    
+    private static final String DEFAULT_CHARSET = "UTF-8";
     
     private String name;
     
@@ -49,13 +54,15 @@ public class ServiceInfo {
     
     private long cacheMillis = 1000L;
     
-    private List<Instance> hosts = new ArrayList<Instance>();
+    private List<Instance> hosts = new ArrayList<>();
     
     private long lastRefTime = 0L;
     
     private String checksum = "";
     
     private volatile boolean allIPs = false;
+    
+    private volatile boolean reachProtectionThreshold = false;
     
     public ServiceInfo() {
     }
@@ -69,7 +76,7 @@ public class ServiceInfo {
     }
     
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constuctor used by DiskCache.read(String) and
+     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(String key) {
@@ -88,7 +95,7 @@ public class ServiceInfo {
             this.name = keys[serviceNameIndex];
         } else {
             //defensive programming
-            throw new IllegalArgumentException("Cann't parse out 'groupName',but it must not be null!");
+            throw new IllegalArgumentException("Can't parse out 'groupName',but it must not be null!");
         }
     }
     
@@ -107,6 +114,18 @@ public class ServiceInfo {
     
     public void setHosts(List<Instance> hosts) {
         this.hosts = hosts;
+    }
+    
+    public void addHost(Instance host) {
+        hosts.add(host);
+    }
+    
+    public void addAllHosts(List<? extends Instance> hosts) {
+        this.hosts.addAll(hosts);
+    }
+    
+    public List<Instance> getHosts() {
+        return new ArrayList<>(hosts);
     }
     
     public boolean isValid() {
@@ -153,10 +172,6 @@ public class ServiceInfo {
         this.cacheMillis = cacheMillis;
     }
     
-    public List<Instance> getHosts() {
-        return new ArrayList<Instance>(hosts);
-    }
-    
     /**
      * Judge whether service info is validate.
      *
@@ -171,7 +186,7 @@ public class ServiceInfo {
             return false;
         }
         
-        List<Instance> validHosts = new ArrayList<Instance>();
+        List<Instance> validHosts = new ArrayList<>();
         for (Instance host : hosts) {
             if (!host.isHealthy()) {
                 continue;
@@ -214,16 +229,15 @@ public class ServiceInfo {
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();
         try {
-            serviceName = URLEncoder.encode(serviceName, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            //do nothing
+            serviceName = URLEncoder.encode(serviceName, DEFAULT_CHARSET);
+        } catch (UnsupportedEncodingException ignored) {
         }
         return getKey(serviceName, clusters);
     }
     
     private String getGroupedServiceName() {
         String serviceName = this.name;
-        if (!isEmpty(groupName) && serviceName.indexOf(Constants.SERVICE_INFO_SPLITER) == -1) {
+        if (!isEmpty(groupName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             serviceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         }
         return serviceName;
@@ -267,15 +281,11 @@ public class ServiceInfo {
         return str == null || str.length() == 0;
     }
     
-    private static boolean isEmpty(Collection coll) {
-        return (coll == null || coll.isEmpty());
+    public boolean isReachProtectionThreshold() {
+        return reachProtectionThreshold;
     }
-    
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
+
+    public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
+        this.reachProtectionThreshold = reachProtectionThreshold;
     }
-    
-    private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
 }

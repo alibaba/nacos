@@ -17,7 +17,6 @@
 package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.Objects;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
@@ -27,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,6 +42,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
@@ -96,8 +97,8 @@ public final class DiskUtils {
      *
      * <p>The details as to how the name of the file is constructed is
      * implementation dependent and therefore not specified. Where possible the {@code prefix} and {@code suffix} are
-     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String, File)}
-     * method.
+     * used to construct candidate names in the same manner as the {@link java.io.File#createTempFile(String, String,
+     * File)} method.
      *
      * @param dir    the path to directory in which to create the file
      * @param prefix the prefix string to be used in generating the file's name; may be {@code null}
@@ -373,13 +374,38 @@ public final class DiskUtils {
             if (file.isDirectory()) {
                 compressDirectoryToZipFile(rootDir, child, zos);
             } else {
-                zos.putNextEntry(new ZipEntry(child));
                 try (final FileInputStream fis = new FileInputStream(file);
                         final BufferedInputStream bis = new BufferedInputStream(fis)) {
-                    IOUtils.copy(bis, zos);
+                    compressIntoZipFile(child, bis, zos);
                 }
             }
         }
+    }
+    
+    /**
+     * Compress an input stream to zip file.
+     *
+     * @param childName   child name in zip file
+     * @param inputStream input stream needed compress
+     * @param outputFile  output file
+     * @param checksum    check sum
+     * @throws IOException IOException during compress
+     */
+    public static void compressIntoZipFile(final String childName, final InputStream inputStream,
+            final String outputFile, final Checksum checksum) throws IOException {
+        try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
+                final CheckedOutputStream checkedOutputStream = new CheckedOutputStream(fileOutputStream, checksum);
+                final ZipOutputStream zipStream = new ZipOutputStream(new BufferedOutputStream(checkedOutputStream))) {
+            compressIntoZipFile(childName, inputStream, zipStream);
+            zipStream.flush();
+            fileOutputStream.getFD().sync();
+        }
+    }
+    
+    private static void compressIntoZipFile(final String childName, final InputStream inputStream,
+            final ZipOutputStream zipOutputStream) throws IOException {
+        zipOutputStream.putNextEntry(new ZipEntry(childName));
+        IOUtils.copy(inputStream, zipOutputStream);
     }
     
     // copy from sofa-jraft
@@ -415,6 +441,30 @@ public final class DiskUtils {
             // See https://coderanch.com/t/279175/java/ZipInputStream
             IOUtils.copy(cis, NullOutputStream.NULL_OUTPUT_STREAM);
         }
+    }
+    
+    /**
+     * Unzip the target file to byte array.
+     *
+     * @param sourceFile target file
+     * @param checksum   checksum
+     * @return decompress byte array
+     * @throws IOException IOException during decompress
+     */
+    public static byte[] decompress(final String sourceFile, final Checksum checksum) throws IOException {
+        byte[] result;
+        try (final FileInputStream fis = new FileInputStream(sourceFile);
+                final CheckedInputStream cis = new CheckedInputStream(fis, checksum);
+                final ZipInputStream zis = new ZipInputStream(new BufferedInputStream(cis));
+                final ByteArrayOutputStream bos = new ByteArrayOutputStream(1024)) {
+            while (zis.getNextEntry() != null) {
+                IOUtils.copy(zis, bos);
+                bos.flush();
+            }
+            IOUtils.copy(cis, NullOutputStream.NULL_OUTPUT_STREAM);
+            result = bos.toByteArray();
+        }
+        return result;
     }
     
     /**
@@ -490,7 +540,7 @@ public final class DiskUtils {
         }
         
         @Override
-        public void close() {
+        public void close() throws IOException {
             target.close();
         }
         

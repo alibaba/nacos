@@ -24,13 +24,13 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.persistent.ClusterVersionJudgement;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.pojo.Record;
-import com.alibaba.nacos.naming.utils.Constants;
 import com.google.protobuf.ByteString;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Persistent service manipulation layer in stand-alone mode.
@@ -40,8 +40,7 @@ import java.util.List;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class StandalonePersistentServiceProcessor extends BasePersistentServiceProcessor {
     
-    public StandalonePersistentServiceProcessor(final ClusterVersionJudgement judgement) throws Exception {
-        super(judgement);
+    public StandalonePersistentServiceProcessor() throws Exception {
     }
     
     @Override
@@ -106,5 +105,16 @@ public class StandalonePersistentServiceProcessor extends BasePersistentServiceP
     @Override
     public boolean isAvailable() {
         return !hasError;
+    }
+    
+    @Override
+    public Optional<String> getErrorMsg() {
+        String errorMsg;
+        if (hasError) {
+            errorMsg = "The raft peer is in error: " + jRaftErrorMsg;
+        } else {
+            errorMsg = null;
+        }
+        return Optional.ofNullable(errorMsg);
     }
 }

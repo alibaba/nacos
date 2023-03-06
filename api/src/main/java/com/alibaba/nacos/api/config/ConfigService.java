@@ -58,7 +58,7 @@ public interface ConfigService {
     /**
      * Add a listener to the configuration, after the server modified the configuration, the client will use the
      * incoming listener callback. Recommended asynchronous processing, the application can implement the getExecutor
-     * method in the ManagerListener, provide a thread pool of execution. If provided, use the main thread callback, May
+     * method in the ManagerListener, provide a thread pool of execution. If not provided, use the main thread callback, May
      * block other configurations or be blocked by other configurations.
      *
      * @param dataId   dataId
@@ -79,6 +79,7 @@ public interface ConfigService {
      */
     boolean publishConfig(String dataId, String group, String content) throws NacosException;
     
+    
     /**
      * Publish config.
      *
@@ -90,6 +91,32 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
+    
+    /**
+     * Cas Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param casMd5  casMd5 prev content's md5 to cas.
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException;
+    
+    /**
+     * Cas Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param casMd5  casMd5 prev content's md5 to cas.
+     * @param type    config type {@link ConfigType}
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
+            throws NacosException;
     
     /**
      * Remove config.

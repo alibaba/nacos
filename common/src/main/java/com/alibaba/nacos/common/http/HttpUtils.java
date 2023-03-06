@@ -48,6 +48,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
  * Http utils.
  *
@@ -111,7 +114,7 @@ public final class HttpUtils {
         if (body == null || body.isEmpty()) {
             return;
         }
-        List<NameValuePair> params = new ArrayList<NameValuePair>(body.size());
+        List<NameValuePair> params = new ArrayList<>(body.size());
         for (Map.Entry<String, String> entry : body.entrySet()) {
             params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
@@ -133,9 +136,9 @@ public final class HttpUtils {
     public static String buildUrl(boolean isHttps, String serverAddr, String... subPaths) {
         StringBuilder sb = new StringBuilder();
         if (isHttps) {
-            sb.append("https://");
+            sb.append(HTTPS_PREFIX);
         } else {
-            sb.append("http://");
+            sb.append(HTTP_PREFIX);
         }
         sb.append(serverAddr);
         String pre = null;
@@ -151,7 +154,7 @@ public final class HttpUtils {
                 if (subPath.startsWith("/")) {
                     sb.append(subPath);
                 } else {
-                    sb.append("/").append(subPath);
+                    sb.append('/').append(subPath);
                 }
             } else {
                 if (subPath.startsWith("/")) {
@@ -173,9 +176,9 @@ public final class HttpUtils {
      * @throws Exception exception
      */
     public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) throws Exception {
-        Map<String, String> map = new HashMap<String, String>(16);
-        for (String key : parameterMap.keySet()) {
-            map.put(key, parameterMap.get(key)[0]);
+        Map<String, String> map = new HashMap<>(16);
+        for (Map.Entry<String, String[]> entry : parameterMap.entrySet()) {
+            map.put(entry.getKey(), entry.getValue()[0]);
         }
         return map;
     }
@@ -199,9 +202,9 @@ public final class HttpUtils {
                 continue;
             }
             
-            sb.append(entry.getKey()).append("=");
+            sb.append(entry.getKey()).append('=');
             sb.append(URLEncoder.encode(entry.getValue(), encoding));
-            sb.append("&");
+            sb.append('&');
         }
         
         return sb.toString();
@@ -222,10 +225,10 @@ public final class HttpUtils {
         }
         
         for (Iterator<String> iter = paramValues.iterator(); iter.hasNext(); ) {
-            sb.append(iter.next()).append("=");
+            sb.append(iter.next()).append('=');
             sb.append(URLEncoder.encode(iter.next(), encoding));
             if (iter.hasNext()) {
-                sb.append("&");
+                sb.append('&');
             }
         }
         return sb.toString();

@@ -24,7 +24,7 @@ package com.alibaba.nacos.core.cluster;
 public class MemberMetaDataConstants {
     
     /**
-     * Raft port，This parameter is dropped when GRPC is used as a whole.
+     * Raft port，This parameter is dropped when RPC is used as a whole.
      */
     public static final String RAFT_PORT = "raftPort";
     
@@ -38,5 +38,10 @@ public class MemberMetaDataConstants {
     
     public static final String VERSION = "version";
     
-    public static final String[] BASIC_META_KEYS = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT, VERSION};
+    public static final String SUPPORT_REMOTE_C_TYPE = "remoteConnectType";
+    
+    public static final String READY_TO_UPGRADE = "readyToUpgrade";
+    
+    public static final String[] BASIC_META_KEYS = new String[] {SITE_KEY, AD_WEIGHT, RAFT_PORT, WEIGHT, VERSION,
+            READY_TO_UPGRADE};
 }

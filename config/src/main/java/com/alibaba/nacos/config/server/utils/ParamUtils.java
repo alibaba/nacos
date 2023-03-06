@@ -19,7 +19,10 @@ package com.alibaba.nacos.config.server.utils;
 import java.util.Map;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.common.utils.StringUtils;
+import org.springframework.http.HttpStatus;
 
 /**
  * Parameter validity check util.
@@ -32,7 +35,21 @@ public class ParamUtils {
     
     private static final int TAG_MAX_LEN = 16;
     
-    private static final int TANANT_MAX_LEN = 128;
+    private static final int TENANT_MAX_LEN = 128;
+    
+    private static final String CONFIG_TAGS = "config_tags";
+    
+    private static final String DESC = "desc";
+    
+    private static final String USE = "use";
+    
+    private static final String EFFECT = "effect";
+    
+    private static final String TYPE = "type";
+    
+    private static final String SCHEMA = "schema";
+    
+    private static final String ENCRYPTED_DATA_KEY = "encryptedDataKey";
     
     /**
      * Whitelist checks that valid parameters can only contain letters, Numbers, and characters in validChars, and
@@ -62,25 +79,29 @@ public class ParamUtils {
     }
     
     /**
-     * Check the parameter.
+     * Check the parameter for [v1] and [v2].
      */
     public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
         if (StringUtils.isBlank(dataId) || !isValid(dataId.trim())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "invalid dataId : " + dataId);
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "invalid dataId : " + dataId);
         } else if (StringUtils.isBlank(group) || !isValid(group)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "invalid group : " + group);
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "invalid group : " + group);
         } else if (StringUtils.isBlank(datumId) || !isValid(datumId)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "invalid datumId : " + datumId);
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "invalid datumId : " + datumId);
         } else if (StringUtils.isBlank(content)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "content is blank : " + content);
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                    "content is blank : " + content);
         } else if (content.length() > PropertyUtil.getMaxContent()) {
-            throw new NacosException(NacosException.INVALID_PARAM,
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
                     "invalid content, over " + PropertyUtil.getMaxContent());
         }
     }
     
     /**
-     * Check the tag.
+     * Check the tag for [v1].
      */
     public static void checkParam(String tag) {
         if (StringUtils.isNotBlank(tag)) {
@@ -94,63 +115,105 @@ public class ParamUtils {
     }
     
     /**
-     * Check the config info.
+     * Check the config info for [v1] and [v2].
      */
     public static void checkParam(Map<String, Object> configAdvanceInfo) throws NacosException {
         for (Map.Entry<String, Object> configAdvanceInfoTmp : configAdvanceInfo.entrySet()) {
-            if ("config_tags".equals(configAdvanceInfoTmp.getKey())) {
+            if (CONFIG_TAGS.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null) {
                     String[] tagArr = ((String) configAdvanceInfoTmp.getValue()).split(",");
                     if (tagArr.length > 5) {
-                        throw new NacosException(NacosException.INVALID_PARAM, "too much config_tags, over 5");
+                        throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                                "too much config_tags, over 5");
                     }
                     for (String tag : tagArr) {
                         if (tag.length() > 64) {
-                            throw new NacosException(NacosException.INVALID_PARAM, "too long tag, over 64");
+                            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(),
+                                    ErrorCode.PARAMETER_VALIDATE_ERROR, "too long tag, over 64");
                         }
                     }
                 }
-            } else if ("desc".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (DESC.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 128) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "too long desc, over 128");
+                    throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "too long desc, over 128");
                 }
-            } else if ("use".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (USE.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "too long use, over 32");
+                    throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "too long use, over 32");
                 }
-            } else if ("effect".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (EFFECT.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "too long effect, over 32");
+                    throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "too long effect, over 32");
                 }
-            } else if ("type".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (TYPE.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "too long type, over 32");
+                    throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "too long type, over 32");
                 }
-            } else if ("schema".equals(configAdvanceInfoTmp.getKey())) {
+            } else if (SCHEMA.equals(configAdvanceInfoTmp.getKey())) {
                 if (configAdvanceInfoTmp.getValue() != null
                         && ((String) configAdvanceInfoTmp.getValue()).length() > 32768) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "too long schema, over 32768");
+                    throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                            "too long schema, over 32768");
                 }
+            } else if (ENCRYPTED_DATA_KEY.equals(configAdvanceInfoTmp.getKey())) {
+                // No verification required
             } else {
-                throw new NacosException(NacosException.INVALID_PARAM, "invalid param");
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "invalid param");
             }
         }
     }
     
     /**
-     * Check the tenant.
+     * Check the tag for [v2].
+     */
+    public static void checkParamV2(String tag) throws NacosApiException {
+        if (StringUtils.isNotBlank(tag)) {
+            if (!isValid(tag.trim())) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "invalid tag : " + tag);
+            }
+            if (tag.length() > TAG_MAX_LEN) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "too long tag, over 16");
+            }
+        }
+    }
+    
+    /**
+     * Check the tenant for [v1].
      */
     public static void checkTenant(String tenant) {
         if (StringUtils.isNotBlank(tenant)) {
             if (!isValid(tenant.trim())) {
                 throw new IllegalArgumentException("invalid tenant");
             }
-            if (tenant.length() > TANANT_MAX_LEN) {
-                throw new IllegalArgumentException("too long tag, over 128");
+            if (tenant.length() > TENANT_MAX_LEN) {
+                throw new IllegalArgumentException("too long tenant, over 128");
+            }
+        }
+    }
+    
+    /**
+     * Check the namespaceId for [v2].
+     */
+    public static void checkTenantV2(String namespaceId) throws NacosApiException {
+        if (StringUtils.isNotBlank(namespaceId)) {
+            if (!isValid(namespaceId.trim())) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "invalid namespaceId");
+            }
+            if (namespaceId.length() > TENANT_MAX_LEN) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_VALIDATE_ERROR,
+                        "too long namespaceId, over 128");
             }
         }
     }

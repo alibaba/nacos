@@ -93,7 +93,7 @@ public interface CmdbService {
      *
      * @param entityName name of entity
      * @param entityType type of entity
-     * @return
+     * @return entity.
      */
     Entity getEntity(String entityName, String entityType);
 }

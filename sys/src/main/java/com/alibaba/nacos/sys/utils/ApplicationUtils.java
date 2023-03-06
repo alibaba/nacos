@@ -45,6 +45,8 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     
     private static ApplicationContext applicationContext;
     
+    private static boolean started = false;
+    
     public static String getId() {
         return applicationContext.getId();
     }
@@ -67,6 +69,14 @@ public class ApplicationUtils implements ApplicationContextInitializer<Configura
     
     public static AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
         return applicationContext.getAutowireCapableBeanFactory();
+    }
+    
+    public static boolean isStarted() {
+        return started;
+    }
+    
+    public static void setStarted(boolean started) {
+        ApplicationUtils.started = started;
     }
     
     public static BeanFactory getParentBeanFactory() {

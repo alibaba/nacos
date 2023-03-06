@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.model.event;
 
 import com.alibaba.nacos.common.notify.Event;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * ConfigDataChangeEvent.

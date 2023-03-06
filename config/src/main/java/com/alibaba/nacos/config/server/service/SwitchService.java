@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -47,10 +47,10 @@ public class SwitchService {
     
     public static final String DISABLE_APP_COLLECTOR = "disableAppCollector";
     
-    private static volatile Map<String, String> switches = new HashMap<String, String>();
+    private static volatile Map<String, String> switches = new HashMap<>();
     
     public static boolean getSwitchBoolean(String key, boolean defaultValue) {
-        boolean rtn = defaultValue;
+        boolean rtn;
         try {
             String value = switches.get(key);
             rtn = value != null ? Boolean.parseBoolean(value) : defaultValue;
@@ -62,7 +62,7 @@ public class SwitchService {
     }
     
     public static int getSwitchInteger(String key, int defaultValue) {
-        int rtn = defaultValue;
+        int rtn;
         try {
             String status = switches.get(key);
             rtn = status != null ? Integer.parseInt(status) : defaultValue;
@@ -90,7 +90,7 @@ public class SwitchService {
         }
         FATAL_LOG.warn("[switch-config] {}", config);
         
-        Map<String, String> map = new HashMap<String, String>(30);
+        Map<String, String> map = new HashMap<>(30);
         try {
             for (String line : IoUtils.readLines(new StringReader(config))) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
@@ -123,7 +123,7 @@ public class SwitchService {
             String value = entry.getValue();
             sb.append(split);
             sb.append(key);
-            sb.append("=");
+            sb.append('=');
             sb.append(value);
             split = "; ";
         }

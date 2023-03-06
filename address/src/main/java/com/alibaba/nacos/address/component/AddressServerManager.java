@@ -18,7 +18,7 @@ package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 /**
@@ -33,7 +33,7 @@ public class AddressServerManager {
     
     public String getRawProductName(String name) {
         
-        if (StringUtils.isBlank(name) || AddressServerConstants.DEFAULT_PRODUCT.equals(name)) {
+        if (StringUtils.isBlank(name)) {
             
             return AddressServerConstants.DEFAULT_PRODUCT;
         }
@@ -50,7 +50,7 @@ public class AddressServerManager {
      */
     public String getDefaultClusterNameIfEmpty(String name) {
         
-        if (StringUtils.isEmpty(name) || AddressServerConstants.DEFAULT_GET_CLUSTER.equals(name)) {
+        if (StringUtils.isEmpty(name)) {
             return AddressServerConstants.DEFAULT_GET_CLUSTER;
         }
         

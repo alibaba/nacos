@@ -39,8 +39,10 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     
     private static final String INVALID_CONSTRUCTOR_ERROR_INFO = "could not determine a constructor for the tag";
     
+    private static final String CONFIG_TYPE = "yaml";
+    
     public YmlChangeParser() {
-        super("yaml");
+        super(CONFIG_TYPE);
     }
     
     @Override
@@ -75,7 +77,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     }
     
     private Map<String, Object> getFlattenedMap(Map<String, Object> source) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>(128);
+        Map<String, Object> result = new LinkedHashMap<>(128);
         buildFlattenedMap(result, source, null);
         return result;
     }

@@ -18,13 +18,13 @@ package com.alibaba.nacos.config.server.model;
 
 /**
  * ConfigInfoBaseEx.
- * And can't add field, to compatible with old interface(If adding a field, then it will occour compatibility problems).
+ * And can't add field, to compatible with old interface(If adding a field, then it will occur compatibility problems).
  *
  * @author Nacos
  */
 public class ConfigInfoBaseEx extends ConfigInfoBase {
     
-    private static final long serialVersionUID = -1L;
+    private static final long serialVersionUID = 5802322506486922169L;
     
     /**
      * Single message status code, when querying for batch.

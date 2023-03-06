@@ -56,6 +56,7 @@ class Header extends React.Component {
   changePassword = () => {
     this.setState({
       passwordResetUser: this.getUsername(),
+      passwordResetUserVisible: true,
     });
   };
 
@@ -65,7 +66,7 @@ class Header extends React.Component {
       const [, base64Url = ''] = token.split('.');
       const base64 = base64Url.replace('-', '+').replace('_', '/');
       try {
-        const parsedToken = JSON.parse(window.atob(base64));
+        const parsedToken = JSON.parse(decodeURIComponent(escape(window.atob(base64))));
         return parsedToken.sub;
       } catch (e) {
         delete localStorage.token;
@@ -74,23 +75,30 @@ class Header extends React.Component {
     }
     return '';
   };
+
   indexAction = () => {
     this.props.history.push('/');
   };
+
   render() {
     const {
       locale = {},
       language = 'en-us',
       location: { pathname },
     } = this.props;
-    const { home, docs, blog, community, languageSwitchButton } = locale;
-    const { passwordResetUser = '' } = this.state;
+    const { home, docs, blog, community, enterprise, languageSwitchButton } = locale;
+    const { passwordResetUser = '', passwordResetUserVisible = false } = this.state;
     const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
     const NAV_MENU = [
       { id: 1, title: home, link: BASE_URL },
       { id: 2, title: docs, link: `${BASE_URL}docs/what-is-nacos.html` },
       { id: 3, title: blog, link: `${BASE_URL}blog/index.html` },
       { id: 4, title: community, link: `${BASE_URL}community/index.html` },
+      {
+        id: 5,
+        title: enterprise,
+        link: 'https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0',
+      },
     ];
     return (
       <>
@@ -130,13 +138,16 @@ class Header extends React.Component {
           </div>
         </header>
         <PasswordReset
+          visible={passwordResetUserVisible}
           username={passwordResetUser}
           onOk={user =>
             passwordReset(user).then(res => {
               return res;
             })
           }
-          onCancel={() => this.setState({ passwordResetUser: undefined })}
+          onCancel={() =>
+            this.setState({ passwordResetUser: undefined, passwordResetUserVisible: false })
+          }
         />
       </>
     );

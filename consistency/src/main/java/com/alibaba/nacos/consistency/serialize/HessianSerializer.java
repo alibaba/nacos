@@ -28,12 +28,14 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * hessian serializer.
+ * Serializer implement by hessian.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 public class HessianSerializer implements Serializer {
+    
+    private static final String NAME = "Hessian";
     
     private SerializerFactory serializerFactory = new SerializerFactory();
     
@@ -89,7 +91,7 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public String name() {
-        return "Hessian";
+        return NAME;
     }
     
 }

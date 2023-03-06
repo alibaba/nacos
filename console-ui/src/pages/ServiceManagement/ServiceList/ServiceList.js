@@ -30,11 +30,12 @@ import {
   ConfigProvider,
   Switch,
 } from '@alifd/next';
-import { request } from '../../../globalLib';
+import { getParams, setParams, request } from '../../../globalLib';
 import { generateUrl } from '../../../utils/nacosutil';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
+import PageTitle from '../../../components/PageTitle';
 
 import './ServiceList.scss';
 import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
@@ -63,8 +64,8 @@ class ServiceList extends React.Component {
       currentPage: 1,
       dataSource: [],
       search: {
-        serviceName: '',
-        groupName: '',
+        serviceName: getParams('serviceNameParam') || '',
+        groupName: getParams('groupNameParam') || '',
       },
       hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
@@ -95,6 +96,10 @@ class ServiceList extends React.Component {
       `serviceNameParam=${search.serviceName}`,
       `groupNameParam=${search.groupName}`,
     ];
+    setParams({
+      serviceNameParam: search.serviceName,
+      groupNameParam: search.groupName,
+    });
     this.openLoading();
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
@@ -131,6 +136,12 @@ class ServiceList extends React.Component {
    */
   showSampleCode(record) {
     this.showcode.current.getInstance().openDialog(record);
+  }
+
+  querySubscriber(record) {
+    const { name, groupName } = record;
+    const namespace = this.state.nowNamespaceId;
+    this.props.history.push(generateUrl('/subscriberList', { namespace, name, groupName }));
   }
 
   handlePageSizeChange(pageSize) {
@@ -187,6 +198,7 @@ class ServiceList extends React.Component {
       detail,
       sampleCode,
       deleteAction,
+      subscriber,
     } = locale;
     const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
@@ -195,18 +207,11 @@ class ServiceList extends React.Component {
 
     return (
       <div className="main-container service-management">
-        <div style={{ marginTop: -15 }}>
-          <RegionGroup
-            setNowNameSpace={this.setNowNameSpace}
-            namespaceCallBack={this.getQueryLater}
-          />
-        </div>
-        <h3 className="page-title">
-          <span className="title-item">{serviceList}</span>
-          <span className="title-item">|</span>
-          <span className="title-item">{nowNamespaceName}</span>
-          <span className="title-item">{nowNamespaceId}</span>
-        </h3>
+        <PageTitle title={serviceList} desc={nowNamespaceId} nameSpace />
+        <RegionGroup
+          setNowNameSpace={this.setNowNameSpace}
+          namespaceCallBack={this.getQueryLater}
+        />
         <Row
           className="demo-row"
           style={{
@@ -238,7 +243,7 @@ class ServiceList extends React.Component {
                   }
                 />
               </FormItem>
-              <Form.Item label={`${hiddenEmptyService}:`}>
+              <Form.Item label={`${hiddenEmptyService}`}>
                 <Switch
                   checked={hasIpCount}
                   onChange={hasIpCount =>
@@ -259,7 +264,7 @@ class ServiceList extends React.Component {
                 </Button>
               </FormItem>
               <FormItem label="" style={{ float: 'right' }}>
-                <Button type="secondary" onClick={() => this.openEditServiceDialog()}>
+                <Button type="primary" onClick={() => this.openEditServiceDialog()}>
                   {create}
                 </Button>
               </FormItem>
@@ -271,7 +276,7 @@ class ServiceList extends React.Component {
             <Table
               dataSource={this.state.dataSource}
               locale={{ empty: pubNoData }}
-              getRowProps={row => this.rowColor(row)}
+              rowProps={row => this.rowColor(row)}
               loading={this.state.loading}
             >
               <Column title={locale.columnServiceName} dataIndex="name" />
@@ -302,6 +307,10 @@ class ServiceList extends React.Component {
                     <span style={{ marginRight: 5 }}>|</span>
                     <a style={{ marginRight: 5 }} onClick={() => this.showSampleCode(record)}>
                       {sampleCode}
+                    </a>
+                    <span style={{ marginRight: 5 }}>|</span>
+                    <a style={{ marginRight: 5 }} onClick={() => this.querySubscriber(record)}>
+                      {subscriber}
                     </a>
                     <span style={{ marginRight: 5 }}>|</span>
                     <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>

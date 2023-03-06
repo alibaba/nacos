@@ -84,9 +84,9 @@ public class ApplicationInfo {
     }
     
     /**
-     * Judge whether subinfo collected recently or not.
+     * Judge whether sub info collected recently or not.
      *
-     * @return The result whether subinfo collected recently or not.
+     * @return The result whether sub info collected recently or not.
      */
     public boolean isSubInfoRecentlyCollected() {
         if (System.currentTimeMillis() - this.lastSubscribeInfoCollectedTime < RECENTLY_DURATION) {
@@ -98,7 +98,7 @@ public class ApplicationInfo {
     /**
      * Judge whether current server own the lock or not.
      *
-     * @return The result whether whether current server own the lock or not.
+     * @return The result whether current server own the lock or not.
      */
     public boolean canCurrentServerOwnTheLock() {
         boolean currentOwnerIsMe =

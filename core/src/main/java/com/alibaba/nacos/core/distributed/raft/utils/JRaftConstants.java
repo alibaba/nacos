@@ -43,5 +43,10 @@ public class JRaftConstants {
     public static final String REMOVE_PEERS = "removePeers";
     
     public static final String CHANGE_PEERS = "changePeers";
-    
+
+    /**
+     * resetPeers.
+     */
+    public static final String RESET_PEERS = "resetPeers";
+
 }

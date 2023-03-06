@@ -28,23 +28,30 @@
     <packaging>jar</packaging>
     
     <name>nacos-api ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>6</source>
-                    <target>6</target>
-                </configuration>
-            </plugin>
+            <!--  reuse when you need to update grpc model  -->
+             <!--<plugin>
+                 <groupId>org.xolstice.maven.plugins</groupId>
+                 <artifactId>protobuf-maven-plugin</artifactId>
+                 <version>0.5.0</version>
+                 <configuration>
+                     <protocArtifact>com.google.protobuf:protoc:3.8.0:exe:${os.detected.classifier}</protocArtifact>
+                     <pluginId>grpc-java</pluginId>
+                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.14.0:exe:${os.detected.classifier}</pluginArtifact>
+                 </configuration>
+                 <executions>
+                     <execution>
+                         <goals>
+                             <goal>compile</goal>
+                             <goal>compile-custom</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>-->
         </plugins>
     </build>
-    
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     
     <dependencies>
         <dependency>
@@ -66,8 +73,29 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.api.grpc</groupId>
+            <artifactId>proto-google-common-protos</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
+    
     </dependencies>
 </project>

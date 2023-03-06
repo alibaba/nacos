@@ -16,15 +16,9 @@
 
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
-import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
@@ -32,7 +26,6 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -41,7 +34,7 @@ import org.springframework.mock.env.MockEnvironment;
 import static org.mockito.Mockito.doReturn;
 
 @RunWith(MockitoJUnitRunner.class)
-public class BaseTest {
+public abstract class BaseTest {
     
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
     
@@ -51,14 +44,13 @@ public class BaseTest {
     
     protected static final String TEST_NAMESPACE = "test-namespace";
     
-    @Mock
-    public ServiceManager serviceManager;
+    protected static final String TEST_IP = "1.1.1.1";
     
-    @Mock
-    public RaftPeerSet peerSet;
+    protected static final String TEST_METADATA = "{\"label\":\"123\"}";
     
-    @Mock
-    public RaftCore raftCore;
+    protected static final String TEST_INSTANCE_INFO_LIST = "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
+            + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
+            + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
     
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -73,13 +65,10 @@ public class BaseTest {
     protected SwitchDomain switchDomain;
     
     @Mock
-    protected HealthCheckProcessorDelegate delegate;
-    
-    @Mock
-    protected PushService pushService;
+    protected UdpPushService pushService;
     
     @Spy
-    private MockEnvironment environment;
+    protected MockEnvironment environment;
     
     @Before
     public void before() {
@@ -87,21 +76,8 @@ public class BaseTest {
         ApplicationUtils.injectContext(context);
     }
     
-    protected void mockRaft() {
-        RaftPeer peer = new RaftPeer();
-        peer.ip = NetUtils.localServer();
-        raftCore.setPeerSet(peerSet);
-        Mockito.when(peerSet.local()).thenReturn(peer);
-        Mockito.when(peerSet.getLeader()).thenReturn(peer);
-        Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
-    }
-    
     protected void mockInjectPushServer() {
-        doReturn(pushService).when(context).getBean(PushService.class);
-    }
-    
-    protected void mockInjectHealthCheckProcessor() {
-        doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
+        doReturn(pushService).when(context).getBean(UdpPushService.class);
     }
     
     protected void mockInjectSwitchDomain() {

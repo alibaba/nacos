@@ -39,6 +39,9 @@ import java.lang.reflect.Type;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class JacksonUtils {
+
+    private JacksonUtils() {
+    }
     
     static ObjectMapper mapper = new ObjectMapper();
     
@@ -71,7 +74,7 @@ public final class JacksonUtils {
      */
     public static byte[] toJsonBytes(Object obj) {
         try {
-            return ByteUtils.toBytes(mapper.writeValueAsString(obj));
+            return mapper.writeValueAsBytes(obj);
         } catch (JsonProcessingException e) {
             throw new NacosSerializationException(obj.getClass(), e);
         }
@@ -88,7 +91,7 @@ public final class JacksonUtils {
      */
     public static <T> T toObj(byte[] json, Class<T> cls) {
         try {
-            return toObj(StringUtils.newStringForUtf8(json), cls);
+            return mapper.readValue(json, cls);
         } catch (Exception e) {
             throw new NacosDeserializationException(cls, e);
         }
@@ -105,7 +108,7 @@ public final class JacksonUtils {
      */
     public static <T> T toObj(byte[] json, Type cls) {
         try {
-            return toObj(StringUtils.newStringForUtf8(json), cls);
+            return mapper.readValue(json, mapper.constructType(cls));
         } catch (Exception e) {
             throw new NacosDeserializationException(e);
         }
@@ -139,7 +142,7 @@ public final class JacksonUtils {
      */
     public static <T> T toObj(byte[] json, TypeReference<T> typeReference) {
         try {
-            return toObj(StringUtils.newStringForUtf8(json), typeReference);
+            return mapper.readValue(json, typeReference);
         } catch (Exception e) {
             throw new NacosDeserializationException(e);
         }

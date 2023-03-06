@@ -26,7 +26,7 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +45,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Config sub service.
@@ -74,14 +76,14 @@ public class ConfigSubService {
      * @return all path.
      */
     private String getUrl(String ip, String relativePath) {
-        return "http://" + ip + EnvUtil.getContextPath() + relativePath;
+        return HTTP_PREFIX + ip + EnvUtil.getContextPath() + relativePath;
     }
     
     private List<SampleResult> runCollectionJob(String url, Map<String, String> params,
             CompletionService<SampleResult> completionService, List<SampleResult> resultList) {
         
         Collection<Member> ipList = memberManager.allMembers();
-        List<SampleResult> collectionResult = new ArrayList<SampleResult>(ipList.size());
+        List<SampleResult> collectionResult = new ArrayList<>(ipList.size());
         // Submit query task.
         for (Member ip : ipList) {
             try {
@@ -92,7 +94,7 @@ public class ConfigSubService {
             }
         }
         // Get and merge result.
-        SampleResult sampleResults = null;
+        SampleResult sampleResults;
         for (Member member : ipList) {
             try {
                 Future<SampleResult> f = completionService.poll(1000, TimeUnit.MILLISECONDS);
@@ -106,9 +108,7 @@ public class ConfigSubService {
                         LogUtil.DEFAULT_LOG.warn("The task in ip: {}  did not completed in 1000ms ", member);
                     }
                 } catch (TimeoutException e) {
-                    if (f != null) {
-                        f.cancel(true);
-                    }
+                    f.cancel(true);
                     LogUtil.DEFAULT_LOG.warn("get task result with TimeoutException: {} ", e.getMessage());
                 }
             } catch (InterruptedException e) {
@@ -129,36 +129,34 @@ public class ConfigSubService {
      */
     public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = null;
+        Map<String, String> listenersGroupkeyStatus;
         if (sampleCollectResult.getLisentersGroupkeyStatus() == null || sampleCollectResult.getLisentersGroupkeyStatus()
                 .isEmpty()) {
-            lisentersGroupkeyStatus = new HashMap<String, String>(10);
+            listenersGroupkeyStatus = new HashMap<>(10);
         } else {
-            lisentersGroupkeyStatus = sampleCollectResult.getLisentersGroupkeyStatus();
+            listenersGroupkeyStatus = sampleCollectResult.getLisentersGroupkeyStatus();
         }
         
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
-            for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
-                lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
-            }
+            Map<String, String> listenersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
+            listenersGroupkeyStatus.putAll(listenersGroupkeyStatusTmp);
         }
-        mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        mergeResult.setLisentersGroupkeyStatus(listenersGroupkeyStatus);
         return mergeResult;
     }
     
     /**
-     * Query subsrciber's task from every nacos server nodes.
+     * Query subscriber's task from every nacos server nodes.
      *
      * @author Nacos
      */
     class Job implements Callable<SampleResult> {
         
-        private String ip;
+        private final String ip;
         
-        private String url;
+        private final String url;
         
-        private Map<String, String> params;
+        private final Map<String, String> params;
         
         public Job(String ip, String url, Map<String, String> params) {
             this.ip = ip;
@@ -172,13 +170,12 @@ public class ConfigSubService {
             try {
                 StringBuilder paramUrl = new StringBuilder();
                 for (Map.Entry<String, String> param : params.entrySet()) {
-                    paramUrl.append("&").append(param.getKey()).append("=")
+                    paramUrl.append('&').append(param.getKey()).append('=')
                             .append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                RestResult<String> result = NotifyService
-                        .invokeURL(urlAll, null, Constants.ENCODE);
+                RestResult<String> result = NotifyService.invokeURL(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
                 if (result.ok()) {
@@ -197,45 +194,39 @@ public class ConfigSubService {
     
     public SampleResult getCollectSampleResult(String dataId, String group, String tenant, int sampleTime)
             throws Exception {
-        List<SampleResult> resultList = new ArrayList<SampleResult>();
+        List<SampleResult> resultList = new ArrayList<>();
         String url = Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers";
-        Map<String, String> params = new HashMap<String, String>(5);
+        Map<String, String> params = new HashMap<>(5);
         params.put("dataId", dataId);
         params.put("group", group);
         if (!StringUtils.isBlank(tenant)) {
             params.put("tenant", tenant);
         }
-        BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-                memberManager.getServerList().size());
-        CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(
+        BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<>(memberManager.getServerList().size());
+        CompletionService<SampleResult> completionService = new ExecutorCompletionService<>(
                 ConfigExecutor.getConfigSubServiceExecutor(), queue);
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
-            if (sampleResults != null) {
-                sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
-            }
+            sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
         }
         return sampleCollectResult;
     }
     
-    public SampleResult getCollectSampleResultByIp(String ip, int sampleTime) throws Exception {
-        List<SampleResult> resultList = new ArrayList<SampleResult>(10);
+    public SampleResult getCollectSampleResultByIp(String ip, int sampleTime) {
+        List<SampleResult> resultList = new ArrayList<>(10);
         String url = Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs";
-        Map<String, String> params = new HashMap<String, String>(50);
+        Map<String, String> params = new HashMap<>(50);
         params.put("ip", ip);
-        BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-                memberManager.getServerList().size());
-        CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(
+        BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<>(memberManager.getServerList().size());
+        CompletionService<SampleResult> completionService = new ExecutorCompletionService<>(
                 ConfigExecutor.getConfigSubServiceExecutor(), queue);
         
         SampleResult sampleCollectResult = new SampleResult();
         for (int i = 0; i < sampleTime; i++) {
             List<SampleResult> sampleResults = runCollectionJob(url, params, completionService, resultList);
-            if (sampleResults != null) {
-                sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
-            }
+            sampleCollectResult = mergeSampleResult(sampleCollectResult, sampleResults);
         }
         return sampleCollectResult;
     }

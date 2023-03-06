@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.logging.log4j2;
 
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.utils.ResourceUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -45,15 +46,22 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
     
     private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
     
+    private static final String NACOS_LOG4J2_PLUGIN_PACKAGE = "com.alibaba.nacos.client.logging.log4j2";
+    
     private final String location = getLocation(NACOS_LOG4J2_LOCATION);
     
     @Override
     public void loadConfiguration() {
+        if (StringUtils.isBlank(location)) {
+            return;
+        }
+        
         final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         final Configuration contextConfiguration = loggerContext.getConfiguration();
         
         // load and start nacos configuration
         Configuration configuration = loadConfiguration(loggerContext, location);
+        configuration.getPluginPackages().add(NACOS_LOG4J2_PLUGIN_PACKAGE);
         configuration.start();
         
         // append loggers and appenders to contextConfiguration

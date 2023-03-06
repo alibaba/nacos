@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.codec;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Provides Base64 encoding and decoding as defined by <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
@@ -179,7 +179,7 @@ public class Base64 {
         if (lineSeparator != null) {
             if (containsAlphabetOrPad(lineSeparator)) {
                 String sep = null;
-                sep = new String(lineSeparator, Charset.forName("UTF-8"));
+                sep = new String(lineSeparator, StandardCharsets.UTF_8);
                 throw new IllegalArgumentException("lineSeparator must not contain base64 characters: [" + sep + "]");
             }
             if (lineLength > 0) {

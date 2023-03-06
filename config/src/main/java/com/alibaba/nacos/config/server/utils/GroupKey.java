@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 /**
  * Synthesize dataId+groupId form. Escape reserved characters in dataId and groupId.
@@ -88,16 +88,13 @@ public class GroupKey {
         
         if (StringUtils.isBlank(group)) {
             group = sb.toString();
-            if (group.length() == 0) {
-                throw new IllegalArgumentException("invalid groupkey:" + groupKey);
-            }
         } else {
             tenant = sb.toString();
-            if (group.length() == 0) {
-                throw new IllegalArgumentException("invalid groupkey:" + groupKey);
-            }
         }
-        
+        if (group.length() == 0) {
+            throw new IllegalArgumentException("invalid groupkey:" + groupKey);
+        }
+    
         return new String[] {dataId, group, tenant};
     }
     

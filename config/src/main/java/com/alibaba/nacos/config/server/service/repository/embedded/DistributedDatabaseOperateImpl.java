@@ -28,6 +28,7 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -59,7 +60,6 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
-import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -94,7 +94,7 @@ import java.util.stream.Collectors;
  *               │              │           │                 │
  *               │              │           │                 ▼
  *               │              │           │    ┌────────────────────────┐
- *               │              │           │    │  acquireSnakeflowerId  │
+ *               │              │           │    │  acquireSnowFlowerId   │
  *               │              │           │    └────────────────────────┘
  *               │              │           │                 │
  *               │              │           │                 │
@@ -406,7 +406,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 }
                 return RestResultUtils.success();
             } catch (Throwable ex) {
-                LogUtil.DEFAULT_LOG.error("data import has error : {}", ex);
+                LogUtil.DEFAULT_LOG.error("data import has error :", ex);
                 return RestResultUtils.failed(ex.getMessage());
             }
         });
@@ -539,8 +539,6 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (DataAccessException e) {
             throw new ConsistencyException(e.toString());
-        } catch (Throwable t) {
-            throw t;
         } finally {
             lock.unlock();
         }

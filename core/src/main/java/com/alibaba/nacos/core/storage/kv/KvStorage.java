@@ -60,7 +60,7 @@ public interface KvStorage {
      *
      * @param keys List byte[]
      * @return Map byte[], byte[]
-     * @throws KvStorageException RocksStorageException
+     * @throws KvStorageException KvStorageException
      */
     Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException;
     
@@ -69,34 +69,34 @@ public interface KvStorage {
      *
      * @param key   byte[]
      * @param value byte[]
-     * @throws KvStorageException RocksStorageException
+     * @throws KvStorageException KvStorageException
      */
     void put(byte[] key, byte[] value) throws KvStorageException;
     
     /**
      * batch write.
      *
-     * @param key    List byte[]
+     * @param keys    List byte[]
      * @param values List byte[]
-     * @throws KvStorageException RocksStorageException
+     * @throws KvStorageException KvStorageException
      */
-    void batchPut(List<byte[]> key, List<byte[]> values) throws KvStorageException;
+    void batchPut(List<byte[]> keys, List<byte[]> values) throws KvStorageException;
     
     /**
      * delete with key.
      *
      * @param key byte[]
-     * @throws KvStorageException RocksStorageException
+     * @throws KvStorageException KvStorageException
      */
     void delete(byte[] key) throws KvStorageException;
     
     /**
      * batch delete with keys.
      *
-     * @param key List byte[]
-     * @throws KvStorageException RocksStorageException
+     * @param keys List byte[]
+     * @throws KvStorageException KvStorageException
      */
-    void batchDelete(List<byte[]> key) throws KvStorageException;
+    void batchDelete(List<byte[]> keys) throws KvStorageException;
     
     /**
      * do snapshot.

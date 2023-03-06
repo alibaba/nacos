@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -33,7 +32,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static com.alibaba.nacos.config.server.constant.Constants.LIMIT_ERROR_CODE;
 
 /**
  * Capacity management aspect: batch write and update but don't process it.
@@ -58,10 +59,10 @@ public class CapacityManagementAspect {
     private CapacityService capacityService;
     
     @Autowired
-    private PersistService persistService;
+    private ConfigInfoPersistService configInfoPersistService;
     
     /**
-     * Need to judge the size of content whether to exceed the limination.
+     * Need to judge the size of content whether to exceed the limitation.
      */
     @Around(SYNC_UPDATE_CONFIG_ALL)
     public Object aroundSyncUpdateConfigAll(ProceedingJoinPoint pjp, HttpServletRequest request,
@@ -74,8 +75,8 @@ public class CapacityManagementAspect {
         String betaIps = request.getHeader("betaIps");
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
-                // do capacity management limination check for writting or updating config_info table.
-                if (persistService.findConfigInfo(dataId, group, tenant) == null) {
+                // do capacity management limitation check for writing or updating config_info table.
+                if (configInfoPersistService.findConfigInfo(dataId, group, tenant) == null) {
                     // Write operation.
                     return do4Insert(pjp, request, response, group, tenant, content);
                 }
@@ -87,7 +88,7 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * Update operation: open the limination of capacity management and it will check the size of content.
+     * Update operation: open the limitation of capacity management and it will check the size of content.
      *
      * @throws Throwable Throws Exception when actually operate.
      */
@@ -109,11 +110,10 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * Write operation.
-     * Step 1: count whether to open the limination checking funtion for capacity management;
-     * Step 2: open limination checking capacity management and check size of content and quota;
+     * Write operation. Step 1: count whether to open the limitation checking function for capacity management; Step 2:
+     * open limitation checking capacity management and check size of content and quota;
      *
-     * @throws Throwable Expcetion.
+     * @throws Throwable Exception.
      */
     private Object do4Insert(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
             String group, String tenant, String content) throws Throwable {
@@ -143,7 +143,8 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * The usage of capacity table for counting module will subtracte one whether open the limination check of capacity management.
+     * The usage of capacity table for counting module will subtracte one whether open the limitation check of capacity
+     * management.
      */
     @Around(DELETE_CONFIG)
     public Object aroundDeleteConfig(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
@@ -152,7 +153,7 @@ public class CapacityManagementAspect {
             return pjp.proceed();
         }
         LOGGER.info("[capacityManagement] aroundDeleteConfig");
-        ConfigInfo configInfo = persistService.findConfigInfo(dataId, group, tenant);
+        ConfigInfo configInfo = configInfoPersistService.findConfigInfo(dataId, group, tenant);
         if (configInfo == null) {
             return pjp.proceed();
         }
@@ -162,7 +163,7 @@ public class CapacityManagementAspect {
     /**
      * Delete Operation.
      *
-     * @throws Throwable Expcetion.
+     * @throws Throwable Exception.
      */
     private Object do4Delete(ProceedingJoinPoint pjp, HttpServletResponse response, String group, String tenant,
             ConfigInfo configInfo) throws Throwable {
@@ -181,7 +182,7 @@ public class CapacityManagementAspect {
             correctUsage(group, tenant, hasTenant);
             return pjp.proceed();
         }
-
+        
         // The same record can be deleted concurrently. This interface can be deleted asynchronously(submit MergeDataTask
         // to MergeTaskProcessor for processing), It may lead to more than one decrease in usage.
         // Therefore, it is necessary to modify the usage job regularly.
@@ -193,10 +194,10 @@ public class CapacityManagementAspect {
     private void correctUsage(String group, String tenant, boolean hasTenant) {
         try {
             if (hasTenant) {
-                LOGGER.info("主动修正usage, tenant: {}", tenant);
+                LOGGER.info("[capacityManagement] correct usage, tenant: {}", tenant);
                 capacityService.correctTenantUsage(tenant);
             } else {
-                LOGGER.info("主动修正usage, group: {}", group);
+                LOGGER.info("[capacityManagement] correct usage, group: {}", group);
                 capacityService.correctGroupUsage(group);
             }
         } catch (Exception e) {
@@ -221,7 +222,7 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * Usage counting service: it will count whether the limination check funtion will be open.
+     * Usage counting service: it will count whether the limitation check function will be open.
      */
     private void insertOrUpdateUsage(String group, String tenant, CounterMode counterMode, boolean hasTenant) {
         try {
@@ -264,7 +265,7 @@ public class CapacityManagementAspect {
      */
     private int getCurrentSize(String content) {
         try {
-            return content.getBytes(Charset.forName(Constants.ENCODE)).length;
+            return content.getBytes(StandardCharsets.UTF_8).length;
         } catch (Exception e) {
             LOGGER.error("[capacityManagement] getCurrentSize ", e);
         }
@@ -333,13 +334,13 @@ public class CapacityManagementAspect {
         if (capacity != null) {
             Integer maxSize = getMaxSize(isAggr, capacity);
             if (maxSize == 0) {
-                // If there exists capacity info and maxSize = 0, then it uses maxSize limination default value to compare.
+                // If there exists capacity info and maxSize = 0, then it uses maxSize limitation default value to compare.
                 return isOverSize(group, tenant, currentSize, defaultMaxSize, hasTenant);
             }
             // If there exists capacity info, then maxSize!=0.
             return isOverSize(group, tenant, currentSize, maxSize, hasTenant);
         }
-        // If there no exists capacity info, then it uses maxSize limination default value to compare.
+        // If there no exists capacity info, then it uses maxSize limitation default value to compare.
         return isOverSize(group, tenant, currentSize, defaultMaxSize, hasTenant);
     }
     
@@ -420,7 +421,7 @@ public class CapacityManagementAspect {
     }
     
     /**
-     * limit tyep.
+     * limit type.
      *
      * @author Nacos.
      */
@@ -428,10 +429,10 @@ public class CapacityManagementAspect {
         /**
          * over limit.
          */
-        OVER_CLUSTER_QUOTA("超过集群配置个数上限", 429),
-        OVER_GROUP_QUOTA("超过该Group配置个数上限", 429),
-        OVER_TENANT_QUOTA("超过该租户配置个数上限", 429),
-        OVER_MAX_SIZE("超过配置的内容大小上限", 429);
+        OVER_CLUSTER_QUOTA("超过集群配置个数上限", LIMIT_ERROR_CODE),
+        OVER_GROUP_QUOTA("超过该Group配置个数上限", LIMIT_ERROR_CODE),
+        OVER_TENANT_QUOTA("超过该租户配置个数上限", LIMIT_ERROR_CODE),
+        OVER_MAX_SIZE("超过配置的内容大小上限", LIMIT_ERROR_CODE);
         
         public final String description;
         

@@ -18,7 +18,8 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.core.utils.StringPool;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -50,7 +51,7 @@ public class MD5Util {
      */
     public static List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
             Map<String, String> clientMd5Map) {
-        List<String> changedGroupKeys = new ArrayList<String>();
+        List<String> changedGroupKeys = new ArrayList<>();
         String tag = request.getHeader("Vipserver-Tag");
         for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();
@@ -72,9 +73,9 @@ public class MD5Util {
         for (String groupKey : changedGroupKeys) {
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
-            sb.append(":");
+            sb.append(':');
             sb.append(dataIdGroupId[1]);
-            sb.append(";");
+            sb.append(';');
         }
         return sb.toString();
     }
@@ -117,13 +118,13 @@ public class MD5Util {
      */
     public static Map<String, String> getClientMd5Map(String configKeysString) {
         
-        Map<String, String> md5Map = new HashMap<String, String>(5);
+        Map<String, String> md5Map = new HashMap<>(5);
         
         if (null == configKeysString || "".equals(configKeysString)) {
             return md5Map;
         }
         int start = 0;
-        List<String> tmpList = new ArrayList<String>(3);
+        List<String> tmpList = new ArrayList<>(3);
         for (int i = start; i < configKeysString.length(); i++) {
             char c = configKeysString.charAt(i);
             if (c == WORD_SEPARATOR_CHAR) {
@@ -143,11 +144,11 @@ public class MD5Util {
                 // If it is the old message, the last digit is MD5. The post-multi-tenant message is tenant
                 if (tmpList.size() == 2) {
                     String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1));
-                    groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
+                    groupKey = StringPool.get(groupKey);
                     md5Map.put(groupKey, endValue);
                 } else {
                     String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1), endValue);
-                    groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
+                    groupKey = StringPool.get(groupKey);
                     md5Map.put(groupKey, tmpList.get(2));
                 }
                 tmpList.clear();

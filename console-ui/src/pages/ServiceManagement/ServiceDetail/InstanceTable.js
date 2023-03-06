@@ -185,10 +185,10 @@ class InstanceTable extends React.Component {
             )}
           />
         </Table>
-        {_instance.count > pageSize ? (
+        {instance.count > pageSize ? (
           <Pagination
             className="pagination"
-            total={_instance.count}
+            total={instance.count}
             pageSize={pageSize}
             onChange={currentPage => this.onChangePage(currentPage)}
           />

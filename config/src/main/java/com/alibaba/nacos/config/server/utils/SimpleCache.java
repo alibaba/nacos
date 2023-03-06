@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class SimpleCache<E> {
     
-    final ConcurrentMap<String, CacheEntry<E>> cache = new ConcurrentHashMap<String, CacheEntry<E>>();
+    final ConcurrentMap<String, CacheEntry<E>> cache = new ConcurrentHashMap<>();
     
     private static class CacheEntry<E> {
         
@@ -48,7 +48,7 @@ public class SimpleCache<E> {
         if (key == null || e == null) {
             return;
         }
-        CacheEntry<E> entry = new CacheEntry<E>(e, System.currentTimeMillis() + ttlMs);
+        CacheEntry<E> entry = new CacheEntry<>(e, System.currentTimeMillis() + ttlMs);
         cache.put(key, entry);
     }
     

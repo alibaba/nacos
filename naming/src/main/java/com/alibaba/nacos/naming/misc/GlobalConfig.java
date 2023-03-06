@@ -16,11 +16,15 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.core.distributed.distro.DistroConfig;
-import org.springframework.beans.factory.annotation.Value;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import static com.alibaba.nacos.naming.constants.Constants.DATA_WARMUP;
+import static com.alibaba.nacos.naming.constants.Constants.EMPTY_SERVICE_CLEAN_INTERVAL;
+import static com.alibaba.nacos.naming.constants.Constants.EMPTY_SERVICE_EXPIRED_TIME;
+import static com.alibaba.nacos.naming.constants.Constants.EXPIRED_METADATA_CLEAN_INTERVAL;
+import static com.alibaba.nacos.naming.constants.Constants.EXPIRED_METADATA_EXPIRED_TIME;
+import static com.alibaba.nacos.naming.constants.Constants.EXPIRE_INSTANCE;
 
 /**
  * Stores some configurations for Distro protocol.
@@ -31,70 +35,28 @@ import javax.annotation.PostConstruct;
 @Component
 public class GlobalConfig {
     
-    private final DistroConfig distroConfig;
-    
-    @Value("${nacos.naming.distro.taskDispatchPeriod:2000}")
-    private int taskDispatchPeriod = 2000;
-    
-    @Value("${nacos.naming.distro.batchSyncKeyCount:1000}")
-    private int batchSyncKeyCount = 1000;
-    
-    @Value("${nacos.naming.distro.syncRetryDelay:5000}")
-    private long syncRetryDelay = 5000L;
-    
-    @Value("${nacos.naming.data.warmup:false}")
-    private boolean dataWarmup = false;
-    
-    @Value("${nacos.naming.expireInstance:true}")
-    private boolean expireInstance = true;
-    
-    @Value("${nacos.naming.distro.loadDataRetryDelayMillis:30000}")
-    private long loadDataRetryDelayMillis = 30000;
-    
-    public GlobalConfig(DistroConfig distroConfig) {
-        this.distroConfig = distroConfig;
-    }
-    
-    @PostConstruct
-    public void printGlobalConfig() {
-        Loggers.SRV_LOG.info(toString());
-        overrideDistroConfiguration();
-    }
-    
-    private void overrideDistroConfiguration() {
-        distroConfig.setSyncDelayMillis(taskDispatchPeriod);
-        distroConfig.setSyncRetryDelayMillis(syncRetryDelay);
-        distroConfig.setLoadDataRetryDelayMillis(loadDataRetryDelayMillis);
-    }
-    
-    public int getTaskDispatchPeriod() {
-        return taskDispatchPeriod;
-    }
-    
-    public int getBatchSyncKeyCount() {
-        return batchSyncKeyCount;
-    }
-    
-    public long getSyncRetryDelay() {
-        return syncRetryDelay;
-    }
-    
     public boolean isDataWarmup() {
-        return dataWarmup;
+        return EnvUtil.getProperty(DATA_WARMUP, Boolean.class, false);
     }
     
     public boolean isExpireInstance() {
-        return expireInstance;
+        return EnvUtil.getProperty(EXPIRE_INSTANCE, Boolean.class, true);
     }
     
-    public long getLoadDataRetryDelayMillis() {
-        return loadDataRetryDelayMillis;
+    public static Long getEmptyServiceCleanInterval() {
+        return EnvUtil.getProperty(EMPTY_SERVICE_CLEAN_INTERVAL, Long.class, 60000L);
     }
     
-    @Override
-    public String toString() {
-        return "GlobalConfig{" + "taskDispatchPeriod=" + taskDispatchPeriod + ", batchSyncKeyCount=" + batchSyncKeyCount
-                + ", syncRetryDelay=" + syncRetryDelay + ", dataWarmup=" + dataWarmup + ", expireInstance="
-                + expireInstance + ", loadDataRetryDelayMillis=" + loadDataRetryDelayMillis + '}';
+    public static Long getEmptyServiceExpiredTime() {
+        return EnvUtil.getProperty(EMPTY_SERVICE_EXPIRED_TIME, Long.class, 60000L);
     }
+    
+    public static Long getExpiredMetadataCleanInterval() {
+        return EnvUtil.getProperty(EXPIRED_METADATA_CLEAN_INTERVAL, Long.class, 5000L);
+    }
+    
+    public static Long getExpiredMetadataExpiredTime() {
+        return EnvUtil.getProperty(EXPIRED_METADATA_EXPIRED_TIME, Long.class, 60000L);
+    }
+    
 }

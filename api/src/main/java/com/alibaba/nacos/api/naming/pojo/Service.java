@@ -54,7 +54,7 @@ public class Service implements Serializable {
      */
     private String groupName;
     
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
     
     public Service() {
     }

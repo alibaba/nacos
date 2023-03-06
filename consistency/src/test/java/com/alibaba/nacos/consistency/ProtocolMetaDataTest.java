@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -33,8 +33,8 @@ public class ProtocolMetaDataTest {
     public void testProtocolMetaData() throws Exception {
         Map<String, Map<String, Object>> map = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
-        data.put("test-1", LocalDateTime.now());
-        data.put("test_2", LocalDateTime.now());
+        data.put("test-1", new Date());
+        data.put("test_2", new Date());
         map.put("global", data);
         
         ProtocolMetaData metaData = new ProtocolMetaData();
@@ -46,8 +46,9 @@ public class ProtocolMetaDataTest {
         
         CountDownLatch latch = new CountDownLatch(2);
         
-        metaData.subscribe("global", "test-1", (o, arg) -> {
-            System.out.println(arg);
+        metaData.subscribe("global", "test-1", o -> {
+            ProtocolMetaData.ValueItem item = (ProtocolMetaData.ValueItem) o;
+            System.out.println(item.getData());
             count.incrementAndGet();
             latch.countDown();
         });
@@ -56,8 +57,8 @@ public class ProtocolMetaDataTest {
         
         map = new HashMap<>();
         data = new HashMap<>();
-        data.put("test-1", LocalDateTime.now());
-        data.put("test_2", LocalDateTime.now());
+        data.put("test-1", new Date());
+        data.put("test_2", new Date());
         map.put("global", data);
         
         metaData.load(map);

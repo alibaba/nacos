@@ -38,6 +38,11 @@ public class Constants {
     public static final String BASE_DIR = "config-data";
     
     /**
+     * The derby base dir.
+     */
+    public static final String DERBY_BASE_DIR = "derby-data";
+    
+    /**
      * Back up file directory in server side.
      *
      */
@@ -111,6 +116,8 @@ public class Constants {
     
     public static final String BASE_PATH = "/v1/cs";
     
+    public static final String BASE_V2_PATH = "/v2/cs";
+    
     public static final String OPS_CONTROLLER_PATH = BASE_PATH + "/ops";
     
     public static final String CAPACITY_CONTROLLER_PATH = BASE_PATH + "/capacity";
@@ -119,13 +126,19 @@ public class Constants {
     
     public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
     
+    public static final String CONFIG_CONTROLLER_V2_PATH = BASE_V2_PATH + "/config";
+    
     public static final String HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
     
     public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
     
+    public static final String HISTORY_CONTROLLER_V2_PATH = BASE_V2_PATH + "/history";
+    
     public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
     
     public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
+    
+    public static final String METRICS_CONTROLLER_PATH = BASE_PATH + "/metrics";
     
     public static final String ENCODE = "UTF-8";
     
@@ -269,4 +282,16 @@ public class Constants {
     public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
 
     public static final String CONFIG_EXPORT_ITEM_FILE_SEPARATOR = "/";
+    
+    public static final String CONFIG_EXPORT_METADATA = ".meta.yml";
+    
+    public static final String CONFIG_EXPORT_METADATA_NEW = ".metadata.yml";
+    
+    public static final int LIMIT_ERROR_CODE = 429;
+    
+    public static final String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
+    
+    public static final String CONFIG_SEARCH_BLUR = "blur";
+    
+    public static final String CONFIG_SEARCH_ACCURATE = "accurate";
 }

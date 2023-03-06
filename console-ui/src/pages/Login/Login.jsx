@@ -90,10 +90,7 @@ class Login extends React.Component {
         >
           <div className="vertical-middle product-area">
             <img className="product-logo" src="img/nacos.png" />
-            <p className="product-desc">
-              an easy-to-use dynamic service discovery, configuration and service management
-              platform for building cloud native applications
-            </p>
+            <p className="product-desc">{locale.productDesc}</p>
           </div>
           <div className="animation animation1" />
           <div className="animation animation2" />
@@ -102,6 +99,10 @@ class Login extends React.Component {
           <div className="animation animation5" />
           <Card className="login-panel" contentHeight="auto">
             <div className="login-header">{locale.login}</div>
+            <div className="internal-sys-tip">
+              <div>{locale.internalSysTip1}</div>
+              <div>{locale.internalSysTip2}</div>
+            </div>
             <Form className="login-form" field={this.field}>
               <FormItem>
                 <Input

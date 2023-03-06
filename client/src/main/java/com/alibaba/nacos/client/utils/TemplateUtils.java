@@ -41,7 +41,7 @@ public class TemplateUtils {
             try {
                 runnable.run();
             } catch (Exception e) {
-                LogUtils.NAMING_LOGGER.error("string empty and then execute cause an exception.", e);
+                LogUtils.NAMING_LOGGER.error("string not empty and then execute cause an exception.", e);
             }
         }
     }
@@ -64,7 +64,7 @@ public class TemplateUtils {
             }
         }
         
-        return source.trim();
+        return source == null ? null : source.trim();
     }
     
     /**
@@ -85,6 +85,6 @@ public class TemplateUtils {
             }
         }
         
-        return source.trim();
+        return source == null ? null : source.trim();
     }
 }

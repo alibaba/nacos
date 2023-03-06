@@ -22,14 +22,20 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
 
@@ -63,13 +69,17 @@ public class EmbeddedDumpService extends DumpService {
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param persistService  {@link PersistService}
      * @param memberManager   {@link ServerMemberManager}
      * @param protocolManager {@link ProtocolManager}
      */
-    public EmbeddedDumpService(PersistService persistService, ServerMemberManager memberManager,
+    public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
+            CommonPersistService commonPersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoAggrPersistService configInfoAggrPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager,
             ProtocolManager protocolManager) {
-        super(persistService, memberManager);
+        super(configInfoPersistService, commonPersistService, historyConfigInfoPersistService,
+                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
         this.protocolManager = protocolManager;
     }
     
@@ -89,7 +99,11 @@ public class EmbeddedDumpService extends DumpService {
         Observer observer = new Observer() {
             
             @Override
-            public void update(Observable o, Object arg) {
+            public void update(Observable o) {
+                if (!(o instanceof ProtocolMetaData.ValueItem)) {
+                    return;
+                }
+                final Object arg = ((ProtocolMetaData.ValueItem) o).getData();
                 GlobalExecutor.executeByCommon(() -> {
                     // must make sure that there is a value here to perform the correct operation that follows
                     if (Objects.isNull(arg)) {

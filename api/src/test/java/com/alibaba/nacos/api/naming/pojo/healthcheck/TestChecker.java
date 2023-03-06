@@ -24,6 +24,8 @@ public class TestChecker extends AbstractHealthChecker {
     @JsonTypeInfo(use = Id.NAME, property = "type")
     public static final String TYPE = "TEST";
     
+    private static final long serialVersionUID = 2472091207760970225L;
+    
     private String testValue;
     
     public String getTestValue() {

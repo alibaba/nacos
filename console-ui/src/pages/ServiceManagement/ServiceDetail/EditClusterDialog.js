@@ -63,7 +63,7 @@ class EditClusterDialog extends React.Component {
       name,
       serviceName,
       metadataText,
-      defCkport,
+      defaultCheckPort,
       useIPPort4Check,
       healthChecker,
     } = this.state.editCluster;
@@ -74,7 +74,7 @@ class EditClusterDialog extends React.Component {
         serviceName,
         clusterName: name,
         metadata: metadataText,
-        checkPort: defCkport,
+        checkPort: defaultCheckPort,
         useInstancePort4Check: useIPPort4Check,
         healthChecker: JSON.stringify(healthChecker),
       },
@@ -106,7 +106,7 @@ class EditClusterDialog extends React.Component {
     const {
       healthChecker = {},
       useIPPort4Check,
-      defCkport = '80',
+      defaultCheckPort = '80',
       metadataText = '',
     } = editCluster;
     const { type, path, headers } = healthChecker;
@@ -125,7 +125,7 @@ class EditClusterDialog extends React.Component {
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${checkType}:`}>
+          <Form.Item label={`${checkType}`}>
             <Select
               className="in-select"
               defaultValue={type}
@@ -136,28 +136,28 @@ class EditClusterDialog extends React.Component {
               <Select.Option value="NONE">NONE</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label={`${checkPort}:`}>
+          <Form.Item label={`${checkPort}`}>
             <Input
               className="in-text"
-              value={defCkport}
-              onChange={defCkport => this.onChangeCluster({ defCkport })}
+              value={defaultCheckPort}
+              onChange={defaultCheckPort => this.onChangeCluster({ defaultCheckPort })}
             />
           </Form.Item>
-          <Form.Item label={`${useIpPortCheck}:`}>
+          <Form.Item label={`${useIpPortCheck}`}>
             <Switch
               checked={useIPPort4Check}
               onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
             />
           </Form.Item>
           {type === 'HTTP' && [
-            <Form.Item label={`${checkPath}:`}>
+            <Form.Item label={`${checkPath}`}>
               <Input
                 className="in-text"
                 value={path}
                 onChange={path => healthCheckerChange({ path })}
               />
             </Form.Item>,
-            <Form.Item label={`${checkHeaders}:`}>
+            <Form.Item label={`${checkHeaders}`}>
               <Input
                 className="in-text"
                 value={headers}
@@ -165,7 +165,7 @@ class EditClusterDialog extends React.Component {
               />
             </Form.Item>,
           ]}
-          <Form.Item label={`${locale.metadata}:`}>
+          <Form.Item label={`${locale.metadata}`}>
             <MonacoEditor
               language="json"
               width={'100%'}

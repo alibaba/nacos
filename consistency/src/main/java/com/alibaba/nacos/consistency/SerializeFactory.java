@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.consistency;
 
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.consistency.serialize.HessianSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ServiceLoader;
 
 /**
  * Serialization factory.
@@ -31,15 +31,14 @@ public class SerializeFactory {
     
     public static final String HESSIAN_INDEX = "Hessian".toLowerCase();
     
-    private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<String, Serializer>(4);
+    private static final Map<String, Serializer> SERIALIZER_MAP = new HashMap<>(4);
     
     public static String defaultSerializer = HESSIAN_INDEX;
     
     static {
         Serializer serializer = new HessianSerializer();
         SERIALIZER_MAP.put(HESSIAN_INDEX, serializer);
-        ServiceLoader<Serializer> loader = ServiceLoader.load(Serializer.class);
-        for (Serializer item : loader) {
+        for (Serializer item : NacosServiceLoader.load(Serializer.class)) {
             SERIALIZER_MAP.put(item.name().toLowerCase(), item);
         }
     }

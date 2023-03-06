@@ -16,9 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.nio.charset.Charset;
-
-import com.alibaba.nacos.api.common.Constants;
+import java.nio.charset.StandardCharsets;
 
 /**
  * ByteUtils.
@@ -26,6 +24,9 @@ import com.alibaba.nacos.api.common.Constants;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ByteUtils {
+
+    private ByteUtils() {
+    }
     
     public static final byte[] EMPTY = new byte[0];
     
@@ -39,7 +40,7 @@ public final class ByteUtils {
         if (input == null) {
             return EMPTY;
         }
-        return input.getBytes(Charset.forName(Constants.ENCODE));
+        return input.getBytes(StandardCharsets.UTF_8);
     }
     
     /**
@@ -65,7 +66,7 @@ public final class ByteUtils {
         if (bytes == null) {
             return StringUtils.EMPTY;
         }
-        return new String(bytes, Charset.forName(Constants.ENCODE));
+        return new String(bytes, StandardCharsets.UTF_8);
     }
     
     public static boolean isEmpty(byte[] data) {

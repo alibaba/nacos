@@ -26,28 +26,31 @@
     <artifactId>nacos-console</artifactId>
     <packaging>jar</packaging>
     <name>nacos-console ${project.version}</name>
-    <url>http://nacos.io</url>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <url>https://nacos.io</url>
     
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-jasper</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
-        
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-plugin-default-impl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-istio</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-prometheus</artifactId>
         </dependency>
         
         <!-- log -->
@@ -65,12 +68,6 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jul-to-slf4j</artifactId>
-        </dependency>
-        <!-- log -->
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

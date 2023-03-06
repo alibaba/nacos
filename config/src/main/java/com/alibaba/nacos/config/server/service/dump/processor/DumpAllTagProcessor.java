@@ -22,7 +22,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
@@ -38,22 +38,22 @@ public class DumpAllTagProcessor implements NacosTaskProcessor {
     
     public DumpAllTagProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
-        this.persistService = dumpService.getPersistService();
+        this.configInfoTagPersistService = dumpService.getConfigInfoTagPersistService();
     }
     
     @Override
     public boolean process(NacosTask task) {
-        int rowCount = persistService.configInfoTagCount();
+        int rowCount = configInfoTagPersistService.configInfoTagCount();
         int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
         
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-            Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
+            Page<ConfigInfoTagWrapper> page = configInfoTagPersistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
                 for (ConfigInfoTagWrapper cf : page.getPageItems()) {
                     boolean result = ConfigCacheService
                             .dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(), cf.getContent(),
-                                    cf.getLastModified());
+                                    cf.getLastModified(), cf.getEncryptedDataKey());
                     LogUtil.DUMP_LOG.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
                             GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
                             cf.getContent().length(), cf.getMd5());
@@ -70,5 +70,5 @@ public class DumpAllTagProcessor implements NacosTaskProcessor {
     
     final DumpService dumpService;
     
-    final PersistService persistService;
+    final ConfigInfoTagPersistService configInfoTagPersistService;
 }

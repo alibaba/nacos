@@ -60,4 +60,15 @@ public abstract class Subscriber<T extends Event> {
     public boolean ignoreExpireEvent() {
         return false;
     }
+    
+    /**
+     * Whether the event's scope matches current subscriber. Default implementation is all scopes matched.
+     * If you override this method, it better to override related {@link com.alibaba.nacos.common.notify.Event#scope()}.
+     *
+     * @param event {@link Event}
+     * @return Whether the event's scope matches current subscriber
+     */
+    public boolean scopeMatches(T event) {
+        return true;
+    }
 }

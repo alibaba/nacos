@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.auth.util;
 
-import com.alibaba.nacos.auth.common.AuthConfigs;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;

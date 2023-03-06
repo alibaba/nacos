@@ -27,6 +27,13 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 public interface DistroTransportAgent {
     
     /**
+     * Whether support transport data with callback.
+     *
+     * @return true if support, otherwise false
+     */
+    boolean supportCallbackTransport();
+    
+    /**
      * Sync data.
      *
      * @param data         data
@@ -41,6 +48,8 @@ public interface DistroTransportAgent {
      * @param data         data
      * @param targetServer target server
      * @param callback     callback
+     * @throws UnsupportedOperationException if method supportCallbackTransport is false, should throw {@code
+     *                                       UnsupportedOperationException}
      */
     void syncData(DistroData data, String targetServer, DistroCallback callback);
     
@@ -59,6 +68,8 @@ public interface DistroTransportAgent {
      * @param verifyData   verify data
      * @param targetServer target server
      * @param callback     callback
+     * @throws UnsupportedOperationException if method supportCallbackTransport is false, should throw {@code
+     *                                       UnsupportedOperationException}
      */
     void syncVerifyData(DistroData verifyData, String targetServer, DistroCallback callback);
     

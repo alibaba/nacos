@@ -18,7 +18,8 @@ package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.utils.StringUtils;
-import com.google.common.base.Objects;
+
+import java.util.Objects;
 
 /**
  * Implementation of health checker for MYSQL.
@@ -28,6 +29,8 @@ import com.google.common.base.Objects;
 public class Mysql extends AbstractHealthChecker {
     
     public static final String TYPE = "MYSQL";
+    
+    private static final long serialVersionUID = 7928108094599401491L;
     
     private String user;
     
@@ -65,7 +68,7 @@ public class Mysql extends AbstractHealthChecker {
     
     @Override
     public int hashCode() {
-        return Objects.hashCode(user, pwd, cmd);
+        return Objects.hash(user, pwd, cmd);
     }
     
     @Override

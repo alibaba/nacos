@@ -16,27 +16,67 @@
 
 package com.alibaba.nacos.client.security;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class SecurityProxyTest {
     
-    /**
-     * Just test for replace fastjson with jackson.
-     */
-    @Test
-    public void testLogin() {
-        String example = "{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}";
-        JsonNode obj = JacksonUtils.toObj(example);
-        if (obj.has(Constants.ACCESS_TOKEN)) {
-            if (obj.has(Constants.ACCESS_TOKEN)) {
-                assertEquals("ttttttttttttttttt", obj.get(Constants.ACCESS_TOKEN).asText());
-                assertEquals(1000, obj.get(Constants.TOKEN_TTL).asInt());
-            }
-        }
+    private SecurityProxy securityProxy;
+    
+    @Mock
+    private NacosRestTemplate nacosRestTemplate;
+    
+    @Before
+    public void setUp() throws Exception {
+        //given
+        HttpRestResult<Object> result = new HttpRestResult<>();
+        result.setData("{\"accessToken\":\"ttttttttttttttttt\",\"tokenTtl\":1000}");
+        result.setCode(200);
+        when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenReturn(result);
+        
+        List<String> serverList = new ArrayList<>();
+        serverList.add("localhost");
+        securityProxy = new SecurityProxy(serverList, nacosRestTemplate);
     }
+    
+    @Test
+    public void testLoginClientAuthService() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+        securityProxy.login(properties);
+        verify(nacosRestTemplate).postForm(any(), (Header) any(), any(), any(), any());
+    }
+    
+    @Test
+    public void testGetIdentityContext() {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
+        properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
+        securityProxy.login(properties);
+        //when
+        Map<String, String> keyMap = securityProxy.getIdentityContext(null);
+        //then
+        Assert.assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
+    }
+    
 }

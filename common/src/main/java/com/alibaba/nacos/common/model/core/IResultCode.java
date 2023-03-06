@@ -24,6 +24,7 @@ package com.alibaba.nacos.common.model.core;
  * @Description: result code enum needs to be implemented this interface
  * @date 2019/6/28 14:44
  */
+@Deprecated
 public interface IResultCode {
     
     /**

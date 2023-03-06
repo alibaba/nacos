@@ -41,6 +41,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class NotifyTaskProcessor implements NacosTaskProcessor {
     
+    static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
+    
+    static final String URL_PATTERN =
+            "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
+    
+    final ServerMemberManager memberManager;
+    
     public NotifyTaskProcessor(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
@@ -87,26 +94,19 @@ public class NotifyTaskProcessor implements NacosTaskProcessor {
                 return true;
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
-                LOGGER.error("[notify-error] {}, {}, to {}, result {}",
-                        new Object[] {dataId, group, serverIp, result.getCode()});
+                LOGGER.error("[notify-error] {}, {}, to {}, result {}", dataId, group, serverIp, result.getCode());
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                         ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
             MetricsMonitor.getConfigNotifyException().increment();
-            LOGGER.error("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString());
-            LOGGER.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
+            String message = "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString();
+            LOGGER.error(message);
+            LOGGER.debug(message, e);
             ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, InetUtils.getSelfIP(),
                     ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }
     }
-    
-    static final Logger LOGGER = LoggerFactory.getLogger(NotifyTaskProcessor.class);
-    
-    static final String URL_PATTERN =
-            "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange" + "?dataId={2}&group={3}";
-    
-    final ServerMemberManager memberManager;
 }

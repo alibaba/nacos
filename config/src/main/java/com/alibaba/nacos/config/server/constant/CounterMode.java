@@ -36,7 +36,7 @@ public enum CounterMode {
     /**
      * Reverse the two mode value.
      *
-     * @return
+     * @return CounterMode
      */
     public CounterMode reverse() {
         if (INCREMENT == this) {

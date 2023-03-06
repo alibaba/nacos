@@ -38,6 +38,13 @@ public interface IdGenerator {
     long currentId();
     
     /**
+     * worker id info.
+     *
+     * @return worker id
+     */
+    long workerId();
+    
+    /**
      * Get next id.
      *
      * @return next id

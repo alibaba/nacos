@@ -41,8 +41,8 @@ public class ServerStateController {
      * @return state json.
      */
     @GetMapping("/state")
-    public ResponseEntity serverState() {
-        Map<String, String> serverState = new HashMap<>(3);
+    public ResponseEntity<Map<String, String>> serverState() {
+        Map<String, String> serverState = new HashMap<>(4);
         serverState.put("standalone_mode",
                 EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
         

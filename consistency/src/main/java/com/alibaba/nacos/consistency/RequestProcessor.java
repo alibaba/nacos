@@ -22,7 +22,8 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 
 /**
  * Can be discovered through SPI or Spring, This interface is just a function definition interface. Different
- * consistency protocols have their own LogDispatcher. It is not recommended to directly implement this interface.
+ * consistency protocols have their pwd
+ * LogDispatcher. It is not recommended to directly implement this interface.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

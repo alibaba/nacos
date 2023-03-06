@@ -42,7 +42,7 @@ public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
     }
     
     protected Map<String, ConfigChangeItem> filterChangeData(Map oldMap, Map newMap) {
-        Map<String, ConfigChangeItem> result = new HashMap<String, ConfigChangeItem>(16);
+        Map<String, ConfigChangeItem> result = new HashMap<>(16);
         for (Map.Entry<String, Object> e : (Iterable<Map.Entry<String, Object>>) oldMap.entrySet()) {
             ConfigChangeItem cci;
             if (newMap.containsKey(e.getKey())) {
