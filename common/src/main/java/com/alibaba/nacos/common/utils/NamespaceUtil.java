@@ -24,6 +24,9 @@ package com.alibaba.nacos.common.utils;
  * @date 2020/10/12 17:56
  */
 public class NamespaceUtil {
+
+    private NamespaceUtil() {
+    }
     
     private static final String NAMESPACE_PUBLIC_KEY = "public";
     

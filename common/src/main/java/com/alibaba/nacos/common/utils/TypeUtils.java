@@ -25,6 +25,9 @@ import java.lang.reflect.Type;
  * @author zzq
  */
 public class TypeUtils {
+
+    private TypeUtils() {
+    }
     
     /**
      * Create a parameterized type instance.

@@ -36,6 +36,9 @@ import java.util.StringTokenizer;
  * @author zzq
  */
 public class StringUtils {
+
+    private StringUtils() {
+    }
     
     public static final String DOT = ".";
     

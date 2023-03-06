@@ -27,7 +27,10 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
 public class InternetAddressUtil {
-    
+
+    private InternetAddressUtil() {
+    }
+
     public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
     
     public static final String IPV6_START_MARK = "[";
