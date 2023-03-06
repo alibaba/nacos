@@ -29,6 +29,9 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadUtils {
+
+    private ThreadUtils() {
+    }
     
     private static final int THREAD_MULTIPLER = 2;
     
