@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.naming.spi.generator.IdGenerator;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 
 /**
- * Created by chenwenshun on 2023/2/16.
+ * @author chenwenshun@gmail.com
  */
 public class SnowFlakeInstanceIdGenerator implements IdGenerator {
 
