@@ -35,14 +35,21 @@ import java.util.List;
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
     
+    /**
+     * file name pattern: groupName@@name@clusters.
+     */
+    private static final int GROUP_POSITION = 0;
+    
+    private static final int SERVICE_POSITION = 1;
+    
+    private static final int CLUSTER_POSITION = 2;
+    
+    private static final int FILE_NAME_PARTS = 3;
+    
     @JsonIgnore
     private String jsonFromServer = EMPTY;
     
     private static final String EMPTY = "";
-    
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
-    
-    public static final String SPLITER = "@@";
     
     private static final String DEFAULT_CHARSET = "UTF-8";
     
@@ -79,20 +86,15 @@ public class ServiceInfo {
      * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
      * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
      */
-    public ServiceInfo(String key) {
-        int maxIndex = 2;
-        int clusterIndex = 2;
-        int serviceNameIndex = 1;
-        int groupIndex = 0;
-        
+    public ServiceInfo(final String key) {
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (keys.length >= maxIndex + 1) {
-            this.groupName = keys[groupIndex];
-            this.name = keys[serviceNameIndex];
-            this.clusters = keys[clusterIndex];
-        } else if (keys.length == maxIndex) {
-            this.groupName = keys[groupIndex];
-            this.name = keys[serviceNameIndex];
+        if (keys.length >= FILE_NAME_PARTS) {
+            this.groupName = keys[GROUP_POSITION];
+            this.name = keys[SERVICE_POSITION];
+            this.clusters = keys[CLUSTER_POSITION];
+        } else if (keys.length == CLUSTER_POSITION) {
+            this.groupName = keys[GROUP_POSITION];
+            this.name = keys[SERVICE_POSITION];
         } else {
             //defensive programming
             throw new IllegalArgumentException("Can't parse out 'groupName',but it must not be null!");
@@ -249,19 +251,8 @@ public class ServiceInfo {
      * @param key key of service info
      * @return new service info
      */
-    public static ServiceInfo fromKey(String key) {
-        ServiceInfo serviceInfo = new ServiceInfo();
-        int maxSegCount = 3;
-        String[] segs = key.split(Constants.SERVICE_INFO_SPLITER);
-        if (segs.length == maxSegCount - 1) {
-            serviceInfo.setGroupName(segs[0]);
-            serviceInfo.setName(segs[1]);
-        } else if (segs.length == maxSegCount) {
-            serviceInfo.setGroupName(segs[0]);
-            serviceInfo.setName(segs[1]);
-            serviceInfo.setClusters(segs[2]);
-        }
-        return serviceInfo;
+    public static ServiceInfo fromKey(final String key) {
+        return new ServiceInfo(key);
     }
     
     @Override
@@ -284,7 +275,7 @@ public class ServiceInfo {
     public boolean isReachProtectionThreshold() {
         return reachProtectionThreshold;
     }
-
+    
     public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
         this.reachProtectionThreshold = reachProtectionThreshold;
     }
