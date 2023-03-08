@@ -113,7 +113,7 @@ public class ServerLoaderController {
     }
     
     /**
-     * Get server state of current server.
+     * Rebalance the number of sdk connections on the current server.
      *
      * @return state json.
      */
@@ -126,7 +126,8 @@ public class ServerLoaderController {
     }
     
     /**
-     * Get server state of current server.
+     * According to the total number of sdk connections of all nodes in the nacos cluster,
+     * intelligently balance the number of sdk connections of each node in the nacos cluster.
      *
      * @return state json.
      */
@@ -236,7 +237,7 @@ public class ServerLoaderController {
     
     
     /**
-     * Get server state of current server.
+     * Send a ConnectResetRequest to this connection according to the sdk connection ID.
      *
      * @return state json.
      */
