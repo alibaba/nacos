@@ -34,14 +34,14 @@ import org.springframework.util.Assert;
 import javax.servlet.http.HttpServletRequest;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.anyObject;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class HttpRequestInstanceBuilderTest {
@@ -125,7 +125,7 @@ public class HttpRequestInstanceBuilderTest {
     @Test
     public void testBuildWithMetadata() throws NacosException {
         EnvUtil.setEnvironment(env);
-        when(env.getProperty(anyString(), anyObject(), any())).thenReturn(-1);
+        when(env.getProperty(anyString(), eq(Integer.class), anyInt())).thenReturn(-1);
         when(request.getParameter(CommonParams.CLUSTER_NAME)).thenReturn("cluster");
         when(request.getParameter("metadata")).thenReturn("{\n"
                 + "        \"preserved.register.source\": \"SPRING_CLOUD\",\n"

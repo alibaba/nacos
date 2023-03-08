@@ -21,13 +21,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.anyObject;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by chenwenshun on 2023/2/24.
@@ -40,8 +41,9 @@ public class SnowFlakeInstanceIdGeneratorTest {
 
     @Test
     public void testGenerateInstanceId() {
+        MockEnvironment env = Mockito.mock(MockEnvironment.class);
         EnvUtil.setEnvironment(env);
-        when(env.getProperty(anyString(), anyObject(), any())).thenReturn(-1);
+        when(env.getProperty(anyString(), eq(Integer.class), anyInt())).thenReturn(-1);
         SnowFlakeInstanceIdGenerator idGenerator = new SnowFlakeInstanceIdGenerator("hello-service",
                 "clusterName", 8080);
         String instanceId = idGenerator.generateInstanceId();
