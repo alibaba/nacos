@@ -44,18 +44,18 @@ public class NacosClientPropertiesTest {
     
     @Test
     public void testGetPropertyMultiLayer() {
-       
+        
         NacosClientProperties.PROTOTYPE.setProperty("top.layer", "top");
-    
+        
         final NacosClientProperties layerAEnv = NacosClientProperties.PROTOTYPE.derive();
         layerAEnv.setProperty("a.layer", "a");
-    
+        
         final NacosClientProperties layerBEnv = layerAEnv.derive();
         layerBEnv.setProperty("b.layer", "b");
-    
+        
         final NacosClientProperties layerCEnv = layerBEnv.derive();
         layerCEnv.setProperty("c.layer", "c");
-    
+        
         String value = layerCEnv.getProperty("c.layer");
         Assert.assertEquals("c", value);
         
@@ -130,10 +130,10 @@ public class NacosClientPropertiesTest {
     
     @Test
     public void setPropertyWithScope() {
-    
+        
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         properties.setProperty("nacos.set.property.scope", "config");
-    
+        
         String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.set.property.scope");
         Assert.assertNull(ret);
         
@@ -145,7 +145,7 @@ public class NacosClientPropertiesTest {
     public void testAddProperties() {
         Properties properties = new Properties();
         properties.setProperty("nacos.add.properties", "true");
-    
+        
         NacosClientProperties.PROTOTYPE.addProperties(properties);
         
         final String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.add.properties");
@@ -158,10 +158,10 @@ public class NacosClientPropertiesTest {
         
         Properties properties = new Properties();
         properties.setProperty("nacos.add.properties.scope", "config");
-    
+        
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive();
         nacosClientProperties.addProperties(properties);
-    
+        
         String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.add.properties.scope");
         Assert.assertNull(ret);
         
@@ -174,13 +174,13 @@ public class NacosClientPropertiesTest {
     public void testTestDerive() {
         Properties properties = new Properties();
         properties.setProperty("nacos.derive.properties.scope", "derive");
-    
+        
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-    
+        
         final String value = nacosClientProperties.getProperty("nacos.derive.properties.scope");
         
         Assert.assertEquals("derive", value);
-    
+        
     }
     
     @Test
@@ -198,16 +198,16 @@ public class NacosClientPropertiesTest {
     public void testContainsKeyMultiLayers() {
         
         NacosClientProperties.PROTOTYPE.setProperty("top.layer", "top");
-    
+        
         final NacosClientProperties layerAEnv = NacosClientProperties.PROTOTYPE.derive();
         layerAEnv.setProperty("a.layer", "a");
-    
+        
         final NacosClientProperties layerBEnv = layerAEnv.derive();
         layerBEnv.setProperty("b.layer", "b");
-    
+        
         final NacosClientProperties layerCEnv = layerBEnv.derive();
         layerCEnv.setProperty("c.layer", "c");
-    
+        
         boolean exist = layerCEnv.containsKey("c.layer");
         Assert.assertTrue(exist);
         
@@ -219,7 +219,7 @@ public class NacosClientPropertiesTest {
         
         exist = layerCEnv.containsKey("top.layer");
         Assert.assertTrue(exist);
-    
+        
     }
     
     @Test
@@ -227,7 +227,7 @@ public class NacosClientPropertiesTest {
         NacosClientProperties.PROTOTYPE.setProperty("nacos.contains.global.scope", "global");
         final NacosClientProperties namingProperties = NacosClientProperties.PROTOTYPE.derive();
         namingProperties.setProperty("nacos.contains.naming.scope", "naming");
-    
+        
         boolean ret = NacosClientProperties.PROTOTYPE.containsKey("nacos.contains.global.scope");
         Assert.assertTrue(ret);
         
@@ -252,13 +252,13 @@ public class NacosClientPropertiesTest {
     
     @Test
     public void testAsPropertiesWithScope() {
-    
+        
         NacosClientProperties.PROTOTYPE.setProperty("nacos.as.properties.global.scope", "global");
         NacosClientProperties.PROTOTYPE.setProperty("nacos.server.addr.scope", "global");
-    
+        
         final NacosClientProperties configProperties = NacosClientProperties.PROTOTYPE.derive();
         configProperties.setProperty("nacos.server.addr.scope", "config");
-    
+        
         final Properties properties = configProperties.asProperties();
         Assert.assertNotNull(properties);
         
@@ -271,7 +271,7 @@ public class NacosClientPropertiesTest {
     
     @Test
     public void testGetPropertyWithScope() {
-    
+        
         NacosClientProperties.PROTOTYPE.setProperty("nacos.global.scope", "global");
         
         final NacosClientProperties configProperties = NacosClientProperties.PROTOTYPE.derive();
@@ -279,7 +279,7 @@ public class NacosClientPropertiesTest {
         
         final NacosClientProperties namingProperties = NacosClientProperties.PROTOTYPE.derive();
         namingProperties.setProperty("nacos.naming.scope", "naming");
-    
+        
         String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.global.scope");
         Assert.assertEquals("global", ret);
         
@@ -310,17 +310,14 @@ public class NacosClientPropertiesTest {
         System.setProperty("nacos.home.default.test", "/home/jvm_args");
         NacosClientProperties.PROTOTYPE.setProperty("nacos.home.default.test", "/home/properties_args");
         
-        Assert.assertEquals(NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.JVM, "nacos.home.default.test"),
-                "/home/jvm_args");
-        Assert.assertEquals(
-                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.DEFAULT_SETTING, "nacos.home.default.test"),
-                "/home/default_setting");
-        Assert.assertEquals(
-                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.PROPERTIES, "nacos.home.default.test"),
-                "/home/properties_args");
-        Assert.assertEquals(
-                NacosClientProperties.PROTOTYPE.getPropertyFrom(null, "nacos.home.default.test"),
-                "/home/jvm_args");
+        Assert.assertEquals("/home/jvm_args",
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.JVM, "nacos.home.default.test"));
+        Assert.assertEquals("/home/default_setting",
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.DEFAULT_SETTING, "nacos.home.default.test"));
+        Assert.assertEquals("/home/properties_args",
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.PROPERTIES, "nacos.home.default.test"));
+        Assert.assertEquals(NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default.test"),
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(null, "nacos.home.default.test"));
     }
     
 }
