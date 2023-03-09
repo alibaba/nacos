@@ -55,6 +55,15 @@ public interface NacosClientProperties {
     String getProperty(String key, String defaultValue);
     
     /**
+     * get property from special property source.
+     * @param source source type
+     * @see SourceType
+     * @param key special key
+     * @return string value or null.
+     */
+    String getPropertyFrom(SourceType source, String key);
+    
+    /**
      * get boolean, if the value can not be got by the special key, the null will be returned.
      *
      * @param key special key
