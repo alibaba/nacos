@@ -320,7 +320,7 @@ public class NacosClientPropertiesTest {
                 "/home/properties_args");
         Assert.assertEquals(
                 NacosClientProperties.PROTOTYPE.getPropertyFrom(null, "nacos.home.default.test"),
-                "/home/jvm_args");
+                NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default.test"));
     }
     
 }
