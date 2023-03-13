@@ -198,6 +198,10 @@ public class ConfigServletInner {
                         configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
+                        // fix https://github.com/alibaba/nacos/issues/10067
+                        if (!file.exists() && ConfigCacheService.getContentCache(groupKey) != null) {
+                            configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                        }
                     }
                     response.setHeader("isBeta", "true");
                 } else {
@@ -213,6 +217,10 @@ public class ConfigServletInner {
                                 configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
+                                // fix https://github.com/alibaba/nacos/issues/10067
+                                if (!file.exists() && ConfigCacheService.getContentCache(groupKey) != null) {
+                                    configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                                }
                             }
                             
                             response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
@@ -226,16 +234,23 @@ public class ConfigServletInner {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
                             if (configInfoBase == null && fileNotExist(file)) {
-                                // FIXME CacheItem
-                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
-                                
-                                // pullLog.info("[client-get] clientIp={}, {},
-                                // no data",
-                                // new Object[]{clientIp, groupKey});
-                                
-                                return get404Result(response, isV2);
+                                // try to read in database if md5 in cache
+                                if (!PropertyUtil.isDirectRead()
+                                        && ConfigCacheService.getContentCache(groupKey) != null) {
+                                    configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                                } else {
+                                    // or 404 no found
+                                    // FIXME CacheItem
+                                    // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
+                                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
+                                            ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
+
+                                    // pullLog.info("[client-get] clientIp={}, {},
+                                    // no data",
+                                    // new Object[]{clientIp, groupKey});
+
+                                    return get404Result(response, isV2);
+                                }
                             }
                             isSli = true;
                         }
@@ -255,16 +270,22 @@ public class ConfigServletInner {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
                         if (configInfoBase == null && fileNotExist(file)) {
-                            // FIXME CacheItem
-                            // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify && isSli);
-                            
-                            // pullLog.info("[client-get] clientIp={}, {},
-                            // no data",
-                            // new Object[]{clientIp, groupKey});
-                            
-                            return get404Result(response, isV2);
+                            // try to read in database if md5 in cache
+                            if (!PropertyUtil.isDirectRead()
+                                    && ConfigCacheService.getContentCache(groupKey) != null) {
+                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                            } else {
+                                // FIXME CacheItem
+                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
+                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify && isSli);
+
+                                // pullLog.info("[client-get] clientIp={}, {},
+                                // no data",
+                                // new Object[]{clientIp, groupKey});
+
+                                return get404Result(response, isV2);
+                            }
                         }
                     }
                 }
@@ -277,9 +298,11 @@ public class ConfigServletInner {
                 response.setHeader("Cache-Control", "no-cache,no-store");
                 if (PropertyUtil.isDirectRead()) {
                     response.setDateHeader("Last-Modified", lastModified);
-                } else {
+                } else if (!fileNotExist(file)) {
                     fis = new FileInputStream(file);
                     response.setDateHeader("Last-Modified", file.lastModified());
+                } else if (configInfoBase != null) {
+                    response.setDateHeader("Last-Modified", lastModified);
                 }
                 
                 if (PropertyUtil.isDirectRead()) {
@@ -294,7 +317,12 @@ public class ConfigServletInner {
                     out.flush();
                     out.close();
                 } else {
-                    String fileContent = IoUtils.toString(fis, StandardCharsets.UTF_8.name());
+                    String fileContent = null;
+                    if (fis != null) {
+                        fileContent = IoUtils.toString(fis, StandardCharsets.UTF_8.name());
+                    } else {
+                        fileContent = configInfoBase.getContent();
+                    }
                     String encryptedDataKey = cacheItem.getEncryptedDataKey();
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, fileContent);
                     String decryptContent = pair.getSecond();
