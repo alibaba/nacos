@@ -52,8 +52,8 @@ import java.util.concurrent.atomic.AtomicInteger;
                 "nacos.standalone=true",
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
                 RpcServerTlsConfig.PREFIX+".compatibility=true",
-                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"},
+                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceComTlsGrpcClientTest {
 

@@ -52,9 +52,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
         RpcServerTlsConfig.PREFIX+".enableTls=true",
         RpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
         RpcServerTlsConfig.PREFIX+".compatibility=false",
-        RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-        RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
-        RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
+        RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+        RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
+        RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=test-ca-cert.pem",
 
 },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -68,9 +68,9 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
     public void test_a_MutualAuth() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"client-cert.pem");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"client-key.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"test-ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"test-client-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"test-client-key.pem");
         System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH,"true");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
@@ -103,7 +103,7 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
         System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH,"true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"test-ca-cert.pem");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);

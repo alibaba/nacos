@@ -53,9 +53,9 @@ import java.util.concurrent.atomic.AtomicInteger;
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
                 RpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
                 RpcServerTlsConfig.PREFIX+".compatibility=false",
-                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
-                RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
+                RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=test-ca-cert.pem",
 
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -80,9 +80,9 @@ public class NacosConfigV2MutualAuthTest {
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         propertiesfalse.put(RpcConstants.RPC_CLIENT_MUTUAL_AUTH,"true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"client-key.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"client-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_KEY,"test-client-key.pem");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"test-ca-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH,"test-client-cert.pem");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();
@@ -110,7 +110,7 @@ public class NacosConfigV2MutualAuthTest {
 
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"client-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"test-client-cert.pem");
 
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);

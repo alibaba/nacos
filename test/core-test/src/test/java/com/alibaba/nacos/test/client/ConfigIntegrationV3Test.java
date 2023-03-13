@@ -50,8 +50,8 @@ import java.util.concurrent.atomic.AtomicInteger;
         properties = {
                 "nacos.standalone=true",
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
-                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"
+                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem"
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV3Test {
@@ -125,7 +125,7 @@ public class ConfigIntegrationV3Test {
         serverInfo.setServerPort(EnvUtil.getPort());
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
-        tlsConfig.setTrustCollectionCertFile("ca-cert.pem");
+        tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
         Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
         ConfigPublishRequest configPublishRequestCa = new ConfigPublishRequest();

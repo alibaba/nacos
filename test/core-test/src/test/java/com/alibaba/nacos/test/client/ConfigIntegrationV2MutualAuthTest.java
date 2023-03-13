@@ -51,9 +51,9 @@ import java.util.concurrent.atomic.AtomicInteger;
                 RpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
                 RpcServerTlsConfig.PREFIX+".compatibility=false",
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
-                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
-                RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=ca-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
+                RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=test-ca-cert.pem",
 
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -81,9 +81,9 @@ public class ConfigIntegrationV2MutualAuthTest {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setMutualAuthEnable(true);
-        tlsConfig.setCertChainFile("client-cert.pem");
-        tlsConfig.setCertPrivateKey("client-key.pem");
-        tlsConfig.setTrustCollectionCertFile("ca-cert.pem");
+        tlsConfig.setCertChainFile("test-client-cert.pem");
+        tlsConfig.setCertPrivateKey("test-client-key.pem");
+        tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testMutualAuth", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
 
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
@@ -109,7 +109,7 @@ public class ConfigIntegrationV2MutualAuthTest {
 
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
-        tlsConfig.setTrustCollectionCertFile("ca-cert.pem");
+        tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
 
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();

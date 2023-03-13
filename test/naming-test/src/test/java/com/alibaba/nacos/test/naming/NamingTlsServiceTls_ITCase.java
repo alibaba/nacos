@@ -50,8 +50,8 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
         "server.servlet.context-path=/nacos",
         RpcServerTlsConfig.PREFIX+".enableTls=true",
         RpcServerTlsConfig.PREFIX+".compatibility=false",
-        RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-        RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
+        RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+        RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
 },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NamingTlsServiceTls_ITCase {
@@ -81,7 +81,7 @@ public class NamingTlsServiceTls_ITCase {
     public void Tls_b_ServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"test-ca-cert.pem");
         Instance   instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);

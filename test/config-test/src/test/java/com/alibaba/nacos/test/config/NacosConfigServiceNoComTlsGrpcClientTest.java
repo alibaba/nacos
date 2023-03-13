@@ -51,8 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
                 "nacos.standalone=true",
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
                 RpcServerTlsConfig.PREFIX+".compatibility=false",
-                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem"},
+                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceNoComTlsGrpcClientTest {
 
@@ -75,7 +75,7 @@ public class NacosConfigServiceNoComTlsGrpcClientTest {
         Properties properties = new Properties();
         properties.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         properties.put(RpcConstants.RPC_CLIENT_TLS_PROVIDER, "openssl");
-        properties.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "ca-cert.pem");
+        properties.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
         properties.put("serverAddr", "127.0.0.1");
         ConfigService configService = new NacosConfigService(properties);
         String content = UUID.randomUUID().toString();

@@ -55,8 +55,8 @@ import java.util.concurrent.atomic.AtomicInteger;
                 "server.servlet.context-path=/nacos",
                 RpcServerTlsConfig.PREFIX+".compatibility=false",
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
-                RpcServerTlsConfig.PREFIX+".certChainFile=server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=server-key.pem",
+                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
+                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
         },
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
@@ -120,7 +120,7 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
 
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
-        tlsConfig.setTrustCollectionCertFile("ca-cert.pem");
+        tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
         Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
         ConfigPublishRequest configPublishRequestCa = new ConfigPublishRequest();
