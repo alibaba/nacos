@@ -82,7 +82,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
-        
+
         try {
             return getContext(request, meta, request.isNotify());
         } catch (Exception e) {
@@ -165,17 +165,25 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
                             if (configInfoBase == null && fileNotExist(file)) {
-                                // FIXME CacheItem
-                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
-                                
-                                // pullLog.info("[client-get] clientIp={}, {},
-                                // no data",
-                                // new Object[]{clientIp, groupKey});
-                                
-                                response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
-                                return response;
+                                // try to read in database if md5 in cache
+                                // fix https://github.com/alibaba/nacos/issues/10067
+                                if (!PropertyUtil.isDirectRead()
+                                        && ConfigCacheService.getContentCache(groupKey) != null) {
+                                    configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                                } else {
+                                    // or 404 no found
+                                    // FIXME CacheItem
+                                    // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
+                                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
+                                            ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
+
+                                    // pullLog.info("[client-get] clientIp={}, {},
+                                    // no data",
+                                    // new Object[]{clientIp, groupKey});
+
+                                    response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
+                                    return response;
+                                }
                             }
                         }
                     } else {
@@ -196,18 +204,25 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
                         if (configInfoBase == null && fileNotExist(file)) {
-                            // FIXME CacheItem
-                            // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
-                            
-                            // pullLog.info("[client-get] clientIp={}, {},
-                            // no data",
-                            // new Object[]{clientIp, groupKey});
-                            
-                            response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
-                            return response;
-                            
+                            // try to read in database if md5 in cache
+                            if (!PropertyUtil.isDirectRead()
+                                    && ConfigCacheService.getContentCache(groupKey) != null) {
+                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                            } else {
+                                // or 404 no found
+                                // FIXME CacheItem
+                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
+                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
+
+                                // pullLog.info("[client-get] clientIp={}, {},
+                                // no data",
+                                // new Object[]{clientIp, groupKey});
+
+                                response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
+                                System.out.println("2:config don not exist!");
+                                return response;
+                            }
                         }
                     }
                 }
@@ -219,7 +234,18 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     response.setContent(configInfoBase.getContent());
                     response.setEncryptedDataKey(configInfoBase.getEncryptedDataKey());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
-                    
+
+                } else if (!PropertyUtil.isDirectRead() && configInfoBase != null) {
+                    // read from configInfoBase if Windows OS
+                    String content = configInfoBase.getContent();
+                    response.setContent(content);
+                    response.setLastModified(lastModified);
+                    response.setResultCode(ResponseCode.SUCCESS.getCode());
+                    if (isBeta) {
+                        response.setEncryptedDataKey(cacheItem.getEncryptedDataKeyBeta());
+                    } else {
+                        response.setEncryptedDataKey(cacheItem.getEncryptedDataKey());
+                    }
                 } else {
                     //read from file
                     String content = null;
