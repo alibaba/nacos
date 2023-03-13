@@ -305,4 +305,22 @@ public class NacosClientPropertiesTest {
         
     }
     
+    @Test
+    public void testGetPropertyFrom() {
+        System.setProperty("nacos.home.default.test", "/home/jvm_args");
+        NacosClientProperties.PROTOTYPE.setProperty("nacos.home.default.test", "/home/properties_args");
+        
+        Assert.assertEquals(NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.JVM, "nacos.home.default.test"),
+                "/home/jvm_args");
+        Assert.assertEquals(
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.DEFAULT_SETTING, "nacos.home.default.test"),
+                "/home/default_setting");
+        Assert.assertEquals(
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.PROPERTIES, "nacos.home.default.test"),
+                "/home/properties_args");
+        Assert.assertEquals(
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(null, "nacos.home.default.test"),
+                NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default.test"));
+    }
+    
 }

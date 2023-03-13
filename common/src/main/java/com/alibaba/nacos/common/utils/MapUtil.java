@@ -31,6 +31,9 @@ import java.util.function.BiFunction;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MapUtil {
+
+    private MapUtil() {
+    }
     
     /**
      * Null-safe check if the specified Dictionary is empty.

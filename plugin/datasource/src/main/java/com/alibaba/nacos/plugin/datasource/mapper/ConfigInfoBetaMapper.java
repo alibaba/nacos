@@ -17,11 +17,6 @@
 package com.alibaba.nacos.plugin.datasource.mapper;
 
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import com.alibaba.nacos.plugin.datasource.model.MapperContext;
-import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The beta config info mapper.
@@ -36,30 +31,11 @@ public interface ConfigInfoBetaMapper extends Mapper {
      * UPDATE config_info_beta SET content=?, md5=?, beta_ips=?, src_ip=?,src_user=?,gmt_modified=?,app_name=?
      * WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? or md5 is null or md5='')
      *
-     * @param context The context of content, md5, beta_ips, src_ip, src_user, gmt_modified, app_name,
-     *                data_id, group_id, tenant_id, md5
-     * @return The result of updating beta configuration information.
+     * @return The sql of updating beta configuration information.
      */
-    default MapperResult updateConfigInfo4BetaCas(MapperContext context) {
-        final String sql = "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+    default String updateConfigInfo4BetaCas() {
+        return "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')";
-    
-        List<Object> paramList = new ArrayList<>();
-        
-        paramList.add(context.getUpdateParameter("content"));
-        paramList.add(context.getUpdateParameter("md5"));
-        paramList.add(context.getUpdateParameter("beta_ips"));
-        paramList.add(context.getUpdateParameter("src_ip"));
-        paramList.add(context.getUpdateParameter("src_user"));
-        paramList.add(context.getUpdateParameter("gmt_modified"));
-        paramList.add(context.getUpdateParameter("app_name"));
-    
-        paramList.add(context.getWhereParameter("data_id"));
-        paramList.add(context.getWhereParameter("group_id"));
-        paramList.add(context.getWhereParameter("tenant_id"));
-        paramList.add(context.getWhereParameter("md5"));
-        
-        return new MapperResult(sql, paramList);
     }
     
     /**
@@ -68,10 +44,11 @@ public interface ConfigInfoBetaMapper extends Mapper {
      * SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key
      * FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT startRow,pageSize  ) g, config_info_beta t WHERE g.id = t.id
      *
-     * @param context The context of startRow, pageSize
-     * @return The result of querying all beta config info for dump task.
+     * @param startRow The start index.
+     * @param pageSize The size of page.
+     * @return The sql of querying all beta config info for dump task.
      */
-    MapperResult findAllConfigInfoBetaForDumpAllFetchRows(MapperContext context);
+    String findAllConfigInfoBetaForDumpAllFetchRows(int startRow, int pageSize);
     
     /**
      * 获取返回表名.

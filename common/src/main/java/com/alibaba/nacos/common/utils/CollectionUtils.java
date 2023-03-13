@@ -35,6 +35,9 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class CollectionUtils {
+
+    private CollectionUtils() {
+    }
     
     /**
      * Returns the <code>index</code>-th value in <code>object</code>, throwing
