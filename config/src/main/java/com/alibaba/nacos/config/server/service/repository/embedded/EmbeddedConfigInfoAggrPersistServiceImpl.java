@@ -34,8 +34,6 @@ import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
-import com.alibaba.nacos.plugin.datasource.model.MapperContext;
-import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
@@ -234,17 +232,12 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-    
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumList);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
-        
-        MapperResult mapperResult = configInfoAggrMapper.batchRemoveAggr(context);
-        
-        final String sql = mapperResult.getSql();
-        final Object[] args = mapperResult.getParamList().toArray();
+        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList.size());
+        final Object[] args = new Object[3 + datumList.size()];
+        args[0] = dataId;
+        args[1] = group;
+        args[2] = tenantTmp;
+        System.arraycopy(datumList.toArray(), 0, args, 3, datumList.size());
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         
         try {
@@ -279,20 +272,12 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
+        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
         
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumIds);
-        context.putWhereParameter("isIn", true);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
+        List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
+        objectList.addAll(datumIds);
         
-        MapperResult mapperResult = configInfoAggrMapper.aggrConfigInfoCount(context);
-        
-        String sql = mapperResult.getSql();
-        Object[] args = mapperResult.getParamList().toArray();
-        
-        Integer result = databaseOperate.queryOne(sql, args, Integer.class);
+        Integer result = databaseOperate.queryOne(sql, objectList.toArray(), Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
@@ -318,17 +303,9 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
+        String sql = configInfoAggrMapper.findConfigInfoAggrIsOrdered();
         
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
-        
-        MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrIsOrdered(context);
-        String sql = mapperResult.getSql();
-        Object[] args = mapperResult.getParamList().toArray();
-        
-        return databaseOperate.queryMany(sql, args, CONFIG_INFO_AGGR_ROW_MAPPER);
+        return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_AGGR_ROW_MAPPER);
         
     }
     
@@ -339,22 +316,13 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
         final int startRow = (pageNo - 1) * pageSize;
-        final String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"),
+        String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
+        String sqlFetchRows = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(startRow, pageSize);
         
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
-        context.putWhereParameter("startRow", startRow);
-        context.putWhereParameter("pageSize", pageSize);
-        MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
-        String sqlFetchRows = mapperResult.getSql();
-        Object[] sqlFetchArgs = mapperResult.getParamList().toArray();
-    
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows,
-                sqlFetchArgs, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
+                new Object[] {dataId, group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
     }
     
     @Override
