@@ -29,7 +29,9 @@ import java.util.regex.Pattern;
  */
 public class WindowsEncoder implements PathEncoder {
 
-    // 不应该含有 / : ? " < > | \
+    /**
+     * 不应该含有 / : ? " < > | \.
+     */
     private static final String PATTERN_EXP = "[^/:*?\"<>|\\\\]+";
 
     private static final Map<String, String> REG_MAPPING = new HashMap<>();
