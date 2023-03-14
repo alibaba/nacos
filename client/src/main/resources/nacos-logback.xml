@@ -35,6 +35,13 @@
         </encoder>
     </appender>
     
+    <appender name="ASYNC-CONFIG" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="CONFIG_LOG_FILE"/>
+    </appender>
+    
     <appender name="NAMING_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${JM.LOG.PATH}/nacos/naming.log</file>
         
@@ -52,20 +59,26 @@
         </encoder>
     </appender>
     
+    <appender name="ASYNC-NAMING" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="NAMING_LOG_FILE"/>
+    </appender>
     
     <logger name="com.alibaba.nacos.client" level="${com.alibaba.nacos.config.log.level:-info}"
         additivity="false">
-        <appender-ref ref="CONFIG_LOG_FILE"/>
+        <appender-ref ref="ASYNC-CONFIG"/>
     </logger>
     
     <logger name="com.alibaba.nacos.client.config" level="${com.alibaba.nacos.config.log.level:-info}"
         additivity="false">
-        <appender-ref ref="CONFIG_LOG_FILE"/>
+        <appender-ref ref="ASYNC-CONFIG"/>
     </logger>
     
     <logger name="com.alibaba.nacos.client.naming" level="${com.alibaba.nacos.naming.log.level:-info}"
         additivity="false">
-        <appender-ref ref="NAMING_LOG_FILE"/>
+        <appender-ref ref="ASYNC-NAMING"/>
     </logger>
 
 </configuration>

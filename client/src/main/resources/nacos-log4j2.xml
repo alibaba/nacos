@@ -30,6 +30,10 @@
             
             <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
         </RollingFile>
+    
+        <Async name="ASYNC_CONFIG" bufferSize="1024" blocking="false">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Async>
         
         <RollingFile name="NAMING_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/naming.log"
             filePattern="${sys:JM.LOG.PATH}/nacos/naming.log.%d{yyyy-MM-dd}.%i">
@@ -46,23 +50,27 @@
         </RollingFile>
     </Appenders>
     
+    <Async name="ASYNC_NAMING" bufferSize="1024" blocking="false">
+        <AppenderRef ref="NAMING_LOG_FILE"/>
+    </Async>
+    
     <Loggers>
         <Logger name="com.alibaba.nacos.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
-            <AppenderRef ref="CONFIG_LOG_FILE"/>
+            <AppenderRef ref="ASYNC_CONFIG"/>
         </Logger>
         
         <Logger name="com.alibaba.nacos.client.config" level="${sys:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
-            <AppenderRef ref="CONFIG_LOG_FILE"/>
+            <AppenderRef ref="ASYNC_CONFIG"/>
         </Logger>
         
         <Logger name="com.alibaba.nacos.client.naming" level="${sys:com.alibaba.nacos.naming.log.level:-info}"
             additivity="false">
-            <AppenderRef ref="NAMING_LOG_FILE"/>
+            <AppenderRef ref="ASYNC_NAMING"/>
         </Logger>
         <Root level="INFO">
-            <AppenderRef ref="CONFIG_LOG_FILE"/>
+            <AppenderRef ref="ASYNC_CONFIG"/>
         </Root>
     </Loggers>
 </Configuration>
