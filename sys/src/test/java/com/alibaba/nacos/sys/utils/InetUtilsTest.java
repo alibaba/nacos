@@ -41,12 +41,7 @@ public class InetUtilsTest {
     
     @Test
     public void testRefreshIp() throws InterruptedException {
-        String serverIp1 = "1.1.1.1";
-
-        //for initializing InetUtils scheduled executor。
-        InetUtils.getSelfIP();
-        
-        Assert.assertEquals(serverIp1, InetUtils.getSelfIP());
+        Assert.assertEquals("1.1.1.1", InetUtils.getSelfIP());
         
         System.setProperty(NACOS_SERVER_IP, "1.1.1.2");
         TimeUnit.MILLISECONDS.sleep(300L);
