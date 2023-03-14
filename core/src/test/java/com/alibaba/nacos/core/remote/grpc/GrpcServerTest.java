@@ -87,8 +87,8 @@ public class GrpcServerTest {
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
 
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("server-cert.pem");
+        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
         grpcSdkServer.start();
         grpcSdkServer.shutdownServer();
@@ -113,8 +113,8 @@ public class GrpcServerTest {
         when(grpcServerConfig.getTrustAll()).thenReturn(true);
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("server-cert.pem");
+        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
         grpcSdkServer.start();
         grpcSdkServer.shutdownServer();
@@ -139,9 +139,9 @@ public class GrpcServerTest {
         when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
 
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("server-cert.pem");
-        when(grpcServerConfig.getTrustCollectionCertFile()).thenReturn("ca-cert.pem");
+        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
+        when(grpcServerConfig.getTrustCollectionCertFile()).thenReturn("test-ca-cert.pem");
 
         grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
 
