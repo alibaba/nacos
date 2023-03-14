@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.StsConfig;
+import com.alibaba.nacos.client.identify.StsCredential;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -42,14 +43,12 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
-import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -352,9 +351,9 @@ public class ServerHttpAgent implements HttpAgent {
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
             StsCredential stsCredential = getStsCredential();
-            accessKey = stsCredential.accessKeyId;
-            secretKey = stsCredential.accessKeySecret;
-            header.addParam("Spas-SecurityToken", stsCredential.securityToken);
+            accessKey = stsCredential.getAccessKeyId();
+            secretKey = stsCredential.getAccessKeySecret();
+            header.addParam("Spas-SecurityToken", stsCredential.getSecurityToken());
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotEmpty(secretKey)) {
@@ -381,7 +380,7 @@ public class ServerHttpAgent implements HttpAgent {
         boolean cacheSecurityCredentials = StsConfig.getInstance().isCacheSecurityCredentials();
         if (cacheSecurityCredentials && stsCredential != null) {
             long currentTime = System.currentTimeMillis();
-            long expirationTime = stsCredential.expiration.getTime();
+            long expirationTime = stsCredential.getExpiration().getTime();
             int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
             if (expirationTime - currentTime > timeToRefreshInMillisecond) {
                 return stsCredential;
@@ -450,50 +449,6 @@ public class ServerHttpAgent implements HttpAgent {
         ConfigHttpClientManager.getInstance().shutdown();
         SpasAdapter.freeCredentialInstance();
         LOGGER.info("{} do shutdown stop", className);
-    }
-    
-    private static class StsCredential {
-        
-        @JsonProperty(value = "AccessKeyId")
-        private String accessKeyId;
-        
-        @JsonProperty(value = "AccessKeySecret")
-        private String accessKeySecret;
-        
-        @JsonProperty(value = "Expiration")
-        private Date expiration;
-        
-        @JsonProperty(value = "SecurityToken")
-        private String securityToken;
-        
-        @JsonProperty(value = "LastUpdated")
-        private Date lastUpdated;
-        
-        @JsonProperty(value = "Code")
-        private String code;
-        
-        public String getAccessKeyId() {
-            return accessKeyId;
-        }
-        
-        public Date getExpiration() {
-            return expiration;
-        }
-        
-        public Date getLastUpdated() {
-            return lastUpdated;
-        }
-        
-        public String getCode() {
-            return code;
-        }
-        
-        @Override
-        public String toString() {
-            return "STSCredential{" + "accessKeyId='" + accessKeyId + '\'' + ", accessKeySecret='" + accessKeySecret
-                    + '\'' + ", expiration=" + expiration + ", securityToken='" + securityToken + '\''
-                    + ", lastUpdated=" + lastUpdated + ", code='" + code + '\'' + '}';
-        }
     }
     
     private String accessKey;
