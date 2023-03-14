@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.ConstructorException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -50,7 +51,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
         try {
-            Yaml yaml = new Yaml(new SafeConstructor());
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             if (StringUtils.isNotBlank(oldContent)) {
                 oldMap = yaml.load(oldContent);
                 oldMap = getFlattenedMap(oldMap);
