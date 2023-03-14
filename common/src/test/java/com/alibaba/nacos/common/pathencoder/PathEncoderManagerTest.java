@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.alibaba.nacos.common.pathencoder;
 
 import com.alibaba.nacos.common.pathencoder.impl.WindowsEncoder;
@@ -25,6 +24,9 @@ import java.lang.reflect.Field;
 
 public class PathEncoderManagerTest extends TestCase {
 
+    /**
+     * test expose method.
+     */
     public void test() throws Exception {
         // load static
         Class.forName(PathEncoderManager.class.getName());

@@ -26,6 +26,9 @@ public class WindowsEncoderTest extends TestCase {
 
     WindowsEncoder windowsEncoder = new WindowsEncoder();
 
+    /**
+     * test encode.
+     */
     public void testEncode() {
         String charset = Charset.defaultCharset().name();
         String case1 = "aaaadsaknkf";
@@ -57,6 +60,9 @@ public class WindowsEncoderTest extends TestCase {
         Assert.assertEquals(windowsEncoder.encode(case12, charset), "aaaa%A6%dsa%A6%%A1%%A1%knkf");
     }
 
+    /**
+     * test decode.
+     */
     public void testDecode() {
         String charset = Charset.defaultCharset().name();
         String case1 = "aaaadsaknkf";
@@ -88,6 +94,9 @@ public class WindowsEncoderTest extends TestCase {
         Assert.assertEquals(windowsEncoder.decode(case12, charset), "aaaa\"dsa\"\\\\knkf");
     }
 
+    /**
+     * test needEncode.
+     */
     public void testNeedEncode() {
         String case1 = "aaaadsaknkf";
         // / : ? " < > | \
@@ -109,5 +118,4 @@ public class WindowsEncoderTest extends TestCase {
         Assert.assertTrue(windowsEncoder.needEncode(case8));
         Assert.assertTrue(windowsEncoder.needEncode(case9));
     }
-
 }
