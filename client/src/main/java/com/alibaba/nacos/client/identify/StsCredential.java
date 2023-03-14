@@ -21,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
 
 /**
+ * StsCredential.
+ *
  * @author xiweng.yy
  */
 public class StsCredential {
