@@ -644,6 +644,7 @@ public class NamingProxy implements Closeable {
         }
         try {
             // Inject ak/sk if exist:
+            injectRoleName();
             String ak = getAccessKey();
             String sk = getSecretKey();
             params.put("app", AppNameUtils.getAppName());
@@ -713,9 +714,9 @@ public class NamingProxy implements Closeable {
                     .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
             
             if (!result.ok()) {
-                NAMING_LOGGER.error(
-                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                        securityCredentialsUrl, result.getCode(), result.getMessage());
+                NAMING_LOGGER
+                        .error("can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
+                                securityCredentialsUrl, result.getCode(), result.getMessage());
                 throw new NacosException(NacosException.SERVER_ERROR,
                         "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
                                 .getMessage());
@@ -730,6 +731,17 @@ public class NamingProxy implements Closeable {
     private static String getSignData(String serviceName) {
         return StringUtils.isNotEmpty(serviceName) ? System.currentTimeMillis() + "@@" + serviceName
                 : String.valueOf(System.currentTimeMillis());
+    }
+    
+    private void injectRoleName() {
+        if (properties == null) {
+            return;
+        }
+        if (null != StsConfig.getInstance().getRamRoleName()) {
+            return;
+        }
+        String roleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME, "");
+        StsConfig.getInstance().setRamRoleName(roleName);
     }
     
     public String getAccessKey() {
