@@ -28,6 +28,8 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
+import com.alibaba.nacos.client.identify.StsConfig;
+import com.alibaba.nacos.client.identify.StsCredential;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -45,8 +47,8 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.IPUtil;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -113,6 +115,8 @@ public class NamingProxy implements Closeable {
     
     private int maxRetry;
     
+    private volatile StsCredential stsCredential;
+    
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
         
         this.securityProxy = new SecurityProxy(properties, nacosRestTemplate);
@@ -167,8 +171,7 @@ public class NamingProxy implements Closeable {
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
             Header header = builderHeader();
-            Query query = StringUtils.isNotBlank(namespaceId)
-                    ? Query.newInstance().addParam("namespace", namespaceId)
+            Query query = StringUtils.isNotBlank(namespaceId) ? Query.newInstance().addParam("namespace", namespaceId)
                     : Query.EMPTY;
             HttpRestResult<String> restResult = nacosRestTemplate.get(urlString, header, query, String.class);
             if (!restResult.ok()) {
@@ -590,8 +593,8 @@ public class NamingProxy implements Closeable {
             String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
-        injectSecurityInfo(params);
         Header header = builderHeader();
+        injectSecurityInfo(params, header);
         
         String url;
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
@@ -633,27 +636,33 @@ public class NamingProxy implements Closeable {
         }
     }
     
-    private void injectSecurityInfo(Map<String, String> params) {
+    private void injectSecurityInfo(Map<String, String> params, Header header) {
         
         // Inject token if exist:
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             params.put(Constants.ACCESS_TOKEN, securityProxy.getAccessToken());
         }
-        
-        // Inject ak/sk if exist:
-        String ak = getAccessKey();
-        String sk = getSecretKey();
-        params.put("app", AppNameUtils.getAppName());
-        if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
-            try {
+        try {
+            // Inject ak/sk if exist:
+            String ak = getAccessKey();
+            String sk = getSecretKey();
+            params.put("app", AppNameUtils.getAppName());
+            // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
+            if (StsConfig.getInstance().isStsOn()) {
+                StsCredential stsCredential = getStsCredential();
+                ak = stsCredential.getAccessKeyId();
+                sk = stsCredential.getAccessKeySecret();
+                header.addParam("Spas-SecurityToken", stsCredential.getSecurityToken());
+            }
+            if (StringUtils.isNotBlank(ak) && StringUtils.isNotBlank(sk)) {
                 String signData = getSignData(params.get("serviceName"));
                 String signature = SignUtil.sign(signData, sk);
                 params.put("signature", signature);
                 params.put("data", signData);
                 params.put("ak", ak);
-            } catch (Exception e) {
-                NAMING_LOGGER.error("inject ak/sk failed.", e);
             }
+        } catch (Exception e) {
+            NAMING_LOGGER.error("inject ak/sk failed.", e);
         }
     }
     
@@ -671,6 +680,51 @@ public class NamingProxy implements Closeable {
         header.addParam(HttpHeaderConsts.REQUEST_ID, UuidUtils.generateUuid());
         header.addParam(HttpHeaderConsts.REQUEST_MODULE, "Naming");
         return header;
+    }
+    
+    private StsCredential getStsCredential() throws Exception {
+        boolean cacheSecurityCredentials = StsConfig.getInstance().isCacheSecurityCredentials();
+        if (cacheSecurityCredentials && stsCredential != null) {
+            long currentTime = System.currentTimeMillis();
+            long expirationTime = stsCredential.getExpiration().getTime();
+            int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
+            if (expirationTime - currentTime > timeToRefreshInMillisecond) {
+                return stsCredential;
+            }
+        }
+        String stsResponse = getStsResponse();
+        StsCredential stsCredentialTmp = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
+        });
+        stsCredential = stsCredentialTmp;
+        NAMING_LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
+                stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
+                stsCredential.getExpiration());
+        return stsCredential;
+    }
+    
+    private String getStsResponse() throws Exception {
+        String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
+        if (securityCredentials != null) {
+            return securityCredentials;
+        }
+        String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
+        try {
+            HttpRestResult<String> result = nacosRestTemplate
+                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
+            
+            if (!result.ok()) {
+                NAMING_LOGGER.error(
+                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
+                        securityCredentialsUrl, result.getCode(), result.getMessage());
+                throw new NacosException(NacosException.SERVER_ERROR,
+                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
+                                .getMessage());
+            }
+            return result.getData();
+        } catch (Exception e) {
+            NAMING_LOGGER.error("can not get security credentials", e);
+            throw e;
+        }
     }
     
     private static String getSignData(String serviceName) {
