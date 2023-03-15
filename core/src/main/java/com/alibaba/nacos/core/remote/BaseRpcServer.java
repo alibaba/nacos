@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -31,22 +34,31 @@ import javax.annotation.PreDestroy;
  * @version $Id: BaseRpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
  */
 public abstract class BaseRpcServer {
-    
+
     static {
         PayloadRegistry.init();
     }
-    
+
+    @Autowired
+    protected RpcServerTlsConfig grpcServerConfig;
+
+    @JustForTest
+    public void setGrpcServerConfig(RpcServerTlsConfig grpcServerConfig) {
+        this.grpcServerConfig = grpcServerConfig;
+    }
+
     /**
      * Start sever.
      */
     @PostConstruct
     public void start() throws Exception {
         String serverName = getClass().getSimpleName();
-        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
+        String tlsConfig = JacksonUtils.toJson(grpcServerConfig);
+        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {} and tls config:{}", serverName, getServicePort(), tlsConfig);
         
         startServer();
     
-        Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
+        Loggers.REMOTE.info("Nacos {} Rpc server started at port {} and tls config:{}", serverName, getServicePort(), tlsConfig);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
             try {
