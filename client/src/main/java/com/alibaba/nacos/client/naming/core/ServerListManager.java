@@ -146,7 +146,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("refresh server list get empty list");
             }
-            if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
+            if (!CollectionUtils.isEqualCollection(list, serverList)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
                 serverList = list;
                 lastServerListRefreshTime = System.currentTimeMillis();
