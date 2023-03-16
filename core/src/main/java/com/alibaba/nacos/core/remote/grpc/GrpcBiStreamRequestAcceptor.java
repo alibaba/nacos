@@ -122,7 +122,6 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         try {
                             Loggers.REMOTE_DIGEST.warn("[{}]Connection register fail,reason:{}", connectionId,
                                     rejectSdkOnStarting ? " server is not started" : " server is over limited.");
-                            connection.request(new ConnectResetRequest(), 3000L);
                             connection.close();
                         } catch (Exception e) {
                             //Do nothing.
