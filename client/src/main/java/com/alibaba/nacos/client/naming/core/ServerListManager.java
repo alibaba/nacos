@@ -67,9 +67,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private final AtomicInteger currentIndex = new AtomicInteger();
     
-    private final List<String> serverList = new ArrayList<>();
-    
-    private volatile List<String> serversFromEndpoint = new ArrayList<>();
+    private volatile List<String> serverList = new ArrayList<>();
     
     private ScheduledExecutorService refreshServerListExecutor;
     
@@ -88,8 +86,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
         initServerAddr(properties);
         if (!serverList.isEmpty()) {
             currentIndex.set(new Random().nextInt(serverList.size()));
-        }
-        if (serverList.isEmpty() && StringUtils.isEmpty(endpoint)) {
+        } else {
             throw new NacosLoadException("serverList is empty,please check configuration");
         }
     }
@@ -97,7 +94,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     private void initServerAddr(NacosClientProperties properties) {
         this.endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
-            this.serversFromEndpoint = getServerListFromEndpoint();
+            this.serverList = getServerListFromEndpoint();
             refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
                     new NameThreadFactory("com.alibaba.nacos.client.naming.server.list.refresher"));
             refreshServerListExecutor
@@ -142,20 +139,16 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private void refreshServerListIfNeed() {
         try {
-            if (!CollectionUtils.isEmpty(serverList)) {
-                NAMING_LOGGER.debug("server list provided by user: " + serverList);
-                return;
-            }
             if (System.currentTimeMillis() - lastServerListRefreshTime < refreshServerListInternal) {
                 return;
             }
             List<String> list = getServerListFromEndpoint();
             if (CollectionUtils.isEmpty(list)) {
-                throw new Exception("Can not acquire Nacos list");
+                throw new Exception("refresh server list get empty list");
             }
-            if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
+            if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
-                serversFromEndpoint = list;
+                serverList = list;
                 lastServerListRefreshTime = System.currentTimeMillis();
                 NotifyCenter.publishEvent(new ServerListChangedEvent());
             }
@@ -174,7 +167,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     @Override
     public List<String> getServerList() {
-        return serverList.isEmpty() ? serversFromEndpoint : serverList;
+        return serverList;
     }
     
     @Override
