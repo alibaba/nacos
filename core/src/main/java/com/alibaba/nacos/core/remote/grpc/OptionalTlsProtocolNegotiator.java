@@ -32,40 +32,45 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 /**
- *  support the tls and plain protocol one the same port.
+ * support the tls and plain protocol one the same port.
  *
  * @author githubcheng2978.
  */
 public class OptionalTlsProtocolNegotiator implements InternalProtocolNegotiator.ProtocolNegotiator {
-
+    
     private static final int MAGIC_VALUE = 5;
-
+    
+    private boolean supportPlainText;
+    
     private SslContext sslContext;
-
-    public OptionalTlsProtocolNegotiator(SslContext sslContext) {
+    
+    public OptionalTlsProtocolNegotiator(SslContext sslContext, boolean supportPlainText) {
+        this.sslContext = sslContext;
+        this.supportPlainText = supportPlainText;
+    }
+    
+    void setSslContext(SslContext sslContext) {
         this.sslContext = sslContext;
     }
-
+    
     @Override
     public AsciiString scheme() {
         return AsciiString.of("https");
     }
-
+    
     @Override
     public ChannelHandler newHandler(GrpcHttp2ConnectionHandler grpcHttp2ConnectionHandler) {
-        ChannelHandler plaintext =
-                InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
-        ChannelHandler ssl =
-                InternalProtocolNegotiators.serverTls(sslContext).newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler plaintext = InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler ssl = InternalProtocolNegotiators.serverTls(sslContext).newHandler(grpcHttp2ConnectionHandler);
         ChannelHandler decoder = new PortUnificationServerHandler(ssl, plaintext);
         return decoder;
     }
-
+    
     @Override
     public void close() {
-
+    
     }
-
+    
     private ProtocolNegotiationEvent getDefPne() {
         ProtocolNegotiationEvent protocolNegotiationEvent = null;
         try {
@@ -77,31 +82,31 @@ public class OptionalTlsProtocolNegotiator implements InternalProtocolNegotiator
         }
         return protocolNegotiationEvent;
     }
-
+    
     public class PortUnificationServerHandler extends ByteToMessageDecoder {
+        
         private ProtocolNegotiationEvent pne;
-
+        
         private final ChannelHandler ssl;
-
+        
         private final ChannelHandler plaintext;
-
+        
         public PortUnificationServerHandler(ChannelHandler ssl, ChannelHandler plaintext) {
             this.ssl = ssl;
             this.plaintext = plaintext;
             this.pne = getDefPne();
         }
-
+        
         private boolean isSsl(ByteBuf buf) {
             return SslHandler.isEncrypted(buf);
         }
-
+        
         @Override
-        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)
-                throws Exception {
+        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
             if (in.readableBytes() < MAGIC_VALUE) {
                 return;
             }
-            if (isSsl(in)) {
+            if (isSsl(in) || !supportPlainText) {
                 ctx.pipeline().addAfter(ctx.name(), (String) null, this.ssl);
                 ctx.fireUserEventTriggered(pne);
                 ctx.pipeline().remove(this);
@@ -112,5 +117,5 @@ public class OptionalTlsProtocolNegotiator implements InternalProtocolNegotiator
             }
         }
     }
-
+    
 }
