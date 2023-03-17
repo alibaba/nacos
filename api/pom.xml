@@ -28,6 +28,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-api ${project.version}</name>
+    <description>Nacos api module.</description>
     <url>http://nacos.io</url>
     <build>
         <plugins>
