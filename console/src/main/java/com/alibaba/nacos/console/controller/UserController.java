@@ -144,7 +144,7 @@ public class UserController {
             HttpServletResponse response, HttpServletRequest request) throws IOException {
         // admin or same user
         if (!hasPermission(username, request)) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+            return new RestResult<>(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
         }
 
         User user = userDetailsService.getUserFromDatabase(username);

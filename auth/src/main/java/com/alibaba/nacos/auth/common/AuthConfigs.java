@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.auth.common;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.auth.config.AuthErrorCode;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.jsonwebtoken.io.Decoders;
@@ -24,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
 import java.util.Objects;
 
 /**
@@ -70,6 +73,24 @@ public class AuthConfigs {
     
     @Value(("${nacos.core.auth.enable.userAgentAuthWhite:true}"))
     private boolean enableUserAgentAuthWhite;
+    
+    /**
+     * Validate auth config.
+     *
+     * @throws NacosException If the config is not valid.
+     */
+    @PostConstruct
+    public void validate() throws NacosException {
+        if (!isAuthEnabled()) {
+            return;
+        }
+        if (StringUtils.isEmpty(nacosAuthSystemType)) {
+            throw new NacosException(AuthErrorCode.INVALID_TYPE.getCode(), AuthErrorCode.INVALID_TYPE.getMsg());
+        }
+        if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
+            throw new NacosException(AuthErrorCode.EMPTY_IDENTITY.getCode(), AuthErrorCode.EMPTY_IDENTITY.getMsg());
+        }
+    }
     
     public byte[] getSecretKeyBytes() {
         if (secretKeyBytes == null) {
