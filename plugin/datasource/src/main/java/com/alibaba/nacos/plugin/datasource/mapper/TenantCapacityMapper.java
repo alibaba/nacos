@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 /**
  * The tenant capacity info mapper.
  *
@@ -31,7 +33,10 @@ public interface TenantCapacityMapper extends Mapper {
      *
      * @return The sql of increment UsageWithDefaultQuotaLimit.
      */
-    String incrementUsageWithDefaultQuotaLimit();
+    default String incrementUsageWithDefaultQuotaLimit() {
+        return "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
+                + " ? AND quota = 0";
+    }
     
     /**
      * Increment UsageWithQuotaLimit.
@@ -40,7 +45,10 @@ public interface TenantCapacityMapper extends Mapper {
      *
      * @return The sql of Increment UsageWithQuotaLimit.
      */
-    String incrementUsageWithQuotaLimit();
+    default String incrementUsageWithQuotaLimit() {
+        return "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
+                + "quota AND quota != 0";
+    }
     
     /**
      * Increment Usage.
@@ -49,7 +57,9 @@ public interface TenantCapacityMapper extends Mapper {
      *
      * @return The sql of increment UsageWithQuotaLimit.
      */
-    String incrementUsage();
+    default String incrementUsage() {
+        return "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?";
+    }
     
     /**
      * DecrementUsage.
@@ -58,7 +68,9 @@ public interface TenantCapacityMapper extends Mapper {
      *
      * @return The sql of decrementUsage.
      */
-    String decrementUsage();
+    default String decrementUsage() {
+        return "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0";
+    }
     
     /**
      * Correct Usage.
@@ -67,7 +79,10 @@ public interface TenantCapacityMapper extends Mapper {
      *
      * @return The sql of correcting Usage.
      */
-    String correctUsage();
+    default String correctUsage() {
+        return "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
+                + "gmt_modified = ? WHERE tenant_id = ?";
+    }
     
     /**
      * Get TenantCapacity List, only including id and tenantId value.
@@ -85,5 +100,17 @@ public interface TenantCapacityMapper extends Mapper {
      * gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;
      * @return The sql of inserting TenantCapacity.
      */
-    String insertTenantCapacity();
+    default String insertTenantCapacity() {
+        return "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
+                + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;";
+    }
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.TENANT_CAPACITY;
+    }
 }

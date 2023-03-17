@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.auth.config;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
@@ -30,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -78,6 +81,24 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     public AuthConfigs() {
         NotifyCenter.registerSubscriber(this);
         refreshPluginProperties();
+    }
+    
+    /**
+     * Validate auth config.
+     *
+     * @throws NacosException If the config is not valid.
+     */
+    @PostConstruct
+    public void validate() throws NacosException {
+        if (!authEnabled) {
+            return;
+        }
+        if (StringUtils.isEmpty(nacosAuthSystemType)) {
+            throw new NacosException(AuthErrorCode.INVALID_TYPE.getCode(), AuthErrorCode.INVALID_TYPE.getMsg());
+        }
+        if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
+            throw new NacosException(AuthErrorCode.EMPTY_IDENTITY.getCode(), AuthErrorCode.EMPTY_IDENTITY.getMsg());
+        }
     }
     
     private void refreshPluginProperties() {

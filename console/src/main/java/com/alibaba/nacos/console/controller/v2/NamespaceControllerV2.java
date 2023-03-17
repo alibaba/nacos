@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
  */
 @NacosApi
 @RestController
-@RequestMapping(path = "/v2/console/namespace")
+@RequestMapping("/v2/console/namespace")
 public class NamespaceControllerV2 {
     
     private final NamespaceOperationService namespaceOperationService;

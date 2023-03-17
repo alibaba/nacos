@@ -49,6 +49,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -146,7 +147,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        boolean result = tjt.execute(status -> {
+        tjt.execute(status -> {
             try {
                 long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, time, configAdvanceInfo);
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
@@ -173,7 +174,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             Map<String, Object> configAdvanceInfo, boolean notify) {
         try {
             addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+        } catch (DuplicateKeyException ive) { // Unique constraint conflict
             updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
         }
     }
@@ -190,7 +191,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
             return true;
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+        } catch (DuplicateKeyException ignore) { // Unique constraint conflict
             return updateConfigInfoCas(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
         }
     }
@@ -474,10 +475,18 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        boolean result = tjt.execute(status -> {
+        tjt.execute(status -> {
             try {
                 ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
+                if (oldConfigInfo == null) {
+                    if (LogUtil.FATAL_LOG.isErrorEnabled()) {
+                        LogUtil.FATAL_LOG.error("expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
+                                configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+                    }
+                    return Boolean.FALSE;
+                }
+                
                 String appNameTmp = oldConfigInfo.getAppName();
                 /*
                  If the appName passed by the user is not empty, use the persistent user's appName,
@@ -511,6 +520,13 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             try {
                 ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
+                if (oldConfigInfo == null) {
+                    if (LogUtil.FATAL_LOG.isErrorEnabled()) {
+                        LogUtil.FATAL_LOG.error("expected config info[dataid:{}, group:{}, tenent:{}] but not found.",
+                                configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
+                    }
+                    return Boolean.FALSE;
+                }
                 String appNameTmp = oldConfigInfo.getAppName();
                 /*
                  If the appName passed by the user is not empty, use the persistent user's appName,
@@ -695,6 +711,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
+        final String content = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("content");
         final String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
         String sql = null;
         String sqlCount = null;
@@ -713,6 +730,10 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             paramList.add(appName);
             paramsMap.put(APP_NAME, APP_NAME);
         }
+        if (!StringUtils.isBlank(content)) {
+            paramList.add(content);
+            paramsMap.put(CONTENT, CONTENT);
+        }
         final int startRow = (pageNo - 1) * pageSize;
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
@@ -720,8 +741,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
             sqlCount = configTagsRelationMapper.findConfigInfo4PageCountRows(paramsMap, tagArr.length);
-            sql = configTagsRelationMapper.findConfigInfo4PageFetchRows(paramsMap, tagArr.length, startRow,
-                    pageSize);
+            sql = configTagsRelationMapper.findConfigInfo4PageFetchRows(paramsMap, tagArr.length, startRow, pageSize);
         } else {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);

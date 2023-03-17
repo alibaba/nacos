@@ -150,7 +150,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         String sqlCountRows = historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
-        String sqlFetchRows = historyConfigInfoMapper.findConfigHistoryFetchRows();
+        String sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(pageNo, pageSize);
         
         Page<ConfigHistoryInfo> page = null;
         try {

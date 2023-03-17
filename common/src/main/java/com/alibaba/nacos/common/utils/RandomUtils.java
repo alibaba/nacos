@@ -24,6 +24,9 @@ import java.util.Random;
  * @author zzq
  */
 public class RandomUtils {
+
+    private RandomUtils() {
+    }
     
     /**
      * Random Object for random method.

@@ -24,6 +24,9 @@ import java.util.Arrays;
  * @author zzq
  */
 public class ArrayUtils {
+
+    private ArrayUtils() {
+    }
     
     /**
      * <p>Checks if an array of Objects is empty or {@code null}.</p>

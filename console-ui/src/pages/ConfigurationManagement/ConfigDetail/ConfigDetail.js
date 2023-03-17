@@ -318,6 +318,9 @@ class ConfigDetail extends React.Component {
             ''
           )}
           <Form inline={false} field={this.field} {...formItemLayout}>
+            <FormItem label={locale.namespace} required>
+              <p>{this.tenant}</p>
+            </FormItem>
             <FormItem label={'Data ID'} required>
               <Input htmlType={'text'} readOnly {...init('dataId')} />
             </FormItem>

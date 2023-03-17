@@ -191,7 +191,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        boolean result = tjt.execute(status -> {
+        tjt.execute(status -> {
             try {
                 long configId = addConfigInfoAtomic(-1, srcIp, srcUser, configInfo, time, configAdvanceInfo);
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
@@ -252,7 +252,7 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        boolean result = tjt.execute(status -> {
+        tjt.execute(status -> {
             try {
                 ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
@@ -641,16 +641,16 @@ public class ExternalStoragePersistServiceImpl implements PersistService {
     public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
             final List<String> datumList) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final StringBuilder datumString = new StringBuilder();
-        for (String datum : datumList) {
-            datumString.append('\'').append(datum).append("',");
-        }
-        datumString.deleteCharAt(datumString.length() - 1);
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList);
+        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList.size());
+        final Object[] args = new Object[3 + datumList.size()];
+        args[0] = dataId;
+        args[1] = group;
+        args[2] = tenantTmp;
+        System.arraycopy(datumList.toArray(), 0, args, 3, datumList.size());
         try {
-            jt.update(sql, dataId, group, tenantTmp);
+            jt.update(sql, args);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             return false;

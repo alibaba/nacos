@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+
 /**
  * The history config info mapper.
  *
@@ -40,7 +42,9 @@ public interface HistoryConfigInfoMapper extends Mapper {
      *
      * @return The sql of getting the number of configurations before the specified time.
      */
-    String findConfigHistoryCountByTime();
+    default String findConfigHistoryCountByTime() {
+        return "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?";
+    }
     
     /**
      * Query deleted config.
@@ -49,7 +53,10 @@ public interface HistoryConfigInfoMapper extends Mapper {
      *
      * @return The sql of querying deleted config.
      */
-    String findDeletedConfig();
+    default String findDeletedConfig() {
+        return "SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND "
+                + "gmt_modified >= ? AND gmt_modified <= ?";
+    }
     
     /**
      * List configuration history change record.
@@ -59,8 +66,22 @@ public interface HistoryConfigInfoMapper extends Mapper {
      *
      * @return The sql of listing configuration history change record.
      */
-    String findConfigHistoryFetchRows();
-    
+    default String findConfigHistoryFetchRows() {
+        return  "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+                + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";
+    }
+
+    /**
+     * page search List configuration history.
+     * SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
+     * WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC limit ?,?
+     *
+     * @param pageNo   pageNo
+     * @param pageSize pageSize
+     * @return
+     */
+    String pageFindConfigHistoryFetchRows(int pageNo, int pageSize);
+
     /**
      * Get previous config detail.
      * The default sql:
@@ -69,5 +90,17 @@ public interface HistoryConfigInfoMapper extends Mapper {
      *
      * @return The sql of getting previous config detail.
      */
-    String detailPreviousConfigHistory();
+    default String detailPreviousConfigHistory() {
+        return "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified "
+                + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)";
+    }
+
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.HIS_CONFIG_INFO;
+    }
 }

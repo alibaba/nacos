@@ -182,8 +182,27 @@ public class ClientWorkerTest {
         Assert.assertTrue(o.executor.isShutdown());
         agent1.setAccessible(false);
         
-        Assert.assertTrue(clientWorker.isHealthServer());
         Assert.assertEquals(null, clientWorker.getAgentName());
     }
     
+    @Test
+    public void testIsHealthServer() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ServerListManager agent = Mockito.mock(ServerListManager.class);
+        
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
+        ClientWorker.ConfigRpcTransportClient client = Mockito.mock(ClientWorker.ConfigRpcTransportClient.class);
+        Mockito.when(client.isHealthServer()).thenReturn(Boolean.TRUE);
+        
+        Field declaredField = ClientWorker.class.getDeclaredField("agent");
+        declaredField.setAccessible(true);
+        declaredField.set(clientWorker, client);
+        
+        Assert.assertEquals(true, clientWorker.isHealthServer());
+        
+        Mockito.when(client.isHealthServer()).thenReturn(Boolean.FALSE);
+        Assert.assertEquals(false, clientWorker.isHealthServer());
+    }
 }

@@ -28,7 +28,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-api ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     <build>
         <plugins>
             <!--  reuse when you need to update grpc model  -->
@@ -50,21 +50,8 @@
                      </execution>
                  </executions>
              </plugin>-->
-            
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
-    
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     
     <dependencies>
         <dependency>
@@ -104,11 +91,6 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>protoc-gen-grpc-java</artifactId>
-            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>javax.annotation</groupId>

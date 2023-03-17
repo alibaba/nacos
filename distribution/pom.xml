@@ -37,6 +37,7 @@
             <artifactId>nacos-console</artifactId>
         </dependency>
     </dependencies>
+    
     <profiles>
         <profile>
             <id>release-config</id>
@@ -198,12 +199,6 @@
         </profile>
         <profile>
             <id>release-nacos</id>
-            <dependencies>
-                <dependency>
-                    <groupId>${project.groupId}</groupId>
-                    <artifactId>nacos-console</artifactId>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
