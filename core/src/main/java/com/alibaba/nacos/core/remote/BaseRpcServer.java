@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -81,6 +80,10 @@ public abstract class BaseRpcServer {
     
     public RpcServerTlsConfig getRpcServerTlsConfig() {
         return rpcServerTlsConfig;
+    }
+    
+    public void setRpcServerTlsConfig(RpcServerTlsConfig rpcServerTlsConfig) {
+        this.rpcServerTlsConfig = rpcServerTlsConfig;
     }
     
     /**

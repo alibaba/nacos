@@ -107,6 +107,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         server.start();
     }
     
+    /**
+     * reload ssl context.
+     */
     public void reloadSslContext() {
         if (optionalTlsProtocolNegotiator != null) {
             try {

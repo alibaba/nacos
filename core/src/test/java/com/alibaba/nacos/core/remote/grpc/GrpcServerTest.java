@@ -51,7 +51,7 @@ public class GrpcServerTest {
     @Test
     public void testGrpcSdkServer() throws Exception {
         BaseGrpcServer grpcSdkServer = new GrpcSdkServer();
-        grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
+        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
         when(grpcServerConfig.getEnableTls()).thenReturn(false);
         grpcSdkServer.start();
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
@@ -62,7 +62,7 @@ public class GrpcServerTest {
     @Test
     public void testGrpcClusterServer() throws Exception {
         BaseGrpcServer grpcSdkServer = new GrpcClusterServer();
-        grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
+        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
         when(grpcServerConfig.getEnableTls()).thenReturn(false);
         grpcSdkServer.start();
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
@@ -89,7 +89,7 @@ public class GrpcServerTest {
 
         when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
         when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
+        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
         grpcSdkServer.start();
         grpcSdkServer.shutdownServer();
     }
@@ -115,7 +115,7 @@ public class GrpcServerTest {
         when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
         when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
         when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
+        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
         grpcSdkServer.start();
         grpcSdkServer.shutdownServer();
     }
@@ -143,7 +143,7 @@ public class GrpcServerTest {
         when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
         when(grpcServerConfig.getTrustCollectionCertFile()).thenReturn("test-ca-cert.pem");
 
-        grpcSdkServer.setGrpcServerConfig(grpcServerConfig);
+        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
 
         grpcSdkServer.start();
         grpcSdkServer.shutdownServer();
