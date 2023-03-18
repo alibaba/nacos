@@ -35,6 +35,9 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class CollectionUtils {
+
+    private CollectionUtils() {
+    }
     
     /**
      * Returns the <code>index</code>-th value in <code>object</code>, throwing
@@ -269,7 +272,7 @@ public final class CollectionUtils {
     }
     
     /**
-     * Return an set containing all input parameters.
+     * Return a set containing all input parameters.
      *
      * @param elements elements element array
      * @return set containing all input parameters
@@ -278,7 +281,7 @@ public final class CollectionUtils {
         if (elements == null) {
             throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
         } else {
-            return new LinkedHashSet(Arrays.asList(elements));
+            return new LinkedHashSet<>(Arrays.asList(elements));
         }
     }
     
@@ -304,18 +307,18 @@ public final class CollectionUtils {
     
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private static <T> String buildExceptionMessage(Iterator<T> iterator, T first) {
-        String msg = "";
-        msg += "expected one element but was: <";
-        msg += first;
+        StringBuilder msg = new StringBuilder();
+        msg.append("expected one element but was: <");
+        msg.append(first);
         for (int i = 0; i < 4 && iterator.hasNext(); i++) {
-            msg += ", ";
-            msg += iterator.next();
+            msg.append(", ");
+            msg.append(iterator.next());
         }
         if (iterator.hasNext()) {
-            msg += ", ...";
+            msg.append(", ...");
         }
-        msg += '>';
-        return msg;
+        msg.append('>');
+        return msg.toString();
     }
     
     /**

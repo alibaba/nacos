@@ -30,7 +30,6 @@ import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberMetaDataConstants;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -54,7 +53,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class CurcuitFilter implements Filter {
+public class CircuitFilter implements Filter {
     
     private volatile boolean isDowngrading = false;
     
@@ -65,9 +64,6 @@ public class CurcuitFilter implements Filter {
     
     @Autowired
     private CPProtocol protocol;
-    
-    @Autowired
-    private ControllerMethodsCache controllerMethodsCache;
     
     @PostConstruct
     protected void init() {

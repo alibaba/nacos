@@ -33,10 +33,6 @@
     <name>nacos-example ${project.version}</name>
     <url>https://nacos.io</url>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>

@@ -57,6 +57,24 @@ public class EmbeddedStorageContextUtils {
     }
     
     /**
+     * Add sql context.
+     *
+     * @param rollbackOnUpdateFail  roll back when update fail
+     * @param sql  sql
+     * @param args argument list
+     */
+    public static void addSqlContext(boolean rollbackOnUpdateFail, String sql, Object... args) {
+        ArrayList<ModifyRequest> requests = SQL_CONTEXT.get();
+        ModifyRequest context = new ModifyRequest();
+        context.setExecuteNo(requests.size());
+        context.setSql(sql);
+        context.setArgs(args);
+        context.setRollBackOnUpdateFail(rollbackOnUpdateFail);
+        requests.add(context);
+        SQL_CONTEXT.set(requests);
+    }
+    
+    /**
      * Put extend info.
      *
      * @param key   key

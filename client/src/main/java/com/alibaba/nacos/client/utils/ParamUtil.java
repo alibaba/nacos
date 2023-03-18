@@ -223,7 +223,7 @@ public class ParamUtil {
         }
         
         String endpointUrlSource = TemplateUtils
-                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl, System.getenv(endpointUrl)),
+                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl),
                         () -> NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {

@@ -41,11 +41,8 @@ import java.util.List;
  *
  * @author zjw
  */
+@Deprecated
 public class LdapAuthenticationProvider implements AuthenticationProvider {
-    
-    private static final String DEFAULT_PASSWORD = "nacos";
-    
-    private static final String LDAP_PREFIX = "LDAP_";
     
     private final NacosUserDetailsServiceImpl userDetailsService;
     
@@ -95,12 +92,12 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         
         UserDetails userDetails;
         try {
-            userDetails = userDetailsService.loadUserByUsername(LDAP_PREFIX + username);
+            userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
-            String nacosPassword = PasswordEncoderUtil.encode(DEFAULT_PASSWORD);
-            userDetailsService.createUser(LDAP_PREFIX + username, nacosPassword);
+            String nacosPassword = PasswordEncoderUtil.encode(AuthConstants.LDAP_DEFAULT_PASSWORD);
+            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username, nacosPassword);
             User user = new User();
-            user.setUsername(LDAP_PREFIX + username);
+            user.setUsername(AuthConstants.LDAP_PREFIX + username);
             user.setPassword(nacosPassword);
             userDetails = new NacosUserDetails(user);
         }

@@ -79,8 +79,8 @@ public class AuthFilter implements Filter {
                 chain.doFilter(request, response);
                 return;
             }
-        } else if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils
-                .isNotBlank(authConfigs.getServerIdentityValue())) {
+        } else if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey()) && StringUtils.isNotBlank(
+                authConfigs.getServerIdentityValue())) {
             String serverIdentity = req.getHeader(authConfigs.getServerIdentityKey());
             if (StringUtils.isNotBlank(serverIdentity)) {
                 if (authConfigs.getServerIdentityValue().equals(serverIdentity)) {
@@ -156,9 +156,11 @@ public class AuthFilter implements Filter {
      * @param identityContext identity context
      */
     private void injectIdentityId(HttpServletRequest request, IdentityContext identityContext) {
-        String identityId = identityContext
-                .getParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, StringUtils.EMPTY);
+        String identityId = identityContext.getParameter(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, StringUtils.EMPTY);
         request.getSession()
                 .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID, identityId);
+        request.getSession().setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT,
+                identityContext);
     }
 }

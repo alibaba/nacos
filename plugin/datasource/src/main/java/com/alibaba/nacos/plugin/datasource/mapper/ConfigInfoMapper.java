@@ -336,6 +336,7 @@ public interface ConfigInfoMapper extends Mapper {
         final String appName = params.get(APP_NAME);
         final String dataId = params.get(DATA_ID);
         final String group = params.get(GROUP);
+        final String content = params.get(CONTENT);
         final String sqlCount = "SELECT count(*) FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
@@ -347,6 +348,9 @@ public interface ConfigInfoMapper extends Mapper {
         }
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
+        }
+        if (!StringUtils.isBlank(content)) {
+            where.append(" AND content LIKE ? ");
         }
         return sqlCount + where;
     }

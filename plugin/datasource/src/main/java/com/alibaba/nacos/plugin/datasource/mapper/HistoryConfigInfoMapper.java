@@ -70,7 +70,18 @@ public interface HistoryConfigInfoMapper extends Mapper {
         return  "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC";
     }
-    
+
+    /**
+     * page search List configuration history.
+     * SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
+     * WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC limit ?,?
+     *
+     * @param pageNo   pageNo
+     * @param pageSize pageSize
+     * @return
+     */
+    String pageFindConfigHistoryFetchRows(int pageNo, int pageSize);
+
     /**
      * Get previous config detail.
      * The default sql:
@@ -83,7 +94,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
         return "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified "
                 + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)";
     }
-    
+
     /**
      * 获取返回表名.
      *

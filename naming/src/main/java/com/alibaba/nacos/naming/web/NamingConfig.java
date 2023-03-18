@@ -44,7 +44,7 @@ public class NamingConfig {
         registration.setFilter(distroFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.setName(DISTRO_FILTER);
-        registration.setOrder(6);
+        registration.setOrder(7);
         return registration;
     }
     
@@ -74,7 +74,7 @@ public class NamingConfig {
         registration.setFilter(clientAttributesFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.setName(CLIENT_ATTRIBUTES_FILTER);
-        registration.setOrder(7);
+        registration.setOrder(8);
         return registration;
     }
     
