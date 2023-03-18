@@ -40,6 +40,13 @@ public class MapperContext {
         this.updateParamMap = new HashMap<>();
     }
     
+    public MapperContext(int startRow, int pageSize) {
+        this.whereParamMap = new HashMap<>();
+        this.updateParamMap = new HashMap<>();
+        this.startRow = startRow;
+        this.pageSize = pageSize;
+    }
+    
     /**
      * Returns the value to which the key is mapped, it will return the WHERE parameter in the SQL statement.
      *
@@ -53,7 +60,7 @@ public class MapperContext {
     /**
      * Associates the value with the key in this map, it will contain the WHERE parameter in the SQL statement.
      *
-     * @param key Key with which the value is to be associated
+     * @param key   Key with which the value is to be associated
      * @param value Value to be associated with the specified key
      */
     public void putWhereParameter(String key, Object value) {
@@ -73,7 +80,7 @@ public class MapperContext {
     /**
      * Associates the value with the key in this map, it will contain the UPDATE parameter in the SQL statement.
      *
-     * @param key Key with which the value is to be associated
+     * @param key   Key with which the value is to be associated
      * @param value Value to be associated with the specified key
      */
     public void putUpdateParameter(String key, Object value) {

@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -34,14 +35,15 @@ public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements Confi
     
     @Override
     public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
-        Integer startRow = (Integer) context.getWhereParameter("startRow");
-        Integer pageSize = (Integer) context.getWhereParameter("pageSize");
-        String dataId = (String) context.getWhereParameter("data_id");
-        String groupId = (String) context.getWhereParameter("group_id");
-        String tenantId = (String) context.getWhereParameter("tenant_id");
+        Integer startRow =  context.getStartRow();
+        Integer pageSize =  context.getPageSize();
+        String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        String groupId = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         
-        String sql = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id= ? AND "
-                + "group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT " + startRow + "," + pageSize;
+        String sql =
+                "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id= ? AND "
+                        + "group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT " + startRow + "," + pageSize;
         List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
         return new MapperResult(sql, paramList);
     }

@@ -29,6 +29,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistS
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -175,19 +176,18 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
             MapperContext context = new MapperContext();
-            context.putUpdateParameter("content", configInfo.getContent());
-            context.putUpdateParameter("md5", md5);
-            context.putUpdateParameter("beta_ips", betaIps);
-            context.putUpdateParameter("src_ip", srcIp);
-            context.putUpdateParameter("src_user", srcUser);
-            context.putUpdateParameter("gmt_modified", time);
-            context.putUpdateParameter("app_name", appNameTmp);
+            context.putUpdateParameter(FieldConstant.CONTENT,  configInfo.getContent());
+            context.putUpdateParameter(FieldConstant.MD5, md5);
+            context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
+            context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
+            context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
+            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
+            context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
     
-            context.putWhereParameter("data_id", configInfo.getDataId());
-            context.putWhereParameter("group_id", configInfo.getGroup());
-            context.putWhereParameter("tenant_id", tenantTmp);
-            context.putWhereParameter("md5", configInfo.getMd5());
-    
+            context.putWhereParameter(FieldConstant.DATA_ID,  configInfo.getDataId());
+            context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
+            context.putWhereParameter(FieldConstant.TENANT_ID,  tenantTmp);
+            context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
             MapperResult mapperResult = configInfoBetaMapper.updateConfigInfo4BetaCas(context);
             final String sql = mapperResult.getSql();
             List<Object> paramList = mapperResult.getParamList();
@@ -236,14 +236,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_BETA);
         String sqlCountRows = configInfoBetaMapper.count(null);
-    
+        
         MapperContext context = new MapperContext();
         context.setStartRow(startRow);
         context.setPageSize(pageSize);
         
-        MapperResult mapperResult = configInfoBetaMapper
-                .findAllConfigInfoBetaForDumpAllFetchRows(context);
-    
+        MapperResult mapperResult = configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(context);
+        
         String sqlFetchRows = mapperResult.getSql();
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
         try {

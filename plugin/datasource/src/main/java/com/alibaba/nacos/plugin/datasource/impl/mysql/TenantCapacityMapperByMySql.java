@@ -16,9 +16,13 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 /**
  * The mysql implementation of TenantCapacityMapper.
@@ -27,15 +31,17 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
  **/
 
 public class TenantCapacityMapperByMySql extends AbstractMapper implements TenantCapacityMapper {
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-
+    
     @Override
-    public String getCapacityList4CorrectUsage() {
-        return "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
+    public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
+        String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-
+    
 }

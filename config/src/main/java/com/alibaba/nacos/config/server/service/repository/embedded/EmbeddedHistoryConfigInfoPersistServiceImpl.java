@@ -31,8 +31,11 @@ import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersi
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
@@ -122,17 +125,24 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
-        String sql = historyConfigInfoMapper.removeConfigHistory();
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.START_TIME, startTime);
+        context.putWhereParameter(FieldConstant.LIMIT_SIZE, limitSize);
+        MapperResult mapperResult = historyConfigInfoMapper.removeConfigHistory(context);
         PaginationHelper<ConfigInfo> helper = createPaginationHelper();
-        helper.updateLimit(sql, new Object[] {startTime, limitSize});
+        helper.updateLimit(mapperResult.getSql(), mapperResult.getParamList().toArray());
     }
     
     @Override
     public List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
-        List<Map<String, Object>> list = databaseOperate.queryMany(historyConfigInfoMapper.findDeletedConfig(),
-                new Object[] {startTime, endTime});
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.START_TIME, startTime);
+        context.putWhereParameter(FieldConstant.END_TIME, endTime);
+        MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
+        List<Map<String, Object>> list = databaseOperate.queryMany(mapperResult.getSql(),
+                mapperResult.getParamList().toArray());
         return convertDeletedConfig(list);
         
     }
@@ -144,12 +154,18 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        
+        MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        
         String sqlCountRows = historyConfigInfoMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
-        String sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(pageNo, pageSize);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
         
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows, new Object[] {dataId, group, tenantTmp}, pageNo, pageSize,
-                HISTORY_LIST_ROW_MAPPER);
+        return helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+                pageSize, HISTORY_LIST_ROW_MAPPER);
     }
     
     @Override
@@ -167,16 +183,22 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
-        String sqlFetchRows = historyConfigInfoMapper.detailPreviousConfigHistory();
-        return databaseOperate.queryOne(sqlFetchRows, new Object[] {id}, HISTORY_DETAIL_ROW_MAPPER);
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.ID, id);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.detailPreviousConfigHistory(context);
+        return databaseOperate.queryOne(sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(),
+                HISTORY_DETAIL_ROW_MAPPER);
     }
     
     @Override
     public int findConfigHistoryCountByTime(final Timestamp startTime) {
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
-        String sql = historyConfigInfoMapper.findConfigHistoryCountByTime();
-        Integer result = databaseOperate.queryOne(sql, new Object[] {startTime}, Integer.class);
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.START_TIME, startTime);
+        MapperResult sqlFetchRows = historyConfigInfoMapper.findConfigHistoryCountByTime(context);
+        Integer result = databaseOperate.queryOne(sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(),
+                Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("findConfigHistoryCountByTime error");
         }
