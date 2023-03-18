@@ -37,7 +37,6 @@ import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -900,11 +899,15 @@ public abstract class RpcClient implements Closeable {
         if (matcher.find()) {
             serverAddress = matcher.group(1);
         }
+        // ipPortTuple[0] is serverIp, ipPortTuple[1] is serverPort（May not exist）
         String[] ipPortTuple = InternetAddressUtil.splitIPPortStr(serverAddress);
-        int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
-        String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, Integer.toString(defaultPort));
-        
-        return new ServerInfo(ipPortTuple[0], NumberUtils.toInt(serverPort, defaultPort));
+    
+        String serverIp = ipPortTuple[0];
+    
+        String defaultPort = System.getProperty("nacos.server.port", "8848");
+        String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, defaultPort);
+    
+        return new ServerInfo(serverIp, Integer.parseInt(serverPort));
     }
     
     public static class ServerInfo {
