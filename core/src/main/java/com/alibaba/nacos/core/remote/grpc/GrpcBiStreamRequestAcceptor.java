@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
-import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.ConnectionType;
