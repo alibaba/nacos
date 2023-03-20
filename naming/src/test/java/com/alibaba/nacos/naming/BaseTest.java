@@ -30,6 +30,9 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+import java.lang.reflect.Field;
 
 import static org.mockito.Mockito.doReturn;
 
@@ -74,6 +77,16 @@ public abstract class BaseTest {
     public void before() {
         EnvUtil.setEnvironment(environment);
         ApplicationUtils.injectContext(context);
+    }
+    
+    protected MockHttpServletRequestBuilder convert(Object simpleOb, MockHttpServletRequestBuilder builder)
+            throws IllegalAccessException {
+        Field[] declaredFields = simpleOb.getClass().getDeclaredFields();
+        for (Field declaredField : declaredFields) {
+            declaredField.setAccessible(true);
+            builder.param(declaredField.getName(), String.valueOf(declaredField.get(simpleOb)));
+        }
+        return builder;
     }
     
     protected void mockInjectPushServer() {
