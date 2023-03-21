@@ -353,7 +353,7 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
     }
     
     @SuppressWarnings("unchecked")
-    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
+    public <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
             Callback<T> callback) {
         try {
             URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());

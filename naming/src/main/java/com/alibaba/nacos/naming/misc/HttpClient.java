@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -200,6 +201,22 @@ public class HttpClient {
             default:
                 throw new RuntimeException("not supported method:" + method);
         }
+    }
+
+    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, String body,
+                                        Callback<String> callback, String method) throws Exception {
+
+        Query query = Query.newInstance().initParams(paramValues);
+        query.addParam(FieldsConstants.ENCODING, ENCODING);
+        query.addParam(FieldsConstants.NOFIX, NOFIX);
+
+        Header header = Header.newInstance();
+        if (CollectionUtils.isNotEmpty(headers)) {
+            header.addAll(headers);
+        }
+        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, "UTF-8");
+        AuthHeaderUtil.addIdentityToHeader(header);
+        ASYNC_REST_TEMPLATE.execute(url, method, new RequestHttpEntity(header, query, body), String.class, callback);
     }
     
     /**
