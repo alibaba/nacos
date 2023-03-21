@@ -22,10 +22,12 @@ import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
 import com.alibaba.nacos.common.remote.ConnectionType;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
@@ -61,63 +63,78 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
-
+    
     private Server server;
-
+    
     private final ResourceLoader resourceLoader = new DefaultResourceLoader();
-
+    
     @Autowired
     private GrpcRequestAcceptor grpcCommonRequestAcceptor;
-
+    
     @Autowired
     private GrpcBiStreamRequestAcceptor grpcBiStreamRequestAcceptor;
-
+    
     @Autowired
     private ConnectionManager connectionManager;
-
+    
+    private OptionalTlsProtocolNegotiator optionalTlsProtocolNegotiator;
+    
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
     }
-
+    
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
         addServices(handlerRegistry, new GrpcConnectionInterceptor());
         NettyServerBuilder builder = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor());
-
-        if (grpcServerConfig.getEnableTls()) {
-            if (grpcServerConfig.getCompatibility()) {
-                builder.protocolNegotiator(new OptionalTlsProtocolNegotiator(getSslContextBuilder()));
-            } else {
-                builder.sslContext(getSslContextBuilder());
-            }
+        
+        if (rpcServerTlsConfig.getEnableTls()) {
+            builder.protocolNegotiator(
+                    new OptionalTlsProtocolNegotiator(getSslContextBuilder(), rpcServerTlsConfig.getCompatibility()));
+            
         }
-
+        
         server = builder.maxInboundMessageSize(getMaxInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
                 .compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .addTransportFilter(new AddressTransportFilter(connectionManager))
                 .keepAliveTime(getKeepAliveTime(), TimeUnit.MILLISECONDS)
                 .keepAliveTimeout(getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
-                .permitKeepAliveTime(getPermitKeepAliveTime(), TimeUnit.MILLISECONDS)
-                .build();
-
+                .permitKeepAliveTime(getPermitKeepAliveTime(), TimeUnit.MILLISECONDS).build();
+        
         server.start();
     }
-
+    
+    /**
+     * reload ssl context.
+     */
+    public void reloadSslContext() {
+        if (optionalTlsProtocolNegotiator != null) {
+            try {
+                optionalTlsProtocolNegotiator.setSslContext(getSslContextBuilder());
+            } catch (Throwable throwable) {
+                Loggers.REMOTE.info("Nacos {} Rpc server reload ssl context fail at port {} and tls config:{}",
+                        this.getClass().getSimpleName(), getServicePort(),
+                        JacksonUtils.toJson(super.rpcServerTlsConfig));
+                throw throwable;
+            }
+        }
+    }
+    
     protected long getPermitKeepAliveTime() {
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_PERMIT_KEEP_ALIVE_TIME;
     }
-
+    
     protected long getKeepAliveTime() {
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_KEEP_ALIVE_TIME;
     }
-
+    
     protected long getKeepAliveTimeout() {
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_KEEP_ALIVE_TIMEOUT;
     }
-
+    
     protected int getMaxInboundMessageSize() {
         Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY,
                 Integer.class);
@@ -126,88 +143,90 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         }
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE;
     }
-
+    
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
-
+        
         // unary common call register.
         final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.UNARY)
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_SERVICE_NAME,
-                        GrpcServerConstants.REQUEST_METHOD_NAME))
+                .setType(MethodDescriptor.MethodType.UNARY).setFullMethodName(
+                        MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_SERVICE_NAME,
+                                GrpcServerConstants.REQUEST_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-
-        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls
-                .asyncUnaryCall((request, responseObserver) -> grpcCommonRequestAcceptor.request(request, responseObserver));
-
+        
+        final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall(
+                (request, responseObserver) -> grpcCommonRequestAcceptor.request(request, responseObserver));
+        
         final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(
-                        GrpcServerConstants.REQUEST_SERVICE_NAME)
-                .addMethod(unaryPayloadMethod, payloadHandler).build();
+                GrpcServerConstants.REQUEST_SERVICE_NAME).addMethod(unaryPayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
-
+        
         // bi stream register.
         final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
                 (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
-
+        
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
-                        .generateFullMethodName(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME,
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(
+                        MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME,
                                 GrpcServerConstants.REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-
-        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
-                .builder(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
+        
+        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition.builder(
+                GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
-
+        
     }
-
+    
     @Override
     public void shutdownServer() {
         if (server != null) {
             server.shutdownNow();
         }
     }
-
+    
     private SslContext getSslContextBuilder() {
         try {
-            if (StringUtils.isBlank(grpcServerConfig.getCertChainFile()) || StringUtils.isBlank(grpcServerConfig.getCertPrivateKey())) {
+            if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile()) || StringUtils.isBlank(
+                    rpcServerTlsConfig.getCertPrivateKey())) {
                 throw new IllegalArgumentException("Server certChainFile or certPrivateKey must be not null");
             }
-            InputStream certificateChainFile = getInputStream(grpcServerConfig.getCertChainFile(), "certChainFile");
-            InputStream privateKeyFile = getInputStream(grpcServerConfig.getCertPrivateKey(), "certPrivateKey");
-            SslContextBuilder sslClientContextBuilder = SslContextBuilder.forServer(certificateChainFile, privateKeyFile,
-                    grpcServerConfig.getCertPrivateKeyPassword());
-
-            if (StringUtils.isNotBlank(grpcServerConfig.getProtocols())) {
-                sslClientContextBuilder.protocols(grpcServerConfig.getProtocols().split(","));
+            InputStream certificateChainFile = getInputStream(rpcServerTlsConfig.getCertChainFile(), "certChainFile");
+            InputStream privateKeyFile = getInputStream(rpcServerTlsConfig.getCertPrivateKey(), "certPrivateKey");
+            SslContextBuilder sslClientContextBuilder = SslContextBuilder.forServer(certificateChainFile,
+                    privateKeyFile, rpcServerTlsConfig.getCertPrivateKeyPassword());
+            
+            if (StringUtils.isNotBlank(rpcServerTlsConfig.getProtocols())) {
+                sslClientContextBuilder.protocols(rpcServerTlsConfig.getProtocols().split(","));
             }
-
-            if (StringUtils.isNotBlank(grpcServerConfig.getCiphers())) {
-                sslClientContextBuilder.ciphers(Arrays.asList(grpcServerConfig.getCiphers().split(",")));
+            
+            if (StringUtils.isNotBlank(rpcServerTlsConfig.getCiphers())) {
+                sslClientContextBuilder.ciphers(Arrays.asList(rpcServerTlsConfig.getCiphers().split(",")));
             }
-            if (grpcServerConfig.getMutualAuthEnable()) {
+            if (rpcServerTlsConfig.getMutualAuthEnable()) {
                 // trust all certificate
-                if (grpcServerConfig.getTrustAll()) {
+                if (rpcServerTlsConfig.getTrustAll()) {
                     sslClientContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
                 } else {
-                    if (StringUtils.isBlank(grpcServerConfig.getTrustCollectionCertFile())) {
-                        throw new IllegalArgumentException("enable mutual auth,trustCollectionCertFile must be not null");
+                    if (StringUtils.isBlank(rpcServerTlsConfig.getTrustCollectionCertFile())) {
+                        throw new IllegalArgumentException(
+                                "enable mutual auth,trustCollectionCertFile must be not null");
                     }
-
-                    InputStream clientCert = getInputStream(grpcServerConfig.getTrustCollectionCertFile(), "trustCollectionCertFile");
+                    
+                    InputStream clientCert = getInputStream(rpcServerTlsConfig.getTrustCollectionCertFile(),
+                            "trustCollectionCertFile");
                     sslClientContextBuilder.trustManager(clientCert);
                 }
                 sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);
             }
             SslContextBuilder configure = GrpcSslContexts.configure(sslClientContextBuilder,
-                    TlsTypeResolve.getSslProvider(grpcServerConfig.getSslProvider()));
+                    TlsTypeResolve.getSslProvider(rpcServerTlsConfig.getSslProvider()));
             return configure.build();
         } catch (SSLException e) {
             throw new RuntimeException(e);
         }
     }
-
+    
     private InputStream getInputStream(String path, String config) {
         try {
             Resource resource = resourceLoader.getResource(path);
@@ -216,12 +235,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             throw new RuntimeException(config + " load fail", e);
         }
     }
-
+    
     /**
      * get rpc executor.
      *
      * @return executor.
      */
     public abstract ThreadPoolExecutor getRpcExecutor();
-
+    
 }
