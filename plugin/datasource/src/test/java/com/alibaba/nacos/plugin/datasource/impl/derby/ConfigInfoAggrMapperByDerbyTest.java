@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -45,17 +46,17 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String tenantId = "tenant-id";
         List<String> argList = CollectionUtils.list(dataId, groupId, tenantId);
         argList.addAll(datumList);
-    
+        
         MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumList);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter(FieldConstant.DATUM_ID, datumList);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
         MapperResult result = configInfoAggrMapperByDerby.batchRemoveAggr(context);
         String sql = result.getSql();
         List<Object> paramList = result.getParamList();
-    
+        
         Assert.assertEquals(sql, "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
                 + "AND datum_id IN (?, ?, ?, ?, ?)");
         Assert.assertEquals(paramList, argList);
@@ -69,18 +70,18 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String tenantId = "tenant-id";
         List<String> argList = CollectionUtils.list(dataId, groupId, tenantId);
         argList.addAll(datumIds);
-    
+        
         MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumIds);
-        context.putWhereParameter("isIn", true);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter(FieldConstant.DATUM_ID, datumIds);
+        context.putWhereParameter(FieldConstant.IS_IN, true);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByDerby.aggrConfigInfoCount(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
-    
+        
         Assert.assertEquals(sql,
                 "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
                         + "AND datum_id IN (?, ?, ?, ?, ?)");
@@ -92,11 +93,11 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String dataId = "data-id";
         String groupId = "group-id";
         String tenantId = "tenant-id";
-    
+        
         MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByDerby.findConfigInfoAggrIsOrdered(context);
         String sql = mapperResult.getSql();
@@ -114,13 +115,13 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String tenantId = "tenant-id";
         Integer startRow = 0;
         Integer pageSize = 5;
-    
+        
         MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
-        context.putWhereParameter("startRow", startRow);
-        context.putWhereParameter("pageSize", pageSize);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.setStartRow(startRow);
+        context.setPageSize(pageSize);
         
         MapperResult mapperResult = configInfoAggrMapperByDerby.findConfigInfoAggrByPageFetchRows(context);
         String sql = mapperResult.getSql();
@@ -133,8 +134,8 @@ public class ConfigInfoAggrMapperByDerbyTest {
     
     @Test
     public void testFindAllAggrGroupByDistinct() {
-        String sql = configInfoAggrMapperByDerby.findAllAggrGroupByDistinct();
-        Assert.assertEquals(sql, "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr");
+        MapperResult sql = configInfoAggrMapperByDerby.findAllAggrGroupByDistinct(null);
+        Assert.assertEquals(sql.getSql(), "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr");
     }
     
     @Test

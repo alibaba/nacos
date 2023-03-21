@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -46,18 +47,18 @@ public interface ConfigInfoBetaMapper extends Mapper {
     
         List<Object> paramList = new ArrayList<>();
         
-        paramList.add(context.getUpdateParameter("content"));
-        paramList.add(context.getUpdateParameter("md5"));
-        paramList.add(context.getUpdateParameter("beta_ips"));
-        paramList.add(context.getUpdateParameter("src_ip"));
-        paramList.add(context.getUpdateParameter("src_user"));
-        paramList.add(context.getUpdateParameter("gmt_modified"));
-        paramList.add(context.getUpdateParameter("app_name"));
+        paramList.add(context.getUpdateParameter(FieldConstant.CONTENT));
+        paramList.add(context.getUpdateParameter(FieldConstant.MD5));
+        paramList.add(context.getUpdateParameter(FieldConstant.BETA_IPS));
+        paramList.add(context.getUpdateParameter(FieldConstant.SRC_IP));
+        paramList.add(context.getUpdateParameter(FieldConstant.SRC_USER));
+        paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
+        paramList.add(context.getUpdateParameter(FieldConstant.APP_NAME));
     
-        paramList.add(context.getWhereParameter("data_id"));
-        paramList.add(context.getWhereParameter("group_id"));
-        paramList.add(context.getWhereParameter("tenant_id"));
-        paramList.add(context.getWhereParameter("md5"));
+        paramList.add(context.getWhereParameter(FieldConstant.DATA_ID));
+        paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
+        paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
+        paramList.add(context.getWhereParameter(FieldConstant.MD5));
         
         return new MapperResult(sql, paramList);
     }

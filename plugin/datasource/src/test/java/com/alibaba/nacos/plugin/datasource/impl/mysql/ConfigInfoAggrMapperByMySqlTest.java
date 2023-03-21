@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -46,15 +47,15 @@ public class ConfigInfoAggrMapperByMySqlTest {
         String dataId = "data-id";
         String groupId = "group-id";
         String tenantId = "tenant-id";
-    
+        
         List<String> argList = CollectionUtils.list(dataId, groupId, tenantId);
         argList.addAll(datumList);
-    
+        
         MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumList);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter(FieldConstant.DATUM_ID, datumList);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByMySql.batchRemoveAggr(context);
         String sql = mapperResult.getSql();
@@ -72,20 +73,20 @@ public class ConfigInfoAggrMapperByMySqlTest {
         String dataId = "data-id";
         String groupId = "group-id";
         String tenantId = "tenant-id";
-    
+        
         List<String> argList = CollectionUtils.list(dataId, groupId, tenantId);
         argList.addAll(datumIds);
-    
+        
         MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumIds);
-        context.putWhereParameter("isIn", true);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter(FieldConstant.DATUM_ID, datumIds);
+        context.putWhereParameter(FieldConstant.IS_IN, true);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         MapperResult mapperResult = configInfoAggrMapperByMySql.aggrConfigInfoCount(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
-    
+        
         Assert.assertEquals(sql,
                 "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
                         + "AND datum_id IN (?, ?, ?, ?, ?)");
@@ -99,14 +100,14 @@ public class ConfigInfoAggrMapperByMySqlTest {
         String tenantId = "tenant-id";
         
         MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
         MapperResult mapperResult = configInfoAggrMapperByMySql.findConfigInfoAggrIsOrdered(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
-    
+        
         Assert.assertEquals(sql, "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM "
                 + "config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY datum_id");
         Assert.assertEquals(paramList, Arrays.asList(dataId, groupId, tenantId));
@@ -121,11 +122,11 @@ public class ConfigInfoAggrMapperByMySqlTest {
         Integer pageSize = 5;
         
         MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", groupId);
-        context.putWhereParameter("tenant_id", tenantId);
-        context.putWhereParameter("startRow", startRow);
-        context.putWhereParameter("pageSize", pageSize);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.setStartRow(startRow);
+        context.setPageSize(pageSize);
         
         MapperResult mapperResult = configInfoAggrMapperByMySql.findConfigInfoAggrByPageFetchRows(context);
         String sql = mapperResult.getSql();
@@ -139,8 +140,9 @@ public class ConfigInfoAggrMapperByMySqlTest {
     
     @Test
     public void testFindAllAggrGroupByDistinct() {
-        String sql = configInfoAggrMapperByMySql.findAllAggrGroupByDistinct();
-        Assert.assertEquals(sql, "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr");
+        MapperResult mapperResult = configInfoAggrMapperByMySql.findAllAggrGroupByDistinct(null);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr");
     }
     
     @Test
