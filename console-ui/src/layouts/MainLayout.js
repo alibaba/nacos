@@ -104,10 +104,6 @@ class MainLayout extends React.Component {
                   </div>
                 ) : (
                   <>
-                    <h1 className="nav-title">
-                      {locale.nacosName}
-                      <span>{version}</span>
-                    </h1>
                     <Menu
                       defaultOpenKeys={this.defaultOpenKeys()}
                       className="next-nav next-normal next-active next-right next-no-arrow next-nav-embeddable"

@@ -86,23 +86,11 @@ class Login extends React.Component {
           style={{
             background: 'url(img/black_dot.png) repeat',
             backgroundSize: '14px 14px',
+            paddingTop: '50px'
           }}
         >
-          <div className="vertical-middle product-area">
-            <img className="product-logo" src="img/nacos.png" />
-            <p className="product-desc">{locale.productDesc}</p>
-          </div>
-          <div className="animation animation1" />
-          <div className="animation animation2" />
-          <div className="animation animation3" />
-          <div className="animation animation4" />
-          <div className="animation animation5" />
           <Card className="login-panel" contentHeight="auto">
             <div className="login-header">{locale.login}</div>
-            <div className="internal-sys-tip">
-              <div>{locale.internalSysTip1}</div>
-              <div>{locale.internalSysTip2}</div>
-            </div>
             <Form className="login-form" field={this.field}>
               <FormItem>
                 <Input

@@ -37,7 +37,7 @@ const I18N_CONF = {
     productDesc: '一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台',
   },
   MainLayout: {
-    nacosName: 'NACOS',
+    nacosName: 'NC 注册中心',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
