@@ -831,13 +831,6 @@
                 <version>${log4j.version}</version>
             </dependency>
             
-            <!-- HTTP client libs -->
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpasyncclient</artifactId>
-                <version>${httpasyncclient.version}</version>
-            </dependency>
-            
             <!-- JDBC libs -->
             <dependency>
                 <groupId>mysql</groupId>
