@@ -16,6 +16,7 @@
 
 import request from '../utils/request';
 import { GET_STATE } from '../constants';
+import { encryption } from '../utils/crypto';
 
 const initialState = {
   version: null,
@@ -27,7 +28,14 @@ const initialState = {
  * 用户登录
  * @param {*} param0
  */
-const login = user => request.post('v1/auth/users/login', user);
+const login = user => {
+  const encryptionUser = encryption({
+    data: user,
+    key: 'ncncncncncncncnc',
+    param: ['password'],
+  });
+  return request.post('v1/auth/users/login', encryptionUser);
+};
 
 const getState = () => dispatch =>
   request

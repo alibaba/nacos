@@ -17,6 +17,7 @@
 import { Message } from '@alifd/next';
 import request from '../utils/request';
 import { UPDATE_USER, SIGN_IN, USER_LIST, ROLE_LIST, PERMISSIONS_LIST } from '../constants';
+import { encryption } from '../utils/crypto';
 
 const initialState = {
   users: {
@@ -78,8 +79,15 @@ const deleteUser = username =>
  * 重置密码
  * @param {*} param0
  */
-const passwordReset = ([username, newPassword]) =>
-  request.put('v1/auth/users', { username, newPassword }).then(res => successMsg(res));
+const passwordReset = ([username, newPassword]) => {
+  let user = { username, newPassword };
+  const encryptionUser = encryption({
+    data: user,
+    key: 'ncncncncncncncnc',
+    param: ['newPassword'],
+  });
+  return request.put('v1/auth/users', encryptionUser).then(res => successMsg(res));
+};
 
 /**
  * 角色列表

@@ -35,6 +35,7 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.utils.ParamsEncryptUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -68,7 +71,9 @@ import java.util.List;
 @RestController("user")
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
-    
+
+    Logger log = LoggerFactory.getLogger(UserController.class);
+
     @Autowired
     private TokenManagerDelegate jwtTokenManager;
     
@@ -146,6 +151,8 @@ public class UserController {
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
             HttpServletResponse response, HttpServletRequest request) throws IOException {
+        newPassword = ParamsEncryptUtil.getInstance().decryptAES(newPassword);
+
         // admin or same user
         try {
             if (!hasPermission(username, request)) {
@@ -223,7 +230,12 @@ public class UserController {
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
             HttpServletRequest request) throws AccessException {
-        
+        try {
+            password = ParamsEncryptUtil.getInstance().decryptAES(password);
+        } catch (Exception e) {
+            log.error("Login failed username {} password {}", username, password);
+            throw e;
+        }
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             NacosUser user = iAuthenticationManager.authenticate(request);

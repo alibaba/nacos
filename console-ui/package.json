@@ -40,6 +40,7 @@
     "copy-webpack-plugin": "^5.1.1 ",
     "cross-env": "^6.0.3",
     "css-loader": "^3.4.0",
+    "crypto-js": "^3.1.9-1",
     "eslint": "^6.8.0",
     "eslint-config-ali": "^9.0.2",
     "eslint-config-prettier": "^6.8.0",

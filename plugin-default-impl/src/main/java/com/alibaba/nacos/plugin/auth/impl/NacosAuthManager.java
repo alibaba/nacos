@@ -27,6 +27,7 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import com.alibaba.nacos.plugin.auth.impl.utils.ParamsEncryptUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -106,6 +107,7 @@ public class NacosAuthManager {
         if (StringUtils.isBlank(bearerToken)) {
             String userName = request.getParameter(AuthConstants.PARAM_USERNAME);
             String password = request.getParameter(AuthConstants.PARAM_PASSWORD);
+            password = ParamsEncryptUtil.getInstance().decryptAES(password);
             bearerToken = resolveTokenFromUser(userName, password);
         }
         
@@ -121,6 +123,7 @@ public class NacosAuthManager {
         if (StringUtils.isBlank(bearerToken)) {
             String userName = (String) identityContext.getParameter(AuthConstants.PARAM_USERNAME);
             String password = (String) identityContext.getParameter(AuthConstants.PARAM_PASSWORD);
+            password = ParamsEncryptUtil.getInstance().decryptAES(password);
             bearerToken = resolveTokenFromUser(userName, password);
         }
         return bearerToken;
