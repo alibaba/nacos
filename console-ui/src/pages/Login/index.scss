@@ -37,11 +37,10 @@ $contentWidth: 1280px;
     position: relative;
     height: 100vh;
     .login-panel {
-      position: absolute;
-      right: 40px;
+      position: relative;
+      margin: 0px auto;
       width: 480px;
       height: 540px;
-      top: 90px;
       border: 0px;
       input,
       input::-webkit-input-placeholder {

@@ -39,7 +39,7 @@ const I18N_CONF = {
       'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
   },
   MainLayout: {
-    nacosName: 'NACOS',
+    nacosName: 'NC 注册中心',
     doesNotExist: 'The page you visit does not exist',
     configurationManagementVirtual: 'ConfigManagement',
     configurationManagement: 'Configurations',
