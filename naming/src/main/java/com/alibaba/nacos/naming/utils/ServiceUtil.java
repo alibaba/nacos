@@ -196,14 +196,14 @@ public final class ServiceUtil {
             filteredResult.setHosts(allInstances);
             
             // will re-compute healthCount
-            long newHealthyCount = healthyCount;
-            if (originalTotal != allInstances.size()) {
-                for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
-                    if (allInstance.isHealthy()) {
-                        newHealthyCount++;
-                    }
+            long newHealthyCount = 0L;
+            // if (originalTotal != allInstances.size()) {
+            for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
+                if (allInstance.isHealthy()) {
+                    newHealthyCount++;
                 }
             }
+            // }
             
             float threshold = serviceMetadata.getProtectThreshold();
             if (threshold < 0) {
