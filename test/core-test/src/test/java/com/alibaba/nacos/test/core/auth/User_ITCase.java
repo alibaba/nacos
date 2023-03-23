@@ -19,6 +19,7 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
+import com.alibaba.nacos.plugin.auth.impl.utils.ParamsEncryptUtil;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
@@ -46,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class User_ITCase extends HttpClient4Test {
 
     @LocalServerPort
@@ -93,7 +94,7 @@ public class User_ITCase extends HttpClient4Test {
     @Test
     public void login() {
 
-        ResponseEntity<String> response = login("nacos", "nacos");
+        ResponseEntity<String> response = login("nacos", ParamsEncryptUtil.getInstance().encrypAES("nacos"));
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
         Assert.assertTrue(json.has("accessToken"));
@@ -101,7 +102,7 @@ public class User_ITCase extends HttpClient4Test {
     }
 
     private ResponseEntity<String> login(String username,String password){
-         return request("/nacos/v1/auth/users/login",
+         return requestWithoutEscape("/nacos/v1/auth/users/login",
                 Params.newParams()
                         .appendParam("username", username)
                         .appendParam("password", password)
@@ -133,6 +134,7 @@ public class User_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", String.valueOf(Integer.MAX_VALUE))
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class);
 
@@ -155,11 +157,12 @@ public class User_ITCase extends HttpClient4Test {
         Assert.assertTrue(found);
 
         // Update a user:
-        response = request("/nacos/v1/auth/users",
+        response = requestWithoutEscape("/nacos/v1/auth/users",
             Params.newParams()
                 .appendParam("username", "username1")
-                .appendParam("newPassword", "password2")
+                .appendParam("newPassword", ParamsEncryptUtil.getInstance().encrypAES("password2"))
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class,
             HttpMethod.PUT);
@@ -172,6 +175,7 @@ public class User_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", String.valueOf(Integer.MAX_VALUE))
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class);
 
@@ -208,6 +212,7 @@ public class User_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", String.valueOf(Integer.MAX_VALUE))
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class);
 
@@ -258,19 +263,19 @@ public class User_ITCase extends HttpClient4Test {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // user login
-        response = login("username1", "password1");
+        response = login("username1", ParamsEncryptUtil.getInstance().encrypAES("password1"));
         String user1AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = login("username2", "password2");
+        response = login("username2", ParamsEncryptUtil.getInstance().encrypAES("password2"));
         String user2AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // update by admin
-        response = request("/nacos/v1/auth/users",
+        response = requestWithoutEscape("/nacos/v1/auth/users",
                 Params.newParams()
                         .appendParam("username", "username1")
-                        .appendParam("newPassword", "password3")
+                        .appendParam("newPassword", ParamsEncryptUtil.getInstance().encrypAES("password3"))
                         .appendParam("accessToken", accessToken)
                         .done(),
                 String.class,
@@ -278,10 +283,10 @@ public class User_ITCase extends HttpClient4Test {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // update by same user
-        response = request("/nacos/v1/auth/users",
+        response = requestWithoutEscape("/nacos/v1/auth/users",
                 Params.newParams()
                         .appendParam("username", "username1")
-                        .appendParam("newPassword", "password4")
+                        .appendParam("newPassword", ParamsEncryptUtil.getInstance().encrypAES("password4"))
                         .appendParam("accessToken", user1AccessToken)
                         .done(),
                 String.class,
@@ -289,10 +294,10 @@ public class User_ITCase extends HttpClient4Test {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         // update by another user
-        response = request("/nacos/v1/auth/users",
+        response = requestWithoutEscape("/nacos/v1/auth/users",
                 Params.newParams()
                         .appendParam("username", "username1")
-                        .appendParam("newPassword", "password5")
+                        .appendParam("newPassword", ParamsEncryptUtil.getInstance().encrypAES("password5"))
                         .appendParam("accessToken", user2AccessToken)
                         .done(),
                 String.class,

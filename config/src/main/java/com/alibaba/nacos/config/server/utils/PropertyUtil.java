@@ -101,7 +101,17 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      * Inline storage value = ${nacos.standalone}.
      */
     private static boolean embeddedStorage = EnvUtil.getStandaloneMode();
-    
+
+    private static String useExternalDBDriverClassName;
+
+    public static String getUseExternalDBDriverClassName() {
+        return useExternalDBDriverClassName;
+    }
+
+    public static void setUseExternalDBDriverClassName(String useExternalDBDriverClassName) {
+        PropertyUtil.useExternalDBDriverClassName = useExternalDBDriverClassName;
+    }
+
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
     }
@@ -282,9 +292,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
             // External data sources are used by default in cluster mode
             String platform = DatasourcePlatformUtil.getDatasourcePlatform("");
-            boolean useExternalStorage = !PropertiesConstant.EMPTY_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
-                    && !PropertiesConstant.DERBY.equalsIgnoreCase(platform);
-            setUseExternalDB(useExternalStorage);
+            setUseExternalDB(!"".equalsIgnoreCase(platform));
             
             // must initialize after setUseExternalDB
             // This value is true in stand-alone mode and false in cluster mode

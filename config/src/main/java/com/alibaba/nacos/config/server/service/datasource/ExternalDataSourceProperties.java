@@ -15,6 +15,7 @@ package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -39,7 +40,9 @@ public class ExternalDataSourceProperties {
     private static final String TEST_QUERY = "SELECT 1";
     
     private Integer num;
-    
+
+    private List<String> driverClassName = new ArrayList<>();
+
     private List<String> url = new ArrayList<>();
     
     private List<String> user = new ArrayList<>();
@@ -49,7 +52,11 @@ public class ExternalDataSourceProperties {
     public void setNum(Integer num) {
         this.num = num;
     }
-    
+
+    public void setDriverClassName(List<String> driverClassName) {
+        this.driverClassName = driverClassName;
+    }
+
     public void setUrl(List<String> url) {
         this.url = url;
     }
@@ -75,13 +82,13 @@ public class ExternalDataSourceProperties {
         Preconditions.checkArgument(Objects.nonNull(num), "db.num is null");
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(user), "db.user or db.user.[index] is null");
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(password), "db.password or db.password.[index] is null");
+        Preconditions.checkArgument(CollectionUtils.isNotEmpty(driverClassName), "db.driverClassName or db.driverClassName.[index] is null");
         for (int index = 0; index < num; index++) {
             int currentSize = index + 1;
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
-            if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
-                poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
-            }
+            poolProperties.setDriverClassName(getOrDefault(driverClassName, index, JDBC_DRIVER_NAME).trim());
+            PropertyUtil.setUseExternalDBDriverClassName(getOrDefault(driverClassName, index, JDBC_DRIVER_NAME));
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());

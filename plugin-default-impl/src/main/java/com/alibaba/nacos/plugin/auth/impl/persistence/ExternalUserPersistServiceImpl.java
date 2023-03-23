@@ -67,7 +67,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
         
         try {
-            jt.update(sql, username, password, true);
+            jt.update(sql, username, password, ExternalDBType.dbType() == ExternalDBType.DBType.DERBY ? true : 1);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;

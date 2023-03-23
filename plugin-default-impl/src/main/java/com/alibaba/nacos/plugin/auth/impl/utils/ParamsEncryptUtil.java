@@ -32,6 +32,7 @@ public class ParamsEncryptUtil {
 
   public String decryptAES(String value) {
     try {
+      value = value.replaceAll(" ", "+");
       IvParameterSpec iv = new IvParameterSpec(encodeKey.getBytes(StandardCharsets.UTF_8));
       SecretKeySpec skeySpec = new SecretKeySpec(encodeKey.getBytes(StandardCharsets.UTF_8), "AES");
       Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
