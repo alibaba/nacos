@@ -150,8 +150,7 @@ public class UserController {
     @PutMapping
     @Secured(resource = AuthConstants.UPDATE_PASSWORD_ENTRY_POINT, action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword,
-            HttpServletResponse response, HttpServletRequest request) throws IOException {
-        newPassword = ParamsEncryptUtil.getInstance().decryptAES(newPassword);
+            HttpServletResponse response, HttpServletRequest request) throws IOException {newPassword = ParamsEncryptUtil.getInstance().decryptAES(newPassword);
 
         // admin or same user
         try {

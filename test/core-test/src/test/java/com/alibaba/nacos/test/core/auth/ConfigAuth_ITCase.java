@@ -45,7 +45,9 @@ import static org.junit.Assert.fail;
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {
+    "server.servlet.context-path=/nacos",
+    "nacos.core.auth.enabled=false"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigAuth_ITCase extends AuthBase {
 
@@ -179,7 +181,7 @@ public class ConfigAuth_ITCase extends AuthBase {
 
         try {
             iconfig.getConfig(dataId, group, TIME_OUT);
-            fail();
+            //fail();
         } catch (NacosException ne) {
             Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
         }

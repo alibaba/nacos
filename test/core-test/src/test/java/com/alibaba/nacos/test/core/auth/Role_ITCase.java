@@ -19,6 +19,7 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.auth.impl.utils.ParamsEncryptUtil;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -101,10 +102,10 @@ public class Role_ITCase extends HttpClient4Test {
     @Test
     public void login() {
 
-        ResponseEntity<String> response = request("/nacos/v1/auth/users/login",
+        ResponseEntity<String> response = requestWithoutEscape("/nacos/v1/auth/users/login",
             Params.newParams()
                 .appendParam("username", "nacos")
-                .appendParam("password", "nacos")
+                .appendParam("password", ParamsEncryptUtil.getInstance().encrypAES("nacos"))
                 .done(),
             String.class,
             HttpMethod.POST);
@@ -151,6 +152,7 @@ public class Role_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", "10")
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class,
             HttpMethod.GET);
@@ -189,6 +191,7 @@ public class Role_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", "10")
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class,
             HttpMethod.GET);
@@ -234,6 +237,7 @@ public class Role_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", "10")
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class,
             HttpMethod.GET);
@@ -263,6 +267,7 @@ public class Role_ITCase extends HttpClient4Test {
                 .appendParam("role", "role1")
                 .appendParam("username", "username2")
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class,
             HttpMethod.DELETE);
@@ -276,6 +281,7 @@ public class Role_ITCase extends HttpClient4Test {
                 .appendParam("pageNo", "1")
                 .appendParam("pageSize", "10")
                 .appendParam("accessToken", accessToken)
+                .appendParam("search","accurate")
                 .done(),
             String.class,
             HttpMethod.GET);

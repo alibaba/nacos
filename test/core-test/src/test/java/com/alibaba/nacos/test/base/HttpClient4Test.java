@@ -64,4 +64,18 @@ public class HttpClient4Test {
         return this.restTemplate.exchange(
             builder.toUriString(), httpMethod, entity, clazz);
     }
+
+    protected <T> ResponseEntity<T> requestWithoutEscape(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
+
+        String url = this.base.toString() + path + "?" + params.toSingleValueMap().entrySet().stream()
+            .map(entry -> entry.getKey() + "=" + entry.getValue())
+            .reduce((s1, s2) -> s1 + "&" + s2)
+            .orElse("");
+        return this.restTemplate.exchange(
+            url, httpMethod, entity, clazz);
+    }
 }
