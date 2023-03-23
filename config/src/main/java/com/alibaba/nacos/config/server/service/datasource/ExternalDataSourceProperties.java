@@ -15,6 +15,7 @@ package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.PropertiesEncrypt;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.collections.CollectionUtils;
@@ -25,6 +26,7 @@ import org.springframework.core.env.Environment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
 
@@ -66,7 +68,8 @@ public class ExternalDataSourceProperties {
     }
     
     public void setPassword(List<String> password) {
-        this.password = password;
+        PropertiesEncrypt encryptor = PropertiesEncrypt.builder().build();
+        this.password = password.stream().map(s -> encryptor.decrypt(s)).collect(Collectors.toList());
     }
     
     /**
