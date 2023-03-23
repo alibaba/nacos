@@ -18,6 +18,7 @@ package com.alibaba.nacos;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -26,7 +27,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *
  * @author nacos
  */
-@SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
+@SpringBootApplication(scanBasePackages = "com.alibaba.nacos", exclude = FlywayAutoConfiguration.class)
 @ServletComponentScan
 @EnableScheduling
 public class Nacos {

@@ -1,2 +1,3 @@
 org.springframework.context.ApplicationContextInitializer=\
+  com.alibaba.nacos.config.server.flyway.FlywayInitializer,\
   com.alibaba.nacos.config.server.utils.PropertyUtil
