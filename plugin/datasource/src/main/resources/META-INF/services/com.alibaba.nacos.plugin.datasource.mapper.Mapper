@@ -43,3 +43,13 @@ com.alibaba.nacos.plugin.datasource.impl.postgresql.HistoryConfigInfoMapperByPos
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantInfoMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.TenantCapacityMapperByPostgresql
 com.alibaba.nacos.plugin.datasource.impl.postgresql.GroupCapacityMapperByPostgresql
+
+com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoAggrMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoBetaMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoTagMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.ConfigInfoTagsRelationMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.HistoryConfigInfoMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.TenantInfoMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.TenantCapacityMapperByOracle
+com.alibaba.nacos.plugin.datasource.impl.oracle.GroupCapacityMapperByOracle

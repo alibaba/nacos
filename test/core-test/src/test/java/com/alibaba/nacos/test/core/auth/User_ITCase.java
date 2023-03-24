@@ -26,7 +26,9 @@ import com.alibaba.nacos.test.base.Params;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,11 +57,24 @@ public class User_ITCase extends HttpClient4Test {
 
     private String accessToken;
 
+    private String nacosPassword = "nacos";
+
+    public String getNacosPassword() {
+        return nacosPassword;
+    }
+
     @Before
     public void init() throws Exception {
         TimeUnit.SECONDS.sleep(5L);
         String url = String.format("http://localhost:%d/", port);
         this.base = new URL(url);
+    }
+
+    @AfterClass
+    public static void afterClass() throws Exception {
+        String userHome = System.getProperty("user.home");
+        String nacosDataDir = userHome + "/nacos/data";
+        FileUtils.deleteDirectory(FileUtils.getFile(nacosDataDir));
     }
 
     @After
@@ -94,7 +109,7 @@ public class User_ITCase extends HttpClient4Test {
     @Test
     public void login() {
 
-        ResponseEntity<String> response = login("nacos", ParamsEncryptUtil.getInstance().encrypAES("nacos"));
+        ResponseEntity<String> response = login("nacos", ParamsEncryptUtil.getInstance().encrypAES(this.getNacosPassword()));
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
         Assert.assertTrue(json.has("accessToken"));

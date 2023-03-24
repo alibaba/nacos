@@ -15,6 +15,7 @@ package com.alibaba.nacos.config.server.service.datasource;
 
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.ExternalDBType;
 import com.alibaba.nacos.config.server.utils.PropertiesEncrypt;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.zaxxer.hikari.HikariDataSource;
@@ -40,6 +41,8 @@ public class ExternalDataSourceProperties {
     private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
     
     private static final String TEST_QUERY = "SELECT 1";
+
+    private static final String TEST_QUERY_ORACLE = "SELECT 1 FROM DUAL";
     
     private Integer num;
 
@@ -96,7 +99,10 @@ public class ExternalDataSourceProperties {
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());
             poolProperties.setPassword(getOrDefault(password, index, password.get(0)).trim());
             HikariDataSource ds = poolProperties.getDataSource();
-            if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
+
+            if (ExternalDBType.dbType() == ExternalDBType.DBType.ORACLE) {
+                ds.setConnectionTestQuery(TEST_QUERY_ORACLE);
+            } else if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
                 ds.setConnectionTestQuery(TEST_QUERY);
             }
             dataSources.add(ds);

@@ -586,11 +586,13 @@
     <logger name="com.alibaba.nacos.address.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="nacos-address"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="com.alibaba.nacos.cmdb.main" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="cmdb-main"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
     
     <logger name="com.alibaba.nacos.core.remote" additivity="false">
@@ -667,20 +669,24 @@
     <logger name="com.alibaba.nacos.config.fatal" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="fatalFile"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
     <logger name="com.alibaba.nacos.config.monitorLog" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="memoryFile"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="com.alibaba.nacos.config.clientLog" additivity="false">
         <level value="info"/>
         <appender-ref ref="clientLog"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="com.alibaba.nacos.config.notifyLog" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="notifyLog"/>
+        <appender-ref ref="CONSOLE"/>
     </logger>
 
     <logger name="com.alibaba.nacos.config.traceLog" additivity="false">

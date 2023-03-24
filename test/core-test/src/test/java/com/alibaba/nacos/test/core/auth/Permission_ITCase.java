@@ -52,7 +52,13 @@ public class Permission_ITCase extends HttpClient4Test {
     private int port;
     
     private String accessToken;
-    
+
+    private String nacosPassword = "nacos";
+
+    public String getNacosPassword() {
+        return nacosPassword;
+    }
+
     @Before
     public void init() throws Exception {
         TimeUnit.SECONDS.sleep(5L);
@@ -98,7 +104,7 @@ public class Permission_ITCase extends HttpClient4Test {
     public void login() {
         
         ResponseEntity<String> response = requestWithoutEscape("/nacos/v1/auth/users/login",
-                Params.newParams().appendParam("username", "nacos").appendParam("password", ParamsEncryptUtil.getInstance().encrypAES("nacos")).done(),
+                Params.newParams().appendParam("username", "nacos").appendParam("password", ParamsEncryptUtil.getInstance().encrypAES(this.getNacosPassword())).done(),
                 String.class, HttpMethod.POST);
         
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
