@@ -16,27 +16,25 @@
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.Nacos;
-import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * @author nkorange
  * @since 1.2.0
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
     "server.servlet.context-path=/nacos",
     "db.num=1",
-    "spring.sql.init.platform=postgresql",
-    "db.driverClassName[0]=org.postgresql.Driver",
-    "db.url[0]=jdbc:postgresql://localhost:5432/nc_config",
-    "db.user[0]=nc_config_user",
-    "db.password[0]=nc_config_pass"},
+    "spring.sql.init.platform=oracle",
+    "db.driverClassName[0]=oracle.jdbc.driver.OracleDriver",
+    "db.url[0]=jdbc:oracle:thin:@10.19.88.60:1521:xe",
+    "db.user[0]=system",
+    "db.password[0]=oracle",
+    "nacos.core.auth.enabled=false"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class Role_ITCase_With_PostgressSQL extends Role_ITCase {
-  @Override
-  public String getNacosPassword() {
-    return "123456";
-  }
+public class NamingAuth_ITCase_With_Oracle extends NamingAuth_ITCase {
+    @Override
+    public String getNacosPassword() {
+        return "nacos";
+    }
 }

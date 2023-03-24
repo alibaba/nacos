@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
+import com.alibaba.nacos.config.server.utils.ExternalDBType;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
@@ -61,8 +62,14 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
-        
+
+        String sqlFetchRows;
+        if (ExternalDBType.dbType() == ExternalDBType.DBType.ORACLE) {
+            sqlFetchRows = "SELECT role,\"resource\",action FROM permissions WHERE ";
+        } else {
+            sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
+        }
+
         String where = " role= ? ";
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(role)) {
@@ -99,9 +106,12 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      */
     @Override
     public void addPermission(String role, String resource, String action) {
-        
-        String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
-        
+        String sql;
+        if (ExternalDBType.dbType() == ExternalDBType.DBType.ORACLE) {
+            sql = "INSERT INTO permissions (role, \"resource\", action) VALUES (?, ?, ?)";
+        } else {
+            sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
+        }
         try {
             jt.update(sql, role, resource, action);
         } catch (CannotGetJdbcConnectionException e) {
@@ -119,8 +129,12 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
      */
     @Override
     public void deletePermission(String role, String resource, String action) {
-        
-        String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
+        String sql;
+        if (ExternalDBType.dbType() == ExternalDBType.DBType.ORACLE) {
+            sql = "DELETE FROM permissions WHERE role=? AND \"resource\"=? AND action=?";
+        } else {
+            sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
+        }
         try {
             jt.update(sql, role, resource, action);
         } catch (CannotGetJdbcConnectionException e) {
@@ -134,8 +148,12 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
 
         String sqlCountRows = "SELECT count(*) FROM permissions ";
-        String sqlFetchRows = "SELECT role,resource,action FROM permissions ";
-
+        String sqlFetchRows;
+        if (ExternalDBType.dbType() == ExternalDBType.DBType.ORACLE) {
+            sqlFetchRows = "SELECT role,\"resource\",action FROM permissions ";
+        } else {
+            sqlFetchRows = "SELECT role,resource,action FROM permissions ";
+        }
         StringBuilder where = new StringBuilder(" WHERE 1=1");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(role)) {

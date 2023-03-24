@@ -52,5 +52,8 @@ import java.util.concurrent.TimeUnit;
     "db.password.[0]=nc_config_pass"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class Role_ITCase_With_MySQL extends Role_ITCase {
-
+  @Override
+  public String getNacosPassword() {
+    return "123456";
+  }
 }

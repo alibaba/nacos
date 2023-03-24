@@ -28,9 +28,11 @@ import org.springframework.test.context.junit4.SpringRunner;
     "db.driverClassName[0]=org.postgresql.Driver",
     "db.url[0]=jdbc:postgresql://localhost:5432/nc_config",
     "db.user[0]=nc_config_user",
-    "db.password[0]=nc_config_pass",
-    "nacos.core.auth.enabled=true"},
+    "db.password[0]=nc_config_pass"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class User_ITCase_With_PostgressSQL extends User_ITCase {
-
+  @Override
+  public String getNacosPassword() {
+    return "123456";
+  }
 }

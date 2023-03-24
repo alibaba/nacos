@@ -36,5 +36,8 @@ import org.springframework.test.context.junit4.SpringRunner;
     "db.password[0]=nc_config_pass"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class Permission_ITCase_With_PostgressSQL extends Permission_ITCase {
-
+  @Override
+  public String getNacosPassword() {
+    return "123456";
+  }
 }

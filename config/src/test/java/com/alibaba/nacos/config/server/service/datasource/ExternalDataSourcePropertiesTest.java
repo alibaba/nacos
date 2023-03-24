@@ -28,7 +28,7 @@ public class ExternalDataSourcePropertiesTest {
     @SuppressWarnings("checkstyle:linelength")
     public static final String JDBC_URL = "jdbc:mysql://127.0.0.1:3306/nacos_devtest?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC";
     
-    public static final String PASSWORD = "nacos";
+    public static final String PASSWORD = "123456";
     
     public static final String USERNAME = "nacos_devtest";
     

@@ -28,9 +28,12 @@ import org.springframework.test.context.junit4.SpringRunner;
     "db.driverClassName[0]=com.mysql.cj.jdbc.Driver",
     "db.url.[0]=jdbc:mysql://localhost:3316/nc_config?characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8&allowMultiQueries=true&allowPublicKeyRetrieval=true",
     "db.user.[0]=nc_config_user",
-    "db.password.[0]=nc_config_pass",
-    "nacos.core.auth.enabled=true"},
+    "db.password.[0]=nc_config_pass"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class User_ITCase_With_MySQL extends User_ITCase {
 
+  @Override
+  public String getNacosPassword() {
+    return "123456";
+  }
 }

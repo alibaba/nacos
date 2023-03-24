@@ -62,7 +62,13 @@ public class AuthBase extends HttpClient4Test {
     protected Properties properties;
     
     protected String namespace1 = "namespace1";
-    
+
+    private String nacosPassword = "nacos";
+
+    public String getNacosPassword() {
+        return nacosPassword;
+    }
+
     public String login(String username, String password) {
         ResponseEntity<String> response = requestWithoutEscape("/nacos/v1/auth/users/login",
                 Params.newParams().appendParam("username", username).appendParam("password", ParamsEncryptUtil.getInstance().encrypAES(password)).done(),
@@ -75,7 +81,7 @@ public class AuthBase extends HttpClient4Test {
     }
     
     public String login() {
-        return login("nacos", "nacos");
+        return login("nacos", this.getNacosPassword());
     }
     
     protected void init(int port) throws Exception {

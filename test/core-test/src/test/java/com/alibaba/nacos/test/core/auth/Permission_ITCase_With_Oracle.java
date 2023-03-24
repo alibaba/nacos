@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.Nacos;
@@ -28,15 +29,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest(classes = Nacos.class, properties = {
     "server.servlet.context-path=/nacos",
     "db.num=1",
-    "spring.sql.init.platform=postgresql",
-    "db.driverClassName[0]=org.postgresql.Driver",
-    "db.url[0]=jdbc:postgresql://localhost:5432/nc_config",
-    "db.user[0]=nc_config_user",
-    "db.password[0]=nc_config_pass"},
+    "spring.sql.init.platform=oracle",
+    "db.driverClassName[0]=oracle.jdbc.driver.OracleDriver",
+    "db.url[0]=jdbc:oracle:thin:@10.19.88.60:1521:xe",
+    "db.user[0]=system",
+    "db.password[0]=oracle"},
     webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class Role_ITCase_With_PostgressSQL extends Role_ITCase {
-  @Override
-  public String getNacosPassword() {
-    return "123456";
-  }
+public class Permission_ITCase_With_Oracle extends Permission_ITCase {
+
 }
