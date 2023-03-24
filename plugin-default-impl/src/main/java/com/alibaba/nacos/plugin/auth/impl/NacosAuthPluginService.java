@@ -107,6 +107,11 @@ public class NacosAuthPluginService implements AuthPluginService {
         return AuthConstants.AUTH_PLUGIN_TYPE;
     }
     
+    @Override
+    public boolean isLoginEnabled() {
+        return true;
+    }
+    
     protected void checkNacosAuthManager() {
         if (null == authenticationManager) {
             authenticationManager = ApplicationUtils.getBean(DefaultAuthenticationManager.class);
