@@ -34,7 +34,7 @@ public class PathEncoderManagerTest extends TestCase {
         Field targetEncoder = PathEncoderManager.class.getDeclaredField("targetEncoder");
         targetEncoder.setAccessible(true);
         // remain old path encoder
-        Object origin = targetEncoder.get(instance);
+        final Object origin = targetEncoder.get(instance);
         targetEncoder.set(instance, null);
         // try to encode, non windows
         String case1 = "aa||a";
