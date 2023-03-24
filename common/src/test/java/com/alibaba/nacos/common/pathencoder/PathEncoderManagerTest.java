@@ -33,6 +33,8 @@ public class PathEncoderManagerTest extends TestCase {
         // remove windows impl
         Field targetEncoder = PathEncoderManager.class.getDeclaredField("targetEncoder");
         targetEncoder.setAccessible(true);
+        // remain old path encoder
+        Object origin = targetEncoder.get(instance);
         targetEncoder.set(instance, null);
         // try to encode, non windows
         String case1 = "aa||a";
@@ -43,6 +45,8 @@ public class PathEncoderManagerTest extends TestCase {
         targetEncoder.set(instance, new WindowsEncoder());
         Assert.assertEquals(PathEncoderManager.getInstance().encode(case1), case2);
         Assert.assertEquals(PathEncoderManager.getInstance().decode(case2), case1);
+        // set origin
+        targetEncoder.set(instance, origin);
     }
 
 }
