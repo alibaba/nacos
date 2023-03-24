@@ -28,17 +28,27 @@ import java.util.Collection;
  */
 public class PathEncoderManager {
 
-    private static volatile PathEncoder targetEncoder = null;
+    /**
+     * singleton.
+     */
+    private static final PathEncoderManager INSTANCE = new PathEncoderManager();
 
-    static {
+    /**
+     * encoder.
+     */
+    private PathEncoder targetEncoder = null;
+
+    private PathEncoderManager() {
         // load path encoder
         Collection<PathEncoder> load = NacosServiceLoader.load(PathEncoder.class);
-        String currentOs = System.getProperty("os.name").toLowerCase();
-        for (PathEncoder pathEncoder : load) {
-            // match first
-            if (currentOs.contains(pathEncoder.name())) {
-                targetEncoder = pathEncoder;
-                break;
+        if (!load.isEmpty()) {
+            String currentOs = System.getProperty("os.name").toLowerCase();
+            for (PathEncoder pathEncoder : load) {
+                // match first
+                if (currentOs.contains(pathEncoder.name())) {
+                    targetEncoder = pathEncoder;
+                    break;
+                }
             }
         }
     }
@@ -50,7 +60,7 @@ public class PathEncoderManager {
      * @param charset charset of origin path
      * @return encoded path
      */
-    public static String encode(String path, String charset) {
+    public String encode(String path, String charset) {
         if (path == null || charset == null) {
             return path;
         }
@@ -66,7 +76,7 @@ public class PathEncoderManager {
      * @param path origin path
      * @return encoded path
      */
-    public static String encode(String path) {
+    public String encode(String path) {
         return encode(path, Charset.defaultCharset().name());
     }
 
@@ -77,7 +87,7 @@ public class PathEncoderManager {
      * @param charset charset of encoded path
      * @return origin path
      */
-    public static String decode(String path, String charset) {
+    public String decode(String path, String charset) {
         if (path == null || charset == null) {
             return path;
         }
@@ -93,8 +103,17 @@ public class PathEncoderManager {
      * @param path encoded path
      * @return origin path
      */
-    public static String decode(String path) {
+    public String decode(String path) {
         return decode(path, Charset.defaultCharset().name());
+    }
+
+    /**
+     * get singleton.
+     *
+     * @return singleton.
+     */
+    public static PathEncoderManager getInstance() {
+        return INSTANCE;
     }
 
 }

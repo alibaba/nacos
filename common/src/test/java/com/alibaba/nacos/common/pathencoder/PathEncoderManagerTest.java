@@ -29,20 +29,20 @@ public class PathEncoderManagerTest extends TestCase {
      */
     public void test() throws Exception {
         // load static
-        Class.forName(PathEncoderManager.class.getName());
+        PathEncoderManager instance = PathEncoderManager.getInstance();
         // remove windows impl
         Field targetEncoder = PathEncoderManager.class.getDeclaredField("targetEncoder");
         targetEncoder.setAccessible(true);
-        targetEncoder.set(PathEncoderManager.class, null);
+        targetEncoder.set(instance, null);
         // try to encode, non windows
         String case1 = "aa||a";
-        Assert.assertEquals(PathEncoderManager.encode(case1), case1);
+        Assert.assertEquals(PathEncoderManager.getInstance().encode(case1), case1);
         String case2 = "aa%A9%%A9%a";
-        Assert.assertEquals(PathEncoderManager.decode(case2), case2);
+        Assert.assertEquals(PathEncoderManager.getInstance().decode(case2), case2);
         // try to encode if in windows
-        targetEncoder.set(PathEncoderManager.class, new WindowsEncoder());
-        Assert.assertEquals(PathEncoderManager.encode(case1), case2);
-        Assert.assertEquals(PathEncoderManager.decode(case2), case1);
+        targetEncoder.set(instance, new WindowsEncoder());
+        Assert.assertEquals(PathEncoderManager.getInstance().encode(case1), case2);
+        Assert.assertEquals(PathEncoderManager.getInstance().decode(case2), case1);
     }
 
 }
