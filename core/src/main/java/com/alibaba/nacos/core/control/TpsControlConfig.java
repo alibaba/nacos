@@ -30,7 +30,7 @@ public class TpsControlConfig {
      * tps control is enabled.
      * @return true/false.
      */
-    public static final boolean isTpsControlEnabled() {
+    public static boolean isTpsControlEnabled() {
         return true;
     }
 }
