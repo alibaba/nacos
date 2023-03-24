@@ -43,9 +43,11 @@ public class ServerStateController {
     @GetMapping("/state")
     public ResponseEntity<Map<String, String>> serverState() {
         Map<String, String> serverState = new HashMap<>(4);
+        //        for (ModuleState each : ModuleStateHolder.getInstance().getAllModuleStates()) {
+        //            each.getStates().forEach((s, o) -> serverState.put(s, o.toString()));
+        //        }
         serverState.put("standalone_mode",
                 EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
-        
         serverState.put("function_mode", EnvUtil.getFunctionMode());
         serverState.put("version", VersionUtils.version);
         
