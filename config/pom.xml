@@ -136,8 +136,8 @@
         </dependency>
 
         <dependency>
+            <groupId>io.github.coolbeevip</groupId>
             <artifactId>flyway-core</artifactId>
-            <groupId>org.flywaydb</groupId>
             <version>9.15.2</version>
         </dependency>
         <dependency>
