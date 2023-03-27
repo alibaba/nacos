@@ -84,9 +84,9 @@ class Login extends React.Component {
         <section
           className="top-section"
           style={{
-            background: 'url(img/black_dot.png) repeat',
             backgroundSize: '14px 14px',
-            paddingTop: '50px'
+            paddingTop: '50px',
+            backgroundColor: '#252a2f'
           }}
         >
           <Card className="login-panel" contentHeight="auto">
