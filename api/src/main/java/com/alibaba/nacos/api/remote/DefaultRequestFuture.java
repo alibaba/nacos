@@ -167,7 +167,8 @@ public class DefaultRequestFuture implements RequestFuture {
             if (timeoutInnerTrigger != null) {
                 timeoutInnerTrigger.triggerOnTimeout();
             }
-            throw new TimeoutException("request timeout after " + timeout + " milliseconds, requestId=" + requestId);
+            throw new TimeoutException(
+                "request timeout after " + timeout + " milliseconds, requestId=" + requestId + ", connectionId=" + connectionId);
         }
     }
     
@@ -191,7 +192,7 @@ public class DefaultRequestFuture implements RequestFuture {
         @Override
         public void run() {
             setFailResult(new TimeoutException(
-                    "Timeout After " + requestCallBack.getTimeout() + " milliseconds,requestId =" + requestId));
+                    "Timeout After " + requestCallBack.getTimeout() + " milliseconds, requestId=" + requestId + ", connectionId=" + connectionId));
             if (timeoutInnerTrigger != null) {
                 timeoutInnerTrigger.triggerOnTimeout();
             }
