@@ -1,0 +1,3 @@
+CREATE OR REPLACE VIEW dual AS
+SELECT NULL::"unknown"
+WHERE 1 = 1;
