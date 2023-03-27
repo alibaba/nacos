@@ -29,6 +29,7 @@ import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.*;
@@ -113,7 +114,6 @@ public class DistroFilter implements Filter {
             }
 
             final String targetServer = distroMapper.mapSrv(distroTag);
-
             List<String> headerList = new ArrayList<>(16);
             Enumeration<String> headers = req.getHeaderNames();
             while (headers.hasMoreElements()) {
@@ -125,32 +125,19 @@ public class DistroFilter implements Filter {
             final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
 
-            final AsyncContext asyncContext = servletRequest.startAsync();
-            asyncContext.setTimeout(PROXY_READ_TIMEOUT);
-            final String uri = urlString;
-            HttpClient.asyncHttpRequest(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body, new Callback<String>() {
-                @Override
-                public void onReceive(RestResult<String> result) {
-                    String data = result.ok() ? result.getData() : result.getMessage();
-                    try {
-                        WebUtils.response(resp, data, result.getCode());
-                    } catch (Exception ignore) {
-                        Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + targetServer + uri);
-                    }
-                    asyncContext.complete();
+            if (!EnvUtil.isAsyncDistroForward()) {
+                RestResult<String> result = HttpClient
+                        .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
+                                PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), req.getMethod());
+                String data = result.ok() ? result.getData() : result.getMessage();
+                try {
+                    WebUtils.response(resp, data, result.getCode());
+                } catch (Exception ignore) {
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
                 }
-
-                @Override
-                public void onError(Throwable e) {
-                    DistroFilter.this.onError(resp, e);
-                    asyncContext.complete();
-                }
-
-                @Override
-                public void onCancel() {
-
-                }
-            }, req.getMethod());
+            } else {
+                asyncForward(req, resp, urlString, targetServer, headerList, paramsValue, body);
+            }
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
         } catch (NoSuchMethodException e) {
@@ -159,6 +146,35 @@ public class DistroFilter implements Filter {
         } catch (Exception e) {
             onError(resp, e);
         }
+    }
+
+    private void asyncForward(HttpServletRequest req, HttpServletResponse resp,
+                              String urlString, String targetServer, List<String> headerList, Map<String, String> paramsValue, String body) throws Exception {
+        final AsyncContext asyncContext = req.startAsync();
+        asyncContext.setTimeout(PROXY_READ_TIMEOUT);
+        HttpClient.asyncHttpRequest(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body, new Callback<String>() {
+            @Override
+            public void onReceive(RestResult<String> result) {
+                String data = result.ok() ? result.getData() : result.getMessage();
+                try {
+                    WebUtils.response(resp, data, result.getCode());
+                } catch (Exception ignore) {
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + targetServer + urlString);
+                }
+                asyncContext.complete();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                DistroFilter.this.onError(resp, e);
+                asyncContext.complete();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+        }, req.getMethod());
     }
 
     private void onError(HttpServletResponse response, Throwable e) {
