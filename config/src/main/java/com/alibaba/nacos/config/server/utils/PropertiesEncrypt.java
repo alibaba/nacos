@@ -19,7 +19,11 @@ public class PropertiesEncrypt {
   }
 
   public String decrypt(String value) {
-    return value.startsWith(this.prefix) && value.endsWith(this.suffix) ? this.encryptor.decrypt(this.unwrapEncryptedValue(value)) : value;
+    if (value != null) {
+      return value.startsWith(this.prefix) && value.endsWith(this.suffix) ? this.encryptor.decrypt(this.unwrapEncryptedValue(value)) : value;
+    } else {
+      return null;
+    }
   }
 
   private String unwrapEncryptedValue(String value) {

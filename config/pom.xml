@@ -141,6 +141,11 @@
             <version>9.15.2</version>
         </dependency>
         <dependency>
+            <groupId>io.github.coolbeevip</groupId>
+            <artifactId>flyway-mysql</artifactId>
+            <version>9.15.2</version>
+        </dependency>
+        <dependency>
             <groupId>com.github.ulisesbocchio</groupId>
             <artifactId>jasypt-spring-boot-starter</artifactId>
             <version>1.16</version>

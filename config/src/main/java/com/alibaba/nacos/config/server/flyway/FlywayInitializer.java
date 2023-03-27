@@ -21,7 +21,13 @@ public class FlywayInitializer implements ApplicationContextInitializer<Configur
       log.info("Flyway Initializer");
       String url = configurableApplicationContext.getEnvironment().getProperty("db.url[0]");
       String user = configurableApplicationContext.getEnvironment().getProperty("db.user[0]");
+      if (user == null || user.trim().length() == 0) {
+        user = configurableApplicationContext.getEnvironment().getProperty("db.user");
+      }
       String password = configurableApplicationContext.getEnvironment().getProperty("db.password[0]");
+      if (password == null || password.trim().length() == 0) {
+        password = configurableApplicationContext.getEnvironment().getProperty("db.password");
+      }
 
       // 如果是密文，则返回明文
       password = tryDecryptPassword(configurableApplicationContext.getEnvironment().getProperty("jasypt.encryptor.password"), password);
@@ -33,7 +39,6 @@ public class FlywayInitializer implements ApplicationContextInitializer<Configur
       Flyway flyway = Flyway.configure().locations(locations).table(table).baselineOnMigrate(true)
           .cleanDisabled(true).baselineVersion(baselineVersion).dataSource(url, user, password).load();
       flyway.migrate();
-      log.info("Flyway migrate success");
     } else {
       log.info("Ignore Flyway initializer, No configuration spring.flyway.enabled=true");
     }
