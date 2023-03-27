@@ -138,12 +138,12 @@
         <dependency>
             <groupId>io.github.coolbeevip</groupId>
             <artifactId>flyway-core</artifactId>
-            <version>9.15.2</version>
+            <version>9.15.2.1</version>
         </dependency>
         <dependency>
             <groupId>io.github.coolbeevip</groupId>
             <artifactId>flyway-mysql</artifactId>
-            <version>9.15.2</version>
+            <version>9.15.2.1</version>
         </dependency>
         <dependency>
             <groupId>com.github.ulisesbocchio</groupId>
