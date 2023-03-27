@@ -152,7 +152,7 @@ public class UserController {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
                 return null;
             }
-        } catch (HttpSessionRequiredException e) {
+        } catch (HttpSessionRequiredException | AccessException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "session expired!");
             return null;
         }
@@ -167,7 +167,7 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException {
+    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException,AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
@@ -175,7 +175,7 @@ public class UserController {
                 .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT);
         NacosUser user;
         if (identityContext == null
-                || (user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY)) == null) {
+                || (user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY)) == null || (user = iAuthenticationManager.authenticate(request)) == null) {
             throw new HttpSessionRequiredException("session expired!");
         }
         // admin
