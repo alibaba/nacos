@@ -70,6 +70,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>nacos-version.txt</include>
+                    <include>META-INF/services/*</include>
                 </includes>
             </resource>
         </resources>
