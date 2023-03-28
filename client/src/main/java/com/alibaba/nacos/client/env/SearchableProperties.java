@@ -115,8 +115,6 @@ class SearchableProperties implements NacosClientProperties {
                 return SYSTEM_ENV_PROPERTY_SOURCE.getProperty(key);
             case PROPERTIES:
                 return this.propertiesPropertySource.getProperty(key);
-            //            case DEFAULT_SETTING:
-            //                return DEFAULT_SETTING_PROPERTY_SOURCE.getProperty(key);
             default:
                 return this.getProperty(key);
         }
