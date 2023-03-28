@@ -32,9 +32,5 @@ public enum SourceType {
     /**
      * get value from system environment.
      */
-    ENV,
-    /**
-     * get value from default setting.
-     */
-    DEFAULT_SETTING
+    ENV
 }

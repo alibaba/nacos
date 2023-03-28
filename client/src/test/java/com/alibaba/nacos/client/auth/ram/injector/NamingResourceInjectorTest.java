@@ -49,6 +49,7 @@ public class NamingResourceInjectorTest {
         ramContext.setAccessKey(PropertyKeyConst.ACCESS_KEY);
         ramContext.setSecretKey(PropertyKeyConst.SECRET_KEY);
         stsCredential = new StsCredential();
+        StsConfig.getInstance().setRamRoleName(null);
     }
     
     @After
