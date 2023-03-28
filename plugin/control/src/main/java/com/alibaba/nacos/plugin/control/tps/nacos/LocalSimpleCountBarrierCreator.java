@@ -32,7 +32,7 @@ public class LocalSimpleCountBarrierCreator implements RuleBarrierCreator {
     
     public LocalSimpleCountBarrierCreator() {
     }
-
+    
     public static final LocalSimpleCountBarrierCreator getInstance() {
         return INSTANCE;
     }
