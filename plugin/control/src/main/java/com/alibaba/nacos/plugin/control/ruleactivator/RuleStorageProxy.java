@@ -74,8 +74,8 @@ public class RuleStorageProxy {
     public RuleStorage getExternalStorage() {
         return externalRuleStorage;
     }
-    
-    public static RuleStorageProxy getInstance() {
+
+    public static final RuleStorageProxy getInstance() {
         return INSTANCE;
     }
 }
