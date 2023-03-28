@@ -103,13 +103,11 @@ public class EnvUtil {
     private static final String NACOS_TEMP_DIR_1 = "data";
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
-
+    
     private static final String NACOS_CUSTOM_ENVIRONMENT_ENABLED = "nacos.custom.environment.enabled";
-
+    
     private static final String NACOS_CUSTOM_CONFIG_NAME = "customFirstNacosConfig";
-
-    private static final String NACOS_ASYNC_DISTRO_FORWARD_NAME = "nacos.async.distro.forward";
-
+    
     @JustForTest
     private static String confPath = "";
     
@@ -117,7 +115,7 @@ public class EnvUtil {
     private static String nacosHomePath = null;
     
     private static ConfigurableEnvironment environment;
-
+    
     /**
      * customEnvironment.
      */
@@ -129,12 +127,13 @@ public class EnvUtil {
             for (String key : propertyKeys) {
                 sourcePropertyMap.put(key, getProperty(key, Object.class));
             }
-            Map<String, Object> targetMap = CustomEnvironmentPluginManager.getInstance().getCustomValues(sourcePropertyMap);
+            Map<String, Object> targetMap = CustomEnvironmentPluginManager.getInstance()
+                    .getCustomValues(sourcePropertyMap);
             MutablePropertySources propertySources = environment.getPropertySources();
             propertySources.addFirst(new MapPropertySource(NACOS_CUSTOM_CONFIG_NAME, targetMap));
         }
     }
-
+    
     public static ConfigurableEnvironment getEnvironment() {
         return environment;
     }
@@ -304,8 +303,8 @@ public class EnvUtil {
     }
     
     public static float getMem() {
-        return (float) (1 - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager
-                .getTotalPhysicalMem());
+        return (float) (1
+                - OperatingSystemBeanManager.getFreePhysicalMem() / OperatingSystemBeanManager.getTotalPhysicalMem());
     }
     
     public static String getConfPath() {
@@ -482,9 +481,5 @@ public class EnvUtil {
                 getProperty(Constants.AVAILABLE_PROCESSORS_BASIC, int.class, ThreadUtils.getSuitableThreadCount(1))
                         * scale;
         return result > 1 ? (int) result : 1;
-    }
-
-    public static boolean isAsyncDistroForward() {
-        return getProperty(NACOS_ASYNC_DISTRO_FORWARD_NAME, Boolean.class, false);
     }
 }
