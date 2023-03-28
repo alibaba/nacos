@@ -105,7 +105,6 @@ public class InitUtils {
      */
     public static String initEndpoint(final NacosClientProperties properties) {
         if (properties == null) {
-            
             return "";
         }
         // Whether to enable domain name resolution rules
