@@ -130,7 +130,7 @@ public class Chooser<K, T> {
          * Refresh.
          */
         public void refresh() {
-            Double originWeightSum = (double) 0;
+            double originWeightSum = 0;
             int size = 0;
             for (Pair<T> item : itemsWithWeight) {
                 
