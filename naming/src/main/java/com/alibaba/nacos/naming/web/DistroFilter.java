@@ -77,6 +77,10 @@ public class DistroFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
+        if (distroMapper.nonUseDistro()) {
+            filterChain.doFilter(servletRequest, servletResponse);
+            return;
+        }
         ReuseHttpServletRequest req = new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
         

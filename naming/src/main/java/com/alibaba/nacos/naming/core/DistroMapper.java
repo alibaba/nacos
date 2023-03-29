@@ -70,22 +70,34 @@ public class DistroMapper extends MemberChangeListener {
     }
     
     /**
+     * Judge whether to use distro.
+     *
+     * @return false if use distro, otherwise true
+     */
+    public boolean nonUseDistro() {
+        if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
+            return true;
+        }
+        
+        List<String> servers = healthyList;
+        if (CollectionUtils.isEmpty(servers)) {
+            // means distro config is not ready yet
+            return true;
+        }
+        return false;
+    }
+    
+    /**
      * Judge whether current server is responsible for input tag.
      *
      * @param responsibleTag responsible tag, serviceName for v1 and ip:port for v2
      * @return true if input service is response, otherwise false
      */
     public boolean responsible(String responsibleTag) {
-        final List<String> servers = healthyList;
-        
-        if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
+        if (nonUseDistro()) {
             return true;
         }
-        
-        if (CollectionUtils.isEmpty(servers)) {
-            // means distro config is not ready yet
-            return false;
-        }
+        final List<String> servers = healthyList;
         
         String localAddress = EnvUtil.getLocalAddress();
         int index = servers.indexOf(localAddress);
@@ -105,11 +117,10 @@ public class DistroMapper extends MemberChangeListener {
      * @return server which response input service
      */
     public String mapSrv(String responsibleTag) {
-        final List<String> servers = healthyList;
-        
-        if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
+        if (nonUseDistro()) {
             return EnvUtil.getLocalAddress();
         }
+        final List<String> servers = healthyList;
         
         try {
             int index = distroHash(responsibleTag) % servers.size();
