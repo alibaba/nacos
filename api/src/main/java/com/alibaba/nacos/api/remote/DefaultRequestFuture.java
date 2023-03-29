@@ -204,7 +204,7 @@ public class DefaultRequestFuture implements RequestFuture {
         /**
          * triggered on timeout .
          */
-        public void triggerOnTimeout();
+        void triggerOnTimeout();
         
     }
     

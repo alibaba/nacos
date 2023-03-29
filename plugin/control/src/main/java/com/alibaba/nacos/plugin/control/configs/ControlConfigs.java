@@ -27,7 +27,7 @@ import java.util.Collection;
  */
 public class ControlConfigs {
     
-    private static ControlConfigs instance = null;
+    private static volatile ControlConfigs instance = null;
     
     public static ControlConfigs getInstance() {
         if (instance == null) {
