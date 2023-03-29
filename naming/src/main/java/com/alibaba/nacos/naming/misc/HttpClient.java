@@ -206,7 +206,18 @@ public class HttpClient {
                 throw new RuntimeException("not supported method:" + method);
         }
     }
-
+    
+    /**
+     * Do http request by async with request body.
+     *
+     * @param url         request url
+     * @param headers     request headers
+     * @param paramValues request params
+     * @param body        request body
+     * @param callback    async callback func
+     * @param method      http method
+     * @throws Exception exception when request
+     */
     public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, String body,
                                         Callback<String> callback, String method) throws Exception {
 
