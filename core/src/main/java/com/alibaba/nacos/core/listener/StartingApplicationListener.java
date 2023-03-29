@@ -56,7 +56,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(StartingApplicationListener.class);
     
-    private static final String MODE_PROPERTY_KEY_STAND_MODE = "nacos.mode";
+    public static final String MODE_PROPERTY_KEY_STAND_MODE = "nacos.mode";
     
     private static final String MODE_PROPERTY_KEY_FUNCTION_MODE = "nacos.function.mode";
     
