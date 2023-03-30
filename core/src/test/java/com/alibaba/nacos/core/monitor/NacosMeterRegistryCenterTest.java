@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.monitor;
 
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,13 +41,22 @@ public class NacosMeterRegistryCenterTest {
         when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
     }
     
+    @AfterClass
+    public static void tearDown() {
+        ApplicationUtils.injectContext(null);
+    }
+    
     @Test
     public void testGetMeterRegistry() {
         Assert.assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY));
-        Assert.assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CONFIG_STABLE_REGISTRY));
-        Assert.assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY));
-        Assert.assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY));
-        Assert.assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY));
+        Assert.assertNotNull(
+                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CONFIG_STABLE_REGISTRY));
+        Assert.assertNotNull(
+                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY));
+        Assert.assertNotNull(
+                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY));
+        Assert.assertNotNull(
+                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY));
     }
     
 }
