@@ -18,6 +18,7 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -51,6 +52,8 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import org.junit.After;
 import org.junit.Assert;
@@ -516,5 +519,19 @@ public class NamingGrpcClientProxyTest {
         }
         
         Assert.assertEquals(newServer, rpc.getCurrentServer().getServerIp());
+    }
+
+    @Test
+    public void testConfigAppNameLabels() throws Exception {
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties, holder);
+        Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
+        rpcClientField.setAccessible(true);
+        RpcClient rpcClient = (RpcClient) rpcClientField.get(client);
+        Field clientConfig = GrpcClient.class.getDeclaredField("clientConfig");
+        clientConfig.setAccessible(true);
+        GrpcClientConfig config = (GrpcClientConfig)clientConfig.get(rpcClient);
+        String appName =  config.labels().get(Constants.APPNAME);
+        Assert.assertNotNull(appName);
     }
 }
