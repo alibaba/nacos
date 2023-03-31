@@ -71,8 +71,4 @@ public class NacosApiException extends NacosException {
         }
         return Constants.NULL;
     }
-    
-    public void setErrAbstract(String errAbstract) {
-        this.errAbstract = errAbstract;
-    }
 }
