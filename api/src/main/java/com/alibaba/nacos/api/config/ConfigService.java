@@ -150,6 +150,7 @@ public interface ConfigService {
      * It is recommended to use {@link com.alibaba.nacos.api.config.filter.AbstractConfigFilter} to expand the filter.
      *
      * @param configFilter filter
+     * @since 2.2.1
      */
     void addConfigFilter(IConfigFilter configFilter);
     
