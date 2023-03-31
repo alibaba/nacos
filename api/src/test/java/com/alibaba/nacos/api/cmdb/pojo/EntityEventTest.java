@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.selector;
+package com.alibaba.nacos.api.cmdb.pojo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ExpressionSelectorTest {
+public class EntityEventTest {
     
     ObjectMapper mapper = new ObjectMapper();
     
@@ -35,24 +34,27 @@ public class ExpressionSelectorTest {
     public void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.registerSubtypes(new NamedType(ExpressionSelector.class, SelectorType.label.name()));
     }
     
     @Test
     public void testSerialization() throws JsonProcessingException {
-        ExpressionSelector selector = new ExpressionSelector();
-        selector.setExpression("test expression");
-        String actual = mapper.writeValueAsString(selector);
-        assertTrue(actual.contains("\"type\":\"" + SelectorType.label.name() + "\""));
-        assertTrue(actual.contains("\"expression\":\"test expression\""));
+        EntityEvent entity = new EntityEvent();
+        entity.setEntityName("test-entity");
+        entity.setEntityType("CMDB");
+        entity.setType(EntityEventType.ENTITY_ADD_OR_UPDATE);
+        String actual = mapper.writeValueAsString(entity);
+        System.out.println(actual);
+        assertTrue(actual.contains("\"entityName\":\"test-entity\""));
+        assertTrue(actual.contains("\"entityType\":\"CMDB\""));
+        assertTrue(actual.contains("\"type\":\"ENTITY_ADD_OR_UPDATE\""));
     }
     
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        String json = "{\"type\":\"label\",\"expression\":\"test expression\"}";
-        AbstractSelector actual = mapper.readValue(json, AbstractSelector.class);
-        assertEquals(SelectorType.label.name(), actual.getType());
-        ExpressionSelector selector = (ExpressionSelector) actual;
-        assertEquals("test expression", selector.getExpression());
+        String json = "{\"type\":\"ENTITY_REMOVE\",\"entityName\":\"test-entity\",\"entityType\":\"CMDB\"}";
+        EntityEvent entity = mapper.readValue(json, EntityEvent.class);
+        assertEquals("test-entity", entity.getEntityName());
+        assertEquals("CMDB", entity.getEntityType());
+        assertEquals(EntityEventType.ENTITY_REMOVE, entity.getType());
     }
 }

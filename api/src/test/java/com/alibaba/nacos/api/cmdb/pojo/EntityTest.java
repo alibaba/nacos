@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.selector;
+package com.alibaba.nacos.api.cmdb.pojo;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.NamedType;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ExpressionSelectorTest {
+public class EntityTest {
     
     ObjectMapper mapper = new ObjectMapper();
     
@@ -35,24 +36,28 @@ public class ExpressionSelectorTest {
     public void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.registerSubtypes(new NamedType(ExpressionSelector.class, SelectorType.label.name()));
     }
     
     @Test
     public void testSerialization() throws JsonProcessingException {
-        ExpressionSelector selector = new ExpressionSelector();
-        selector.setExpression("test expression");
-        String actual = mapper.writeValueAsString(selector);
-        assertTrue(actual.contains("\"type\":\"" + SelectorType.label.name() + "\""));
-        assertTrue(actual.contains("\"expression\":\"test expression\""));
+        Entity entity = new Entity();
+        entity.setName("test-entity");
+        entity.setType(PreservedEntityTypes.ip.name());
+        entity.setLabels(Collections.singletonMap("test-label-key", "test-label-value"));
+        String actual = mapper.writeValueAsString(entity);
+        assertTrue(actual.contains("\"type\":\"ip\""));
+        assertTrue(actual.contains("\"name\":\"test-entity\""));
+        assertTrue(actual.contains("\"labels\":{\"test-label-key\":\"test-label-value\"}"));
     }
     
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        String json = "{\"type\":\"label\",\"expression\":\"test expression\"}";
-        AbstractSelector actual = mapper.readValue(json, AbstractSelector.class);
-        assertEquals(SelectorType.label.name(), actual.getType());
-        ExpressionSelector selector = (ExpressionSelector) actual;
-        assertEquals("test expression", selector.getExpression());
+        String json = "{\"type\":\"service\",\"name\":\"test-entity\",\"labels\":{\"test-label-key\":\"test-label-value\"}}";
+        Entity entity = mapper.readValue(json, Entity.class);
+        assertEquals("test-entity", entity.getName());
+        assertEquals(PreservedEntityTypes.service.name(), entity.getType());
+        assertEquals(1, entity.getLabels().size());
+        assertTrue(entity.getLabels().containsKey("test-label-key"));
+        assertEquals("test-label-value", entity.getLabels().get("test-label-key"));
     }
 }

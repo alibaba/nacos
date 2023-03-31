@@ -42,7 +42,6 @@ public class NoneSelectorTest {
     public void testSerialization() throws JsonProcessingException {
         NoneSelector selector = new NoneSelector();
         String actual = mapper.writeValueAsString(selector);
-        System.out.println(actual);
         assertTrue(actual.contains("\"type\":\"" + SelectorType.none.name() + "\""));
     }
     
