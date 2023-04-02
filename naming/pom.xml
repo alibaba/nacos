@@ -45,6 +45,11 @@
         </dependency>
         
         <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-auth</artifactId>
+        </dependency>
+        
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot</artifactId>
         </dependency>

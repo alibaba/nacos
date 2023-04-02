@@ -16,16 +16,20 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Naming spring configuration.
  *
  * @author nkorange
  */
-@Configuration
+@Component
 public class NamingConfig {
     
     private static final String UTL_PATTERNS = "/v1/ns/*";
@@ -37,6 +41,14 @@ public class NamingConfig {
     private static final String TRAFFIC_REVISE_FILTER = "trafficReviseFilter";
     
     private static final String CLIENT_ATTRIBUTES_FILTER = "clientAttributes_filter";
+    
+    @Autowired
+    private ControllerMethodsCache methodsCache;
+    
+    @PostConstruct
+    public void init() {
+        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
+    }
     
     @Bean
     public FilterRegistrationBean distroFilterRegistration() {
@@ -78,22 +90,18 @@ public class NamingConfig {
         return registration;
     }
     
-    @Bean
     public DistroFilter distroFilter() {
         return new DistroFilter();
     }
     
-    @Bean
     public TrafficReviseFilter trafficReviseFilter() {
         return new TrafficReviseFilter();
     }
     
-    @Bean
     public ServiceNameFilter serviceNameFilter() {
         return new ServiceNameFilter();
     }
     
-    @Bean
     public ClientAttributesFilter clientAttributesFilter() {
         return new ClientAttributesFilter();
     }
