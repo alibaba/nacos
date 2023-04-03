@@ -53,7 +53,6 @@ import Welcome from './pages/Welcome/Welcome';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
-import { getState } from './reducers/base';
 
 import './index.scss';
 import PropTypes from 'prop-types';
@@ -96,13 +95,11 @@ const MENU = [
   { path: '/permissionsManagement', component: PermissionsManagement },
 ];
 
-@connect(state => ({ ...state.locale, ...state.base }), { changeLanguage, getState })
+@connect(state => ({ ...state.locale }), { changeLanguage })
 class App extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     changeLanguage: PropTypes.func,
-    getState: PropTypes.func,
-    loginPageEnabled: PropTypes.string,
   };
 
   constructor(props) {
@@ -115,20 +112,15 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.props.getState();
     const language = localStorage.getItem(LANGUAGE_KEY);
     this.props.changeLanguage(language);
   }
 
   get router() {
-    const { loginPageEnabled } = this.props;
     return (
       <HashRouter>
         <Switch>
-          {loginPageEnabled && loginPageEnabled === 'false' ? null : (
-            <Route path="/login" component={Login} />
-          )}
-          {/* <Route path="/login" component={Login} /> */}
+          <Route path="/login" component={Login} />
           <Layout>
             {MENU.map(item => (
               <Route key={item.path} {...item} />
@@ -140,13 +132,13 @@ class App extends React.Component {
   }
 
   render() {
-    const { locale, loginPageEnabled } = this.props;
+    const { locale } = this.props;
     return (
       <Loading
         className="nacos-loading"
         shape="flower"
         tip="loading..."
-        visible={!loginPageEnabled}
+        visible={false}
         fullScreen
         {...this.state.nacosLoading}
       >

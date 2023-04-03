@@ -18,15 +18,15 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Icon, Menu, Message } from '@alifd/next';
+import { ConfigProvider, Icon, Menu } from '@alifd/next';
 import Header from './Header';
-import { getState, getNotice } from '../reducers/base';
+import { getState } from '../reducers/base';
 import getMenuData from './menu';
 
 const { SubMenu, Item } = Menu;
 
 @withRouter
-@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice })
+@connect(state => ({ ...state.locale, ...state.base }), { getState })
 @ConfigProvider.config
 class MainLayout extends React.Component {
   static displayName = 'MainLayout';
@@ -38,15 +38,11 @@ class MainLayout extends React.Component {
     version: PropTypes.any,
     getState: PropTypes.func,
     functionMode: PropTypes.string,
-    authEnabled: PropTypes.string,
     children: PropTypes.object,
-    getNotice: PropTypes.func,
-    notice: PropTypes.string,
   };
 
   componentDidMount() {
     this.props.getState();
-    this.props.getNotice();
   }
 
   goBack() {
@@ -87,7 +83,7 @@ class MainLayout extends React.Component {
   }
 
   render() {
-    const { locale = {}, version, functionMode, authEnabled } = this.props;
+    const { locale = {}, version, functionMode } = this.props;
     const MenuData = getMenuData(functionMode);
     return (
       <section
@@ -150,12 +146,7 @@ class MainLayout extends React.Component {
                 )}
               </div>
             </div>
-            <div className="right-panel next-shell-sub-main">
-              {authEnabled === 'false' ? (
-                <Message type="notice">{this.props.notice}</Message>
-              ) : null}
-              {this.props.children}
-            </div>
+            <div className="right-panel next-shell-sub-main">{this.props.children}</div>
           </div>
         </section>
       </section>

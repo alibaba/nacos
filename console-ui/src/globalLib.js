@@ -17,7 +17,6 @@
 import projectConfig from './config';
 import $ from 'jquery';
 import { Message } from '@alifd/next';
-import { LOGINPAGE_ENABLED } from './constants';
 
 function goLogin() {
   const url = window.location.href;
@@ -494,23 +493,17 @@ const request = (function(_global) {
 
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
-
+    let token = {};
+    try {
+      token = JSON.parse(localStorage.token);
+    } catch (e) {
+      console.log('Token Error', localStorage.token, e);
+      goLogin();
+    }
+    const { accessToken = '' } = token;
     const [url, paramsStr] = config.url.split('?');
     const params = paramsStr ? paramsStr.split('&') : [];
-
-    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
-
-    if (_LOGINPAGE_ENABLED !== 'false') {
-      let token = {};
-      try {
-        token = JSON.parse(localStorage.token);
-      } catch (e) {
-        console.log('Token Error', localStorage.token, e);
-        goLogin();
-      }
-      const { accessToken = '' } = token;
-      params.push(`accessToken=${accessToken}`);
-    }
+    params.push(`accessToken=${accessToken}`);
 
     return $.ajax(
       Object.assign({}, config, {
