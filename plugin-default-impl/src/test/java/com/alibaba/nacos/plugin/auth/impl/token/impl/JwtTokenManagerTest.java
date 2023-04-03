@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.jwt.NacosJwtParser;
@@ -24,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.core.Authentication;
@@ -32,10 +34,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class JwtTokenManagerTest {
     
     private JwtTokenManager jwtTokenManager;
+    
+    @Mock
+    private AuthConfigs authConfigs;
     
     @Before
     public void setUp() {
@@ -47,8 +54,7 @@ public class JwtTokenManagerTest {
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         
         EnvUtil.setEnvironment(mockEnvironment);
-        
-        jwtTokenManager = new JwtTokenManager();
+        jwtTokenManager = new JwtTokenManager(authConfigs);
     }
     
     @Test
@@ -70,7 +76,7 @@ public class JwtTokenManagerTest {
         
         EnvUtil.setEnvironment(mockEnvironment);
         
-        JwtTokenManager jwtTokenManager = new JwtTokenManager();
+        JwtTokenManager jwtTokenManager = new JwtTokenManager(authConfigs);
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.assertNotNull(nacosToken);
         jwtTokenManager.validateToken(nacosToken);
@@ -85,6 +91,7 @@ public class JwtTokenManagerTest {
     
     @Test
     public void testInvalidSecretKey() {
+        when(authConfigs.isAuthEnabled()).thenReturn(true);
         Assert.assertThrows(IllegalArgumentException.class, () -> createToken("0123456789ABCDEF0123456789ABCDE"));
     }
     
@@ -109,7 +116,7 @@ public class JwtTokenManagerTest {
         
         EnvUtil.setEnvironment(mockEnvironment);
         
-        JwtTokenManager jwtTokenManager = new JwtTokenManager();
+        JwtTokenManager jwtTokenManager = new JwtTokenManager(authConfigs);
         String nacosToken = jwtTokenManager.createToken("nacos");
         Assert.assertNotNull(nacosToken);
         System.out.println("oldToken: " + nacosToken);
