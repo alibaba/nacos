@@ -20,8 +20,6 @@ import com.alibaba.nacos.core.config.AbstractDynamicConfig;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
-import static com.alibaba.nacos.naming.constants.Constants.NACOS_ASYNC_DISTRO_FORWARD_NAME;
-
 /**
  * Naming client config.
  *
@@ -34,8 +32,6 @@ public class ClientConfig extends AbstractDynamicConfig {
     private static final ClientConfig INSTANCE = new ClientConfig();
     
     private long clientExpiredTime = ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME;
-    
-    private boolean asyncDistroForward = false;
     
     private ClientConfig() {
         super(NAMING_CLIENT);
@@ -54,15 +50,10 @@ public class ClientConfig extends AbstractDynamicConfig {
         this.clientExpiredTime = clientExpiredTime;
     }
     
-    public boolean isAsyncDistroForward() {
-        return asyncDistroForward;
-    }
-    
     @Override
     protected void getConfigFromEnv() {
         clientExpiredTime = EnvUtil.getProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, Long.class,
                 ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
-        asyncDistroForward = EnvUtil.getProperty(NACOS_ASYNC_DISTRO_FORWARD_NAME, Boolean.class, false);
     }
     
     @Override

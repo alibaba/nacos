@@ -44,6 +44,8 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     private long loadDataTimeoutMillis = DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS;
     
+    private boolean asyncDistroForward = DistroConstants.DEFAULT_ASYNC_DISTRO_FORWARD_VALUE;
+    
     private DistroConfig() {
         super(DISTRO);
         resetConfig();
@@ -65,6 +67,9 @@ public class DistroConfig extends AbstractDynamicConfig {
                 DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS);
         loadDataTimeoutMillis = EnvUtil.getProperty(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS, Long.class,
                 DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS);
+        asyncDistroForward = EnvUtil.getProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, Boolean.class,
+                DistroConstants.DEFAULT_ASYNC_DISTRO_FORWARD_VALUE);
+        
     }
     
     public static DistroConfig getInstance() {
@@ -125,6 +130,10 @@ public class DistroConfig extends AbstractDynamicConfig {
     
     public void setLoadDataTimeoutMillis(long loadDataTimeoutMillis) {
         this.loadDataTimeoutMillis = loadDataTimeoutMillis;
+    }
+    
+    public boolean isAsyncDistroForward() {
+        return asyncDistroForward;
     }
     
     @Override
