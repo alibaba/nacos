@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -131,7 +131,7 @@ public class DistroFilter implements Filter {
             final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
             
-            if (!GlobalConfig.isAsyncDistroForward()) {
+            if (!ClientConfig.getInstance().isAsyncDistroForward()) {
                 syncForward(req, resp, urlString, targetServer, headerList, paramsValue, body);
             } else {
                 asyncForward(req, resp, urlString, targetServer, headerList, paramsValue, body);
