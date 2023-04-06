@@ -75,4 +75,13 @@ public interface AuthPluginService {
      */
     String getAuthServiceName();
     
+    /**
+     * Is the plugin enable login.
+     *
+     * @return {@code true} if plugin need login, otherwise {@code false}
+     * @since 2.2.2
+     */
+    default boolean isLoginEnabled() {
+        return false;
+    }
 }

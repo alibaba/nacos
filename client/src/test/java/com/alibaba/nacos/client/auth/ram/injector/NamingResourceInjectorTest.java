@@ -142,6 +142,7 @@ public class NamingResourceInjectorTest {
     
     private void clearForSts() throws NoSuchFieldException, IllegalAccessException {
         StsConfig.getInstance().setSecurityCredentialsUrl(null);
+        StsConfig.getInstance().setSecurityCredentials(null);
         Field field = StsCredentialHolder.class.getDeclaredField("stsCredential");
         field.setAccessible(true);
         field.set(StsCredentialHolder.getInstance(), null);
