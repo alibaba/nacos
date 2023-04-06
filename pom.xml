@@ -353,6 +353,7 @@
                         <exclude>**/any.proto</exclude>
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
                         <exclude>.flattened-pom.xml</exclude>
+                        <exclude>**/announcement.conf</exclude>
                     </excludes>
                 </configuration>
                 <executions>
