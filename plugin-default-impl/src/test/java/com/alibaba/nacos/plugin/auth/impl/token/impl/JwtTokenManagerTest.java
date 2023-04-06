@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -46,6 +47,7 @@ public class JwtTokenManagerTest {
     
     @Before
     public void setUp() {
+        when(authConfigs.isAuthEnabled()).thenReturn(true);
         MockEnvironment mockEnvironment = new MockEnvironment();
         mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
                 "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
@@ -91,7 +93,6 @@ public class JwtTokenManagerTest {
     
     @Test
     public void testInvalidSecretKey() {
-        when(authConfigs.isAuthEnabled()).thenReturn(true);
         Assert.assertThrows(IllegalArgumentException.class, () -> createToken("0123456789ABCDEF0123456789ABCDE"));
     }
     
@@ -103,6 +104,13 @@ public class JwtTokenManagerTest {
     @Test
     public void testGetExpiredTimeInSeconds() throws AccessException {
         Assert.assertTrue(jwtTokenManager.getExpiredTimeInSeconds(jwtTokenManager.createToken("nacos")) > 0);
+    }
+    
+    @Test
+    public void testCreateTokenWhenDisableAuth() {
+        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        jwtTokenManager = new JwtTokenManager(authConfigs);
+        assertEquals("", jwtTokenManager.createToken("nacos"));
     }
     
     @Test
