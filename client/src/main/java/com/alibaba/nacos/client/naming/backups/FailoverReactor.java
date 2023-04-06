@@ -156,7 +156,7 @@ public class FailoverReactor implements Closeable {
                 
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
-                    String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
+                    String failover = ConcurrentDiskUtil.getFileContent(switchFile.getPath(),
                             Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         String[] lines = failover.split(DiskCache.getLineSeparator());
