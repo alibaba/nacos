@@ -43,6 +43,9 @@ public class ModuleStateHolder {
     private ModuleStateHolder() {
         this.moduleStates = new HashMap<>();
         for (ModuleStateBuilder each : NacosServiceLoader.load(ModuleStateBuilder.class)) {
+            if (each.isIgnore()) {
+                continue;
+            }
             try {
                 ModuleState moduleState = each.build();
                 moduleStates.put(moduleState.getModuleName(), moduleState);

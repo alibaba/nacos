@@ -29,4 +29,13 @@ public interface ModuleStateBuilder {
      * @return ModuleState
      */
     ModuleState build();
+    
+    /**
+     * Whether module is ignored, default return false.
+     *
+     * @return boolean
+     */
+    default boolean isIgnore() {
+        return false;
+    }
 }

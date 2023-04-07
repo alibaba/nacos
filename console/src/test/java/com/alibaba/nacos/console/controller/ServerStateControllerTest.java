@@ -63,7 +63,7 @@ public class ServerStateControllerTest {
         Assert.assertEquals(200, response.getStatus());
         ObjectNode responseContent = JacksonUtils.toObj(response.getContentAsByteArray(), ObjectNode.class);
         Assert.assertEquals(EnvUtil.STANDALONE_MODE_CLUSTER,
-                responseContent.get(Constants.STANDALONE_MODE_STATE).asText());
+                responseContent.get(Constants.STARTUP_MODE_STATE).asText());
         Assert.assertEquals("null", responseContent.get(Constants.FUNCTION_MODE_STATE).asText());
         Assert.assertEquals(VersionUtils.version, responseContent.get(Constants.NACOS_VERSION).asText());
     }
