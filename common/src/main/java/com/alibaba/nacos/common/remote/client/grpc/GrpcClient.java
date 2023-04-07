@@ -382,7 +382,10 @@ public abstract class GrpcClient extends RpcClient {
         }
         try {
             SslContextBuilder builder = GrpcSslContexts.forClient();
-            builder.sslProvider(TlsTypeResolve.getSslProvider(tlsConfig.getSslProvider()));
+            if (StringUtils.isNotBlank(tlsConfig.getSslProvider())) {
+                builder.sslProvider(TlsTypeResolve.getSslProvider(tlsConfig.getSslProvider()));
+            }
+            
             if (StringUtils.isNotBlank(tlsConfig.getProtocols())) {
                 builder.protocols(tlsConfig.getProtocols().split(","));
             }
