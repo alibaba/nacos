@@ -25,7 +25,7 @@ public class TlsConfig {
     /**
      * ssl provider,default OPENSSL,JDK,OPENSSL_REFCNT.
      */
-    private String sslProvider = "OPENSSL";
+    private String sslProvider = "";
 
     /**
      * enable tls.
