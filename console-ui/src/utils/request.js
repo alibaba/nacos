@@ -39,7 +39,7 @@ const request = () => {
       if (!params) {
         config.params = {};
       }
-      if (!url.includes('auth/users/login')) {
+      if (!url.includes('auth/users/login') && localStorage.token) {
         let token = {};
         try {
           token = JSON.parse(localStorage.token);
