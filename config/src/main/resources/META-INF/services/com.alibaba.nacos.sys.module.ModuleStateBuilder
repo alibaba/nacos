@@ -16,4 +16,4 @@
 #
 #
 
-com.alibaba.nacos.config.server.constant.ConfigModuleStateBuilderTest
+com.alibaba.nacos.config.server.constant.ConfigModuleStateBuilder
