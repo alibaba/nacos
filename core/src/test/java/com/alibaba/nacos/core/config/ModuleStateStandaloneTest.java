@@ -26,6 +26,9 @@ import org.junit.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -36,17 +39,22 @@ import static org.junit.Assert.assertFalse;
 public class ModuleStateStandaloneTest {
     
     private ConfigurableEnvironment environment;
+
+    private ModuleStateHolder moduleStateHolder;
     
     @Before
-    public void setUp() {
+    public void setUp() throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(true);
+        Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        moduleStateHolder = constructor.newInstance();
     }
     
     @Test
     public void testStandaloneBuilder() {
-        assertFalse(ModuleStateHolder.getInstance().getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
-        assertFalse(ModuleStateHolder.getInstance().getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
+        assertFalse(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
+        assertFalse(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
     }
 }
