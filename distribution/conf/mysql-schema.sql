@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info   */
-/******************************************/
+
 CREATE TABLE `config_info` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_id` varchar(255) NOT NULL COMMENT 'data_id',
@@ -40,10 +37,7 @@ CREATE TABLE `config_info` (
   UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info';
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info_aggr   */
-/******************************************/
+
 CREATE TABLE `config_info_aggr` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_id` varchar(255) NOT NULL COMMENT 'data_id',
@@ -58,10 +52,6 @@ CREATE TABLE `config_info_aggr` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='增加租户字段';
 
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info_beta   */
-/******************************************/
 CREATE TABLE `config_info_beta` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_id` varchar(255) NOT NULL COMMENT 'data_id',
@@ -80,10 +70,7 @@ CREATE TABLE `config_info_beta` (
   UNIQUE KEY `uk_configinfobeta_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_beta';
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info_tag   */
-/******************************************/
+
 CREATE TABLE `config_info_tag` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
   `data_id` varchar(255) NOT NULL COMMENT 'data_id',
@@ -101,10 +88,7 @@ CREATE TABLE `config_info_tag` (
   UNIQUE KEY `uk_configinfotag_datagrouptenanttag` (`data_id`,`group_id`,`tenant_id`,`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_tag';
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_tags_relation   */
-/******************************************/
+
 CREATE TABLE `config_tags_relation` (
   `id` bigint(20) NOT NULL COMMENT 'id',
   `tag_name` varchar(128) NOT NULL COMMENT 'tag_name',
@@ -118,10 +102,7 @@ CREATE TABLE `config_tags_relation` (
   KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_tag_relation';
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = group_capacity   */
-/******************************************/
+
 CREATE TABLE `group_capacity` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `group_id` varchar(128) NOT NULL DEFAULT '' COMMENT 'Group ID，空字符表示整个集群',
@@ -137,10 +118,7 @@ CREATE TABLE `group_capacity` (
   UNIQUE KEY `uk_group_id` (`group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='集群、各Group容量信息表';
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = his_config_info   */
-/******************************************/
+
 CREATE TABLE `his_config_info` (
   `id` bigint(20) unsigned NOT NULL,
   `nid` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -163,10 +141,6 @@ CREATE TABLE `his_config_info` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='多租户改造';
 
 
-/******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = tenant_capacity   */
-/******************************************/
 CREATE TABLE `tenant_capacity` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `tenant_id` varchar(128) NOT NULL DEFAULT '' COMMENT 'Tenant ID',
