@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
@@ -178,7 +179,8 @@ public class LocalConfigInfoProcessor {
      * @param envName env name
      */
     public static void cleanEnvSnapshot(String envName) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
+        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, ENV_CHILD);
         try {
             IoUtils.cleanDirectory(tmp);
@@ -189,7 +191,8 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + SUFFIX);
+        final String md5 = MD5Utils.md5Hex(serverName, Constants.ENCODE);
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, FAILOVER_FILE_CHILD_2);
@@ -201,7 +204,8 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
+        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, SNAPSHOT_FILE_CHILD_1);
         } else {
