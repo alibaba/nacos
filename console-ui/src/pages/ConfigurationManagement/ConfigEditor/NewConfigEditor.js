@@ -138,7 +138,7 @@ class ConfigEditor extends React.Component {
       readOnly: false,
       lineNumbersMinChars: true,
       theme: 'vs-dark',
-      folding: false,
+      folding: true,
       showFoldingControls: 'always',
       cursorStyle: 'line',
       automaticLayout: true,

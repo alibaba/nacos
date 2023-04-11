@@ -24,6 +24,9 @@ import java.util.Date;
  * @author zzq
  */
 public class DateFormatUtils {
+
+    private DateFormatUtils() {
+    }
     
     public static final String YYYYMMDD = "yyyyMMdd";
     

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
@@ -60,7 +61,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     private long healthCheckTimeOut;
     
     private Map<String, String> labels;
-    
+
+    private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+
     /**
      * constructor.
      *
@@ -88,6 +91,13 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         this.channelKeepAliveTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT,
                 builder.channelKeepAliveTimeout);
         this.labels = builder.labels;
+        this.labels.put("tls.enable", "false");
+        if (Objects.nonNull(builder.tlsConfig)) {
+            this.tlsConfig = builder.tlsConfig;
+            if (builder.tlsConfig.getEnableTls()) {
+                this.labels.put("tls.enable", "true");
+            }
+        }
     }
     
     private int loadIntegerConfig(String key, int builderValue) {
@@ -157,17 +167,26 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     public long channelKeepAliveTimeout() {
         return channelKeepAliveTimeout;
     }
-    
+
+    @Override
+    public RpcClientTlsConfig tlsConfig() {
+        return tlsConfig;
+    }
+
+    public void setTlsConfig(RpcClientTlsConfig tlsConfig) {
+        this.tlsConfig = tlsConfig;
+    }
+
     @Override
     public int healthCheckRetryTimes() {
         return healthCheckRetryTimes;
     }
-    
+
     @Override
     public long healthCheckTimeOut() {
         return healthCheckTimeOut;
     }
-    
+
     @Override
     public Map<String, String> labels() {
         return this.labels;
@@ -208,7 +227,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         private long healthCheckTimeOut = 3000L;
         
         private Map<String, String> labels = new HashMap<>();
-        
+
+        private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+
         private Builder() {
         }
         
@@ -271,7 +292,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.channelKeepAliveTimeout = Integer.parseInt(
                         properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-            
+            this.tlsConfig = RpcClientTlsConfig.properties(properties);
             return this;
         }
         
@@ -401,7 +422,18 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             this.labels.putAll(labels);
             return this;
         }
-        
+
+        /**
+         * set tlsConfig.
+         *
+         * @param tlsConfig tls of client.
+         * @return
+         */
+        public Builder setTlsConfig(RpcClientTlsConfig tlsConfig) {
+            this.tlsConfig = tlsConfig;
+            return this;
+        }
+
         /**
          * build GrpcClientConfig.
          */
@@ -409,5 +441,5 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             return new DefaultGrpcClientConfig(this);
         }
     }
-    
+
 }

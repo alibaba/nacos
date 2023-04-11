@@ -103,16 +103,7 @@ public class NacosNamingService implements NamingService {
     }
     
     private void initLogName(NacosClientProperties properties) {
-        logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
-        if (StringUtils.isEmpty(logName)) {
-            
-            if (StringUtils
-                    .isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
-                logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
-            } else {
-                logName = DEFAULT_NAMING_LOG_FILE_PATH;
-            }
-        }
+        logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME, DEFAULT_NAMING_LOG_FILE_PATH);
     }
     
     @Override

@@ -58,8 +58,6 @@ import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
-import com.alibaba.nacos.plugin.datasource.model.MapperContext;
-import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -416,26 +414,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-    
-            MapperContext context = new MapperContext();
-            context.putUpdateParameter("content", configInfo.getContent());
-            context.putUpdateParameter("md5", md5);
-            context.putUpdateParameter("beta_ips", betaIps);
-            context.putUpdateParameter("src_ip", srcIp);
-            context.putUpdateParameter("src_user", srcUser);
-            context.putUpdateParameter("gmt_modified", time);
-            context.putUpdateParameter("app_name", appNameTmp);
-    
-            context.putWhereParameter("data_id", configInfo.getDataId());
-            context.putWhereParameter("group_id", configInfo.getGroup());
-            context.putWhereParameter("tenant_id", tenantTmp);
-            context.putWhereParameter("md5", configInfo.getMd5());
-    
-            MapperResult mapperResult = configInfoBetaMapper.updateConfigInfo4BetaCas(context);
-    
-            final String sql = mapperResult.getSql();
-            List<Object> paramList = mapperResult.getParamList();
-            final Object[] args = paramList.toArray();
+            final String sql = configInfoBetaMapper.updateConfigInfo4BetaCas();
+            
+            final Object[] args = new Object[] {configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp,
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, configInfo.getMd5()};
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextUtils.addSqlContext(sql, args);
@@ -771,18 +753,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-    
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumList);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
-        
-        MapperResult mapperResult = configInfoAggrMapper.batchRemoveAggr(context);
-        String sql = mapperResult.getSql();
-        List<Object> paramList = mapperResult.getParamList();
-        Object[] args = paramList.toArray();
-        
+        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList.size());
+        final Object[] args = new Object[3 + datumList.size()];
+        args[0] = dataId;
+        args[1] = group;
+        args[2] = tenantTmp;
+        System.arraycopy(datumList.toArray(), 0, args, 3, datumList.size());
         EmbeddedStorageContextUtils.addSqlContext(sql, args);
         
         try {
@@ -1105,20 +1081,12 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_AGGR);
-    
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("datum_id", datumIds);
-        context.putWhereParameter("isIn", true);
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
+        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
         
-        MapperResult mapperResult = configInfoAggrMapper.aggrConfigInfoCount(context);
+        List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
+        objectList.addAll(datumIds);
         
-        String sql = mapperResult.getSql();
-        Object[] args = mapperResult.getParamList().toArray();
-    
-        Integer result = databaseOperate.queryOne(sql, args, Integer.class);
+        Integer result = databaseOperate.queryOne(sql, objectList.toArray(), Integer.class);
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
@@ -1201,18 +1169,11 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final int startRow = (pageNo - 1) * pageSize;
         ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
         String sqlCountRows = configInfoBetaMapper.count(null);
-    
-        MapperContext context = new MapperContext();
-        context.setStartRow(startRow);
-        context.setPageSize(pageSize);
-        
-        MapperResult mapperResult = configInfoBetaMapper
-                .findAllConfigInfoBetaForDumpAllFetchRows(context);
-        
-        String sqlFetchRows = mapperResult.getSql();
+        String sqlFetchRows = configInfoBetaMapper.findAllConfigInfoBetaForDumpAllFetchRows(startRow, pageSize);
         PaginationHelper<ConfigInfoBetaWrapper> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
                 CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
+        
     }
     
     @Override
@@ -1427,17 +1388,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_AGGR);
-    
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
-    
-        MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrIsOrdered(context);
-        String sql = mapperResult.getSql();
-        Object[] args = mapperResult.getParamList().toArray();
+        String sql = configInfoAggrMapper.findConfigInfoAggrIsOrdered();
         
-        return databaseOperate.queryMany(sql, args, CONFIG_INFO_AGGR_ROW_MAPPER);
+        return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_AGGR_ROW_MAPPER);
+        
     }
     
     @Override
@@ -1446,22 +1400,13 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_AGGR);
         final int startRow = (pageNo - 1) * pageSize;
-        final String sqlCountRows = configInfoAggrMapper
+        String sqlCountRows = configInfoAggrMapper
                 .select(Arrays.asList("count(*)"), Arrays.asList("data_id", "group_id", "tenant_id"));
-        
-        MapperContext context = new MapperContext();
-        context.putWhereParameter("data_id", dataId);
-        context.putWhereParameter("group_id", group);
-        context.putWhereParameter("tenant_id", tenantTmp);
-        context.putWhereParameter("startRow", startRow);
-        context.putWhereParameter("pageSize", pageSize);
-        MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
-        String sqlFetchRows = mapperResult.getSql();
-        Object[] sqlFethcArgs = mapperResult.getParamList().toArray();
+        String sqlFetchRows = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(startRow, pageSize);
         
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
         return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows,
-               sqlFethcArgs, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
+                new Object[] {dataId, group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
     }
     
     @Override
@@ -1794,7 +1739,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 use, effect, type, schema, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
                 configInfo.getMd5()};
         
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextUtils.addSqlContext(true, sql, args);
     }
     
     @Override

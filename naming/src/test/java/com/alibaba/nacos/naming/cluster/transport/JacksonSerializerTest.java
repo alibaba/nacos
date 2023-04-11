@@ -39,7 +39,6 @@ public class JacksonSerializerTest {
     @Test
     public void testSerialize() {
         String actual = new String(serializer.serialize(switchDomain));
-        System.out.println(actual);
         assertTrue(actual.contains("\"defaultPushCacheMillis\":10000"));
         assertTrue(actual.contains("\"clientBeatInterval\":5000"));
         assertTrue(actual.contains("\"defaultCacheMillis\":3000"));

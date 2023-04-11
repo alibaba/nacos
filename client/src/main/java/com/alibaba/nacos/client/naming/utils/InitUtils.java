@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -58,21 +59,21 @@ public class InitUtils {
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             
             tmpNamespace = TenantUtil.getUserTenantForAns();
-            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property : {}", tmpNamespace);
+            LogUtils.NAMING_LOGGER.info("initializer namespace from ans.namespace attribute : {}", tmpNamespace);
             
             tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
                 String namespace = properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
+                LogUtils.NAMING_LOGGER.info("initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :" + namespace);
                 return namespace;
             });
         }
         
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
-            String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
-            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
+            String namespace = properties.getPropertyFrom(SourceType.JVM, PropertyKeyConst.NAMESPACE);
+            LogUtils.NAMING_LOGGER.info("initializer namespace from namespace attribute :" + namespace);
             return namespace;
         });
-        
+    
         if (StringUtils.isEmpty(tmpNamespace)) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
@@ -104,7 +105,6 @@ public class InitUtils {
      */
     public static String initEndpoint(final NacosClientProperties properties) {
         if (properties == null) {
-            
             return "";
         }
         // Whether to enable domain name resolution rules
