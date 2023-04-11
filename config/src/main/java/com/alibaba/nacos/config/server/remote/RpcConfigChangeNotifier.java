@@ -192,8 +192,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                         tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_FAIL);
                         tpsControlManager.check(tpsCheckRequest);
                         Loggers.REMOTE_PUSH
-                            .warn("Push fail, dataId={}, group={}, tenant={}, clientId={}", notifyRequest.getDataId(),
-                                notifyRequest.getGroup(), notifyRequest.getTenant(), connectionId, e);
+                                .warn("Push fail, dataId={}, group={}, tenant={}, clientId={}", notifyRequest.getDataId(), 
+                                        notifyRequest.getGroup(), notifyRequest.getTenant(), connectionId, e);
                         push(RpcPushTask.this);
                     }
                     
