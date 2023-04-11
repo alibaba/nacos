@@ -76,6 +76,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
         try {
             this.jwtParser = new NacosJwtParser(encodedSecretKey);
         } catch (Exception e) {
+            this.jwtParser = null;
             if (authConfigs.isAuthEnabled()) {
                 throw new IllegalArgumentException(
                         "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
