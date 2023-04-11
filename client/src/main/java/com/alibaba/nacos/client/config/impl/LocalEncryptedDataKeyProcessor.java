@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.config.utils.JvmUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -124,7 +125,8 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeyFailoverFile(String envName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
+        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, FAILOVER_CHILD_1);
         
         if (StringUtils.isBlank(tenant)) {
@@ -138,7 +140,8 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeySnapshotFile(String envName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
+        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, SNAPSHOT_CHILD_1);
         
         if (StringUtils.isBlank(tenant)) {
