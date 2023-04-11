@@ -125,7 +125,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeyFailoverFile(String envName, String dataId, String group, String tenant) {
-        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        final String md5 = MD5Utils.md5Hex(StringUtils.isBlank(envName) ? "" : envName, Constants.ENCODE);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, FAILOVER_CHILD_1);
         
@@ -140,7 +140,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
     }
     
     private static File getEncryptDataKeySnapshotFile(String envName, String dataId, String group, String tenant) {
-        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        final String md5 = MD5Utils.md5Hex(StringUtils.isBlank(envName) ? "" : envName, Constants.ENCODE);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, SNAPSHOT_CHILD_1);
         

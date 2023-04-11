@@ -179,7 +179,7 @@ public class LocalConfigInfoProcessor {
      * @param envName env name
      */
     public static void cleanEnvSnapshot(String envName) {
-        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        final String md5 = MD5Utils.md5Hex(StringUtils.isBlank(envName) ? "" : envName, Constants.ENCODE);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, ENV_CHILD);
         try {
@@ -191,7 +191,7 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
-        final String md5 = MD5Utils.md5Hex(serverName, Constants.ENCODE);
+        final String md5 = MD5Utils.md5Hex(StringUtils.isBlank(serverName) ? "" : serverName, Constants.ENCODE);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
         if (StringUtils.isBlank(tenant)) {
@@ -204,7 +204,7 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
-        final String md5 = MD5Utils.md5Hex(envName, Constants.ENCODE);
+        final String md5 = MD5Utils.md5Hex(StringUtils.isBlank(envName) ? "" : envName, Constants.ENCODE);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, md5 + SUFFIX);
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, SNAPSHOT_FILE_CHILD_1);
