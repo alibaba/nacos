@@ -43,6 +43,7 @@ import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
+import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
 import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
@@ -1009,13 +1010,6 @@ class ConfigurationManagement extends React.Component {
     }
   }
 
-  goLogin() {
-    const url = window.location.href;
-    localStorage.removeItem('token');
-    const base_url = url.split('#')[0];
-    window.location.href = `${base_url}#/login`;
-  }
-
   importData() {
     const { locale = {} } = this.props;
     const self = this;
@@ -1029,7 +1023,12 @@ class ConfigurationManagement extends React.Component {
         token = JSON.parse(localStorage.token);
       } catch (e) {
         console.log(e);
-        this.goLogin();
+        goLogin();
+        Dialog.alert({
+          title: locale.importFail,
+          content: locale.authFail,
+        });
+        return;
       }
     }
     const { accessToken = '', username = '' } = token;
