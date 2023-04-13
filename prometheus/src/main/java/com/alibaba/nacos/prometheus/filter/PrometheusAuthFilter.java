@@ -61,7 +61,7 @@ public class PrometheusAuthFilter {
     @Bean
     public FilterRegistrationBean<AuthorizationFilter> authorizationFilter() {
         FilterRegistrationBean<AuthorizationFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new AuthorizationFilter(new AuthenticatedAuthorizationManager()));
+        registration.setFilter(new AuthorizationFilter(new AuthenticatedAuthorizationManager<>()));
         registration.addUrlPatterns(PROMETHEUS_CONTROLLER_PATH);
         registration.setName("prometheusAuthorizationFilter");
         registration.setOrder(4);

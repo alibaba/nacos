@@ -28,7 +28,7 @@
     <artifactId>nacos-custom-environment-plugin</artifactId>
     <name>nacos-custom-environment-plugin ${project.version}</name>
     <url>https://nacos.io</url>
-
+    <description>Nacos custom environment plugin pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
