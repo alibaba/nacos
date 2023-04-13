@@ -49,7 +49,7 @@ import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
-import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
@@ -1009,16 +1009,28 @@ class ConfigurationManagement extends React.Component {
     }
   }
 
+  goLogin() {
+    const url = window.location.href;
+    localStorage.removeItem('token');
+    const base_url = url.split('#')[0];
+    window.location.href = `${base_url}#/login`;
+  }
+
   importData() {
     const { locale = {} } = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
+
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
     let token = {};
-    try {
-      token = JSON.parse(localStorage.token);
-    } catch (e) {
-      console.log(e);
-      goLogin();
+
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log(e);
+        this.goLogin();
+      }
     }
     const { accessToken = '', username = '' } = token;
     const uploadProps = {
