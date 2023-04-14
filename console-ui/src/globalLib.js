@@ -563,5 +563,6 @@ export {
   getParams,
   setParam,
   setParams,
+  goLogin,
   request,
 };
