@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -124,6 +125,13 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
             page.getPageItems().add(item);
         }
         return page;
+    }
+    
+    @Override
+    public Page fetchPageLimit(MapperResult countMapperResult, MapperResult mapperResult, int pageNo, int pageSize,
+            RowMapper rowMapper) {
+        return fetchPageLimit(countMapperResult.getSql(), countMapperResult.getParamList().toArray(),
+                mapperResult.getSql(), mapperResult.getParamList().toArray(), pageNo, pageSize, rowMapper);
     }
 
     @Override
