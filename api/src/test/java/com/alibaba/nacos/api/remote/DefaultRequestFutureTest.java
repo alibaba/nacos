@@ -268,7 +268,7 @@ public class DefaultRequestFutureTest {
     public void testASyncGetResponseFailureWithTimeout() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
         MockRequestCallback callback = new MockRequestCallback(100L);
-        DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID, callback, trigger);
+        final DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID, callback, trigger);
         TimeUnit.MILLISECONDS.sleep(500);
         assertNull(callback.response);
         assertTrue(callback.exception instanceof TimeoutException);
