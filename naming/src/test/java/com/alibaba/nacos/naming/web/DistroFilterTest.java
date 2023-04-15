@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.distributed.distro.DistroConstants;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.naming.controllers.InstanceController;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +85,6 @@ public class DistroFilterTest {
     @BeforeClass
     public static void beforeClass() {
         MockEnvironment environment = new MockEnvironment();
-        environment.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
         EnvUtil.setEnvironment(environment);
         EnvUtil.setContextPath("/nacos");
         
@@ -119,6 +119,7 @@ public class DistroFilterTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         final MockFilterChain filterChain = new MockFilterChain();
         
+        DistroConfig.getInstance().setAsyncDistroForward(true);
         distroFilter.doFilter(request, response, filterChain);
         final AsyncContext asyncContext = request.getAsyncContext();
         Assert.assertNotNull(asyncContext);
@@ -149,7 +150,8 @@ public class DistroFilterTest {
     }
     
     @Test
-    public void asyncForwardRequestNotBlockTomcatThread() throws IOException, InterruptedException {
+    public void asyncForwardRequestNotBlockTomcatThread() throws InterruptedException {
+        DistroConfig.getInstance().setAsyncDistroForward(true);
         Executor mockTomcatThread = new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, new SynchronousQueue<>());
         for (int i = 0; i < 3; ++i) {
             //nacos naming server will block 1 second and then return response
@@ -174,6 +176,24 @@ public class DistroFilterTest {
         final MockFilterChain filterChain = new MockFilterChain();
         
         distroFilter.doFilter(request, response, filterChain);
+    }
+    
+    @Test(expected = RejectedExecutionException.class)
+    public void syncForwardRequestWillBlockTomcatThread() throws InterruptedException {
+        DistroConfig.getInstance().setAsyncDistroForward(false);
+        Executor mockTomcatThread = new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, new SynchronousQueue<>());
+        for (int i = 0; i < 3; ++i) {
+            //nacos naming server will block 1 second and then return response
+            //if use sync forward request, the mockTomcatThread will throw RejectedExecutionException
+            mockTomcatThread.execute(() -> {
+                try {
+                    asyncForwardRequest();
+                } catch (Exception e) {
+                    Assert.assertNull(e);
+                }
+            });
+            Thread.sleep(500);
+        }
     }
     
     @AfterClass

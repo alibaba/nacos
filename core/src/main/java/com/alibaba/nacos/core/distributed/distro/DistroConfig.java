@@ -136,6 +136,10 @@ public class DistroConfig extends AbstractDynamicConfig {
         return asyncDistroForward;
     }
     
+    public void setAsyncDistroForward(boolean asyncDistroForward) {
+        this.asyncDistroForward = asyncDistroForward;
+    }
+    
     @Override
     protected String printConfig() {
         return "DistroConfig{" + "syncDelayMillis=" + syncDelayMillis + ", syncTimeoutMillis=" + syncTimeoutMillis
