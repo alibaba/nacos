@@ -83,6 +83,11 @@ public class DistroFilterTest {
     
     @BeforeClass
     public static void beforeClass() {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
+        EnvUtil.setEnvironment(environment);
+        EnvUtil.setContextPath("/nacos");
+        
         mockServer = ClientAndServer.startClientAndServer(8080);
         
         //mock nacos naming server, and delay 1 seconds
@@ -93,11 +98,6 @@ public class DistroFilterTest {
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        EnvUtil.setContextPath("/nacos");
-        
-        MockEnvironment environment = new MockEnvironment();
-        environment.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
-        EnvUtil.setEnvironment(environment);
         
         ApplicationUtils.injectContext(context);
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
