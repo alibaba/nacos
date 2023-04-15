@@ -86,15 +86,12 @@ public class DistroFilterTest {
         MockitoAnnotations.openMocks(this);
         EnvUtil.setContextPath("/nacos");
         
-        System.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
-        when(environment.getProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, Boolean.class,
-                DistroConstants.DEFAULT_ASYNC_DISTRO_FORWARD_VALUE)).thenReturn(true);
+        environment.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
         EnvUtil.setEnvironment(environment);
         
         ApplicationUtils.injectContext(context);
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         
-        System.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
         mockServer = ClientAndServer.startClientAndServer(8080);
         
         final Method register = ReflectionUtils.findMethod(InstanceController.class, "register",
