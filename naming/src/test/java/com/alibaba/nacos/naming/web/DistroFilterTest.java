@@ -83,9 +83,10 @@ public class DistroFilterTest {
         MockitoAnnotations.openMocks(this);
         EnvUtil.setContextPath("/nacos");
         
-        EnvUtil.setEnvironment(environment);
+        System.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
         when(environment.getProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, Boolean.class,
                 DistroConstants.DEFAULT_ASYNC_DISTRO_FORWARD_VALUE)).thenReturn(true);
+        EnvUtil.setEnvironment(environment);
         
         ApplicationUtils.injectContext(context);
         when(context.getBean(AuthConfigs.class)).thenReturn(new AuthConfigs());
@@ -114,6 +115,7 @@ public class DistroFilterTest {
                 .respond(response().withStatusCode(200).withBody("ok").withDelay(TimeUnit.SECONDS, 1));
         distroFilter.doFilter(request, response, filterChain);
         final AsyncContext asyncContext = request.getAsyncContext();
+        Assert.assertNotNull(asyncContext);
         CountDownLatch latch = new CountDownLatch(1);
         asyncContext.addListener(new AsyncListener() {
             @Override
