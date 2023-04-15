@@ -73,6 +73,9 @@ public class DistroFilterTest {
     @Mock
     private ConfigurableApplicationContext context;
     
+    @Mock
+    private AuthConfigs authConfigs;
+    
     @InjectMocks
     private DistroFilter distroFilter;
     
@@ -89,7 +92,7 @@ public class DistroFilterTest {
         EnvUtil.setEnvironment(environment);
         
         ApplicationUtils.injectContext(context);
-        when(context.getBean(AuthConfigs.class)).thenReturn(new AuthConfigs());
+        when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         
         System.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
         mockServer = ClientAndServer.startClientAndServer(8080);
