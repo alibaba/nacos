@@ -158,7 +158,7 @@ public class DistroFilterTest {
                 try {
                     asyncForwardRequest();
                 } catch (Exception e) {
-                
+                    Assert.assertNull(e);
                 }
             });
             Thread.sleep(500);
