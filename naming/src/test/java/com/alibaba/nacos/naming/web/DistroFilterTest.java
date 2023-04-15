@@ -102,7 +102,7 @@ public class DistroFilterTest {
     }
     
     @Test
-    public void given_async_can_forward_request_to_target() throws ServletException, IOException, InterruptedException {
+    public void givenAsyncCanForwardRequestToTarget() throws ServletException, IOException, InterruptedException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setMethod("POST");
         request.setRequestURI("/nacos/v1/ns/instance");
