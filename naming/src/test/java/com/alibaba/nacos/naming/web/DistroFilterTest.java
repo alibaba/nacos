@@ -23,14 +23,14 @@ import com.alibaba.nacos.naming.controllers.InstanceController;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 import org.mockserver.client.server.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -48,6 +48,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -67,9 +70,6 @@ public class DistroFilterTest {
     @Mock
     private DistroTagGenerator distroTagGenerator;
     
-    @Spy
-    protected MockEnvironment environment;
-    
     @Mock
     private ConfigurableApplicationContext context;
     
@@ -79,20 +79,28 @@ public class DistroFilterTest {
     @InjectMocks
     private DistroFilter distroFilter;
     
-    private ClientAndServer mockServer;
+    private static ClientAndServer mockServer;
+    
+    @BeforeClass
+    public static void beforeClass() {
+        mockServer = ClientAndServer.startClientAndServer(8080);
+        
+        //mock nacos naming server, and delay 1 seconds
+        new MockServerClient("127.0.0.1", 8080).when(request().withMethod("POST").withPath("/nacos/v1/ns/instance"))
+                .respond(response().withStatusCode(200).withBody("ok").withDelay(TimeUnit.SECONDS, 1));
+    }
     
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         EnvUtil.setContextPath("/nacos");
         
+        MockEnvironment environment = new MockEnvironment();
         environment.setProperty(DistroConstants.NACOS_ASYNC_DISTRO_FORWARD_NAME, "true");
         EnvUtil.setEnvironment(environment);
         
         ApplicationUtils.injectContext(context);
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
-        
-        mockServer = ClientAndServer.startClientAndServer(8080);
         
         final Method register = ReflectionUtils.findMethod(InstanceController.class, "register",
                 HttpServletRequest.class);
@@ -111,8 +119,6 @@ public class DistroFilterTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         final MockFilterChain filterChain = new MockFilterChain();
         
-        new MockServerClient("127.0.0.1", 8080).when(request().withMethod("POST").withPath("/nacos/v1/ns/instance"))
-                .respond(response().withStatusCode(200).withBody("ok").withDelay(TimeUnit.SECONDS, 1));
         distroFilter.doFilter(request, response, filterChain);
         final AsyncContext asyncContext = request.getAsyncContext();
         Assert.assertNotNull(asyncContext);
@@ -142,8 +148,36 @@ public class DistroFilterTest {
         Assert.assertEquals("ok", response.getContentAsString());
     }
     
-    @After
-    public void tearDown() {
+    @Test
+    public void asyncForwardRequestNotBlockTomcatThread() throws IOException, InterruptedException {
+        Executor mockTomcatThread = new ThreadPoolExecutor(1, 1, 1, TimeUnit.MINUTES, new SynchronousQueue<>());
+        for (int i = 0; i < 3; ++i) {
+            //nacos naming server will block 1 second and then return response
+            //if use sync forward request, the mockTomcatThread will throw RejectedExecutionException
+            mockTomcatThread.execute(() -> {
+                try {
+                    asyncForwardRequest();
+                } catch (Exception e) {
+                
+                }
+            });
+            Thread.sleep(500);
+        }
+    }
+    
+    private void asyncForwardRequest() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setMethod("POST");
+        request.setRequestURI("/nacos/v1/ns/instance");
+        request.setAsyncSupported(true);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        final MockFilterChain filterChain = new MockFilterChain();
+        
+        distroFilter.doFilter(request, response, filterChain);
+    }
+    
+    @AfterClass
+    public static void afterClass() {
         mockServer.stop();
     }
 }
