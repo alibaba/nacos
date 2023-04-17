@@ -34,7 +34,7 @@ public class EnvModuleStateBuilder implements ModuleStateBuilder {
                 EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
         state.newState(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
         state.newState(Constants.NACOS_VERSION, VersionUtils.version);
-        state.newState(Constants.NACOS_SERVER_IP_STATE, System.getProperty(Constants.NACOS_SERVER_IP));
+        
         state.newState(Constants.SERVER_PORT_STATE, EnvUtil.getPort());
         return state;
     }
