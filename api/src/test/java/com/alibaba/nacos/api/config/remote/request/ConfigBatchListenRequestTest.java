@@ -52,4 +52,12 @@ public class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
         assertEquals(actual.getHeader(HEADER_KEY), HEADER_VALUE);
         assertEquals(actual.getConfigListenContexts().size(), 1);
     }
+    
+    @Test
+    public void testConfigListenContextToString() {
+        ConfigBatchListenRequest configBatchListenRequest = new ConfigBatchListenRequest();
+        configBatchListenRequest.addConfigListenContext(GROUP, DATA_ID, TENANT, MD5);
+        assertEquals("ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
+                configBatchListenRequest.getConfigListenContexts().get(0).toString());
+    }
 }
