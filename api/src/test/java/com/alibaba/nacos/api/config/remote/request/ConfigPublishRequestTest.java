@@ -39,6 +39,7 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
         configPublishRequest = new ConfigPublishRequest(DATA_ID, GROUP, TENANT, CONTENT);
         configPublishRequest.putAdditionalParam(TAG_PARAM, TAG_PARAM);
         configPublishRequest.putAdditionalParam(APP_NAME_PARAM, APP_NAME_PARAM);
+        configPublishRequest.setCasMd5(MD5);
         configPublishRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configPublishRequest);
     }
@@ -52,6 +53,7 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"group\":\"" + GROUP));
         assertTrue(json.contains("\"tenant\":\"" + TENANT));
         assertTrue(json.contains("\"content\":\"" + CONTENT));
+        assertTrue(json.contains("\"casMd5\":\"" + MD5));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
     
@@ -59,7 +61,7 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{\"header1\":\"test_header1\"},\"dataId\":\"test_data\",\"group\":\"group\","
-                + "\"tenant\":\"test_tenant\",\"content\":\"content\","
+                + "\"tenant\":\"test_tenant\",\"content\":\"content\",\"casMd5\":\"test_MD5\","
                 + "\"additionMap\":{\"appName\":\"appName\",\"tag\":\"tag\"},\"module\":\"config\"}";
         ConfigPublishRequest actual = mapper.readValue(json, ConfigPublishRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
@@ -67,6 +69,7 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
         assertEquals(actual.getTenant(), TENANT);
         assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
         assertEquals(actual.getContent(), CONTENT);
+        assertEquals(actual.getCasMd5(), MD5);
         assertEquals(actual.getAdditionParam(TAG_PARAM), TAG_PARAM);
         assertEquals(actual.getAdditionParam(APP_NAME_PARAM), APP_NAME_PARAM);
     }

@@ -36,9 +36,9 @@ public class ClientConfigMetricResponseTest extends BasedConfigResponseTest {
     @Before
     public void before() {
         metric.put("m1", "v1");
-        metric.put("m2", "v2");
         clientConfigMetricResponse = new ClientConfigMetricResponse();
         clientConfigMetricResponse.setMetrics(metric);
+        clientConfigMetricResponse.putMetric("m2", "v2");
         requestId = injectResponseUuId(clientConfigMetricResponse);
     }
     
