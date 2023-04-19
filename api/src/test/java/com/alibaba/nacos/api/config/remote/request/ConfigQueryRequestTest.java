@@ -40,6 +40,7 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
         headers.put(Constants.Config.NOTIFY_HEADER, Boolean.TRUE.toString());
         configQueryRequest = ConfigQueryRequest.build(DATA_ID, GROUP, TENANT);
         configQueryRequest.putAllHeader(headers);
+        configQueryRequest.setTag(TAG);
         requestId = injectRequestUuId(configQueryRequest);
     }
     
@@ -56,6 +57,7 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"dataId\":\"" + DATA_ID));
         assertTrue(json.contains("\"group\":\"" + GROUP));
         assertTrue(json.contains("\"tenant\":\"" + TENANT));
+        assertTrue(json.contains("\"tag\":\"" + TAG));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
     
@@ -63,11 +65,12 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
-                + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\"}";
+                + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\",\"tag\":\"tag\"}";
         ConfigQueryRequest actual = mapper.readValue(json, ConfigQueryRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
         assertEquals(actual.getGroup(), GROUP);
         assertEquals(actual.getTenant(), TENANT);
+        assertEquals(actual.getTag(), TAG);
         assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
     }
 }
