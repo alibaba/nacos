@@ -51,8 +51,4 @@ public class DistroConstants {
     
     public static final long DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS = 30000L;
     
-    public static final String NACOS_ASYNC_DISTRO_FORWARD_NAME = "nacos.async.distro.forward";
-    
-    public static final boolean DEFAULT_ASYNC_DISTRO_FORWARD_VALUE = false;
-    
 }

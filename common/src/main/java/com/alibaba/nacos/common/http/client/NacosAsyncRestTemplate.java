@@ -352,29 +352,15 @@ public class NacosAsyncRestTemplate extends AbstractNacosRestTemplate {
                 responseType, callback);
     }
     
-    /**
-     * async general http request.
-     *
-     * <p>{@code responseType} can be an RestResult or RestResult data {@code T} type.
-     *
-     * <p>{@code callback} Result callback execution,
-     * if you need response headers, you can convert the received RestResult to HttpRestResult.
-     *
-     * @param url          url
-     * @param httpMethod       http header param
-     * @param requestEntity   http body param
-     * @param responseType return type
-     * @param callback     callback {@link Callback#onReceive(com.alibaba.nacos.common.model.RestResult)}
-     */
     @SuppressWarnings("unchecked")
-    public <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type responseType,
+    private <T> void execute(String url, String httpMethod, RequestHttpEntity requestEntity, Type type,
             Callback<T> callback) {
         try {
             URI uri = HttpUtils.buildUri(url, requestEntity.getQuery());
             if (logger.isDebugEnabled()) {
                 logger.debug("HTTP method: {}, url: {}, body: {}", httpMethod, uri, requestEntity.getBody());
             }
-            ResponseHandler<T> responseHandler = super.selectResponseHandler(responseType);
+            ResponseHandler<T> responseHandler = super.selectResponseHandler(type);
             clientRequest.execute(uri, httpMethod, requestEntity, responseHandler, callback);
         } catch (Exception e) {
             // When an exception occurs, use Callback to pass it instead of throw it directly.

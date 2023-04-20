@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -103,7 +102,11 @@ public class HttpClient {
         if (CollectionUtils.isNotEmpty(headers)) {
             header.addAll(headers);
         }
-        configDefaultHeaders(header, encoding);
+        header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
+        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
+        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
+        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
         AuthHeaderUtil.addIdentityToHeader(header);
         
         HttpClientConfig httpClientConfig = HttpClientConfig.builder().setConTimeOutMillis(connectTimeout)
@@ -118,14 +121,6 @@ public class HttpClient {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return RestResult.<String>builder().withCode(500).withMsg(e.toString()).build();
         }
-    }
-
-    private static void configDefaultHeaders(Header header, String encoding) {
-        header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        header.addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.version);
-        header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
-        header.addParam(HttpHeaderConsts.REQUEST_SOURCE_HEADER, EnvUtil.getLocalAddress());
-        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
     }
     
     /**
@@ -205,33 +200,6 @@ public class HttpClient {
             default:
                 throw new RuntimeException("not supported method:" + method);
         }
-    }
-    
-    /**
-     * Do http request by async with request body.
-     *
-     * @param url         request url
-     * @param headers     request headers
-     * @param paramValues request params
-     * @param body        request body
-     * @param callback    async callback func
-     * @param method      http method
-     * @throws Exception exception when request
-     */
-    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, String body,
-                                        Callback<String> callback, String method) throws Exception {
-
-        Query query = Query.newInstance().initParams(paramValues);
-        query.addParam(FieldsConstants.ENCODING, ENCODING);
-        query.addParam(FieldsConstants.NOFIX, NOFIX);
-
-        Header header = Header.newInstance();
-        if (CollectionUtils.isNotEmpty(headers)) {
-            header.addAll(headers);
-        }
-        configDefaultHeaders(header, "UTF-8");
-        AuthHeaderUtil.addIdentityToHeader(header);
-        ASYNC_REST_TEMPLATE.execute(url, method, new RequestHttpEntity(header, query, body), String.class, callback);
     }
     
     /**

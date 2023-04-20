@@ -109,4 +109,5 @@ public final class Constants {
      * Min value of instance weight.
      */
     public static final double MIN_WEIGHT_VALUE = 0.00D;
+    
 }
