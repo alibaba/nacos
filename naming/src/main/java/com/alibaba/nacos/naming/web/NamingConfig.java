@@ -44,7 +44,6 @@ public class NamingConfig {
         registration.setFilter(distroFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.setName(DISTRO_FILTER);
-        registration.setAsyncSupported(true);
         registration.setOrder(7);
         return registration;
     }
