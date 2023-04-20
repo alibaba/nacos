@@ -17,10 +17,12 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.distributed.distro.DistroConfig;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -30,6 +32,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.servlet.AsyncContext;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -117,7 +120,6 @@ public class DistroFilter implements Filter {
             }
             
             final String targetServer = distroMapper.mapSrv(distroTag);
-            
             List<String> headerList = new ArrayList<>(16);
             Enumeration<String> headers = req.getHeaderNames();
             while (headers.hasMoreElements()) {
@@ -129,14 +131,10 @@ public class DistroFilter implements Filter {
             final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
             
-            RestResult<String> result = HttpClient
-                    .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
-                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), req.getMethod());
-            String data = result.ok() ? result.getData() : result.getMessage();
-            try {
-                WebUtils.response(resp, data, result.getCode());
-            } catch (Exception ignore) {
-                Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
+            if (!DistroConfig.getInstance().isAsyncDistroForward()) {
+                syncForward(req, resp, urlString, targetServer, headerList, paramsValue, body);
+            } else {
+                asyncForward(req, resp, urlString, targetServer, headerList, paramsValue, body);
             }
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
@@ -144,11 +142,60 @@ public class DistroFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
                     "no such api:" + req.getMethod() + ":" + req.getRequestURI());
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[DISTRO-FILTER] Server failed: ", e);
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Server failed, " + ExceptionUtil.getAllExceptionMsg(e));
+            onError(resp, e);
         }
-        
+    }
+    
+    private void syncForward(ReuseHttpServletRequest req, HttpServletResponse resp, String urlString,
+            String targetServer, List<String> headerList, Map<String, String> paramsValue, String body) {
+        RestResult<String> result = HttpClient.request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList,
+                paramsValue, body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(),
+                req.getMethod());
+        String data = result.ok() ? result.getData() : result.getMessage();
+        try {
+            WebUtils.response(resp, data, result.getCode());
+        } catch (Exception ignore) {
+            Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + targetServer + urlString);
+        }
+    }
+    
+    private void asyncForward(HttpServletRequest req, HttpServletResponse resp, String urlString, String targetServer,
+            List<String> headerList, Map<String, String> paramsValue, String body) throws Exception {
+        final AsyncContext asyncContext = req.startAsync();
+        asyncContext.setTimeout(PROXY_READ_TIMEOUT);
+        HttpClient.asyncHttpRequest(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
+                new Callback<String>() {
+                    @Override
+                    public void onReceive(RestResult<String> result) {
+                        String data = result.ok() ? result.getData() : result.getMessage();
+                        try {
+                            WebUtils.response(resp, data, result.getCode());
+                        } catch (Exception ignore) {
+                            Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + targetServer + urlString);
+                        }
+                        asyncContext.complete();
+                    }
+                    
+                    @Override
+                    public void onError(Throwable e) {
+                        DistroFilter.this.onError(resp, e);
+                        asyncContext.complete();
+                    }
+                    
+                    @Override
+                    public void onCancel() {
+                    
+                    }
+                }, req.getMethod());
+    }
+    
+    private void onError(HttpServletResponse response, Throwable e) {
+        try {
+            Loggers.SRV_LOG.warn("[DISTRO-FILTER] Server failed: ", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Server failed, " + ExceptionUtil.getAllExceptionMsg(e));
+        } catch (Exception ignore) {
+        }
     }
     
     @Override
