@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -41,6 +42,9 @@ public interface PaginationHelper<E> {
     
     Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
             final RowMapper<E> rowMapper);
+    
+    Page<E> fetchPageLimit(final MapperResult countMapperResult, final MapperResult mapperResult, final int pageNo,
+            final int pageSize, final RowMapper<E> rowMapper);
     
     void updateLimit(final String sql, final Object[] args);
 }

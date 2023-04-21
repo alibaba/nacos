@@ -30,6 +30,7 @@
     
     <name>nacos-client ${project.version}</name>
     <url>https://nacos.io</url>
+    <description>Nacos client pom.xml file</description>
     
     <dependencies>
         
