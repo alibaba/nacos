@@ -67,9 +67,8 @@ public class MapperManager {
     public void loadInitial() {
         Collection<Mapper> mappers = NacosServiceLoader.load(Mapper.class);
         for (Mapper mapper : mappers) {
-            Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.getOrDefault(mapper.getDataSource(), new HashMap<>(16));
+            Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.computeIfAbsent(mapper.getDataSource(), (r) -> new HashMap<>(16));
             mapperMap.put(mapper.getTableName(), mapper);
-            MAPPER_SPI_MAP.put(mapper.getDataSource(), mapperMap);
             LOGGER.info("[MapperManager] Load Mapper({}) datasource({}) tableName({}) successfully.",
                     mapper.getClass(), mapper.getDataSource(), mapper.getTableName());
         }
@@ -112,8 +111,7 @@ public class MapperManager {
                     "[MapperManager] Failed to find the table ,tableName:" + tableName);
         }
         if (dataSourceLogEnable) {
-            MapperProxy mapperProxy = new MapperProxy();
-            return (R) mapperProxy.createProxy(mapper);
+            return (R) MapperProxy.createSingleProxy(mapper);
         }
         return (R) mapper;
     }

@@ -198,6 +198,7 @@ public final class ServiceUtil {
             // will re-compute healthCount
             long newHealthyCount = healthyCount;
             if (originalTotal != allInstances.size()) {
+                newHealthyCount = 0L;
                 for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
                     if (allInstance.isHealthy()) {
                         newHealthyCount++;

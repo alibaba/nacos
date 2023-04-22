@@ -19,10 +19,10 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.util.List;
-
-import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Pagination Utils For Apache Derby.
@@ -55,7 +55,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
         return fetchPage(sqlCountRows, sqlFetchRows, args, pageNo, pageSize, null, rowMapper);
     }
-
+    
     @Override
     public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
@@ -91,7 +91,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-
+    
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
             final int pageNo, final int pageSize, final RowMapper rowMapper) {
@@ -126,7 +126,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-
+    
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
             final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
@@ -161,7 +161,7 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-
+    
     @Override
     public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
             final RowMapper rowMapper) {
@@ -177,7 +177,14 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         }
         return page;
     }
-
+    
+    @Override
+    public Page fetchPageLimit(MapperResult countMapperResult, MapperResult mapperResult, int pageNo, int pageSize,
+            RowMapper rowMapper) {
+        return fetchPageLimit(countMapperResult.getSql(), countMapperResult.getParamList().toArray(),
+                mapperResult.getSql(), mapperResult.getParamList().toArray(), pageNo, pageSize, rowMapper);
+    }
+    
     @Override
     public void updateLimit(final String sql, final Object[] args) {
         EmbeddedStorageContextUtils.addSqlContext(sql, args);

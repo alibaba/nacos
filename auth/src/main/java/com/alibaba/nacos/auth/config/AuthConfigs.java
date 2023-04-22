@@ -26,6 +26,8 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.module.ModuleState;
+import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,6 +181,11 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
                     .getProperty(Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE, Boolean.class, false);
             nacosAuthSystemType = EnvUtil.getProperty(Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE, "");
             refreshPluginProperties();
+            ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)
+                    .ifPresent(moduleState -> {
+                        ModuleState temp = new AuthModuleStateBuilder().build();
+                        moduleState.getStates().putAll(temp.getStates());
+                    });
         } catch (Exception e) {
             LOGGER.warn("Upgrade auth config from env failed, use old value", e);
         }

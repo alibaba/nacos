@@ -91,8 +91,12 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         this.channelKeepAliveTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT,
                 builder.channelKeepAliveTimeout);
         this.labels = builder.labels;
+        this.labels.put("tls.enable", "false");
         if (Objects.nonNull(builder.tlsConfig)) {
             this.tlsConfig = builder.tlsConfig;
+            if (builder.tlsConfig.getEnableTls()) {
+                this.labels.put("tls.enable", "true");
+            }
         }
     }
     

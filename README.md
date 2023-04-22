@@ -190,6 +190,7 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
 ![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
+![三诺生物](http://www.sinocare.com/public/static/images/logored6000321.png)
 ![DaoCloud](https://www.daocloud.io/static/Logo-Light.png)
 
 美菜, 松格科技, 集萃智能, 吾享, 拓深科技, 郑州山水, 长亮科技, 深圳易停车库, 武汉日创科技, 易管智能, 云帐房, 知氏教育, 三诺生物

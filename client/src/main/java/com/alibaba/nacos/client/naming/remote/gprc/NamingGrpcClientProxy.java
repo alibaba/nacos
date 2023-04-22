@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -47,6 +48,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -93,6 +95,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Map<String, String> labels = new HashMap<>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
+        labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels, RpcClientTlsConfig.properties(properties.asProperties()));
         this.redoService = new NamingGrpcRedoService(this);
         start(serverListFactory, serviceInfoHolder);
