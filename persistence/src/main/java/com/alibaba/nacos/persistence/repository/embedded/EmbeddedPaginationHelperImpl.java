@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.embedded;
+package com.alibaba.nacos.persistence.repository.embedded;
 
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
@@ -32,7 +32,7 @@ import java.util.List;
  * @author boyan
  * @date 2010-5-6
  */
-class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
+public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     
     private final DatabaseOperate databaseOperate;
     

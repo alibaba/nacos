@@ -29,6 +29,7 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
