@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;

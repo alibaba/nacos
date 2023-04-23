@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.persistence.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.PropertiesConstant;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 /**
@@ -34,9 +34,9 @@ public class DatasourcePlatformUtil {
      * @return
      */
     public static String getDatasourcePlatform(String defaultPlatform) {
-        String platform = EnvUtil.getProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY, defaultPlatform);
+        String platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, defaultPlatform);
         if (StringUtils.isBlank(platform)) {
-            platform = EnvUtil.getProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, defaultPlatform);
+            platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, defaultPlatform);
         }
         return platform;
     }

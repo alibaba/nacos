@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
@@ -47,19 +48,19 @@ public class ConditionStandaloneEmbedStorageTest {
         MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
         Assert.assertTrue(conditionStandaloneEmbedStorage.matches(context, metadata));
     
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
         Assert.assertFalse(conditionStandaloneEmbedStorage.matches(context, metadata));
     
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(false);
+        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
         Assert.assertFalse(conditionStandaloneEmbedStorage.matches(context, metadata));
     
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(false);
+        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
         Assert.assertFalse(conditionStandaloneEmbedStorage.matches(context, metadata));
     

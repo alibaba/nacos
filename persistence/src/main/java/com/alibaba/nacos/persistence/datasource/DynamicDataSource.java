@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.datasource;
+package com.alibaba.nacos.persistence.datasource;
 
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 
 /**
  * Datasource adapter.
@@ -43,7 +43,7 @@ public class DynamicDataSource {
             // Embedded storage is used by default in stand-alone mode
             // In cluster mode, external databases are used by default
             
-            if (PropertyUtil.isEmbeddedStorage()) {
+            if (DatasourceConfiguration.isEmbeddedStorage()) {
                 if (localDataSourceService == null) {
                     localDataSourceService = new LocalDataSourceServiceImpl();
                     localDataSourceService.init();

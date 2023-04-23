@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.constant.PropertiesConstant;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.datasource.ExternalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.ExternalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -71,15 +72,15 @@ public class ClusterExternalStorageTest {
     public void test005WithClusterAndNullDatabase() {
         // 模拟设置环境05：指定集群，未指定数据库，UseExternalDB是true，数据库类型是""
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
-        PropertyUtil.setEmbeddedStorage(EnvUtil.getStandaloneMode());
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
         // 模拟初始化
         propertyUtil.initialize(null);
 
         Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertTrue(PropertyUtil.isUseExternalDB());
+        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
 
@@ -87,15 +88,15 @@ public class ClusterExternalStorageTest {
     public void test006WithClusterAndMysqlDatabase() {
         // 模拟设置环境06：指定集群，指定数据库mysql，UseExternalDB是true，数据库类型是mysql
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
-        PropertyUtil.setEmbeddedStorage(EnvUtil.getStandaloneMode());
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
     
         // 模拟初始化
         propertyUtil.initialize(null);
 
         Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertTrue(PropertyUtil.isUseExternalDB());
+        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
 
@@ -103,15 +104,15 @@ public class ClusterExternalStorageTest {
     public void test007WithClusterAndDerbyDatabase() {
         // 模拟设置环境07：指定集群，指定数据库derby，UseExternalDB是false，数据库类型是derby
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
         
         // 模拟初始化
         propertyUtil.initialize(null);
 
         Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertFalse(PropertyUtil.isUseExternalDB());
+        Assert.assertFalse(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
     }
 
@@ -119,15 +120,15 @@ public class ClusterExternalStorageTest {
     public void test008WithClusterAndOtherDatabase() {
         // 模拟设置环境08: 指定集群，指定数据库其他，UseExternalDB是true，数据库类型是其他
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
-        PropertyUtil.setEmbeddedStorage(EnvUtil.getStandaloneMode());
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
         // 模拟初始化
         propertyUtil.initialize(null);
 
         Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertTrue(PropertyUtil.isUseExternalDB());
+        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
 

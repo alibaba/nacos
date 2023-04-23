@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.datasource;
+package com.alibaba.nacos.persistence.datasource;
 
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
+@RunWith(MockitoJUnitRunner.class)
 public class DynamicDataSourceTest {
     
     @InjectMocks
@@ -52,15 +47,11 @@ public class DynamicDataSourceTest {
     
     @Test
     public void testGetDataSource() {
-        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
-        
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
         
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(false);
+        DatasourceConfiguration.setEmbeddedStorage(false);
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
-    
-        propertyUtilMockedStatic.close();
     }
     
 }

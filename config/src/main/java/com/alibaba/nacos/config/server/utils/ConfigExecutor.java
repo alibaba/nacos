@@ -40,7 +40,7 @@ public final class ConfigExecutor {
                     new NameThreadFactory("com.alibaba.nacos.config.embedded.dump"));
     
     private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 10,
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 8,
                     new NameThreadFactory("com.alibaba.nacos.config.server.timer"));
     
     private static final ScheduledExecutorService CAPACITY_MANAGEMENT_EXECUTOR = ExecutorFactory.Managed

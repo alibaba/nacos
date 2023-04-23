@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import java.util.List;
 
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 
 /**
  * Role CRUD service.

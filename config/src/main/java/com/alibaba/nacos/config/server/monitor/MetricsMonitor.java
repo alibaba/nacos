@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
@@ -196,10 +197,6 @@ public class MetricsMonitor {
     
     public static Counter getNacosException() {
         return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "nacos");
-    }
-    
-    public static Counter getDbException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "db");
     }
     
     public static Counter getConfigNotifyException() {

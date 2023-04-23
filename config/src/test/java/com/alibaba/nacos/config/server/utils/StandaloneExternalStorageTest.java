@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.constant.PropertiesConstant;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.datasource.ExternalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.ExternalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -70,7 +71,7 @@ public class StandaloneExternalStorageTest {
     public void test001WithStandaloneAndNullDatabase() {
         // 模拟设置环境01：指定单例，未指定数据库，UseExternalDB是false
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         
         // 模拟初始化
@@ -78,14 +79,14 @@ public class StandaloneExternalStorageTest {
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
-        Assert.assertFalse(PropertyUtil.isUseExternalDB());
+        Assert.assertFalse(DatasourceConfiguration.isUseExternalDB());
     }
     
     @Test
     public void test002WithStandaloneAndDerbyDatabase() {
         // 模拟设置环境02：指定单例，指定数据库derby，UseExternalDB是false
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         // 模拟初始化
         
@@ -93,14 +94,14 @@ public class StandaloneExternalStorageTest {
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
-        Assert.assertFalse(PropertyUtil.isUseExternalDB());
+        Assert.assertFalse(DatasourceConfiguration.isUseExternalDB());
     }
     
     @Test
     public void test003WithStandaloneAndMysqlDatabase() {
         // 模拟设置环境03：指定单例，指定数据库为mysql， UseExternalDB是true
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         // 模拟初始化
         
@@ -108,14 +109,14 @@ public class StandaloneExternalStorageTest {
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
-        Assert.assertTrue(PropertyUtil.isUseExternalDB());
+        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
     }
     
     @Test
     public void test004WithStandaloneAndOtherDatabase() {
         // 模拟设置环境04：指定单例，指定数据库为其他， UseExternalDB是true
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
-        environment.setProperty(PropertiesConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
+        environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         // 模拟初始化
         
@@ -123,7 +124,7 @@ public class StandaloneExternalStorageTest {
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
-        Assert.assertTrue(PropertyUtil.isUseExternalDB());
+        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
     }
     
 }

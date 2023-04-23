@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,10 +45,10 @@ public class ConditionOnEmbeddedStorageTest {
     @Test
     public void testMatches() {
         MockedStatic<PropertyUtil> mockedStatic = Mockito.mockStatic(PropertyUtil.class);
-        mockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        mockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         Assert.assertTrue(conditionOnEmbeddedStorage.matches(context, metadata));
     
-        mockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(false);
+        mockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         Assert.assertFalse(conditionOnEmbeddedStorage.matches(context, metadata));
     
         mockedStatic.close();

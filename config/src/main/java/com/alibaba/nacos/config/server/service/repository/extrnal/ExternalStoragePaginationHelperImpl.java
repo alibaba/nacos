@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.JdbcTemplate;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.datasource;
+package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.DatasourcePlatformUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
+import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -37,16 +39,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-
 /**
  * Base data source.
  *
  * @author Nacos
  */
 public class ExternalDataSourceServiceImpl implements DataSourceService {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalDataSourceServiceImpl.class);
     
     /**
      * JDBC execute timeout value, unit:second.
@@ -79,7 +79,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
     
     private String dataSourceType = "";
     
-    private String defaultDataSourceType = "";
+    private final String defaultDataSourceType = "";
     
     @Override
     public void init() {
@@ -109,18 +109,18 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         dataSourceType = DatasourcePlatformUtil.getDatasourcePlatform(defaultDataSourceType);
         
-        if (PropertyUtil.isUseExternalDB()) {
+        if (DatasourceConfiguration.isUseExternalDB()) {
             try {
                 reload();
             } catch (IOException e) {
-                FATAL_LOG.error("[ExternalDataSourceService] datasource reload error", e);
+                LOGGER.error("[ExternalDataSourceService] datasource reload error", e);
                 throw new RuntimeException(DB_LOAD_ERROR_MSG, e);
             }
             
             if (this.dataSourceList.size() > DB_MASTER_SELECT_THRESHOLD) {
-                ConfigExecutor.scheduleConfigTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
+                PersistenceExecutor.scheduleTask(new SelectMasterTask(), 10, 10, TimeUnit.SECONDS);
             }
-            ConfigExecutor.scheduleConfigTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
+            PersistenceExecutor.scheduleTask(new CheckDbHealthTask(), 10, 10, TimeUnit.SECONDS);
         }
     }
     
@@ -158,7 +158,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 }
             }
         } catch (RuntimeException e) {
-            FATAL_LOG.error(DB_LOAD_ERROR_MSG, e);
+            LOGGER.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
         }
     }
@@ -179,7 +179,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 return result == 0;
             }
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] " + e.toString(), e);
+            LOGGER.error("[db-error] " + e.toString(), e);
             return false;
         }
         
@@ -231,8 +231,8 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         @Override
         public void run() {
-            if (DEFAULT_LOG.isDebugEnabled()) {
-                DEFAULT_LOG.debug("check master db.");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("check master db.");
             }
             boolean isFound = false;
             
@@ -244,7 +244,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                 try {
                     testMasterJT.update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
-                        FATAL_LOG.warn("[master-db] {}", ds.getJdbcUrl());
+                        LOGGER.warn("[master-db] {}", ds.getJdbcUrl());
                     }
                     jt.setDataSource(ds);
                     tm.setDataSource(ds);
@@ -252,13 +252,13 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
                     masterIndex = index;
                     break;
                 } catch (DataAccessException e) { // read only
-                    FATAL_LOG.warn("[master-db] master db access error", e);
+                    LOGGER.warn("[master-db] master db access error", e);
                 }
             }
             
             if (!isFound) {
-                FATAL_LOG.error("[master-db] master db not found.");
-                MetricsMonitor.getDbException().increment();
+                LOGGER.error("[master-db] master db not found.");
+                DatasourceMetrics.getDbException().increment();
             }
         }
     }
@@ -268,27 +268,27 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         
         @Override
         public void run() {
-            if (DEFAULT_LOG.isDebugEnabled()) {
-                DEFAULT_LOG.debug("check db health.");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("check db health.");
             }
             String sql = "SELECT * FROM config_info_beta WHERE id = 1";
             
             for (int i = 0; i < testJtList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJtList.get(i);
                 try {
-                    jdbcTemplate.query(sql, CONFIG_INFO4BETA_ROW_MAPPER);
+                    jdbcTemplate.queryForMap(sql);
                     isHealthList.set(i, Boolean.TRUE);
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
-                        FATAL_LOG.error("[db-error] master db {} down.",
+                        LOGGER.error("[db-error] master db {} down.",
                                 InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     } else {
-                        FATAL_LOG.error("[db-error] slave db {} down.",
+                        LOGGER.error("[db-error] slave db {} down.",
                                 InternetAddressUtil.getIPFromString(dataSourceList.get(i).getJdbcUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
                     
-                    MetricsMonitor.getDbException().increment();
+                    DatasourceMetrics.getDbException().increment();
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.datasource;
+package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
-import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -50,13 +51,15 @@ import java.util.concurrent.Callable;
  */
 public class LocalDataSourceServiceImpl implements DataSourceService {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalDataSourceServiceImpl.class);
+    
     private final String jdbcDriverName = "org.apache.derby.jdbc.EmbeddedDriver";
     
     private final String userName = "nacos";
     
     private final String password = "nacos";
     
-    private final String derbyBaseDir = "data" + File.separator + Constants.DERBY_BASE_DIR;
+    private final String derbyBaseDir = "data" + File.separator + PersistenceConstant.DERBY_BASE_DIR;
     
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
     
@@ -74,11 +77,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     
     @Override
     public synchronized void init() throws Exception {
-        if (PropertyUtil.isUseExternalDB()) {
+        if (DatasourceConfiguration.isUseExternalDB()) {
             return;
         }
         if (!initialize) {
-            LogUtil.DEFAULT_LOG.info("use local db service for init");
+            LOGGER.info("use local db service for init");
             final String jdbcUrl = "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
             initialize(jdbcUrl);
             initialize = true;
@@ -94,8 +97,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         try {
             execute(ds.getConnection(), "META-INF/derby-schema.sql");
         } catch (Exception e) {
-            if (LogUtil.DEFAULT_LOG.isErrorEnabled()) {
-                LogUtil.DEFAULT_LOG.error(e.getMessage(), e);
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error(e.getMessage(), e);
             }
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load derby-schema.sql error.", e);
         }
@@ -131,7 +134,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
     
     private void doDerbyClean() throws Exception {
-        LogUtil.DEFAULT_LOG.warn("use local db service for reopenDerby");
+        LOGGER.warn("use local db service for reopenDerby");
         try {
             DriverManager.getConnection("jdbc:derby:;shutdown=true");
         } catch (Exception e) {
@@ -226,7 +229,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             byte[] buff = new byte[1024];
             int byteRead = 0;
             while ((byteRead = sqlFileIn.read(buff)) != -1) {
-                sqlSb.append(new String(buff, 0, byteRead, Constants.ENCODE));
+                sqlSb.append(new String(buff, 0, byteRead, PersistenceConstant.DEFAULT_ENCODE));
             }
             
             String[] sqlArr = sqlSb.toString().split(";");
@@ -258,7 +261,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 try {
                     stmt.execute(sql);
                 } catch (Exception e) {
-                    LogUtil.DEFAULT_LOG.warn(e.getMessage());
+                    LOGGER.warn(e.getMessage());
                 }
             }
         }
