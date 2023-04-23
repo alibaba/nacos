@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.repository.embedded;
+package com.alibaba.nacos.persistence.repository.embedded.sql;
 
 import java.io.Serializable;
 import java.util.Arrays;

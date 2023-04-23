@@ -17,7 +17,7 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
-import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;

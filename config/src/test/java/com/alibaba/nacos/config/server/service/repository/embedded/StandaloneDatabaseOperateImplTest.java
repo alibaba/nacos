@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
-import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.persistence.repository.embedded;
 
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
