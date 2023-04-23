@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.console.model.Namespace;
-import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +70,7 @@ public class NamespaceControllerTest {
     
     @Test
     public void testGetNamespaceByNamespaceId() throws Exception {
-        NamespaceAllInfo namespace = new NamespaceAllInfo("", "public", 0, 0, 0, "");
+        Namespace namespace = new Namespace("", "public", "", 0, 0, 0);
         when(namespaceOperationService.getNamespace("")).thenReturn(namespace);
         assertEquals(namespace, namespaceController.getNamespace(""));
     }

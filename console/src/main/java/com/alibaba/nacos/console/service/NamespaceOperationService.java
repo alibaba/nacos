@@ -26,7 +26,6 @@ import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
 import com.alibaba.nacos.console.model.Namespace;
-import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -89,14 +88,13 @@ public class NamespaceOperationService {
      * query namespace by namespace id.
      *
      * @param namespaceId namespace Id.
-     * @return NamespaceAllInfo.
+     * @return Namespace.
      */
-    public NamespaceAllInfo getNamespace(String namespaceId) throws NacosException {
+    public Namespace getNamespace(String namespaceId) throws NacosException {
         // TODO 获取用kp
         if (StringUtils.isBlank(namespaceId) || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {
-            return new NamespaceAllInfo(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_QUOTA,
-                    configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType(),
-                    DEFAULT_NAMESPACE_DESCRIPTION);
+            return new Namespace(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION, DEFAULT_QUOTA,
+                    configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
         } else {
             TenantInfo tenantInfo = commonPersistService.findTenantByKp(DEFAULT_KP, namespaceId);
             if (null == tenantInfo) {
@@ -104,8 +102,8 @@ public class NamespaceOperationService {
                         "namespaceId [ " + namespaceId + " ] not exist");
             }
             int configCount = configInfoPersistService.configInfoCount(namespaceId);
-            return new NamespaceAllInfo(namespaceId, tenantInfo.getTenantName(), DEFAULT_QUOTA, configCount,
-                    NamespaceTypeEnum.CUSTOM.getType(), tenantInfo.getTenantDesc());
+            return new Namespace(namespaceId, tenantInfo.getTenantName(), tenantInfo.getTenantDesc(), DEFAULT_QUOTA,
+                    configCount, NamespaceTypeEnum.CUSTOM.getType());
         }
     }
     
@@ -124,7 +122,7 @@ public class NamespaceOperationService {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
                     "namespaceId [" + namespaceId + "] already exist");
         }
-    
+        
         commonPersistService
                 .insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc, DEFAULT_CREATE_SOURCE,
                         System.currentTimeMillis());
