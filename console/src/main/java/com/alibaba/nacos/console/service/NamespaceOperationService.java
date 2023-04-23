@@ -24,8 +24,8 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
-import com.alibaba.nacos.console.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
+import com.alibaba.nacos.core.namespace.model.Namespace;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.enums;
+package com.alibaba.nacos.core.namespace.model;
 
 /**
- * the enum of namespace.
- * 0 : Global configuration， 1 : Default private namespace ，2 : Custom namespace.
+ * the enum of namespace. 0 : Global configuration， 1 : Default private namespace ，2 : Custom namespace.
  *
  * @author chenglu
  * @date 2021-05-25 17:01
