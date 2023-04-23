@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.persistence.datasource;
 
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.datasource.ExternalDataSourceServiceImpl;
-import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.Constants;
@@ -56,12 +53,13 @@ public class StandaloneExternalStorageTest {
     @Mock
     private ExternalDataSourceServiceImpl basicDataSourceService;
     
-    PropertyUtil propertyUtil = new PropertyUtil();
+    DatasourceConfiguration datasourceConfig;
     
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        datasourceConfig = new DatasourceConfiguration();
         dataSource = DynamicDataSource.getInstance();
         ReflectionTestUtils.setField(dataSource, "localDataSourceService", localDataSourceService);
         ReflectionTestUtils.setField(dataSource, "basicDataSourceService", basicDataSourceService);
@@ -73,9 +71,10 @@ public class StandaloneExternalStorageTest {
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
         // 模拟初始化
-        propertyUtil.initialize(null);
+        datasourceConfig.initialize(null);
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
@@ -88,9 +87,10 @@ public class StandaloneExternalStorageTest {
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         // 模拟初始化
         
-        propertyUtil.initialize(null);
+        datasourceConfig.initialize(null);
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
@@ -103,9 +103,10 @@ public class StandaloneExternalStorageTest {
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         // 模拟初始化
         
-        propertyUtil.initialize(null);
+        datasourceConfig.initialize(null);
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
@@ -118,9 +119,10 @@ public class StandaloneExternalStorageTest {
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "true");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
+        DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         // 模拟初始化
         
-        propertyUtil.initialize(null);
+        datasourceConfig.initialize(null);
         
         Assert.assertTrue(EnvUtil.getStandaloneMode());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);

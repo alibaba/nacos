@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.persistence.datasource;
 
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.datasource.ExternalDataSourceServiceImpl;
-import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.Constants;
@@ -56,16 +53,17 @@ public class ClusterExternalStorageTest {
     @Mock
     private ExternalDataSourceServiceImpl basicDataSourceService;
     
-    PropertyUtil propertyUtil = new PropertyUtil();
+    DatasourceConfiguration datasourceConfig;
     
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
+        datasourceConfig = new DatasourceConfiguration();
         dataSource = DynamicDataSource.getInstance();
         ReflectionTestUtils.setField(dataSource, "localDataSourceService", localDataSourceService);
         ReflectionTestUtils.setField(dataSource, "basicDataSourceService", basicDataSourceService);
-       
+        
     }
     
     @Test
@@ -77,13 +75,13 @@ public class ClusterExternalStorageTest {
         DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
         // 模拟初始化
-        propertyUtil.initialize(null);
-
+        datasourceConfig.initialize(null);
+        
         Assert.assertFalse(EnvUtil.getStandaloneMode());
         Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
-
+    
     @Test
     public void test006WithClusterAndMysqlDatabase() {
         // 模拟设置环境06：指定集群，指定数据库mysql，UseExternalDB是true，数据库类型是mysql
@@ -91,15 +89,15 @@ public class ClusterExternalStorageTest {
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
         EnvUtil.setIsStandalone(Boolean.getBoolean(Constants.STANDALONE_MODE_PROPERTY_NAME));
         DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
-    
+        
         // 模拟初始化
-        propertyUtil.initialize(null);
-
+        datasourceConfig.initialize(null);
+        
         Assert.assertFalse(EnvUtil.getStandaloneMode());
         Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
-
+    
     @Test
     public void test007WithClusterAndDerbyDatabase() {
         // 模拟设置环境07：指定集群，指定数据库derby，UseExternalDB是false，数据库类型是derby
@@ -109,13 +107,13 @@ public class ClusterExternalStorageTest {
         DatasourceConfiguration.setEmbeddedStorage(true);
         
         // 模拟初始化
-        propertyUtil.initialize(null);
-
+        datasourceConfig.initialize(null);
+        
         Assert.assertFalse(EnvUtil.getStandaloneMode());
         Assert.assertFalse(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
     }
-
+    
     @Test
     public void test008WithClusterAndOtherDatabase() {
         // 模拟设置环境08: 指定集群，指定数据库其他，UseExternalDB是true，数据库类型是其他
@@ -125,11 +123,11 @@ public class ClusterExternalStorageTest {
         DatasourceConfiguration.setEmbeddedStorage(EnvUtil.getStandaloneMode());
         
         // 模拟初始化
-        propertyUtil.initialize(null);
-
+        datasourceConfig.initialize(null);
+        
         Assert.assertFalse(EnvUtil.getStandaloneMode());
         Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
-
+    
 }
