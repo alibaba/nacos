@@ -30,7 +30,7 @@ import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.configuration.ConditionDistributedEmbedStorage;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;

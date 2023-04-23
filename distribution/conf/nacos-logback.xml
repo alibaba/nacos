@@ -582,6 +582,22 @@
         </encoder>
     </appender>
     
+    <appender name="nacos-persistence"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/nacos-persistence.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/nacos-persistence.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
     
     <logger name="com.alibaba.nacos.address.main" additivity="false">
         <level value="INFO"/>
@@ -721,6 +737,11 @@
     <logger name="com.alibaba.nacos.core.cluster" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="nacos-cluster"/>
+    </logger>
+    
+    <logger name="com.alibaba.nacos.persistence" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="nacos-persistence"/>
     </logger>
 
     <springProfile name="standalone">

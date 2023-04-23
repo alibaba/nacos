@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.configuration;
+package com.alibaba.nacos.persistence.configuration.condition;
 
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,14 +43,14 @@ public class ConditionOnExternalStorageTest {
     
     @Test
     public void testMatches() {
-        MockedStatic<PropertyUtil> mockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        MockedStatic<DatasourceConfiguration> mockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
         
         mockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         Assert.assertFalse(conditionOnExternalStorage.matches(context, metadata));
-    
+        
         mockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         Assert.assertTrue(conditionOnExternalStorage.matches(context, metadata));
-    
+        
         mockedStatic.close();
     }
     

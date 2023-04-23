@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.configuration;
+package com.alibaba.nacos.persistence.configuration.condition;
 
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import org.springframework.context.annotation.Condition;
@@ -22,15 +22,14 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Judge whether to user ExternalStorage by condition.
+ * Judge whether to user EmbeddedStorage by condition.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ConditionOnExternalStorage implements Condition {
+public class ConditionOnEmbeddedStorage implements Condition {
     
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-        return !DatasourceConfiguration.isEmbeddedStorage();
+        return DatasourceConfiguration.isEmbeddedStorage();
     }
-    
 }

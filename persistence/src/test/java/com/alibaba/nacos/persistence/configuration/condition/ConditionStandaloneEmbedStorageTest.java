@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.configuration;
+package com.alibaba.nacos.persistence.configuration.condition;
 
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
@@ -45,25 +44,26 @@ public class ConditionStandaloneEmbedStorageTest {
     
     @Test
     public void testMatches() {
-        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        MockedStatic<DatasourceConfiguration> propertyUtilMockedStatic = Mockito
+                .mockStatic(DatasourceConfiguration.class);
         MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
         Assert.assertTrue(conditionStandaloneEmbedStorage.matches(context, metadata));
-    
+        
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
         Assert.assertFalse(conditionStandaloneEmbedStorage.matches(context, metadata));
-    
+        
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
         Assert.assertFalse(conditionStandaloneEmbedStorage.matches(context, metadata));
-    
+        
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
         Assert.assertFalse(conditionStandaloneEmbedStorage.matches(context, metadata));
-    
+        
         propertyUtilMockedStatic.close();
         envUtilMockedStatic.close();
     }
