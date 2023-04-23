@@ -40,6 +40,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
 import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
+import com.alibaba.nacos.persistence.repository.embedded.operate.BaseDatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.persistence.repository.embedded.sql.QueryType;

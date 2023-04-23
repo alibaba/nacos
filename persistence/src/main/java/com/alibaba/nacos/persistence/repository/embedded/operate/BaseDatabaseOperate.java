@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.embedded;
+package com.alibaba.nacos.persistence.repository.embedded.operate;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.persistence.utils.DerbyUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -36,8 +37,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-
 /**
  * The Derby database basic operation.
  *
@@ -45,6 +44,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
 public interface BaseDatabaseOperate extends DatabaseOperate {
+    
+    Logger LOGGER = LoggerFactory.getLogger(BaseDatabaseOperate.class);
     
     /**
      * query one result by sql then convert result to target type.
@@ -61,10 +62,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] can't get connection : {}", ExceptionUtil.getAllExceptionMsg(e));
+            LOGGER.error("[db-error] can't get connection : {}", ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         } catch (DataAccessException e) {
-            FATAL_LOG.error("[db-error] DataAccessException : {}", ExceptionUtil.getAllExceptionMsg(e));
+            LOGGER.error("[db-error] DataAccessException : {}", ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
     }
@@ -85,10 +86,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] {}", e.toString());
+            LOGGER.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            LOGGER.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -110,10 +111,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] {}", e.toString());
+            LOGGER.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            LOGGER.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -133,10 +134,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         try {
             return jdbcTemplate.query(sql, args, mapper);
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] {}", e.toString());
+            LOGGER.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            LOGGER.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -158,10 +159,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] {}", e.toString());
+            LOGGER.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            LOGGER.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -179,10 +180,10 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
         try {
             return jdbcTemplate.queryForList(sql, args);
         } catch (CannotGetJdbcConnectionException e) {
-            FATAL_LOG.error("[db-error] {}", e.toString());
+            LOGGER.error("[db-error] {}", e.toString());
             throw e;
         } catch (DataAccessException e) {
-            FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
+            LOGGER.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", sql, args,
                     ExceptionUtil.getAllExceptionMsg(e));
             throw e;
         }
@@ -221,11 +222,11 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                         errSql[0] = pair.getSql();
                         args[0] = pair.getArgs();
                         boolean rollBackOnUpdateFail = pair.isRollBackOnUpdateFail();
-                        LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current sql : {}", errSql[0]);
-                        LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "current args : {}", args[0]);
+                        LoggerUtils.printIfDebugEnabled(LOGGER, "current sql : {}", errSql[0]);
+                        LoggerUtils.printIfDebugEnabled(LOGGER, "current args : {}", args[0]);
                         int row = jdbcTemplate.update(pair.getSql(), pair.getArgs());
                         if (rollBackOnUpdateFail && row < 1) {
-                            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "SQL update affected {} rows ", row);
+                            LoggerUtils.printIfDebugEnabled(LOGGER, "SQL update affected {} rows ", row);
                             throw new IllegalTransactionStateException("Illegal transaction");
                         }
                     });
@@ -234,22 +235,22 @@ public interface BaseDatabaseOperate extends DatabaseOperate {
                     }
                     return Boolean.TRUE;
                 } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
-                    FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
+                    LOGGER.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                     if (consumer != null) {
                         consumer.accept(Boolean.FALSE, e);
                     }
                     return Boolean.FALSE;
                 } catch (CannotGetJdbcConnectionException e) {
-                    FATAL_LOG.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
+                    LOGGER.error("[db-error] sql : {}, args : {}, error : {}", errSql[0], args[0], e.toString());
                     throw e;
                 } catch (DataAccessException e) {
-                    FATAL_LOG.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0],
-                            args[0], ExceptionUtil.getAllExceptionMsg(e));
+                    LOGGER.error("[db-error] DataAccessException sql : {}, args : {}, error : {}", errSql[0], args[0],
+                            ExceptionUtil.getAllExceptionMsg(e));
                     throw e;
                 }
             });
         } catch (IllegalTransactionStateException e) {
-            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "Roll back transaction for {} ", e.getMessage());
+            LoggerUtils.printIfDebugEnabled(LOGGER, "Roll back transaction for {} ", e.getMessage());
             if (consumer != null) {
                 consumer.accept(Boolean.FALSE, e);
             }

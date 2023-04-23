@@ -23,7 +23,7 @@ import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.Assert;

@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
