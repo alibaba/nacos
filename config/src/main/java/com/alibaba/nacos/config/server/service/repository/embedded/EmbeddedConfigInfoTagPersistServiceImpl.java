@@ -30,6 +30,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -100,11 +101,11 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
                     appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
-            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
             
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -141,11 +142,11 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         final Object[] args = new Object[] {dataId, group, tenantTmp, tagTmp};
         
         EmbeddedStorageContextUtils.onDeleteConfigTagInfo(tenantTmp, group, dataId, tagTmp, srcIp);
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         try {
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -170,11 +171,11 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp};
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
-            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
             
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -208,11 +209,11 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             final MapperResult mapperResult = configInfoTagMapper.updateConfigInfo4TagCas(context);
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
-            EmbeddedStorageContextUtils.addSqlContext(mapperResult.getSql(), mapperResult.getParamList());
+            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList());
             
             return databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

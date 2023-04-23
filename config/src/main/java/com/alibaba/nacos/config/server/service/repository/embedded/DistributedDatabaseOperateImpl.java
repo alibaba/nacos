@@ -40,10 +40,10 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
 import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
 import com.alibaba.nacos.config.server.service.sql.QueryType;
-import com.alibaba.nacos.config.server.service.sql.SelectRequest;
+import com.alibaba.nacos.persistence.repository.embedded.SelectRequest;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -223,7 +223,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
                             .className(cls.getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
+            final boolean blockRead = EmbeddedStorageContextHolder
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
@@ -247,7 +247,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(cls.getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
+            final boolean blockRead = EmbeddedStorageContextHolder
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
@@ -271,7 +271,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(mapper.getClass().getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
+            final boolean blockRead = EmbeddedStorageContextHolder
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
@@ -296,7 +296,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(mapper.getClass().getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
+            final boolean blockRead = EmbeddedStorageContextHolder
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
@@ -320,7 +320,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
                             .className(rClass.getCanonicalName()).build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
+            final boolean blockRead = EmbeddedStorageContextHolder
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
@@ -344,7 +344,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql).args(args)
                             .build());
             
-            final boolean blockRead = EmbeddedStorageContextUtils
+            final boolean blockRead = EmbeddedStorageContextHolder
                     .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
@@ -429,7 +429,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             + MD5Utils.md5Hex(sqlContext.toString(), Constants.ENCODE);
             WriteRequest request = WriteRequest.newBuilder().setGroup(group()).setKey(key)
                     .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
-                    .putAllExtendInfo(EmbeddedStorageContextUtils.getCurrentExtendInfo())
+                    .putAllExtendInfo(EmbeddedStorageContextHolder.getCurrentExtendInfo())
                     .setType(sqlContext.getClass().getCanonicalName()).build();
             if (Objects.isNull(consumer)) {
                 Response response = this.protocol.write(request);

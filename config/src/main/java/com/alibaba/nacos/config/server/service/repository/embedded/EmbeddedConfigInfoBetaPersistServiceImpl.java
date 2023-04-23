@@ -31,6 +31,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -102,11 +103,11 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                     configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, time, encryptedDataKey};
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
-            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
             
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -145,14 +146,14 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                 
                 EmbeddedStorageContextUtils.onDeleteConfigBetaInfo(tenantTmp, group, dataId,
                         System.currentTimeMillis());
-                EmbeddedStorageContextUtils.addSqlContext(sql, args);
+                EmbeddedStorageContextHolder.addSqlContext(sql, args);
                 
-                boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+                boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
                 if (!result) {
                     throw new NacosConfigException("[Tag] Configuration deletion failed");
                 }
             } finally {
-                EmbeddedStorageContextUtils.cleanAllContext();
+                EmbeddedStorageContextHolder.cleanAllContext();
             }
             
         }
@@ -179,11 +180,11 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                     encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
-            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
             
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -220,11 +221,11 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             final Object[] args = paramList.toArray();
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
-            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
             
             return databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

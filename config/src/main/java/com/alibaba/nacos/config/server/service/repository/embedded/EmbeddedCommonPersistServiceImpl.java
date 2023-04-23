@@ -25,7 +25,7 @@ import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
@@ -81,15 +81,15 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
                         "gmt_modified"));
         final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResoure, time, time};
         
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("Namespace creation failed");
             }
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -98,12 +98,12 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
         TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_INFO);
         
-        EmbeddedStorageContextUtils.addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp,
+        EmbeddedStorageContextHolder.addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp,
                 tenantId);
         try {
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -116,15 +116,15 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
                 Arrays.asList("kp", "tenant_id"));
         final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
         
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("Namespace update failed");
             }
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

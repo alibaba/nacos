@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -314,7 +314,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testBlockUpdate1() {
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = 1;";
-        EmbeddedStorageContextUtils.addSqlContext(sql);
+        EmbeddedStorageContextHolder.addSqlContext(sql);
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.blockUpdate());
     }
@@ -322,7 +322,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testBlockUpdate2() {
         String sql = "UPDATE config_info SET data_id = 'test' WHERE id = 1;";
-        EmbeddedStorageContextUtils.addSqlContext(sql);
+        EmbeddedStorageContextHolder.addSqlContext(sql);
         when(transactionTemplate.execute(any(TransactionCallback.class))).thenReturn(true);
         Assert.assertTrue(operate.blockUpdate(biConsumer));
     }
@@ -343,7 +343,7 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testFutureUpdate() throws ExecutionException, InterruptedException {
         String sql = "SELECT 1";
-        EmbeddedStorageContextUtils.addSqlContext(sql);
+        EmbeddedStorageContextHolder.addSqlContext(sql);
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         future.complete(true);
         doAnswer((invocationOnMock) -> null).when(operate).futureUpdate();

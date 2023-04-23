@@ -22,7 +22,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -90,7 +90,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     @Override
     public void addPermission(String role, String resource, String action) {
         String sql = "INSERT INTO permissions (role, resource, action) VALUES (?, ?, ?)";
-        EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+        EmbeddedStorageContextHolder.addSqlContext(sql, role, resource, action);
         databaseOperate.blockUpdate();
     }
     
@@ -104,7 +104,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     @Override
     public void deletePermission(String role, String resource, String action) {
         String sql = "DELETE FROM permissions WHERE role=? AND resource=? AND action=?";
-        EmbeddedStorageContextUtils.addSqlContext(sql, role, resource, action);
+        EmbeddedStorageContextHolder.addSqlContext(sql, role, resource, action);
         databaseOperate.blockUpdate();
     }
 

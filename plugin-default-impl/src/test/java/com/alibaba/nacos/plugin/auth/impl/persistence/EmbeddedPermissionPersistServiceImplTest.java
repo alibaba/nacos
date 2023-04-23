@@ -20,8 +20,8 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,7 +72,7 @@ public class EmbeddedPermissionPersistServiceImplTest {
     @Test
     public void testAddPermission() {
         embeddedPermissionPersistService.addPermission("role", "resource", "action");
-        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextUtils.getCurrentSqlContext();
+        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();
     }
@@ -80,7 +80,7 @@ public class EmbeddedPermissionPersistServiceImplTest {
     @Test
     public void testDeletePermission() {
         embeddedPermissionPersistService.deletePermission("role", "resource", "action");
-        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextUtils.getCurrentSqlContext();
+        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();
     }

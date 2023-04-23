@@ -20,8 +20,8 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,7 +79,7 @@ public class EmbeddedRolePersistServiceImplTest {
     @Test
     public void testAddRole() {
         embeddedRolePersistService.addRole("role", "userName");
-        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextUtils.getCurrentSqlContext();
+        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Assert.assertEquals(currentSqlContext.size(), 0);
     }
@@ -89,7 +89,7 @@ public class EmbeddedRolePersistServiceImplTest {
         embeddedRolePersistService.deleteRole("role");
         embeddedRolePersistService.deleteRole("role", "userName");
         
-        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextUtils.getCurrentSqlContext();
+        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Assert.assertEquals(currentSqlContext.size(), 0);
     }

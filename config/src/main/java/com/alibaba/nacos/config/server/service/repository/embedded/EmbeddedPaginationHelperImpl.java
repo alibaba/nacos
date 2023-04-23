@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -187,11 +187,11 @@ class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     
     @Override
     public void updateLimit(final String sql, final Object[] args) {
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         try {
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -188,7 +188,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         try {
             jdbcTemplate.update(sql, args);
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -198,7 +198,7 @@ class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
         try {
             return jdbcTemplate.update(sqlUpdate, args);
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

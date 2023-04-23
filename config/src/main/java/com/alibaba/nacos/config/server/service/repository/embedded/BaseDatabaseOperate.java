@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
 import com.alibaba.nacos.config.server.utils.DerbyUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.springframework.dao.DataAccessException;

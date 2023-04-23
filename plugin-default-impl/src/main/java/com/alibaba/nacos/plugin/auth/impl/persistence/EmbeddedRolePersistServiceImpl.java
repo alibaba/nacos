@@ -26,8 +26,8 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -113,10 +113,10 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         String sql = "INSERT INTO roles (role, username) VALUES (?, ?)";
         
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, role, userName);
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            EmbeddedStorageContextHolder.addSqlContext(sql, role, userName);
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -129,10 +129,10 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     public void deleteRole(String role) {
         String sql = "DELETE FROM roles WHERE role=?";
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, role);
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            EmbeddedStorageContextHolder.addSqlContext(sql, role);
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -146,10 +146,10 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     public void deleteRole(String role, String username) {
         String sql = "DELETE FROM roles WHERE role=? AND username=?";
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, role, username);
-            databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            EmbeddedStorageContextHolder.addSqlContext(sql, role, username);
+            databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

@@ -22,8 +22,8 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -63,10 +63,10 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
         
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
+            EmbeddedStorageContextHolder.addSqlContext(sql, username, password, true);
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -79,10 +79,10 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     public void deleteUser(String username) {
         String sql = "DELETE FROM users WHERE username=?";
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, username);
+            EmbeddedStorageContextHolder.addSqlContext(sql, username);
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -95,11 +95,11 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public void updateUserPassword(String username, String password) {
         try {
-            EmbeddedStorageContextUtils
+            EmbeddedStorageContextHolder
                     .addSqlContext("UPDATE users SET password = ? WHERE username=?", password, username);
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

@@ -30,7 +30,7 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -120,20 +120,20 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         
         if (Objects.isNull(dbContent)) {
             final Object[] args = new Object[] {dataId, group, tenantTmp, datumId, appNameTmp, contentTmp, now};
-            EmbeddedStorageContextUtils.addSqlContext(insert, args);
+            EmbeddedStorageContextHolder.addSqlContext(insert, args);
         } else if (!dbContent.equals(content)) {
             final Object[] args = new Object[] {contentTmp, now, dataId, group, tenantTmp, datumId};
-            EmbeddedStorageContextUtils.addSqlContext(update, args);
+            EmbeddedStorageContextHolder.addSqlContext(update, args);
         }
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("[Merge] Configuration release failed");
             }
             return true;
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -146,14 +146,14 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 addAggrConfigInfo(dataId, group, tenant, entry.getKey(), appName, entry.getValue());
             }
             
-            isPublishOk = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            isPublishOk = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             
             if (isPublishOk == null) {
                 return false;
             }
             return isPublishOk;
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -173,17 +173,17 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         for (Map.Entry<String, String> datumEntry : datumMap.entrySet()) {
             final Object[] args = new Object[] {dataId, group, tenantTmp, datumEntry.getKey(), appNameTmp,
                     datumEntry.getValue(), new Timestamp(System.currentTimeMillis())};
-            EmbeddedStorageContextUtils.addSqlContext(sql, args);
+            EmbeddedStorageContextHolder.addSqlContext(sql, args);
         }
         try {
-            isReplaceOk = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            isReplaceOk = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             
             if (isReplaceOk == null) {
                 return false;
             }
             return isReplaceOk;
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
         
     }
@@ -197,15 +197,15 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 TableConstant.CONFIG_INFO_AGGR);
         final String sql = configInfoAggrMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp, datumId};
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("[aggregation with single] Configuration deletion failed");
             }
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -217,15 +217,15 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
                 TableConstant.CONFIG_INFO_AGGR);
         final String sql = configInfoAggrMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("[aggregation with all] Configuration deletion failed");
             }
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -246,16 +246,16 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         
         final String sql = mapperResult.getSql();
         final Object[] args = mapperResult.getParamList().toArray();
-        EmbeddedStorageContextUtils.addSqlContext(sql, args);
+        EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
         try {
-            boolean result = databaseOperate.update(EmbeddedStorageContextUtils.getCurrentSqlContext());
+            boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
                 throw new NacosConfigException("[aggregation] Failed to configure batch deletion");
             }
             return true;
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     

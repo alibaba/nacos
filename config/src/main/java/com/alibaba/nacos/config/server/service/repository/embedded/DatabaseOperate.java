@@ -17,8 +17,8 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.ModifyRequest;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.io.File;
@@ -146,9 +146,9 @@ public interface DatabaseOperate {
      */
     default Boolean blockUpdate(BiConsumer<Boolean, Throwable> consumer) {
         try {
-            return update(EmbeddedStorageContextUtils.getCurrentSqlContext(), consumer);
+            return update(EmbeddedStorageContextHolder.getCurrentSqlContext(), consumer);
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -161,7 +161,7 @@ public interface DatabaseOperate {
     default CompletableFuture<Boolean> futureUpdate() {
         try {
             CompletableFuture<Boolean> future = new CompletableFuture<>();
-            update(EmbeddedStorageContextUtils.getCurrentSqlContext(), (o, throwable) -> {
+            update(EmbeddedStorageContextHolder.getCurrentSqlContext(), (o, throwable) -> {
                 if (Objects.nonNull(throwable)) {
                     future.completeExceptionally(throwable);
                     return;
@@ -170,7 +170,7 @@ public interface DatabaseOperate {
             });
             return future;
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
