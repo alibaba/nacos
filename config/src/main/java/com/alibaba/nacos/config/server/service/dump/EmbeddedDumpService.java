@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
@@ -110,14 +110,14 @@ public class EmbeddedDumpService extends DumpService {
                         return;
                     }
                     // Identify without a timeout mechanism
-                    EmbeddedStorageContextHolder.putExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA, "true");
+                    EmbeddedStorageContextHolder.putExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA, "true");
                     // Remove your own listening to avoid task accumulation
                     boolean canEnd = false;
                     for (; ; ) {
                         try {
                             dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
                             protocol.protocolMetaData()
-                                    .unSubscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, this);
+                                    .unSubscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, this);
                             canEnd = true;
                         } catch (Throwable ex) {
                             if (!shouldRetry(ex)) {
@@ -137,7 +137,7 @@ public class EmbeddedDumpService extends DumpService {
         };
         
         protocol.protocolMetaData()
-                .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, observer);
+                .subscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, observer);
         
         // We must wait for the dump task to complete the callback operation before
         // continuing with the initialization
@@ -174,6 +174,6 @@ public class EmbeddedDumpService extends DumpService {
         }
         // if is derby + raft mode, only leader can execute
         CPProtocol protocol = protocolManager.getCpProtocol();
-        return protocol.isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return protocol.isLeader(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP);
     }
 }

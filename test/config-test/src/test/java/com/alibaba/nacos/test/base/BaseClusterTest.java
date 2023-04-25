@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;

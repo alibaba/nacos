@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
+import com.alibaba.nacos.persistence.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;

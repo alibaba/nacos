@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model.event;
+package com.alibaba.nacos.persistence.model.event;
 
 import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
- * DerbyLoadEvent.
+ * RaftDBErrorEvent.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
-public class DerbyLoadEvent extends SlowEvent {
+public class RaftDbErrorEvent extends SlowEvent {
     
-    public static final DerbyLoadEvent INSTANCE = new DerbyLoadEvent();
+    private static final long serialVersionUID = 101591819161802336L;
     
-    private static final long serialVersionUID = 875401667921565121L;
+    private Throwable ex;
     
+    public RaftDbErrorEvent() {
+    }
+    
+    public RaftDbErrorEvent(Throwable ex) {
+        this.ex = ex;
+    }
+    
+    public Throwable getEx() {
+        return ex;
+    }
 }

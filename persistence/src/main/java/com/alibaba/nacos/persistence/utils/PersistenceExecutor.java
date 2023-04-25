@@ -19,6 +19,7 @@ package com.alibaba.nacos.persistence.utils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +34,15 @@ public class PersistenceExecutor {
             .newScheduledExecutorService(PersistenceExecutor.class.getCanonicalName(), 2,
                     new NameThreadFactory("com.alibaba.nacos.persistence.timer"));
     
+    private static final Executor DUMP_EXECUTOR = ExecutorFactory.Managed
+            .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
+                    new NameThreadFactory("com.alibaba.nacos.config.embedded.dump"));
+    
     public static void scheduleTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    }
+    
+    public static void executeEmbeddedDump(Runnable runnable) {
+        DUMP_EXECUTOR.execute(runnable);
     }
 }

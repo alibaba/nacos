@@ -30,22 +30,10 @@ import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.exception.NJdbcException;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
-import com.alibaba.nacos.config.server.model.event.DerbyLoadEvent;
-import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
 import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
-import com.alibaba.nacos.persistence.repository.embedded.operate.BaseDatabaseOperate;
-import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
-import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
-import com.alibaba.nacos.persistence.repository.embedded.sql.QueryType;
-import com.alibaba.nacos.persistence.repository.embedded.sql.SelectRequest;
-import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -59,8 +47,21 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.exception.NJdbcException;
+import com.alibaba.nacos.persistence.model.event.DerbyLoadEvent;
+import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.BaseDatabaseOperate;
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.sql.QueryType;
+import com.alibaba.nacos.persistence.repository.embedded.sql.SelectRequest;
+import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -225,7 +226,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             .className(cls.getCanonicalName()).build());
             
             final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -249,7 +250,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             .className(cls.getCanonicalName()).build());
             
             final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -273,7 +274,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             .className(mapper.getClass().getCanonicalName()).build());
             
             final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -298,7 +299,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             .className(mapper.getClass().getCanonicalName()).build());
             
             final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -322,7 +323,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             .className(rClass.getCanonicalName()).build());
             
             final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -346,7 +347,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                             .build());
             
             final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(Constants.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
             
             Response response = innerRead(
                     ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
@@ -391,9 +392,10 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     if (submit) {
                         List<ModifyRequest> requests = batchUpdate.stream().map(ModifyRequest::new)
                                 .collect(Collectors.toList());
-                        CompletableFuture<Response> future = protocol.writeAsync(WriteRequest.newBuilder().setGroup(group())
-                                .setData(ByteString.copyFrom(serializer.serialize(requests)))
-                                .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
+                        CompletableFuture<Response> future = protocol.writeAsync(
+                                WriteRequest.newBuilder().setGroup(group())
+                                        .setData(ByteString.copyFrom(serializer.serialize(requests)))
+                                        .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
                         futures.add(future);
                         batchUpdate.clear();
                     }
@@ -427,7 +429,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             
             final String key =
                     System.currentTimeMillis() + "-" + group() + "-" + memberManager.getSelf().getAddress() + "-"
-                            + MD5Utils.md5Hex(sqlContext.toString(), Constants.ENCODE);
+                            + MD5Utils.md5Hex(sqlContext.toString(), PersistenceConstant.DEFAULT_ENCODE);
             WriteRequest request = WriteRequest.newBuilder().setGroup(group()).setKey(key)
                     .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
                     .putAllExtendInfo(EmbeddedStorageContextHolder.getCurrentExtendInfo())
@@ -529,7 +531,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 // If there is additional information, post processing
                 // Put into the asynchronous thread pool for processing to avoid blocking the
                 // normal execution of the state machine
-                ConfigExecutor.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
+                PersistenceExecutor.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
             }
             
             return Response.newBuilder().setSuccess(isOk).build();
@@ -553,7 +555,7 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     
     @Override
     public String group() {
-        return Constants.CONFIG_MODEL_RAFT_GROUP;
+        return PersistenceConstant.CONFIG_MODEL_RAFT_GROUP;
     }
     
     private void handleExtendInfo(Map<String, String> extendInfo) {

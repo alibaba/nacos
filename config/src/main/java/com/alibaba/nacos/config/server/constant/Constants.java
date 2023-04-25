@@ -257,8 +257,6 @@ public class Constants {
     
     public static final int ATOMIC_MAX_SIZE = 1000;
     
-    public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
-    
     public static final int DATA_IN_BODY_VERSION = 204;
     
     /**
@@ -271,11 +269,6 @@ public class Constants {
      */
     public static final String EXTEND_INFOS_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName() + "@@many";
     
-    /**
-     * Specifies that reads wait without timeout.
-     */
-    public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
-
     public static final String CONFIG_EXPORT_ITEM_FILE_SEPARATOR = "/";
     
     public static final String CONFIG_EXPORT_METADATA = ".meta.yml";

@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.config.server.service.merge;
 
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -132,7 +132,7 @@ public class MergeDatumService {
             return true;
         }
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
-        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return protocolManager.getCpProtocol().isLeader(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP);
     }
     
     class MergeAllDataWorker extends Thread {
