@@ -56,7 +56,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.core.utils.TimerContext;
+import com.alibaba.nacos.sys.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

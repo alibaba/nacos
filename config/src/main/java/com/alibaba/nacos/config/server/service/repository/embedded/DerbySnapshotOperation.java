@@ -17,22 +17,24 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.persistence.model.event.DerbyLoadEvent;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
-import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.model.event.DerbyLoadEvent;
+import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
-import com.alibaba.nacos.core.utils.TimerContext;
+import com.alibaba.nacos.sys.utils.TimerContext;
 import com.alipay.sofa.jraft.util.CRC64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.io.File;
 import java.nio.file.Paths;
 import java.sql.CallableStatement;
@@ -43,7 +45,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.zip.Checksum;
-import javax.sql.DataSource;
 
 /**
  * Derby Snapshot operation.
@@ -51,6 +52,8 @@ import javax.sql.DataSource;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbySnapshotOperation implements SnapshotOperation {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(DerbySnapshotOperation.class);
     
     private static final String DERBY_SNAPSHOT_SAVE = DerbySnapshotOperation.class.getSimpleName() + ".SAVE";
     
@@ -62,7 +65,8 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     
     private final String snapshotArchive = "derby_data.zip";
     
-    private final String derbyBaseDir = Paths.get(EnvUtil.getNacosHome(), "data", PersistenceConstant.DERBY_BASE_DIR).toString();
+    private final String derbyBaseDir = Paths.get(EnvUtil.getNacosHome(), "data", PersistenceConstant.DERBY_BASE_DIR)
+            .toString();
     
     private final String restoreDB = "jdbc:derby:" + derbyBaseDir;
     
@@ -76,7 +80,7 @@ public class DerbySnapshotOperation implements SnapshotOperation {
     
     @Override
     public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
-        RaftExecutor.doSnapshot(() -> {
+        PersistenceExecutor.executeSnapshot(() -> {
             TimerContext.start(DERBY_SNAPSHOT_SAVE);
             
             final Lock lock = writeLock;
@@ -99,12 +103,12 @@ public class DerbySnapshotOperation implements SnapshotOperation {
                 
                 callFinally.accept(writer.addFile(snapshotArchive, meta), null);
             } catch (Throwable t) {
-                LogUtil.FATAL_LOG.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
+                LOGGER.error("Fail to compress snapshot, path={}, file list={}, {}.", writer.getPath(),
                         writer.listFiles(), t);
                 callFinally.accept(false, t);
             } finally {
                 lock.unlock();
-                TimerContext.end(DERBY_SNAPSHOT_SAVE, LogUtil.FATAL_LOG);
+                TimerContext.end(DERBY_SNAPSHOT_SAVE, LOGGER);
             }
         });
     }
@@ -129,26 +133,25 @@ public class DerbySnapshotOperation implements SnapshotOperation {
             }
             
             final String loadPath = Paths.get(readerPath, snapshotDir, PersistenceConstant.DERBY_BASE_DIR).toString();
-            LogUtil.FATAL_LOG.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
+            LOGGER.info("snapshot load from : {}, and copy to : {}", loadPath, derbyBaseDir);
             
             doDerbyRestoreFromBackup(() -> {
                 final File srcDir = new File(loadPath);
                 final File destDir = new File(derbyBaseDir);
                 
                 DiskUtils.copyDirectory(srcDir, destDir);
-                LogUtil.FATAL_LOG.info("Complete database recovery");
+                LOGGER.info("Complete database recovery");
                 return null;
             });
             DiskUtils.deleteDirectory(loadPath);
             NotifyCenter.publishEvent(DerbyLoadEvent.INSTANCE);
             return true;
         } catch (final Throwable t) {
-            LogUtil.FATAL_LOG
-                    .error("Fail to load snapshot, path={}, file list={}, {}.", readerPath, reader.listFiles(), t);
+            LOGGER.error("Fail to load snapshot, path={}, file list={}, {}.", readerPath, reader.listFiles(), t);
             return false;
         } finally {
             lock.unlock();
-            TimerContext.end(DERBY_SNAPSHOT_LOAD, LogUtil.FATAL_LOG);
+            TimerContext.end(DERBY_SNAPSHOT_LOAD, LOGGER);
         }
     }
     
