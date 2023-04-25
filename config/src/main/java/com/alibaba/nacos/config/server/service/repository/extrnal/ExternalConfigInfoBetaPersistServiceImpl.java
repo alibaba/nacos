@@ -47,7 +47,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 
 /**
  * ExternalConfigInfoBetaPersistServiceImpl.

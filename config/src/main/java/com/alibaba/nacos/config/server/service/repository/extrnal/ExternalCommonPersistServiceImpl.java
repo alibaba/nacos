@@ -40,7 +40,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
 
 /**
  * ExternalOtherPersistServiceImpl.

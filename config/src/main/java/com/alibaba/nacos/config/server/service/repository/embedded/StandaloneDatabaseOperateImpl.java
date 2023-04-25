@@ -25,8 +25,9 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.embedded.operate.BaseDatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -52,6 +53,8 @@ import java.util.stream.Collectors;
 @Component
 public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(StandaloneDatabaseOperateImpl.class);
+    
     private JdbcTemplate jdbcTemplate;
     
     private TransactionTemplate transactionTemplate;
@@ -61,7 +64,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
         DataSourceService dataSourceService = DynamicDataSource.getInstance().getDataSource();
         jdbcTemplate = dataSourceService.getJdbcTemplate();
         transactionTemplate = dataSourceService.getTransactionTemplate();
-        LogUtil.DEFAULT_LOG.info("use StandaloneDatabaseOperateImpl");
+        LOGGER.info("use StandaloneDatabaseOperateImpl");
     }
     
     @Override
@@ -124,7 +127,7 @@ public class StandaloneDatabaseOperateImpl implements BaseDatabaseOperate {
                 }
                 return RestResult.<String>builder().withCode(code).withData("").build();
             } catch (Throwable ex) {
-                LogUtil.DEFAULT_LOG.error("An exception occurred when external data was imported into Derby : ", ex);
+                LOGGER.error("An exception occurred when external data was imported into Derby : ", ex);
                 return RestResultUtils.failed(ex.getMessage());
             }
         });
