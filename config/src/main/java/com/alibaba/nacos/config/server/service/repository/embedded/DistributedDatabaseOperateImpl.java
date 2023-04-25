@@ -25,14 +25,10 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Preconditions;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
-import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
 import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -47,7 +43,6 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -56,6 +51,8 @@ import com.alibaba.nacos.persistence.exception.NJdbcException;
 import com.alibaba.nacos.persistence.model.event.DerbyLoadEvent;
 import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.hook.EmbeddedApplyHook;
+import com.alibaba.nacos.persistence.repository.embedded.hook.EmbeddedApplyHookHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.BaseDatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.persistence.repository.embedded.sql.QueryType;
@@ -203,9 +200,6 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 return RaftDbErrorEvent.class;
             }
         });
-        
-        NotifyCenter.registerToPublisher(ConfigDumpEvent.class, NotifyCenter.ringBufferSize);
-        NotifyCenter.registerSubscriber(new DumpConfigHandler());
         
         this.protocol.addRequestProcessors(Collections.singletonList(this));
         LogUtil.DEFAULT_LOG.info("use DistributedTransactionServicesImpl");
@@ -531,7 +525,11 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 // If there is additional information, post processing
                 // Put into the asynchronous thread pool for processing to avoid blocking the
                 // normal execution of the state machine
-                PersistenceExecutor.executeEmbeddedDump(() -> handleExtendInfo(log.getExtendInfoMap()));
+                PersistenceExecutor.executeEmbeddedDump(() -> {
+                    for (EmbeddedApplyHook each : EmbeddedApplyHookHolder.getInstance().getAllHooks()) {
+                        each.afterApply(log);
+                    }
+                });
             }
             
             return Response.newBuilder().setSuccess(isOk).build();
@@ -556,23 +554,5 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     @Override
     public String group() {
         return PersistenceConstant.CONFIG_MODEL_RAFT_GROUP;
-    }
-    
-    private void handleExtendInfo(Map<String, String> extendInfo) {
-        if (extendInfo.containsKey(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT)) {
-            String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
-            if (StringUtils.isNotBlank(jsonVal)) {
-                NotifyCenter.publishEvent(JacksonUtils.toObj(jsonVal, ConfigDumpEvent.class));
-            }
-            return;
-        }
-        if (extendInfo.containsKey(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT)) {
-            String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
-            if (StringUtils.isNotBlank(jsonVal)) {
-                List<ConfigDumpEvent> list = JacksonUtils.toObj(jsonVal, new GenericType<List<ConfigDumpEvent>>() {
-                }.getType());
-                list.stream().filter(Objects::nonNull).forEach(NotifyCenter::publishEvent);
-            }
-        }
     }
 }
