@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 
 /**
  * Local Disaster Recovery Directory Tool.
@@ -41,7 +42,15 @@ public class LocalConfigInfoProcessor {
     private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
     
     public static final String LOCAL_SNAPSHOT_PATH;
-    
+
+    public static final String FAILOVER_SWITCH = "00-00---000-DIAMOND_FAILOVER_SWITCH-000---00-00";
+
+    private static final String NO_FAILOVER_MODE_0 = "0";
+
+    private static final String NO_FAILOVER_MODE_FALSE = "false";
+
+    private static final String NO_FAILOVER_MODE_NO = "no";
+
     private static final String SUFFIX = "_nacos";
     
     private static final String ENV_CHILD = "snapshot";
@@ -65,7 +74,7 @@ public class LocalConfigInfoProcessor {
     
     public static String getFailover(String serverName, String dataId, String group, String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
-        if (!localPath.exists() || !localPath.isFile()) {
+        if (localPath == null || !localPath.exists() || !localPath.isFile()) {
             return null;
         }
         
@@ -189,6 +198,9 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
+        if (!isFailoverSwitch(serverName, tenant)) {
+            return null;
+        }
         File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + SUFFIX);
         tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
         if (StringUtils.isBlank(tenant)) {
@@ -198,6 +210,46 @@ public class LocalConfigInfoProcessor {
             tmp = new File(tmp, tenant);
         }
         return new File(new File(tmp, group), dataId);
+    }
+
+    /**
+     * judge whether to enable failover by the file {@link #FAILOVER_SWITCH} in the namespace directory.
+     *
+     * @param serverName server name
+     * @param tenant namespace
+     * @return whether to enable failover
+     */
+    static boolean isFailoverSwitch(String serverName, String tenant) {
+        try {
+            File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + SUFFIX);
+            tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
+            if (StringUtils.isBlank(tenant)) {
+                tmp = new File(tmp, FAILOVER_FILE_CHILD_2);
+            } else {
+                tmp = new File(tmp, FAILOVER_FILE_CHILD_3);
+                tmp = new File(tmp, tenant);
+            }
+            File switchFile = new File(tmp, FAILOVER_SWITCH);
+            // fit old version
+            if (!switchFile.exists()) {
+                return true;
+            }
+            String failover = ConcurrentDiskUtil.getFileContent(switchFile.getPath(),
+                    Charset.defaultCharset().toString()).trim();
+            // if content is no, false or 0
+            // then return false
+            // other return true(fit old version)
+            if (StringUtils.isNotBlank(failover)
+                    && (NO_FAILOVER_MODE_0.equals(failover)
+                    || NO_FAILOVER_MODE_FALSE.equals(failover)
+                    || NO_FAILOVER_MODE_NO.equals(failover))) {
+                return false;
+            }
+        } catch (Exception e) {
+            // nothing to do
+        }
+        // fit old version
+        return true;
     }
     
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
