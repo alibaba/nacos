@@ -127,11 +127,11 @@
         <p3c-pmd.version>1.3.0</p3c-pmd.version>
         
         <!-- dependency version -->
-        <spring-boot-dependencies.version>2.6.14</spring-boot-dependencies.version>
+        <spring-boot-dependencies.version>2.7.11</spring-boot-dependencies.version>
         <servlet-api.version>3.0</servlet-api.version>
         <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
-        <slf4j-api.version>1.7.7</slf4j-api.version>
+        <slf4j-api.version>1.7.26</slf4j-api.version>
         <logback.version>1.2.9</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
