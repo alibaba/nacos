@@ -31,7 +31,7 @@
     
     <name>nacos-common ${project.version}</name>
     <url>https://nacos.io</url>
-    
+    <description>Nacos common pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -70,6 +70,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>nacos-version.txt</include>
+                    <include>META-INF/services/*</include>
                 </includes>
             </resource>
         </resources>

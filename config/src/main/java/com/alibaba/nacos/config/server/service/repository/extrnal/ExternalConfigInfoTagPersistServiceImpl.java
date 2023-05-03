@@ -29,8 +29,11 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistSe
 import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -164,9 +167,24 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            return jt.update(configInfoTagMapper.updateConfigInfo4TagCas(), configInfo.getContent(), md5, srcIp,
-                    srcUser, time, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp,
-                    configInfo.getMd5()) > 0;
+    
+            MapperContext context = new MapperContext();
+            context.putUpdateParameter(FieldConstant.CONTENT,  configInfo.getContent());
+            context.putUpdateParameter(FieldConstant.MD5, md5);
+            context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
+            context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
+            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
+            context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
+    
+            context.putWhereParameter(FieldConstant.DATA_ID,  configInfo.getDataId());
+            context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
+            context.putWhereParameter(FieldConstant.TENANT_ID,  tenantTmp);
+            context.putWhereParameter(FieldConstant.TAG_ID, tagTmp);
+            context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
+            
+            final MapperResult mapperResult = configInfoTagMapper.updateConfigInfo4TagCas(context);
+            
+            return jt.update(mapperResult.getSql(), mapperResult.getParamList().toArray()) > 0;
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -211,11 +229,14 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_TAG);
         String sqlCountRows = configInfoTagMapper.count(null);
-        String sqlFetchRows = configInfoTagMapper.findAllConfigInfoTagForDumpAllFetchRows(startRow, pageSize);
+        MapperResult sqlFetchRows = configInfoTagMapper.findAllConfigInfoTagForDumpAllFetchRows(
+                new MapperContext(startRow, pageSize));
+    
         PaginationHelper<ConfigInfoTagWrapper> helper = createPaginationHelper();
+   
         try {
-            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
-                    CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
+            return helper.fetchPageLimit(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+                    pageSize, CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);

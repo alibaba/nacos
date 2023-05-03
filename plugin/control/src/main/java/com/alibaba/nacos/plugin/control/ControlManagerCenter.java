@@ -38,7 +38,7 @@ import java.util.Collection;
  */
 public class ControlManagerCenter {
     
-    static ControlManagerCenter instance = null;
+    static volatile ControlManagerCenter instance = null;
     
     private TpsControlManager tpsControlManager;
     
@@ -109,7 +109,7 @@ public class ControlManagerCenter {
         return connectionControlManager;
     }
     
-    public static final ControlManagerCenter getInstance() {
+    public static ControlManagerCenter getInstance() {
         if (instance == null) {
             synchronized (ControlManagerCenter.class) {
                 if (instance == null) {

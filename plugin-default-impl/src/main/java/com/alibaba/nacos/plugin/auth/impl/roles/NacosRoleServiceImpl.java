@@ -45,6 +45,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
+
 /**
  * Nacos builtin role service.
  *
@@ -265,7 +267,10 @@ public class NacosRoleServiceImpl {
         StringBuilder result = new StringBuilder();
         String namespaceId = resource.getNamespaceId();
         if (StringUtils.isNotBlank(namespaceId)) {
-            result.append(namespaceId);
+            // https://github.com/alibaba/nacos/issues/10347
+            if (!DEFAULT_NAMESPACE_ID.equals(namespaceId)) {
+                result.append(namespaceId);
+            }
         }
         String group = resource.getGroup();
         if (StringUtils.isBlank(group)) {
