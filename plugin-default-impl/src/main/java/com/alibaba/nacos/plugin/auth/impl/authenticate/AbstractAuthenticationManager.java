@@ -70,7 +70,6 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         if (StringUtils.isBlank(token)) {
             throw new AccessException("user not found!");
         }
-        
         return jwtTokenManager.parseToken(token);
     }
     

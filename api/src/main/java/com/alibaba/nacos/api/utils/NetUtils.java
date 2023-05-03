@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.utils;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -93,8 +92,7 @@ public class NetUtils {
                     
                 }
             }
-        } catch (IOException ex) {
-            //ignore
+        } catch (Exception ignore) {
         }
         
         if (result != null) {
@@ -103,8 +101,7 @@ public class NetUtils {
         
         try {
             return InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            //ignore
+        } catch (UnknownHostException ignore) {
         }
         
         return null;

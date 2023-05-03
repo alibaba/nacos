@@ -196,12 +196,11 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![康美](https://img.alicdn.com/tfs/TB19RCANgHqK1RjSZFPXXcwapXa-180-180.jpg)
 ![环球易购](https://img.alicdn.com/tfs/TB1iCGyNb2pK1RjSZFsXXaNlXXa-143-143.jpg)
 ![Nepxion](https://avatars0.githubusercontent.com/u/16344119?s=200&v=4)
-![东莞最佳拍档](https://img.alicdn.com/tfs/TB11ugsDzTpK1RjSZKPXXa3UpXa-300-300.png)
 ![chigua](https://img.alicdn.com/tfs/TB1aUe5EpzqK1RjSZSgXXcpAVXa-248-124.png)
 ![宅无限](https://img.alicdn.com/tfs/TB1H9O5EAvoK1RjSZFNXXcxMVXa-221-221.jpg)
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
 ![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
-![三诺生物](http://www.sinocare.com/public/static/images/logored6000321.png)
+![DaoCloud](https://www.daocloud.io/static/Logo-Light.png)
 
 

@@ -29,6 +29,7 @@
     
     <name>nacos-api ${project.version}</name>
     <url>https://nacos.io</url>
+    <description>Nacos api pom.xml file</description>
     <build>
         <plugins>
             <!--  reuse when you need to update grpc model  -->
