@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
-import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.Namespace;
@@ -44,7 +44,7 @@ public class NamespaceOperationService {
     
     private final ConfigInfoPersistService configInfoPersistService;
     
-    private final CommonPersistService commonPersistService;
+    private final NamespacePersistService namespacePersistService;
     
     private static final String DEFAULT_NAMESPACE = "public";
     
@@ -61,14 +61,14 @@ public class NamespaceOperationService {
     private static final String DEFAULT_KP = "1";
     
     public NamespaceOperationService(ConfigInfoPersistService configInfoPersistService,
-            CommonPersistService commonPersistService) {
+            NamespacePersistService namespacePersistService) {
         this.configInfoPersistService = configInfoPersistService;
-        this.commonPersistService = commonPersistService;
+        this.namespacePersistService = namespacePersistService;
     }
     
     public List<Namespace> getNamespaceList() {
         // TODO 获取用kp
-        List<TenantInfo> tenantInfos = commonPersistService.findTenantByKp(DEFAULT_KP);
+        List<TenantInfo> tenantInfos = namespacePersistService.findTenantByKp(DEFAULT_KP);
         
         Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA,
                 configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
@@ -96,7 +96,7 @@ public class NamespaceOperationService {
             return new Namespace(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION, DEFAULT_QUOTA,
                     configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
         } else {
-            TenantInfo tenantInfo = commonPersistService.findTenantByKp(DEFAULT_KP, namespaceId);
+            TenantInfo tenantInfo = namespacePersistService.findTenantByKp(DEFAULT_KP, namespaceId);
             if (null == tenantInfo) {
                 throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.NAMESPACE_NOT_EXIST,
                         "namespaceId [ " + namespaceId + " ] not exist");
@@ -118,12 +118,12 @@ public class NamespaceOperationService {
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
         // TODO 获取用kp
-        if (commonPersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
+        if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
                     "namespaceId [" + namespaceId + "] already exist");
         }
         
-        commonPersistService
+        namespacePersistService
                 .insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc, DEFAULT_CREATE_SOURCE,
                         System.currentTimeMillis());
         return true;
@@ -134,7 +134,7 @@ public class NamespaceOperationService {
      */
     public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc) {
         // TODO 获取用kp
-        commonPersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
+        namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
         return true;
     }
     
@@ -142,7 +142,7 @@ public class NamespaceOperationService {
      * remove namespace.
      */
     public Boolean removeNamespace(String namespaceId) {
-        commonPersistService.removeTenantInfoAtomic(DEFAULT_KP, namespaceId);
+        namespacePersistService.removeTenantInfoAtomic(DEFAULT_KP, namespaceId);
         return true;
     }
 }

@@ -19,7 +19,7 @@ package com.alibaba.nacos.console.service;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
-import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.Namespace;
@@ -55,7 +55,7 @@ public class NamespaceOperationServiceTest {
     private ConfigInfoPersistService configInfoPersistService;
     
     @Mock
-    private CommonPersistService commonPersistService;
+    private NamespacePersistService namespacePersistService;
     
     private static final String TEST_NAMESPACE_ID = "testId";
     
@@ -71,7 +71,7 @@ public class NamespaceOperationServiceTest {
     
     @Before
     public void setUp() throws Exception {
-        namespaceOperationService = new NamespaceOperationService(configInfoPersistService, commonPersistService);
+        namespaceOperationService = new NamespaceOperationService(configInfoPersistService, namespacePersistService);
     }
     
     @Test
@@ -80,7 +80,7 @@ public class NamespaceOperationServiceTest {
         tenantInfo.setTenantId(TEST_NAMESPACE_ID);
         tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
-        when(commonPersistService.findTenantByKp(DEFAULT_KP)).thenReturn(Collections.singletonList(tenantInfo));
+        when(namespacePersistService.findTenantByKp(DEFAULT_KP)).thenReturn(Collections.singletonList(tenantInfo));
         when(configInfoPersistService.configInfoCount(anyString())).thenReturn(1);
         
         List<Namespace> list = namespaceOperationService.getNamespaceList();
@@ -104,8 +104,8 @@ public class NamespaceOperationServiceTest {
         tenantInfo.setTenantId(TEST_NAMESPACE_ID);
         tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
-        when(commonPersistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID)).thenReturn(tenantInfo);
-        when(commonPersistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id")).thenReturn(null);
+        when(namespacePersistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID)).thenReturn(tenantInfo);
+        when(namespacePersistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id")).thenReturn(null);
         when(configInfoPersistService.configInfoCount(anyString())).thenReturn(1);
         Namespace namespaceAllInfo = new Namespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC,
                 DEFAULT_QUOTA, 1, NamespaceTypeEnum.GLOBAL.getType());
@@ -122,9 +122,9 @@ public class NamespaceOperationServiceTest {
     
     @Test
     public void testCreateNamespace() throws NacosException {
-        when(commonPersistService.tenantInfoCountByTenantId(anyString())).thenReturn(0);
+        when(namespacePersistService.tenantInfoCountByTenantId(anyString())).thenReturn(0);
         namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
-        verify(commonPersistService)
+        verify(namespacePersistService)
                 .insertTenantInfoAtomic(eq(DEFAULT_KP), eq(TEST_NAMESPACE_ID), eq(TEST_NAMESPACE_NAME),
                         eq(TEST_NAMESPACE_DESC), any(), anyLong());
     }
@@ -132,13 +132,13 @@ public class NamespaceOperationServiceTest {
     @Test
     public void testEditNamespace() {
         namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
-        verify(commonPersistService)
+        verify(namespacePersistService)
                 .updateTenantNameAtomic(DEFAULT_KP, TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
     }
     
     @Test
     public void testRemoveNamespace() {
         namespaceOperationService.removeNamespace(TEST_NAMESPACE_ID);
-        verify(commonPersistService).removeTenantInfoAtomic(DEFAULT_KP, TEST_NAMESPACE_ID);
+        verify(namespacePersistService).removeTenantInfoAtomic(DEFAULT_KP, TEST_NAMESPACE_ID);
     }
 }

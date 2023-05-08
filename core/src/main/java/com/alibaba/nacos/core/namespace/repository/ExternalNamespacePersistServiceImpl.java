@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.extrnal;
+package com.alibaba.nacos.core.namespace.repository;
 
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
-import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
-import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -50,17 +49,17 @@ import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInje
 @SuppressWarnings(value = {"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service("externalOtherPersistServiceImpl")
-public class ExternalCommonPersistServiceImpl implements CommonPersistService {
+public class ExternalNamespacePersistServiceImpl implements NamespacePersistService {
     
-    private DataSourceService dataSourceService;
+    private final DataSourceService dataSourceService;
     
     protected JdbcTemplate jt;
     
     protected TransactionTemplate tjt;
     
-    private MapperManager mapperManager;
+    private final MapperManager mapperManager;
     
-    public ExternalCommonPersistServiceImpl() {
+    public ExternalNamespacePersistServiceImpl() {
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
@@ -79,7 +78,7 @@ public class ExternalCommonPersistServiceImpl implements CommonPersistService {
                     .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                             "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         }
     }
@@ -91,7 +90,7 @@ public class ExternalCommonPersistServiceImpl implements CommonPersistService {
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         }
     }
@@ -105,7 +104,7 @@ public class ExternalCommonPersistServiceImpl implements CommonPersistService {
                     Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
                     tenantId);
         } catch (DataAccessException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         }
     }
@@ -119,12 +118,12 @@ public class ExternalCommonPersistServiceImpl implements CommonPersistService {
         try {
             return this.jt.query(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return Collections.emptyList();
         } catch (Exception e) {
-            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
+            Loggers.CLUSTER.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
@@ -138,12 +137,12 @@ public class ExternalCommonPersistServiceImpl implements CommonPersistService {
         try {
             return jt.queryForObject(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
-            LogUtil.FATAL_LOG.error("[db-error] " + e, e);
+            Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         } catch (EmptyResultDataAccessException e) {
             return null;
         } catch (Exception e) {
-            LogUtil.FATAL_LOG.error("[db-other-error]" + e.getMessage(), e);
+            Loggers.CLUSTER.error("[db-other-error]" + e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }

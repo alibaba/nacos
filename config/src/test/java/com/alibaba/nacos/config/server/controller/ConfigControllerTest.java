@@ -29,7 +29,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
@@ -90,7 +90,7 @@ public class ConfigControllerTest {
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     @Mock
-    private CommonPersistService commonPersistService;
+    private NamespacePersistService namespacePersistService;
     
     @Mock
     private ConfigOperationService configOperationService;
@@ -105,7 +105,7 @@ public class ConfigControllerTest {
         ReflectionTestUtils.setField(configController, "configSubService", configSubService);
         ReflectionTestUtils.setField(configController, "configInfoPersistService", configInfoPersistService);
         ReflectionTestUtils.setField(configController, "configInfoBetaPersistService", configInfoBetaPersistService);
-        ReflectionTestUtils.setField(configController, "commonPersistService", commonPersistService);
+        ReflectionTestUtils.setField(configController, "namespacePersistService", namespacePersistService);
         ReflectionTestUtils.setField(configController, "configOperationService", configOperationService);
         ReflectionTestUtils.setField(configController, "inner", inner);
         mockmvc = MockMvcBuilders.standaloneSetup(configController).build();
@@ -369,7 +369,7 @@ public class ConfigControllerTest {
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
         
         zipUtilsMockedStatic.when(() -> ZipUtils.unzip(file.getBytes())).thenReturn(unziped);
-        when(commonPersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         Map<String, Object> map = new HashMap<>();
         map.put("test", "test");
         when(configInfoPersistService
@@ -400,7 +400,7 @@ public class ConfigControllerTest {
         List<SameNamespaceCloneConfigBean> configBeansList = new ArrayList<>();
         configBeansList.add(sameNamespaceCloneConfigBean);
         
-        when(commonPersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
+        when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         
         ConfigAllInfo configAllInfo = new ConfigAllInfo();
         configAllInfo.setDataId("test");

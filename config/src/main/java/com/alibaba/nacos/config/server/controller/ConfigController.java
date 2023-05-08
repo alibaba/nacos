@@ -44,7 +44,7 @@ import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.ConfigChangePublisher;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -114,7 +114,7 @@ public class ConfigController {
     
     private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
-    private CommonPersistService commonPersistService;
+    private NamespacePersistService namespacePersistService;
     
     private final ConfigOperationService configOperationService;
     
@@ -122,12 +122,12 @@ public class ConfigController {
     
     public ConfigController(ConfigServletInner inner, ConfigOperationService configOperationService,
             ConfigSubService configSubService, ConfigInfoPersistService configInfoPersistService,
-            CommonPersistService commonPersistService, ConfigInfoBetaPersistService configInfoBetaPersistService) {
+            NamespacePersistService namespacePersistService, ConfigInfoBetaPersistService configInfoBetaPersistService) {
         this.inner = inner;
         this.configOperationService = configOperationService;
         this.configSubService = configSubService;
         this.configInfoPersistService = configInfoPersistService;
-        this.commonPersistService = commonPersistService;
+        this.namespacePersistService = namespacePersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
     }
     
@@ -595,7 +595,7 @@ public class ConfigController {
         }
         
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
-        if (StringUtils.isNotBlank(namespace) && commonPersistService.tenantInfoCountByTenantId(namespace) <= 0) {
+        if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
@@ -830,7 +830,7 @@ public class ConfigController {
         configBeansList.removeAll(Collections.singleton(null));
         
         namespace = NamespaceUtil.processNamespaceParameter(namespace);
-        if (StringUtils.isNotBlank(namespace) && commonPersistService.tenantInfoCountByTenantId(namespace) <= 0) {
+        if (StringUtils.isNotBlank(namespace) && namespacePersistService.tenantInfoCountByTenantId(namespace) <= 0) {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }

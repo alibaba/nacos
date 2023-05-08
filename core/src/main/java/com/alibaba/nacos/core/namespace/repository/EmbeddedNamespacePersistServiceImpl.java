@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.embedded;
+package com.alibaba.nacos.core.namespace.repository;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.config.server.exception.NacosConfigException;
-import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
-import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
@@ -49,7 +49,7 @@ import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInje
 @SuppressWarnings({"PMD.MethodReturnWrapperTypeRule", "checkstyle:linelength"})
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Service("embeddedOtherPersistServiceImpl")
-public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
+public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistService {
     
     private DataSourceService dataSourceService;
     
@@ -60,9 +60,9 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate databaseOperate
      */
-    public EmbeddedCommonPersistServiceImpl(DatabaseOperate databaseOperate) {
+    public EmbeddedNamespacePersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         Boolean isDataSourceLogEnable = EnvUtil
@@ -87,7 +87,7 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
-                throw new NacosConfigException("Namespace creation failed");
+                throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Namespace creation failed");
             }
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
@@ -122,7 +122,7 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
-                throw new NacosConfigException("Namespace update failed");
+                throw new NacosRuntimeException(NacosException.SERVER_ERROR, "Namespace update failed");
             }
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
