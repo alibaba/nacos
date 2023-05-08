@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.*;
@@ -55,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
                 RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
                 RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class NacosConfigServiceComTlsGrpcClientTest {
+public class NacosConfigServiceComTlsGrpcClient_CITCase {
 
     public static AtomicInteger increment = new AtomicInteger(100);
 
@@ -64,7 +63,7 @@ public class NacosConfigServiceComTlsGrpcClientTest {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceComTlsGrpcClientTest.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceComTlsGrpcClient_CITCase.class.getSimpleName());
 
     }
 
