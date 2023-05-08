@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.embedded;
+package com.alibaba.nacos.core.persistence;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
@@ -48,6 +48,7 @@ import java.util.zip.Checksum;
 
 /**
  * Derby Snapshot operation.
+ * TODO depend on jraft strongly, Waiting for addition split.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.embedded;
+package com.alibaba.nacos.core.persistence;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
@@ -136,6 +136,8 @@ import java.util.stream.Collectors;
  *               │                                           │
  *               └───────────────────────────────────────────┘
  * </pre>
+ *
+ * TODO depend on Member and Cp protocol strongly, Waiting for addition split.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
