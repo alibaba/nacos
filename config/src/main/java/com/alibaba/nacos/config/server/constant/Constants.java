@@ -25,11 +25,15 @@ import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
  */
 public class Constants {
     
+    public static final String CONFIG_MODULE = "config";
+    
     public static final String CLIENT_VERSION_HEADER = "Client-Version";
     
     public static final String CLIENT_VERSION = "3.0.0";
     
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
+    
+    public static final String DATASOURCE_PLATFORM_PROPERTY_STATE = "datasource_platform";
     
     /**
      * Config file directory in server side.
@@ -290,6 +294,8 @@ public class Constants {
     public static final int LIMIT_ERROR_CODE = 429;
     
     public static final String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
+    
+    public static final String NACOS_PLUGIN_DATASOURCE_LOG_STATE = "plugin_datasource_log_enabled";
     
     public static final String CONFIG_SEARCH_BLUR = "blur";
     
