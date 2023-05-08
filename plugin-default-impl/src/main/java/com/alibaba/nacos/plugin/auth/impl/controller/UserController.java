@@ -152,8 +152,11 @@ public class UserController {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
                 return null;
             }
-        } catch (HttpSessionRequiredException | AccessException e) {
+        } catch (HttpSessionRequiredException  e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "session expired!");
+            return null;
+        } catch (AccessException exception){
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
             return null;
         }
         
