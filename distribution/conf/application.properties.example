@@ -32,7 +32,9 @@ server.port=8848
 
 #*************** Config Module Related Configurations ***************#
 ### If use MySQL as datasource:
+### Deprecated configuration property, it is recommended to use `spring.sql.init.platform` replaced.
 # spring.datasource.platform=mysql
+# spring.sql.init.platform=mysql
 
 ### Count of DB:
 # db.num=1
@@ -150,11 +152,12 @@ nacos.core.auth.enabled=false
 #nacos.core.auth.ldap.case.sensitive=true
 
 
+### worked when nacos.core.auth.system.type=nacos
 ### The token expiration in seconds:
-nacos.core.auth.default.token.expire.seconds=18000
-
-### The default token:
-#nacos.core.auth.default.token.secret.key=SecretKey012345678901234567890123456789012345678901234567890123456789
+nacos.core.auth.plugin.nacos.token.cache.enable=false
+nacos.core.auth.plugin.nacos.token.expire.seconds=18000
+### The default token (Base64 String):
+nacos.core.auth.plugin.nacos.token.secret.key=SecretKey012345678901234567890123456789012345678901234567890123456789
 
 ### Turn on/off caching of auth information. By turning on this switch, the update of auth information would have a 15 seconds delay.
 nacos.core.auth.caching.enabled=true
