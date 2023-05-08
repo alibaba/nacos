@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository.embedded;
+package com.alibaba.nacos.persistence.repository.embedded.operate;
 
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import org.junit.Assert;
@@ -56,7 +55,7 @@ public class StandaloneDatabaseOperateImplTest {
     private StandaloneDatabaseOperateImpl operate;
     
     @Mock
-    private RowMapper<ConfigInfo> rowMapper;
+    private RowMapper<MockConfigInfo> rowMapper;
     
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -92,19 +91,19 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryOne2() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
-        ConfigInfo configInfo = new ConfigInfo();
+        MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
         Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
-        when(jdbcTemplate.queryForObject(sql, args, ConfigInfo.class)).thenReturn(configInfo);
-        Assert.assertEquals(operate.queryOne(sql, args, ConfigInfo.class), configInfo);
+        when(jdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenReturn(configInfo);
+        Assert.assertEquals(operate.queryOne(sql, args, MockConfigInfo.class), configInfo);
     }
     
     @Test
     public void testQueryOne3() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
-        ConfigInfo configInfo = new ConfigInfo();
+        MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
@@ -125,19 +124,19 @@ public class StandaloneDatabaseOperateImplTest {
     @Test
     public void testQueryOne5() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
-        ConfigInfo configInfo = new ConfigInfo();
+        MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
         Object[] args = new Object[] {configInfo.getId(), configInfo.getDataId(), configInfo.getGroup()};
-        when(tempJdbcTemplate.queryForObject(sql, args, ConfigInfo.class)).thenReturn(configInfo);
-        Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, ConfigInfo.class), configInfo);
+        when(tempJdbcTemplate.queryForObject(sql, args, MockConfigInfo.class)).thenReturn(configInfo);
+        Assert.assertEquals(operate.queryOne(tempJdbcTemplate, sql, args, MockConfigInfo.class), configInfo);
     }
     
     @Test
     public void testQueryOne6() {
         final String sql = "SELECT * FROM config_info WHERE id = ? AND data_id = ? AND group_id = ?";
-        ConfigInfo configInfo = new ConfigInfo();
+        MockConfigInfo configInfo = new MockConfigInfo();
         configInfo.setId(1L);
         configInfo.setDataId("test");
         configInfo.setGroup("test");
@@ -150,11 +149,11 @@ public class StandaloneDatabaseOperateImplTest {
     public void testQueryMany1() {
         final String sql = "SELECT * FROM config_info WHERE id >= ? AND id <= ?";
         final Object[] args = new Object[] {1, 2};
-        ConfigInfo configInfo1 = new ConfigInfo();
+        MockConfigInfo configInfo1 = new MockConfigInfo();
         configInfo1.setId(1);
-        ConfigInfo configInfo2 = new ConfigInfo();
+        MockConfigInfo configInfo2 = new MockConfigInfo();
         configInfo2.setId(2);
-        List<ConfigInfo> configInfos = new ArrayList<>();
+        List<MockConfigInfo> configInfos = new ArrayList<>();
         configInfos.add(configInfo1);
         configInfos.add(configInfo2);
         when(jdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfos);
@@ -238,11 +237,11 @@ public class StandaloneDatabaseOperateImplTest {
     public void testQueryMany6() {
         final String sql = "SELECT * FROM config_info WHERE id >= ? AND id <= ?";
         final Object[] args = new Object[] {1, 2};
-        ConfigInfo configInfo1 = new ConfigInfo();
+        MockConfigInfo configInfo1 = new MockConfigInfo();
         configInfo1.setId(1);
-        ConfigInfo configInfo2 = new ConfigInfo();
+        MockConfigInfo configInfo2 = new MockConfigInfo();
         configInfo2.setId(2);
-        List<ConfigInfo> configInfos = new ArrayList<>();
+        List<MockConfigInfo> configInfos = new ArrayList<>();
         configInfos.add(configInfo1);
         configInfos.add(configInfo2);
         when(tempJdbcTemplate.query(eq(sql), eq(args), any(RowMapper.class))).thenReturn(configInfos);
