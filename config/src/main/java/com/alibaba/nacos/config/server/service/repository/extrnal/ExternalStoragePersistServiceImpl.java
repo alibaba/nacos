@@ -36,7 +36,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
@@ -101,7 +101,7 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_KEY_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
 
 /**
  * External Storage Persist Service.

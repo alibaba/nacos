@@ -18,7 +18,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import org.junit.Before;

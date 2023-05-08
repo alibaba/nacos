@@ -40,7 +40,7 @@ import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
-import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
@@ -100,7 +100,7 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
 /**

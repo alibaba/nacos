@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;

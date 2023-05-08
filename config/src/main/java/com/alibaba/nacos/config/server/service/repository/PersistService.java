@@ -32,7 +32,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.io.IOException;

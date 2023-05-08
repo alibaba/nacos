@@ -21,7 +21,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.console.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;

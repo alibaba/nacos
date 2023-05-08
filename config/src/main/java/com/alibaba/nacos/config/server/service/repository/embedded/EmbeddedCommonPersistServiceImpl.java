@@ -17,16 +17,16 @@
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
-import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.model.event.DerbyImportEvent;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static com.alibaba.nacos.config.server.service.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
 
 /**
  * EmbeddedOtherPersistServiceImpl.
@@ -65,8 +65,8 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
     public EmbeddedCommonPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
-                false);
+        Boolean isDataSourceLogEnable = EnvUtil
+                .getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
@@ -75,10 +75,10 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
             String createResoure, final long time) {
         
-        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.TENANT_INFO);
-        final String sql = tenantInfoMapper.insert(
-                Arrays.asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
+        TenantInfoMapper tenantInfoMapper = mapperManager
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+        final String sql = tenantInfoMapper.insert(Arrays
+                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                         "gmt_modified"));
         final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResoure, time, time};
         
@@ -96,11 +96,11 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
     
     @Override
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
-        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.TENANT_INFO);
+        TenantInfoMapper tenantInfoMapper = mapperManager
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         
-        EmbeddedStorageContextHolder.addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp,
-                tenantId);
+        EmbeddedStorageContextHolder
+                .addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
         try {
             databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
         } finally {
@@ -111,10 +111,10 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
     @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
         
-        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.TENANT_INFO);
-        final String sql = tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
-                Arrays.asList("kp", "tenant_id"));
+        TenantInfoMapper tenantInfoMapper = mapperManager
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+        final String sql = tenantInfoMapper
+                .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id"));
         final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
@@ -131,20 +131,20 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
     
     @Override
     public List<TenantInfo> findTenantByKp(String kp) {
-        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
-                Collections.singletonList("kp"));
+        TenantInfoMapper tenantInfoMapper = mapperManager
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+        String sql = tenantInfoMapper
+                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Collections.singletonList("kp"));
         return databaseOperate.queryMany(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
         
     }
     
     @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
-        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"),
-                Arrays.asList("kp", "tenant_id"));
+        TenantInfoMapper tenantInfoMapper = mapperManager
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+        String sql = tenantInfoMapper
+                .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Arrays.asList("kp", "tenant_id"));
         return databaseOperate.queryOne(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         
     }
@@ -176,8 +176,8 @@ public class EmbeddedCommonPersistServiceImpl implements CommonPersistService {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
-        TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                TableConstant.TENANT_INFO);
+        TenantInfoMapper tenantInfoMapper = mapperManager
+                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
         Integer result = databaseOperate.queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {

@@ -18,8 +18,8 @@ package com.alibaba.nacos.console.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.Namespace;

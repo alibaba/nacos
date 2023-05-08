@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.core.namespace.repository;
 
-import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
 
 import java.util.List;
 

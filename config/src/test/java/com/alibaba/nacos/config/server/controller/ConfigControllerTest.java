@@ -29,7 +29,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ZipUtils;

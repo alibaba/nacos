@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.repository;
+package com.alibaba.nacos.core.namespace.repository;
 
-import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
