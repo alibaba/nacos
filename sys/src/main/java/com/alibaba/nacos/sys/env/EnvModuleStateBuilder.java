@@ -29,11 +29,13 @@ public class EnvModuleStateBuilder implements ModuleStateBuilder {
     
     @Override
     public ModuleState build() {
-        ModuleState result = new ModuleState(Constants.SYS_MODULE);
-        result.newState(Constants.STANDALONE_MODE_STATE,
+        ModuleState state = new ModuleState(Constants.SYS_MODULE);
+        state.newState(Constants.STARTUP_MODE_STATE,
                 EnvUtil.getStandaloneMode() ? EnvUtil.STANDALONE_MODE_ALONE : EnvUtil.STANDALONE_MODE_CLUSTER);
-        result.newState(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
-        result.newState(Constants.NACOS_VERSION, VersionUtils.version);
-        return result;
+        state.newState(Constants.FUNCTION_MODE_STATE, EnvUtil.getFunctionMode());
+        state.newState(Constants.NACOS_VERSION, VersionUtils.version);
+        
+        state.newState(Constants.SERVER_PORT_STATE, EnvUtil.getPort());
+        return state;
     }
 }
