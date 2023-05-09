@@ -192,5 +192,16 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
 ![三诺生物](http://www.sinocare.com/public/static/images/logored6000321.png)
 ![DaoCloud](https://www.daocloud.io/static/Logo-Light.png)
+![美菜](https://www.meicai.cn/img/logo.9210b6eb.jpg)
+![松格科技](https://img5.tianyancha.com/logo/lll/3aad34039972b57e70874df8c919ae8b.png@!f_200x200)
+![集萃智能](https://www.jsic-tech.com/Public/uploads/20191206/5de9b9baac696.jpg)
+![吾享](https://www.wuuxiang.com/theme/images/common/logo1.png)
+![拓深科技](http://www.tpson.cn/static/upload/image/20230111/1673427385140440.png)
+![长亮科技](https://www.sunline.cn/u_file/fileUpload/2021-06/25/2021062586431.png)
+![深圳易停车库](http://pmt2f499f.pic44.websiteonline.cn/upload/wv0c.png)
+![武汉日创科技](http://www.dragonwake.cn/static/css/default/img/logo.png)
+![易管智能](https://i4im-web.oss-cn-shanghai.aliyuncs.com/images/logo.png)
+![云帐房](https://www.yunzhangfang.com/assets/img/logo.4096cf52.png)
+![三诺生物](https://www.sinocare.com/sannuo/templates/web/img/bocweb-logo.svg)
 
-美菜, 松格科技, 集萃智能, 吾享, 拓深科技, 郑州山水, 长亮科技, 深圳易停车库, 武汉日创科技, 易管智能, 云帐房, 知氏教育, 三诺生物
+郑州山水, 知氏教育
