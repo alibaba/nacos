@@ -16,21 +16,20 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.ROLE_INFO_ROW_MAPPER;
 
@@ -46,17 +45,14 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     @Autowired
     private DatabaseOperate databaseOperate;
     
-    @Autowired
-    private EmbeddedStoragePersistServiceImpl persistService;
-
     private static final String PATTERN_STR = "*";
-
+    
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        PaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
         
@@ -79,12 +75,12 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
         
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        PaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
         
         String sqlFetchRows = "SELECT role,username FROM roles ";
-
+        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -158,7 +154,7 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         String sql = "SELECT role FROM roles WHERE role LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         return databaseOperate.queryMany(sql, new String[] {"%" + role + "%"}, String.class);
     }
-
+    
     @Override
     public String generateLikeArgument(String s) {
         String underscore = "_";
@@ -173,12 +169,12 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
             return s;
         }
     }
-
+    
     @Override
     public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
-
+        
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username LIKE ? ");
             params.add(generateLikeArgument(username));
@@ -192,10 +188,14 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         }
         String sqlCountRows = "SELECT count(*) FROM roles";
         String sqlFetchRows = "SELECT role, username FROM roles";
-
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        
+        PaginationHelper<RoleInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                 ROLE_INFO_ROW_MAPPER);
     }
-
+    
+    @Override
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new EmbeddedPaginationHelperImpl<>(databaseOperate);
+    }
 }

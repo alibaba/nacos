@@ -17,21 +17,22 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EmbeddedRolePersistServiceImplTest {
@@ -39,27 +40,16 @@ public class EmbeddedRolePersistServiceImplTest {
     @Mock
     private DatabaseOperate databaseOperate;
     
-    @Mock
-    private EmbeddedStoragePersistServiceImpl persistService;
-    
-    @Mock
-    private PaginationHelper paginationHelper;
-    
     private EmbeddedRolePersistServiceImpl embeddedRolePersistService;
     
     @Before
     public void setUp() throws Exception {
+        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
         embeddedRolePersistService = new EmbeddedRolePersistServiceImpl();
         Class<EmbeddedRolePersistServiceImpl> embeddedRolePersistServiceClass = EmbeddedRolePersistServiceImpl.class;
         Field databaseOperateFields = embeddedRolePersistServiceClass.getDeclaredField("databaseOperate");
         databaseOperateFields.setAccessible(true);
         databaseOperateFields.set(embeddedRolePersistService, databaseOperate);
-        
-        Field persistServiceField = embeddedRolePersistServiceClass.getDeclaredField("persistService");
-        persistServiceField.setAccessible(true);
-        persistServiceField.set(embeddedRolePersistService, persistService);
-        
-        Mockito.when(persistService.createPaginationHelper()).thenReturn(paginationHelper);
     }
     
     @Test
@@ -70,10 +60,9 @@ public class EmbeddedRolePersistServiceImplTest {
     
     @Test
     public void testGetRolesByUserName() {
-        Page<RoleInfo> page = embeddedRolePersistService.getRolesByUserNameAndRoleName(
-                "userName", "roleName", 1, 10);
+        Page<RoleInfo> page = embeddedRolePersistService.getRolesByUserNameAndRoleName("userName", "roleName", 1, 10);
         
-        Assert.assertNull(page);
+        Assert.assertNotNull(page);
     }
     
     @Test
