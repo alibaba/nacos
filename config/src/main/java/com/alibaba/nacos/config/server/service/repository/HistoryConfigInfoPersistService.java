@@ -18,7 +18,8 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.sql.Timestamp;
 import java.util.List;

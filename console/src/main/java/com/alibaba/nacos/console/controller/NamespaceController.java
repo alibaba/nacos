@@ -21,10 +21,9 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
-import com.alibaba.nacos.console.model.Namespace;
-import com.alibaba.nacos.console.model.NamespaceAllInfo;
-import com.alibaba.nacos.console.service.NamespaceOperationService;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,7 @@ import java.util.regex.Pattern;
 public class NamespaceController {
     
     @Autowired
-    private CommonPersistService commonPersistService;
+    private NamespacePersistService namespacePersistService;
     
     @Autowired
     private NamespaceOperationService namespaceOperationService;
@@ -76,7 +75,7 @@ public class NamespaceController {
      * @return namespace all info
      */
     @GetMapping(params = "show=all")
-    public NamespaceAllInfo getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
+    public Namespace getNamespace(@RequestParam("namespaceId") String namespaceId) throws NacosException {
         return namespaceOperationService.getNamespace(namespaceId);
     }
     
@@ -121,7 +120,7 @@ public class NamespaceController {
         if (StringUtils.isBlank(namespaceId)) {
             return false;
         }
-        return (commonPersistService.tenantInfoCountByTenantId(namespaceId) > 0);
+        return (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0);
     }
     
     /**

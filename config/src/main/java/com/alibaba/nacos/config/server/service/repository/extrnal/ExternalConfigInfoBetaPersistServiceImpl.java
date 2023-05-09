@@ -18,17 +18,19 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
@@ -47,7 +49,7 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 
 /**
  * ExternalConfigInfoBetaPersistServiceImpl.
@@ -71,7 +73,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }

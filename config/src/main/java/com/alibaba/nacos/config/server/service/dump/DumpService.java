@@ -26,9 +26,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
@@ -40,7 +41,6 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -56,7 +56,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.core.utils.TimerContext;
+import com.alibaba.nacos.sys.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,7 +95,7 @@ public abstract class DumpService {
     
     protected ConfigInfoPersistService configInfoPersistService;
     
-    protected CommonPersistService commonPersistService;
+    protected NamespacePersistService namespacePersistService;
     
     protected HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
@@ -143,13 +143,13 @@ public abstract class DumpService {
      *
      * @param memberManager  {@link ServerMemberManager}
      */
-    public DumpService(ConfigInfoPersistService configInfoPersistService, CommonPersistService commonPersistService,
+    public DumpService(ConfigInfoPersistService configInfoPersistService, NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
         this.configInfoPersistService = configInfoPersistService;
-        this.commonPersistService = commonPersistService;
+        this.namespacePersistService = namespacePersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.configInfoAggrPersistService = configInfoAggrPersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
@@ -232,13 +232,13 @@ public abstract class DumpService {
                 // update Beta cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
                 DiskUtil.clearAllBeta();
-                if (commonPersistService.isExistTable(BETA_TABLE_NAME)) {
+                if (namespacePersistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
                 DiskUtil.clearAllTag();
-                if (commonPersistService.isExistTable(TAG_TABLE_NAME)) {
+                if (namespacePersistService.isExistTable(TAG_TABLE_NAME)) {
                     dumpAllTagProcessor.process(new DumpAllTagTask());
                 }
                 

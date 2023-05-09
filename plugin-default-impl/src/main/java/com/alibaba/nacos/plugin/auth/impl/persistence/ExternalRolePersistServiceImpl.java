@@ -17,12 +17,12 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -46,22 +46,19 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Component
 public class ExternalRolePersistServiceImpl implements RolePersistService {
     
-    @Autowired
-    private ExternalStoragePersistServiceImpl persistService;
-    
     private JdbcTemplate jt;
-
+    
     private static final String PATTERN_STR = "*";
     
     @PostConstruct
     protected void init() {
-        jt = persistService.getJdbcTemplate();
+        jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
     }
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
         
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        PaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
         
@@ -88,12 +85,12 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
         
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        PaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
         
         String sqlFetchRows = "SELECT role,username FROM roles ";
-
+        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -172,7 +169,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
         List<String> users = this.jt.queryForList(sql, new String[] {String.format("%%%s%%", role)}, String.class);
         return users;
     }
-
+    
     @Override
     public String generateLikeArgument(String s) {
         String underscore = "_";
@@ -187,14 +184,14 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             return s;
         }
     }
-
+    
     @Override
     public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM roles";
         String sqlFetchRows = "SELECT role, username FROM roles";
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
-
+        
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username LIKE ? ");
             params.add(generateLikeArgument(username));
@@ -203,8 +200,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             where.append(" AND role LIKE ? ");
             params.add(generateLikeArgument(role));
         }
-
-        PaginationHelper<RoleInfo> helper = persistService.createPaginationHelper();
+        
+        PaginationHelper<RoleInfo> helper = createPaginationHelper();
         try {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     ROLE_INFO_ROW_MAPPER);
@@ -213,7 +210,12 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             throw e;
         }
     }
-
+    
+    @Override
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new ExternalStoragePaginationHelperImpl<>(jt);
+    }
+    
     private static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
         
         @Override

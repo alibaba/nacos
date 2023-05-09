@@ -22,7 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;

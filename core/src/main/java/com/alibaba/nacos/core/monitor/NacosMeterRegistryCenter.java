@@ -30,6 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Metrics unified usage center.
  *
+ * <p>
+ * FIXME: Bad implemetation, force depend prometheus. No need to new {@link CompositeMeterRegistry}, only should use
+ * {@link io.micrometer.core.instrument.Metrics#globalRegistry}. If need to distinguish different scope or module, use
+ * name of meters is enough.
+ * </p>
+ *
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
 @SuppressWarnings("all")
