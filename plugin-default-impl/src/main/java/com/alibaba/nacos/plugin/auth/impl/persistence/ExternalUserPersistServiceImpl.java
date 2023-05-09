@@ -17,12 +17,12 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -44,16 +44,13 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Component
 public class ExternalUserPersistServiceImpl implements UserPersistService {
     
-    @Autowired
-    private ExternalStoragePersistServiceImpl persistService;
-    
     private JdbcTemplate jt;
-
+    
     private static final String PATTERN_STR = "*";
     
     @PostConstruct
     protected void init() {
-        jt = persistService.getJdbcTemplate();
+        jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
     }
     
     /**
@@ -131,23 +128,23 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
         
-        PaginationHelper<User> helper = persistService.createPaginationHelper();
+        PaginationHelper<User> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users ";
         
         String sqlFetchRows = "SELECT username,password FROM users ";
-
+        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username = ? ");
             params.add(username);
         }
-
+        
         try {
             Page<User> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
-                            pageSize, USER_ROW_MAPPER);
+                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                            USER_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
                 pageInfo.setTotalCount(0);
@@ -163,32 +160,32 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ?";
-        List<String> users = this.jt.queryForList(sql, new String[]{String.format("%%%s%%", username)}, String.class);
+        List<String> users = this.jt.queryForList(sql, new String[] {String.format("%%%s%%", username)}, String.class);
         return users;
     }
-
+    
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM users ";
         String sqlFetchRows = "SELECT username,password FROM users ";
-
+        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username LIKE ? ");
             params.add(generateLikeArgument(username));
         }
-
-        PaginationHelper<User> helper = persistService.createPaginationHelper();
+        
+        PaginationHelper<User> helper = createPaginationHelper();
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
-                    params.toArray(), pageNo, pageSize, USER_ROW_MAPPER);
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                    USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
-
+    
     @Override
     public String generateLikeArgument(String s) {
         String underscore = "_";
@@ -202,5 +199,10 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         } else {
             return s;
         }
+    }
+    
+    @Override
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new ExternalStoragePaginationHelperImpl<>(jt);
     }
 }

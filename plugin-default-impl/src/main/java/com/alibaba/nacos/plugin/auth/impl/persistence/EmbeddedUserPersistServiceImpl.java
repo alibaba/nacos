@@ -20,10 +20,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -45,11 +44,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Autowired
     private DatabaseOperate databaseOperate;
     
-    @Autowired
-    private EmbeddedStoragePersistServiceImpl persistService;
-
     private static final String PATTERN_STR = "*";
-
+    
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     /**
@@ -112,12 +108,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
         
-        PaginationHelper<User> helper = persistService.createPaginationHelper();
+        PaginationHelper<User> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users ";
         
         String sqlFetchRows = "SELECT username,password FROM users ";
-
+        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -125,8 +121,8 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             params.add(username);
         }
         Page<User> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
-                        pageSize, USER_ROW_MAPPER);
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                        USER_ROW_MAPPER);
         if (pageInfo == null) {
             pageInfo = new Page<>();
             pageInfo.setTotalCount(0);
@@ -140,12 +136,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         String sql = "SELECT username FROM users WHERE username LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
     }
-
+    
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM users ";
         String sqlFetchRows = "SELECT username,password FROM users ";
-
+        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -153,12 +149,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             params.add(generateLikeArgument(username));
         }
-
-        PaginationHelper<User> helper = persistService.createPaginationHelper();
-        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
-                params.toArray(), pageNo, pageSize, USER_ROW_MAPPER);
+        
+        PaginationHelper<User> helper = createPaginationHelper();
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                USER_ROW_MAPPER);
     }
-
+    
     @Override
     public String generateLikeArgument(String s) {
         String underscore = "_";
@@ -172,5 +168,10 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         } else {
             return s;
         }
+    }
+    
+    @Override
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new EmbeddedPaginationHelperImpl<>(databaseOperate);
     }
 }
