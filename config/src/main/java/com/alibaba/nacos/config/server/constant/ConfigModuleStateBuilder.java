@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.config.server.constant;
 
-import com.alibaba.nacos.config.server.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
@@ -31,11 +32,11 @@ public class ConfigModuleStateBuilder implements ModuleStateBuilder {
     
     @Override
     public ModuleState build() {
-        ModuleState moduleState = new ModuleState(Constants.CONFIG_MODULE);
+        ModuleState moduleState = new ModuleState(com.alibaba.nacos.api.common.Constants.Config.CONFIG_MODULE);
         
         moduleState.newState(Constants.DATASOURCE_PLATFORM_PROPERTY_STATE, DatasourcePlatformUtil.getDatasourcePlatform(""));
         moduleState.newState(Constants.NACOS_PLUGIN_DATASOURCE_LOG_STATE,
-                EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false));
+                EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false));
         
         moduleState.newState(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT, PropertyUtil.getNotifyConnectTimeout());
         moduleState.newState(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT, PropertyUtil.getNotifySocketTimeout());

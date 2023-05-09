@@ -27,7 +27,17 @@ public abstract class AbstractModuleHealthChecker {
         ModuleHealthCheckerHolder.getInstance().registerChecker(this);
     }
     
+    /**
+     * Check readiness.
+     *
+     * @return {@code true} if readiness, otherwise {@code false}
+     */
     public abstract boolean readiness();
     
+    /**
+     * Module name.
+     *
+     * @return module name
+     */
     public abstract String getModuleName();
 }

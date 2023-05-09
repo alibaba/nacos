@@ -25,6 +25,7 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class EmbeddedApplyHook {
     
     protected EmbeddedApplyHook() {
