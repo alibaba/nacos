@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.sys.module;
 
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
@@ -30,8 +33,12 @@ public class ModuleStateHolderTest {
     
     private Map<String, ModuleState> moduleStateMap;
     
+    private ConfigurableEnvironment environment;
+    
     @Before
     public void setUp() throws Exception {
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         moduleStateMap = (Map<String, ModuleState>) ReflectionTestUtils
                 .getField(ModuleStateHolder.getInstance(), ModuleStateHolder.class, "moduleStates");
     }

@@ -35,8 +35,8 @@ public class RpcScheduledExecutorTest {
     public void testRpcScheduledExecutor() throws InterruptedException {
         RpcScheduledExecutor executor = new RpcScheduledExecutor(2, NAME);
         CountDownLatch latch = new CountDownLatch(2);
-        executor.execute(new TestRunner(1, latch));
-        executor.execute(new TestRunner(2, latch));
+        executor.submit(new TestRunner(1, latch));
+        executor.submit(new TestRunner(2, latch));
         latch.await(1, TimeUnit.SECONDS);
         assertEquals(2, threadNameMap.size());
         assertEquals(NAME + ".0", threadNameMap.get("1"));

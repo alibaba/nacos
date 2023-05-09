@@ -23,14 +23,15 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
 import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
@@ -46,25 +47,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author githubcheng2978.
  */
 @RunWith(SpringRunner.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest(classes = {Nacos.class},
         properties = {
                 "nacos.standalone=true",
                 RpcServerTlsConfig.PREFIX+".enableTls=true",
-                RpcServerTlsConfig.PREFIX+".compatibility=true",
+                RpcServerTlsConfig.PREFIX+".compatibility=false",
                 RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
                 RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem"},
         webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class NacosConfigServiceComTlsGrpcClientTest {
+public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
 
     public static AtomicInteger increment = new AtomicInteger(100);
 
-    @LocalServerPort
-    private int port;
-
     @BeforeClass
     public static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceComTlsGrpcClientTest.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceNoComTlsGrpcClient_CITCase.class.getSimpleName());
 
     }
 
@@ -74,6 +71,34 @@ public class NacosConfigServiceComTlsGrpcClientTest {
         ConfigCleanUtils.cleanClientCache();
     }
 
+    @Test
+    @Ignore("TODO, Fix cert expired problem")
+    public void test_e_TlsServerAndTlsClient() throws Exception {
+        Properties properties = new Properties();
+        properties.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+        properties.put(RpcConstants.RPC_CLIENT_TLS_PROVIDER, "openssl");
+        properties.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+        properties.put("serverAddr", "127.0.0.1");
+        ConfigService configService = new NacosConfigService(properties);
+        String content = UUID.randomUUID().toString();
+        String dataId = "test-group" + increment.getAndIncrement();
+        String groupId = "test-data" + increment.getAndIncrement();
+        boolean b = configService.publishConfig("test-group" + increment.getAndIncrement(), "test-data" + increment.getAndIncrement(), content);
+        CountDownLatch latch = new CountDownLatch(1);
+        configService.addListener(dataId, groupId, new AbstractConfigChangeListener() {
+            @Override
+            public void receiveConfigChange(ConfigChangeEvent event) {
+                ConfigChangeItem cci = event.getChangeItem("content");
+                System.out.println("content:" + cci);
+                if (!content.equals(cci.getNewValue())) {
+                    return;
+                }
+                latch.countDown();
+            }
+        });
+        latch.await(5, TimeUnit.SECONDS);
+        Assert.assertTrue(b);
+    }
 
     @Test
     public void test_e_TlsServerAndPlainClient()  throws Exception {
@@ -98,6 +123,6 @@ public class NacosConfigServiceComTlsGrpcClientTest {
             }
         });
         latch2.await(5, TimeUnit.SECONDS);
-        Assert.assertTrue(res);
+        Assert.assertFalse(res);
     }
 }

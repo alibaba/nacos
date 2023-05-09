@@ -31,6 +31,8 @@ public class Constants {
     
     public static final String DEFAULT_GROUP = "DEFAULT_GROUP";
     
+    public static final String DATASOURCE_PLATFORM_PROPERTY_STATE = "datasource_platform";
+    
     /**
      * Config file directory in server side.
      *
@@ -276,6 +278,8 @@ public class Constants {
     public static final String CONFIG_EXPORT_METADATA_NEW = ".metadata.yml";
     
     public static final int LIMIT_ERROR_CODE = 429;
+    
+    public static final String NACOS_PLUGIN_DATASOURCE_LOG_STATE = "plugin_datasource_log_enabled";
     
     public static final String CONFIG_SEARCH_BLUR = "blur";
     

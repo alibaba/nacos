@@ -33,7 +33,7 @@ import org.junit.Test;
  * @author horizonzy
  * @since 1.3.2
  */
-public class ControllerMethodsCacheTest {
+public class ControllerMethodsCache_ITCase {
 
     private ControllerMethodsCache methodsCache;
 
