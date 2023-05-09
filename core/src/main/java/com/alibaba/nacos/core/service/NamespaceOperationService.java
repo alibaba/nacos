@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.service;
+package com.alibaba.nacos.core.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.namespace.injector.NamespaceDetailInjectorHolder;
+import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
-import com.alibaba.nacos.core.namespace.model.Namespace;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -42,8 +42,6 @@ import java.util.List;
 @Service
 public class NamespaceOperationService {
     
-    private final ConfigInfoPersistService configInfoPersistService;
-    
     private final NamespacePersistService namespacePersistService;
     
     private static final String DEFAULT_NAMESPACE = "public";
@@ -56,13 +54,9 @@ public class NamespaceOperationService {
     
     private static final String DEFAULT_CREATE_SOURCE = "nacos";
     
-    private static final String DEFAULT_TENANT = "";
-    
     private static final String DEFAULT_KP = "1";
     
-    public NamespaceOperationService(ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService) {
-        this.configInfoPersistService = configInfoPersistService;
+    public NamespaceOperationService(NamespacePersistService namespacePersistService) {
         this.namespacePersistService = namespacePersistService;
     }
     
@@ -70,15 +64,16 @@ public class NamespaceOperationService {
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = namespacePersistService.findTenantByKp(DEFAULT_KP);
         
-        Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA,
-                configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
+        Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA, 0,
+                NamespaceTypeEnum.GLOBAL.getType());
+        NamespaceDetailInjectorHolder.getInstance().injectDetail(namespace0);
         List<Namespace> namespaceList = new ArrayList<>();
         namespaceList.add(namespace0);
         
         for (TenantInfo tenantInfo : tenantInfos) {
-            int configCount = configInfoPersistService.configInfoCount(tenantInfo.getTenantId());
             Namespace namespaceTmp = new Namespace(tenantInfo.getTenantId(), tenantInfo.getTenantName(),
-                    tenantInfo.getTenantDesc(), DEFAULT_QUOTA, configCount, NamespaceTypeEnum.CUSTOM.getType());
+                    tenantInfo.getTenantDesc(), DEFAULT_QUOTA, 0, NamespaceTypeEnum.CUSTOM.getType());
+            NamespaceDetailInjectorHolder.getInstance().injectDetail(namespaceTmp);
             namespaceList.add(namespaceTmp);
         }
         return namespaceList;
@@ -92,19 +87,22 @@ public class NamespaceOperationService {
      */
     public Namespace getNamespace(String namespaceId) throws NacosException {
         // TODO 获取用kp
+        Namespace result;
         if (StringUtils.isBlank(namespaceId) || namespaceId.equals(NamespaceUtil.getNamespaceDefaultId())) {
-            return new Namespace(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION, DEFAULT_QUOTA,
-                    configInfoPersistService.configInfoCount(DEFAULT_TENANT), NamespaceTypeEnum.GLOBAL.getType());
+            result = new Namespace(namespaceId, DEFAULT_NAMESPACE_SHOW_NAME, DEFAULT_NAMESPACE_DESCRIPTION,
+                    DEFAULT_QUOTA, 0, NamespaceTypeEnum.GLOBAL.getType());
+            
         } else {
             TenantInfo tenantInfo = namespacePersistService.findTenantByKp(DEFAULT_KP, namespaceId);
             if (null == tenantInfo) {
                 throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.NAMESPACE_NOT_EXIST,
                         "namespaceId [ " + namespaceId + " ] not exist");
             }
-            int configCount = configInfoPersistService.configInfoCount(namespaceId);
-            return new Namespace(namespaceId, tenantInfo.getTenantName(), tenantInfo.getTenantDesc(), DEFAULT_QUOTA,
-                    configCount, NamespaceTypeEnum.CUSTOM.getType());
+            result = new Namespace(namespaceId, tenantInfo.getTenantName(), tenantInfo.getTenantDesc(), DEFAULT_QUOTA,
+                    0, NamespaceTypeEnum.CUSTOM.getType());
         }
+        NamespaceDetailInjectorHolder.getInstance().injectDetail(result);
+        return result;
     }
     
     /**

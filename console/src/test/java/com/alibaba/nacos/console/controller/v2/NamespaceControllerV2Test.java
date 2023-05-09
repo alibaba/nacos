@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
-import com.alibaba.nacos.console.service.NamespaceOperationService;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

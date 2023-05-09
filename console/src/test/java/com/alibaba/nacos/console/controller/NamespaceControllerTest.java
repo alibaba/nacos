@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.namespace.model.Namespace;
-import com.alibaba.nacos.console.service.NamespaceOperationService;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

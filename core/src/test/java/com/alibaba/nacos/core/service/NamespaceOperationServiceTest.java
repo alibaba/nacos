@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.service;
+package com.alibaba.nacos.core.service;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
+import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
-import com.alibaba.nacos.core.namespace.model.Namespace;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,8 +52,7 @@ public class NamespaceOperationServiceTest {
     
     private NamespaceOperationService namespaceOperationService;
     
-    @Mock
-    private ConfigInfoPersistService configInfoPersistService;
+    private MockNamespaceInjector injector;
     
     @Mock
     private NamespacePersistService namespacePersistService;
@@ -71,7 +71,13 @@ public class NamespaceOperationServiceTest {
     
     @Before
     public void setUp() throws Exception {
-        namespaceOperationService = new NamespaceOperationService(configInfoPersistService, namespacePersistService);
+        injector = new MockNamespaceInjector();
+        namespaceOperationService = new NamespaceOperationService(namespacePersistService);
+    }
+    
+    @After
+    public void tearDown() {
+        injector.doInjector = false;
     }
     
     @Test
@@ -81,7 +87,6 @@ public class NamespaceOperationServiceTest {
         tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
         when(namespacePersistService.findTenantByKp(DEFAULT_KP)).thenReturn(Collections.singletonList(tenantInfo));
-        when(configInfoPersistService.configInfoCount(anyString())).thenReturn(1);
         
         List<Namespace> list = namespaceOperationService.getNamespaceList();
         assertEquals(2, list.size());
@@ -106,7 +111,6 @@ public class NamespaceOperationServiceTest {
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
         when(namespacePersistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID)).thenReturn(tenantInfo);
         when(namespacePersistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id")).thenReturn(null);
-        when(configInfoPersistService.configInfoCount(anyString())).thenReturn(1);
         Namespace namespaceAllInfo = new Namespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC,
                 DEFAULT_QUOTA, 1, NamespaceTypeEnum.GLOBAL.getType());
         Namespace namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID);
@@ -140,5 +144,17 @@ public class NamespaceOperationServiceTest {
     public void testRemoveNamespace() {
         namespaceOperationService.removeNamespace(TEST_NAMESPACE_ID);
         verify(namespacePersistService).removeTenantInfoAtomic(DEFAULT_KP, TEST_NAMESPACE_ID);
+    }
+    
+    private static class MockNamespaceInjector extends AbstractNamespaceDetailInjector {
+        
+        private boolean doInjector = true;
+        
+        @Override
+        public void injectDetail(Namespace namespace) {
+            if (doInjector) {
+                namespace.setConfigCount(1);
+            }
+        }
     }
 }
