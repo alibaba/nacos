@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.config.server.filter.CircuitFilter;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;

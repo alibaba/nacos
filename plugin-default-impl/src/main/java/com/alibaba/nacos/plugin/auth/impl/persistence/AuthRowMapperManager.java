@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.service.repository.RowMapperManager;
+import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;

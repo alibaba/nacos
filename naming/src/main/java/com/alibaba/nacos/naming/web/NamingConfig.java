@@ -39,7 +39,7 @@ public class NamingConfig {
     private static final String CLIENT_ATTRIBUTES_FILTER = "clientAttributes_filter";
     
     @Bean
-    public FilterRegistrationBean distroFilterRegistration() {
+    public FilterRegistrationBean<DistroFilter> distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
@@ -49,7 +49,7 @@ public class NamingConfig {
     }
     
     @Bean
-    public FilterRegistrationBean serviceNameFilterRegistration() {
+    public FilterRegistrationBean<ServiceNameFilter> serviceNameFilterRegistration() {
         FilterRegistrationBean<ServiceNameFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(serviceNameFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
@@ -59,7 +59,7 @@ public class NamingConfig {
     }
     
     @Bean
-    public FilterRegistrationBean trafficReviseFilterRegistration() {
+    public FilterRegistrationBean<TrafficReviseFilter> trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(trafficReviseFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
@@ -69,7 +69,7 @@ public class NamingConfig {
     }
     
     @Bean
-    public FilterRegistrationBean clientAttributesFilterRegistration() {
+    public FilterRegistrationBean<ClientAttributesFilter> clientAttributesFilterRegistration() {
         FilterRegistrationBean<ClientAttributesFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(clientAttributesFilter());
         registration.addUrlPatterns(UTL_PATTERNS);

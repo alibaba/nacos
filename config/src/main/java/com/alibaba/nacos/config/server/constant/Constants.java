@@ -25,8 +25,6 @@ import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
  */
 public class Constants {
     
-    public static final String CONFIG_MODULE = "config";
-    
     public static final String CLIENT_VERSION_HEADER = "Client-Version";
     
     public static final String CLIENT_VERSION = "3.0.0";
@@ -40,11 +38,6 @@ public class Constants {
      *
      */
     public static final String BASE_DIR = "config-data";
-    
-    /**
-     * The derby base dir.
-     */
-    public static final String DERBY_BASE_DIR = "derby-data";
     
     /**
      * Back up file directory in server side.
@@ -266,8 +259,6 @@ public class Constants {
     
     public static final int ATOMIC_MAX_SIZE = 1000;
     
-    public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
-    
     public static final int DATA_IN_BODY_VERSION = 204;
     
     /**
@@ -280,11 +271,6 @@ public class Constants {
      */
     public static final String EXTEND_INFOS_CONFIG_DUMP_EVENT = ConfigDumpEvent.class.getName() + "@@many";
     
-    /**
-     * Specifies that reads wait without timeout.
-     */
-    public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
-
     public static final String CONFIG_EXPORT_ITEM_FILE_SEPARATOR = "/";
     
     public static final String CONFIG_EXPORT_METADATA = ".meta.yml";
@@ -292,8 +278,6 @@ public class Constants {
     public static final String CONFIG_EXPORT_METADATA_NEW = ".metadata.yml";
     
     public static final int LIMIT_ERROR_CODE = 429;
-    
-    public static final String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
     
     public static final String NACOS_PLUGIN_DATASOURCE_LOG_STATE = "plugin_datasource_log_enabled";
     

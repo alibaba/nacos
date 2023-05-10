@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -295,7 +296,7 @@ public class ConfigCacheService {
     public static void reloadConfig() {
         String aggreds = null;
         try {
-            if (PropertyUtil.isEmbeddedStorage()) {
+            if (DatasourceConfiguration.isEmbeddedStorage()) {
                 ConfigInfoBase config = configInfoPersistService
                         .findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
@@ -313,7 +314,7 @@ public class ConfigCacheService {
         
         String clientIpWhitelist = null;
         try {
-            if (PropertyUtil.isEmbeddedStorage()) {
+            if (DatasourceConfiguration.isEmbeddedStorage()) {
                 ConfigInfoBase config = configInfoPersistService
                         .findConfigInfoBase(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
@@ -332,7 +333,7 @@ public class ConfigCacheService {
         
         String switchContent = null;
         try {
-            if (PropertyUtil.isEmbeddedStorage()) {
+            if (DatasourceConfiguration.isEmbeddedStorage()) {
                 ConfigInfoBase config = configInfoPersistService
                         .findConfigInfoBase(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP");
                 if (config != null) {

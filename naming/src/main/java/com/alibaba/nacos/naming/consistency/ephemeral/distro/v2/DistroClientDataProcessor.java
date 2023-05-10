@@ -213,7 +213,7 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 result = batchInstancePublishInfo.equals(targetInstanceInfo);
             }
             if (!result) {
-                client.addServiceInstance(service, batchInstancePublishInfo);
+                client.addServiceInstance(singleton, batchInstancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
