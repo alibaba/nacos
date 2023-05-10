@@ -141,6 +141,7 @@ public class MapUtil {
      * @param param2          function's parameter value1.
      * @return
      */
+    @NotThreadSafe
     public static <K, C, V, T> V computeIfAbsent(Map<K, V> target, K key, BiFunction<C, T, V> mappingFunction, C param1,
             T param2) {
         
