@@ -16,6 +16,16 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The tenant capacity info mapper.
  *
@@ -29,22 +39,55 @@ public interface GroupCapacityMapper extends Mapper {
      * <p>Example: INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count,
      * max_aggr_size,gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info;
      *
+     * @param context sql paramMap
      * @return sql.
      */
-    String insertIntoSelect();
+    default MapperResult insertIntoSelect(MapperContext context) {
+        List<Object> paramList = new ArrayList<>();
+        paramList.add(context.getUpdateParameter(FieldConstant.GROUP_ID));
+        paramList.add(context.getUpdateParameter(FieldConstant.QUOTA));
+        paramList.add(context.getUpdateParameter(FieldConstant.MAX_SIZE));
+        paramList.add(context.getUpdateParameter(FieldConstant.MAX_AGGR_COUNT));
+        paramList.add(context.getUpdateParameter(FieldConstant.MAX_AGGR_SIZE));
+        paramList.add(context.getUpdateParameter(FieldConstant.GMT_CREATE));
+        paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
+        
+        String sql =
+                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,gmt_create,"
+                        + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info";
+        return new MapperResult(sql, paramList);
+    }
     
     /**
      * INSERT INTO SELECT statement. Used to insert query results into a table.
      *
-     * <p>Where condition: group_id=? AND tenant_id = ''
+     * <p>Where condition: group_id=? AND tenant_id = '{defaultNamespaceId}'
      *
      * <p>Example: INSERT INTO group_capacity (group_id, quota,`usage`, `max_size`, max_aggr_count,
      * max_aggr_size,gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info where group_id=?
-     * AND tenant_id = '';
+     * AND tenant_id = '{defaultNamespaceId}';
      *
+     * @param context sql paramMap
      * @return sql.
      */
-    String insertIntoSelectByWhere();
+    default MapperResult insertIntoSelectByWhere(MapperContext context) {
+        final String sql =
+                "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size, gmt_create,"
+                        + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = '"
+                        + NamespaceUtil.getNamespaceDefaultId() + "'";
+        List<Object> paramList = new ArrayList<>();
+        paramList.add(context.getUpdateParameter(FieldConstant.GROUP_ID));
+        paramList.add(context.getUpdateParameter(FieldConstant.QUOTA));
+        paramList.add(context.getUpdateParameter(FieldConstant.MAX_SIZE));
+        paramList.add(context.getUpdateParameter(FieldConstant.MAX_AGGR_COUNT));
+        paramList.add(context.getUpdateParameter(FieldConstant.MAX_AGGR_SIZE));
+        paramList.add(context.getUpdateParameter(FieldConstant.GMT_CREATE));
+        paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
+        
+        paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
+        
+        return new MapperResult(sql, paramList);
+    }
     
     /**
      * used to increment usage field.
@@ -55,9 +98,16 @@ public interface GroupCapacityMapper extends Mapper {
      * AND
      * quota = 0;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String incrementUsageByWhereQuotaEqualZero();
+    default MapperResult incrementUsageByWhereQuotaEqualZero(MapperContext context) {
+        return new MapperResult(
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0",
+                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
+                        context.getWhereParameter(FieldConstant.GROUP_ID),
+                        context.getWhereParameter(FieldConstant.USAGE)));
+    }
     
     /**
      * used to increment usage field.
@@ -68,9 +118,15 @@ public interface GroupCapacityMapper extends Mapper {
      * quota
      * AND quota != 0;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String incrementUsageByWhereQuotaNotEqualZero();
+    default MapperResult incrementUsageByWhereQuotaNotEqualZero(MapperContext context) {
+        return new MapperResult(
+                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0",
+                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
+                        context.getWhereParameter(FieldConstant.GROUP_ID)));
+    }
     
     /**
      * used to increment usage field.
@@ -79,9 +135,14 @@ public interface GroupCapacityMapper extends Mapper {
      *
      * <p>Example: UPDATE group_capacity SET `usage` = `usage` + 1, gmt_modified = ? WHERE group_id = ?;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String incrementUsageByWhere();
+    default MapperResult incrementUsageByWhere(MapperContext context) {
+        return new MapperResult("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?",
+                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
+                        context.getWhereParameter(FieldConstant.GROUP_ID)));
+    }
     
     /**
      * used to decrement usage field.
@@ -91,9 +152,15 @@ public interface GroupCapacityMapper extends Mapper {
      * <p>Example: UPDATE group_capacity SET `usage` = `usage` - 1, gmt_modified = ? WHERE group_id = ? AND `usage` >
      * 0;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String decrementUsageByWhere();
+    default MapperResult decrementUsageByWhere(MapperContext context) {
+        return new MapperResult(
+                "UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0",
+                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
+                        context.getWhereParameter(FieldConstant.GROUP_ID)));
+    }
     
     /**
      * used to update usage field.
@@ -101,30 +168,53 @@ public interface GroupCapacityMapper extends Mapper {
      * <p>Example: UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE
      * group_id = ?;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String updateUsage();
+    default MapperResult updateUsage(MapperContext context) {
+        return new MapperResult(
+                "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?",
+                CollectionUtils.list(context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
+                        context.getWhereParameter(FieldConstant.GROUP_ID)));
+    }
     
     /**
      * used to update usage field.
      *
-     * <p>Where condition: group_id=? AND tenant_id = ''
+     * <p>Where condition: group_id=? AND tenant_id = '{defaultNamespaceId}'
      *
      * <p>Example: UPDATE group_capacity SET `usage` = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id
      * =
      * ''), gmt_modified = ? WHERE group_id= ?;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String updateUsageByWhere();
+    default MapperResult updateUsageByWhere(MapperContext context) {
+        return new MapperResult(
+                "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = '"
+                        + NamespaceUtil.getNamespaceDefaultId() + "')," + " gmt_modified = ? WHERE group_id= ?",
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.GROUP_ID),
+                        context.getWhereParameter(FieldConstant.GMT_MODIFIED),
+                        context.getWhereParameter(FieldConstant.GROUP_ID)));
+    }
     
     /**
      * used to select group info.
      *
      * <p>Example: SELECT id, group_id FROM group_capacity WHERE id>? LIMIT ?;
      *
-     * @return
+     * @param context sql paramMap
+     * @return sql.
      */
-    String selectGroupInfoBySize();
+    MapperResult selectGroupInfoBySize(MapperContext context);
     
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.GROUP_CAPACITY;
+    }
 }

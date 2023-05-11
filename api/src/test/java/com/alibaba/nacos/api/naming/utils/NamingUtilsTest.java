@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.naming.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -32,6 +33,79 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class NamingUtilsTest {
+    
+    @Test
+    public void testGetGroupedName() {
+        assertEquals("group@@serviceName", NamingUtils.getGroupedName("serviceName", "group"));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetGroupedNameWithoutGroup() {
+        NamingUtils.getGroupedName("serviceName", "");
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetGroupedNameWithoutServiceName() {
+        NamingUtils.getGroupedName("", "group");
+    }
+    
+    @Test
+    public void testGetServiceName() {
+        String validServiceName = "group@@serviceName";
+        assertEquals("serviceName", NamingUtils.getServiceName(validServiceName));
+    }
+    
+    @Test
+    public void testGetServiceNameWithoutGroup() {
+        String serviceName = "serviceName";
+        assertEquals(serviceName, NamingUtils.getServiceName(serviceName));
+    }
+    
+    @Test
+    public void testGetServiceNameWithEmpty() {
+        assertEquals(StringUtils.EMPTY, NamingUtils.getServiceName(null));
+    }
+    
+    @Test
+    public void testGetGroupName() {
+        String validServiceName = "group@@serviceName";
+        assertEquals("group", NamingUtils.getGroupName(validServiceName));
+    }
+    
+    @Test
+    public void testGetGroupNameWithoutGroup() {
+        String serviceName = "serviceName";
+        assertEquals(Constants.DEFAULT_GROUP, NamingUtils.getGroupName(serviceName));
+    }
+    
+    @Test
+    public void testGetGroupNameWithEmpty() {
+        assertEquals(StringUtils.EMPTY, NamingUtils.getGroupName(null));
+    }
+    
+    @Test
+    public void testCheckServiceNameFormat() {
+        String validServiceName = "group@@serviceName";
+        NamingUtils.checkServiceNameFormat(validServiceName);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckServiceNameFormatWithoutGroupAndService() {
+        String validServiceName = "@@";
+        NamingUtils.checkServiceNameFormat(validServiceName);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckServiceNameFormatWithoutGroup() {
+        String validServiceName = "@@service";
+        NamingUtils.checkServiceNameFormat(validServiceName);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckServiceNameFormatWithoutService() {
+        String validServiceName = "group@@";
+        NamingUtils.checkServiceNameFormat(validServiceName);
+    }
     
     @Test
     public void testGetGroupedNameOptional() {

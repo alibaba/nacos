@@ -15,8 +15,7 @@
  */
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info   */
+/*   表名称 = config_info                  */
 /******************************************/
 CREATE TABLE `config_info` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -35,14 +34,13 @@ CREATE TABLE `config_info` (
   `effect` varchar(64) DEFAULT NULL,
   `type` varchar(64) DEFAULT NULL,
   `c_schema` text,
-  `encrypted_data_key` text NOT NULL COMMENT '秘钥',
+  `encrypted_data_key` text NOT NULL COMMENT '密钥',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info';
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info_aggr   */
+/*   表名称 = config_info_aggr             */
 /******************************************/
 CREATE TABLE `config_info_aggr` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -59,8 +57,7 @@ CREATE TABLE `config_info_aggr` (
 
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info_beta   */
+/*   表名称 = config_info_beta             */
 /******************************************/
 CREATE TABLE `config_info_beta` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -75,14 +72,13 @@ CREATE TABLE `config_info_beta` (
   `src_user` text COMMENT 'source user',
   `src_ip` varchar(50) DEFAULT NULL COMMENT 'source ip',
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
-  `encrypted_data_key` text NOT NULL COMMENT '秘钥',
+  `encrypted_data_key` text NOT NULL COMMENT '密钥',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_configinfobeta_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_beta';
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_info_tag   */
+/*   表名称 = config_info_tag              */
 /******************************************/
 CREATE TABLE `config_info_tag` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -102,8 +98,7 @@ CREATE TABLE `config_info_tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_tag';
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = config_tags_relation   */
+/*   表名称 = config_tags_relation         */
 /******************************************/
 CREATE TABLE `config_tags_relation` (
   `id` bigint(20) NOT NULL COMMENT 'id',
@@ -119,8 +114,7 @@ CREATE TABLE `config_tags_relation` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_tag_relation';
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = group_capacity   */
+/*   表名称 = group_capacity               */
 /******************************************/
 CREATE TABLE `group_capacity` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
@@ -138,8 +132,7 @@ CREATE TABLE `group_capacity` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='集群、各Group容量信息表';
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = his_config_info   */
+/*   表名称 = his_config_info              */
 /******************************************/
 CREATE TABLE `his_config_info` (
   `id` bigint(20) unsigned NOT NULL,
@@ -155,7 +148,7 @@ CREATE TABLE `his_config_info` (
   `src_ip` varchar(50) DEFAULT NULL,
   `op_type` char(10) DEFAULT NULL,
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
-  `encrypted_data_key` text NOT NULL COMMENT '秘钥',
+  `encrypted_data_key` text NOT NULL COMMENT '密钥',
   PRIMARY KEY (`nid`),
   KEY `idx_gmt_create` (`gmt_create`),
   KEY `idx_gmt_modified` (`gmt_modified`),
@@ -164,8 +157,7 @@ CREATE TABLE `his_config_info` (
 
 
 /******************************************/
-/*   数据库全名 = nacos_config   */
-/*   表名称 = tenant_capacity   */
+/*   表名称 = tenant_capacity              */
 /******************************************/
 CREATE TABLE `tenant_capacity` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',

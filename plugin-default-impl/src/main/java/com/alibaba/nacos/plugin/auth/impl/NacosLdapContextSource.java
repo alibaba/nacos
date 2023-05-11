@@ -20,16 +20,15 @@ import com.alibaba.nacos.common.tls.TlsHelper;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.ldap.core.support.LdapContextSource;
 
+import javax.naming.Context;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.naming.Context;
-import javax.net.ssl.SSLSocketFactory;
 
 /**
  * NacosLdapContextSource.
@@ -104,13 +103,13 @@ public class NacosLdapContextSource extends LdapContextSource {
         }
         
         @Override
-        public Socket createSocket(String s, int i) throws IOException, UnknownHostException {
+        public Socket createSocket(String s, int i) throws IOException {
             return socketFactory.createSocket(s, i);
         }
         
         @Override
         public Socket createSocket(String s, int i, InetAddress inetAddress, int i1)
-                throws IOException, UnknownHostException {
+                throws IOException {
             return socketFactory.createSocket(s, i, inetAddress, i1);
         }
         

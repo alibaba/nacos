@@ -117,7 +117,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             push(rpcPushRetryTask);
             notifyClientCount++;
         }
-        Loggers.REMOTE_PUSH.info("push [{}] clients ,groupKey=[{}]", notifyClientCount, groupKey);
+        Loggers.REMOTE_PUSH.info("push [{}] clients, groupKey=[{}]", notifyClientCount, groupKey);
     }
     
     @Override
@@ -191,7 +191,9 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
                         
                         tpsCheckRequest.setPointName(POINT_CONFIG_PUSH_FAIL);
                         tpsControlManager.check(tpsCheckRequest);
-                        Loggers.REMOTE_PUSH.warn("Push fail", e);
+                        Loggers.REMOTE_PUSH
+                                .warn("Push fail, dataId={}, group={}, tenant={}, clientId={}", notifyRequest.getDataId(), 
+                                        notifyRequest.getGroup(), notifyRequest.getTenant(), connectionId, e);
                         push(RpcPushTask.this);
                     }
                     
@@ -206,7 +208,7 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
         ConfigChangeNotifyRequest notifyRequest = retryTask.notifyRequest;
         if (retryTask.isOverTimes()) {
             Loggers.REMOTE_PUSH
-                    .warn("push callback retry fail over times .dataId={},group={},tenant={},clientId={},will unregister client.",
+                    .warn("push callback retry fail over times. dataId={},group={},tenant={},clientId={}, will unregister client.",
                             notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
                             retryTask.connectionId);
             connectionManager.unregister(retryTask.connectionId);

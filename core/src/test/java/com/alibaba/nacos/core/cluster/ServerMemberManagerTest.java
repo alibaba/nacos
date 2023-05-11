@@ -26,6 +26,8 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
+import com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
@@ -78,6 +80,9 @@ public class ServerMemberManagerTest {
     
     @Mock
     private ConfigurableApplicationContext context;
+    
+    @Mock
+    private ClusterRpcClientProxy clusterRpcClientProxy;
     
     private ServerMemberManager serverMemberManager;
     
@@ -184,11 +189,12 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testReportTaskWithoutMemberInfo() {
+    public void testHttpReportTaskWithoutMemberInfo() throws NacosException {
         Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
         testMember.setAbilities(new ServerAbilities());
         testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        testMember.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
         serverMemberManager.updateMember(testMember);
         assertTrue(
                 serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
@@ -206,11 +212,32 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testReportTaskWithMemberInfoChanged() {
+    public void testGrpcReportTaskWithoutMemberInfo() throws NacosException {
         Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
         testMember.setAbilities(new ServerAbilities());
         testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        serverMemberManager.updateMember(testMember);
+        assertTrue(
+                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
+        ServerMemberManager.MemberInfoReportTask infoReportTask = serverMemberManager.getInfoReportTask();
+        ClusterRpcClientProxy clusterRpcClientProxy = mock(ClusterRpcClientProxy.class);
+        ReflectionTestUtils.setField(infoReportTask, "clusterRpcClientProxy", clusterRpcClientProxy);
+        when(clusterRpcClientProxy.isRunning(any())).thenReturn(true);
+        testMember.setState(NodeState.UP);
+        when(clusterRpcClientProxy.sendRequest(any(), any())).thenReturn(new MemberReportResponse(testMember));
+        infoReportTask.run();
+        assertEquals("test", serverMemberManager.find("1.1.1.1:8848").getExtendVal(MemberMetaDataConstants.VERSION));
+        assertEquals(NodeState.UP, serverMemberManager.find("1.1.1.1:8848").getState());
+    }
+    
+    @Test
+    public void testHttpReportTaskWithMemberInfoChanged() {
+        Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
+                .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
+        testMember.setAbilities(new ServerAbilities());
+        testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        testMember.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
         serverMemberManager.updateMember(testMember);
         assertTrue(
                 serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
@@ -225,6 +252,27 @@ public class ServerMemberManagerTest {
             return null;
         }).when(mockAsyncRestTemplate).post(anyString(), any(), any(), any(), any(), any());
         serverMemberManager.getInfoReportTask().run();
+        assertEquals("new", serverMemberManager.find("1.1.1.1:8848").getExtendVal(MemberMetaDataConstants.VERSION));
+        assertEquals(NodeState.UP, serverMemberManager.find("1.1.1.1:8848").getState());
+    }
+    
+    @Test
+    public void testGrpcReportTaskWithMemberInfoChanged() throws NacosException {
+        Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
+                .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
+        testMember.setAbilities(new ServerAbilities());
+        testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        serverMemberManager.updateMember(testMember);
+        assertTrue(
+                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
+        Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP)
+                .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "new")).build();
+        ServerMemberManager.MemberInfoReportTask infoReportTask = serverMemberManager.getInfoReportTask();
+        ClusterRpcClientProxy clusterRpcClientProxy = mock(ClusterRpcClientProxy.class);
+        ReflectionTestUtils.setField(infoReportTask, "clusterRpcClientProxy", clusterRpcClientProxy);
+        when(clusterRpcClientProxy.isRunning(any())).thenReturn(true);
+        when(clusterRpcClientProxy.sendRequest(any(), any())).thenReturn(new MemberReportResponse(newMember));
+        infoReportTask.run();
         assertEquals("new", serverMemberManager.find("1.1.1.1:8848").getExtendVal(MemberMetaDataConstants.VERSION));
         assertEquals(NodeState.UP, serverMemberManager.find("1.1.1.1:8848").getState());
     }

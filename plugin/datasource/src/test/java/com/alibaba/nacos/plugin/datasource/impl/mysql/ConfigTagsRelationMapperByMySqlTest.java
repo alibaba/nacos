@@ -16,52 +16,85 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.List;
 
 public class ConfigTagsRelationMapperByMySqlTest {
     
     private ConfigTagsRelationMapperByMySql configTagsRelationMapperByMySql;
     
+    int startRow = 0;
+    
+    int pageSize = 5;
+    
+    String tenantId = "tenantId";
+    
+    String[] tagArr = new String[] {"tag1", "tag3", "tag2", "tag4", "tag5"};
+    
+    MapperContext context;
+    
     @Before
     public void setUp() throws Exception {
         configTagsRelationMapperByMySql = new ConfigTagsRelationMapperByMySql();
+        context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.TAG_ARR, tagArr);
     }
     
     @Test
     public void testFindConfigInfo4PageCountRows() {
-        String sql = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(new HashMap<>(), 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  WHERE  "
                         + "a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
     public void testFindConfigInfo4PageFetchRows() {
-        String sql = configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(new HashMap<>(), 5, 0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
-                        + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT 0,5");
+                        + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT "
+                        + startRow + "," + pageSize);
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
     public void testFindConfigInfoLike4PageCountRows() {
-        String sql = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(new HashMap<>(), 5);
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  "
-                + "WHERE  a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  "
+                        + "WHERE  a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test
     public void tsetFindConfigInfoLike4PageFetchRows() {
-        String sql = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(new HashMap<>(), 5, 0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN"
-                        + " config_tags_relation b ON a.id=b.id  WHERE  a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT 0,5");
+                        + " config_tags_relation b ON a.id=b.id  WHERE  a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT "
+                        + startRow + "," + pageSize);
+        List<Object> list = CollectionUtils.list(tenantId);
+        list.addAll(Arrays.asList(tagArr));
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
     @Test

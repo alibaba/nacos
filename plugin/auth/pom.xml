@@ -27,8 +27,8 @@
     
     <artifactId>nacos-auth-plugin</artifactId>
     <name>nacos-auth-plugin ${project.version}</name>
-    <url>http://nacos.io</url>
-
+    <url>https://nacos.io</url>
+    <description>Nacos auth plugin pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

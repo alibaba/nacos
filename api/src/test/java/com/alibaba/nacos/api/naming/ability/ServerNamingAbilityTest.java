@@ -26,6 +26,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ServerNamingAbilityTest {
     
@@ -56,5 +57,30 @@ public class ServerNamingAbilityTest {
         assertNotEquals(expected, actual);
         actual.setSupportJraft(true);
         assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testEqualsForOneObject() {
+        ServerNamingAbility ability = new ServerNamingAbility();
+        assertTrue(ability.equals(ability));
+    }
+    
+    @Test
+    public void testEqualsForOtherAbility() {
+        ServerNamingAbility ability = new ServerNamingAbility();
+        assertFalse(ability.equals(new ClientNamingAbility()));
+    }
+    
+    @Test
+    public void testHashCode() throws JsonProcessingException {
+        ServerNamingAbility expected = new ServerNamingAbility();
+        expected.setSupportJraft(true);
+        String serializeJson = jacksonMapper.writeValueAsString(expected);
+        ServerNamingAbility actual = jacksonMapper.readValue(serializeJson, ServerNamingAbility.class);
+        assertEquals(expected, actual);
+        actual = new ServerNamingAbility();
+        assertNotEquals(expected, actual);
+        actual.setSupportJraft(true);
+        assertEquals(expected.hashCode(), actual.hashCode());
     }
 }

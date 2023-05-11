@@ -16,6 +16,12 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+
 /**
  * The config tag info mapper.
  *
@@ -30,9 +36,29 @@ public interface ConfigInfoTagMapper extends Mapper {
      * UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE
      * data_id=? AND group_id=? AND tenant_id=? AND tag_id=? AND (md5=? or md5 is null or md5='')
      *
+     * @param context sql paramMap
      * @return The sql of updating tag configuration information.
      */
-    String updateConfigInfo4TagCas();
+    default MapperResult updateConfigInfo4TagCas(MapperContext context) {
+        Object content = context.getUpdateParameter(FieldConstant.CONTENT);
+        Object md5 = context.getUpdateParameter(FieldConstant.MD5);
+        Object srcIp = context.getUpdateParameter(FieldConstant.SRC_IP);
+        Object srcUser = context.getUpdateParameter(FieldConstant.SRC_USER);
+        Object gmtModified = context.getUpdateParameter(FieldConstant.GMT_MODIFIED);
+        Object appName = context.getUpdateParameter(FieldConstant.APP_NAME);
+        
+        Object dataId = context.getWhereParameter(FieldConstant.DATA_ID);
+        Object groupId = context.getWhereParameter(FieldConstant.GROUP_ID);
+        Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
+        Object tagId = context.getWhereParameter(FieldConstant.TAG_ID);
+        Object oldMd5 = context.getWhereParameter(FieldConstant.MD5);
+        String sql =
+                "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
+        return new MapperResult(sql,
+                CollectionUtils.list(content, md5, srcIp, srcUser, gmtModified, appName, dataId, groupId, tenantId,
+                        tagId, oldMd5));
+    }
     
     /**
      * Query all tag config info for dump task.
@@ -41,9 +67,17 @@ public interface ConfigInfoTagMapper extends Mapper {
      * FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT startRow,pageSize ) g,
      * config_info_tag t  WHERE g.id = t.id
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The start index.
      * @return The sql of querying all tag config info for dump task.
      */
-    String findAllConfigInfoTagForDumpAllFetchRows(int startRow, int pageSize);
+    MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context);
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.CONFIG_INFO_TAG;
+    }
 }

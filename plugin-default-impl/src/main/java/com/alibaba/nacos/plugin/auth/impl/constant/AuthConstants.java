@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.constant;
 
+import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+
 /**
  * All the constants.
  *
@@ -64,4 +66,16 @@ public class AuthConstants {
     public static final String NACOS_CORE_AUTH_LDAP_FILTER_PREFIX = "nacos.core.auth.ldap.filter.prefix";
     
     public static final String NACOS_CORE_AUTH_CASE_SENSITIVE = "nacos.core.auth.ldap.case.sensitive";
+    
+    /**
+     * LDAP Ignore partial result exception.
+     */
+    public static final String NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION = "nacos.core.auth.ldap.ignore.partial.result.exception";
+    
+    @Deprecated
+    public static final String LDAP_DEFAULT_PASSWORD = "nacos";
+    
+    public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(LDAP_DEFAULT_PASSWORD);
+    
+    public static final String LDAP_PREFIX = "LDAP_";
 }

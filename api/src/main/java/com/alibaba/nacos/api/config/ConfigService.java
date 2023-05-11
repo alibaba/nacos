@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.api.config;
 
+import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -143,6 +144,15 @@ public interface ConfigService {
      * @return whether health
      */
     String getServerStatus();
+
+    /**
+     * add config filter.
+     * It is recommended to use {@link com.alibaba.nacos.api.config.filter.AbstractConfigFilter} to expand the filter.
+     *
+     * @param configFilter filter
+     * @since 2.3.0
+     */
+    void addConfigFilter(IConfigFilter configFilter);
     
     /**
      * Shutdown the resource service.

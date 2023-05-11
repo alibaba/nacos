@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.core.utils.ClassUtils;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,12 +34,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ConfigExecutor {
     
-    private static final Executor DUMP_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    new NameThreadFactory("com.alibaba.nacos.config.embedded.dump"));
-    
     private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 10,
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 8,
                     new NameThreadFactory("com.alibaba.nacos.config.server.timer"));
     
     private static final ScheduledExecutorService CAPACITY_MANAGEMENT_EXECUTOR = ExecutorFactory.Managed
@@ -72,10 +67,6 @@ public final class ConfigExecutor {
     
     public static void scheduleConfigTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-    }
-    
-    public static void executeEmbeddedDump(Runnable runnable) {
-        DUMP_EXECUTOR.execute(runnable);
     }
     
     public static void scheduleCorrectUsageTask(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {

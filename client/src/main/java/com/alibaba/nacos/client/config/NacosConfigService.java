@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -247,7 +248,12 @@ public class NacosConfigService implements ConfigService {
             return DOWN;
         }
     }
-    
+
+    @Override
+    public void addConfigFilter(IConfigFilter configFilter) {
+        configFilterChainManager.addFilter(configFilter);
+    }
+
     @Override
     public void shutDown() throws NacosException {
         worker.shutdown();

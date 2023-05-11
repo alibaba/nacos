@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -34,7 +34,7 @@ public class ConfigChangePublisherTest {
     @Before
     public void startUP() {
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
     }
     
     @Test
@@ -58,7 +58,7 @@ public class ConfigChangePublisherTest {
         
         // nacos is standalone mode and use embedded storage
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
         
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
@@ -68,7 +68,7 @@ public class ConfigChangePublisherTest {
         
         // nacos is standalone mode and use external storage
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(false);
+        DatasourceConfiguration.setEmbeddedStorage(false);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
         Thread.sleep(2000);
@@ -77,7 +77,7 @@ public class ConfigChangePublisherTest {
         
         // nacos is cluster mode and use embedded storage
         EnvUtil.setIsStandalone(false);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
         Thread.sleep(2000);
@@ -86,7 +86,7 @@ public class ConfigChangePublisherTest {
         
         // nacos is cluster mode and use external storage
         EnvUtil.setIsStandalone(false);
-        PropertyUtil.setEmbeddedStorage(false);
+        DatasourceConfiguration.setEmbeddedStorage(false);
         ConfigChangePublisher
                 .notifyConfigChange(new ConfigDataChangeEvent("chuntaojun", "chuntaojun", System.currentTimeMillis()));
         Thread.sleep(2000);
@@ -98,6 +98,6 @@ public class ConfigChangePublisherTest {
     @After
     public void tearDown() {
         EnvUtil.setIsStandalone(true);
-        PropertyUtil.setEmbeddedStorage(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
     }
 }

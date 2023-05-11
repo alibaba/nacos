@@ -18,11 +18,12 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Assert;
@@ -98,7 +99,7 @@ public class ConfigOpsControllerTest {
         MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dataSource);
         LocalDataSourceServiceImpl dataSourceService = Mockito.mock(LocalDataSourceServiceImpl.class);
@@ -120,7 +121,7 @@ public class ConfigOpsControllerTest {
         MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
         
-        propertyUtilMockedStatic.when(PropertyUtil::isEmbeddedStorage).thenReturn(true);
+        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
                 .thenReturn(Mockito.mock(DatabaseOperate.class));

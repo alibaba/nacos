@@ -43,13 +43,14 @@ import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
+import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
-import { getConfigs } from '../../../reducers/configuration';
+import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
-import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
@@ -58,7 +59,7 @@ const configsTableSelected = new Map();
   state => ({
     configurations: state.configuration.configurations,
   }),
-  { getConfigs }
+  { getConfigs, getConfigsV2 }
 )
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
@@ -98,6 +99,7 @@ class ConfigurationManagement extends React.Component {
       dataId: this.dataId,
       group: this.group,
       appName: this.appName,
+      config_detail: getParams('configDetail') || '',
       config_tags: getParams('configTags') ? getParams('configTags').split(',') : [],
       tagLst: getParams('tagList') ? getParams('tagList').split(',') : [],
       selectValue: [],
@@ -250,7 +252,7 @@ class ConfigurationManagement extends React.Component {
         params.group = '*' + params.group + '*';
       }
     }
-    if (params.dataId.indexOf('*') !== -1 || params.group.indexOf('*') !== -1) {
+    if (this.state.defaultFuzzySearch) {
       params.search = 'blur';
     } else {
       params.search = 'accurate';
@@ -281,8 +283,18 @@ class ConfigurationManagement extends React.Component {
     setParams('pageNo', null);
     this.changeParamsBySearchType(params);
     this.setState({ loading: true });
-    this.props
-      .getConfigs(params)
+    let props = null;
+    if (this.state.config_detail && this.state.config_detail !== '') {
+      if (this.state.defaultFuzzySearch) {
+        params.config_detail = '*' + this.state.config_detail + '*';
+      } else {
+        params.config_detail = this.state.config_detail;
+      }
+      props = this.props.getConfigsV2(params);
+    } else {
+      props = this.props.getConfigs(params);
+    }
+    props
       .then(() =>
         this.setState({
           loading: false,
@@ -440,6 +452,13 @@ class ConfigurationManagement extends React.Component {
     this.setState({ pageSize }, () => this.changePage(1));
   }
 
+  setConfigDetail(value) {
+    this.setState({
+      config_detail: value,
+    });
+    setParams('configDetail', value);
+  }
+
   setAppName(value) {
     this.appName = value;
     this.setState({
@@ -530,6 +549,7 @@ class ConfigurationManagement extends React.Component {
   clear = () => {
     this.setAppName('');
     this.setConfigTags([]);
+    this.setConfigDetail('');
   };
 
   changeAdvancedQuery = () => {
@@ -598,7 +618,7 @@ class ConfigurationManagement extends React.Component {
     if (newVersion) {
       this.openUri('v1/cs/configs', {
         exportV2: 'true',
-        tenant: '',
+        tenant: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -608,7 +628,7 @@ class ConfigurationManagement extends React.Component {
     } else {
       this.openUri('v1/cs/configs', {
         export: 'true',
-        tenant: '',
+        tenant: getParams('namespace'),
         group: '',
         appName: '',
         ids: ids.join(','),
@@ -994,12 +1014,22 @@ class ConfigurationManagement extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
+
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
     let token = {};
-    try {
-      token = JSON.parse(localStorage.token);
-    } catch (e) {
-      console.log(e);
-      goLogin();
+
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log(e);
+        goLogin();
+        Dialog.alert({
+          title: locale.importFail,
+          content: locale.authFail,
+        });
+        return;
+      }
     }
     const { accessToken = '', username = '' } = token;
     const uploadProps = {
@@ -1265,6 +1295,18 @@ class ConfigurationManagement extends React.Component {
                       }
                     }}
                     hasClear
+                  />
+                </Form.Item>
+                <Form.Item
+                  style={this.state.isAdvancedQuery ? {} : { display: 'none' }}
+                  label={locale.configDetailLabel}
+                >
+                  <Input
+                    htmlType={'text'}
+                    placeholder={locale.configDetailH}
+                    style={{ width: 200 }}
+                    value={this.state.config_detail}
+                    onChange={this.setConfigDetail.bind(this)}
                   />
                 </Form.Item>
               </Form>
