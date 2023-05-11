@@ -39,79 +39,18 @@ import java.util.Properties;
  **/
 @Configuration
 public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangeConfigs.class);
-
+    
     private static final String PREFIX = ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX;
-
-    /**
-     * Whether webhook config change plugin enabled.
-     */
-    @Value("${" + ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENABLED + ":false}")
-    private boolean webhookEnabled;
-
-    /**
-     * The url which webhook.
-     */
-    @Value("${" + ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL + ":}")
-    private String webhookUrl;
-
-    /**
-     * The max content capacity which webhook push.
-     */
-    @Value("${" + ConfigChangeConstants.Webhook.NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_CONTENT_MAX_CAPACITY + ":102400}")
-    private int webhookContentMaxCapacity;
-
-    /**
-     * Whether whitelist config change plugin enabled.
-     */
-    @Value("${" + ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_ENABLED + ":false}")
-    private boolean whiteListEnabled;
-
-    /**
-     * Whether whitelist sets.
-     */
-    @Value("${" + ConfigChangeConstants.WhiteList.NACOS_CORE_CONFIG_PLUGIN_WHITELIST_SUFFIXS + ":}")
-    private String whiteListSuffixs;
-
-    /**
-     * Whether file format config change plugin enabled.
-     */
-    @Value("${" + ConfigChangeConstants.FileFormatCheck.NACOS_CORE_CONFIG_PLUGIN_FILEFORMATCHECK_ENABLED + ":false}")
-    private boolean fileFormatCheckEnabled;
-
+    
     private Map<String, Properties> configPluginProperties = new HashMap<>();
-
+    
     public ConfigChangeConfigs() {
         NotifyCenter.registerSubscriber(this);
         refreshPluginProperties();
     }
-
-    public boolean isWebHookEnabled() {
-        return webhookEnabled;
-    }
-
-    public String getWebHookUrl() {
-        return webhookUrl;
-    }
-
-    public int getWebHookMaxContentCapacity() {
-        // default 100kb
-        return webhookContentMaxCapacity;
-    }
-
-    public boolean isWhiteListEnabled() {
-        return whiteListEnabled;
-    }
-
-    public String getWhiteListSuffixs() {
-        return whiteListSuffixs;
-    }
-
-    public boolean isFileFormatCheckEnabled() {
-        return whiteListEnabled;
-    }
-
+    
     private void refreshPluginProperties() {
         try {
             Map<String, Properties> newProperties = new HashMap<>(3);
@@ -128,37 +67,22 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
             LOGGER.warn("[ConfigChangeConfigs]Refresh config plugin properties failed ", e);
         }
     }
-
+    
     public Properties getPluginProperties(String configPluginType) {
         if (!configPluginProperties.containsKey(configPluginType)) {
-            LOGGER.warn("[ConfigChangeConfigs]Can't find config plugin properties for type {}, will use empty properties", configPluginType);
+            LOGGER.warn(
+                    "[ConfigChangeConfigs]Can't find config plugin properties for type {}, will use empty properties",
+                    configPluginType);
             return new Properties();
         }
         return configPluginProperties.get(configPluginType);
     }
-
+    
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
-        try {
-            webhookEnabled = EnvUtil.getProperty(ConfigChangeConstants.Webhook
-                    .NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENABLED, Boolean.class);
-            webhookUrl = EnvUtil.getProperty(ConfigChangeConstants.Webhook
-                    .NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL, String.class);
-            webhookContentMaxCapacity = EnvUtil.getProperty(ConfigChangeConstants.Webhook
-                    .NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_CONTENT_MAX_CAPACITY, Integer.class);
-            whiteListEnabled = EnvUtil.getProperty(ConfigChangeConstants.WhiteList
-                    .NACOS_CORE_CONFIG_PLUGIN_WHITELIST_ENABLED, Boolean.class);
-            whiteListSuffixs = EnvUtil.getProperty(ConfigChangeConstants.WhiteList
-                    .NACOS_CORE_CONFIG_PLUGIN_WHITELIST_SUFFIXS, String.class);
-            fileFormatCheckEnabled = EnvUtil.getProperty(ConfigChangeConstants.FileFormatCheck
-                    .NACOS_CORE_CONFIG_PLUGIN_FILEFORMATCHECK_ENABLED, Boolean.class);
-            LOGGER.info("[ConfigChangeConfigs]Upgrade config change plugin configs successfully, {} enabled:{} , {} enabled:{}, {} enbaled: {}",
-                    "webhook", isWebHookEnabled(), "fileformatcheck", isFileFormatCheckEnabled(), "whitelist", isWhiteListEnabled());
-        } catch (Exception e) {
-            LOGGER.warn("[ConfigChangeConfigs]Upgrade config change plugin config from env failed, use old value", e);
-        }
+        refreshPluginProperties();
     }
-
+    
     @Override
     public Class<? extends Event> subscribeType() {
         return ServerConfigChangeEvent.class;
