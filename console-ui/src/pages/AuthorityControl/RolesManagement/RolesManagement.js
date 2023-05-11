@@ -131,13 +131,13 @@ class RolesManagement extends React.Component {
               }}
             />
           </Form.Item>
-          <Form.Item label="默认模糊匹配">
+          <Form.Item label={locale.fuzzydMode}>
             <Switch
               checkedChildren=""
               unCheckedChildren=""
               defaultChecked={this.state.defaultFuzzySearch}
               onChange={this.handleDefaultFuzzySwitchChange}
-              title={'自动在搜索参数前后加上*'}
+              title={locale.fuzzyd}
             />
           </Form.Item>
           <Form.Item label={''}>
