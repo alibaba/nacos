@@ -69,8 +69,6 @@ public interface ConfigChangePluginService {
      *
      * @return array of pointcut the methods
      */
-    default ConfigChangePointCutTypes[] pointcutMethodNames() {
-        return ConfigChangeConstants.getPointcuts(getServiceType());
-    }
+    ConfigChangePointCutTypes[] pointcutMethodNames();
 
 }

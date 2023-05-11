@@ -475,7 +475,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.IDS, paramList);
         MapperResult result = configInfoMapper.removeConfigInfoByIdsAtomic(context);
-        EmbeddedStorageContextHolder.addSqlContext(result.getSql(), result.getParamList());
+        EmbeddedStorageContextHolder.addSqlContext(result.getSql(), result.getParamList().toArray());
     }
     
     @Override
