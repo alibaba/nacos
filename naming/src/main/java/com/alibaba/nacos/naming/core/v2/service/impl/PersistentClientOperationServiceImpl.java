@@ -60,11 +60,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -404,7 +402,9 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                         // compare, remove if change
                         if (!infoMap.get(oldService).equals(client.getInstancePublishInfo(oldService))) {
                             NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(oldService, client.getClientId()));
-                            Loggers.RAFT.info("Change instance service={}, instance={}", oldService, client.getInstancePublishInfo(oldService));
+                            InstancePublishInfo oldInfo = client.getInstancePublishInfo(oldService);
+                            InstancePublishInfo newInfo = infoMap.get(oldService);
+                            Loggers.RAFT.info("Change instance service={}, old instance={}, new instance={}", oldService, oldInfo, newInfo);
                         }
                     }
                 }
