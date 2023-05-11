@@ -32,6 +32,8 @@ public class ConfigChangeResponse {
     private Object retVal;
 
     private String msg;
+    
+    private Object[] args;
 
     public ConfigChangeResponse(ConfigChangePointCutTypes responseType) {
         this.responseType = responseType;
@@ -68,5 +70,12 @@ public class ConfigChangeResponse {
     public void setMsg(String msg) {
         this.msg = msg;
     }
-
+    
+    public Object[] getArgs() {
+        return args;
+    }
+    
+    public void setArgs(Object[] args) {
+        this.args = args;
+    }
 }

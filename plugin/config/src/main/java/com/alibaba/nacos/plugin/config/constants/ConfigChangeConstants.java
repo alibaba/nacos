@@ -40,6 +40,13 @@ public class ConfigChangeConstants {
     public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
 
     public static final String POINT_CUT_NAME = "CONFIG_CHANGE_POINT_CUT_TYPES_TYPES";
+    
+    public static final String PLUGIN_PROPERTIES = "pluginProperties";
+    
+    /**
+     * The actual config method args.
+     */
+    public static final String ORIGINAL_ARGS = "originalArgs";
 
     private static Integer pluginServiceCount = 0;
 
