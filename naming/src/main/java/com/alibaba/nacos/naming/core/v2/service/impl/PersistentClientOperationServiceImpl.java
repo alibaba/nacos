@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ClassUtils;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
@@ -59,10 +60,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -351,7 +357,58 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                 loadSyncDataToClient(entry, snapshotClient);
                 snapshot.put(entry.getKey(), snapshotClient);
             }
+            // tell removed and changed data
+            tellRemovedData(newData);
+            // sync data
             clientManager.loadFromSnapshot(snapshot);
+        }
+
+        private void tellRemovedData(Map<String, ClientSyncData> newData) {
+            Collection<String> clientIds = clientManager.allClientId();
+            // nothing to do if empty in memory
+            if (CollectionUtils.isEmpty(clientIds)) {
+                return;
+            }
+            Set<String> newClientIds = newData.keySet();
+            for (String clientId : clientIds) {
+                Client client = clientManager.getClient(clientId);
+                // remove all if not contains this client
+                if (!newClientIds.contains(clientId)) {
+                    if (client == null) {
+                        continue;
+                    }
+                    if (CollectionUtils.isNotEmpty(client.getAllPublishedService())) {
+                        for (Service service : client.getAllPublishedService()) {
+                            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
+                            Loggers.RAFT.info("Removing instance service={}, instance={}", service, client.getInstancePublishInfo(service));
+                        }
+                    }
+                } else {
+                    // compare and remove some
+                    ClientSyncData clientSyncData = newData.get(clientId);
+                    List<String> namespaces = clientSyncData.getNamespaces();
+                    List<String> groupNames = clientSyncData.getGroupNames();
+                    List<String> serviceNames = clientSyncData.getServiceNames();
+                    List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
+                    Map<Service, InstancePublishInfo> infoMap = new HashMap<>(instances.size());
+                    for (int i = 0; i < namespaces.size(); i++) {
+                        Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
+                        infoMap.put(service, instances.get(i));
+                    }
+                    for (Service oldService : client.getAllSubscribeService()) {
+                        // if remove
+                        if (!infoMap.containsKey(oldService)) {
+                            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(oldService, client.getClientId()));
+                            Loggers.RAFT.info("Removing instance service={}, instance={}", oldService, client.getInstancePublishInfo(oldService));
+                        }
+                        // compare, remove if change
+                        if (!infoMap.get(oldService).equals(client.getInstancePublishInfo(oldService))) {
+                            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(oldService, client.getClientId()));
+                            Loggers.RAFT.info("Change instance service={}, instance={}", oldService, client.getInstancePublishInfo(oldService));
+                        }
+                    }
+                }
+            }
         }
         
         private void loadSyncDataToClient(Map.Entry<String, ClientSyncData> entry, IpPortBasedClient client) {
