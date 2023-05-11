@@ -29,16 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author liyunfei
  */
 public class ConfigChangeConstants {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangeConstants.class);
-
+    
     /**
      * The relationship of  config change plugin service name and its pointcuts.
      */
     private static final Map<String, ConfigChangePointCutTypes[]> POINTCUTS_MAP = new ConcurrentHashMap<String, ConfigChangePointCutTypes[]>();
-
+    
     public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
-
+    
     public static final String POINT_CUT_NAME = "CONFIG_CHANGE_POINT_CUT_TYPES_TYPES";
     
     public static final String PLUGIN_PROPERTIES = "pluginProperties";
@@ -47,59 +47,9 @@ public class ConfigChangeConstants {
      * The actual config method args.
      */
     public static final String ORIGINAL_ARGS = "originalArgs";
-
+    
     private static Integer pluginServiceCount = 0;
-
-    /**
-     * Webhook plugin service relevant server configs.
-     */
-    public static class Webhook {
-
-        /**
-         * The plugin service will execute when the action produce.
-         */
-        public static final ConfigChangePointCutTypes[] CONFIG_CHANGE_POINT_CUT_TYPES_TYPES = ConfigChangePointCutTypes
-                .values();
-
-        public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_ENABLED = "nacos.core.config.plugin.webhook.enabled";
-
-        public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_URL = "nacos.core.config.plugin.webhook.url";
-
-        public static final String NACOS_CORE_CONFIG_PLUGIN_WEBHOOK_CONTENT_MAX_CAPACITY = "nacos.core.config.plugin.webhook.contentMaxCapacity";
-    }
-
-    /**
-     * File format check plugin service relevant server configs.
-     */
-    public static class FileFormatCheck {
-
-        /**
-         * The plugin service will execute when the action produce.
-         */
-        public static final ConfigChangePointCutTypes[] CONFIG_CHANGE_POINT_CUT_TYPES_TYPES = {
-                ConfigChangePointCutTypes.PUBLISH_BY_HTTP, ConfigChangePointCutTypes.PUBLISH_BY_RPC};
-
-        public static final String NACOS_CORE_CONFIG_PLUGIN_FILEFORMATCHECK_ENABLED = "nacos.core.config.plugin.fileformatcheck.enabled";
-
-    }
-
-    /**
-     * WhiteList plugin service relevant server configs.
-     */
-    public static class WhiteList {
-
-        /**
-         * The plugin service will execute when the action produce.
-         */
-        public static final ConfigChangePointCutTypes[] CONFIG_CHANGE_POINT_CUT_TYPES_TYPES = {
-                ConfigChangePointCutTypes.IMPORT_BY_HTTP};
-
-        public static final String NACOS_CORE_CONFIG_PLUGIN_WHITELIST_ENABLED = "nacos.core.config.plugin.whitelist.enabled";
-
-        public static final String NACOS_CORE_CONFIG_PLUGIN_WHITELIST_SUFFIXS = "nacos.core.config.plugin.whitelist.suffixs";
-
-    }
-
+    
     // Load config pointcuts to each config change plugin services.
     static {
         Class[] innerClasses = ConfigChangeConstants.class.getDeclaredClasses();
@@ -115,11 +65,11 @@ public class ConfigChangeConstants {
             }
         }
     }
-
+    
     public static ConfigChangePointCutTypes[] getPointcuts(String serviceType) {
         return POINTCUTS_MAP.get(serviceType);
     }
-
+    
     public static Integer getPluginServiceCount() {
         return pluginServiceCount;
     }
