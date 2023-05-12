@@ -131,7 +131,27 @@ public class PersistentIpPortClientManager implements ClientManager {
     public void loadFromSnapshot(ConcurrentMap<String, IpPortBasedClient> clients) {
         ConcurrentMap<String, IpPortBasedClient> oldClients = this.clients;
         this.clients = clients;
-        oldClients.forEach((clientId, client) -> client.release());
         oldClients.clear();
+    }
+
+    /**
+     * add client directlt.
+     *
+     * @param client client
+     */
+    public void addSyncClient(IpPortBasedClient client) {
+        clients.put(client.getClientId(), client);
+    }
+
+    /**
+     * remove client.
+     *
+     * @param clientId client id
+     */
+    public void removeAndRelease(String clientId) {
+        IpPortBasedClient client = clients.remove(clientId);
+        if (client != null) {
+            client.release();
+        }
     }
 }

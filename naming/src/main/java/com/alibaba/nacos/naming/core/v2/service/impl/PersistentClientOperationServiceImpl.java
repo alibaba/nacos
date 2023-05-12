@@ -347,71 +347,111 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         protected void loadSnapshot(byte[] snapshotBytes) {
             ConcurrentHashMap<String, ClientSyncData> newData = serializer.deserialize(snapshotBytes);
-            ConcurrentHashMap<String, IpPortBasedClient> snapshot = new ConcurrentHashMap<>(newData.size());
+            Collection<String> oldClientIds = clientManager.allClientId();
+            // add or update
             for (Map.Entry<String, ClientSyncData> entry : newData.entrySet()) {
-                IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
-                snapshotClient.setAttributes(entry.getValue().getAttributes());
-                snapshotClient.init();
-                loadSyncDataToClient(entry, snapshotClient);
-                snapshot.put(entry.getKey(), snapshotClient);
+                if (oldClientIds.contains(entry.getKey())) {
+                    // update alive client
+                    updateSyncDataToClient(entry, (IpPortBasedClient) clientManager.getClient(entry.getKey()));
+                } else {
+                    // add new client
+                    IpPortBasedClient snapshotClient = new IpPortBasedClient(entry.getKey(), false);
+                    snapshotClient.setAttributes(entry.getValue().getAttributes());
+                    snapshotClient.init();
+                    addSyncDataToClient(entry, snapshotClient);
+                }
             }
-            // tell removed and changed data
-            tellRemovedData(newData);
-            // sync data
-            clientManager.loadFromSnapshot(snapshot);
+            // remove dead client
+            removeDeadClient(newData.keySet(), oldClientIds);
         }
 
-        private void tellRemovedData(Map<String, ClientSyncData> newData) {
-            Collection<String> clientIds = clientManager.allClientId();
-            // nothing to do if empty in memory
-            if (CollectionUtils.isEmpty(clientIds)) {
-                return;
+        /**
+         * update instance info for client.
+         *
+         * @param entry entry
+         * @param client client
+         */
+        private void updateSyncDataToClient(Map.Entry<String, ClientSyncData> entry, IpPortBasedClient client) {
+            ClientSyncData data = entry.getValue();
+            List<String> namespaces = data.getNamespaces();
+            List<String> groupNames = data.getGroupNames();
+            List<String> serviceNames = data.getServiceNames();
+            List<InstancePublishInfo> instances = data.getInstancePublishInfos();
+            // alive instance data: Service = InstancePublishInfo
+            Map<Service, InstancePublishInfo> newInstanceInfoMap = new HashMap<>(instances.size());
+            for (int i = 0; i < namespaces.size(); i++) {
+                Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
+                newInstanceInfoMap.put(service, instances.get(i));
             }
-            Set<String> newClientIds = newData.keySet();
-            for (String clientId : clientIds) {
-                Client client = clientManager.getClient(clientId);
-                // remove all if not contains this client
-                if (!newClientIds.contains(clientId)) {
-                    if (client == null) {
-                        continue;
-                    }
-                    if (CollectionUtils.isNotEmpty(client.getAllPublishedService())) {
-                        for (Service service : client.getAllPublishedService()) {
-                            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
-                            Loggers.RAFT.info("Removing instance service={}, instance={}", service, client.getInstancePublishInfo(service));
-                        }
+            // old instance data
+            Collection<Service> oldPublishedService = client.getAllPublishedService();
+            Set<Service> aliveInstanceServices = newInstanceInfoMap.keySet();
+            // add or update existed service
+            for (Service service : aliveInstanceServices) {
+                Service singleton = ServiceManager.getInstance().getSingleton(service);
+                InstancePublishInfo newInstanceInfo = newInstanceInfoMap.get(singleton);
+                if (oldPublishedService.contains(singleton)) {
+                    // update if necessary
+                    InstancePublishInfo oldInstanceInfo = client.getInstancePublishInfo(singleton);
+                    if (oldInstanceInfo != null && !newInstanceInfo.equals(oldInstanceInfo)) {
+                        client.addServiceInstance(singleton, newInstanceInfo);
+                        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                        Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, newInstanceInfo);
                     }
                 } else {
-                    // compare and remove some
-                    ClientSyncData clientSyncData = newData.get(clientId);
-                    List<String> namespaces = clientSyncData.getNamespaces();
-                    List<String> groupNames = clientSyncData.getGroupNames();
-                    List<String> serviceNames = clientSyncData.getServiceNames();
-                    List<InstancePublishInfo> instances = clientSyncData.getInstancePublishInfos();
-                    Map<Service, InstancePublishInfo> infoMap = new HashMap<>(instances.size());
-                    for (int i = 0; i < namespaces.size(); i++) {
-                        Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
-                        infoMap.put(service, instances.get(i));
-                    }
-                    for (Service oldService : client.getAllSubscribeService()) {
-                        // if remove
-                        if (!infoMap.containsKey(oldService)) {
-                            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(oldService, client.getClientId()));
-                            Loggers.RAFT.info("Removing instance service={}, instance={}", oldService, client.getInstancePublishInfo(oldService));
+                    // add
+                    client.addServiceInstance(singleton, newInstanceInfo);
+                    NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                    Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, newInstanceInfo);
+                }
+            }
+            // remove dead instance
+            for (Service service : oldPublishedService) {
+                if (!aliveInstanceServices.contains(service)) {
+                    Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] service={}, instance={}", service, client.getInstancePublishInfo(service));
+                    // metric ip count decrement
+                    client.removeServiceInstance(service);
+                    NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
+                }
+            }
+        }
+
+        /**
+         * remove certain client which has dead.
+         *
+         * @param aliveClientIds new client ids
+         * @param oldClientIds old client ids
+         */
+        private void removeDeadClient(Collection<String> aliveClientIds, Collection<String> oldClientIds) {
+            // return if empty
+            if (CollectionUtils.isEmpty(oldClientIds)) {
+                return;
+            }
+            for (String oldClientId : oldClientIds) {
+                // no contains if discaonnect
+                if (!aliveClientIds.contains(oldClientId)) {
+                    Client client = clientManager.getClient(oldClientId);
+                    // remove all publishedService
+                    if (client != null) {
+                        if (CollectionUtils.isNotEmpty(client.getAllPublishedService())) {
+                            for (Service service : client.getAllPublishedService()) {
+                                Service singleton = ServiceManager.getInstance().getSingleton(service);
+                                InstancePublishInfo oldInfo = client.getInstancePublishInfo(service);
+                                // metric ip count decrement
+                                client.removeServiceInstance(service);
+                                NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, client.getClientId()));
+                                Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] service={}, instance={}", singleton, oldInfo);
+                            }
                         }
-                        // compare, remove if change
-                        if (!infoMap.get(oldService).equals(client.getInstancePublishInfo(oldService))) {
-                            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(oldService, client.getClientId()));
-                            InstancePublishInfo oldInfo = client.getInstancePublishInfo(oldService);
-                            InstancePublishInfo newInfo = infoMap.get(oldService);
-                            Loggers.RAFT.info("Change instance service={}, old instance={}, new instance={}", oldService, oldInfo, newInfo);
-                        }
+                        // remove client
+                        clientManager.removeAndRelease(client.getClientId());
+                        Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] client={}", client);
                     }
                 }
             }
         }
         
-        private void loadSyncDataToClient(Map.Entry<String, ClientSyncData> entry, IpPortBasedClient client) {
+        private void addSyncDataToClient(Map.Entry<String, ClientSyncData> entry, IpPortBasedClient client) {
             ClientSyncData data = entry.getValue();
             List<String> namespaces = data.getNamespaces();
             List<String> groupNames = data.getGroupNames();
@@ -421,10 +461,11 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                 Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
                 Service singleton = ServiceManager.getInstance().getSingleton(service);
                 client.putServiceInstance(singleton, instances.get(i));
-                Loggers.RAFT.info("[SNAPSHOT-LOAD] service={}, instance={}", service, instances.get(i));
+                Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, instances.get(i));
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
+            clientManager.addSyncClient(client);
         }
         
         @Override
