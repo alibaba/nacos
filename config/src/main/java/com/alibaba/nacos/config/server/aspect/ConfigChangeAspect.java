@@ -287,7 +287,8 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("modifyTime", TimeUtils.getCurrentTimeStr());
         ConfigChangePointCutTypes handleType = configChangeRequest.getRequestType();
         ConfigChangeResponse configChangeResponse = new ConfigChangeResponse(handleType);
-        configChangeResponse.setSuccess(true); // default success,when before plugin service verify failed , set false
+        // default success,when before plugin service verify failed , set false
+        configChangeResponse.setSuccess(true);
         PriorityQueue<ConfigChangePluginService> beforeExecutePriorityQueue = new PriorityQueue<>(
                 DEFAULT_BEFORE_QUEUE_CAPACITY, Comparator.comparingInt(ConfigChangePluginService::getOrder));
         PriorityQueue<ConfigChangePluginService> afterExecutePriorityQueue = new PriorityQueue<>(
@@ -315,7 +316,8 @@ public class ConfigChangeAspect {
             configChangeRequest.setArg("pluginProperties", properties);
             ccs.execute(configChangeRequest, configChangeResponse);
             if (null != configChangeResponse.getArgs()) {
-                args = configChangeResponse.getArgs(); // update args by filter with whitelist
+                // update args by filter with whitelist
+                args = configChangeResponse.getArgs();
             }
             // prevent execute next before plugins service
             if (!configChangeResponse.isSuccess()) {
@@ -325,7 +327,8 @@ public class ConfigChangeAspect {
         }
         
         try {
-            if (configChangeResponse.isSuccess()) { // if validate failed,skipped directly
+            // if validate failed,skipped directly
+            if (configChangeResponse.isSuccess()) {
                 retVal = pjp.proceed(args);
             }
         } catch (Throwable e) {
