@@ -62,11 +62,15 @@ jobs:
         name: Download distribution tar
         with:
           name: nacos
-          path: /home
+          path: ./
       - name: print path
         run: |
           ls
-          echo `ls /home`
+          echo `ls`
+      - name: print path
+        run: |
+          ls
+          echo `ls /nacos`
       - name: print path
         run: |
           ls
