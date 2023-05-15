@@ -1,0 +1,107 @@
+name: PUSH-CI
+
+on:
+  push:
+    branches: [master, develop, v1.x-develop, v1.X]
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+concurrency:
+  group: rocketmq-${{ github.ref }}
+
+env:
+  MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+  DOCKER_REPO: apache/rocketmq-ci
+
+jobs:
+  dist-tar:
+    name: Build dist tar
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "8"
+          cache: "maven"
+      - name: "Check with Maven"
+        run: |
+          mvn -B clean package apache-rat:check findbugs:findbugs -DskipTests -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: Build distribution tar
+        run: |
+          mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: "Test With Maven"
+        run: |
+          mvn -Prelease-nacos clean test -DtrimStackTrace=false -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - uses: "codecov/codecov-action@v3.1.0"
+        with:
+          files: ./address/target/site/jacoco/jacoco.xml,./api/target/site/jacoco/jacoco.xml,./auth/target/site/jacoco/jacoco.xml,./client/target/site/jacoco/jacoco.xml,./common/target/site/jacoco/jacoco.xml,./consistency/target/site/jacoco/jacoco.xml,./console/target/site/jacoco/jacoco.xml,./core/target/site/jacoco/jacoco.xml,./naming/target/site/jacoco/jacoco.xml,./plugin-default-impl/target/site/jacoco/jacoco.xml,./plugin/auth/target/site/jacoco/jacoco.xml,./plugin/encryption/target/site/jacoco/jacoco.xml,./sys/target/site/jacoco/jacoco.xml    
+      - uses: actions/upload-artifact@v3
+        name: Upload distribution tar
+        with:
+          name: nacos
+          path: distribution/target/nacos-server-2.3.0-SNAPSHOT/*
+      - name: print current path
+        run: |
+          ls
+          echo `ls -l`
+
+  docker:
+    if: ${{ success() }}
+    name: Docker images
+    needs: [dist-tar]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        base-image: ["centos"]
+        java-version: ["8"]
+    steps:
+      - uses: actions/download-artifact@v3
+        name: Download distribution tar
+        with:
+          name: nacos
+          path: nacos
+      - name: print path
+        run: |
+          ls
+          echo `ls`
+      - uses: actions/checkout@v3
+        with:
+          repository: apache/rocketmq-docker.git
+          ref: master
+          path: rocketmq-docker
+      - uses: actions/download-artifact@v3
+        name: Download distribution tar
+        with:
+          name: rocketmq
+          path: rocketmq
+      - name: docker-login
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and save docker images
+        id: build-images
+        run: |
+          cd rocketmq-docker/image-build-ci
+          version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
+          mkdir versionlist
+          touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
+          sh ./build-image-local.sh ${version} ${{ matrix.base-image }} ${{ matrix.java-version }} ${DOCKER_REPO}
+      - uses: actions/upload-artifact@v3
+        name: Upload distribution tar
+        with:
+          name: versionlist
+          path: rocketmq-docker/image-build-ci/versionlist/*
