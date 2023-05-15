@@ -79,7 +79,13 @@ public class MapperProxy implements InvocationHandler {
         
         String className = mapper.getClass().getSimpleName();
         String methodName = method.getName();
-        String sql = ((MapperResult)invoke).getSql();
+        
+        String sql;
+        if(invoke instanceof MapperResult){
+            sql = ((MapperResult)invoke).getSql();
+        }else{
+            sql = invoke.toString();
+        }
         
         LOGGER.info("[{}] METHOD : {}, SQL : {}, ARGS : {}", className, methodName, sql, JacksonUtils.toJson(args));
         return invoke;
