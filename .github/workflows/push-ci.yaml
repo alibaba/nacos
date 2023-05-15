@@ -41,7 +41,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-2.3.0-SNAPSHOT/nacos
+          path: distribution/target/nacos-server-2.3.0-SNAPSHOT/nacos/*
       - name: print current path
         run: |
           ls
@@ -66,11 +66,16 @@ jobs:
       - name: print path
         run: |
           ls
-          echo `ls`
+          echo `ls /home/runner/work/nacos`
       - name: print path
         run: |
           ls
-          echo `ls /nacos`
+          echo `pwd`
+          echo `ls ./home`
+      - name: print path
+        run: |
+          ls
+          echo `ls /home/runner/work/nacos/nacos`
       - name: print path
         run: |
           ls
