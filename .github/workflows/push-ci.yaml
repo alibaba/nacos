@@ -65,29 +65,13 @@ jobs:
           path: ./
       - name: print path
         run: |
-          echo `ls /home/runner/work/nacos/nacos`
-      - name: print path
-        run: |
           echo `pwd`
-          echo `ls /home/runner/work/nacos`
-      - name: print path
-        run: |
-          ls
           echo `ls /home/runner/work/nacos/nacos`
-      - name: print path
-        run: |
-          ls
-          echo `ls /home/runner/work`
       - uses: actions/checkout@v3
         with:
-          repository: apache/rocketmq-docker.git
+          repository: Wuyunfan-BUPT/nacos-docker.git
           ref: master
-          path: rocketmq-docker
-      - uses: actions/download-artifact@v3
-        name: Download distribution tar
-        with:
-          name: rocketmq
-          path: rocketmq
+          path: nacos-docker
       - name: docker-login
         uses: docker/login-action@v2
         with:
@@ -97,13 +81,8 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
-          cd rocketmq-docker/image-build-ci
+          cd nacos-docker/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
-          sh ./build-image-local.sh ${version} ${{ matrix.base-image }} ${{ matrix.java-version }} ${DOCKER_REPO}
-      - uses: actions/upload-artifact@v3
-        name: Upload distribution tar
-        with:
-          name: versionlist
-          path: rocketmq-docker/image-build-ci/versionlist/*
+          docker build --no-cache -f Dockerfile -t nacos:test8
