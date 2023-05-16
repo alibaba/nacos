@@ -77,6 +77,7 @@ public class MapperProxy implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Object invoke = method.invoke(mapper, args);
+        
         String className = mapper.getClass().getSimpleName();
         String methodName = method.getName();
         String sql;
