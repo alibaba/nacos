@@ -396,7 +396,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                     if (oldInstanceInfo != null && !newInstanceInfo.equals(oldInstanceInfo)) {
                         client.addServiceInstance(singleton, newInstanceInfo);
                         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
-                        Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, newInstanceInfo);
+                        Loggers.RAFT.info("[SNAPSHOT-DATA-UPDATE] service={}, instance={}", service, newInstanceInfo);
                     }
                 } else {
                     // add
@@ -408,10 +408,11 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             // remove dead instance
             for (Service service : oldPublishedService) {
                 if (!aliveInstanceServices.contains(service)) {
-                    Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] service={}, instance={}", service, client.getInstancePublishInfo(service));
+                    InstancePublishInfo oldInfo = client.getInstancePublishInfo(service);
                     // metric ip count decrement
                     client.removeServiceInstance(service);
                     NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
+                    Loggers.RAFT.info("[SNAPSHOT-DATA-REMOVE] service={}, instance={}", service, oldInfo);
                 }
             }
         }
