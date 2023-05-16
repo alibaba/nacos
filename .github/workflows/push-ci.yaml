@@ -86,5 +86,3 @@ jobs:
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
           docker build --no-cache -f Dockerfile -t nacos:test8 .
-
-      - name: Build and save docker image
