@@ -150,7 +150,7 @@ jobs:
                 repository: ${{env.DOCKER_REPO}}
                 tag: ${{ matrix.version }}
             service:
-              nodePort: $[30000+`echo ${RANDOM}`]
+              nodePort: 30001
 
 
 
