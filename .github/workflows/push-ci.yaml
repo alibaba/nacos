@@ -8,11 +8,10 @@ permissions:
   contents: read # to fetch code (actions/checkout)
 
 concurrency:
-  group: rocketmq-${{ github.ref }}
+  group: nacos-${{ github.ref }}
 
 env:
-  MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
-  DOCKER_REPO: apache/rocketmq-ci
+  DOCKER_REPO: wuyfeedocker/nacos-ci
 
 jobs:
   dist-tar:
@@ -86,4 +85,7 @@ jobs:
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
-          docker build --no-cache -f Dockerfile -t nacos:test8 .
+          tag=${version}-$(echo ${{ matrix.base-image }} | sed -e "s/:/-/g")-${{ matrix.java-version }}
+          echo $tag
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
+          docker push ${DOCKER_REPO}:${tag}
