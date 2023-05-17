@@ -85,7 +85,76 @@ jobs:
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
+          ls versionlist/
           tag=${version}-$(echo ${{ matrix.base-image }} | sed -e "s/:/-/g")-${{ matrix.java-version }}
           echo $tag
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
           docker push ${DOCKER_REPO}:${tag}
+      - uses: actions/upload-artifact@v3
+        name: Upload distribution tar
+        with:
+          name: versionlist
+          path: nacos-docker/build/versionlist/*
+          
+          
+  list-version:
+    if: always()
+    name: List version
+    needs: [docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version-json: ${{ steps.show_versions.outputs.version-json }}
+    steps:
+      - uses: actions/download-artifact@v3
+        name: Download versionlist
+        with:
+          name: versionlist
+          path: versionlist
+      - name: Show versions
+        id: show_versions
+        run: | 
+          a=(`ls versionlist`)
+          printf '%s\n' "${a[@]}" | jq -R . | jq -s .
+          echo version-json=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .` >> $GITHUB_OUTPUT
+  
+  
+  deploy:
+    if: ${{ success() }}
+    name: Deploy nacos-server
+    needs: [list-version,docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
+        mode: ["cluster"]
+    steps:
+      - uses: Wuyunfan-BUPT/nacosTestTools@master
+        name: Deploy nacos
+        with:
+          action: "deploy"
+          ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
+          test-version: "${{ matrix.version }}"
+          chart-git: "https://ghproxy.com/https://github.com/nacos-group/nacos-k8s.git"
+          chart-branch: "master"
+          chart-path: "./helm"
+          job-id: ${{ strategy.job-index }}
+          helm-values: |
+            namespace: nacos-namespace-${{ strategy.job-index }}
+            global:
+              mode: ${{ matrix.mode }}
+            nacos:
+              replicaCount: 3
+              image: 
+                repository: ${{env.DOCKER_REPO}}
+                tag: ${{ matrix.version }}
+            service:
+              nodePort: $((30000+$(echo $RANDOM)))
+
+
+
+          
+          
+      
+          
