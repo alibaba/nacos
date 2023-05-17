@@ -394,13 +394,13 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                     // update if necessary
                     InstancePublishInfo oldInstanceInfo = client.getInstancePublishInfo(singleton);
                     if (oldInstanceInfo != null && !newInstanceInfo.equals(oldInstanceInfo)) {
-                        client.addServiceInstance(singleton, newInstanceInfo);
+                        client.putServiceInstance(singleton, newInstanceInfo);
                         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                         Loggers.RAFT.info("[SNAPSHOT-DATA-UPDATE] service={}, instance={}", service, newInstanceInfo);
                     }
                 } else {
                     // add
-                    client.addServiceInstance(singleton, newInstanceInfo);
+                    client.putServiceInstance(singleton, newInstanceInfo);
                     NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                     Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, newInstanceInfo);
                 }
