@@ -41,7 +41,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-2.3.0-SNAPSHOT/nacos/*
+          path: distribution/target/nacos-server-2.3.0-SNAPSHOT.tar.gz
       - name: print current path
         run: |
           ls
@@ -81,8 +81,8 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
+          mv ../nacos-server-2.3.0-SNAPSHOT.tar.gz build/
           cd nacos-docker/build
-          mv ../LICENSE ./  && mv ../NOTICE ./  && mv ../bin ./ && mv ../conf ./ && mv ../target ./
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
