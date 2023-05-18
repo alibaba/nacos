@@ -146,10 +146,10 @@ jobs:
             nacos:
               replicaCount: 3
               image: 
-                repository: ${{env.DOCKER_REPO}}
-                tag: ${{ matrix.version }}
+                repository: nacos/nacos-server
+                tag: latest
             service:
-              nodePort: 30002
+              nodePort: 30004
 
 
           
