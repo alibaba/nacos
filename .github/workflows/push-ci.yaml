@@ -144,7 +144,7 @@ jobs:
               replicaCount: 3
               image: 
                 repository: ${{ env.DOCKER_REPO }}
-                tag: $${{ matrix.version }}
+                tag: ${{ matrix.version }}
             service:
               nodePort: ${{ env.NODE_PORT }}
 
