@@ -21,6 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: set nodeport
+        run: |
+            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
+      - name: ${NODE_PORT}
+        run: |
+          echo ${NODE_PORT}
       - uses: actions/cache@v3
         with:
           path: ~/.m2/repository
