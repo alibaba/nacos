@@ -49,10 +49,11 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
      */
     public void doEject() {
         try {
-            
+    
+            Loggers.CONNECTION.info("Connection check task start");
+    
             Map<String, Connection> connections = connectionManager.connections;
             int totalCount = connections.size();
-            Loggers.CONNECTION.info("Connection check task start");
             MetricsMonitor.getLongConnectionMonitor().set(totalCount);
             int currentSdkClientCount = connectionManager.currentSdkClientCount();
             
@@ -61,15 +62,15 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             
             Set<String> outDatedConnections = new HashSet<>();
             long now = System.currentTimeMillis();
-            //2.outdated connections check.
+            //outdated connections collect.
             for (Map.Entry<String, Connection> entry : connections.entrySet()) {
                 Connection client = entry.getValue();
                 if (now - client.getMetaInfo().getLastActiveTime() >= KEEP_ALIVE_TIME) {
                     outDatedConnections.add(client.getMetaInfo().getConnectionId());
                 }
-                
             }
             
+            // check out date connection
             Loggers.CONNECTION.info("Out dated connection ,size={}", outDatedConnections.size());
             if (CollectionUtils.isNotEmpty(outDatedConnections)) {
                 Set<String> successConnections = new HashSet<>();
