@@ -149,7 +149,7 @@ jobs:
                 repository: nacos/nacos-server
                 tag: latest
             service:
-              nodePort: 30004
+              nodePort: $(expr $(expr $(expr $(expr 4 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)
 
 
           
