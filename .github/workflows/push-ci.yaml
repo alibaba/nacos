@@ -150,8 +150,7 @@ jobs:
                 repository: ${{env.DOCKER_REPO}}
                 tag: ${{ matrix.version }}
             service:
-              nodePort: 30008
-
+              nodePort: 30002
 
 
           
