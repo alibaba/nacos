@@ -12,6 +12,8 @@ concurrency:
 
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  NODE_PORT: 30000
 
 jobs:
   dist-tar:
@@ -130,6 +132,9 @@ jobs:
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
         mode: ["cluster"]
     steps:
+      - name: set nodeport
+        run: |
+            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
       - uses: Wuyunfan-BUPT/nacosTestTools@master
         name: Deploy nacos
         with:
@@ -149,7 +154,7 @@ jobs:
                 repository: nacos/nacos-server
                 tag: latest
             service:
-              nodePort: $(expr $(expr $(expr $(expr 4 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)
+              nodePort: ${NODE_PORT}
 
 
           
