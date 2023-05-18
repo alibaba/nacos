@@ -21,12 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: set nodeport
-        run: |
-            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
-      - name: ${{ env.NODE_PORT }}
-        run: |
-          echo ${NODE_PORT}
       - uses: actions/cache@v3
         with:
           path: ~/.m2/repository
@@ -49,10 +43,6 @@ jobs:
         with:
           name: nacos
           path: distribution/target/nacos-server-2.3.0-SNAPSHOT.tar.gz
-      - name: print current path
-        run: |
-          ls
-          echo `ls -l`
 
   docker:
     if: ${{ success() }}
@@ -75,10 +65,6 @@ jobs:
         with:
           name: nacos
           path: ./
-      - name: print path
-        run: |
-          echo `pwd`
-          echo `ls /home/runner/work/nacos/nacos`
       - name: docker-login
         uses: docker/login-action@v2
         with:
