@@ -76,10 +76,10 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
     
             String clientIp = meta.getClientIp();
             if (StringUtils.isBlank(tag)) {
-                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-    
                 configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
+                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
+    
                 configInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();

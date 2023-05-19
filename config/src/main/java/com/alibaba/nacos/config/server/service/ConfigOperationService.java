@@ -135,9 +135,9 @@ public class ConfigOperationService {
             String srcUser) {
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         if (StringUtils.isBlank(tag)) {
-            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG;
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
         } else {
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();

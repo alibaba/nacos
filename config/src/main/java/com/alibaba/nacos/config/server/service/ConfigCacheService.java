@@ -242,7 +242,7 @@ public class ConfigCacheService {
             boolean md5Changed = !md5.equals(localContentBetaMd5);
             if (md5Changed) {
                 if (!PropertyUtil.isDirectRead()) {
-                    DUMP_LOG.warn(
+                    DUMP_LOG.info(
                             "[dump-beta] md5 changed, update md5 in local disk cache. groupKey={}, newMd5={}, oldMd5={}",
                             new Object[] {groupKey, md5, localContentBetaMd5});
                     
@@ -538,9 +538,12 @@ public class ConfigCacheService {
         
         try {
             if (!PropertyUtil.isDirectRead()) {
-                DiskUtil.removeConfigInfo(dataId, group, tenant);
+                DUMP_LOG.info("[dump] remove  local disk cache,groupKey={} ", groupKey);
+                ConfigDiskServiceFactory.getInstance().removeConfigInfo(dataId, group, tenant);
             }
             CACHE.remove(groupKey);
+            DUMP_LOG.info("[dump] remove  local jvm cache,groupKey={} ", groupKey);
+            
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
             
             return true;
@@ -798,6 +801,7 @@ public class ConfigCacheService {
         CacheItem item = CACHE.get(groupKey);
         return (null != item) ? item.getConfigCache().getLastModifiedTs() : 0L;
     }
+    
     public static void updateTagTimeStamp(String groupKey, String tag, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initConfigTagsIfEmpty(tag);
@@ -865,7 +869,7 @@ public class ConfigCacheService {
             groupItem.rwLock.releaseWriteLock();
         }
     }
-
+    
     static CacheItem makeSure(final String groupKey, final String encryptedDataKey) {
         CacheItem item = CACHE.get(groupKey);
         if (null != item) {
