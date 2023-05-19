@@ -13,57 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
 
+import java.util.Properties;
+
 /**
- * Config Filter Interface
- * 
- * @author Nacos
+ * Config Filter Interface.
  *
+ * <p>DO NOT implement this interface directly, you should extend <code>AbstractConfigFilter</code>.
+ *
+ * @author Nacos
+ * @see AbstractConfigFilter
  */
 public interface IConfigFilter {
-	/**
-	 * Init Fuction
-	 * 
-	 * @param filterConfig
-	 *            Filter Config
-	 */
-	void init(IFilterConfig filterConfig);
-
-	/**
-	 * do filter
-	 * 
-	 * @param request
-	 *            request
-	 * @param response
-	 *            response
-	 * @param filterChain
-	 *            filter Chain
-	 * @throws NacosException
-	 *             exception
-	 */
-	void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
-			throws NacosException;
-
-	/**
-	 * deploy
-	 */
-	void deploy();
-
-	/**
-	 * order
-	 * 
-	 * @return
-	 */
-	int getOrder();
-
-	/**
-	 * filterName
-	 * 
-	 * @return
-	 */
-	String getFilterName();
-
+    
+    /**
+     * Init.
+     *
+     * @param properties Filter Config
+     */
+    void init(Properties properties);
+    
+    /**
+     * do filter.
+     *
+     * @param request     request
+     * @param response    response
+     * @param filterChain filter Chain
+     * @throws NacosException exception
+     */
+    void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
+            throws NacosException;
+    
+    /**
+     * Get order.
+     *
+     * @return order number
+     */
+    int getOrder();
+    
+    /**
+     * Get filterName.
+     *
+     * @return filter name
+     */
+    String getFilterName();
+    
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2021 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,133 +13,126 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 
 /**
+ * Client info.
+ *
  * @author nacos
  */
 public class ClientInfo {
-    public Version version = Version.unknownVersion();
-    public ClientType type = ClientType.UNKNOWN;
-
+    
+    public Version version;
+    
+    public ClientType type;
+    
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
-
-        if (versionStr.startsWith(ClientTypeDescription.JAVA_CLIENT)) {
-            type = ClientType.JAVA;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
-        if (versionStr.startsWith(ClientTypeDescription.DNSF_CLIENT)) {
-            type = ClientType.DNS;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
-        if (versionStr.startsWith(ClientTypeDescription.C_CLIENT)) {
-            type = ClientType.C;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
-        if (versionStr.startsWith(ClientTypeDescription.SDK_CLIENT)) {
-            type = ClientType.JAVA_SDK;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
-        if (versionStr.startsWith(UtilsAndCommons.NACOS_SERVER_HEADER)) {
-            type = ClientType.NACOS_SERVER;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
-        if (versionStr.startsWith(ClientTypeDescription.NGINX_CLIENT)) {
-            type = ClientType.TENGINE;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
-        }
-
+        this.type = ClientType.getType(versionStr);
         if (versionStr.startsWith(ClientTypeDescription.CPP_CLIENT)) {
-            type = ClientType.C;
-
-            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
-            version = VersionUtil.parseVersion(versionStr);
-
-            return;
+            this.type = ClientType.C;
         }
-
-        //we're not eager to implement other type yet
-        this.type = ClientType.UNKNOWN;
-        this.version = Version.unknownVersion();
+        this.version = parseVersion(versionStr);
     }
-
+    
+    private Version parseVersion(String versionStr) {
+        if (StringUtils.isBlank(versionStr) || ClientType.UNKNOWN.equals(this.type)) {
+            return Version.unknownVersion();
+        }
+        int versionStartIndex = versionStr.indexOf(":v");
+        if (versionStartIndex < 0) {
+            return Version.unknownVersion();
+        }
+        return VersionUtil.parseVersion(versionStr.substring(versionStartIndex + 2));
+    }
+    
     public enum ClientType {
         /**
-         * Java client type
+         * Go client type.
          */
-        JAVA,
+        GO(ClientTypeDescription.GO_CLIENT),
         /**
-         * C client type
+         * Java client type.
          */
-        C,
+        JAVA(ClientTypeDescription.JAVA_CLIENT),
         /**
-         * php client type
+         * C client type.
          */
-        PHP,
+        C(ClientTypeDescription.C_CLIENT),
         /**
-         * dns-f client type
+         * CSharp client type.
          */
-        DNS,
+        CSHARP(ClientTypeDescription.CSHARP_CLIENT),
         /**
-         * nginx client type
+         * php client type.
          */
-        TENGINE,
+        PHP(ClientTypeDescription.PHP_CLIENT),
         /**
-         * sdk client type
+         * dns-f client type.
          */
-        JAVA_SDK,
+        DNS(ClientTypeDescription.DNSF_CLIENT),
         /**
-         * Server notify each other
+         * nginx client type.
          */
-        NACOS_SERVER,
+        TENGINE(ClientTypeDescription.NGINX_CLIENT),
         /**
-         * Unknown client type
+         * sdk client type.
          */
-        UNKNOWN;
+        JAVA_SDK(ClientTypeDescription.SDK_CLIENT),
+        /**
+         * Server notify each other.
+         */
+        NACOS_SERVER(UtilsAndCommons.NACOS_SERVER_HEADER),
+        /**
+         * Unknown client type.
+         */
+        UNKNOWN(UtilsAndCommons.UNKNOWN_SITE);
+        
+        private final String clientTypeDescription;
+        
+        ClientType(String clientTypeDescription) {
+            this.clientTypeDescription = clientTypeDescription;
+        }
+        
+        public String getClientTypeDescription() {
+            return clientTypeDescription;
+        }
+        
+        public static ClientType getType(String userAgent) {
+            for (ClientType each : ClientType.values()) {
+                if (userAgent.startsWith(each.getClientTypeDescription())) {
+                    return each;
+                }
+            }
+            return UNKNOWN;
+        }
     }
-
+    
     public static class ClientTypeDescription {
+        
         public static final String JAVA_CLIENT = "Nacos-Java-Client";
+        
         public static final String DNSF_CLIENT = "Nacos-DNS";
+        
         public static final String C_CLIENT = "Nacos-C-Client";
+        
         public static final String SDK_CLIENT = "Nacos-SDK-Java";
+        
         public static final String NGINX_CLIENT = "unit-nginx";
+        
         public static final String CPP_CLIENT = "vip-client4cpp";
+        
+        public static final String GO_CLIENT = "Nacos-Go-Client";
+        
+        public static final String PHP_CLIENT = "Nacos-Php-Client";
+        
+        public static final String CSHARP_CLIENT = "Nacos-CSharp-Client";
     }
-
+    
 }

@@ -1,12 +1,20 @@
-# Except this file !.gitignore 
+# Except this file !.gitignore
 .classpath
 .project
 .settings
 target
-.project
 .idea
+.vscode
 .DS_Store
+.factorypath
 /logs
 *.iml
+*.log
 node_modules
 test/derby.log
+derby.log
+work
+test/logs
+derby.log
+yarn.lock
+.flattened-pom.xml

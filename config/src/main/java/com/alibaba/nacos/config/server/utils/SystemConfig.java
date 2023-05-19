@@ -13,53 +13,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
+
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * System config
- * @author Nacos
+ * System config.
  *
+ * @author Nacos
  */
 public class SystemConfig {
-
+    
     public static final String LOCAL_IP = getHostAddress();
-
-    private static final Logger log = LoggerFactory.getLogger(SystemConfig.class);
-
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemConfig.class);
+    
     private static String getHostAddress() {
-		String address = System.getProperty("nacos.server.ip");
-		if (StringUtils.isNotEmpty(address)) {
-			return address;
-		} else {
-			address = "127.0.0.1";
-		}
+        String address = System.getProperty("nacos.server.ip");
+        if (StringUtils.isNotEmpty(address)) {
+            return address;
+        } else {
+            address = InternetAddressUtil.localHostIP();
+        }
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
             while (en.hasMoreElements()) {
                 NetworkInterface ni = en.nextElement();
                 Enumeration<InetAddress> ads = ni.getInetAddresses();
-				while (ads.hasMoreElements()) {
-					InetAddress ip = ads.nextElement();
-					// 兼容集团不规范11网段
-					if (!ip.isLoopbackAddress()
-							&& ip.getHostAddress().indexOf(":") == -1
-					/* && ip.isSiteLocalAddress() */) {
-						return ip.getHostAddress();
-					}
-				}
+                while (ads.hasMoreElements()) {
+                    InetAddress ip = ads.nextElement();
+                    // Compatible group does not regulate 11 network segments
+                    if (!ip.isLoopbackAddress() && ip.getHostAddress().indexOf(":") == -1
+                        /* && ip.isSiteLocalAddress() */) {
+                        return ip.getHostAddress();
+                    }
+                }
             }
         } catch (Exception e) {
-            log.error("get local host address error", e);
+            LOGGER.error("get local host address error", e);
         }
         return address;
     }
-
+    
 }

@@ -13,80 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.monitor;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import com.alibaba.nacos.config.server.service.ClientTrackService;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 /**
- * Memory monitor
- * 
- * @author Nacos
+ * Memory monitor.
  *
+ * @author Nacos
  */
 @Service
 public class MemoryMonitor {
+    
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
-
-        TimerTaskService.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
         
-        TimerTaskService.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
-
-        TimerTaskService.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
+        ConfigExecutor.scheduleConfigTask(new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+        
+        ConfigExecutor
+                .scheduleConfigTask(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+        
+        ConfigExecutor
+                .scheduleConfigTask(new ThreadTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS, DELAY_SECONDS,
+                        TimeUnit.SECONDS);
+        
     }
     
-
-    static final long DELAY_SECONDS = 10;
-}
-
-class PrintGetConfigResponeTask implements Runnable{
-	@Override
-	public void run() {
-		memoryLog.info(ResponseMonitor.getStringForPrint());
-	}
-}
-
-class PrintMemoryTask implements Runnable {
-    @Override
-    public void run() {
-        int groupCount = ConfigService.groupCount();
-        int subClientCount = ClientTrackService.subscribeClientCount();
-        long subCount = ClientTrackService.subscriberCount();
-        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}",
-                new Object[] { groupCount, subClientCount, subCount });
-    }
-}
-
-
-class NotifyTaskQueueMonitorTask implements Runnable {
-    final private AsyncNotifyService notifySingleService;
-
-    NotifyTaskQueueMonitorTask(AsyncNotifyService notifySingleService) {
-        this.notifySingleService = notifySingleService;
-    }
-
-    @Override
-    public void run() {
-    	
-    	 memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-                 new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(), ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size() });
-    	 
-//      for(Map.Entry<String, Executor> entry: notifySingleService.getExecutors().entrySet()) {
-//          ThreadPoolExecutor pool = (ThreadPoolExecutor) entry.getValue();
-//          String target = entry.getKey();
-//          memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-//                  new Object[] { target, pool.getQueue().size() });
-//      }
+    private static final long DELAY_SECONDS = 10;
+    
+    /**
+     * reset some metrics to 0 every day.
+     */
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void clear() {
+        MetricsMonitor.getConfigMonitor().set(0);
+        MetricsMonitor.getPublishMonitor().set(0);
+        MetricsMonitor.getFuzzySearchMonitor().set(0);
     }
 }

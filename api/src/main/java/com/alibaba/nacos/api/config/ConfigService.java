@@ -13,98 +13,151 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config;
 
+import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Config Interface
- * 
- * @author Nacos
+ * Config Service Interface.
  *
+ * @author Nacos
  */
 public interface ConfigService {
+    
+    /**
+     * Get config.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @return config value
+     * @throws NacosException NacosException
+     */
+    String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
+    
+    /**
+     * Get config and register Listener.
+     *
+     * <p>If you want to pull it yourself when the program starts to get the configuration for the first time, and the
+     * registered Listener is used for future configuration updates, you can keep the original code unchanged, just add
+     * the system parameter: enableRemoteSyncConfig = "true" ( But there is network overhead); therefore we recommend
+     * that you use this interface directly
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @param listener  {@link Listener}
+     * @return config value
+     * @throws NacosException NacosException
+     */
+    String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
+            throws NacosException;
+    
+    /**
+     * Add a listener to the configuration, after the server modified the configuration, the client will use the
+     * incoming listener callback. Recommended asynchronous processing, the application can implement the getExecutor
+     * method in the ManagerListener, provide a thread pool of execution. If not provided, use the main thread callback, May
+     * block other configurations or be blocked by other configurations.
+     *
+     * @param dataId   dataId
+     * @param group    group
+     * @param listener listener
+     * @throws NacosException NacosException
+     */
+    void addListener(String dataId, String group, Listener listener) throws NacosException;
+    
+    /**
+     * Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfig(String dataId, String group, String content) throws NacosException;
+    
+    
+    /**
+     * Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param type    config type {@link ConfigType}
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfig(String dataId, String group, String content, String type) throws NacosException;
+    
+    /**
+     * Cas Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param casMd5  casMd5 prev content's md5 to cas.
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5) throws NacosException;
+    
+    /**
+     * Cas Publish config.
+     *
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @param casMd5  casMd5 prev content's md5 to cas.
+     * @param type    config type {@link ConfigType}
+     * @return Whether publish
+     * @throws NacosException NacosException
+     */
+    boolean publishConfigCas(String dataId, String group, String content, String casMd5, String type)
+            throws NacosException;
+    
+    /**
+     * Remove config.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @return whether remove
+     * @throws NacosException NacosException
+     */
+    boolean removeConfig(String dataId, String group) throws NacosException;
+    
+    /**
+     * Remove listener.
+     *
+     * @param dataId   dataId
+     * @param group    group
+     * @param listener listener
+     */
+    void removeListener(String dataId, String group, Listener listener);
+    
+    /**
+     * Get server status.
+     *
+     * @return whether health
+     */
+    String getServerStatus();
 
-	/**
-	 * Get Configuration
-	 * 
-	 * @param dataId
-	 *            Config ID
-	 * @param group
-	 *            Config Group
-	 * @param timeoutMs
-	 *            read timeout
-	 * @return config value
-	 * @throws NacosException
-	 *             NacosException
-	 */
-	public String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
-
-	/**
-	 * Add a listener to the configuration, after the server to modify the
-	 * configuration, the client will use the incoming listener callback.
-	 * Recommended asynchronous processing, the application can implement the
-	 * getExecutor method in the ManagerListener, provide a thread pool of
-	 * execution. If provided, use the main thread callback, May block other
-	 * configurations or be blocked by other configurations.
-	 * 
-	 * @param dataId
-	 *            Config ID
-	 * @param group
-	 *            Config Group
-	 * @param listener
-	 *            listener
-	 * @throws NacosException
-	 *             NacosException
-	 */
-	public void addListener(String dataId, String group, Listener listener) throws NacosException;
-
-	/**
-	 * publish config.
-	 * 
-	 * @param dataId
-	 *            Config ID
-	 * @param group
-	 *            Config Group
-	 * @param content
-	 *            Config Content
-	 * @return Whether publish
-	 * @throws NacosException
-	 *             NacosException
-	 */
-	public boolean publishConfig(String dataId, String group, String content) throws NacosException;
-
-	/**
-	 * Remove Config
-	 * 
-	 * @param dataId
-	 *            Config ID
-	 * @param group
-	 *            Config Group
-	 * @return whether remove
-	 * @throws NacosException
-	 *             NacosException
-	 */
-	public boolean removeConfig(String dataId, String group) throws NacosException;
-
-	/**
-	 * Remove Listener
-	 * 
-	 * @param dataId
-	 *            Config ID
-	 * @param group
-	 *            Config Group
-	 * @param listener
-	 *            listener
-	 */
-	public void removeListener(String dataId, String group, Listener listener);
-	
-	/**
-	 * server health info
-	 * 
-	 * @return whether health
-	 */
-	public String getServerStatus();
-
+    /**
+     * add config filter.
+     * It is recommended to use {@link com.alibaba.nacos.api.config.filter.AbstractConfigFilter} to expand the filter.
+     *
+     * @param configFilter filter
+     * @since 2.3.0
+     */
+    void addConfigFilter(IConfigFilter configFilter);
+    
+    /**
+     * Shutdown the resource service.
+     *
+     * @throws NacosException exception.
+     */
+    void shutDown() throws NacosException;
 }

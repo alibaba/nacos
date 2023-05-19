@@ -16,19 +16,36 @@
 
 package com.alibaba.nacos;
 
-import java.net.UnknownHostException;
+import com.alibaba.nacos.sys.filter.NacosTypeExcludeFilter;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
+ * Nacos starter.
+ * <p>
+ * Use @SpringBootApplication and @ComponentScan at the same time, using CUSTOM type filter to control module enabled.
+ * </p>
+ *
  * @author nacos
  */
-@SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
+@SpringBootApplication
+@ComponentScan(basePackages = "com.alibaba.nacos", excludeFilters = {
+        @Filter(type = FilterType.CUSTOM, classes = {NacosTypeExcludeFilter.class}),
+        @Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
+        @Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
 @ServletComponentScan
+@EnableScheduling
 public class Nacos {
-
-    public static void main(String[] args) throws UnknownHostException {
+    
+    public static void main(String[] args) {
         SpringApplication.run(Nacos.class, args);
     }
 }
+

@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.api.config.listener;
 
 import java.util.concurrent.Executor;
 
-
 /**
- * Listener for watch config
- * 
+ * Listener for watch config.
+ *
  * @author Nacos
- * 
  */
 public interface Listener {
-
-	/**
-	 * Executor to excute this receive
-	 * 
-	 * @return Executor
-	 */
-    public Executor getExecutor();
-
-
+    
     /**
-     * 接收配置信息
-     * 
-     * @param configInfo 配置值
+     * Get executor for execute this receive.
+     *
+     * @return Executor
      */
-    public void receiveConfigInfo(final String configInfo);
+    Executor getExecutor();
+    
+    /**
+     * Receive config info.
+     *
+     * @param configInfo config info
+     */
+    void receiveConfigInfo(final String configInfo);
 }

@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
 
 /**
- * auth type
- * 
- * @author Nacos
+ * Auth type.
  *
+ * @author Nacos
  */
 public enum AuthType {
-	/**
-	 * auth type
-	 */
-	GROUP, GROUP_DATAID, TENANT_GROUP, TENANT
+    /**
+     * Auth type.
+     */
+    GROUP,
+    GROUP_DATAID,
+    TENANT_GROUP,
+    TENANT
 }

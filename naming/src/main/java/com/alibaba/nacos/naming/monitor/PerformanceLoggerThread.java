@@ -13,130 +13,114 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.monitor;
 
-import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
+import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientDataProcessor;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
-import com.alibaba.nacos.naming.push.PushService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+import javax.annotation.PostConstruct;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Logger thread for print performance.
+ *
  * @author nacos
  */
+
+@Component
 public class PerformanceLoggerThread {
-
-    @Autowired
-    private DomainsManager domainsManager;
-
-    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("nacos-server-performance");
-            return t;
-        }
-    });
-
-    private static final long PERIOD = 1 * 60 * 60;
-    private static final long HEALTH_CHECK_PERIOD = 5 * 60;
-
-    public void init(DomainsManager domainsManager) {
-        this.domainsManager = domainsManager;
+    
+    private static final long PERIOD = 60;
+    
+    @PostConstruct
+    public void init() {
         start();
     }
-
-    private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("HEALTH-CHECK", "health check is " + Switch.isHealthCheckEnabled());
-    }
-
-    class HealthCheckSwitchTask implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                freshHealthCheckSwitch();
-            } catch (Exception ignore) {
-
-            }
-        }
-    }
-
+    
     private void start() {
         PerformanceLogTask task = new PerformanceLogTask();
-        executor.scheduleWithFixedDelay(task, 30, PERIOD, TimeUnit.SECONDS);
-        executor.scheduleWithFixedDelay(new HealthCheckSwitchTask(), 30, HEALTH_CHECK_PERIOD, TimeUnit.SECONDS);
-        executor.scheduleWithFixedDelay(new AllDomNamesTask(), 60, 60, TimeUnit.SECONDS);
-
+        GlobalExecutor.schedulePerformanceLogger(task, 30, PERIOD, TimeUnit.SECONDS);
     }
-
-    class AllDomNamesTask implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                domainsManager.setAllDomNames(new ArrayList<String>(domainsManager.getAllDomNames()));
-                Loggers.PERFORMANCE_LOG.debug("refresh all dom names: " + domainsManager.getAllDomNamesCache().size());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    
+    /**
+     * Refresh metrics.
+     */
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void refreshMetrics() {
+        MetricsMonitor.resetAll();
     }
-
+    
+    /**
+     * collect metrics.
+     */
+    @Scheduled(cron = "0/15 * * * * ?")
+    public void collectMetrics() {
+        MetricsMonitor.getDomCountMonitor().set(com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size());
+        MetricsMonitor.getAvgPushCostMonitor().set(getAvgPushCost());
+    }
+    
     class PerformanceLogTask implements Runnable {
-
+        
+        private int logCount = 0;
+        
         @Override
         public void run() {
             try {
-                int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getIPCount();
-                long maxPushMaxCost = getMaxPushCost();
+                logCount %= 10;
+                if (logCount == 0) {
+                    Loggers.PERFORMANCE_LOG
+                            .info("PERFORMANCE:|serviceCount|ipCount|subscribeCount|maxPushCost|avgPushCost|totalPushCount|failPushCount");
+                    Loggers.PERFORMANCE_LOG.info("DISTRO:|V1SyncDone|V1SyncFail|V2SyncDone|V2SyncFail|V2VerifyFail|");
+                }
+                int serviceCount = com.alibaba.nacos.naming.core.v2.ServiceManager.getInstance().size();
+                int ipCount = MetricsMonitor.getIpCountMonitor().get();
+                int subscribeCount = MetricsMonitor.getSubscriberCount().get();
+                long maxPushCost = MetricsMonitor.getMaxPushCostMonitor().get();
                 long avgPushCost = getAvgPushCost();
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);
+                long totalPushCount = MetricsMonitor.getTotalPushMonitor().longValue();
+                long failPushCount = MetricsMonitor.getFailedPushMonitor().longValue();
+                Loggers.PERFORMANCE_LOG
+                        .info("PERFORMANCE:|{}|{}|{}|{}|{}|{}|{}", serviceCount, ipCount, subscribeCount, maxPushCost,
+                                avgPushCost, totalPushCount, failPushCount);
+                Loggers.PERFORMANCE_LOG
+                        .info("Task worker status: \n" + NamingExecuteTaskDispatcher.getInstance().workersStatus());
+                printDistroMonitor();
+                logCount++;
+                MetricsMonitor.getTotalPushCountForAvg().set(0);
+                MetricsMonitor.getTotalPushCostForAvg().set(0);
+                MetricsMonitor.getMaxPushCostMonitor().set(-1);
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("PERFORMANCE", "Exception while print performance log.", e);
+                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }
-
+            
+        }
+        
+        private void printDistroMonitor() {
+            Optional<DistroRecord> v2Record = DistroRecordsHolder.getInstance()
+                    .getRecordIfExist(DistroClientDataProcessor.TYPE);
+            long v2SyncDone = 0;
+            long v2SyncFail = 0;
+            int v2VerifyFail = 0;
+            if (v2Record.isPresent()) {
+                v2SyncDone = v2Record.get().getSuccessfulSyncCount();
+                v2SyncFail = v2Record.get().getFailedSyncCount();
+                v2VerifyFail = v2Record.get().getFailedVerifyCount();
+            }
+            Loggers.PERFORMANCE_LOG.info("DISTRO:|{}|{}|{}|", v2SyncDone, v2SyncFail, v2VerifyFail);
         }
     }
-
-    private long getMaxPushCost() {
-        long max = -1;
-
-        for (Map.Entry<String, Long> entry : PushService.pushCostMap.entrySet()) {
-            if (entry.getValue() > max) {
-                max = entry.getValue();
-            }
-        }
-
-        return max;
-    }
-
+    
     private long getAvgPushCost() {
-        int size = 0;
-        long totalCost = 0;
-        long avgCost = -1;
-
-        for (Map.Entry<String, Long> entry : PushService.pushCostMap.entrySet()) {
-            size += 1;
-            totalCost += entry.getValue();
-        }
-        PushService.pushCostMap.clear();
-
-        if (size > 0 && totalCost > 0) {
-            avgCost = totalCost / size;
-        }
-        return avgCost;
-    }
-
-    public static void main(String[] args) {
+        int size = MetricsMonitor.getTotalPushCountForAvg().get();
+        long totalCost = MetricsMonitor.getTotalPushCostForAvg().get();
+        return (size > 0 && totalCost > 0) ? totalCost / size : -1;
     }
 }

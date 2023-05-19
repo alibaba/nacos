@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<included>
+    
+    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
+    <property name="LOG_HOME" value="${logPath}"/>
+    
+    <appender name="naming-server"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-server.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <appender name="naming-raft"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-raft.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-raft.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>128MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <appender name="naming-event"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-event.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-event.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>128MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <appender name="naming-push"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-push.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-push.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>128MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    <appender name="naming-rt"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-rt.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-rt.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-performance"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-performance.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-performance.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>512MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-router"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-router.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-router.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date|%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-cache"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-cache.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-cache.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date|%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-device"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-device.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-device.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date|%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-tag"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-tag.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-tag.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-debug"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-debug.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-debug.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <maxHistory>15</maxHistory>
+            <totalSizeCap>128MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <appender name="naming-distro"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-distro.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-distro.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <logger name="com.alibaba.nacos.naming.main" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-server"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.raft" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="naming-raft"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.distro" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-distro"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.event" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-event"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.push" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-push"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.rt" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-rt"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.performance" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-performance"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.router" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-router"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.cache" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-cache"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.debug" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-debug"/>
+    </logger>
+
+</included>
+

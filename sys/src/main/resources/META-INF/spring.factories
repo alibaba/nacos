@@ -1,0 +1,3 @@
+# ApplicationContextInitializer
+org.springframework.context.ApplicationContextInitializer=\
+  com.alibaba.nacos.sys.utils.ApplicationUtils

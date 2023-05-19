@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
 /**
- * 用来处理协议相关的操作
- * 
+ * Used to handle protocol-related operations.
+ *
  * @author zhidao
  * @version 1.0 2011/05/03
- * 
  */
 public class Protocol {
+    
     /**
-     * 解析类于2.0.4(major.minor.bug-fix这样的版本为数字)
-     * 
-     * @param version
-     * @return
+     * fix the version number like 2.0.4(fix the version template like major.minor.bug-fix)
+     *
+     * @param version version
+     * @return version.
      */
     public static int getVersionNumber(String version) {
         if (version == null) {
@@ -38,8 +39,7 @@ public class Protocol {
         for (int i = 0; i < vs.length; i++) {
             try {
                 sum = sum * 10 + Integer.parseInt(vs[i]);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // ignore
             }
         }

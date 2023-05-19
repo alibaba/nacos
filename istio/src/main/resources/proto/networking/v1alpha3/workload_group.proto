@@ -1,0 +1,206 @@
+// Copyright 2020 Istio Authors
+//
+//   Licensed under the Apache License, Version 2.0 (the "License");
+//   you may not use this file except in compliance with the License.
+//   You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+//   Unless required by applicable law or agreed to in writing, software
+//   distributed under the License is distributed on an "AS IS" BASIS,
+//   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//   See the License for the specific language governing permissions and
+//   limitations under the License.
+
+syntax = "proto3";
+
+import "google/api/field_behavior.proto";
+import "networking/v1alpha3/workload_entry.proto";
+
+// $schema: istio.networking.v1alpha3.WorkloadGroup
+// $title: Workload Group
+// $description: Describes a collection of workload instances.
+// $location: https://istio.io/docs/reference/config/networking/workload-group.html
+// $aliases: [/docs/reference/config/networking/v1alpha3/workload-group]
+
+// `WorkloadGroup` describes a collection of workload instances.
+// It provides a specification that the workload instances can use to bootstrap 
+// their proxies, including the metadata and identity. It is only intended to 
+// be used with non-k8s workloads like Virtual Machines, and is meant to mimic 
+// the existing sidecar injection and deployment specification model used for 
+// Kubernetes workloads to bootstrap Istio proxies.
+//
+// The following example declares a workload group representing a collection 
+// of workloads that will be registered under `reviews` in namespace
+// `bookinfo`. The set of labels will be associated with each workload 
+// instance during the bootstrap process, and the ports 3550 and 8080
+// will be associated with the workload group and use service account `default`.
+// `app.kubernetes.io/version` is just an arbitrary example of a label.
+//
+// {{<tabset category-name="example">}}
+// {{<tab name="v1alpha3" category-value="v1alpha3">}}
+// ```yaml
+// apiVersion: networking.istio.io/v1alpha3
+// kind: WorkloadGroup
+// metadata:
+//   name: reviews
+//   namespace: bookinfo
+// spec:
+//   metadata:
+//     labels:
+//       app.kubernetes.io/name: reviews
+//       app.kubernetes.io/version: "1.3.4"
+//   template:
+//     ports:
+//       grpc: 3550
+//       http: 8080
+//     serviceAccount: default
+//   probe:
+//     initialDelaySeconds: 5
+//     timeoutSeconds: 3
+//     periodSeconds: 4
+//     successThreshold: 3
+//     failureThreshold: 3
+//     httpGet:
+//      path: /foo/bar
+//      host: 127.0.0.1
+//      port: 3100
+//      scheme: https
+//      httpHeaders:
+//      - name: Lit-Header
+//        value: Im-The-Best
+// ```
+// {{</tab>}}
+// {{</tabset>}}
+//
+package istio.networking.v1alpha3;
+
+option go_package = "istio.io/api/networking/v1alpha3";
+
+// `WorkloadGroup` enables specifying the properties of a single workload for bootstrap and
+// provides a template for `WorkloadEntry`, similar to how `Deployment` specifies properties
+// of workloads via `Pod` templates. A `WorkloadGroup` can have more than one `WorkloadEntry`.
+// `WorkloadGroup` has no relationship to resources which control service registry like `ServiceEntry` 
+// and as such doesn't configure host name for these workloads.
+//
+// <!-- crd generation tags
+// +cue-gen:WorkloadGroup:groupName:networking.istio.io
+// +cue-gen:WorkloadGroup:version:v1alpha3
+// +cue-gen:WorkloadGroup:storageVersion
+// +cue-gen:WorkloadGroup:subresource:status
+// +cue-gen:WorkloadGroup:scope:Namespaced
+// +cue-gen:WorkloadGroup:resource:categories=istio-io,networking-istio-io,shortNames=wg,plural=workloadgroups
+// +cue-gen:WorkloadGroup:printerColumn:name=Age,type=date,JSONPath=.metadata.creationTimestamp,description="CreationTimestamp is a timestamp
+// representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations.
+// Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+// Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata"
+// +cue-gen:WorkloadGroup:preserveUnknownFields:false
+// -->
+//
+// <!-- go code generation tags
+// +kubetype-gen
+// +kubetype-gen:groupVersion=networking.istio.io/v1alpha3
+// +genclient
+// +k8s:deepcopy-gen=true
+// -->
+message WorkloadGroup {
+  // Metadata that will be used for all corresponding `WorkloadEntries`.
+  // User labels for a workload group should be set here in `metadata` rather than in `template`.
+  ObjectMeta metadata = 1;
+
+  // Template to be used for the generation of `WorkloadEntry` resources that belong to this `WorkloadGroup`.
+  // Please note that `address` and `labels` fields should not be set in the template, and an empty `serviceAccount`
+  // should default to `default`. The workload identities (mTLS certificates) will be bootstrapped using the
+  // specified service account's token. Workload entries in this group will be in the same namespace as the
+  // workload group, and inherit the labels and annotations from the above `metadata` field.
+  WorkloadEntry template = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // `ObjectMeta` describes metadata that will be attached to a `WorkloadEntry`.
+  // It is a subset of the supported Kubernetes metadata.
+  message ObjectMeta {
+      // Labels to attach
+      map<string, string> labels = 1;
+
+      // Annotations to attach
+      map<string, string> annotations = 2;
+  }
+
+  // `ReadinessProbe` describes the configuration the user must provide for healthchecking on their workload.
+  // This configuration mirrors K8S in both syntax and logic for the most part.
+  ReadinessProbe probe = 3;
+}
+
+message ReadinessProbe {
+
+    // Number of seconds after the container has started before readiness probes are initiated.
+    int32 initial_delay_seconds = 2;
+
+    // Number of seconds after which the probe times out.
+    // Defaults to 1 second. Minimum value is 1 second.
+    int32 timeout_seconds = 3;
+
+    // How often (in seconds) to perform the probe.
+    // Default to 10 seconds. Minimum value is 1 second.
+    int32 period_seconds = 4;
+
+    // Minimum consecutive successes for the probe to be considered successful after having failed.
+    // Defaults to 1 second.
+    int32 success_threshold = 5;
+
+    // Minimum consecutive failures for the probe to be considered failed after having succeeded.
+    // Defaults to 3 seconds.
+    int32 failure_threshold = 6;
+
+    // Users can only provide one configuration for healthchecks (tcp, http, exec),
+    // and this is expressed as a oneof. All of the other configuration values
+    // hold true for any of the healthcheck methods.
+    oneof health_check_method {
+        // `httpGet` is performed to a given endpoint
+        // and the status/able to connect determines health.
+        HTTPHealthCheckConfig http_get = 7;
+        // Health is determined by if the proxy is able to connect.
+        TCPHealthCheckConfig tcp_socket = 8;
+        // Health is determined by how the command that is executed exited.
+        ExecHealthCheckConfig exec = 9;
+    }
+}
+
+message HTTPHealthCheckConfig {
+    // Path to access on the HTTP server.
+    string path = 1;
+
+    // Port on which the endpoint lives.
+    uint32 port = 2;
+
+    // Host name to connect to, defaults to the pod IP. You probably want to set
+    // "Host" in httpHeaders instead.
+    string host = 3;
+
+    // HTTP or HTTPS, defaults to HTTP
+    string scheme = 4;
+
+    // Headers the proxy will pass on to make the request.
+    // Allows repeated headers.
+    repeated HTTPHeader http_headers = 5;
+}
+
+message HTTPHeader {
+    // The header field name
+    string name = 1;
+
+    // The header field value
+    string value = 2;
+}
+
+message TCPHealthCheckConfig {
+    // Host to connect to, defaults to localhost
+    string host = 1;
+    // Port of host
+    uint32 port = 2;
+}
+
+message ExecHealthCheckConfig {
+    // Command to run. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.
+    repeated string command = 1;
+}
+

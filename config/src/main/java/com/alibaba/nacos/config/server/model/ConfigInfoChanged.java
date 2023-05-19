@@ -13,52 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
 
+import java.io.Serializable;
+
 /**
- * 变化的配置信息, 聚合时使用
- * 
+ * ConfigInfoChanged.
+ *
  * @author leiwen.zh
- * 
  */
-public class ConfigInfoChanged {
-
+public class ConfigInfoChanged implements Serializable {
+    
+    private static final long serialVersionUID = -1819539062100125171L;
+    
     private String dataId;
+    
     private String group;
+    
     private String tenant;
-
+    
     public ConfigInfoChanged(String dataId, String group, String tenant) {
         this.dataId = dataId;
         this.group = group;
         this.setTenant(tenant);
     }
-
-
+    
     public ConfigInfoChanged() {
-
+    
     }
-
-
+    
     public String getDataId() {
         return dataId;
     }
-
-
+    
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
-
+    
     public String getGroup() {
         return group;
     }
-
-
+    
     public void setGroup(String group) {
         this.group = group;
     }
-
-
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -67,8 +67,7 @@ public class ConfigInfoChanged {
         result = prime * result + ((group == null) ? 0 : group.hashCode());
         return result;
     }
-
-
+    
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -85,35 +84,30 @@ public class ConfigInfoChanged {
             if (other.dataId != null) {
                 return false;
             }
-        }
-        else if (!dataId.equals(other.dataId)) {
+        } else if (!dataId.equals(other.dataId)) {
             return false;
         }
         if (group == null) {
             if (other.group != null) {
                 return false;
             }
-        }
-        else if (!group.equals(other.group)) {
+        } else if (!group.equals(other.group)) {
             return false;
         }
         return true;
     }
-
-
+    
     @Override
     public String toString() {
         return "ConfigInfoChanged [dataId=" + dataId + ", group=" + group + "]";
     }
-
-
-	public String getTenant() {
-		return tenant;
-	}
-
-
-	public void setTenant(String tenant) {
-		this.tenant = tenant;
-	}
-
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+    
 }

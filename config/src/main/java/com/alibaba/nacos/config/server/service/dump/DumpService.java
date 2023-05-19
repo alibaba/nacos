@@ -13,391 +13,502 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.ServerListService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
-import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpChangeProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpProcessor;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllBetaTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
-import com.alibaba.nacos.config.server.utils.*;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.DiskUtil;
+import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.InetUtils;
+import com.alibaba.nacos.sys.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Service;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.PostConstruct;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
- * Dump data service
- * @author Nacos
+ * Dump data service.
  *
+ * @author Nacos
  */
-@Service
-public class DumpService {
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
+public abstract class DumpService {
     
-	@Autowired
-    private Environment env;
-	
-    @Autowired
-    PersistService persistService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(DumpService.class);
     
-    @PostConstruct
-    public void init() {
-		LogUtil.defaultLog.warn("DumpService start");
-		DumpProcessor processor = new DumpProcessor(this);
-		DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
-		DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-		DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
-		
-		dumpTaskMgr = new TaskManager(
-				"com.alibaba.nacos.server.DumpTaskManager");
-		dumpTaskMgr.setDefaultTaskProcessor(processor);
-
-		dumpAllTaskMgr = new TaskManager(
-				"com.alibaba.nacos.server.DumpAllTaskManager");
-		dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
-
-		Runnable dumpAll = new Runnable() {
-			@Override
-			public void run() {
-				dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
-			}
-		};
-		
-		Runnable dumpAllBeta = new Runnable() {
-			@Override
-			public void run() {
-				dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
-			}
-		};
-		
-		Runnable clearConfigHistory = new Runnable() {
-			@Override
-			public void run() {
-				log.warn("clearConfigHistory start");
-				if (ServerListService.isFirstIp()) {
-					try {
-						Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * 30);
-						int totalCount = persistService.findConfigHistoryCountByTime(startTime);
-						if (totalCount > 0) {
-							int pageSize = 1000;
-							int removeTime = (totalCount + pageSize - 1) / pageSize;
-							log.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-									new Object[] { startTime, totalCount, pageSize, removeTime });
-							while (removeTime > 0) {
-								// 分页删除，以免批量太大报错
-								persistService.removeConfigHistory(startTime, pageSize);
-								removeTime--;
-							}
-						}
-					} catch (Throwable e) {
-						log.error("clearConfigHistory error", e);
-					}
-				}
-			}
-		};
-		
-		try {
-			dumpConfigInfo(dumpAllProcessor);
-
-			// 更新beta缓存
-			LogUtil.defaultLog.info("start clear all config-info-beta.");
-			DiskUtil.clearAllBeta();
-			if (persistService.isExistTable(BETA_TABLE_NAME)) {
-			    dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
-			}
-			// 更新Tag缓存
-			LogUtil.defaultLog.info("start clear all config-info-tag.");
-			DiskUtil.clearAllTag();
-			if (persistService.isExistTable(TAG_TABLE_NAME)) {
-				dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
-			}
-
-			// add to dump aggr
-			List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
-			if (configList != null && !configList.isEmpty()) {
-				total = configList.size();
-				List<List<ConfigInfoChanged>> splitList = splitList(configList, INIT_THREAD_COUNT);
-				for (List<ConfigInfoChanged> list : splitList) {
-					MergeAllDataWorker work = new MergeAllDataWorker(list);
-					work.start();
-				}
-				log.info("server start, schedule merge end.");
-			}
-		} catch (Exception e) {
-			LogUtil.fatalLog.error(
-					"Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
-					e.getCause());
-			throw new RuntimeException(
-					"Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
-		}
-		if (!PropertyUtil.isStandaloneMode()) {
-			Runnable heartbeat = new Runnable() {
-				@Override
-				public void run() {
-					String heartBeatTime = TimeUtils.getCurrentTime().toString();
-					// write disk
-					try {
-						DiskUtil.saveHeartBeatToDisk(heartBeatTime);
-					} catch (IOException e) {
-						LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
-					}
-				}
-			};
-
-			TimerTaskService.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
-
-			long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
-			LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
-
-			TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
-
-			TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
-		}
-
-		TimerTaskService.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
-		
-	}
-
-	private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor)
-			throws IOException {
-		int timeStep = 6;
-		Boolean isAllDump = true;
-		// initial dump all
-		FileInputStream fis = null;
-		Timestamp heartheatLastStamp = null;
-		try {
-			if (isQuickStart()) {
-				File heartbeatFile = DiskUtil.heartBeatFile();
-				if (heartbeatFile.exists()) {
-					fis = new FileInputStream(heartbeatFile);
-					String heartheatTempLast = IOUtils.toString(fis,
-							Constants.ENCODE);
-					heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
-					if (TimeUtils.getCurrentTime().getTime()
-							- heartheatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {
-						isAllDump = false;
-					}
-				}
-			}
-			if (isAllDump) {
-				LogUtil.defaultLog.info("start clear all config-info.");
-				DiskUtil.clearAll();
-				dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
-			} else {
-				Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp,
-						timeStep);
-				DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(
-						this, beforeTimeStamp, TimeUtils.getCurrentTime());
-				dumpChangeProcessor.process(DumpChangeTask.TASK_ID,
-						new DumpChangeTask());
-				Runnable checkMd5Task = new Runnable() {
-					@Override
-					public void run() {
-						LogUtil.defaultLog.error("start checkMd5Task");
-						List<String> diffList = ConfigService.checkMd5();
-						for (String groupKey : diffList) {
-							String[] dg = GroupKey.parseKey(groupKey);
-							String dataId = dg[0];
-							String group = dg[1];
-							String tenant = dg[2];
-							ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
-							ConfigService.dumpChange(dataId, group, tenant, configInfo.getContent(),
-									configInfo.getLastModified());
-						}
-						LogUtil.defaultLog.error("end checkMd5Task");
-					}
-				};
-				TimerTaskService.scheduleWithFixedDelay(checkMd5Task, 0, 12,
-						TimeUnit.HOURS);
-			}
-		} catch (IOException e) {
-			LogUtil.fatalLog.error("dump config fail" + e.getMessage());
-			throw e;
-		} finally {
-			if (null != fis) {
-				try {
-					fis.close();
-				} catch (IOException e) {
-					LogUtil.defaultLog.warn("close file failed");
-				}
-			}
-		}
-	}
+    protected DumpProcessor processor;
     
-	private Timestamp getBeforeStamp(Timestamp date , int step) {
-		Calendar cal = Calendar.getInstance();
-		/**
-		 *  date 换成已经已知的Date对象
-		 */
-		cal.setTime(date);
-		/**
-		 *  before 6 hour
-		 */
-		cal.add(Calendar.HOUR_OF_DAY, -step);
-		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		return Timestamp.valueOf(format.format(cal.getTime()));
-	}
-	
-    private Boolean isQuickStart()
-	{
-		try {
-			String val = null;
-			val = env.getProperty("isQuickStart");
-			if (val != null && TRUE_STR.equals(val)) {
-				isQuickStart = true;
-			}
-			fatalLog.warn("isQuickStart:{}", isQuickStart);
-		} catch (Exception e) {
-			fatalLog.error("read application.properties wrong", e);
-		}
-		return isQuickStart;
-	}
-
-	public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
-		dump(dataId, group, tenant, tag, lastModified, handleIp, false);
-	}
-	
-	public void dump(String dataId, String group, String tenant, long lastModified, String handleIp) {
-		dump(dataId, group, tenant, lastModified, handleIp, false);
-	}
+    protected DumpAllProcessor dumpAllProcessor;
     
-	public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
-		String groupKey = GroupKey2.getKey(dataId, group, tenant);
-		dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
-	}
-	
-	public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
-			boolean isBeta) {
-		String groupKey = GroupKey2.getKey(dataId, group, tenant);
-		dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
-	}
-
-    public void dumpAll() {
-        dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
-    }
-    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count){
-    	List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
-    	for(int i = 0 ; i < count ; i++){
-    		result.add(new ArrayList<ConfigInfoChanged>());
-    	}
-    	for(int i = 0; i < list.size() ; i++){
-    		ConfigInfoChanged config = list.get(i);
-    		result.get(i % count).add(config);
-    	}
-    	return result;
-    }
+    protected DumpAllBetaProcessor dumpAllBetaProcessor;
     
-    class MergeAllDataWorker extends Thread{
-    	static final int PAGE_SIZE = 10000;
-    	
-    	private List<ConfigInfoChanged> configInfoList;
-    	public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
-    		super("MergeAllDataWorker");
-    		this.configInfoList = configInfoList;
-    	}
-    	
-    	@Override
-    	public void run() {
-    		for (ConfigInfoChanged configInfo : configInfoList) {
-    			String dataId = configInfo.getDataId();
-    			String group = configInfo.getGroup();
-    			String tenant = configInfo.getTenant();
-    			try {
-    				List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
-    				int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
-    				int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
-    				for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-    					Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
-    					if (page != null) {
-    						datumList.addAll(page.getPageItems());
-    						log.info("[merge-query] {}, {}, size/total={}/{}", new Object[] { dataId, group, datumList.size(), rowCount });
-    					}
-    				}
-
-    				final Timestamp time = TimeUtils.getCurrentTime();
-    				// 聚合
-    				if (datumList.size() > 0) {
-						ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
-						String aggrContent = cf.getContent();
-    					String localContentMD5 = ConfigService.getContentMd5(GroupKey.getKey(dataId, group));
-    					String aggrConetentMD5 =  MD5.getInstance().getMD5String(aggrContent);
-    					if(!StringUtils.equals(localContentMD5, aggrConetentMD5)){
-	    					persistService.insertOrUpdate(null, null, cf, time, null, false);
-	    					log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", new Object[] { dataId, group, datumList.size(),
-	    							cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()) });
-    					}
-    				}
-    				// 删除
-    				else {
-    					persistService.removeConfigInfo(dataId, group, tenant, SystemConfig.LOCAL_IP, null);
-    					log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId=" + group);
-    				}
-    				
-    			} catch (Throwable e) {
-    				log.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
-    			}
-    			FINISHED.incrementAndGet();
-    			if(FINISHED.get() % 100 == 0){
-    				log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
-    			}
-    		}
-    		log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
-    	}
-    }
+    protected DumpAllTagProcessor dumpAllTagProcessor;
+    
+    protected ConfigInfoPersistService configInfoPersistService;
+    
+    protected NamespacePersistService namespacePersistService;
+    
+    protected HistoryConfigInfoPersistService historyConfigInfoPersistService;
+    
+    protected ConfigInfoAggrPersistService configInfoAggrPersistService;
+    
+    protected ConfigInfoBetaPersistService configInfoBetaPersistService;
+    
+    protected ConfigInfoTagPersistService configInfoTagPersistService;
+    
+    protected final ServerMemberManager memberManager;
     
     /**
-     *  全量dump间隔
+     * full dump interval.
      */
-	static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60; 
-	/**
-	 *  全量dump间隔
-	 */
-    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60; 
+    static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
+    
+    /**
+     * full dump delay.
+     */
+    static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
     
     private TaskManager dumpTaskMgr;
-    private TaskManager dumpAllTaskMgr;
     
-    private static final Logger log = LoggerFactory.getLogger(DumpService.class);
+    private TaskManager dumpAllTaskMgr;
     
     static final AtomicInteger FINISHED = new AtomicInteger();
     
     static final int INIT_THREAD_COUNT = 10;
+    
     int total = 0;
-    private final static String TRUE_STR = "true";
-    private final static String BETA_TABLE_NAME = "config_info_beta";
-    private final static String TAG_TABLE_NAME = "config_info_tag";
+    
+    private static final String TRUE_STR = "true";
+    
+    private static final String BETA_TABLE_NAME = "config_info_beta";
+    
+    private static final String TAG_TABLE_NAME = "config_info_tag";
     
     Boolean isQuickStart = false;
-
+    
+    private int retentionDays = 30;
+    
+    /**
+     * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
+     * initialized ahead of time.
+     *
+     * @param memberManager  {@link ServerMemberManager}
+     */
+    public DumpService(ConfigInfoPersistService configInfoPersistService, NamespacePersistService namespacePersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            ConfigInfoAggrPersistService configInfoAggrPersistService,
+            ConfigInfoBetaPersistService configInfoBetaPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.namespacePersistService = namespacePersistService;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
+        this.configInfoAggrPersistService = configInfoAggrPersistService;
+        this.configInfoBetaPersistService = configInfoBetaPersistService;
+        this.configInfoTagPersistService = configInfoTagPersistService;
+        this.memberManager = memberManager;
+        this.processor = new DumpProcessor(this);
+        this.dumpAllProcessor = new DumpAllProcessor(this);
+        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
+        this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+        this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
+        this.dumpTaskMgr.setDefaultTaskProcessor(processor);
+        
+        this.dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
+        this.dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
+        
+        this.dumpAllTaskMgr.addProcessor(DumpAllTask.TASK_ID, dumpAllProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllBetaTask.TASK_ID, dumpAllBetaProcessor);
+        this.dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
+        
+        DynamicDataSource.getInstance().getDataSource();
+    }
+    
+    public ConfigInfoPersistService getConfigInfoPersistService() {
+        return configInfoPersistService;
+    }
+    
+    public ConfigInfoBetaPersistService getConfigInfoBetaPersistService() {
+        return configInfoBetaPersistService;
+    }
+    
+    public ConfigInfoTagPersistService getConfigInfoTagPersistService() {
+        return configInfoTagPersistService;
+    }
+    
+    public HistoryConfigInfoPersistService getHistoryConfigInfoPersistService() {
+        return historyConfigInfoPersistService;
+    }
+    
+    public ServerMemberManager getMemberManager() {
+        return memberManager;
+    }
+    
+    /**
+     * initialize.
+     *
+     * @throws Throwable throws Exception when actually operate.
+     */
+    protected abstract void init() throws Throwable;
+    
+    protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
+            DumpAllBetaProcessor dumpAllBetaProcessor, DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
+        String dumpFileContext = "CONFIG_DUMP_TO_FILE";
+        TimerContext.start(dumpFileContext);
+        try {
+            LogUtil.DEFAULT_LOG.warn("DumpService start");
+            
+            Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
+            
+            Runnable dumpAllBeta = () -> dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+            
+            Runnable dumpAllTag = () -> dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+            
+            Runnable clearConfigHistory = () -> {
+                LOGGER.warn("clearConfigHistory start");
+                if (canExecute()) {
+                    try {
+                        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
+                        int pageSize = 1000;
+                        LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
+                        historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
+                    } catch (Throwable e) {
+                        LOGGER.error("clearConfigHistory error : {}", e.toString());
+                    }
+                }
+            };
+            
+            try {
+                dumpConfigInfo(dumpAllProcessor);
+                
+                // update Beta cache
+                LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
+                DiskUtil.clearAllBeta();
+                if (namespacePersistService.isExistTable(BETA_TABLE_NAME)) {
+                    dumpAllBetaProcessor.process(new DumpAllBetaTask());
+                }
+                // update Tag cache
+                LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
+                DiskUtil.clearAllTag();
+                if (namespacePersistService.isExistTable(TAG_TABLE_NAME)) {
+                    dumpAllTagProcessor.process(new DumpAllTagTask());
+                }
+                
+                // add to dump aggr
+                List<ConfigInfoChanged> configList = configInfoAggrPersistService.findAllAggrGroup();
+                if (configList != null && !configList.isEmpty()) {
+                    total = configList.size();
+                    List<List<ConfigInfoChanged>> splitList = splitList(configList, INIT_THREAD_COUNT);
+                    for (List<ConfigInfoChanged> list : splitList) {
+                        MergeAllDataWorker work = new MergeAllDataWorker(list);
+                        work.start();
+                    }
+                    LOGGER.info("server start, schedule merge end.");
+                }
+            } catch (Exception e) {
+                LogUtil.FATAL_LOG
+                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e);
+                throw new NacosException(NacosException.SERVER_ERROR,
+                        "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
+                        e);
+            }
+            if (!EnvUtil.getStandaloneMode()) {
+                Runnable heartbeat = () -> {
+                    String heartBeatTime = TimeUtils.getCurrentTime().toString();
+                    // write disk
+                    try {
+                        DiskUtil.saveHeartBeatToDisk(heartBeatTime);
+                    } catch (IOException e) {
+                        LogUtil.FATAL_LOG.error("save heartbeat fail" + e.getMessage());
+                    }
+                };
+                
+                ConfigExecutor.scheduleConfigTask(heartbeat, 0, 10, TimeUnit.SECONDS);
+                
+                long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
+                LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
+                
+                ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                
+                ConfigExecutor
+                        .scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                
+                ConfigExecutor
+                        .scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+            }
+            
+            ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+        } finally {
+            TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
+        }
+        
+    }
+    
+    private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
+        int timeStep = 6;
+        boolean isAllDump = true;
+        // initial dump all
+        FileInputStream fis = null;
+        Timestamp heartheatLastStamp = null;
+        try {
+            if (isQuickStart()) {
+                File heartbeatFile = DiskUtil.heartBeatFile();
+                if (heartbeatFile.exists()) {
+                    fis = new FileInputStream(heartbeatFile);
+                    String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
+                    heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
+                    if (TimeUtils.getCurrentTime().getTime() - heartheatLastStamp.getTime()
+                            < timeStep * 60 * 60 * 1000) {
+                        isAllDump = false;
+                    }
+                }
+            }
+            if (isAllDump) {
+                LogUtil.DEFAULT_LOG.info("start clear all config-info.");
+                DiskUtil.clearAll();
+                dumpAllProcessor.process(new DumpAllTask());
+            } else {
+                Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp, timeStep);
+                DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(this, beforeTimeStamp,
+                        TimeUtils.getCurrentTime());
+                dumpChangeProcessor.process(new DumpChangeTask());
+                Runnable checkMd5Task = () -> {
+                    LogUtil.DEFAULT_LOG.error("start checkMd5Task");
+                    List<String> diffList = ConfigCacheService.checkMd5();
+                    for (String groupKey : diffList) {
+                        String[] dg = GroupKey.parseKey(groupKey);
+                        String dataId = dg[0];
+                        String group = dg[1];
+                        String tenant = dg[2];
+                        ConfigInfoWrapper configInfo = configInfoPersistService.queryConfigInfo(dataId, group, tenant);
+                        ConfigCacheService.dumpChange(dataId, group, tenant, configInfo.getContent(),
+                                configInfo.getLastModified(), configInfo.getEncryptedDataKey());
+                    }
+                    LogUtil.DEFAULT_LOG.error("end checkMd5Task");
+                };
+                ConfigExecutor.scheduleConfigTask(checkMd5Task, 0, 12, TimeUnit.HOURS);
+            }
+        } catch (IOException e) {
+            LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
+            throw e;
+        } finally {
+            if (null != fis) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    LogUtil.DEFAULT_LOG.warn("close file failed");
+                }
+            }
+        }
+    }
+    
+    private Timestamp getBeforeStamp(Timestamp date, int step) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        // before 6 hour
+        cal.add(Calendar.HOUR_OF_DAY, -step);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return Timestamp.valueOf(format.format(cal.getTime()));
+    }
+    
+    private Boolean isQuickStart() {
+        try {
+            String val;
+            val = EnvUtil.getProperty("isQuickStart");
+            if (TRUE_STR.equals(val)) {
+                isQuickStart = true;
+            }
+            FATAL_LOG.warn("isQuickStart:{}", isQuickStart);
+        } catch (Exception e) {
+            FATAL_LOG.error("read application.properties wrong", e);
+        }
+        return isQuickStart;
+    }
+    
+    private int getRetentionDays() {
+        String val = EnvUtil.getProperty("nacos.config.retention.days");
+        if (null == val) {
+            return retentionDays;
+        }
+        
+        int tmp = 0;
+        try {
+            tmp = Integer.parseInt(val);
+            if (tmp > 0) {
+                retentionDays = tmp;
+            }
+        } catch (NumberFormatException nfe) {
+            FATAL_LOG.error("read nacos.config.retention.days wrong", nfe);
+        }
+        
+        return retentionDays;
+    }
+    
+    public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
+        dump(dataId, group, tenant, tag, lastModified, handleIp, false);
+    }
+    
+    public void dump(String dataId, String group, String tenant, long lastModified, String handleIp) {
+        dump(dataId, group, tenant, lastModified, handleIp, false);
+    }
+    
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
+    public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta));
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
+        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
+    }
+    
+    /**
+     * Add DumpTask to TaskManager, it will execute asynchronously.
+     */
+    public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
+            boolean isBeta) {
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta), tag);
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
+        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
+    }
+    
+    public void dumpAll() {
+        dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
+    }
+    
+    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
+        List<List<ConfigInfoChanged>> result = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            result.add(new ArrayList<>());
+        }
+        for (int i = 0; i < list.size(); i++) {
+            ConfigInfoChanged config = list.get(i);
+            result.get(i % count).add(config);
+        }
+        return result;
+    }
+    
+    class MergeAllDataWorker extends Thread {
+        
+        static final int PAGE_SIZE = 10000;
+        
+        private List<ConfigInfoChanged> configInfoList;
+        
+        public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
+            super("MergeAllDataWorker");
+            this.configInfoList = configInfoList;
+        }
+        
+        @Override
+        public void run() {
+            if (!canExecute()) {
+                return;
+            }
+            for (ConfigInfoChanged configInfo : configInfoList) {
+                String dataId = configInfo.getDataId();
+                String group = configInfo.getGroup();
+                String tenant = configInfo.getTenant();
+                try {
+                    List<ConfigInfoAggr> datumList = new ArrayList<>();
+                    int rowCount = configInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
+                    int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
+                    for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
+                        Page<ConfigInfoAggr> page = configInfoAggrPersistService
+                                .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
+                        if (page != null) {
+                            datumList.addAll(page.getPageItems());
+                            LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
+                                    rowCount);
+                        }
+                    }
+                    
+                    final Timestamp time = TimeUtils.getCurrentTime();
+                    // merge
+                    if (datumList.size() > 0) {
+                        ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
+                        String aggrContent = cf.getContent();
+                        String localContentMD5 = ConfigCacheService.getContentMd5(GroupKey.getKey(dataId, group));
+                        String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
+                        
+                        if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
+                            configInfoPersistService.insertOrUpdate(null, null, cf, time, null, false);
+                            LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+                                    datumList.size(), cf.getContent().length(), cf.getMd5(),
+                                    ContentUtils.truncateContent(cf.getContent()));
+                        }
+                    } else {
+                        // remove config info
+                        configInfoPersistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
+                        LOGGER.warn(
+                                "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
+                                        + group);
+                    }
+                    
+                } catch (Throwable e) {
+                    LOGGER.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
+                }
+                FINISHED.incrementAndGet();
+                if (FINISHED.get() % 100 == 0) {
+                    LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+                }
+            }
+            LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
+        }
+    }
+    
+    /**
+     * Used to determine whether the aggregation task, configuration history cleanup task can be performed.
+     *
+     * @return {@link Boolean}
+     */
+    protected abstract boolean canExecute();
 }

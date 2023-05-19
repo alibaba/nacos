@@ -13,40 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang.CharUtils;
-import org.apache.commons.lang.NullArgumentException;
-
-
-
 /**
- * 用于ConfigCenter可支持的通配字符通配判定以及标准正则转换的通用类
+ * Generic classes for wildcard characters, decisions, and standard canonical transformations that can be supported by
+ * ConfigCenter.
  *
  * @author tianhu E-mail:
- * @version 创建时间：2008-12-30 下午07:09:52 类说明
  */
 public class RegexParser {
-
-	private final static char QUESTION_MARK = '?';
-
+    
+    private static final char QUESTION_MARK = '?';
+    
     /**
-     * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br>
-     * '*'替换为 ‘.*’ '?'替换为'{n}'，n为连续?的个数; <br>
-     * 其他非字母或数字的特殊字符前均添加'\'.
+     * Replace input string non-regular special characters with standard regular expression strings; Replace '*' with
+     * '.* '? 'is replaced by '{n}', n is the number of consecutive ?; Other special characters that are not alphabetic
+     * or numeric are preceded by '\'.
      *
-     * @param regex
-     * @return
+     * @param regex  The expression to be formatted
+     * @return format content.
      */
-    static public String regexFormat(String regex) {
+    public static String regexFormat(String regex) {
         if (regex == null) {
-            throw new NullArgumentException("regex string can't be null");
+            throw new NullPointerException("regex string can't be null");
         }
-        StringBuffer result = new StringBuffer();
-        result.append("^");
+        StringBuilder result = new StringBuilder();
+        result.append('^');
         for (int i = 0; i < regex.length(); i++) {
             char ch = regex.charAt(i);
-            if (CharUtils.isAsciiAlphanumeric(ch) || CharUtils.isAsciiNumeric(ch)) {
+            if (isAsciiAlphanumeric(ch)) {
                 result.append(ch);
             } else if (ch == '*') {
                 result.append(".*");
@@ -67,16 +63,28 @@ public class RegexParser {
                 result.append("\\" + ch);
             }
         }
-        result.append("$");
+        result.append('$');
         return result.toString();
     }
-
-    static public boolean containsWildcard(String regex) {
+    
+    public static boolean containsWildcard(String regex) {
         return (regex.contains("?") || regex.contains("*"));
     }
-
-    public static void main(String[] args) {
-        String str = "com.taobao.uic.*";
-        System.out.println(str + " -> " + regexFormat(str));
+    
+    private static Boolean isAsciiAlphanumeric(final char ch) {
+        return  isAsciiAlphaUpper(ch) || isAsciiAlphaLower(ch) || isAsciiNumeric(ch);
     }
+    
+    private static Boolean isAsciiNumeric(final char ch) {
+        return ch >= '0' && ch <= '9';
+    }
+    
+    private static Boolean isAsciiAlphaUpper(final char ch) {
+        return ch >= 'A' && ch <= 'Z';
+    }
+    
+    private static Boolean isAsciiAlphaLower(final char ch) {
+        return ch >= 'a' && ch <= 'z';
+    }
+    
 }

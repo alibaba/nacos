@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 
 /**
- * Snapshot switch
- * 
- * @author Nacos
+ * Snapshot switch.
  *
+ * @author Nacos
  */
 public class SnapShotSwitch {
-
-	/**
-	 * whether use local cache
-	 */
-	private static Boolean isSnapShot = true;
-
-	public static Boolean getIsSnapShot() {
-		return isSnapShot;
-	}
-
-	public static void setIsSnapShot(Boolean isSnapShot) {
-		SnapShotSwitch.isSnapShot = isSnapShot;
-		LocalConfigInfoProcessor.cleanAllSnapshot();
-	}
-	
+    
+    /**
+     * whether use local cache.
+     */
+    private static Boolean isSnapShot = true;
+    
+    public static Boolean getIsSnapShot() {
+        return isSnapShot;
+    }
+    
+    public static void setIsSnapShot(Boolean isSnapShot) {
+        SnapShotSwitch.isSnapShot = isSnapShot;
+        LocalConfigInfoProcessor.cleanAllSnapshot();
+    }
+    
 }

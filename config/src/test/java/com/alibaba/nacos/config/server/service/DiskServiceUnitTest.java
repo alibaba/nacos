@@ -13,54 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.alibaba.nacos.config.server.service.DiskUtil;
-
-import javax.servlet.ServletContext;
-
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 public class DiskServiceUnitTest {
-
-	private DiskUtil diskService;
-
-	private ServletContext servletContext;
-
-	private File tempFile;
-
-	private String path;
-
-	@Before
-	public void setUp() throws IOException {
-		this.tempFile = File.createTempFile("diskServiceTest", "tmp");
-		this.path = tempFile.getParent();
-		this.diskService = new DiskUtil();
-	}
-
-	@Test
-	public void testCreateConfig() throws IOException {
-		diskService.saveToDisk("testDataId", "testGroup", "testTenant", "testContent");
-		String content = diskService.getConfig("testDataId", "testGroup", "testTenant");
-		assertEquals(content, "testContent");
-
-	}
-
-	@After
-	public void tearDown() throws IOException {
-		tempFile.delete();
-	}
+    
+    private DiskUtil diskService;
+    
+    private File tempFile;
+    
+    private String path;
+    
+    @Before
+    public void setUp() throws IOException {
+        this.tempFile = File.createTempFile("diskServiceTest", "tmp");
+        this.path = tempFile.getParent();
+        this.diskService = new DiskUtil();
+    }
+    
+    @Test
+    public void testCreateConfig() throws IOException {
+        DiskUtil.saveToDisk("testDataId", "testGroup", "testTenant", "testContent");
+        String content = DiskUtil.getConfig("testDataId", "testGroup", "testTenant");
+        assertEquals(content, "testContent");
+        
+    }
+    
+    @After
+    public void tearDown() throws IOException {
+        tempFile.delete();
+    }
 }

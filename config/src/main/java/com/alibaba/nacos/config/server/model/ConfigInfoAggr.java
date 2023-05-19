@@ -13,31 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.config.server.model;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 
 import java.io.Serializable;
 
-
 /**
- * 聚合前的配置信息类
- * 
+ * ConfigInfoAggr.
+ *
  * @author leiwen.zh
- * 
  */
 public class ConfigInfoAggr implements Serializable {
-
+    
     private static final long serialVersionUID = -3845825581059306364L;
-
+    
+    @JsonSerialize(using = ToStringSerializer.class)
     private long id;
-
+    
     private String dataId;
+    
     private String group;
+    
     private String datumId;
-    private String tenant; 
+    
+    private String tenant;
+    
     private String appName;
+    
     private String content;
-
-
+    
     public ConfigInfoAggr(String dataId, String group, String datumId, String content) {
         this.dataId = dataId;
         this.group = group;
@@ -46,69 +53,57 @@ public class ConfigInfoAggr implements Serializable {
     }
     
     public ConfigInfoAggr(String dataId, String group, String datumId, String appName, String content) {
-    	this.dataId = dataId;
-    	this.group = group;
-    	this.datumId = datumId;
-    	this.appName = appName;
-    	this.content = content;
+        this.dataId = dataId;
+        this.group = group;
+        this.datumId = datumId;
+        this.appName = appName;
+        this.content = content;
     }
-
-
+    
     public ConfigInfoAggr() {
-
+    
     }
-
-
+    
     public long getId() {
         return id;
     }
-
-
+    
     public void setId(long id) {
         this.id = id;
     }
-
-
+    
     public String getDataId() {
         return dataId;
     }
-
-
+    
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
-
+    
     public String getGroup() {
         return group;
     }
-
-
+    
     public void setGroup(String group) {
         this.group = group;
     }
-
-
+    
     public String getDatumId() {
         return datumId;
     }
-
-
+    
     public void setDatumId(String datumId) {
         this.datumId = datumId;
     }
-
-
+    
     public String getContent() {
         return content;
     }
-
-
+    
     public void setContent(String content) {
         this.content = content;
     }
-
-
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -119,8 +114,7 @@ public class ConfigInfoAggr implements Serializable {
         result = prime * result + ((group == null) ? 0 : group.hashCode());
         return result;
     }
-
-
+    
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -137,60 +131,53 @@ public class ConfigInfoAggr implements Serializable {
             if (other.content != null) {
                 return false;
             }
-        }
-        else if (!content.equals(other.content)) {
+        } else if (!content.equals(other.content)) {
             return false;
         }
         if (dataId == null) {
             if (other.dataId != null) {
                 return false;
             }
-        }
-        else if (!dataId.equals(other.dataId)) {
+        } else if (!dataId.equals(other.dataId)) {
             return false;
         }
         if (datumId == null) {
             if (other.datumId != null) {
                 return false;
             }
-        }
-        else if (!datumId.equals(other.datumId)) {
+        } else if (!datumId.equals(other.datumId)) {
             return false;
         }
         if (group == null) {
             if (other.group != null) {
                 return false;
             }
-        }
-        else if (!group.equals(other.group)) {
-        	 return false;
+        } else if (!group.equals(other.group)) {
+            return false;
         }
         return true;
     }
-
-
+    
     @Override
     public String toString() {
-        return "ConfigInfoAggr [dataId=" + dataId + ", group=" + group + ", datumId=" + datumId + ", content="
-                + content + "]";
+        return "ConfigInfoAggr [dataId=" + dataId + ", group=" + group + ", datumId=" + datumId + ", content=" + content
+                + "]";
     }
-
-
-	public String getAppName() {
-		return appName;
-	}
-
-
-	public void setAppName(String appName) {
-		this.appName = appName;
-	}
-
-	public String getTenant() {
-		return tenant;
-	}
-
-	public void setTenant(String tenant) {
-		this.tenant = tenant;
-	}
-
+    
+    public String getAppName() {
+        return appName;
+    }
+    
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+    
+    public String getTenant() {
+        return tenant;
+    }
+    
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+    
 }

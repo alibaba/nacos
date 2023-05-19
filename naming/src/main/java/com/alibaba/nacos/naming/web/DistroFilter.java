@@ -13,99 +13,146 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 /**
+ * Distro filter.
+ *
  * @author nacos
  */
 public class DistroFilter implements Filter {
+    
+    private static final int PROXY_CONNECT_TIMEOUT = 2000;
+    
+    private static final int PROXY_READ_TIMEOUT = 2000;
+    
+    @Autowired
+    private DistroMapper distroMapper;
+    
+    @Autowired
+    private ControllerMethodsCache controllerMethodsCache;
+    
+    @Autowired
+    private DistroTagGenerator distroTagGenerator;
+    
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-
     }
-
-    @SuppressFBWarnings("HRS_REQUEST_PARAMETER_TO_HTTP_HEADER")
+    
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        HttpServletRequest req = (HttpServletRequest) servletRequest;
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+            throws IOException, ServletException {
+        ReuseHttpServletRequest req = new ReuseHttpServletRequest((HttpServletRequest) servletRequest);
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
-
-        String urlString = req.getRequestURI() + "?" + req.getQueryString();
-        Map<String, Integer> limitedUrlMap = Switch.getLimitedUrlMap();
-
-        if (limitedUrlMap != null && limitedUrlMap.size() > 0) {
-            for (Map.Entry<String, Integer> entry : limitedUrlMap.entrySet()) {
-                String limitedUrl = entry.getKey();
-                if (StringUtils.startsWith(urlString, limitedUrl)) {
-                    resp.setStatus(entry.getValue());
-                    return;
-                }
+        
+        String urlString = req.getRequestURI();
+        
+        if (StringUtils.isNotBlank(req.getQueryString())) {
+            urlString += "?" + req.getQueryString();
+        }
+        
+        try {
+            Method method = controllerMethodsCache.getMethod(req);
+            
+            String path = new URI(req.getRequestURI()).getPath();
+            if (method == null) {
+                throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
-        }
-
-        if (!Switch.isDistroEnabled()) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
-
-        if (!canDistro(urlString)) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
-
-        String redirect = req.getParameter("redirect");
-        String dom = req.getParameter("domainString");
-        String targetIP = req.getParameter("targetIP");
-        if (StringUtils.isEmpty(dom)) {
-            dom = req.getParameter("dom");
-        }
-
-        if (StringUtils.isEmpty(dom)) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
-
-        if (StringUtils.isEmpty(redirect) && StringUtils.isEmpty(targetIP)) {
-            if (!DistroMapper.responsible(dom)) {
-
-                String url = "http://" + DistroMapper.mapSrv(dom) + ":" + req.getServerPort()
-                        + req.getRequestURI() + "?" + req.getQueryString();
-                try {
-                    resp.sendRedirect(url);
-                } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
-                }
+            
+            if (!method.isAnnotationPresent(CanDistro.class)) {
+                filterChain.doFilter(req, resp);
+                return;
             }
+            String distroTag = distroTagGenerator.getResponsibleTag(req);
+            
+            if (distroMapper.responsible(distroTag)) {
+                filterChain.doFilter(req, resp);
+                return;
+            }
+            
+            // proxy request to other server if necessary:
+            String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
+            
+            if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
+                // This request is sent from peer server, should not be redirected again:
+                Loggers.SRV_LOG.error("receive invalid redirect request from peer {}", req.getRemoteAddr());
+                resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        "receive invalid redirect request from peer " + req.getRemoteAddr());
+                return;
+            }
+            
+            final String targetServer = distroMapper.mapSrv(distroTag);
+            
+            List<String> headerList = new ArrayList<>(16);
+            Enumeration<String> headers = req.getHeaderNames();
+            while (headers.hasMoreElements()) {
+                String headerName = headers.nextElement();
+                headerList.add(headerName);
+                headerList.add(req.getHeader(headerName));
+            }
+            
+            final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
+            final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
+            
+            RestResult<String> result = HttpClient
+                    .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
+                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), req.getMethod());
+            String data = result.ok() ? result.getData() : result.getMessage();
+            try {
+                WebUtils.response(resp, data, result.getCode());
+            } catch (Exception ignore) {
+                Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(distroTag) + urlString);
+            }
+        } catch (AccessControlException e) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
+        } catch (NoSuchMethodException e) {
+            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
+                    "no such api:" + req.getMethod() + ":" + req.getRequestURI());
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("[DISTRO-FILTER] Server failed: ", e);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "Server failed, " + ExceptionUtil.getAllExceptionMsg(e));
         }
-
-        filterChain.doFilter(req, resp);
+        
     }
-
+    
     @Override
     public void destroy() {
-
-    }
-
-    public boolean canDistro(String urlString) {
-
-        if (urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM_SERVE_STATUS)) {
-            return false;
-        }
-
-        return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_IP_FOR_DOM) ||
-                urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
+    
     }
 }
