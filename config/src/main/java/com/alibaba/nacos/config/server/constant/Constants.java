@@ -140,6 +140,10 @@ public class Constants {
     
     public static final String PERSIST_ENCODE = getPersistEncode();
     
+    public static final String ENCODE_GBK = "GBK";
+    
+    public static final String ENCODE_UTF8 = "UTF-8";
+    
     public static final String MAP_FILE = "map-file.js";
     
     public static final int FLOW_CONTROL_THRESHOLD = 20;
