@@ -100,15 +100,15 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         String tag = configQueryRequest.getTag();
         ConfigQueryResponse response = new ConfigQueryResponse();
         
-        final String groupKey = GroupKey2
-                .getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(), configQueryRequest.getTenant());
+        final String groupKey = GroupKey2.getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(),
+                configQueryRequest.getTenant());
         
         String autoTag = configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
         
         int lockResult = tryConfigReadLock(groupKey);
-        
+        String pullEvent = ConfigTraceService.PULL_EVENT;
         boolean isBeta = false;
         boolean isSli = false;
         if (lockResult > 0) {
@@ -137,6 +137,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     } else {
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
+                    pullEvent = ConfigTraceService.PULL_EVENT_BETA;
                     response.setBeta(true);
                 } else {
                     if (StringUtils.isBlank(tag)) {
@@ -150,10 +151,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 }
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
+                                        autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
+                            pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
                             response.setTag(URLEncoder.encode(autoTag, Constants.ENCODE));
                             
                         } else {
@@ -164,11 +167,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             } else {
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
+                            pullEvent = ConfigTraceService.PULL_EVENT;
                             if (configInfoBase == null && fileNotExist(file)) {
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
+                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                                        ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
                                 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
@@ -195,11 +199,13 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
+                        pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
+                        
                         if (configInfoBase == null && fileNotExist(file)) {
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, clientIp, false);
+                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -249,8 +255,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                  Otherwise, delayed cannot be used as the basis of push delay directly,
                  because the delayed value of active get requests is very large.
                  */
-                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, notify ? delayed : -1, clientIp, notify);
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,pullEvent,
+                        ConfigTraceService.PULL_TYPE_OK, notify ? delayed : -1, clientIp, notify,"grpc");
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -258,9 +264,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         } else if (lockResult == 0) {
             
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-            ConfigTraceService
-                    .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            clientIp, notify);
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,pullEvent,
+                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify,"grpc");
             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
             
         } else {

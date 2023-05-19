@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
+
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
-import java.sql.Timestamp;
+import java.util.List;
+
 
 /**
  * Database service, providing access to config_info_tag in the database.
@@ -42,6 +46,18 @@ public interface ConfigInfoTagPersistService {
     
     //------------------------------------------insert---------------------------------------------//
     
+    
+    /**
+     * get config info state.
+     *
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @return
+     */
+    ConfigInfoStateWrapper findConfigInfo4TagState(final String dataId, final String group, final String tenant,
+            String tag);
+    
     /**
      * Add tag configuration information and publish data change events.
      *
@@ -49,11 +65,8 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      */
-    void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+    ConfigOperateResult addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
     
     /**
      * insert or update tag config.
@@ -62,11 +75,9 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      */
-    void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp, final String srcUser,
-            final Timestamp time, final boolean notify);
+    ConfigOperateResult insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
+            final String srcUser);
     
     /**
      * insert or update tag config cas.
@@ -75,12 +86,10 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      * @return success or not.
      */
-    boolean insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
-            final String srcUser, final Timestamp time, final boolean notify);
+    ConfigOperateResult insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
+            final String srcUser);
     //------------------------------------------delete---------------------------------------------//
     
     /**
@@ -104,11 +113,8 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      */
-    void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+    ConfigOperateResult updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
     
     /**
      * Update tag configuration information.
@@ -117,12 +123,9 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      * @return success or not.
      */
-    boolean updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+    ConfigOperateResult updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
     //------------------------------------------select---------------------------------------------//
     
     /**
@@ -153,4 +156,13 @@ public interface ConfigInfoTagPersistService {
      */
     Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize);
     
+    /**
+     * found all config tags.
+     *
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @return
+     */
+    List<String> findConfigInfoTags(final String dataId, final String group, final String tenant);
 }

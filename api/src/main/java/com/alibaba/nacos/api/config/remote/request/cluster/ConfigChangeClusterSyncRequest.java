@@ -38,12 +38,21 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
     boolean isBeta;
     
+    boolean isBatch;
     public boolean isBeta() {
         return isBeta;
     }
     
     public void setBeta(boolean beta) {
         isBeta = beta;
+    }
+    
+    public boolean isBatch() {
+        return isBatch;
+    }
+    
+    public void setBatch(boolean batch) {
+        isBatch = batch;
     }
     
     /**

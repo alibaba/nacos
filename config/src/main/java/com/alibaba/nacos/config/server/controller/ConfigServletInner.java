@@ -77,11 +77,11 @@ public class ConfigServletInner {
     
     private final LongPollingService longPollingService;
     
-    private  ConfigInfoPersistService configInfoPersistService;
+    private ConfigInfoPersistService configInfoPersistService;
     
-    private  ConfigInfoBetaPersistService configInfoBetaPersistService;
+    private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
-    private  ConfigInfoTagPersistService configInfoTagPersistService;
+    private ConfigInfoTagPersistService configInfoTagPersistService;
     
     public ConfigServletInner(LongPollingService longPollingService, ConfigInfoPersistService configInfoPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
@@ -188,12 +188,16 @@ public class ConfigServletInner {
                     response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
                 }
                 
+                String pullEvent = ConfigTraceService.PULL_EVENT;
+                
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out;
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
+                    pullEvent = ConfigTraceService.PULL_EVENT_BETA;
+                    
                     if (PropertyUtil.isDirectRead()) {
                         configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
@@ -210,14 +214,16 @@ public class ConfigServletInner {
                                 lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
+                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
+                                        autoTag);
                             } else {
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
-                            
+                            pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
                             response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
                                     URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
+                            pullEvent = ConfigTraceService.PULL_EVENT;
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
@@ -228,8 +234,8 @@ public class ConfigServletInner {
                             if (configInfoBase == null && fileNotExist(file)) {
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify);
+                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                                        ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
                                 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
@@ -254,11 +260,13 @@ public class ConfigServletInner {
                         } else {
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
+                        pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
+                        
                         if (configInfoBase == null && fileNotExist(file)) {
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                    ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp, notify && isSli);
+                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify && isSli, "http");
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -283,8 +291,8 @@ public class ConfigServletInner {
                 }
                 
                 if (PropertyUtil.isDirectRead()) {
-                    Pair<String, String> pair = EncryptionHandler
-                            .decryptHandler(dataId, configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
+                    Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId,
+                            configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
                     out = response.getWriter();
                     if (isV2) {
                         out.print(JacksonUtils.toJson(Result.success(pair.getSecond())));
@@ -317,8 +325,8 @@ public class ConfigServletInner {
                  Otherwise, delayed cannot be used as the basis of push delay directly,
                  because the delayed value of active get requests is very large.
                  */
-                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
-                        ConfigTraceService.PULL_EVENT_OK, delayed, requestIp, notify && isSli);
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,pullEvent,
+                        ConfigTraceService.PULL_TYPE_OK, delayed, requestIp, notify && isSli,"http");
                 
             } finally {
                 releaseConfigReadLock(groupKey);
@@ -327,9 +335,8 @@ public class ConfigServletInner {
         } else if (lockResult == 0) {
             
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-            ConfigTraceService
-                    .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
-                            requestIp, notify && isSli);
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,ConfigTraceService.PULL_EVENT,
+                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify && isSli,"http");
             
             return get404Result(response, isV2);
             
@@ -362,8 +369,8 @@ public class ConfigServletInner {
         response.setStatus(HttpServletResponse.SC_CONFLICT);
         PrintWriter writer = response.getWriter();
         if (isV2) {
-            writer.println(JacksonUtils.toJson(Result
-                    .failure(ErrorCode.RESOURCE_CONFLICT, "requested file is being modified, please try later.")));
+            writer.println(JacksonUtils.toJson(Result.failure(ErrorCode.RESOURCE_CONFLICT,
+                    "requested file is being modified, please try later.")));
         } else {
             writer.println("requested file is being modified, please try later.");
         }

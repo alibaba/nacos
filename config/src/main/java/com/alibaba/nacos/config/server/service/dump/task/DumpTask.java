@@ -25,36 +25,24 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  */
 public class DumpTask extends AbstractDelayTask {
     
-    public DumpTask(String groupKey, long lastModified, String handleIp) {
-        this.groupKey = groupKey;
-        this.lastModified = lastModified;
-        this.handleIp = handleIp;
-        this.isBeta = false;
-        this.tag = null;
-        // retry interval: 1s
-        setTaskInterval(1000L);
-    }
     
-    public DumpTask(String groupKey, long lastModified, String handleIp, boolean isBeta) {
+    public DumpTask(String groupKey, boolean isBeta, boolean isBatch, boolean isTag, String tag, long lastModified,
+            String handleIp) {
         this.groupKey = groupKey;
         this.lastModified = lastModified;
         this.handleIp = handleIp;
         this.isBeta = isBeta;
-        this.tag = null;
-        // retry interval: 1s
+        if (isTag) {
+            this.tag = tag;
+        } else {
+            this.tag = null;
+        }
+        this.isBatch = isBatch;
+        /**
+         * retry interval: 1s
+         */
         setTaskInterval(1000L);
     }
-    
-    public DumpTask(String groupKey, String tag, long lastModified, String handleIp, boolean isBeta) {
-        this.groupKey = groupKey;
-        this.lastModified = lastModified;
-        this.handleIp = handleIp;
-        this.isBeta = isBeta;
-        this.tag = tag;
-        // retry interval: 1s
-        setTaskInterval(1000L);
-    }
-    
     @Override
     public void merge(AbstractDelayTask task) {
     }
@@ -68,6 +56,8 @@ public class DumpTask extends AbstractDelayTask {
     final boolean isBeta;
     
     final String tag;
+    
+    final boolean isBatch;
     
     public String getGroupKey() {
         return groupKey;
@@ -89,5 +79,8 @@ public class DumpTask extends AbstractDelayTask {
         return tag;
     }
     
+    public boolean isBatch() {
+        return isBatch;
+    }
 }
 
