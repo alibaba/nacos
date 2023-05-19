@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * NamespaceOperationService.
@@ -55,6 +56,8 @@ public class NamespaceOperationService {
     private static final String DEFAULT_CREATE_SOURCE = "nacos";
     
     private static final String DEFAULT_KP = "1";
+
+    private static final Pattern namespaceNameCheckPattern = Pattern.compile("^[^@#$%^&*]+$");
     
     public NamespaceOperationService(NamespacePersistService namespacePersistService) {
         this.namespacePersistService = namespacePersistService;
@@ -115,6 +118,11 @@ public class NamespaceOperationService {
      */
     public Boolean createNamespace(String namespaceId, String namespaceName, String namespaceDesc)
             throws NacosException {
+        // contains illegal chars
+        if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
+                "namespaceName [" + namespaceName + "] contains illegal char");
+        }
         // TODO 获取用kp
         if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
             throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.NAMESPACE_ALREADY_EXIST,
@@ -131,6 +139,10 @@ public class NamespaceOperationService {
      * edit namespace.
      */
     public Boolean editNamespace(String namespaceId, String namespaceName, String namespaceDesc) {
+        // contains illegal chars
+        if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {
+            return false;
+        }
         // TODO 获取用kp
         namespacePersistService.updateTenantNameAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc);
         return true;
