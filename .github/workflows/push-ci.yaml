@@ -44,7 +44,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-2.3.0-SNAPSHOT.tar.gz
+          path: distribution/target/nacos-server-*-SNAPSHOT.tar.gz
 
   docker:
     if: ${{ success() }}
