@@ -60,6 +60,8 @@ public class NamespaceControllerV2 {
     }
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
+
+    private final Pattern namespaceNameCheckPattern = Pattern.compile("^[^@#$%^&*]+$");
     
     private static final int NAMESPACE_ID_MAX_LENGTH = 128;
     
@@ -116,6 +118,11 @@ public class NamespaceControllerV2 {
                         "too long namespaceId, over " + NAMESPACE_ID_MAX_LENGTH);
             }
         }
+        // contains illegal chars
+        if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
+                "namespaceName [" + namespaceName + "] contains illegal char");
+        }
         return Result.success(namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc));
     }
     
@@ -130,6 +137,11 @@ public class NamespaceControllerV2 {
             + "namespaces", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public Result<Boolean> editNamespace(NamespaceForm namespaceForm) throws NacosException {
         namespaceForm.validate();
+        // contains illegal chars
+        if (!namespaceNameCheckPattern.matcher(namespaceForm.getNamespaceName()).matches()) {
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
+                "namespaceName [" + namespaceForm.getNamespaceName() + "] contains illegal char");
+        }
         return Result.success(namespaceOperationService
                 .editNamespace(namespaceForm.getNamespaceId(), namespaceForm.getNamespaceName(),
                         namespaceForm.getNamespaceDesc()));
