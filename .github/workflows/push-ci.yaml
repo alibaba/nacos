@@ -2,7 +2,7 @@ name: PUSH-CI
 
 on:
   push:
-    branches: [master, develop, v1.x-develop, v1.X]
+    branches: [master, develop, v1.x-develop, v1.X] 
 
 permissions:
   contents: read # to fetch code (actions/checkout)
