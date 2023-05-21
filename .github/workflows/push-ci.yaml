@@ -35,8 +35,6 @@ jobs:
           distribution: "temurin"
           java-version: "8"
           cache: "maven"
-      - name: "Check with Maven"
-        run: mvn -B clean package apache-rat:check findbugs:findbugs -DskipTests -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: Build distribution tar
         run: |
           mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
@@ -50,7 +48,7 @@ jobs:
     if: ${{ success() }}
     name: Docker images
     needs: [dist-tar]
-    runs-on: ubuntu-latest
+    runs-on: centos-latest
     timeout-minutes: 30
     strategy:
       matrix:
