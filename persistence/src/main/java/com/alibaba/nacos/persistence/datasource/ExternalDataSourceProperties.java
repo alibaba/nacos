@@ -92,11 +92,34 @@ public class ExternalDataSourceProperties {
             if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
                 ds.setConnectionTestQuery(TEST_QUERY);
             }
+            checkDataSourceConnection(ds);
+            
             dataSources.add(ds);
             callback.accept(ds);
         }
         Preconditions.checkArgument(CollectionUtils.isNotEmpty(dataSources), "no datasource available");
         return dataSources;
+    }
+    
+    /**
+     * check HikariDataSource connection ,avoid [no datasource set] text.
+     * @param ds HikariDataSource object
+     */
+    private void checkDataSourceConnection(HikariDataSource ds) {
+        java.sql.Connection connection = null;
+        try {
+            connection = ds.getConnection();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
     
     interface Callback<D> {
