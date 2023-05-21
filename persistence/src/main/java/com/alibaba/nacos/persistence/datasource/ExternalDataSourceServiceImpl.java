@@ -132,12 +132,16 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
                     .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                        //check datasource connection
+                        checkDataSourceConnection(dataSource);
+                        
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
                         jdbcTemplate.setDataSource(dataSource);
                         testJtListNew.add(jdbcTemplate);
                         isHealthListNew.add(Boolean.TRUE);
                     });
+            
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
             dataSourceList = dataSourceListNew;
@@ -160,6 +164,27 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         } catch (RuntimeException e) {
             LOGGER.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
+        }
+    }
+    
+    /**
+     * check HikariDataSource connection ,avoid [no datasource set] text.
+     * @param ds HikariDataSource object
+     */
+    private void checkDataSourceConnection(HikariDataSource ds) {
+        java.sql.Connection connection = null;
+        try {
+            connection = ds.getConnection();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
     
