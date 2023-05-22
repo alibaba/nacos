@@ -144,25 +144,12 @@ public class NamespaceControllerTest {
 
     @Test
     public void testEditNamespaceWithIllegalName() {
-        when(namespaceOperationService.editNamespace(null, "test@Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test@Name", "testDesc"));
-
-        when(namespaceOperationService.editNamespace(null, "test#Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test#Name", "testDesc"));
-
-        when(namespaceOperationService.editNamespace(null, "test$Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test$Name", "testDesc"));
-
-        when(namespaceOperationService.editNamespace(null, "test%Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test%Name", "testDesc"));
-
-        when(namespaceOperationService.editNamespace(null, "test^Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test^Name", "testDesc"));
-
-        when(namespaceOperationService.editNamespace(null, "test&Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test&Name", "testDesc"));
-
-        when(namespaceOperationService.editNamespace(null, "test*Name", "testDesc")).thenReturn(true);
         assertFalse(namespaceController.createNamespace( null, "test*Name", "testDesc"));
     }
     

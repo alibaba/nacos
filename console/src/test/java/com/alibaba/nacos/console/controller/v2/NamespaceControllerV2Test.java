@@ -175,31 +175,24 @@ public class NamespaceControllerV2Test {
         form.setNamespaceDesc("testDesc");
 
         form.setNamespaceName("test@Name");
-        when(namespaceOperationService.editNamespace(null, "test@Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
 
         form.setNamespaceName("test#Name");
-        when(namespaceOperationService.editNamespace(null, "test#Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
 
         form.setNamespaceName("test$Name");
-        when(namespaceOperationService.editNamespace(null, "test$Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
 
         form.setNamespaceName("test%Name");
-        when(namespaceOperationService.editNamespace(null, "test%Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
 
         form.setNamespaceName("test^Name");
-        when(namespaceOperationService.editNamespace(null, "test^Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
 
         form.setNamespaceName("test&Name");
-        when(namespaceOperationService.editNamespace(null, "test&Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
 
         form.setNamespaceName("test*Name");
-        when(namespaceOperationService.editNamespace(null, "test*Name", "testDesc")).thenReturn(true);
         assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
     }
     
