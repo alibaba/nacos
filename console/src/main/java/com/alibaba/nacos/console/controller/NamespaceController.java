@@ -103,6 +103,10 @@ public class NamespaceController {
             if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
                 return false;
             }
+            // check unique
+            if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
+                return false;
+            }
         }
         // contains illegal chars
         if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {

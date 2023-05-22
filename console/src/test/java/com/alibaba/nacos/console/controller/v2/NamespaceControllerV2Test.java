@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
 import com.alibaba.nacos.core.namespace.model.Namespace;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +50,9 @@ public class NamespaceControllerV2Test {
     
     @Mock
     private NamespaceOperationService namespaceOperationService;
+
+    @Mock
+    private NamespacePersistService namespacePersistService;
     
     private static final String TEST_NAMESPACE_ID = "testId";
     
@@ -58,7 +62,7 @@ public class NamespaceControllerV2Test {
     
     @Before
     public void setUp() throws Exception {
-        namespaceControllerV2 = new NamespaceControllerV2(namespaceOperationService);
+        namespaceControllerV2 = new NamespaceControllerV2(namespaceOperationService, namespacePersistService);
     }
     
     @Test

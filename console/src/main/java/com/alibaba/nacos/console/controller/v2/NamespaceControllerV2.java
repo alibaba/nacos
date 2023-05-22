@@ -24,11 +24,14 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,9 +57,12 @@ import java.util.regex.Pattern;
 public class NamespaceControllerV2 {
     
     private final NamespaceOperationService namespaceOperationService;
+
+    private NamespacePersistService namespacePersistService;
     
-    public NamespaceControllerV2(NamespaceOperationService namespaceOperationService) {
+    public NamespaceControllerV2(NamespaceOperationService namespaceOperationService, NamespacePersistService namespacePersistService) {
         this.namespaceOperationService = namespaceOperationService;
+        this.namespacePersistService = namespacePersistService;
     }
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
@@ -116,6 +122,11 @@ public class NamespaceControllerV2 {
             if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
                 throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
                         "too long namespaceId, over " + NAMESPACE_ID_MAX_LENGTH);
+            }
+            // check unique
+            if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
+                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_NAMESPACE,
+                        "the namespaceId is existed, namespaceId: " + namespaceForm.getNamespaceId());
             }
         }
         // contains illegal chars
