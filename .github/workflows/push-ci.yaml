@@ -48,7 +48,7 @@ jobs:
     if: ${{ success() }}
     name: Docker images
     needs: [dist-tar]
-    runs-on: centos
+    runs-on: ubuntu-18.04
     timeout-minutes: 30
     strategy:
       matrix:
