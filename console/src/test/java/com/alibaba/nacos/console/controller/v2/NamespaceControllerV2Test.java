@@ -33,7 +33,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -115,6 +115,45 @@ public class NamespaceControllerV2Test {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());
     }
+
+    @Test
+    public void testCreateNamespaceWithIllegalName() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceDesc("testDesc");
+        form.setNamespaceName("test@Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test$Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test#Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test%Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test^Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test&Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test*Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+    }
+
+    @Test
+    public void testCreateNamespaceWithNonUniqueId() {
+        when(namespacePersistService.tenantInfoCountByTenantId("test-id")).thenReturn(1);
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId("test-id");
+        form.setNamespaceDesc("testDesc");
+        form.setNamespaceName("testName");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+    }
     
     @Test
     public void testEditNamespace() throws NacosException {
@@ -127,6 +166,41 @@ public class NamespaceControllerV2Test {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());
+    }
+
+    @Test
+    public void testEditNamespaceWithIllegalName() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId("test-id");
+        form.setNamespaceDesc("testDesc");
+
+        form.setNamespaceName("test@Name");
+        when(namespaceOperationService.editNamespace(null, "test@Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test#Name");
+        when(namespaceOperationService.editNamespace(null, "test#Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test$Name");
+        when(namespaceOperationService.editNamespace(null, "test$Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test%Name");
+        when(namespaceOperationService.editNamespace(null, "test%Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test^Name");
+        when(namespaceOperationService.editNamespace(null, "test^Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test&Name");
+        when(namespaceOperationService.editNamespace(null, "test&Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test*Name");
+        when(namespaceOperationService.editNamespace(null, "test*Name", "testDesc")).thenReturn(true);
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
     }
     
     @Test

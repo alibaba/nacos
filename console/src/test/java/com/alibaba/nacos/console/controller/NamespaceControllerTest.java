@@ -31,9 +31,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
@@ -80,6 +78,23 @@ public class NamespaceControllerTest {
         namespaceController.createNamespace("test-Id", "testName", "testDesc");
         verify(namespaceOperationService).createNamespace("test-Id", "testName", "testDesc");
     }
+
+    @Test
+    public void testCreateNamespaceWithIllegalName() {
+        assertFalse(namespaceController.createNamespace( null, "test@Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace( null, "test#Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace( null, "test$Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace( null, "test%Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace( null, "test^Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace( null, "test&Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace( null, "test*Name", "testDesc"));
+    }
+
+    @Test
+    public void testCreateNamespaceWithNonUniqueId() throws Exception {
+        when(namespacePersistService.tenantInfoCountByTenantId("test-Id")).thenReturn(1);
+        assertFalse(namespaceController.createNamespace( "test-Id", "testNam2", "testDesc"));
+    }
     
     @Test
     public void testCreateNamespaceWithIllegalCustomId() throws Exception {
@@ -125,6 +140,30 @@ public class NamespaceControllerTest {
     public void testEditNamespace() {
         namespaceController.editNamespace("test-Id", "testName", "testDesc");
         verify(namespaceOperationService).editNamespace("test-Id", "testName", "testDesc");
+    }
+
+    @Test
+    public void testEditNamespaceWithIllegalName() {
+        when(namespaceOperationService.editNamespace(null, "test@Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test@Name", "testDesc"));
+
+        when(namespaceOperationService.editNamespace(null, "test#Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test#Name", "testDesc"));
+
+        when(namespaceOperationService.editNamespace(null, "test$Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test$Name", "testDesc"));
+
+        when(namespaceOperationService.editNamespace(null, "test%Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test%Name", "testDesc"));
+
+        when(namespaceOperationService.editNamespace(null, "test^Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test^Name", "testDesc"));
+
+        when(namespaceOperationService.editNamespace(null, "test&Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test&Name", "testDesc"));
+
+        when(namespaceOperationService.editNamespace(null, "test*Name", "testDesc")).thenReturn(true);
+        assertFalse(namespaceController.createNamespace( null, "test*Name", "testDesc"));
     }
     
     @Test
