@@ -147,6 +147,7 @@ jobs:
                 tag: ${{ matrix.version }}
             service:
               nodePort: ${{ env.NODE_PORT }}
+              type: ClusterIP
 
 
           
