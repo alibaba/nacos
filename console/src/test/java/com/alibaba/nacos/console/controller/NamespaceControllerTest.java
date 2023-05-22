@@ -83,19 +83,19 @@ public class NamespaceControllerTest {
 
     @Test
     public void testCreateNamespaceWithIllegalName() {
-        assertFalse(namespaceController.createNamespace( null, "test@Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test#Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test$Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test%Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test^Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test&Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test*Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test@Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test#Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test$Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test%Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test^Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test&Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test*Name", "testDesc"));
     }
 
     @Test
     public void testCreateNamespaceWithNonUniqueId() throws Exception {
         when(namespacePersistService.tenantInfoCountByTenantId("test-Id")).thenReturn(1);
-        assertFalse(namespaceController.createNamespace( "test-Id", "testNam2", "testDesc"));
+        assertFalse(namespaceController.createNamespace("test-Id", "testNam2", "testDesc"));
     }
     
     @Test
@@ -146,13 +146,13 @@ public class NamespaceControllerTest {
 
     @Test
     public void testEditNamespaceWithIllegalName() {
-        assertFalse(namespaceController.createNamespace( null, "test@Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test#Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test$Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test%Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test^Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test&Name", "testDesc"));
-        assertFalse(namespaceController.createNamespace( null, "test*Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test@Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test#Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test$Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test%Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test^Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test&Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test*Name", "testDesc"));
     }
     
     @Test
