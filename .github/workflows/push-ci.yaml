@@ -82,7 +82,7 @@ jobs:
           ls versionlist/
           tag=${version}-$(echo ${{ matrix.base-image }} | sed -e "s/:/-/g")
           echo $tag
-          docker build --no-cache -f Dockerfile_ubuntu -t ${DOCKER_REPO}:${tag} .
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
           docker push ${DOCKER_REPO}:${tag}
       - uses: actions/upload-artifact@v3
         name: Upload distribution tar
@@ -122,7 +122,7 @@ jobs:
     strategy:
       matrix:
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
-        mode: ["cluster"]
+        mode: ["cluster","standalone"]
     steps:
       - name: set nodeport
         run: |
