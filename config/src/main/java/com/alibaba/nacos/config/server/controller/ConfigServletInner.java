@@ -236,7 +236,6 @@ public class ConfigServletInner {
                         } else {
                             pullEvent = ConfigTraceService.PULL_EVENT;
                             md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
-                            cacheItem.getConfigCache().getMd5(acceptCharset);
                             lastModified = cacheItem.getConfigCache().getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
                                 configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
