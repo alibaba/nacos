@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
@@ -28,10 +29,8 @@ import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.DiskUtil;
-import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
@@ -39,23 +38,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Map;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_GBK;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Config service.
@@ -284,7 +278,15 @@ public class ConfigCacheService {
     }
     
     /**
-     * 保存配置文件，并缓存md5.
+     * Save config file and update md5 value in cache.
+     *
+     * @param dataId         dataId string value.
+     * @param group          group string value.
+     * @param tenant         tenant string value.
+     * @param content        content string value.
+     * @param lastModifiedTs lastModifiedTs.
+     * @param tag            tag string value.
+     * @return dumpChange success or not.
      */
     static public boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
             long lastModifiedTs, String encryptedDataKey4Tag) {
@@ -883,24 +885,6 @@ public class ConfigCacheService {
     public static void updateTimeStamp(String groupKey, long lastModifiedTs, String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey);
         cache.getConfigCache().setLastModifiedTs(lastModifiedTs);
-    }
-    
-    
-    public static void updateBetaMd5(String groupKey, String md5Gbk, String md5UTF8, List<String> ips4Beta,
-            long lastModifiedTs, String encryptedDataKey4Beta) {
-        CacheItem cache = makeSure(groupKey, null);
-        cache.initBetaCacheIfEmpty();
-        String betaMd5Gbk = cache.getConfigCacheBeta().getMd5(ENCODE_GBK);
-        if (betaMd5Gbk == null || !betaMd5Gbk.equals(md5Gbk) || !CollectionUtils.isListEqual(ips4Beta,
-                cache.ips4Beta)) {
-            cache.isBeta = true;
-            cache.ips4Beta = ips4Beta;
-            cache.getConfigCacheBeta().setMd5Gbk(md5Gbk);
-            cache.getConfigCacheBeta().setMd5UTF8(md5UTF8);
-            cache.getConfigCacheBeta().setLastModifiedTs(lastModifiedTs);
-            cache.getConfigCacheBeta().setEncryptedDataKey(encryptedDataKey4Beta);
-            NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, ips4Beta));
-        }
     }
     
     public static void updateBetaIpList(String groupKey, List<String> ips4Beta, long lastModifiedTs) {
