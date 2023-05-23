@@ -55,6 +55,8 @@ public class NamespaceController {
     private NamespaceOperationService namespaceOperationService;
     
     private final Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
+
+    private final Pattern namespaceNameCheckPattern = Pattern.compile("^[^@#$%^&*]+$");
     
     private static final int NAMESPACE_ID_MAX_LENGTH = 128;
     
@@ -101,6 +103,14 @@ public class NamespaceController {
             if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
                 return false;
             }
+            // check unique
+            if (namespacePersistService.tenantInfoCountByTenantId(namespaceId) > 0) {
+                return false;
+            }
+        }
+        // contains illegal chars
+        if (!namespaceNameCheckPattern.matcher(namespaceName).matches()) {
+            return false;
         }
         try {
             return namespaceOperationService.createNamespace(namespaceId, namespaceName, namespaceDesc);
@@ -136,6 +146,10 @@ public class NamespaceController {
     public Boolean editNamespace(@RequestParam("namespace") String namespace,
             @RequestParam("namespaceShowName") String namespaceShowName,
             @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
+        // contains illegal chars
+        if (!namespaceNameCheckPattern.matcher(namespaceShowName).matches()) {
+            return false;
+        }
         return namespaceOperationService.editNamespace(namespace, namespaceShowName, namespaceDesc);
     }
     
