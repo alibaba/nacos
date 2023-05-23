@@ -37,7 +37,7 @@ public class HessianSerializer implements Serializer {
     
     private static final String NAME = "Hessian";
     
-    private SerializerFactory serializerFactory = new SerializerFactory();
+    private SerializerFactory serializerFactory = new NacosHessianSerializerFactory();
     
     public HessianSerializer() {
     }
