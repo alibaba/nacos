@@ -241,7 +241,7 @@ public class ConfigServletInnerTest {
         Map<String, String> tagMd5 = new HashMap<>();
         tagMd5.put("auto-tag-test", "auto-tag-test");
         cacheItem.initConfigTagsIfEmpty("auto-tag-test");
-        cacheItem.getConfigCacheTags().get("auto-tag-test").setMd5UTF8("auto-tag-test");
+        cacheItem.getConfigCacheTags().get("auto-tag-test").setMd5Utf8("auto-tag-test");
         request.addHeader("Vipserver-Tag", "auto-tag-test");
         configInfoTagWrapper.setContent("auto tag mode and direct read is true");
         when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(),

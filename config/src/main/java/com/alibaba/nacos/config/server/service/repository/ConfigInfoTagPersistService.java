@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service.repository;
 
-
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
@@ -27,7 +26,6 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.util.List;
-
 
 /**
  * Database service, providing access to config_info_tag in the database.
@@ -50,10 +48,11 @@ public interface ConfigInfoTagPersistService {
     /**
      * get config info state.
      *
-     * @param dataId
-     * @param group
-     * @param tenant
-     * @return
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param tag    tag.
+     * @return config info state.
      */
     ConfigInfoStateWrapper findConfigInfo4TagState(final String dataId, final String group, final String tenant,
             String tag);
@@ -65,6 +64,7 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
+     * @return config operation result.
      */
     ConfigOperateResult addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
     
@@ -75,6 +75,7 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
+     * @return config operation result.
      */
     ConfigOperateResult insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser);
@@ -82,11 +83,11 @@ public interface ConfigInfoTagPersistService {
     /**
      * insert or update tag config cas.
      *
-     * @param configInfo config info
-     * @param tag        tag
-     * @param srcIp      remote ip
-     * @param srcUser    user
-     * @return success or not.
+     * @param configInfo config info.
+     * @param tag        tag.
+     * @param srcIp      remote ip.
+     * @param srcUser    user.
+     * @return config operation result.
      */
     ConfigOperateResult insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser);
@@ -113,6 +114,7 @@ public interface ConfigInfoTagPersistService {
      * @param tag        tag
      * @param srcIp      remote ip
      * @param srcUser    user
+     * @return config operation result.
      */
     ConfigOperateResult updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
     
@@ -159,9 +161,9 @@ public interface ConfigInfoTagPersistService {
     /**
      * found all config tags.
      *
-     * @param dataId
-     * @param group
-     * @param tenant
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
      * @return
      */
     List<String> findConfigInfoTags(final String dataId, final String group, final String tenant);

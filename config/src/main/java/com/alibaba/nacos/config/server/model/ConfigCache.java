@@ -24,23 +24,28 @@ import java.io.Serializable;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
+ * config cache .
  *
+ * @author shiyiyue1102
  */
 public class ConfigCache implements Serializable {
     
     volatile String md5Gbk = Constants.NULL;
     
-    volatile String md5UTF8 = Constants.NULL;
+    volatile String md5Utf8 = Constants.NULL;
     
     volatile String encryptedDataKey;
     
     volatile long lastModifiedTs;
     
+    /**
+     * clear cache.
+     */
     public void clear() {
         this.md5Gbk = Constants.NULL;
-        this.md5UTF8 = Constants.NULL;
+        this.md5Utf8 = Constants.NULL;
         this.encryptedDataKey = null;
-        this.lastModifiedTs = -1l;
+        this.lastModifiedTs = -1L;
     }
     
     public ConfigCache() {
@@ -48,7 +53,7 @@ public class ConfigCache implements Serializable {
     
     public String getMd5(String encode) {
         if (UTF_8.name().equalsIgnoreCase(encode)) {
-            return md5UTF8;
+            return md5Utf8;
         } else {
             return md5Gbk;
         }
@@ -62,9 +67,9 @@ public class ConfigCache implements Serializable {
         this.encryptedDataKey = encryptedDataKey;
     }
     
-    public ConfigCache(String md5Gbk, String md5UTF8, long lastModifiedTs) {
+    public ConfigCache(String md5Gbk, String md5Utf8, long lastModifiedTs) {
         this.md5Gbk = StringPool.get(md5Gbk);
-        this.md5UTF8 = StringPool.get(md5UTF8);
+        this.md5Utf8 = StringPool.get(md5Utf8);
         this.lastModifiedTs = lastModifiedTs;
     }
     
@@ -76,12 +81,12 @@ public class ConfigCache implements Serializable {
         this.md5Gbk = StringPool.get(md5Gbk);
     }
     
-    public String getMd5UTF8() {
-        return md5UTF8;
+    public String getMd5Utf8() {
+        return md5Utf8;
     }
     
-    public void setMd5UTF8(String md5UTF8) {
-        this.md5UTF8 = StringPool.get(md5UTF8);
+    public void setMd5Utf8(String md5Utf8) {
+        this.md5Utf8 = StringPool.get(md5Utf8);
     }
     
     public long getLastModifiedTs() {

@@ -25,7 +25,6 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  */
 public class DumpTask extends AbstractDelayTask {
     
-    
     public DumpTask(String groupKey, boolean isBeta, boolean isBatch, boolean isTag, String tag, long lastModified,
             String handleIp) {
         this.groupKey = groupKey;
@@ -38,11 +37,11 @@ public class DumpTask extends AbstractDelayTask {
             this.tag = null;
         }
         this.isBatch = isBatch;
-        /**
-         * retry interval: 1s
-         */
+        
+        //retry interval: 1s
         setTaskInterval(1000L);
     }
+    
     @Override
     public void merge(AbstractDelayTask task) {
     }

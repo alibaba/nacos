@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.model;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.core.utils.StringPool;
 
@@ -84,6 +83,9 @@ public class CacheItem {
         this.isBeta = isBeta;
     }
     
+    /**
+     * remove beta.
+     */
     public void removeBeta() {
         this.isBeta = false;
         this.ips4Beta = null;
@@ -118,6 +120,9 @@ public class CacheItem {
         return groupKey;
     }
     
+    /**
+     * init beta cache if empty.
+     */
     public void initBetaCacheIfEmpty() {
         if (this.configCacheBeta == null) {
             this.configCacheBeta = new ConfigCache();
@@ -127,10 +132,18 @@ public class CacheItem {
         }
     }
     
+    /**
+     * get config cache beta.
+     *
+     * @return
+     */
     public ConfigCache getConfigCacheBeta() {
         return configCacheBeta;
     }
     
+    /**
+     * init batch cache if empty.
+     */
     public void initBatchCacheIfEmpty() {
         if (this.configCacheBatch == null) {
             this.configCacheBatch = new ConfigCache();
@@ -141,16 +154,28 @@ public class CacheItem {
         return configCacheBatch;
     }
     
+    /**
+     * remove batch.
+     */
     public void removeBatch() {
         this.configCacheBatch = null;
+        this.isBatch = false;
     }
     
+    /**
+     * init config tags if empty.
+     */
     public void initConfigTagsIfEmpty() {
         if (this.getConfigCacheTags() == null) {
-            this.configCacheTags = new HashMap<>();
+            this.configCacheTags = new HashMap<>(16);
         }
     }
     
+    /**
+     * init config tag if empty.
+     *
+     * @param tag tag.
+     */
     public void initConfigTagsIfEmpty(String tag) {
         initConfigTagsIfEmpty();
         if (!this.configCacheTags.containsKey(tag)) {

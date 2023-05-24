@@ -290,8 +290,9 @@ public class Constants {
     
     public static final String CONFIG_SEARCH_ACCURATE = "accurate";
     
-    
-    // Nacos默认的编码
+    /**
+     * default nacos encode.
+     */
     public static final String DEFAULT_NACOS_ENCODE = "UTF-8";
     
     public static final String NACOS_PERSIST_ENCODE_KEY = "nacosPersistEncodingKey";

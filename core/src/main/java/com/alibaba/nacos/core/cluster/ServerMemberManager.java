@@ -139,7 +139,6 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
     
     private volatile long memberReportTs = System.currentTimeMillis();
     
-    
     /**
      * here is always the node information of the "UP" state.
      */
@@ -546,12 +545,14 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         
         private ClusterRpcClientProxy clusterRpcClientProxy;
         
+        public static final long REPORT_INTERVAL = 50000L;
+        
         @Override
         protected void executeBody() {
             List<Member> members = ServerMemberManager.this.allMembersWithoutSelf();
             
             //report member count per 50 seconds.
-            if (System.currentTimeMillis() - memberReportTs > 50000L) {
+            if (System.currentTimeMillis() - memberReportTs > REPORT_INTERVAL) {
                 Loggers.CLUSTER.info("[serverlist] membercount={}", members.size() + 1);
                 memberReportTs = System.currentTimeMillis();
             }

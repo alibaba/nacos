@@ -34,7 +34,9 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ConfigTraceService {
     
-    //persist event
+    /**
+     * persist event.
+     */
     public static final String PERSISTENCE_EVENT = "persist";
     
     public static final String PERSISTENCE_EVENT_BETA = "persist-beta";
@@ -43,14 +45,18 @@ public class ConfigTraceService {
     
     public static final String PERSISTENCE_EVENT_TAG = "persist-tag";
     
-    //persist type
+    /**
+     * persist type.
+     */
     public static final String PERSISTENCE_TYPE_PUB = "pub";
     
     public static final String PERSISTENCE_TYPE_REMOVE = "remove";
     
     public static final String PERSISTENCE_TYPE_MERGE = "merge";
     
-    //notify event
+    /**
+     * notify event.
+     */
     public static final String NOTIFY_EVENT = "notify";
     
     public static final String NOTIFY_EVENT_BETA = "notify-beta";
@@ -59,7 +65,9 @@ public class ConfigTraceService {
     
     public static final String NOTIFY_EVENT_TAG = "notify-tag";
     
-    //notify type
+    /**
+     * notify type.
+     */
     public static final String NOTIFY_TYPE_OK = "ok";
     
     public static final String NOTIFY_TYPE_ERROR = "error";
@@ -68,7 +76,9 @@ public class ConfigTraceService {
     
     public static final String NOTIFY_TYPE_EXCEPTION = "exception";
     
-    //dump event
+    /**
+     * dump event.
+     */
     public static final String DUMP_EVENT = "dump";
     
     public static final String DUMP_EVENT_BETA = "dump-beta";
@@ -77,14 +87,18 @@ public class ConfigTraceService {
     
     public static final String DUMP_EVENT_TAG = "dump-tag";
     
-    //dump type
+    /**
+     * dump type.
+     */
     public static final String DUMP_TYPE_OK = "ok";
     
     public static final String DUMP_TYPE_REMOVE_OK = "remove-ok";
     
     public static final String DUMP_TYPE_ERROR = "error";
     
-    //pull event
+    /**
+     * pull event.
+     */
     public static final String PULL_EVENT = "pull";
     
     public static final String PULL_EVENT_BETA = "pull-beta";
@@ -93,7 +107,9 @@ public class ConfigTraceService {
     
     public static final String PULL_EVENT_TAG = "pull-tag";
     
-    //pull type
+    /**
+     * pull type.
+     */
     public static final String PULL_TYPE_OK = "ok";
     
     public static final String PULL_TYPE_NOTFOUND = "not-found";
@@ -130,7 +146,6 @@ public class ConfigTraceService {
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, handleIp, event, type, -1, md5);
     }
-    
     
     /**
      * log notify event.
@@ -242,9 +257,8 @@ public class ConfigTraceService {
             tenant = null;
         }
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1]
-        LogUtil.TRACE_LOG
-                .info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant, requestIpAppName,
-                        ts, handleIp, "dump-all", type, -1);
+        LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
+                requestIpAppName, ts, handleIp, "dump-all", type, -1);
     }
     
     /**

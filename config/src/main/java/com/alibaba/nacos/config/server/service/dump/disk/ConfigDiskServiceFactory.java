@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.service.dump.disk;
 
 /**
+ * config disk serve factory.
+ *
  * @author zunfei.lzf
  */
 public class ConfigDiskServiceFactory {

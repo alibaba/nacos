@@ -333,7 +333,6 @@ public final class CollectionUtils {
         return flag1 && flag2;
     }
     
-    
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private static <T> String buildExceptionMessage(Iterator<T> iterator, T first) {
         StringBuilder msg = new StringBuilder();

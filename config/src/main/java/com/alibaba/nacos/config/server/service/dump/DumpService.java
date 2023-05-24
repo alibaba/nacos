@@ -393,6 +393,15 @@ public abstract class DumpService {
         return retentionDays;
     }
     
+    /**
+     * dump formal config.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
+     */
     public void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = dataId + group + tenant;
@@ -401,6 +410,15 @@ public abstract class DumpService {
         
     }
     
+    /**
+     * dump beta.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
+     */
     public void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = dataId + group + tenant + "+beta";
@@ -409,6 +427,15 @@ public abstract class DumpService {
         
     }
     
+    /**
+     * dump batch.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
+     */
     public void dumpBatch(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = groupKey + "+batch";
@@ -416,6 +443,16 @@ public abstract class DumpService {
         DUMP_LOG.info("[dump] add batch task. groupKey={}", dataId + "+" + group);
     }
     
+    /**
+     * dump tag.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param tag          tag.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
+     */
     public void dumpTag(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = groupKey + "+tag+" + tag;

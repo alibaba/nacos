@@ -35,9 +35,9 @@ public class LocalDataChangeEvent extends Event {
     
     public final String tag;
     
-    final public boolean isBatch;
+    public final boolean isBatch;
     
-    final public int delimiter;
+    public final int delimiter;
     
     public LocalDataChangeEvent(String groupKey) {
         this.groupKey = groupKey;

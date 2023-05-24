@@ -71,6 +71,7 @@ public interface ConfigInfoPersistService {
      * @param srcUser           user
      * @param configInfo        config info
      * @param configAdvanceInfo advance info
+     * @return config operation result.
      */
     ConfigOperateResult addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
             final Map<String, Object> configAdvanceInfo);
@@ -82,6 +83,7 @@ public interface ConfigInfoPersistService {
      * @param srcUser           user
      * @param configInfo        config info
      * @param configAdvanceInfo advance info
+     * @return config operation result.
      */
     ConfigOperateResult insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo);
@@ -108,8 +110,8 @@ public interface ConfigInfoPersistService {
      * @param configAdvanceInfo advance info
      * @return execute sql result
      */
-    long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser,
-            final ConfigInfo configInfo, Map<String, Object> configAdvanceInfo);
+    long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
+            Map<String, Object> configAdvanceInfo);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -147,8 +149,7 @@ public interface ConfigInfoPersistService {
      * @throws NacosException nacos exception
      */
     Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
-            Map<String, Object> configAdvanceInfo, SameConfigPolicy policy)
-            throws NacosException;
+            Map<String, Object> configAdvanceInfo, SameConfigPolicy policy) throws NacosException;
     
     //------------------------------------------delete---------------------------------------------//
     
@@ -210,6 +211,7 @@ public interface ConfigInfoPersistService {
      * @param srcIp             remote ip
      * @param srcUser           user
      * @param configAdvanceInfo advance info
+     * @return config operation result.
      */
     ConfigOperateResult updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Map<String, Object> configAdvanceInfo);
@@ -221,7 +223,7 @@ public interface ConfigInfoPersistService {
      * @param srcIp             remote ip
      * @param srcUser           user
      * @param configAdvanceInfo advance info
-     * @return success or not.
+     * @return config operation result.
      */
     ConfigOperateResult updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Map<String, Object> configAdvanceInfo);
@@ -543,10 +545,10 @@ public interface ConfigInfoPersistService {
     /**
      * get config info state.
      *
-     * @param dataId
-     * @param group
-     * @param tenant
-     * @return
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @return config info state.
      */
     ConfigInfoStateWrapper findConfigInfoState(final String dataId, final String group, final String tenant);
     

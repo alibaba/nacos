@@ -31,8 +31,11 @@ import java.io.IOException;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 
 /**
- * zunfei.lzf
+ * config raw disk service.
+ *
+ * @author zunfei.lzf
  */
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class ConfigRawDiskService implements ConfigDiskService {
     
     private static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
@@ -130,7 +133,7 @@ public class ConfigRawDiskService implements ConfigDiskService {
     }
     
     /**
-     * 保存配置信息到磁盘
+     * save batch to disk.
      */
     public void saveBatchToDisk(String dataId, String group, String tenant, String content) throws IOException {
         File targetFile = targetBatchFile(dataId, group, tenant);
@@ -161,7 +164,7 @@ public class ConfigRawDiskService implements ConfigDiskService {
     }
     
     /**
-     * 删除磁盘上的配置文件
+     * remove config for batch.
      */
     public void removeConfigInfo4Batch(String dataId, String group, String tenant) {
         FileUtils.deleteQuietly(targetBatchFile(dataId, group, tenant));
@@ -222,7 +225,6 @@ public class ConfigRawDiskService implements ConfigDiskService {
         return MD5Utils.md5Hex(content, encode);
     }
     
-    
     /**
      * Clear all config file.
      */
@@ -278,7 +280,9 @@ public class ConfigRawDiskService implements ConfigDiskService {
         }
     }
     
-    
+    /**
+     * clear all batch.
+     */
     public void clearAllBatch() {
         File file = new File(EnvUtil.getNacosHome(), BATCH_DIR);
         if (!file.exists() || FileUtils.deleteQuietly(file)) {

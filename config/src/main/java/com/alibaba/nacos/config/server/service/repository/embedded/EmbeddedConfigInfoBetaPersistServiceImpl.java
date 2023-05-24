@@ -19,23 +19,23 @@ package com.alibaba.nacos.config.server.service.repository.embedded;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
-import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -50,7 +50,6 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
@@ -128,7 +127,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             final String sql = configInfoBetaMapper.insert(
                     Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
@@ -207,7 +206,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             final String sql = configInfoBetaMapper.update(
                     Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
                             "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
@@ -220,14 +219,15 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             
             databaseOperate.blockUpdate();
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-    
+            
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
     @Override
-    public ConfigOperateResult updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser) {
+    public ConfigOperateResult updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp,
+            String srcUser) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         
@@ -237,7 +237,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
@@ -259,13 +259,14 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             
             EmbeddedStorageContextUtils.onModifyConfigBetaInfo(configInfo, betaIps, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
-    
+            
             boolean success = databaseOperate.blockUpdate();
             if (success) {
                 return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             } else {
                 return new ConfigOperateResult(false);
-            }        } finally {
+            }
+        } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
     }

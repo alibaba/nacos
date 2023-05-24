@@ -22,9 +22,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
@@ -32,22 +29,25 @@ import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -68,7 +68,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,8 +83,8 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_KEY_ROW_MAPPER;
-import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
 
 /**
  * EmbeddedConfigInfoPersistServiceImpl.
@@ -220,7 +219,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
-            Timestamp now = new Timestamp(new Date().getTime());
+            Timestamp now = new Timestamp(System.currentTimeMillis());
             
             historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I");
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
@@ -269,7 +268,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-        Timestamp time = new Timestamp(new Date().getTime());
+        Timestamp time = new Timestamp(System.currentTimeMillis());
         
         final String sql = configInfoMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
@@ -525,7 +524,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         configInfo.getTenant());
             }
             
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                     srcUser, time, "U");
@@ -567,7 +566,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
             }
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                     srcUser, time, "U");
@@ -599,7 +598,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-        Timestamp time = new Timestamp(new Date().getTime());
+        Timestamp time = new Timestamp(System.currentTimeMillis());
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
         context.putUpdateParameter(FieldConstant.MD5, md5Tmp);
@@ -646,7 +645,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use",
                         "effect", "type", "c_schema", "encrypted_data_key"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        Timestamp time = new Timestamp(new Date().getTime());
+        Timestamp time = new Timestamp(System.currentTimeMillis());
         
         final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc,
                 use, effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};

@@ -254,8 +254,8 @@ public class ConfigCacheService {
                         new Object[] {groupKey, md5, localContentBetaMd5, lastModifiedTs});
                 updateBetaMd5(groupKey, md5, betaIpList, lastModifiedTs, encryptedDataKey);
             } else if (ipListChanged) {
-                DUMP_LOG.warn(
-                        "[dump-beta] ip list changed, update ip list & timestamp in jvm cache. groupKey={}, newIpList={}, oldIpList={}，lastModifiedTs={}",
+                DUMP_LOG.warn("[dump-beta] ip list changed, update ip list & timestamp in jvm cache. groupKey={},"
+                                + " newIpList={}, oldIpList={}，lastModifiedTs={}",
                         new Object[] {groupKey, betaIpList, ConfigCacheService.getBetaIps(groupKey), lastModifiedTs});
                 updateBetaIpList(groupKey, betaIpList, lastModifiedTs);
             } else if (timestampUpdated) {
@@ -288,7 +288,7 @@ public class ConfigCacheService {
      * @param tag            tag string value.
      * @return dumpChange success or not.
      */
-    static public boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
+    public static boolean dumpTag(String dataId, String group, String tenant, String tag, String content,
             long lastModifiedTs, String encryptedDataKey4Tag) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
@@ -328,14 +328,15 @@ public class ConfigCacheService {
             }
             
             if (md5Changed) {
-                String md5UTF8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
+                String md5Utf8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
                 DUMP_LOG.warn(
                         "[dump-tag] md5 changed, update local jvm cache, groupKey={},tag={}, md5UTF8={},oldMd5={},lastModifiedTs={}",
-                        new Object[] {groupKey, tag, md5UTF8, localContentTagMd5, lastModifiedTs});
-                updateTagMd5(groupKey, tag, md5UTF8, lastModifiedTs, encryptedDataKey4Tag);
+                        new Object[] {groupKey, tag, md5Utf8, localContentTagMd5, lastModifiedTs});
+                updateTagMd5(groupKey, tag, md5Utf8, lastModifiedTs, encryptedDataKey4Tag);
             } else if (timestampChanged) {
                 DUMP_LOG.warn(
-                        "[dump-tag] timestamp changed, update last modified in local jvm cache, groupKey={},tag={},tagLastModifiedTs={},oldTagLastModifiedTs={}",
+                        "[dump-tag] timestamp changed, update last modified in local jvm cache, groupKey={},tag={},"
+                                + "tagLastModifiedTs={},oldTagLastModifiedTs={}",
                         new Object[] {groupKey, tag, lastModifiedTs, localTagLastModifiedTs});
                 updateTagTimeStamp(groupKey, tag, lastModifiedTs);
                 
@@ -354,7 +355,7 @@ public class ConfigCacheService {
     /**
      * 保存配置文件，并缓存md5.
      */
-    static public boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs,
+    public static boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs,
             String encryptedDataKey) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         
@@ -379,7 +380,7 @@ public class ConfigCacheService {
             boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
             
             String md5Gbk = MD5Utils.md5Hex(content, ENCODE_GBK);
-            String md5UTF8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
+            String md5Utf8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
             
             //check md5 & update local disk cache.
             String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
@@ -401,12 +402,12 @@ public class ConfigCacheService {
             if (md5Changed) {
                 DUMP_LOG.info(
                         "[dump-change] md5 changed, update md5 and timestamp in jvm cache ,groupKey={},newMd5UTF8={},oldMd5={},lastModifiedTs={}",
-                        groupKey, md5UTF8, localContentMd5, lastModifiedTs);
-                updateMd5(groupKey, md5UTF8, lastModifiedTs, encryptedDataKey);
+                        groupKey, md5Utf8, localContentMd5, lastModifiedTs);
+                updateMd5(groupKey, md5Utf8, lastModifiedTs, encryptedDataKey);
             } else if (newLastModified) {
                 DUMP_LOG.info(
                         "[dump-change] md5 consistent ,timestamp changed, update timestamp only in jvm cache ,groupKey={}, md5={},lastModifiedTs={}",
-                        groupKey, md5UTF8, lastModifiedTs);
+                        groupKey, md5Utf8, lastModifiedTs);
                 updateTimeStamp(groupKey, lastModifiedTs, encryptedDataKey);
             } else {
                 DUMP_LOG.warn(
@@ -593,7 +594,6 @@ public class ConfigCacheService {
         }
     }
     
-    
     /**
      * Delete tag config file, and delete cache.
      *
@@ -646,13 +646,13 @@ public class ConfigCacheService {
      * Update md5 value.
      *
      * @param groupKey       groupKey string value.
-     * @param md5UTF8        md5 string value.
+     * @param md5Utf8        md5 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateMd5(String groupKey, String md5UTF8, long lastModifiedTs, String encryptedDataKey) {
+    public static void updateMd5(String groupKey, String md5Utf8, long lastModifiedTs, String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey);
-        if (cache.getConfigCache().getMd5UTF8() == null || !cache.getConfigCache().getMd5UTF8().equals(md5UTF8)) {
-            cache.getConfigCache().setMd5UTF8(md5UTF8);
+        if (cache.getConfigCache().getMd5Utf8() == null || !cache.getConfigCache().getMd5Utf8().equals(md5Utf8)) {
+            cache.getConfigCache().setMd5Utf8(md5Utf8);
             cache.getConfigCache().setLastModifiedTs(lastModifiedTs);
             cache.getConfigCache().setEncryptedDataKey(encryptedDataKey);
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey));
@@ -663,20 +663,20 @@ public class ConfigCacheService {
      * Update Beta md5 value.
      *
      * @param groupKey       groupKey string value.
-     * @param md5UTF8        md5UTF8 string value.
+     * @param md5Utf8        md5UTF8 string value.
      * @param ips4Beta       ips4Beta List.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateBetaMd5(String groupKey, String md5UTF8, List<String> ips4Beta, long lastModifiedTs,
+    public static void updateBetaMd5(String groupKey, String md5Utf8, List<String> ips4Beta, long lastModifiedTs,
             String encryptedDataKey4Beta) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
-        String betaMd5UTF8 = cache.getConfigCacheBeta().getMd5(ENCODE_UTF8);
-        if (betaMd5UTF8 == null || !betaMd5UTF8.equals(md5UTF8) || !CollectionUtils.isListEqual(ips4Beta,
+        String betaMd5Utf8 = cache.getConfigCacheBeta().getMd5(ENCODE_UTF8);
+        if (betaMd5Utf8 == null || !betaMd5Utf8.equals(md5Utf8) || !CollectionUtils.isListEqual(ips4Beta,
                 cache.ips4Beta)) {
             cache.isBeta = true;
             cache.ips4Beta = ips4Beta;
-            cache.getConfigCacheBeta().setMd5UTF8(md5UTF8);
+            cache.getConfigCacheBeta().setMd5Utf8(md5Utf8);
             cache.getConfigCacheBeta().setLastModifiedTs(lastModifiedTs);
             cache.getConfigCacheBeta().setEncryptedDataKey(encryptedDataKey4Beta);
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, ips4Beta));
@@ -688,15 +688,15 @@ public class ConfigCacheService {
      *
      * @param groupKey       groupKey string value.
      * @param tag            tag string value.
-     * @param md5UTF8        md5UTF8 string value.
+     * @param md5Utf8        md5UTF8 string value.
      * @param lastModifiedTs lastModifiedTs long value.
      */
-    public static void updateTagMd5(String groupKey, String tag, String md5UTF8, long lastModifiedTs,
+    public static void updateTagMd5(String groupKey, String tag, String md5Utf8, long lastModifiedTs,
             String encryptedDataKey4Tag) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initConfigTagsIfEmpty(tag);
         ConfigCache configCache = cache.getConfigCacheTags().get(tag);
-        configCache.setMd5UTF8(md5UTF8);
+        configCache.setMd5Utf8(md5Utf8);
         configCache.setLastModifiedTs(lastModifiedTs);
         configCache.setEncryptedDataKey(encryptedDataKey4Tag);
         NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, tag));
@@ -767,19 +767,18 @@ public class ConfigCacheService {
         return (null != item) ? item.getIps4Beta() : Collections.<String>emptyList();
     }
     
-    
-    static public long getBetaLastModifiedTs(String groupKey) {
+    public static long getBetaLastModifiedTs(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         return (null != item && item.getConfigCacheBeta() != null) ? item.getConfigCacheBeta().getLastModifiedTs() : 0L;
     }
     
-    static public long getBatchLastModifiedTs(String groupKey) {
+    public static long getBatchLastModifiedTs(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         return (null != item && item.getConfigCacheBatch() != null) ? item.getConfigCacheBatch().getLastModifiedTs()
                 : 0L;
     }
     
-    static public long getTagLastModifiedTs(String groupKey, String tag) {
+    public static long getTagLastModifiedTs(String groupKey, String tag) {
         CacheItem item = CACHE.get(groupKey);
         if (item.getConfigCacheTags() == null || !item.getConfigCacheTags().containsKey(tag)) {
             return 0;
@@ -804,6 +803,13 @@ public class ConfigCacheService {
         return (null != item) ? item.getConfigCache().getLastModifiedTs() : 0L;
     }
     
+    /**
+     * update tag timestamp.
+     *
+     * @param groupKey       groupKey.
+     * @param tag            tag.
+     * @param lastModifiedTs lastModifiedTs.
+     */
     public static void updateTagTimeStamp(String groupKey, String tag, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initConfigTagsIfEmpty(tag);
@@ -882,11 +888,25 @@ public class ConfigCacheService {
         return (null == item) ? tmp : item;
     }
     
+    /**
+     * update time stamp.
+     *
+     * @param groupKey         groupKey.
+     * @param lastModifiedTs   lastModifiedTs.
+     * @param encryptedDataKey encryptedDataKey.
+     */
     public static void updateTimeStamp(String groupKey, long lastModifiedTs, String encryptedDataKey) {
         CacheItem cache = makeSure(groupKey, encryptedDataKey);
         cache.getConfigCache().setLastModifiedTs(lastModifiedTs);
     }
     
+    /**
+     * update beta ip list.
+     *
+     * @param groupKey       groupKey.
+     * @param ips4Beta       ips4Beta.
+     * @param lastModifiedTs lastModifiedTs.
+     */
     public static void updateBetaIpList(String groupKey, List<String> ips4Beta, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
@@ -897,6 +917,12 @@ public class ConfigCacheService {
         
     }
     
+    /**
+     * update beta lastModifiedTs.
+     *
+     * @param groupKey       groupKey.
+     * @param lastModifiedTs lastModifiedTs.
+     */
     public static void updateBetaTimeStamp(String groupKey, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();

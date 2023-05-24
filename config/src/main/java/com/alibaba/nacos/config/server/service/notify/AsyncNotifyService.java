@@ -72,11 +72,11 @@ public class AsyncNotifyService {
     
     private ServerMemberManager memberManager;
     
-    static final List<NodeState> healthyCheckStatus = new ArrayList<>();
+    static final List<NodeState> HEALTHY_CHECK_STATUS = new ArrayList<>();
     
     static {
-        healthyCheckStatus.add(NodeState.UP);
-        healthyCheckStatus.add(NodeState.SUSPICIOUS);
+        HEALTHY_CHECK_STATUS.add(NodeState.UP);
+        HEALTHY_CHECK_STATUS.add(NodeState.SUSPICIOUS);
     }
     
     @Autowired
@@ -127,7 +127,7 @@ public class AsyncNotifyService {
     }
     
     private boolean isUnHealthy(String targetIp) {
-        return !memberManager.stateCheck(targetIp, healthyCheckStatus);
+        return !memberManager.stateCheck(targetIp, HEALTHY_CHECK_STATUS);
     }
     
     class AsyncRpcTask implements Runnable {
@@ -259,7 +259,6 @@ public class AsyncNotifyService {
         AsyncRpcTask asyncTask = new AsyncRpcTask(queue);
         ConfigExecutor.scheduleAsyncNotify(asyncTask, delay, TimeUnit.MILLISECONDS);
     }
-    
     
     private String getNotifyEvent(NotifySingleRpcTask task) {
         String event = ConfigTraceService.NOTIFY_EVENT;

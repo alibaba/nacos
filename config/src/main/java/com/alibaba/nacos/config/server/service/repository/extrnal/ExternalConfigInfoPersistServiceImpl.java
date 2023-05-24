@@ -20,26 +20,26 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
@@ -77,7 +77,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -162,7 +161,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                 addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
-                Timestamp now = new Timestamp(new Date().getTime());
+                Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, now, "I");
                 ConfigInfoStateWrapper configInfoCurrent = this.findConfigInfoState(configInfo.getDataId(),
@@ -179,6 +178,15 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         });
     }
     
+    /**
+     * insert or update config.
+     *
+     * @param srcIp             remote ip
+     * @param srcUser           user
+     * @param configInfo        config info
+     * @param configAdvanceInfo advance info
+     * @return
+     */
     public ConfigOperateResult insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo) {
         try {
@@ -197,7 +205,6 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
         }
     }
-    
     
     @Override
     public long addConfigInfoAtomic(final long configId, final String srcIp, final String srcUser,
@@ -230,7 +237,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             jt.update(new PreparedStatementCreator() {
                 @Override
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    Timestamp now = new Timestamp(new Date().getTime());
+                    Timestamp now = new Timestamp(System.currentTimeMillis());
                     
                     PreparedStatement ps = connection.prepareStatement(sql, returnGeneratedKeys);
                     ps.setString(1, configInfo.getDataId());
@@ -509,7 +516,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant());
                 }
-                Timestamp now = new Timestamp(new Date().getTime());
+                Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                         srcUser, now, "U");
@@ -564,7 +571,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant());
                 }
-                Timestamp now = new Timestamp(new Date().getTime());
+                Timestamp now = new Timestamp(System.currentTimeMillis());
                 
                 historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                         srcUser, now, "U");
@@ -595,7 +602,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
-            Timestamp now = new Timestamp(new Date().getTime());
+            Timestamp now = new Timestamp(System.currentTimeMillis());
             
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
@@ -640,7 +647,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
-            Timestamp now = new Timestamp(new Date().getTime());
+            Timestamp now = new Timestamp(System.currentTimeMillis());
             
             jt.update(configInfoMapper.update(
                             Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use",

@@ -35,8 +35,11 @@ import java.util.Map;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 
 /**
- * zunfei.lzf
+ * config rocks db disk service.
+ *
+ * @author shiyiyue
  */
+@SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     private static final String ROCKSDB_DATA = File.separator + "rocksdata" + File.separator;
@@ -51,7 +54,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     private static final long DEFAULT_WRITE_BUFFER_MB = 32;
     
-    Map<String, RocksDB> rocksDBMap = new HashMap<>();
+    Map<String, RocksDB> rocksDbMap = new HashMap<>();
     
     private void createDirIfNotExist(String dir) {
         File roskDataDir = new File(EnvUtil.getNacosHome(), "rocksdata");
@@ -112,7 +115,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * 保存配置信息到磁盘
+     * save config to disk.
      */
     public void saveToDiskInner(String type, String dataId, String group, String tenant, String tag, String content)
             throws IOException {
@@ -124,7 +127,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * 保存配置信息到磁盘
+     * save config to disk.
      */
     public void saveToDiskInner(String type, String dataId, String group, String tenant, String content)
             throws IOException {
@@ -147,7 +150,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * 保存配置信息到磁盘
+     * Save batch information to disk.
      */
     public void saveBatchToDisk(String dataId, String group, String tenant, String content) throws IOException {
         saveToDiskInner(BATCH_DIR, dataId, group, tenant, content);
@@ -178,7 +181,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * 删除磁盘上的配置文件
+     * Deletes batch configuration files on disk.
      */
     public void removeConfigInfo4Batch(String dataId, String group, String tenant) {
         removeContentInner(BATCH_DIR, dataId, group, tenant, null);
@@ -200,16 +203,16 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     RocksDB initAndGetDB(String dir) throws IOException, RocksDBException {
-        if (rocksDBMap.containsKey(dir)) {
-            return rocksDBMap.get(dir);
+        if (rocksDbMap.containsKey(dir)) {
+            return rocksDbMap.get(dir);
         } else {
             synchronized (this) {
-                if (rocksDBMap.containsKey(dir)) {
-                    return rocksDBMap.get(dir);
+                if (rocksDbMap.containsKey(dir)) {
+                    return rocksDbMap.get(dir);
                 }
                 createDirIfEmpty(EnvUtil.getNacosHome() + dir);
-                rocksDBMap.put(dir, RocksDB.open(createOptions(dir), EnvUtil.getNacosHome() + dir));
-                return rocksDBMap.get(dir);
+                rocksDbMap.put(dir, RocksDB.open(createOptions(dir), EnvUtil.getNacosHome() + dir));
+                return rocksDbMap.get(dir);
             }
             
         }
@@ -248,9 +251,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         try {
             initAndGetDB(type).delete(getKeyByte(dataId, group, tenant, tag));
         } catch (Exception e) {
-            LogUtil.DEFAULT_LOG
-                    .warn("Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId, group,
-                            tenant, e.getCause());
+            LogUtil.DEFAULT_LOG.warn("Remove dir=[{}] config fail,dataId={},group={},tenant={},error={}", type, dataId,
+                    group, tenant, e.getCause());
         }
     }
     
@@ -300,24 +302,25 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
      *
      * @return
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private long getSuitFormalCacheSizeMB(String dir) {
         
         boolean formal = BASE_DIR.equals(dir);
         long maxHeapSizeMB = Runtime.getRuntime().maxMemory() / 1024 / 1024;
         
         if (formal) {
-            long formalWritebufferSizeMB = 0;
+            long formalWriteBufferSizeMB = 0;
             
             if (maxHeapSizeMB < 8 * 1024) {
-                formalWritebufferSizeMB = 32;
+                formalWriteBufferSizeMB = 32;
             } else if (maxHeapSizeMB < 16 * 1024) {
-                formalWritebufferSizeMB = 64;
+                formalWriteBufferSizeMB = 64;
             } else {
-                formalWritebufferSizeMB = 256;
+                formalWriteBufferSizeMB = 256;
             }
             LogUtil.DEFAULT_LOG.info("init formal rocksdb write buffer size {}M for dir {}, maxHeapSize={}M",
-                    formalWritebufferSizeMB, dir, maxHeapSizeMB);
-            return formalWritebufferSizeMB;
+                    formalWriteBufferSizeMB, dir, maxHeapSizeMB);
+            return formalWriteBufferSizeMB;
         } else {
             LogUtil.DEFAULT_LOG.info("init default rocksdb write buffer size {}M for dir {}, maxHeapSize={}M",
                     DEFAULT_WRITE_BUFFER_MB, dir, maxHeapSizeMB);
@@ -331,8 +334,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
      */
     public void clearAll() {
         try {
-            if (rocksDBMap.containsKey(BASE_DIR)) {
-                rocksDBMap.get(BASE_DIR).close();
+            if (rocksDbMap.containsKey(BASE_DIR)) {
+                rocksDbMap.get(BASE_DIR).close();
                 RocksDB.destroyDB(EnvUtil.getNacosHome() + BASE_DIR, new Options());
             }
             deleteDirIfExist(BASE_DIR);
@@ -347,8 +350,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
      */
     public void clearAllBeta() {
         try {
-            if (rocksDBMap.containsKey(BETA_DIR)) {
-                rocksDBMap.get(BETA_DIR).close();
+            if (rocksDbMap.containsKey(BETA_DIR)) {
+                rocksDbMap.get(BETA_DIR).close();
                 RocksDB.destroyDB(EnvUtil.getNacosHome() + BETA_DIR, new Options());
             }
             deleteDirIfExist(BETA_DIR);
@@ -364,8 +367,8 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     public void clearAllTag() {
         
         try {
-            if (rocksDBMap.containsKey(TAG_DIR)) {
-                rocksDBMap.get(TAG_DIR).close();
+            if (rocksDbMap.containsKey(TAG_DIR)) {
+                rocksDbMap.get(TAG_DIR).close();
                 RocksDB.destroyDB(EnvUtil.getNacosHome() + TAG_DIR, new Options());
             }
             deleteDirIfExist(TAG_DIR);
@@ -375,11 +378,13 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    
+    /**
+     * clear all batch.
+     */
     public void clearAllBatch() {
         try {
-            if (rocksDBMap.containsKey(BATCH_DIR)) {
-                rocksDBMap.get(BATCH_DIR).close();
+            if (rocksDbMap.containsKey(BATCH_DIR)) {
+                rocksDbMap.get(BATCH_DIR).close();
                 RocksDB.destroyDB(EnvUtil.getNacosHome() + BATCH_DIR, new Options());
             }
             deleteDirIfExist(BATCH_DIR);

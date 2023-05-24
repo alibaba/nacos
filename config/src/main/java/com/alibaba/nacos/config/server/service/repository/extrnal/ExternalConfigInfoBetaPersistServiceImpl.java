@@ -18,18 +18,18 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
-import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
@@ -49,7 +49,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
@@ -97,7 +96,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             jt.update(configInfoBetaMapper.insert(
                             Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
@@ -163,7 +162,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             jt.update(configInfoBetaMapper.update(
                             Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
@@ -212,7 +211,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(new Date().getTime());
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());

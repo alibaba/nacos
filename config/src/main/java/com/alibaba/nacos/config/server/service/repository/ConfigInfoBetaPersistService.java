@@ -45,10 +45,10 @@ public interface ConfigInfoBetaPersistService {
     /**
      * get config info beta.
      *
-     * @param dataId
-     * @param group
-     * @param tenant
-     * @return
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @return config info state.
      */
     ConfigInfoStateWrapper findConfigInfo4BetaState(final String dataId, final String group, final String tenant);
     
@@ -59,6 +59,7 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
+     * @return config operation result.
      */
     ConfigOperateResult addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser);
     
@@ -69,6 +70,7 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
+     * @return config operation result.
      */
     ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser);
@@ -105,6 +107,7 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
+     * @return config operation result.
      */
     ConfigOperateResult updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser);
     

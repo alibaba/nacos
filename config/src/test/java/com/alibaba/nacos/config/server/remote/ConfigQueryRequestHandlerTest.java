@@ -75,7 +75,7 @@ public class ConfigQueryRequestHandlerTest {
         fileUtilsMockedStatic.when(() -> FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
         when(file.exists()).thenReturn(true);
         CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.getConfigCache().setMd5UTF8("1");
+        cacheItem.getConfigCache().setMd5Utf8("1");
         cacheItem.getConfigCache().setLastModifiedTs(1L);
         
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(Mockito.any()))

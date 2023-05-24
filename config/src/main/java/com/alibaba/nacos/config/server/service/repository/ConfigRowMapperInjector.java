@@ -220,6 +220,7 @@ public class ConfigRowMapperInjector {
             return info;
         }
     }
+    
     public static final class ConfigInfoBetaWrapperRowMapper implements RowMapper<ConfigInfoBetaWrapper> {
         
         @Override
