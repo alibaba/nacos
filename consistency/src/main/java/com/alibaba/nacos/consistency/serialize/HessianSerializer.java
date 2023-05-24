@@ -50,7 +50,12 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public <T> T deserialize(byte[] data, Class<T> cls) {
-        return deserialize(data);
+        T result = deserialize(data);
+        if (cls.isAssignableFrom(result.getClass())) {
+            return result;
+        }
+        throw new NacosDeserializationException(cls, new ClassCastException(
+                "%s cannot be cast to %s".format(result.getClass().getCanonicalName(), cls.getCanonicalName())));
     }
     
     @Override
@@ -62,7 +67,7 @@ public class HessianSerializer implements Serializer {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
-    
+        
         Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
         input.setSerializerFactory(serializerFactory);
         Object resultObject;
@@ -72,11 +77,7 @@ public class HessianSerializer implements Serializer {
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer decode!", e);
         }
-        try {
-            return (T) resultObject;
-        } catch (ClassCastException e) {
-            throw new NacosDeserializationException(e);
-        }
+        return (T) resultObject;
     }
     
     @Override
