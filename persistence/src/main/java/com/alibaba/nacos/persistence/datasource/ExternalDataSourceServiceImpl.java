@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
+import com.alibaba.nacos.persistence.utils.ConnectionCheckUtil;
 import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -133,7 +134,7 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
                     .build(EnvUtil.getEnvironment(), (dataSource) -> {
                         //check datasource connection
-                        checkDataSourceConnection(dataSource);
+                        ConnectionCheckUtil.checkDataSourceConnection(dataSource);
                         
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
@@ -164,27 +165,6 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
         } catch (RuntimeException e) {
             LOGGER.error(DB_LOAD_ERROR_MSG, e);
             throw new IOException(e);
-        }
-    }
-    
-    /**
-     * check HikariDataSource connection ,avoid [no datasource set] text.
-     * @param ds HikariDataSource object
-     */
-    private void checkDataSourceConnection(HikariDataSource ds) {
-        java.sql.Connection connection = null;
-        try {
-            connection = ds.getConnection();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
     
