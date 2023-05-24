@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.consistency.serialize;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.consistency.Serializer;
 import com.caucho.hessian.io.Hessian2Input;
@@ -71,7 +72,11 @@ public class HessianSerializer implements Serializer {
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer decode!", e);
         }
-        return (T) resultObject;
+        try {
+            return (T) resultObject;
+        } catch (ClassCastException e) {
+            throw new NacosDeserializationException(e);
+        }
     }
     
     @Override

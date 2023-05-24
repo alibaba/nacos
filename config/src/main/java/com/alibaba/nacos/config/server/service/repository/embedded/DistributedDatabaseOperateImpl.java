@@ -58,8 +58,8 @@ import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
-import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.protobuf.ByteString;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -390,9 +390,10 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                     if (submit) {
                         List<ModifyRequest> requests = batchUpdate.stream().map(ModifyRequest::new)
                                 .collect(Collectors.toList());
-                        CompletableFuture<Response> future = protocol.writeAsync(WriteRequest.newBuilder().setGroup(group())
-                                .setData(ByteString.copyFrom(serializer.serialize(requests)))
-                                .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
+                        CompletableFuture<Response> future = protocol.writeAsync(
+                                WriteRequest.newBuilder().setGroup(group())
+                                        .setData(ByteString.copyFrom(serializer.serialize(requests)))
+                                        .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
                         futures.add(future);
                         batchUpdate.clear();
                     }
@@ -463,16 +464,14 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
     @SuppressWarnings("all")
     @Override
     public Response onRequest(final ReadRequest request) {
-        final SelectRequest selectRequest = serializer
-                .deserialize(request.getData().toByteArray(), SelectRequest.class);
-        
-        LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "getData info : selectRequest : {}", selectRequest);
-        
-        final RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
-        final byte type = selectRequest.getQueryType();
+        SelectRequest selectRequest = null;
         readLock.lock();
         Object data;
         try {
+            selectRequest = serializer.deserialize(request.getData().toByteArray(), SelectRequest.class);
+            LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "getData info : selectRequest : {}", selectRequest);
+            final RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
+            final byte type = selectRequest.getQueryType();
             switch (type) {
                 case QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS:
                     data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(), mapper);
@@ -515,10 +514,10 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         LoggerUtils.printIfDebugEnabled(LogUtil.DEFAULT_LOG, "onApply info : log : {}", log);
         final ByteString byteString = log.getData();
         Preconditions.checkArgument(byteString != null, "Log.getData() must not null");
-        List<ModifyRequest> sqlContext = serializer.deserialize(byteString.toByteArray(), List.class);
         final Lock lock = readLock;
         lock.lock();
         try {
+            List<ModifyRequest> sqlContext = serializer.deserialize(byteString.toByteArray(), List.class);
             boolean isOk = false;
             if (log.containsExtendInfo(DATA_IMPORT_KEY)) {
                 isOk = doDataImport(jdbcTemplate, sqlContext);
@@ -539,6 +538,9 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } catch (DataAccessException e) {
             throw new ConsistencyException(e.toString());
+        } catch (Exception e) {
+            LoggerUtils.printIfWarnEnabled(LogUtil.DEFAULT_LOG, "onApply warn : log : {}", log, e);
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.toString()).build();
         } finally {
             lock.unlock();
         }
