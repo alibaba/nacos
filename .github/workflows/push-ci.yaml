@@ -143,8 +143,17 @@ jobs:
             nacos:
               replicaCount: 3
               image: 
-                repository: nacos/nacos-server
-                tag: latest
+                repository: ${{ env.DOCKER_REPO }}
+                tag: ${{ matrix.version }}
+              storage:
+                type: mysql
+                db:
+                  host: localhost
+                  name: nacos
+                  port: 3306
+                  username: usernmae
+                  password: password
+                  param: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
             service:
               nodePort: ${{ env.NODE_PORT }}
               type: ClusterIP
