@@ -29,6 +29,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-client ${project.version}</name>
+    <description>Nacos client module.</description>
     <url>http://nacos.io</url>
     
     <properties>

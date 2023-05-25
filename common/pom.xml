@@ -30,6 +30,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-common ${project.version}</name>
+    <description>Nacos common module.</description>
     <url>http://nacos.io</url>
     
     <properties>

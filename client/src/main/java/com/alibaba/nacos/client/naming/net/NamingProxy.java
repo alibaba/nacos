@@ -134,6 +134,7 @@ public class NamingProxy implements Closeable {
             }
         }
         this.initRefreshTask();
+        injectRoleName();
     }
     
     private void initRefreshTask() {
@@ -644,7 +645,6 @@ public class NamingProxy implements Closeable {
         }
         try {
             // Inject ak/sk if exist:
-            injectRoleName();
             String ak = getAccessKey();
             String sk = getSecretKey();
             params.put("app", AppNameUtils.getAppName());
@@ -740,8 +740,10 @@ public class NamingProxy implements Closeable {
         if (null != StsConfig.getInstance().getRamRoleName()) {
             return;
         }
-        String roleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME, "");
-        StsConfig.getInstance().setRamRoleName(roleName);
+        String roleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
+        if (StringUtils.isNotEmpty(roleName)) {
+            StsConfig.getInstance().setRamRoleName(roleName);
+        }
     }
     
     public String getAccessKey() {
