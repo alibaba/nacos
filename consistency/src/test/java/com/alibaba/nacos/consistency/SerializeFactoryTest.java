@@ -68,7 +68,7 @@ public class SerializeFactoryTest {
         
         byte[] data = serializer.serialize(logsMap);
         Assert.assertNotEquals(0, data.length);
-        Set<Integer> result = serializer.deserialize(data, HashSet.class);
+        Set<Integer> result = serializer.deserialize(data, CopyOnWriteArraySet.class);
         System.out.println(result);
     }
     
