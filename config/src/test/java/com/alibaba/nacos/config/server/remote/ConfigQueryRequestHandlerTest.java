@@ -60,8 +60,8 @@ public class ConfigQueryRequestHandlerTest {
     
     @Test
     public void testHandle() throws NacosException {
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito
-                .mockStatic(ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(
+                ConfigCacheService.class);
         final MockedStatic<FileUtils> fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
         final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
         MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
@@ -75,8 +75,9 @@ public class ConfigQueryRequestHandlerTest {
         fileUtilsMockedStatic.when(() -> FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
         when(file.exists()).thenReturn(true);
         CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.setMd5("1");
-        cacheItem.setLastModifiedTs(1L);
+        cacheItem.getConfigCache().setMd5Utf8("1");
+        cacheItem.getConfigCache().setLastModifiedTs(1L);
+        
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(Mockito.any()))
                 .thenReturn(cacheItem);
         

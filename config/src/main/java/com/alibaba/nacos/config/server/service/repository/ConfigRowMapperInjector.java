@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
@@ -45,6 +46,8 @@ import java.sql.SQLException;
 public class ConfigRowMapperInjector {
     
     public static final RowMapper<ConfigInfoWrapper> CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
+    
+    public static final ConfigInfoStateWrapperRowMapper CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER = new ConfigInfoStateWrapperRowMapper();
     
     public static final RowMapper<ConfigKey> CONFIG_KEY_ROW_MAPPER = new ConfigKeyRowMapper();
     
@@ -193,6 +196,27 @@ public class ConfigRowMapperInjector {
             } catch (SQLException ignore) {
             
             }
+            return info;
+        }
+    }
+    
+    public static final class ConfigInfoStateWrapperRowMapper implements RowMapper<ConfigInfoStateWrapper> {
+        
+        @Override
+        public ConfigInfoStateWrapper mapRow(ResultSet rs, int rowNum) throws SQLException {
+            ConfigInfoStateWrapper info = new ConfigInfoStateWrapper();
+            
+            info.setDataId(rs.getString("data_id"));
+            info.setGroup(rs.getString("group_id"));
+            info.setTenant(rs.getString("tenant_id"));
+            info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
+            
+            try {
+                info.setId(rs.getLong("id"));
+            } catch (SQLException e) {
+                // ignore
+            }
+            
             return info;
         }
     }

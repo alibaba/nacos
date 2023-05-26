@@ -171,7 +171,7 @@ public class MergeDatumService {
                     if (datumList.size() > 0) {
                         // merge
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
-                        configInfoPersistService.insertOrUpdate(null, null, cf, time, null, false);
+                        configInfoPersistService.insertOrUpdate(null, null, cf, null);
                         LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                 datumList.size(), cf.getContent().length(), cf.getMd5(),
                                 ContentUtils.truncateContent(cf.getContent()));
