@@ -124,6 +124,9 @@ jobs:
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
         mode: ["cluster","standalone"]
         database: ["embedded","mysql"]
+        exclude:
+          - mode: cluster
+            database: embedded
     steps:
       - name: set nodeport
         run: |
