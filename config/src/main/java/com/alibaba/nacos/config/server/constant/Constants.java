@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.constant;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDumpEvent;
 
 /**
@@ -35,13 +36,11 @@ public class Constants {
     
     /**
      * Config file directory in server side.
-     *
      */
     public static final String BASE_DIR = "config-data";
     
     /**
      * Back up file directory in server side.
-     *
      */
     public static final String CONFIG_BAK_DIR = System.getProperty("user.home", "/home/admin") + "/nacos/bak_data";
     
@@ -138,6 +137,12 @@ public class Constants {
     public static final String METRICS_CONTROLLER_PATH = BASE_PATH + "/metrics";
     
     public static final String ENCODE = "UTF-8";
+    
+    public static final String PERSIST_ENCODE = getPersistEncode();
+    
+    public static final String ENCODE_GBK = "GBK";
+    
+    public static final String ENCODE_UTF8 = "UTF-8";
     
     public static final String MAP_FILE = "map-file.js";
     
@@ -284,4 +289,22 @@ public class Constants {
     public static final String CONFIG_SEARCH_BLUR = "blur";
     
     public static final String CONFIG_SEARCH_ACCURATE = "accurate";
+    
+    /**
+     * default nacos encode.
+     */
+    public static final String DEFAULT_NACOS_ENCODE = "UTF-8";
+    
+    public static final String NACOS_PERSIST_ENCODE_KEY = "nacosPersistEncodingKey";
+    
+    static String getPersistEncode() {
+        String persistEncode = System.getenv(NACOS_PERSIST_ENCODE_KEY);
+        if (StringUtils.isBlank(persistEncode)) {
+            persistEncode = System.getProperty(NACOS_PERSIST_ENCODE_KEY);
+            if (StringUtils.isBlank(persistEncode)) {
+                persistEncode = DEFAULT_NACOS_ENCODE;
+            }
+        }
+        return persistEncode;
+    }
 }

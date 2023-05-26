@@ -32,10 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
 
-import java.sql.Timestamp;
-
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -79,23 +76,21 @@ public class ConfigOperationServiceTest {
         // if betaIps is blank and tag is blank
         Boolean aResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoPersistService)
-                .insertOrUpdate(any(), any(), any(ConfigInfo.class), any(Timestamp.class), any(), anyBoolean());
+                .insertOrUpdate(any(), any(), any(ConfigInfo.class), any());
         Assert.assertEquals(true, aResult);
         
         // if betaIps is blank and tag is not blank
         configForm.setTag("test tag");
         Boolean bResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoTagPersistService)
-                .insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any(), any(Timestamp.class),
-                        anyBoolean());
+                .insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any());
         Assert.assertEquals(true, bResult);
         
         // if betaIps is not blank
         configRequestInfo.setBetaIps("test-betaIps");
         Boolean cResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoBetaPersistService)
-                .insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any(), any(Timestamp.class),
-                        anyBoolean());
+                .insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any());
         Assert.assertEquals(true, cResult);
     }
     
