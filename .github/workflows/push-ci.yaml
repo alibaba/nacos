@@ -134,7 +134,7 @@ jobs:
           action: "deploy"
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
-          chart-git: "https://ghproxy.com/https://github.com/nacos-group/nacos-k8s.git"
+          chart-git: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
           chart-branch: "master"
           chart-path: "./helm"
           job-id: ${{ strategy.job-index }}
