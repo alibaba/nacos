@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.client.factory.ClientFactoryHolder;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
@@ -81,8 +82,10 @@ public class PersistentIpPortClientManager implements ClientManager {
         if (null == client) {
             return true;
         }
-        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsibleClient(client)));
+        boolean isResponsible = isResponsibleClient(client);
+        NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsible));
         client.release();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
         return true;
     }
     
