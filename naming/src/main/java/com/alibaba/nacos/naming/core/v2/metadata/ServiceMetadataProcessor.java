@@ -83,9 +83,9 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
     
     @Override
     public Response onApply(WriteRequest request) {
-        MetadataOperation<ServiceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
         readLock.lock();
         try {
+            MetadataOperation<ServiceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
                     addClusterMetadataToService(op);
