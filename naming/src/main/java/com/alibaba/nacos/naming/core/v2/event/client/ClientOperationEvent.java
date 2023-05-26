@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.event.client;
 
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 
 /**
@@ -90,6 +91,29 @@ public class ClientOperationEvent extends Event {
         
         public ClientUnsubscribeServiceEvent(Service service, String clientId) {
             super(clientId, service);
+        }
+    }
+    
+    public static class ClientReleaseEvent extends ClientOperationEvent {
+    
+        private static final long serialVersionUID = -281486927726245701L;
+    
+        private final Client client;
+        
+        private final boolean isNative;
+        
+        public ClientReleaseEvent(Client client, boolean isNative) {
+            super(client.getClientId(), null);
+            this.client = client;
+            this.isNative = isNative;
+        }
+    
+        public Client getClient() {
+            return client;
+        }
+    
+        public boolean isNative() {
+            return isNative;
         }
     }
 }
