@@ -78,9 +78,9 @@ jobs:
           cd nacos-docker/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
-          touch versionlist/"${version}-`echo ${{ matrix.base-image }} | sed -e "s/:/-/g"`"
+          touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
-          tag=${version}-$(echo ${{ matrix.base-image }} | sed -e "s/:/-/g")
+          tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
           echo $tag
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
           docker push ${DOCKER_REPO}:${tag}
@@ -123,6 +123,7 @@ jobs:
       matrix:
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
         mode: ["cluster","standalone"]
+        database: ["embedded","mysql"]
     steps:
       - name: set nodeport
         run: |
@@ -146,13 +147,11 @@ jobs:
                 repository: ${{ env.DOCKER_REPO }}
                 tag: ${{ matrix.version }}
               storage:
-                type: mysql
+                type: ${{ matrix.database }}
                 db:
-                  host: localhost
-                  name: nacos
                   port: 3306
-                  username: usernmae
-                  password: password
+                  username: nacos
+                  password: nacos
                   param: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
             service:
               nodePort: ${{ env.NODE_PORT }}
