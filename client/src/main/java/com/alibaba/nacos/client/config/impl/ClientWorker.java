@@ -37,13 +37,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
@@ -59,6 +57,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -66,6 +65,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
@@ -537,6 +537,8 @@ public class ClientWorker implements Closeable {
         
         private long lastAllSyncTime = System.currentTimeMillis();
         
+        Subscriber subscriber = null;
+        
         /**
          * 5 minutes to check all listen cache keys.
          */
@@ -578,6 +580,10 @@ public class ClientWorker implements Closeable {
                 Map<String, CacheData> stringCacheDataMap = cacheMap.get();
                 for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
                     entry.getValue().setSyncWithServer(false);
+                }
+                
+                if (subscriber != null) {
+                    NotifyCenter.deregisterSubscriber(subscriber);
                 }
             }
             
@@ -678,10 +684,9 @@ public class ClientWorker implements Closeable {
                     
                 }
             });
-            
-            NotifyCenter.registerSubscriber(new Subscriber<ServerlistChangeEvent>() {
+            subscriber = new Subscriber() {
                 @Override
-                public void onEvent(ServerlistChangeEvent event) {
+                public void onEvent(Event event) {
                     rpcClientInner.onServerListChange();
                 }
                 
@@ -689,7 +694,8 @@ public class ClientWorker implements Closeable {
                 public Class<? extends Event> subscribeType() {
                     return ServerlistChangeEvent.class;
                 }
-            });
+            };
+            NotifyCenter.registerSubscriber(subscriber);
         }
         
         @Override
