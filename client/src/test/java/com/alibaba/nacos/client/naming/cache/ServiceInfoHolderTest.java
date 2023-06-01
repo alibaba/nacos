@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -157,5 +158,62 @@ public class ServiceInfoHolderTest {
         Assert.assertFalse(pool.isShutdown());
         holder.shutdown();
         Assert.assertTrue(pool.isShutdown());
+    }
+
+    @Test
+    public void testMakeChangeEvent() {
+        Properties prop = new Properties();
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
+        ServiceInfo oldService = new ServiceInfo();
+        oldService.setName("test-service-1");
+        oldService.setGroupName("test-group");
+        oldService.setClusters("test-cluster");
+        List<Instance> list = new ArrayList<>();
+        Instance instance1 = new Instance();
+        instance1.setIp("12345.23.1");
+        instance1.setPort(120);
+        list.add(instance1);
+        Instance instance2 = new Instance();
+        instance2.setIp("1230.90.1");
+        instance2.setPort(230);
+        list.add(instance2);
+        Instance instance3 = new Instance();
+        instance3.setIp("3467.45.0");
+        instance3.setPort(546);
+        list.add(instance3);
+        oldService.setHosts(list);
+        ServiceInfo newService = new ServiceInfo();
+        newService.setName("test-service-1");
+        newService.setGroupName("test-group");
+        newService.setClusters("test-cluster");
+        List<Instance> list2 = new ArrayList<>();
+        Instance instance4 = new Instance();
+        instance4.setIp("12345.23.1");
+        instance4.setPort(120);
+        list2.add(instance4);
+        Instance instance6 = new Instance();
+        instance6.setIp("3467.45.0");
+        instance6.setPort(546);
+        instance6.setEnabled(false);
+        list2.add(instance6);
+        Instance instance7 = new Instance();
+        instance7.setIp("862.23.0");
+        instance7.setPort(1235);
+        list2.add(instance7);
+        newService.setHosts(list2);
+        InstancesChangeEvent changeEvent = holder.makeChangeEvent(oldService, newService);
+        Assert.assertEquals(1, changeEvent.getModHosts().size());
+        Assert.assertEquals(1, changeEvent.getNewHosts().size());
+        Assert.assertEquals(1, changeEvent.getRemvHosts().size());
+        Assert.assertEquals(instance6, changeEvent.getModHosts().stream().findFirst().orElse(null));
+        Assert.assertEquals(instance7, changeEvent.getNewHosts().stream().findFirst().orElse(null));
+        Assert.assertEquals(instance2, changeEvent.getRemvHosts().stream().findFirst().orElse(null));
+        Assert.assertTrue(changeEvent.changed());
+        Assert.assertEquals("test-service-1", changeEvent.getServiceName());
+        Assert.assertEquals("test-group", changeEvent.getGroupName());
+        Assert.assertEquals("test-cluster", changeEvent.getClusters());
+        Assert.assertEquals("scope-001", changeEvent.scope());
+        Assert.assertEquals(list2, changeEvent.getHosts());
     }
 }

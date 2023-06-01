@@ -21,7 +21,9 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class InstancesChangeEventTest {
     
@@ -34,7 +36,16 @@ public class InstancesChangeEventTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts);
+        Set<Instance> modHosts = new HashSet<>();
+        Instance modIns = new Instance();
+        modHosts.add(modIns);
+        Set<Instance> newHosts = new HashSet<>();
+        Instance newIns = new Instance();
+        newHosts.add(newIns);
+        Set<Instance> removeHosts = new HashSet<>();
+        Instance removeIns = new Instance();
+        removeHosts.add(removeIns);
+        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts, modHosts, newHosts, removeHosts);
         Assert.assertEquals(eventScope, event.scope());
         Assert.assertEquals(serviceName, event.getServiceName());
         Assert.assertEquals(clusters, event.getClusters());
@@ -42,5 +53,14 @@ public class InstancesChangeEventTest {
         List<Instance> hosts1 = event.getHosts();
         Assert.assertEquals(hosts.size(), hosts1.size());
         Assert.assertEquals(hosts.get(0), hosts1.get(0));
+        Set<Instance> hosts2 = event.getModHosts();
+        Assert.assertEquals(modHosts.size(), hosts2.size());
+        Assert.assertEquals(modHosts.stream().findFirst().orElse(null), hosts2.stream().findFirst().orElse(null));
+        Set<Instance> hosts3 = event.getNewHosts();
+        Assert.assertEquals(newHosts.size(), hosts3.size());
+        Assert.assertEquals(newHosts.stream().findFirst().orElse(null), hosts3.stream().findFirst().orElse(null));
+        Set<Instance> hosts4 = event.getRemvHosts();
+        Assert.assertEquals(removeHosts.size(), hosts4.size());
+        Assert.assertEquals(removeHosts.stream().findFirst().orElse(null), hosts4.stream().findFirst().orElse(null));
     }
 }

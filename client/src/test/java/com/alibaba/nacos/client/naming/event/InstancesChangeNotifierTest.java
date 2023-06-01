@@ -24,7 +24,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -49,8 +51,17 @@ public class InstancesChangeNotifierTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusters, hosts);
-        Assert.assertEquals(true, instancesChangeNotifier.scopeMatches(event));
+        Set<Instance> modHosts = new HashSet<>();
+        Instance modIns = new Instance();
+        modHosts.add(modIns);
+        Set<Instance> newHosts = new HashSet<>();
+        Instance newIns = new Instance();
+        newHosts.add(newIns);
+        Set<Instance> removeHosts = new HashSet<>();
+        Instance removeIns = new Instance();
+        removeHosts.add(removeIns);
+        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusters, hosts, modHosts, newHosts, removeHosts);
+        Assert.assertTrue(instancesChangeNotifier.scopeMatches(event));
     }
     
     @Test

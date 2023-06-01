@@ -18,8 +18,10 @@ package com.alibaba.nacos.client.naming.event;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Instances change event.
@@ -40,13 +42,23 @@ public class InstancesChangeEvent extends Event {
     private final String clusters;
     
     private final List<Instance> hosts;
-    
-    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters, List<Instance> hosts) {
+
+    private final Set<Instance> modHosts;
+
+    private final Set<Instance> newHosts;
+
+    private final Set<Instance> remvHosts;
+
+    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters,
+                                List<Instance> hosts, Set<Instance> modHosts, Set<Instance> newHosts, Set<Instance> remvHosts) {
         this.eventScope = eventScope;
         this.serviceName = serviceName;
         this.groupName = groupName;
         this.clusters = clusters;
         this.hosts = hosts;
+        this.modHosts = modHosts;
+        this.newHosts = newHosts;
+        this.remvHosts = remvHosts;
     }
     
     public String getServiceName() {
@@ -64,7 +76,23 @@ public class InstancesChangeEvent extends Event {
     public List<Instance> getHosts() {
         return hosts;
     }
-    
+
+    public Set<Instance> getModHosts() {
+        return modHosts;
+    }
+
+    public Set<Instance> getNewHosts() {
+        return newHosts;
+    }
+
+    public Set<Instance> getRemvHosts() {
+        return remvHosts;
+    }
+
+    public boolean changed() {
+        return CollectionUtils.isNotEmpty(newHosts) || CollectionUtils.isNotEmpty(remvHosts) || CollectionUtils.isNotEmpty(modHosts);
+    }
+
     @Override
     public String scope() {
         return this.eventScope;

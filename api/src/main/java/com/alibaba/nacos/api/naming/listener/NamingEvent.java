@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.naming.listener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Naming Event.
@@ -34,6 +35,12 @@ public class NamingEvent implements Event {
     private String clusters;
     
     private List<Instance> instances;
+
+    private Set<Instance> modInstances;
+
+    private Set<Instance> newInstances;
+
+    private Set<Instance> removeInstances;
     
     public NamingEvent(String serviceName, List<Instance> instances) {
         this.serviceName = serviceName;
@@ -45,6 +52,17 @@ public class NamingEvent implements Event {
         this.groupName = groupName;
         this.clusters = clusters;
         this.instances = instances;
+    }
+
+    public NamingEvent(String serviceName, String groupName, String clusters, List<Instance> instances,
+                       Set<Instance> modInstances, Set<Instance> newInstances, Set<Instance> removeInstances) {
+        this.serviceName = serviceName;
+        this.groupName = groupName;
+        this.clusters = clusters;
+        this.instances = instances;
+        this.modInstances = modInstances;
+        this.newInstances = newInstances;
+        this.removeInstances = removeInstances;
     }
     
     public String getServiceName() {
@@ -77,5 +95,29 @@ public class NamingEvent implements Event {
     
     public void setClusters(String clusters) {
         this.clusters = clusters;
+    }
+
+    public Set<Instance> getModInstances() {
+        return modInstances;
+    }
+
+    public void setModInstances(Set<Instance> modInstances) {
+        this.modInstances = modInstances;
+    }
+
+    public Set<Instance> getNewInstances() {
+        return newInstances;
+    }
+
+    public void setNewInstances(Set<Instance> newInstances) {
+        this.newInstances = newInstances;
+    }
+
+    public Set<Instance> getRemoveInstances() {
+        return removeInstances;
+    }
+
+    public void setRemoveInstances(Set<Instance> removeInstances) {
+        this.removeInstances = removeInstances;
     }
 }
