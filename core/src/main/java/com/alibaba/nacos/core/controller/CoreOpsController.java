@@ -81,7 +81,7 @@ public class CoreOpsController {
     }
     
     @PutMapping(value = "/log")
-    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
+    @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
