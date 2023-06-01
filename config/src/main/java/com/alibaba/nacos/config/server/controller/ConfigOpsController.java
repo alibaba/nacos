@@ -71,7 +71,7 @@ public class ConfigOpsController {
      * Manually trigger dump of a local configuration file.
      */
     @PostMapping(value = "/localCache")
-    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public String updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         dumpService.dumpAll();
@@ -80,7 +80,7 @@ public class ConfigOpsController {
     }
     
     @PutMapping(value = "/log")
-    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONFIG)
+    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
