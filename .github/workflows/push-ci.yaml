@@ -13,7 +13,7 @@ concurrency:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  NODE_PORT: 30000
+
 
 jobs:
   dist-tar:
@@ -119,18 +119,23 @@ jobs:
     needs: [list-version,docker]
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      REPLICA_COUNT: 3
+      DATABASE: mysql
+      NODE_PORT: 30000
     strategy:
       matrix:
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
         mode: ["cluster","standalone"]
-        database: ["embedded","mysql"]
-        exclude:
-          - mode: cluster
-            database: embedded
     steps:
       - name: set nodeport
         run: |
             echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
+      - name: set cluster params
+        if: ${{ matrix.mode == 'standalone' }}
+        run: |
+          echo "::set-env name=REPLICA_COUNT::1"
+          echo "::set-env name=DATABASE::embedded"
       - uses: Wuyunfan-BUPT/nacosTestTools@master
         name: Deploy nacos
         with:
@@ -145,12 +150,12 @@ jobs:
             global:
               mode: ${{ matrix.mode }}
             nacos:
-              replicaCount: 3
+              replicaCount: ${{ env.REPLICA_COUNT }}
               image: 
                 repository: ${{ env.DOCKER_REPO }}
                 tag: ${{ matrix.version }}
               storage:
-                type: ${{ matrix.database }}
+                type: ${{ env.database }}
                 db:
                   port: 3306
                   username: nacos
