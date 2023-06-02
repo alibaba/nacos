@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import org.slf4j.Logger;
@@ -79,7 +80,8 @@ public class ParamUtil {
         // Client identity information
         appKey = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_APP_KEY, BLANK_STR);
         
-        defaultContextPath = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_CONTEXTPATH_KEY, DEFAULT_NACOS_CLIENT_CONTEXTPATH);
+        defaultContextPath = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_CONTEXTPATH_KEY,
+                DEFAULT_NACOS_CLIENT_CONTEXTPATH);
         
         appName = AppNameUtils.getAppName();
         
@@ -100,8 +102,8 @@ public class ParamUtil {
         clientVersion = VersionUtils.version;
         
         try {
-            perTaskConfigSize = Double
-                    .parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+            perTaskConfigSize = Double.parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY,
+                    DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
             LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
         } catch (Throwable t) {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", t);
@@ -206,7 +208,8 @@ public class ParamUtil {
         // If entered in the configuration file, the priority in ENV will be given priority.
         if (endpointUrl == null || !PATTERN.matcher(endpointUrl).find()) {
             // skip retrieve from system property and retrieve directly from system env
-            String endpointUrlSource = NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            String endpointUrlSource = NacosClientProperties.PROTOTYPE.getProperty(
+                    PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
             if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
@@ -222,9 +225,10 @@ public class ParamUtil {
             endpointUrl = endpointUrl.substring(0, defStartOf);
         }
         
-        String endpointUrlSource = TemplateUtils
-                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl),
-                        () -> NacosClientProperties.PROTOTYPE.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
+        String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(
+                NacosClientProperties.PROTOTYPE.getProperty(endpointUrl),
+                () -> NacosClientProperties.PROTOTYPE.getProperty(
+                        PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
         
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {
@@ -235,5 +239,20 @@ public class ParamUtil {
         }
         
         return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+    }
+    
+    public static final int MAX_ENV_NAME_LENGTH = 50;
+    
+    /**
+     * simply env name if name is too long.
+     *
+     * @param envName env name.
+     * @return
+     */
+    public static String simplyEnvNameIfOverLimit(String envName) {
+        if (StringUtils.isNotBlank(envName) && envName.length() > MAX_ENV_NAME_LENGTH) {
+            return envName.substring(0, MAX_ENV_NAME_LENGTH) + MD5Utils.md5Hex(envName, "UTF-8");
+        }
+        return envName;
     }
 }

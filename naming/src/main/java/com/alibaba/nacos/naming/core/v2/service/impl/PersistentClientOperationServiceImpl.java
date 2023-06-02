@@ -134,8 +134,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         request.setService(service);
         request.setInstance(instance);
         request.setClientId(clientId);
-        final WriteRequest writeRequest = WriteRequest.newBuilder()
-                .setGroup(group())
+        final WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request))).setOperation(DataOperation.CHANGE.name())
                 .build();
         try {
@@ -185,11 +184,11 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     
     @Override
     public Response onApply(WriteRequest request) {
-        final InstanceStoreRequest instanceRequest = serializer.deserialize(request.getData().toByteArray());
-        final DataOperation operation = DataOperation.valueOf(request.getOperation());
         final Lock lock = readLock;
         lock.lock();
         try {
+            final InstanceStoreRequest instanceRequest = serializer.deserialize(request.getData().toByteArray());
+            final DataOperation operation = DataOperation.valueOf(request.getOperation());
             switch (operation) {
                 case ADD:
                     onInstanceRegister(instanceRequest.service, instanceRequest.instance,
@@ -209,14 +208,18 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
                             .build();
             }
             return Response.newBuilder().setSuccess(true).build();
+        } catch (Exception e) {
+            Loggers.RAFT.warn("Persistent client operation failed. ", e);
+            return Response.newBuilder().setSuccess(false)
+                    .setErrMsg("Persistent client operation failed. " + e.getMessage()).build();
         } finally {
             lock.unlock();
         }
     }
     
     private boolean instanceAndServiceExist(InstanceStoreRequest instanceRequest) {
-        return clientManager.contains(instanceRequest.getClientId()) && clientManager.getClient(
-                instanceRequest.getClientId()).getAllPublishedService().contains(instanceRequest.service);
+        return clientManager.contains(instanceRequest.getClientId()) && clientManager
+                .getClient(instanceRequest.getClientId()).getAllPublishedService().contains(instanceRequest.service);
     }
     
     private void onInstanceRegister(Service service, Instance instance, String clientId) {
@@ -325,8 +328,8 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             final Checksum checksum = new CRC64();
             byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
             LocalFileMeta fileMeta = reader.getFileMeta(SNAPSHOT_ARCHIVE);
-            if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)
-                    && !Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+            if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY) && !Objects
+                    .equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
                 throw new IllegalArgumentException("Snapshot checksum failed");
             }
             loadSnapshot(snapshotBytes);

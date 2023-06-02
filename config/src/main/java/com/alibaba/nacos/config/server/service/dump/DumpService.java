@@ -141,9 +141,10 @@ public abstract class DumpService {
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
      *
-     * @param memberManager  {@link ServerMemberManager}
+     * @param memberManager {@link ServerMemberManager}
      */
-    public DumpService(ConfigInfoPersistService configInfoPersistService, NamespacePersistService namespacePersistService,
+    public DumpService(ConfigInfoPersistService configInfoPersistService,
+            NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
@@ -254,8 +255,8 @@ public abstract class DumpService {
                     LOGGER.info("server start, schedule merge end.");
                 }
             } catch (Exception e) {
-                LogUtil.FATAL_LOG
-                        .error("Nacos Server did not start because dumpservice bean construction failure :\n" + e);
+                LogUtil.FATAL_LOG.error(
+                        "Nacos Server did not start because dumpservice bean construction failure :\n" + e);
                 throw new NacosException(NacosException.SERVER_ERROR,
                         "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
                         e);
@@ -278,11 +279,11 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
                 
-                ConfigExecutor
-                        .scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
+                        TimeUnit.MINUTES);
                 
-                ConfigExecutor
-                        .scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
+                        TimeUnit.MINUTES);
             }
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
@@ -392,33 +393,72 @@ public abstract class DumpService {
         return retentionDays;
     }
     
-    public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
-        dump(dataId, group, tenant, tag, lastModified, handleIp, false);
-    }
-    
-    public void dump(String dataId, String group, String tenant, long lastModified, String handleIp) {
-        dump(dataId, group, tenant, lastModified, handleIp, false);
+    /**
+     * dump formal config.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
+     */
+    public void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        String taskKey = dataId + group + tenant;
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, false, null, lastModified, handleIp));
+        DUMP_LOG.info("[dump] add formal task. groupKey={}", groupKey);
+        
     }
     
     /**
-     * Add DumpTask to TaskManager, it will execute asynchronously.
+     * dump beta.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
      */
-    public void dump(String dataId, String group, String tenant, long lastModified, String handleIp, boolean isBeta) {
+    public void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta));
-        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
-        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
+        String taskKey = dataId + group + tenant + "+beta";
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, true, false, false, null, lastModified, handleIp));
+        DUMP_LOG.info("[dump] add beta task. groupKey={}", groupKey);
+        
     }
     
     /**
-     * Add DumpTask to TaskManager, it will execute asynchronously.
+     * dump batch.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
      */
-    public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
-            boolean isBeta) {
+    public void dumpBatch(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String taskKey = String.join("+", dataId, group, tenant, String.valueOf(isBeta), tag);
-        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
-        DUMP_LOG.info("[dump-task] add task. groupKey={}, taskKey={}", groupKey, taskKey);
+        String taskKey = groupKey + "+batch";
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, true, false, null, lastModified, handleIp));
+        DUMP_LOG.info("[dump] add batch task. groupKey={}", dataId + "+" + group);
+    }
+    
+    /**
+     * dump tag.
+     *
+     * @param dataId       dataId.
+     * @param group        group.
+     * @param tenant       tenant.
+     * @param tag          tag.
+     * @param lastModified lastModified.
+     * @param handleIp     handleIp.
+     */
+    public void dumpTag(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        String taskKey = groupKey + "+tag+" + tag;
+        dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, true, tag, lastModified, handleIp));
+        DUMP_LOG.info("[dump] add tag task. groupKey={},tag={}", groupKey, tag);
+        
     }
     
     public void dumpAll() {
@@ -462,8 +502,8 @@ public abstract class DumpService {
                     int rowCount = configInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                        Page<ConfigInfoAggr> page = configInfoAggrPersistService
-                                .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
+                        Page<ConfigInfoAggr> page = configInfoAggrPersistService.findConfigInfoAggrByPage(dataId, group,
+                                tenant, pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
                             LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
@@ -480,7 +520,7 @@ public abstract class DumpService {
                         String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
                         
                         if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
-                            configInfoPersistService.insertOrUpdate(null, null, cf, time, null, false);
+                            configInfoPersistService.insertOrUpdate(null, null, cf, null);
                             LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                     datumList.size(), cf.getContent().length(), cf.getMd5(),
                                     ContentUtils.truncateContent(cf.getContent()));

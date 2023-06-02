@@ -80,6 +80,23 @@ public class NamespaceControllerTest {
         namespaceController.createNamespace("test-Id", "testName", "testDesc");
         verify(namespaceOperationService).createNamespace("test-Id", "testName", "testDesc");
     }
+
+    @Test
+    public void testCreateNamespaceWithIllegalName() {
+        assertFalse(namespaceController.createNamespace(null, "test@Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test#Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test$Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test%Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test^Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test&Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test*Name", "testDesc"));
+    }
+
+    @Test
+    public void testCreateNamespaceWithNonUniqueId() throws Exception {
+        when(namespacePersistService.tenantInfoCountByTenantId("test-Id")).thenReturn(1);
+        assertFalse(namespaceController.createNamespace("test-Id", "testNam2", "testDesc"));
+    }
     
     @Test
     public void testCreateNamespaceWithIllegalCustomId() throws Exception {
@@ -125,6 +142,17 @@ public class NamespaceControllerTest {
     public void testEditNamespace() {
         namespaceController.editNamespace("test-Id", "testName", "testDesc");
         verify(namespaceOperationService).editNamespace("test-Id", "testName", "testDesc");
+    }
+
+    @Test
+    public void testEditNamespaceWithIllegalName() {
+        assertFalse(namespaceController.createNamespace(null, "test@Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test#Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test$Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test%Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test^Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test&Name", "testDesc"));
+        assertFalse(namespaceController.createNamespace(null, "test*Name", "testDesc"));
     }
     
     @Test
