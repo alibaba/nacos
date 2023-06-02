@@ -155,7 +155,7 @@ jobs:
                 repository: ${{ env.DOCKER_REPO }}
                 tag: ${{ matrix.version }}
               storage:
-                type: ${{ env.database }}
+                type: ${{ env.DATABASE }}
                 db:
                   port: 3306
                   username: nacos
