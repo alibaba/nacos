@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
@@ -91,16 +92,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      * Fixed capacity information table usage (usage) time interval, the unit is in seconds.
      */
     private static int correctUsageDelay = 10 * 60;
-    
-    /**
-     * Standalone mode uses DB.
-     */
-    private static boolean useExternalDB = false;
-    
-    /**
-     * Inline storage value = ${nacos.standalone}.
-     */
-    private static boolean embeddedStorage = EnvUtil.getStandaloneMode();
     
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
@@ -226,28 +217,12 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return EnvUtil.getStandaloneMode();
     }
     
-    public static boolean isUseExternalDB() {
-        return useExternalDB;
-    }
-    
-    public static void setUseExternalDB(boolean useExternalDB) {
-        PropertyUtil.useExternalDB = useExternalDB;
-    }
-    
-    public static boolean isEmbeddedStorage() {
-        return embeddedStorage;
-    }
-    
     // Determines whether to read the data directly
     // if use mysql, Reduce database read pressure
     // if use raft+derby, Reduce leader read pressure
     
     public static boolean isDirectRead() {
-        return EnvUtil.getStandaloneMode() && isEmbeddedStorage();
-    }
-    
-    public static void setEmbeddedStorage(boolean embeddedStorage) {
-        PropertyUtil.embeddedStorage = embeddedStorage;
+        return EnvUtil.getStandaloneMode() && DatasourceConfiguration.isEmbeddedStorage();
     }
     
     private void loadSetting() {
@@ -279,31 +254,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
             setCorrectUsageDelay(getInt(PropertiesConstant.CORRECT_USAGE_DELAY, correctUsageDelay));
             setInitialExpansionPercent(getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
-    
-            // External data sources are used by default in cluster mode
-            String platform = DatasourcePlatformUtil.getDatasourcePlatform("");
-            boolean useExternalStorage = !PropertiesConstant.EMPTY_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
-                    && !PropertiesConstant.DERBY.equalsIgnoreCase(platform);
-            setUseExternalDB(useExternalStorage);
-            
-            // must initialize after setUseExternalDB
-            // This value is true in stand-alone mode and false in cluster mode
-            // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
-            // default value is depend on ${nacos.standalone}
-            
-            if (isUseExternalDB()) {
-                setEmbeddedStorage(false);
-            } else {
-                boolean embeddedStorage =
-                        PropertyUtil.embeddedStorage || Boolean.getBoolean(PropertiesConstant.EMBEDDED_STORAGE);
-                setEmbeddedStorage(embeddedStorage);
-                
-                // If the embedded data source storage is not turned on, it is automatically
-                // upgraded to the external data source storage, as before
-                if (!embeddedStorage) {
-                    setUseExternalDB(true);
-                }
-            }
         } catch (Exception e) {
             LOGGER.error("read application.properties failed", e);
             throw e;

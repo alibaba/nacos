@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
@@ -105,6 +106,11 @@ public class NacosAuthPluginService implements AuthPluginService {
     @Override
     public String getAuthServiceName() {
         return AuthConstants.AUTH_PLUGIN_TYPE;
+    }
+    
+    @Override
+    public boolean isLoginEnabled() {
+        return ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
     }
     
     protected void checkNacosAuthManager() {

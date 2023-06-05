@@ -36,6 +36,7 @@
         <module>datasource</module>
         <module>environment</module>
         <module>control</module>
+        <module>config</module>
     </modules>
     <packaging>pom</packaging>
 

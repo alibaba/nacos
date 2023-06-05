@@ -28,7 +28,7 @@
     <artifactId>nacos-encryption-plugin</artifactId>
     <name>nacos-encryption-plugin ${project.version}</name>
     <url>https://nacos.io</url>
-    
+    <description>Nacos encryption plugin pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

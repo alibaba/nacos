@@ -19,10 +19,11 @@ package com.alibaba.nacos.config.server.service.repository;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
-
-import java.sql.Timestamp;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 /**
  * Database service, providing access to config_info_beta in the database.
@@ -42,17 +43,25 @@ public interface ConfigInfoBetaPersistService {
     //------------------------------------------insert---------------------------------------------//
     
     /**
+     * get config info beta.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @return config info state.
+     */
+    ConfigInfoStateWrapper findConfigInfo4BetaState(final String dataId, final String group, final String tenant);
+    
+    /**
      * Add beta configuration information and publish data change events.
      *
      * @param configInfo config info
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
+     * @return config operation result.
      */
-    void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+    ConfigOperateResult addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser);
     
     /**
      * insert or update beta config.
@@ -61,11 +70,10 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
+     * @return config operation result.
      */
-    void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp, final String srcUser,
-            final Timestamp time, final boolean notify);
+    ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+            final String srcUser);
     
     /**
      * insert or update beta config cas.
@@ -74,12 +82,10 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      * @return success or not.
      */
-    boolean insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
-            final String srcUser, final Timestamp time, final boolean notify);
+    ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps, final String srcIp,
+            final String srcUser);
     
     //------------------------------------------delete---------------------------------------------//
     
@@ -101,11 +107,9 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
+     * @return config operation result.
      */
-    void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
-            boolean notify);
+    ConfigOperateResult updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser);
     
     /**
      * Update beta configuration information.
@@ -114,12 +118,9 @@ public interface ConfigInfoBetaPersistService {
      * @param betaIps    ip for push
      * @param srcIp      remote ip
      * @param srcUser    user
-     * @param time       time
-     * @param notify     whether to push
      * @return success or not.
      */
-    boolean updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
-            Timestamp time, boolean notify);
+    ConfigOperateResult updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser);
     
     //------------------------------------------select---------------------------------------------//
     

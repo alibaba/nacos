@@ -43,15 +43,12 @@ class SearchableProperties implements NacosClientProperties {
     
     private static final SystemEnvPropertySource SYSTEM_ENV_PROPERTY_SOURCE = new SystemEnvPropertySource();
     
-    private static final DefaultSettingPropertySource DEFAULT_SETTING_PROPERTY_SOURCE = new DefaultSettingPropertySource();
-    
     private static final List<SourceType> SEARCH_ORDER;
     
     private static final CompositeConverter CONVERTER = new CompositeConverter();
     
     static {
-        List<SourceType> initOrder = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV,
-                SourceType.DEFAULT_SETTING);
+        List<SourceType> initOrder = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
         
         String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
         if (StringUtils.isBlank(firstEnv)) {
@@ -61,7 +58,7 @@ class SearchableProperties implements NacosClientProperties {
         if (StringUtils.isNotBlank(firstEnv)) {
             try {
                 final SourceType sourceType = SourceType.valueOf(firstEnv.toUpperCase());
-                if (!sourceType.equals(SourceType.PROPERTIES) && !sourceType.equals(SourceType.DEFAULT_SETTING)) {
+                if (!sourceType.equals(SourceType.PROPERTIES)) {
                     final int index = initOrder.indexOf(sourceType);
                     final SourceType replacedSourceType = initOrder.set(0, sourceType);
                     initOrder.set(index, replacedSourceType);
@@ -93,8 +90,7 @@ class SearchableProperties implements NacosClientProperties {
     
     private SearchableProperties(PropertiesPropertySource propertiesPropertySource) {
         this.propertiesPropertySource = propertiesPropertySource;
-        this.propertySources = build(propertiesPropertySource, JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE,
-                DEFAULT_SETTING_PROPERTY_SOURCE);
+        this.propertySources = build(propertiesPropertySource, JVM_ARGS_PROPERTY_SOURCE, SYSTEM_ENV_PROPERTY_SOURCE);
     }
     
     @Override
@@ -119,8 +115,6 @@ class SearchableProperties implements NacosClientProperties {
                 return SYSTEM_ENV_PROPERTY_SOURCE.getProperty(key);
             case PROPERTIES:
                 return this.propertiesPropertySource.getProperty(key);
-            case DEFAULT_SETTING:
-                return DEFAULT_SETTING_PROPERTY_SOURCE.getProperty(key);
             default:
                 return this.getProperty(key);
         }

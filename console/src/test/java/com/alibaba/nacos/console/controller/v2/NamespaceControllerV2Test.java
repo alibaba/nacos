@@ -19,11 +19,11 @@ package com.alibaba.nacos.console.controller.v2;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
-import com.alibaba.nacos.console.enums.NamespaceTypeEnum;
-import com.alibaba.nacos.console.model.Namespace;
-import com.alibaba.nacos.console.model.NamespaceAllInfo;
-import com.alibaba.nacos.console.model.form.NamespaceForm;
-import com.alibaba.nacos.console.service.NamespaceOperationService;
+import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
+import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.form.NamespaceForm;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,11 +34,13 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * NamespaceControllerV2Test.
+ *
  * @author dongyafei
  * @date 2022/8/16
  */
@@ -49,6 +51,9 @@ public class NamespaceControllerV2Test {
     
     @Mock
     private NamespaceOperationService namespaceOperationService;
+
+    @Mock
+    private NamespacePersistService namespacePersistService;
     
     private static final String TEST_NAMESPACE_ID = "testId";
     
@@ -58,7 +63,7 @@ public class NamespaceControllerV2Test {
     
     @Before
     public void setUp() throws Exception {
-        namespaceControllerV2 = new NamespaceControllerV2(namespaceOperationService);
+        namespaceControllerV2 = new NamespaceControllerV2(namespaceOperationService, namespacePersistService);
     }
     
     @Test
@@ -85,13 +90,13 @@ public class NamespaceControllerV2Test {
     
     @Test
     public void testGetNamespace() throws NacosException {
-        NamespaceAllInfo namespaceAllInfo = new NamespaceAllInfo(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, 200,
-                1, NamespaceTypeEnum.GLOBAL.getType(), TEST_NAMESPACE_DESC);
+        Namespace namespaceAllInfo = new Namespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC, 200, 1,
+                NamespaceTypeEnum.GLOBAL.getType());
         when(namespaceOperationService.getNamespace(TEST_NAMESPACE_ID)).thenReturn(namespaceAllInfo);
-        Result<NamespaceAllInfo> result = namespaceControllerV2.getNamespace(TEST_NAMESPACE_ID);
+        Result<Namespace> result = namespaceControllerV2.getNamespace(TEST_NAMESPACE_ID);
         verify(namespaceOperationService).getNamespace(TEST_NAMESPACE_ID);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        NamespaceAllInfo namespace = result.getData();
+        Namespace namespace = result.getData();
         assertEquals(namespaceAllInfo.getNamespace(), namespace.getNamespace());
         assertEquals(namespaceAllInfo.getNamespaceShowName(), namespace.getNamespaceShowName());
         assertEquals(namespaceAllInfo.getNamespaceDesc(), namespace.getNamespaceDesc());
@@ -101,8 +106,8 @@ public class NamespaceControllerV2Test {
     
     @Test
     public void testCreateNamespace() throws NacosException {
-        when(namespaceOperationService
-                .createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC)).thenReturn(true);
+        when(namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC))
+                .thenReturn(true);
         Result<Boolean> result = namespaceControllerV2
                 .createNamespace(new NamespaceForm(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
         
@@ -111,10 +116,50 @@ public class NamespaceControllerV2Test {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());
     }
+
+    @Test
+    public void testCreateNamespaceWithIllegalName() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceDesc("testDesc");
+        form.setNamespaceName("test@Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test$Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test#Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test%Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test^Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test&Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test*Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+    }
+
+    @Test
+    public void testCreateNamespaceWithNonUniqueId() {
+        when(namespacePersistService.tenantInfoCountByTenantId("test-id")).thenReturn(1);
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId("test-id");
+        form.setNamespaceDesc("testDesc");
+        form.setNamespaceName("testName");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+    }
     
     @Test
     public void testEditNamespace() throws NacosException {
-        when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC)).thenReturn(true);
+        when(namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC))
+                .thenReturn(true);
         Result<Boolean> result = namespaceControllerV2
                 .editNamespace(new NamespaceForm(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC));
         
@@ -122,6 +167,34 @@ public class NamespaceControllerV2Test {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(true, result.getData());
+    }
+
+    @Test
+    public void testEditNamespaceWithIllegalName() {
+        NamespaceForm form = new NamespaceForm();
+        form.setNamespaceId("test-id");
+        form.setNamespaceDesc("testDesc");
+
+        form.setNamespaceName("test@Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test#Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test$Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test%Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test^Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test&Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
+
+        form.setNamespaceName("test*Name");
+        assertThrows(NacosException.class, () -> namespaceControllerV2.createNamespace(form));
     }
     
     @Test

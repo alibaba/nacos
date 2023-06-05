@@ -43,13 +43,14 @@ import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
+import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
 import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
-import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
@@ -1013,12 +1014,22 @@ class ConfigurationManagement extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
+
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
     let token = {};
-    try {
-      token = JSON.parse(localStorage.token);
-    } catch (e) {
-      console.log(e);
-      goLogin();
+
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log(e);
+        goLogin();
+        Dialog.alert({
+          title: locale.importFail,
+          content: locale.authFail,
+        });
+        return;
+      }
     }
     const { accessToken = '', username = '' } = token;
     const uploadProps = {
@@ -1190,13 +1201,13 @@ class ConfigurationManagement extends React.Component {
                   />
                 </Form.Item>
 
-                <Form.Item label="默认模糊匹配">
+                <Form.Item label={locale.fuzzydMode}>
                   <Switch
                     checkedChildren=""
                     unCheckedChildren=""
                     defaultChecked={this.state.defaultFuzzySearch}
                     onChange={this.handleDefaultFuzzySwitchChange}
-                    title={'自动在搜索参数前后加上*'}
+                    title={locale.fuzzyd}
                   />
                 </Form.Item>
 

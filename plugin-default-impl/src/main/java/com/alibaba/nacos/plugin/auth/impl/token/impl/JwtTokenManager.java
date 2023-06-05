@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -56,7 +59,10 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     
     private volatile NacosJwtParser jwtParser;
     
-    public JwtTokenManager() {
+    private final AuthConfigs authConfigs;
+    
+    public JwtTokenManager(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
         NotifyCenter.registerSubscriber(this);
         processProperties();
     }
@@ -70,9 +76,12 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
         try {
             this.jwtParser = new NacosJwtParser(encodedSecretKey);
         } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
-                            + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
+            this.jwtParser = null;
+            if (authConfigs.isAuthEnabled()) {
+                throw new IllegalArgumentException(
+                        "the length of secret key must great than or equal 32 bytes; And the secret key  must be encoded by base64."
+                                + "Please see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html", e);
+            }
         }
         
     }
@@ -95,6 +104,10 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
      * @return token
      */
     public String createToken(String userName) {
+        if (!authConfigs.isAuthEnabled()) {
+            return StringUtils.EMPTY;
+        }
+        checkJwtParser();
         return jwtParser.jwtBuilder().setUserName(userName).setExpiredTime(this.tokenValidityInSeconds).compact();
     }
     
@@ -124,6 +137,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     }
     
     public NacosUser parseToken(String token) throws AccessException {
+        checkJwtParser();
         return jwtParser.parse(token);
     }
     
@@ -148,5 +162,12 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     @Override
     public Class<? extends Event> subscribeType() {
         return ServerConfigChangeEvent.class;
+    }
+    
+    private void checkJwtParser() {
+        if (null == jwtParser) {
+            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
+                    "Please config `nacos.core.auth.plugin.nacos.token.secret.key`, detail see https://nacos.io/zh-cn/docs/v2/guide/user/auth.html");
+        }
     }
 }

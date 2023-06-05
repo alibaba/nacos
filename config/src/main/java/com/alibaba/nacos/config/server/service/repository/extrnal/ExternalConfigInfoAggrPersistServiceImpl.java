@@ -17,20 +17,24 @@
 package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
-import com.alibaba.nacos.config.server.service.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -50,8 +54,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_AGGR_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.service.repository.RowMapperManager.CONFIG_INFO_CHANGED_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_CHANGED_ROW_MAPPER;
 
 /**
  * ExternalConfigInfoAggrPersistServiceImpl.
@@ -75,7 +79,7 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
-        Boolean isDataSourceLogEnable = EnvUtil.getProperty(Constants.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
@@ -238,12 +242,17 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-        final String sql = configInfoAggrMapper.batchRemoveAggr(datumList.size());
-        final Object[] args = new Object[3 + datumList.size()];
-        args[0] = dataId;
-        args[1] = group;
-        args[2] = tenantTmp;
-        System.arraycopy(datumList.toArray(), 0, args, 3, datumList.size());
+        
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.DATUM_ID, datumList);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        
+        MapperResult result = configInfoAggrMapper.batchRemoveAggr(context);
+        final String sql = result.getSql();
+        final Object[] args = result.getParamList().toArray();
+        
         try {
             jt.update(sql, args);
         } catch (CannotGetJdbcConnectionException e) {
@@ -274,10 +283,18 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-        String sql = configInfoAggrMapper.aggrConfigInfoCount(datumIds.size(), isIn);
-        List<Object> objectList = com.alibaba.nacos.common.utils.CollectionUtils.list(dataId, group, tenantTmp);
-        objectList.addAll(datumIds);
-        Integer result = jt.queryForObject(sql, Integer.class, objectList.toArray());
+        
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.DATUM_ID, datumIds);
+        context.putWhereParameter(FieldConstant.IS_IN, true);
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        
+        MapperResult mapperResult = configInfoAggrMapper.aggrConfigInfoCount(context);
+        String sql = mapperResult.getSql();
+        Object[] args = mapperResult.getParamList().toArray();
+        Integer result = jt.queryForObject(sql, Integer.class, args);
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
@@ -313,10 +330,18 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-        String sql = configInfoAggrMapper.findConfigInfoAggrIsOrdered();
+        
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        
+        MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrIsOrdered(context);
+        String sql = mapperResult.getSql();
+        Object[] args = mapperResult.getParamList().toArray();
         
         try {
-            return this.jt.query(sql, new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_AGGR_ROW_MAPPER);
+            return this.jt.query(sql, args, CONFIG_INFO_AGGR_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -337,11 +362,22 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         final int startRow = (pageNo - 1) * pageSize;
         String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        String sqlFetchRows = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(startRow, pageSize);
+        
+        MapperContext context = new MapperContext();
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
+        context.setStartRow(startRow);
+        context.setPageSize(pageSize);
+        
+        MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
+        String sqlFetchRows = mapperResult.getSql();
+        Object[] sqlFetchArgs = mapperResult.getParamList().toArray();
+        
         PaginationHelper<ConfigInfoAggr> helper = this.createPaginationHelper();
         try {
             return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows,
-                    new Object[] {dataId, group, tenantTmp}, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
+                    sqlFetchArgs, pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
             
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
@@ -453,10 +489,11 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     public List<ConfigInfoChanged> findAllAggrGroup() {
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
-        String sql = configInfoAggrMapper.findAllAggrGroupByDistinct();
+        MapperResult mapperResult = configInfoAggrMapper.findAllAggrGroupByDistinct(null);
         
         try {
-            return jt.query(sql, new Object[] {}, CONFIG_INFO_CHANGED_ROW_MAPPER);
+            return jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
+                    CONFIG_INFO_CHANGED_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;

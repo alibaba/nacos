@@ -30,6 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Metrics unified usage center.
  *
+ * <p>
+ * FIXME: Bad implemetation, force depend prometheus. No need to new {@link CompositeMeterRegistry}, only should use
+ * {@link io.micrometer.core.instrument.Metrics#globalRegistry}. If need to distinguish different scope or module, use
+ * name of meters is enough.
+ * </p>
+ *
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
 @SuppressWarnings("all")
@@ -59,38 +65,19 @@ public final class NacosMeterRegistryCenter {
         } catch (Throwable t) {
             Loggers.CORE.warn("Metrics init failed :", t);
         }
+        registry(CORE_STABLE_REGISTRY, CONFIG_STABLE_REGISTRY, NAMING_STABLE_REGISTRY, TOPN_CONFIG_CHANGE_REGISTRY,
+                TOPN_SERVICE_CHANGE_REGISTRY);
         
-        CompositeMeterRegistry compositeMeterRegistry;
-        
-        compositeMeterRegistry = new CompositeMeterRegistry();
-        if (PROMETHEUS_METER_REGISTRY != null) {
-            compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
-        }
-        METER_REGISTRIES.put(CORE_STABLE_REGISTRY, compositeMeterRegistry);
+    }
     
-        compositeMeterRegistry = new CompositeMeterRegistry();
-        if (PROMETHEUS_METER_REGISTRY != null) {
-            compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
+    private static void registry(String... names) {
+        for (String name : names) {
+            CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
+            if (PROMETHEUS_METER_REGISTRY != null) {
+                compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
+            }
+            METER_REGISTRIES.put(name, compositeMeterRegistry);
         }
-        METER_REGISTRIES.put(CONFIG_STABLE_REGISTRY, compositeMeterRegistry);
-    
-        compositeMeterRegistry = new CompositeMeterRegistry();
-        if (PROMETHEUS_METER_REGISTRY != null) {
-            compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
-        }
-        METER_REGISTRIES.put(NAMING_STABLE_REGISTRY, compositeMeterRegistry);
-    
-        compositeMeterRegistry = new CompositeMeterRegistry();
-        if (PROMETHEUS_METER_REGISTRY != null) {
-            compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
-        }
-        METER_REGISTRIES.put(TOPN_CONFIG_CHANGE_REGISTRY, compositeMeterRegistry);
-    
-        compositeMeterRegistry = new CompositeMeterRegistry();
-        if (PROMETHEUS_METER_REGISTRY != null) {
-            compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
-        }
-        METER_REGISTRIES.put(TOPN_SERVICE_CHANGE_REGISTRY, compositeMeterRegistry);
     }
     
     public static Counter counter(String registry, String name, Iterable<Tag> tags) {

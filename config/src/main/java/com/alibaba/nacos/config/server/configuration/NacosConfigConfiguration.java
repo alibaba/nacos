@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.config.server.filter.CircuitFilter;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -33,7 +34,7 @@ import org.springframework.context.annotation.Configuration;
 public class NacosConfigConfiguration {
     
     @Bean
-    public FilterRegistrationBean nacosWebFilterRegistration() {
+    public FilterRegistrationBean<NacosWebFilter> nacosWebFilterRegistration() {
         FilterRegistrationBean<NacosWebFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(nacosWebFilter());
         registration.addUrlPatterns("/v1/cs/*");
@@ -49,7 +50,7 @@ public class NacosConfigConfiguration {
     
     @Conditional(ConditionDistributedEmbedStorage.class)
     @Bean
-    public FilterRegistrationBean transferToLeaderRegistration() {
+    public FilterRegistrationBean<CircuitFilter> transferToLeaderRegistration() {
         FilterRegistrationBean<CircuitFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(transferToLeader());
         registration.addUrlPatterns("/v1/cs/*");

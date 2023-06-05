@@ -31,7 +31,9 @@ import org.springframework.stereotype.Component;
 public class RpcServerTlsConfig extends TlsConfig {
 
     public static final  String PREFIX = "nacos.remote.server.rpc.tls";
-
+    
+    private String sslContextRefresher = "";
+    
     private Boolean compatibility = true;
 
     public Boolean getCompatibility() {
@@ -40,5 +42,13 @@ public class RpcServerTlsConfig extends TlsConfig {
 
     public void setCompatibility(Boolean compatibility) {
         this.compatibility = compatibility;
+    }
+    
+    public String getSslContextRefresher() {
+        return sslContextRefresher;
+    }
+    
+    public void setSslContextRefresher(String sslContextRefresher) {
+        this.sslContextRefresher = sslContextRefresher;
     }
 }

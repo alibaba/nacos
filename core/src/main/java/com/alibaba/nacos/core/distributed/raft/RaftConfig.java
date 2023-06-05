@@ -34,7 +34,7 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-@ConfigurationProperties(prefix = "nacos.core.protocol.raft")
+@ConfigurationProperties(prefix = RaftSysConstants.RAFT_CONFIG_PREFIX)
 public class RaftConfig implements Config<RequestProcessor4CP> {
     
     private static final long serialVersionUID = 9174789390266064002L;
