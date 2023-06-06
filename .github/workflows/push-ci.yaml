@@ -148,10 +148,10 @@ jobs:
           chartGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
           chartBranch: "master"
           chartPath: "./helm"
-          testCodeGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
+          testCodeGit: "https://github.com/nacos-group/nacos-e2e.git"
           testCodeBranch: "master"
-          testCodePath: "./helm"
-          testCmdBase: "mvn clean test -B"
+          testCodePath: "java/nacos-2X"
+          testCmdBase: 'mvn clean test -B'
           jobIndex: ${{ strategy.job-index }}
           helmValue: |
             global:
