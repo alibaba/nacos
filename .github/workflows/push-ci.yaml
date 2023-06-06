@@ -113,7 +113,7 @@ jobs:
           echo version-json=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .` >> $GITHUB_OUTPUT
   
   
-  deploy:
+  test:
     if: ${{ success() }}
     name: Deploy nacos-server
     needs: [list-version,docker]
@@ -136,16 +136,23 @@ jobs:
         run: |
           echo "::set-env name=REPLICA_COUNT::1"
           echo "::set-env name=DATABASE::embedded"
-      - uses: Wuyunfan-BUPT/nacosTestTools@master
-        name: Deploy nacos
+      - uses: Wuyunfan-BUPT/test-tools.git@main
+        name: Deploy and run nacos test
         with:
-          action: "deploy"
-          ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
-          test-version: "${{ matrix.version }}"
-          chart-git: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
-          chart-branch: "master"
-          chart-path: "./helm"
-          job-id: ${{ strategy.job-index }}
+          testRepo: "nacos"
+          action: ""
+          version: "${{ matrix.version }}"
+          askConfig: "${{ secrets.ASK_CONFIG_VIRGINA }}"
+          velauxUsername: "${{ secrets.VELA_USERNAME }}"
+          velauxPassword: "${{ secrets.VELA_PASSWORD }}"
+          chartGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
+          chartBranch: "master"
+          chartPath: "./helm"
+          testCodeGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
+          testCodeBranch: "master"
+          testCodePath: "./helm"
+          testCmdBase: "mvn clean test -B"
+          jobIndex: ${{ strategy.job-index }}
           helm-values: |
             global:
               mode: ${{ matrix.mode }}
