@@ -153,7 +153,7 @@ jobs:
           testCodePath: "./helm"
           testCmdBase: "mvn clean test -B"
           jobIndex: ${{ strategy.job-index }}
-          helm-values: |
+          helmValue: |
             global:
               mode: ${{ matrix.mode }}
             nacos:
