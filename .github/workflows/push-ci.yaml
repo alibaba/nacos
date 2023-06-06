@@ -136,7 +136,7 @@ jobs:
         run: |
           echo "::set-env name=REPLICA_COUNT::1"
           echo "::set-env name=DATABASE::embedded"
-      - uses: Wuyunfan-BUPT/test-tools.git@main
+      - uses: Wuyunfan-BUPT/test-tools@main
         name: Deploy and run nacos test
         with:
           testRepo: "nacos"
