@@ -175,7 +175,7 @@ jobs:
         if: always()
         name: Upload test log
         with:
-          name: root/testlog.tar.gz
+          name: 'root/testlog.tar.gz'
           path: testlog.tar.gz
       - uses: actions/upload-artifact@v3
         if: always()
