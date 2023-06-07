@@ -175,20 +175,14 @@ jobs:
         if: always()
         name: Upload test log
         with:
-          name: 'root/testlog.tar.gz'
+          name: testlog.tar.gz
           path: testlog.tar.gz
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
         with:
-          name: '**/testlog.tar.gz'
-          path: testlog1.tar.gz
-      - uses: actions/upload-artifact@v3
-        if: always()
-        name: Upload test log
-        with:
-          name: testlog.tar.gz
-          path: testlog2.tar.gz
+          name: testlog.txt
+          path: testlog1.txt
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
         if: always() # always run even if the previous step fails
