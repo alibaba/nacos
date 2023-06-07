@@ -51,6 +51,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
@@ -122,6 +123,8 @@ public class NamingGrpcClientProxyTest {
     
     private Instance instance;
     
+    private String uuid;
+    
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
     
@@ -136,10 +139,17 @@ public class NamingGrpcClientProxyTest {
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties, holder);
+        
+        Field uuidField = NamingGrpcClientProxy.class.getDeclaredField("uuid");
+        uuidField.setAccessible(true);
+        uuid = (String) uuidField.get(client);
+        
+        Assert.assertTrue(RpcClientFactory.getClient(uuid) != null);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         ((RpcClient) rpcClientField.get(client)).shutdown();
         rpcClientField.set(client, this.rpcClient);
+        
         response = new InstanceResponse();
         when(this.rpcClient.request(any())).thenReturn(response);
         instance = new Instance();
@@ -398,7 +408,8 @@ public class NamingGrpcClientProxyTest {
     @Test
     public void testShutdown() throws Exception {
         client.shutdown();
-        verify(this.rpcClient, times(1)).shutdown();
+        Assert.assertTrue(RpcClientFactory.getClient(uuid) == null);
+        //verify(this.rpcClient, times(1)).shutdown();
     }
     
     @Test
