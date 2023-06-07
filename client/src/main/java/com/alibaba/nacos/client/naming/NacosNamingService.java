@@ -466,5 +466,7 @@ public class NacosNamingService implements NamingService {
     public void shutDown() throws NacosException {
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
+        NotifyCenter.deregisterSubscriber(changeNotifier);
+    
     }
 }
