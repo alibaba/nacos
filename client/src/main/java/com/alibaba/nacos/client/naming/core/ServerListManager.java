@@ -86,7 +86,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
     public ServerListManager(NacosClientProperties properties, String namespace) {
         this.namespace = namespace;
         initServerAddr(properties);
-        if (getServerList().isEmpty()) {
+        if (getServerList().isEmpty() && StringUtils.isEmpty(endpoint)) {
             throw new NacosLoadException("serverList is empty,please check configuration");
         } else {
             currentIndex.set(new Random().nextInt(getServerList().size()));
