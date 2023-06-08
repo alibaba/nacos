@@ -146,7 +146,7 @@ jobs:
           chart-path: "./helm"
           job-id: ${{ strategy.job-index }}
           helm-values: |
-            namespace: nacos-${{ GITHUB_RUN_ID }}-${{ strategy.job-index }}
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             global:
               mode: ${{ matrix.mode }}
             nacos:
