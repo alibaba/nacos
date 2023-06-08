@@ -9,6 +9,7 @@ on:
   
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 jobs:
   docker:
