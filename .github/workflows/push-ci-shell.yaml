@@ -1,4 +1,4 @@
-name: PUSH-CI 
+name: PUSH-CI-SHELL
 
 on:
   push:
