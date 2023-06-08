@@ -51,7 +51,7 @@ jobs:
         with:
           repository: Wuyunfan-BUPT/nacos-docker.git
           ref: master
-          path: rocketmq-docker
+          path: nacos-docker
       - name: docker-login
         uses: docker/login-action@v2
         with:
@@ -61,7 +61,7 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
-          mv nacos-server-*-SNAPSHOT.tar.gz nacos-docker/build/
+          mv nacos-server-2.3.0-SNAPSHOT.tar.gz nacos-docker/build/
           cd nacos-docker/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
