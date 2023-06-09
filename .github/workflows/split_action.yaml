@@ -175,6 +175,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
+        mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@splitAction
@@ -212,6 +213,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
+        mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@splitAction
