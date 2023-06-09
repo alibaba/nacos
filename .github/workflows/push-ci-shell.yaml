@@ -172,6 +172,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
+        mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
@@ -208,6 +209,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
+        mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
