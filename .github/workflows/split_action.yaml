@@ -13,7 +13,6 @@ concurrency:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  GITHUB_JOB_INDEX: 0
 
 
 jobs:
@@ -123,6 +122,7 @@ jobs:
       REPLICA_COUNT: 3
       DATABASE: mysql
       NODE_PORT: 30000
+      THIS_JOB_INDEX: 0
     strategy:
       matrix:
         mode: ["cluster","standalone"]
@@ -133,7 +133,7 @@ jobs:
             echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
       - name: set job index
         run: |
-            echo "::set-env name=GITHUB_JOB_INDEX::${{ strategy.job-index }}"
+            echo "::set-env name=THIS_JOB_INDEX::${{ strategy.job-index }}"
       
       - name: set cluster params
         if: ${{ matrix.mode == 'standalone' }}
@@ -152,9 +152,9 @@ jobs:
           chartGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
           chartBranch: "master"
           chartPath: "./helm"
-          jobIndex:: ${{ env.GITHUB_JOB_INDEX }}
+          jobIndex:: ${{ env.THIS_JOB_INDEX }}
           helmValue: |
-            namespace: nacos-${{ github.run_id }}-${{ env.GITHUB_JOB_INDEX }}
+            namespace: nacos-${{ github.run_id }}-${{ env.THIS_JOB_INDEX }}
             global:
               mode: ${{ matrix.mode }}
             nacos:
