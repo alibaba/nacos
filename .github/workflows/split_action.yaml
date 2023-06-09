@@ -122,11 +122,15 @@ jobs:
       REPLICA_COUNT: 3
       DATABASE: mysql
       NODE_PORT: 30000
+      JOB_INDEX: 0 
     strategy:
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
+      - name: set job index
+        run: |
+          echo "::set-env name=JOB_INDEX::${{ strategy.job-index }}"
       - name: set nodeport
         run: |
             echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
@@ -147,7 +151,7 @@ jobs:
           chartGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
           chartBranch: "master"
           chartPath: "./helm"
-          jobIndex:: ${{ strategy.job-index }}
+          jobIndex:: ${{ env.JOB_INDEX }}
           helmValue: |
             global:
               mode: ${{ matrix.mode }}
