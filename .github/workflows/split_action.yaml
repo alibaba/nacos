@@ -133,7 +133,7 @@ jobs:
           echo "::set-env name=JOB_INDEX::${{ strategy.job-index }}"
       - name: set nodeport
         run: |
-            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ env.JOB_INDEX }}) % 30000) + 30000)"
+            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
       - name: set cluster params
         if: ${{ matrix.mode == 'standalone' }}
         run: |
@@ -151,7 +151,7 @@ jobs:
           chartGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
           chartBranch: "master"
           chartPath: "./helm"
-          jobIndex:: ${{ env.JOB_INDEX }}
+          jobIndex:: ${{ strategy.job-index }}
           helmValue: |
             global:
               mode: ${{ matrix.mode }}
