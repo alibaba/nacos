@@ -13,6 +13,7 @@ concurrency:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  GITHUB_JOB_INDEX: 0
 
 
 jobs:
@@ -122,7 +123,6 @@ jobs:
       REPLICA_COUNT: 3
       DATABASE: mysql
       NODE_PORT: 30000
-      GITHUB_JOB_INDEX: 0
     strategy:
       matrix:
         mode: ["cluster","standalone"]
