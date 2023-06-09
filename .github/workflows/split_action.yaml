@@ -147,7 +147,7 @@ jobs:
           chartGit: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-docker.git"
           chartBranch: "master"
           chartPath: "./helm"
-          jobIndex:: "${{ strategy.job-index }}"
+          jobIndex:: ${{ strategy.job-index }}
           helmValue: |
             global:
               mode: ${{ matrix.mode }}
