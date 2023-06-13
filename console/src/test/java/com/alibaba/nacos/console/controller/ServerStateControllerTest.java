@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -51,8 +53,12 @@ public class ServerStateControllerTest {
     
     private static final String CONSOLE_URL = "/v1/console/server/state";
     
+    private ConfigurableEnvironment environment;
+    
     @Before
     public void setUp() {
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         mockmvc = MockMvcBuilders.standaloneSetup(serverStateController).build();
     }
     
@@ -63,7 +69,7 @@ public class ServerStateControllerTest {
         Assert.assertEquals(200, response.getStatus());
         ObjectNode responseContent = JacksonUtils.toObj(response.getContentAsByteArray(), ObjectNode.class);
         Assert.assertEquals(EnvUtil.STANDALONE_MODE_CLUSTER,
-                responseContent.get(Constants.STANDALONE_MODE_STATE).asText());
+                responseContent.get(Constants.STARTUP_MODE_STATE).asText());
         Assert.assertEquals("null", responseContent.get(Constants.FUNCTION_MODE_STATE).asText());
         Assert.assertEquals(VersionUtils.version, responseContent.get(Constants.NACOS_VERSION).asText());
     }

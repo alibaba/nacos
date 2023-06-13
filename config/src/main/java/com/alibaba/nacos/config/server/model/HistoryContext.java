@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.config.server.model;
 
+import com.alibaba.nacos.persistence.model.Page;
+
 import java.io.Serializable;
 
 /**

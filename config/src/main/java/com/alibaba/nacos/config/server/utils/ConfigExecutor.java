@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.core.utils.ClassUtils;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,12 +34,8 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ConfigExecutor {
     
-    private static final Executor DUMP_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(ClassUtils.getCanonicalName(Config.class),
-                    new NameThreadFactory("com.alibaba.nacos.config.embedded.dump"));
-    
     private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 10,
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 8,
                     new NameThreadFactory("com.alibaba.nacos.config.server.timer"));
     
     private static final ScheduledExecutorService CAPACITY_MANAGEMENT_EXECUTOR = ExecutorFactory.Managed
@@ -50,7 +45,12 @@ public final class ConfigExecutor {
     private static final ScheduledExecutorService ASYNC_NOTIFY_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class), 100,
                     new NameThreadFactory("com.alibaba.nacos.config.AsyncNotifyService"));
-    
+
+    private static final ScheduledExecutorService ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR = ExecutorFactory.Managed
+            .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
+                    ThreadUtils.getSuitableThreadCount(),
+                    new NameThreadFactory("com.alibaba.nacos.config.plugin.AsyncService"));
+
     private static final ScheduledExecutorService CONFIG_SUB_SERVICE_EXECUTOR = ExecutorFactory.Managed
             .newScheduledExecutorService(ClassUtils.getCanonicalName(Config.class),
                     ThreadUtils.getSuitableThreadCount(),
@@ -69,10 +69,6 @@ public final class ConfigExecutor {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
     
-    public static void executeEmbeddedDump(Runnable runnable) {
-        DUMP_EXECUTOR.execute(runnable);
-    }
-    
     public static void scheduleCorrectUsageTask(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         CAPACITY_MANAGEMENT_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }
@@ -84,7 +80,11 @@ public final class ConfigExecutor {
     public static void scheduleAsyncNotify(Runnable command, long delay, TimeUnit unit) {
         ASYNC_NOTIFY_EXECUTOR.schedule(command, delay, unit);
     }
-    
+
+    public static void executeAsyncConfigChangePluginTask(Runnable runnable) {
+        ASYNC_CONFIG_CHANGE_PLUGIN_EXECUTOR.execute(runnable);
+    }
+
     public static int asyncNotifyQueueSize() {
         return ((ScheduledThreadPoolExecutor) ASYNC_NOTIFY_EXECUTOR).getQueue().size();
     }

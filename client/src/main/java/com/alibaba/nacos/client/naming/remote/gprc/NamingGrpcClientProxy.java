@@ -96,8 +96,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
-        this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels, RpcClientTlsConfig.properties(properties.asProperties()));
+        this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
+                RpcClientTlsConfig.properties(properties.asProperties()));
         this.redoService = new NamingGrpcRedoService(this);
+        NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder);
     }
     
@@ -376,8 +378,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void shutdown() throws NacosException {
-        rpcClient.shutdown();
+        NAMING_LOGGER.info("Shutdown naming grpc client proxy for  uuid->{}", uuid);
         redoService.shutdown();
+        shutDownAndRemove(uuid);
+        NotifyCenter.deregisterSubscriber(this);
+    }
+    
+    private void shutDownAndRemove(String uuid) {
+        synchronized (RpcClientFactory.getAllClientEntries()) {
+            try {
+                RpcClientFactory.destroyClient(uuid);
+                NAMING_LOGGER.info("shutdown and remove naming rpc client  for uuid ->{}", uuid);
+            } catch (NacosException e) {
+                NAMING_LOGGER.warn("Fail to shutdown naming rpc client  for uuid ->{}", uuid);
+            }
+        }
     }
     
     public boolean isEnable() {

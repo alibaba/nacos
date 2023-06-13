@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,32 +31,26 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class EmbeddedPermissionPersistServiceImplTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
     
-    @Mock
-    private PaginationHelper paginationHelper;
-    
-    @Mock
-    private EmbeddedStoragePersistServiceImpl embeddedStoragePersistService;
-    
     private EmbeddedPermissionPersistServiceImpl embeddedPermissionPersistService;
     
     @Before
     public void setUp() throws Exception {
+        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
         embeddedPermissionPersistService = new EmbeddedPermissionPersistServiceImpl();
         Class<EmbeddedPermissionPersistServiceImpl> embeddedPermissionPersistServiceClass = EmbeddedPermissionPersistServiceImpl.class;
         Field databaseOperateF = embeddedPermissionPersistServiceClass.getDeclaredField("databaseOperate");
         databaseOperateF.setAccessible(true);
         databaseOperateF.set(embeddedPermissionPersistService, databaseOperate);
-        
-        Field persistService = embeddedPermissionPersistServiceClass.getDeclaredField("persistService");
-        persistService.setAccessible(true);
-        persistService.set(embeddedPermissionPersistService, embeddedStoragePersistService);
-        Mockito.when(embeddedStoragePersistService.createPaginationHelper()).thenReturn(paginationHelper);
     }
     
     @Test
@@ -72,7 +64,7 @@ public class EmbeddedPermissionPersistServiceImplTest {
     @Test
     public void testAddPermission() {
         embeddedPermissionPersistService.addPermission("role", "resource", "action");
-        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextUtils.getCurrentSqlContext();
+        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();
     }
@@ -80,7 +72,7 @@ public class EmbeddedPermissionPersistServiceImplTest {
     @Test
     public void testDeletePermission() {
         embeddedPermissionPersistService.deletePermission("role", "resource", "action");
-        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextUtils.getCurrentSqlContext();
+        List<ModifyRequest> currentSqlContext = EmbeddedStorageContextHolder.getCurrentSqlContext();
         
         Mockito.verify(databaseOperate).blockUpdate();
     }

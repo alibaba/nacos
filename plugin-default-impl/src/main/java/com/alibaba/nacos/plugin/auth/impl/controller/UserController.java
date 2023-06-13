@@ -22,7 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
@@ -155,6 +155,9 @@ public class UserController {
         } catch (HttpSessionRequiredException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "session expired!");
             return null;
+        } catch (AccessException exception) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+            return null;
         }
         
         User user = userDetailsService.getUserFromDatabase(username);
@@ -167,7 +170,7 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException {
+    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException, AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
@@ -175,7 +178,8 @@ public class UserController {
                 .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT);
         NacosUser user;
         if (identityContext == null
-                || (user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY)) == null) {
+                || (user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY)) == null
+                || (user = iAuthenticationManager.authenticate(request)) == null) {
             throw new HttpSessionRequiredException("session expired!");
         }
         // admin

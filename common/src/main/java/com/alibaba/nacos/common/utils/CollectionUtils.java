@@ -305,6 +305,34 @@ public final class CollectionUtils {
         throw new IllegalArgumentException(buildExceptionMessage(iterator, first));
     }
     
+    /**
+     * check list is equal.
+     *
+     * @param firstList  first list.
+     * @param secondList second list.
+     * @return
+     */
+    public static boolean isListEqual(List<String> firstList, List<String> secondList) {
+        if (firstList == null && secondList == null) {
+            return true;
+        }
+        if (firstList == null || secondList == null) {
+            return false;
+        }
+        
+        if (firstList == secondList) {
+            return true;
+        }
+        
+        if (firstList.size() != secondList.size()) {
+            return false;
+        }
+        
+        boolean flag1 = firstList.containsAll(secondList);
+        boolean flag2 = secondList.containsAll(firstList);
+        return flag1 && flag2;
+    }
+    
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private static <T> String buildExceptionMessage(Iterator<T> iterator, T first) {
         StringBuilder msg = new StringBuilder();

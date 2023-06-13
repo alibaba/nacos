@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.service.repository.CommonPersistService;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -47,11 +47,11 @@ public class ExternalDumpService extends DumpService {
      * @param memberManager {@link ServerMemberManager}
      */
     public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
-            CommonPersistService commonPersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            NamespacePersistService namespacePersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
-        super(configInfoPersistService, commonPersistService, historyConfigInfoPersistService,
+        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
                 configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
     }
     

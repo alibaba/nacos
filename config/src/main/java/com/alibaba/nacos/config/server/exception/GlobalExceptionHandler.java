@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.exception;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -64,7 +65,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
-        MetricsMonitor.getDbException().increment();
+        DatasourceMetrics.getDbException().increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
 }

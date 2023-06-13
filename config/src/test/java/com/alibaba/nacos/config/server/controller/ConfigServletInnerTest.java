@@ -114,8 +114,8 @@ public class ConfigServletInnerTest {
     
     @Test
     public void testDoGetConfigV1() throws Exception {
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito
-                .mockStatic(ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(
+                ConfigCacheService.class);
         final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
         final MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         
@@ -136,15 +136,15 @@ public class ConfigServletInnerTest {
         configInfoBetaWrapper.setDataId("test");
         configInfoBetaWrapper.setGroup("test");
         configInfoBetaWrapper.setContent("isBeta:true, direct read: true");
-        when(configInfoBetaPersistService.findConfigInfo4Beta(anyString(), anyString(), anyString()))
-                .thenReturn(configInfoBetaWrapper);
+        when(configInfoBetaPersistService.findConfigInfo4Beta(anyString(), anyString(), anyString())).thenReturn(
+                configInfoBetaWrapper);
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("localhost:8080");
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        String actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "", "true", "localhost");
+        String actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("true", response.getHeader("isBeta"));
         Assert.assertEquals("isBeta:true, direct read: true", response.getContentAsString());
@@ -155,8 +155,8 @@ public class ConfigServletInnerTest {
         diskUtilMockedStatic.when(() -> DiskUtil.targetBetaFile(anyString(), anyString(), anyString()))
                 .thenReturn(file);
         response = new MockHttpServletResponse();
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("true", response.getHeader("isBeta"));
         Assert.assertEquals("", response.getContentAsString());
@@ -169,8 +169,8 @@ public class ConfigServletInnerTest {
     @Test
     public void testDoGetConfigV2() throws Exception {
         
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito
-                .mockStatic(ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(
+                ConfigCacheService.class);
         final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
         final MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         
@@ -191,14 +191,14 @@ public class ConfigServletInnerTest {
         configInfoWrapper.setDataId("test");
         configInfoWrapper.setGroup("test");
         configInfoWrapper.setContent("tag is blank and direct read is true");
-        when(configInfoPersistService.findConfigInfo(anyString(), anyString(), anyString()))
-                .thenReturn(configInfoWrapper);
+        when(configInfoPersistService.findConfigInfo(anyString(), anyString(), anyString())).thenReturn(
+                configInfoWrapper);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("localhost:8080");
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        String actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "", "true", "localhost");
+        String actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("tag is blank and direct read is true", response.getContentAsString());
         
@@ -207,8 +207,8 @@ public class ConfigServletInnerTest {
         response = new MockHttpServletResponse();
         File file = tempFolder.newFile("test.txt");
         diskUtilMockedStatic.when(() -> DiskUtil.targetFile(anyString(), anyString(), anyString())).thenReturn(file);
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("", response.getContentAsString());
         
@@ -218,11 +218,11 @@ public class ConfigServletInnerTest {
         configInfoTagWrapper.setDataId("test");
         configInfoTagWrapper.setGroup("test");
         configInfoTagWrapper.setContent("tag is not blank and direct read is true");
-        when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(), anyString()))
-                .thenReturn(configInfoTagWrapper);
+        when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(),
+                anyString())).thenReturn(configInfoTagWrapper);
         response = new MockHttpServletResponse();
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "test", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("tag is not blank and direct read is true", response.getContentAsString());
         
@@ -231,8 +231,8 @@ public class ConfigServletInnerTest {
         response = new MockHttpServletResponse();
         diskUtilMockedStatic.when(() -> DiskUtil.targetTagFile(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(file);
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "test", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("", response.getContentAsString());
         
@@ -240,22 +240,23 @@ public class ConfigServletInnerTest {
         propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(true);
         Map<String, String> tagMd5 = new HashMap<>();
         tagMd5.put("auto-tag-test", "auto-tag-test");
-        cacheItem.setTagMd5(tagMd5);
+        cacheItem.initConfigTagsIfEmpty("auto-tag-test");
+        cacheItem.getConfigCacheTags().get("auto-tag-test").setMd5Utf8("auto-tag-test");
         request.addHeader("Vipserver-Tag", "auto-tag-test");
         configInfoTagWrapper.setContent("auto tag mode and direct read is true");
-        when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(), eq("auto-tag-test")))
-                .thenReturn(configInfoTagWrapper);
+        when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(),
+                eq("auto-tag-test"))).thenReturn(configInfoTagWrapper);
         response = new MockHttpServletResponse();
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("auto tag mode and direct read is true", response.getContentAsString());
         
         // if use auto tag and direct read is false
         propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
         response = new MockHttpServletResponse();
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("", response.getContentAsString());
         
@@ -267,21 +268,21 @@ public class ConfigServletInnerTest {
     @Test
     public void testDoGetConfigV3() throws Exception {
         
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito
-                .mockStatic(ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(
+                ConfigCacheService.class);
         
         // if lockResult equals 0
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryReadLock(anyString())).thenReturn(0);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        String actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "test", "true", "localhost");
+        String actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
         
         // if lockResult less than 0
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryReadLock(anyString())).thenReturn(-1);
-        actualValue = configServletInner
-                .doGetConfig(request, response, "test", "test", "test", "test", "true", "localhost");
+        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
+                "localhost");
         Assert.assertEquals(HttpServletResponse.SC_CONFLICT + "", actualValue);
         
         configCacheServiceMockedStatic.close();
