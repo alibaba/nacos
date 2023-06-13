@@ -30,6 +30,7 @@ import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -70,6 +71,7 @@ public class ConfigOpsController {
      * Manually trigger dump of a local configuration file.
      */
     @PostMapping(value = "/localCache")
+    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public String updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         dumpService.dumpAll();
@@ -78,6 +80,7 @@ public class ConfigOpsController {
     }
     
     @PutMapping(value = "/log")
+    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
