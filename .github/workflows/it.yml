@@ -45,3 +45,4 @@ jobs:
         run: mvn clean package -Pnit-test -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Clean Env"
         run: mvn clean -Premove-test-data -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+
