@@ -135,7 +135,7 @@ jobs:
         run: |
           echo "::set-env name=REPLICA_COUNT::1"
           echo "::set-env name=DATABASE::embedded"
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@136205caa6e97f81744e30adea114dd2f09cc55e
         name: Deploy nacos
         with:
           action: "deploy"
@@ -175,7 +175,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@136205caa6e97f81744e30adea114dd2f09cc55e
         name: e2e test
         with:
           action: "test"
@@ -212,7 +212,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@136205caa6e97f81744e30adea114dd2f09cc55e
         name: clean
         with:
           action: "clean"
