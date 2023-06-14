@@ -59,7 +59,7 @@ jobs:
         with:
           repository: Wuyunfan-BUPT/nacos-e2e.git
           ref: main
-          path: nacos-e2e/cicd
+          path: nacos-e2e
       - uses: actions/download-artifact@v3
         name: Download distribution tar
         with:
