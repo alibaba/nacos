@@ -90,6 +90,7 @@ jobs:
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
+          pwd
           tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
           echo $tag
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
