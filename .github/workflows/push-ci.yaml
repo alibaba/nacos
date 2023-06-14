@@ -75,9 +75,15 @@ jobs:
         id: build-images
         run: |
           ls
+          echo null
           ls nacos-e2e/
+          echo null
           ls nacos-e2e/cicd/
-          ls nacos-e2e/cicd/build
+          echo null
+          ls nacos-e2e/cicd/helm/
+          echo null
+          ls nacos-e2e/cicd/build/
+          echo null
           mv nacos-server-*-SNAPSHOT.tar.gz nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
