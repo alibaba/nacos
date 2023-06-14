@@ -59,7 +59,7 @@ jobs:
         with:
           repository: Wuyunfan-BUPT/nacos-e2e.git
           ref: master
-          path: nacos-docker/cicd
+          path: nacos-e2e/cicd
       - uses: actions/download-artifact@v3
         name: Download distribution tar
         with:
@@ -74,8 +74,8 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
-          mv nacos-server-*-SNAPSHOT.tar.gz nacos-docker/build/
-          cd nacos-docker/build
+          mv nacos-server-*-SNAPSHOT.tar.gz nacos-e2e/cicd/build/
+          cd nacos-e2e/cicd/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
