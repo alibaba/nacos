@@ -74,23 +74,12 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
-          ls
-          echo null
-          ls nacos-e2e/
-          echo null
-          ls nacos-e2e/cicd/
-          echo null
-          ls nacos-e2e/cicd/helm/
-          echo null
-          ls nacos-e2e/cicd/build/
-          echo null
           mv nacos-server-*-SNAPSHOT.tar.gz nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
-          pwd
           tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
           echo $tag
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
@@ -99,7 +88,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: versionlist
-          path: nacos-docker/cicd/build/versionlist/*
+          path: nacos-e2e/cicd/build/versionlist/*
           
           
   list-version:
