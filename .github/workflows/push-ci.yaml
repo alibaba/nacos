@@ -157,8 +157,6 @@ jobs:
               storage:
                 type: ${{ env.DATABASE }}
                 db:
-                  host: mysql
-                  name: nacos_devtest
                   port: 3306
                   username: nacos
                   password: nacos
