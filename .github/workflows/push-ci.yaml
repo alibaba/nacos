@@ -98,7 +98,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: versionlist
-          path: nacos-docker/build/versionlist/*
+          path: nacos-docker/cicd/build/versionlist/*
           
           
   list-version:
