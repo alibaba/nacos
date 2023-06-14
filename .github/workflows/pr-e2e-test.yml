@@ -50,9 +50,9 @@ jobs:
           ls
       - uses: actions/checkout@v3
         with:
-          repository: Wuyunfan-BUPT/nacos-docker.git
-          ref: master
-          path: nacos-docker
+          repository: Wuyunfan-BUPT/nacos-e2e.git
+          ref: main
+          path: nacos-e2e
       - name: docker-login
         uses: docker/login-action@v2
         with:
@@ -63,7 +63,7 @@ jobs:
         id: build-images
         run: |
           mv nacos-server-*-SNAPSHOT.tar.gz nacos-docker/build/
-          cd nacos-docker/build
+          cd nacos-e2e/cicd/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
@@ -76,7 +76,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: versionlist
-          path: nacos-docker/build/versionlist/*
+          path: nacos-e2e/cicd/build/versionlist/*
 
 
   list-version:
@@ -130,9 +130,9 @@ jobs:
           action: "deploy"
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
-          chart-git: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-k8s.git"
-          chart-branch: "master"
-          chart-path: "./helm"
+          chart-git: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-e2e.git"
+          chart-branch: "main"
+          chart-path: "./cicd/helm"
           job-id: ${{ strategy.job-index }}
           helm-values: |
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
@@ -208,6 +208,3 @@ jobs:
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
           job-id: ${{ strategy.job-index }}
-  
-  
-  
