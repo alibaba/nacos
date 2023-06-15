@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.re2j.Pattern;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
@@ -244,7 +245,7 @@ public class ServiceOperatorV2Impl implements ServiceOperator {
         Collection<String> result = new HashSet<>();
         for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
             String groupedServiceName = each.getGroupedServiceName();
-            if (groupedServiceName.matches(regex)) {
+            if (Pattern.matches(regex, groupedServiceName)) {
                 result.add(groupedServiceName);
             }
         }

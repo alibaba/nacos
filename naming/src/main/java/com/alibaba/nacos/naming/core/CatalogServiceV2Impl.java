@@ -36,6 +36,7 @@ import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.re2j.Pattern;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -236,7 +237,7 @@ public class CatalogServiceV2Impl implements CatalogService {
         regex.add(getRegexString(serviceName));
         String regexString = regex.toString();
         for (Service each : ServiceManager.getInstance().getSingletons(namespaceId)) {
-            if (each.getGroupedServiceName().matches(regexString)) {
+            if (Pattern.matches(regexString, each.getGroupedServiceName())) {
                 result.add(each);
             }
         }
