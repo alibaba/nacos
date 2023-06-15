@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.control.ruleactivator;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -55,7 +56,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
     }
     
     private static String defaultBaseDir() {
-        return LocalDiskRuleStorage.class.getResource("/").getPath();
+        return EnvUtil.getNacosHome();
     }
     
     private File getConnectionRuleFile() {
