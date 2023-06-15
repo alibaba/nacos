@@ -2,7 +2,7 @@ name: PR-CI
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    branches: [ develop, v1.x-develop ]
 
 jobs:
   dist-tar:
