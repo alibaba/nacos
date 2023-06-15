@@ -32,7 +32,9 @@ server.port=8848
 
 #*************** Config Module Related Configurations ***************#
 ### If use MySQL as datasource:
+### Deprecated configuration property, it is recommended to use `spring.sql.init.platform` replaced.
 # spring.datasource.platform=mysql
+# spring.sql.init.platform=mysql
 
 ### Count of DB:
 # db.num=1
@@ -151,11 +153,12 @@ nacos.core.auth.enabled=false
 #nacos.core.auth.ldap.ignore.partial.result.exception=false
 
 
+### worked when nacos.core.auth.system.type=nacos
 ### The token expiration in seconds:
-nacos.core.auth.default.token.expire.seconds=18000
-
-### The default token:
-#nacos.core.auth.default.token.secret.key=SecretKey012345678901234567890123456789012345678901234567890123456789
+nacos.core.auth.plugin.nacos.token.cache.enable=false
+nacos.core.auth.plugin.nacos.token.expire.seconds=18000
+### The default token (Base64 String):
+nacos.core.auth.plugin.nacos.token.secret.key=
 
 ### Turn on/off caching of auth information. By turning on this switch, the update of auth information would have a 15 seconds delay.
 nacos.core.auth.caching.enabled=true
@@ -242,3 +245,32 @@ nacos.k8s.sync.enabled=false
 
 ### enable to support prometheus service discovery
 #nacos.prometheus.metrics.enabled=true
+
+### Since 2.3
+#*************** Grpc Configurations ***************#
+
+## sdk grpc(between nacos server and client) configuration
+## Sets the maximum message size allowed to be received on the server.
+#nacos.remote.server.grpc.sdk.max-inbound-message-size=10485760
+
+## Sets the time(milliseconds) without read activity before sending a keepalive ping. The typical default is two hours.
+#nacos.remote.server.grpc.sdk.keep-alive-time=7200000
+
+## Sets a time(milliseconds) waiting for read activity after sending a keepalive ping. Defaults to 20 seconds.
+#nacos.remote.server.grpc.sdk.keep-alive-timeout=20000
+
+
+## Sets a time(milliseconds) that specify the most aggressive keep-alive time clients are permitted to configure. The typical default is 5 minutes
+#nacos.remote.server.grpc.sdk.permit-keep-alive-time=300000
+
+## cluster grpc(inside the nacos server) configuration
+#nacos.remote.server.grpc.cluster.max-inbound-message-size=10485760
+
+## Sets the time(milliseconds) without read activity before sending a keepalive ping. The typical default is two hours.
+#nacos.remote.server.grpc.cluster.keep-alive-time=7200000
+
+## Sets a time(milliseconds) waiting for read activity after sending a keepalive ping. Defaults to 20 seconds.
+#nacos.remote.server.grpc.cluster.keep-alive-timeout=20000
+
+## Sets a time(milliseconds) that specify the most aggressive keep-alive time clients are permitted to configure. The typical default is 5 minutes
+#nacos.remote.server.grpc.cluster.permit-keep-alive-time=300000
