@@ -57,7 +57,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          repository: Wuyunfan-BUPT/nacos-e2e.git
+          repository: nacos-group/nacos-e2e.git
           ref: main
           path: nacos-e2e
       - uses: actions/download-artifact@v3
@@ -141,7 +141,7 @@ jobs:
           action: "deploy"
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
-          chart-git: "https://ghproxy.com/https://github.com/Wuyunfan-BUPT/nacos-e2e.git"
+          chart-git: "https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git"
           chart-branch: "main"
           chart-path: "./cicd/helm"
           job-id: ${{ strategy.job-index }}
