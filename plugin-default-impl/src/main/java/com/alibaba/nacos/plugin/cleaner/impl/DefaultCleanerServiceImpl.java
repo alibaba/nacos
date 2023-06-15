@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.cleaner.impl;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.plugin.cleaner.api.ExcuteSwitch;
 import com.alibaba.nacos.plugin.cleaner.config.CleanerConfig;
 import com.alibaba.nacos.plugin.cleaner.impl.config.DefaultCleanerConfig;
@@ -44,6 +45,12 @@ public class DefaultCleanerServiceImpl implements CleanerService {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCleanerServiceImpl.class);
 
     public static String name = "default";
+
+    protected HistoryConfigInfoPersistService historyConfigInfoPersistService;
+
+    private static int clearConfigHistoryPageSize = 1000;
+
+    private static long clearConfigHistorySleepInMillis = 100L;
 
     PersistService persistService;
 
@@ -76,17 +83,27 @@ public class DefaultCleanerServiceImpl implements CleanerService {
         if (excuteSwitch.canExcute()) {
             try {
                 Timestamp startTime = TimeUtils.getBeforeStamp(TimeUtils.getCurrentTime(), 24 * cleanerConfig.getRetentionDays());
-                int count = persistService.findConfigHistoryCount();
-                int maxSize = cleanerConfig.getMaxSize();
 
-                if (count <= maxSize) {
-                    LOGGER.info("configHistory cleaner, count:{} less than maxSize,skip clean", count);
-                    return;
+                int totalCount = historyConfigInfoPersistService.findConfigHistoryCountByTime(startTime);
+
+                if (totalCount > 0) {
+                    int pageSize = clearConfigHistoryPageSize;
+                    int removeTime = (totalCount + pageSize - 1) / pageSize;
+                    LOGGER.warn(
+                            "clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
+                            startTime, totalCount, pageSize, removeTime);
+                    while (removeTime > 0) {
+                        // delete paging to avoid reporting errors in batches
+                        historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
+                        removeTime--;
+
+                        try {
+                            Thread.sleep(clearConfigHistorySleepInMillis);
+                        } catch (InterruptedException e) {
+                            // ignore
+                        }
+                    }
                 }
-                int pageSize = count - maxSize;
-
-                LOGGER.info("configHistory cleaner, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-                persistService.removeConfigHistory(startTime, pageSize);
             } catch (Throwable e) {
                 LOGGER.error("configHistory cleaner, error : {}", e.toString());
             }
