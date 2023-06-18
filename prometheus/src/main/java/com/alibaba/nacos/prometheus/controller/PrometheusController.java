@@ -45,16 +45,16 @@ import java.util.Set;
 @RestController
 @ConditionalOnProperty(name = "nacos.prometheus.metrics.enabled", havingValue = "true")
 public class PrometheusController {
-
+    
     @Autowired
     private InstanceOperatorClientImpl instanceServiceV2;
-
+    
     private final ServiceManager serviceManager;
-
+    
     public PrometheusController() {
         this.serviceManager = ServiceManager.getInstance();
     }
-
+    
     /**
      * Get all service instances.
      *
@@ -68,19 +68,20 @@ public class PrometheusController {
         for (String namespace : allNamespaces) {
             Set<Service> singletons = serviceManager.getSingletons(namespace);
             for (Service service : singletons) {
-
+                
                 List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace,
                         service.getGroupedServiceName());
-
+                
                 targetSet.addAll(instances);
+                
             }
         }
-
+        
         PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
         return ResponseEntity.ok().body(arrayNode.toString());
     }
-
-
+    
+    
     /**
      * Get service instances from designated namespace.
      *
@@ -94,34 +95,36 @@ public class PrometheusController {
         if (!allNamespaces.contains(namespace)) {
             return ResponseEntity.ok().body(arrayNode.toString());
         }
-
+        
         Set<Service> singletons = serviceManager.getSingletons(namespace);
         for (Service service : singletons) {
-
+            
             List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace,
                     service.getGroupedServiceName());
-
+            
             targetSet.addAll(instances);
+            
         }
-
+        
         PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
         return ResponseEntity.ok().body(arrayNode.toString());
     }
-
+    
     /**
      * Get service instances from designated namespace and service.
      *
      * @throws NacosException NacosException.
      */
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH, produces = "application/json; charset=UTF-8")
-    public ResponseEntity metricNamespaceService(@PathVariable("namespace") String namespace, @PathVariable("service") String service) throws NacosException {
+    public ResponseEntity metricNamespaceService(@PathVariable("namespace") String namespace,
+            @PathVariable("service") String service) throws NacosException {
         ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
         Set<Instance> targetSet = new HashSet<>();
         Set<String> allNamespaces = serviceManager.getAllNamespaces();
         if (!allNamespaces.contains(namespace)) {
             return ResponseEntity.ok().body(arrayNode.toString());
         }
-
+        
         Set<Service> singletons = serviceManager.getSingletons(namespace);
         for (Service existService : singletons) {
             if (!existService.getName().equals(service)) {
@@ -129,11 +132,13 @@ public class PrometheusController {
             }
             List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace,
                     existService.getGroupedServiceName());
-
+            
             targetSet.addAll(instances);
+            
         }
+        
         PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
-
+        
         return ResponseEntity.ok().body(arrayNode.toString());
     }
 }

@@ -21,7 +21,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
+import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH;
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_PATH;
+import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH;
 
 
 /**
@@ -36,5 +38,7 @@ public class PrometheusSecurityConfiguration extends WebSecurityConfigurerAdapte
     @Override
     public void configure(WebSecurity web) throws Exception {
         web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_PATH);
+        web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_NAMESPACE_PATH);
+        web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_SERVICE_PATH);
     }
 }
