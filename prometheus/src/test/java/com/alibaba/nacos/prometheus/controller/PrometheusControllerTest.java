@@ -102,5 +102,28 @@ public class PrometheusControllerTest {
         Assert.assertEquals(200, response.getStatus());
         assertEquals(testInstanceList.size(), JacksonUtils.toObj(response.getContentAsString()).size());
     }
+
+    @Test
+    public void testMetricNamespace() throws Exception {
+        when(instanceServiceV2.listAllInstances(nameSpace, NamingUtils.getGroupedName(name, group))).thenReturn(
+                testInstanceList);
+        String prometheusNamespacePath = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH.replace("{namespace}", nameSpace);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(prometheusNamespacePath);
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        Assert.assertEquals(200, response.getStatus());
+        assertEquals(testInstanceList.size(), JacksonUtils.toObj(response.getContentAsString()).size());
+    }
+
+    @Test
+    public void testMetricNamespaceService() throws Exception {
+        when(instanceServiceV2.listAllInstances(nameSpace, NamingUtils.getGroupedName(name, group))).thenReturn(
+                testInstanceList);
+        String promethesuNamespaceServicePath = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH.replace("{namespace}", nameSpace);
+        promethesuNamespaceServicePath = promethesuNamespaceServicePath.replace("{service}", service.getName());
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(promethesuNamespaceServicePath);
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        Assert.assertEquals(200, response.getStatus());
+        assertEquals(testInstanceList.size(), JacksonUtils.toObj(response.getContentAsString()).size());
+    }
     
 }
