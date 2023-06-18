@@ -24,5 +24,9 @@ package com.alibaba.nacos.prometheus.api;
 public class ApiConstants {
     
     public static final String PROMETHEUS_CONTROLLER_PATH = "/prometheus";
+
+    public static final String PROMETHEUS_CONTROLLER_NAMESPACE_PATH = "/prometheus/namespace/{namespace}";
+
+    public static final String PROMETHEUS_CONTROLLER_SERVICE_PATH = "/prometheus/namespace/{namespace}/service/{service}";
     
 }
