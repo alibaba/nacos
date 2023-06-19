@@ -21,6 +21,7 @@ import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
+import com.alibaba.nacos.persistence.utils.ConnectionCheckUtil;
 import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -132,12 +133,16 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             
             List<HikariDataSource> dataSourceListNew = new ExternalDataSourceProperties()
                     .build(EnvUtil.getEnvironment(), (dataSource) -> {
+                        //check datasource connection
+                        ConnectionCheckUtil.checkDataSourceConnection(dataSource);
+                        
                         JdbcTemplate jdbcTemplate = new JdbcTemplate();
                         jdbcTemplate.setQueryTimeout(queryTimeout);
                         jdbcTemplate.setDataSource(dataSource);
                         testJtListNew.add(jdbcTemplate);
                         isHealthListNew.add(Boolean.TRUE);
                     });
+            
             final List<HikariDataSource> dataSourceListOld = dataSourceList;
             final List<JdbcTemplate> testJtListOld = testJtList;
             dataSourceList = dataSourceListNew;

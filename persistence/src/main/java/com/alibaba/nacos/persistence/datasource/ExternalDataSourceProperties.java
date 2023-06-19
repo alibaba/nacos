@@ -92,6 +92,7 @@ public class ExternalDataSourceProperties {
             if (StringUtils.isEmpty(ds.getConnectionTestQuery())) {
                 ds.setConnectionTestQuery(TEST_QUERY);
             }
+            
             dataSources.add(ds);
             callback.accept(ds);
         }
