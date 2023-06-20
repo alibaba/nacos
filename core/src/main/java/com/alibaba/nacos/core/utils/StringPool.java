@@ -33,7 +33,6 @@ public class StringPool {
     private static Cache<String, String> groupKeyCache = CacheBuilder.newBuilder().maximumSize(5000000)
             .expireAfterAccess(180, TimeUnit.SECONDS).build();
     
-    
     /**
      * get singleton string value from the pool.
      *
