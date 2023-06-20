@@ -54,6 +54,9 @@ public class HessianSerializer implements Serializer {
             return null;
         }
         T result = deserialize(data);
+        if (result == null) {
+            return null;
+        }
         if (cls.isAssignableFrom(result.getClass())) {
             return result;
         }
