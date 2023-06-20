@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.cache.Cache;
-import com.alibaba.nacos.common.cache.builder.CacheBuilder;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,14 +30,9 @@ import java.util.concurrent.TimeUnit;
  */
 public class StringPool {
     
-    private static final Cache<String, String> GROUP_KEY_CACHE;
+    private static Cache<String, String> groupKeyCache = CacheBuilder.newBuilder().maximumSize(5000000)
+            .expireAfterAccess(180, TimeUnit.SECONDS).build();
     
-    static {
-        GROUP_KEY_CACHE = CacheBuilder.<String, String>builder().maximumSize(5000000)
-                .expireNanos(180, TimeUnit.SECONDS)
-                .lru(true)
-                .build();
-    }
     
     /**
      * get singleton string value from the pool.
@@ -49,21 +44,21 @@ public class StringPool {
         if (key == null) {
             return key;
         }
-        String value = GROUP_KEY_CACHE.get(key);
+        String value = groupKeyCache.getIfPresent(key);
         if (value == null) {
-            GROUP_KEY_CACHE.put(key, key);
-            value = GROUP_KEY_CACHE.get(key);
+            groupKeyCache.put(key, key);
+            value = groupKeyCache.getIfPresent(key);
         }
         
         return value == null ? key : value;
     }
     
     public static long size() {
-        return GROUP_KEY_CACHE.getSize();
+        return groupKeyCache.size();
     }
     
     public static void remove(String key) {
-        GROUP_KEY_CACHE.remove(key);
+        groupKeyCache.invalidate(key);
     }
     
 }
