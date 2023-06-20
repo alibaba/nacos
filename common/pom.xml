@@ -31,7 +31,7 @@
     
     <name>nacos-common ${project.version}</name>
     <url>https://nacos.io</url>
-    
+    <description>Nacos common pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
