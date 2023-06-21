@@ -183,7 +183,7 @@ jobs:
           test-version: "${{ matrix.version }}"
           test-code-git: "https://github.com/nacos-group/nacos-e2e.git"
           test-code-branch: "main"
-          test-code-path: "golang"
+          test-code-path: "java/nacos-2X"
           test-cmd: 'mvn clean test -B -Dnacos.client.version=2.2.3'
           job-id: ${{ strategy.job-index }}
       - name: Publish Test Report
