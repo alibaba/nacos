@@ -50,9 +50,6 @@ public class HessianSerializer implements Serializer {
     
     @Override
     public <T> T deserialize(byte[] data, Class<T> cls) {
-        if (ByteUtils.isEmpty(data)) {
-            return null;
-        }
         T result = deserialize(data);
         if (result == null) {
             return null;
