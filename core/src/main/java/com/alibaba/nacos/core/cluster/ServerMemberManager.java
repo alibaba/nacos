@@ -164,7 +164,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
         this.localAddress = InetUtils.getSelfIP() + ":" + port;
         this.self = MemberUtil.singleParse(this.localAddress);
         this.self.setExtendVal(MemberMetaDataConstants.VERSION, VersionUtils.version);
-        this.self.setSupportRemoteConnection(true);
+        this.self.setGrpcReportEnabled(true);
 
         // init abilities.
         this.self.setAbilities(initMemberAbilities());
@@ -573,8 +573,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             Member target = members.get(cursor);
             
             Loggers.CLUSTER.debug("report the metadata to the node : {}", target.getAddress());
-            
-            if (target.getAbilities().getRemoteAbility().isGrpcReportEnabled()) {
+
+            // adapt old version
+            if (target.getAbilities().getRemoteAbility().isGrpcReportEnabled() || target.isGrpcReportEnabled()) {
                 reportByGrpc(target);
             } else {
                 reportByHttp(target);
@@ -598,6 +599,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                     Loggers.CLUSTER.warn("failed to report new info to target node : {}, result : {}",
                                             target.getAddress(), result);
                                     MemberUtil.onFail(ServerMemberManager.this, target);
+                                    // try to connect by grpc next time, adapt old version
+                                    target.setGrpcReportEnabled(true);
+                                    target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
                                 }
                             }
                             
@@ -606,6 +610,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
                                 Loggers.CLUSTER.error("failed to report new info to target node : {}, error : {}",
                                         target.getAddress(), ExceptionUtil.getAllExceptionMsg(throwable));
                                 MemberUtil.onFail(ServerMemberManager.this, target, throwable);
+                                // try to connect by grpc next time, adapt old version
+                                target.setGrpcReportEnabled(true);
+                                target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
                             }
                             
                             @Override
@@ -616,6 +623,9 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             } catch (Throwable ex) {
                 Loggers.CLUSTER.error("failed to report new info to target node by http : {}, error : {}",
                         target.getAddress(), ExceptionUtil.getAllExceptionMsg(ex));
+                // try to connect by grpc next time, adapt old version
+                target.setGrpcReportEnabled(true);
+                target.getAbilities().getRemoteAbility().setGrpcReportEnabled(true);
             }
         }
 
@@ -643,6 +653,7 @@ public class ServerMemberManager implements ApplicationListener<WebServerInitial
             } catch (NacosException e) {
                 if (e.getErrCode() == NacosException.NO_HANDLER) {
                     target.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
+                    target.setGrpcReportEnabled(false);
                 }
                 Loggers.CLUSTER.error("failed to report new info to target node by grpc : {}, error : {}",
                         target.getAddress(), ExceptionUtil.getAllExceptionMsg(e));

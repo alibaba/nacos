@@ -56,7 +56,7 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
     @Deprecated
     private ServerAbilities abilities = new ServerAbilities();
     
-    private boolean supportRemoteConnection;
+    private boolean grpcReportEnabled;
     
     public Member() {
         String prefix = "nacos.core.member.meta.";
@@ -68,12 +68,12 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
                 .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
-    public boolean isSupportRemoteConnection() {
-        return supportRemoteConnection;
+    public boolean isGrpcReportEnabled() {
+        return grpcReportEnabled;
     }
     
-    public void setSupportRemoteConnection(boolean supportRemoteConnection) {
-        this.supportRemoteConnection = supportRemoteConnection;
+    public void setGrpcReportEnabled(boolean grpcReportEnabled) {
+        this.grpcReportEnabled = grpcReportEnabled;
     }
     
     @Deprecated

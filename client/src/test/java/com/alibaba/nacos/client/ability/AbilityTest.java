@@ -25,8 +25,9 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.Connection;
+import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import org.junit.After;
@@ -34,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AbilityTest {
     
@@ -43,7 +45,42 @@ public class AbilityTest {
     
     @Test
     public void testReceive() throws Exception {
-        rpcClient = new RpcClient("name") {
+        rpcClient = new RpcClient(new RpcClientConfig() {
+            @Override
+            public String name() {
+                return "test";
+            }
+
+            @Override
+            public int retryTimes() {
+                return 1;
+            }
+
+            @Override
+            public long timeOutMills() {
+                return 3000L;
+            }
+
+            @Override
+            public long connectionKeepAlive() {
+                return 5000L;
+            }
+
+            @Override
+            public int healthCheckRetryTimes() {
+                return 1;
+            }
+
+            @Override
+            public long healthCheckTimeOut() {
+                return 3000L;
+            }
+
+            @Override
+            public Map<String, String> labels() {
+                return new HashMap<>();
+            }
+        }) {
             
             @Override
             public ConnectionType getConnectionType() {

@@ -43,7 +43,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
@@ -65,7 +64,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -421,9 +419,8 @@ public abstract class GrpcClient extends RpcClient {
                 if (synResponse != null) {
                     // try to wait for notify response
                     synResponse.blocker.await(5000L, TimeUnit.MICROSECONDS);
-                }
-                // leave for adapting old version server
-                else {
+                } else {
+                    // leave for adapting old version server
                     //wait to register connection setup
                     Thread.sleep(100L);
                 }
@@ -505,7 +502,7 @@ public abstract class GrpcClient extends RpcClient {
 
         RpcClientTlsConfig tlsConfig = clientConfig.tlsConfig();
         if (!tlsConfig.getEnableTls()) {
-            return Optional.absent();
+            return Optional.empty();
         }
         try {
             SslContextBuilder builder = GrpcSslContexts.forClient();

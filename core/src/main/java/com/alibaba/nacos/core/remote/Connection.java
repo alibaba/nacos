@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.remote.Requester;
 
 import java.util.Map;

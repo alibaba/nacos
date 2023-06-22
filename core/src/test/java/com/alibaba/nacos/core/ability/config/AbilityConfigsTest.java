@@ -33,9 +33,10 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-/**.
+/**
+ * test for ability in config.
+ *
  * @author Daydreamer
- * @description
  * @date 2022/9/3 12:27
  **/
 public class AbilityConfigsTest {
@@ -72,9 +73,13 @@ public class AbilityConfigsTest {
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
         this.serverAbilityControlManager = serverAbilityControlManager;
     }
-    
-    
-    public void fill() throws NoSuchFieldException, IllegalAccessException {
+
+    /**
+     * fill field.
+     *
+     * @throws Exception ignore
+     */
+    public void fill() throws Exception {
         Field instanceField = ServerAbilities.class.getDeclaredField("INSTANCE");
         Field abilitiesField = AbstractAbilityRegistry.class.getDeclaredField("supportedAbilities");
         abilitiesField.setAccessible(true);
@@ -86,7 +91,7 @@ public class AbilityConfigsTest {
     }
     
     @Test
-    public void testLoadAbilities() throws NoSuchFieldException, IllegalAccessException, InterruptedException {
+    public void testLoadAbilities() throws Exception {
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.FALSE.toString());
         // test load

@@ -66,7 +66,7 @@ public class MemberUtil {
         oldMember.setExtendInfo(newMember.getExtendInfo());
         oldMember.setAddress(newMember.getAddress());
         oldMember.setAbilities(newMember.getAbilities());
-        oldMember.setSupportRemoteConnection(newMember.isSupportRemoteConnection());
+        oldMember.setGrpcReportEnabled(newMember.isGrpcReportEnabled());
     }
     
     /**
@@ -95,6 +95,8 @@ public class MemberUtil {
         extendInfo.put(MemberMetaDataConstants.RAFT_PORT, String.valueOf(calculateRaftPort(target)));
         extendInfo.put(MemberMetaDataConstants.READY_TO_UPGRADE, true);
         target.setExtendInfo(extendInfo);
+        // use grpc to report default
+        target.setGrpcReportEnabled(true);
         return target;
     }
     
@@ -111,7 +113,7 @@ public class MemberUtil {
         
         boolean oldVerJudge = member.getAbilities().getRemoteAbility().isSupportRemoteConnection();
         
-        return member.isSupportRemoteConnection() || oldVerJudge;
+        return member.isGrpcReportEnabled() || oldVerJudge;
     }
     
     public static int calculateRaftPort(Member member) {
@@ -281,7 +283,7 @@ public class MemberUtil {
         }
     
         // if change
-        if (expected.isSupportRemoteConnection() != actual.isSupportRemoteConnection()) {
+        if (expected.isGrpcReportEnabled() != actual.isGrpcReportEnabled()) {
             return true;
         }
         
