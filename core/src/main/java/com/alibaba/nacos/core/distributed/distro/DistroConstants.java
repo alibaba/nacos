@@ -23,31 +23,47 @@ package com.alibaba.nacos.core.distributed.distro;
  */
 public class DistroConstants {
     
+    public static final String DISTRO_MODULE = "distro";
+    
     public static final String DATA_SYNC_DELAY_MILLISECONDS = "nacos.core.protocol.distro.data.sync.delayMs";
+    
+    public static final String DATA_SYNC_DELAY_MILLISECONDS_STATE = "data_sync_delayMs";
     
     public static final long DEFAULT_DATA_SYNC_DELAY_MILLISECONDS = 1000L;
     
     public static final String DATA_SYNC_TIMEOUT_MILLISECONDS = "nacos.core.protocol.distro.data.sync.timeoutMs";
     
+    public static final String DATA_SYNC_TIMEOUT_MILLISECONDS_STATE = "data_sync_timeoutMs";
+    
     public static final long DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS = 3000L;
     
     public static final String DATA_SYNC_RETRY_DELAY_MILLISECONDS = "nacos.core.protocol.distro.data.sync.retryDelayMs";
+    
+    public static final String DATA_SYNC_RETRY_DELAY_MILLISECONDS_STATE = "data_sync_retryDelayMs";
     
     public static final long DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS = 3000L;
     
     public static final String DATA_VERIFY_INTERVAL_MILLISECONDS = "nacos.core.protocol.distro.data.verify.intervalMs";
     
+    public static final String DATA_VERIFY_INTERVAL_MILLISECONDS_STATE = "data_verify_intervalMs";
+    
     public static final long DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS = 5000L;
     
     public static final String DATA_VERIFY_TIMEOUT_MILLISECONDS = "nacos.core.protocol.distro.data.verify.timeoutMs";
+    
+    public static final String DATA_VERIFY_TIMEOUT_MILLISECONDS_STATE = "data_verify_timeoutMs";
     
     public static final long DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS = 3000L;
     
     public static final String DATA_LOAD_RETRY_DELAY_MILLISECONDS = "nacos.core.protocol.distro.data.load.retryDelayMs";
     
+    public static final String DATA_LOAD_RETRY_DELAY_MILLISECONDS_STATE = "data_load_retryDelayMs";
+    
     public static final long DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS = 30000L;
     
     public static final String DATA_LOAD_TIMEOUT_MILLISECONDS = "nacos.core.protocol.distro.data.load.timeoutMs";
+    
+    public static final String DATA_LOAD_TIMEOUT_MILLISECONDS_STATE = "data_load_timeoutMs";
     
     public static final long DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS = 30000L;
     

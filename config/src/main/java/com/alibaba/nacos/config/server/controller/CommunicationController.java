@@ -22,8 +22,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -50,42 +48,17 @@ import java.util.Set;
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
     
-    private final DumpService dumpService;
-    
     private final LongPollingService longPollingService;
     
     private final ConfigChangeListenContext configChangeListenContext;
     
     private final ConnectionManager connectionManager;
     
-    public CommunicationController(DumpService dumpService, LongPollingService longPollingService,
+    public CommunicationController(LongPollingService longPollingService,
             ConfigChangeListenContext configChangeListenContext, ConnectionManager connectionManager) {
-        this.dumpService = dumpService;
         this.longPollingService = longPollingService;
         this.configChangeListenContext = configChangeListenContext;
         this.connectionManager = connectionManager;
-    }
-    
-    /**
-     * Notify the change of config information.
-     */
-    @GetMapping("/dataChange")
-    public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
-            @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-            @RequestParam(value = "tag", required = false) String tag) {
-        dataId = dataId.trim();
-        group = group.trim();
-        String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
-        long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
-        String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
-        String isBetaStr = request.getHeader("isBeta");
-        if (StringUtils.isNotBlank(isBetaStr) && Boolean.parseBoolean(isBetaStr)) {
-            dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
-        } else {
-            dumpService.dump(dataId, group, tenant, tag, lastModifiedTs, handleIp);
-        }
-        return true;
     }
     
     /**

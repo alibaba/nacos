@@ -80,8 +80,6 @@ public class SwitchDomain implements Record, Cloneable {
     
     private boolean lightBeatEnabled = true;
     
-    private boolean doubleWriteEnabled = true;
-    
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
     
     /**
@@ -389,14 +387,6 @@ public class SwitchDomain implements Record, Cloneable {
     
     public void setLightBeatEnabled(boolean lightBeatEnabled) {
         this.lightBeatEnabled = lightBeatEnabled;
-    }
-    
-    public boolean isDoubleWriteEnabled() {
-        return doubleWriteEnabled;
-    }
-    
-    public void setDoubleWriteEnabled(boolean doubleWriteEnabled) {
-        this.doubleWriteEnabled = doubleWriteEnabled;
     }
     
     @Override

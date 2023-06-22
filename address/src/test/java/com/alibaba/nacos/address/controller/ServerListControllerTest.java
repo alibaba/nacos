@@ -17,25 +17,29 @@
 package com.alibaba.nacos.address.controller;
 
 import com.alibaba.nacos.address.component.AddressServerGeneratorManager;
-import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
+import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -43,68 +47,56 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ServerListControllerTest {
     
     @Mock
-    private ServiceManager serviceManager;
+    private NamingMetadataManager metadataManager;
+    
+    @Mock
+    private ServiceStorage serviceStorage;
+    
+    private Service service;
     
     private MockMvc mockMvc;
     
     @Before
     public void before() {
-        this.mockMvc = MockMvcBuilders
-                .standaloneSetup(new ServerListController(serviceManager, new AddressServerGeneratorManager()))
-                .build();
+        this.mockMvc = MockMvcBuilders.standaloneSetup(
+                new ServerListController(new AddressServerGeneratorManager(), metadataManager, serviceStorage)).build();
+        service = Service
+                .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default", false);
+        ServiceManager.getInstance().getSingleton(service);
+    }
+    
+    @After
+    public void tearDown() {
+        ServiceManager.getInstance().removeSingleton(service);
     }
     
     @Test
     public void testGetCluster() throws Exception {
-    
-        final Service service = new Service(
-                Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default");
         
-        Cluster cluster = new Cluster();
-        cluster.setName("serverList");
-        cluster.setService(service);
-        
-        final HashMap<String, Cluster> clusterMap = new HashMap<>(1);
-        clusterMap.put("serverList", cluster);
-        service.setClusterMap(clusterMap);
-        
+        final Service service = Service
+                .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default", false);
+        ServiceMetadata serviceMetadata = new ServiceMetadata();
+        serviceMetadata.getClusters().put("serverList", new ClusterMetadata());
+        when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.of(serviceMetadata));
         List<Instance> list = new ArrayList<>(2);
-        list.add(new Instance("192.168.3.1", 8848));
-        list.add(new Instance("192.168.3.2", 8848));
-        cluster.updateIps(list, false);
-        
-        Mockito.when(serviceManager.getService(Mockito.eq(Constants.DEFAULT_NAMESPACE_ID),
-                Mockito.eq(Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default")))
-                .thenReturn(service);
-        
-        mockMvc.perform(get("/nacos/serverList"))
-                .andExpect(status().isOk());
-    
+        list.add(new Instance());
+        list.add(new Instance());
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setHosts(list);
+        when(serviceStorage.getData(service)).thenReturn(serviceInfo);
+        mockMvc.perform(get("/nacos/serverList")).andExpect(status().isOk());
     }
     
     @Test
     public void testGetClusterCannotFindService() throws Exception {
-    
-        mockMvc.perform(get("/default/serverList"))
-                .andExpect(status().isNotFound());
+        tearDown();
+        mockMvc.perform(get("/default/serverList")).andExpect(status().isNotFound());
         
     }
     
     @Test
     public void testGetClusterCannotFindCluster() throws Exception {
-    
-        final Service service = new Service(
-                Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default");
-    
-        final HashMap<String, Cluster> clusterMap = new HashMap<>(1);
-        service.setClusterMap(clusterMap);
-    
-        Mockito.when(serviceManager.getService(Mockito.eq(Constants.DEFAULT_NAMESPACE_ID),
-                        Mockito.eq(Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + "nacos.as.default")))
-                .thenReturn(service);
-    
-        mockMvc.perform(get("/nacos/serverList"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/nacos/serverList")).andExpect(status().isNotFound());
         
     }
 }

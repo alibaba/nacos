@@ -16,6 +16,17 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
+
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
+import org.apache.http.nio.conn.NHttpClientConnectionManager;
+import org.apache.http.pool.PoolStats;
+import org.slf4j.Logger;
+
 import com.alibaba.nacos.common.http.AbstractApacheHttpClientFactory;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -26,11 +37,6 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.slf4j.Logger;
-
-import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
 /**
  * http Manager.
@@ -155,18 +161,65 @@ public class HttpClientManager {
         }
     }
     
-    private static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
+    public static class ProcessorHttpClientFactory extends AbstractHttpClientFactory {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
             return HttpClientConfig.builder().setConnectionRequestTimeout(500).setReadTimeOutMillis(500)
                     .setConTimeOutMillis(500).setIoThreadCount(1).setContentCompressionEnabled(false).setMaxRedirects(0)
-                    .setMaxConnTotal(-1).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
+                    .setMaxConnTotal(5000).setMaxConnPerRoute(-1).setUserAgent("VIPServer").build();
         }
         
         @Override
         protected Logger assignLogger() {
             return SRV_LOG;
+        }
+        
+        @Override
+        protected void monitorAndExtension(NHttpClientConnectionManager connectionManager) {
+            GlobalExecutor.scheduleMonitorHealthCheckPool(new MonitorHealthCheckPool(connectionManager), 60, 60, TimeUnit.SECONDS);
+        }
+    }
+    
+    private static class MonitorHealthCheckPool implements Runnable {
+        private NHttpClientConnectionManager connectionManager;
+
+        public MonitorHealthCheckPool(NHttpClientConnectionManager connectionManager) {
+            this.connectionManager = connectionManager;
+        }
+
+        @Override
+        public void run() {
+            closeExpiredAndIdleConnections();
+            monitor();
+        }
+
+        private void monitor() {
+            try {
+                PoolingNHttpClientConnectionManager manager = (PoolingNHttpClientConnectionManager) connectionManager;
+                // Get the status of each route
+                Set<HttpRoute> routes = manager.getRoutes();
+                if (routes != null && !routes.isEmpty()) {
+                    for (HttpRoute httpRoute : routes) {
+                        PoolStats stats = manager.getStats(httpRoute);
+                        SRV_LOG.debug("connectionManager every route: {}", stats);
+                    }
+                }
+                // Get the connection pool status of all routes
+                PoolStats totalStats = manager.getTotalStats();
+                SRV_LOG.debug("connectionManager total status: {}", totalStats);
+            } catch (Exception e) {
+                SRV_LOG.warn("MonitorHealthCheckPool monitor warn", e);
+            }
+        }
+
+        private void closeExpiredAndIdleConnections() {
+            try {
+                connectionManager.closeExpiredConnections();
+                connectionManager.closeIdleConnections(CON_TIME_OUT_MILLIS * 10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                SRV_LOG.warn("MonitorHealthCheckPool clean warn", e);
+            }
         }
     }
 }

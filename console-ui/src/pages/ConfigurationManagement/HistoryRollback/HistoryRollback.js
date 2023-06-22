@@ -16,7 +16,16 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Field, Form, Loading, Pagination, Select, Table } from '@alifd/next';
+import {
+  ConfigProvider,
+  Field,
+  Form,
+  Loading,
+  Pagination,
+  Select,
+  Table,
+  Message,
+} from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import { getParams, setParams, request } from '@/globalLib';
 
@@ -90,12 +99,9 @@ class HistoryRollback extends React.Component {
         group: '',
         dataId: '',
       });
-      setParams({
-        group: '',
-        dataId: '',
-      });
+      setParams('historyGroup', '');
+      setParams('historyDataId', '');
     }
-
     this.getData();
     this.getConfigList();
   }
@@ -103,12 +109,12 @@ class HistoryRollback extends React.Component {
   getData(pageNo = 1) {
     const self = this;
     this.serverId = getParams('serverId') || '';
-    if (!this.dataId) return false;
+    if (!this.state.dataId) return false;
     request({
       beforeSend() {
         self.openLoading();
       },
-      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      url: `v1/cs/history?search=accurate&dataId=${this.state.dataId}&group=${this.state.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(data) {
         if (data != null) {
           self.setState({
@@ -157,18 +163,20 @@ class HistoryRollback extends React.Component {
   }
 
   selectAll() {
-    this.dataId = this.field.getValue('dataId');
-    this.group = this.field.getValue('group');
-    if (!this.dataId || !this.group) {
+    const { locale = {} } = this.props;
+    if (!this.state.dataId) {
+      Message.error(locale.dataIdCanNotBeEmpty);
       return false;
     }
-    if (this.dataId !== this.preDataId) {
-      setParams('dataId', this.dataId);
-      this.preDataId = this.dataId;
+    if (!this.state.group) {
+      Message.error(locale.groupCanNotBeEmpty);
+      return false;
     }
-    if (this.group !== this.preGroup) {
-      setParams('group', this.preGroup);
-      this.preGroup = this.group;
+    if (this.state.dataId !== this.preDataId) {
+      this.preDataId = this.state.dataId;
+    }
+    if (this.state.group !== this.preGroup) {
+      this.preGroup = this.state.group;
     }
     this.getData();
   }
@@ -335,20 +343,20 @@ class HistoryRollback extends React.Component {
                   dataSource={this.state.dataIds}
                   hasClear
                   showSearch
+                  value={this.state.dataId}
+                  onChange={val => {
+                    if (!val) {
+                      val = '';
+                    }
+                    this.setState({ dataId: val });
+                    setParams('historyDataId', val);
+                  }}
                   onSearch={val => {
                     const { dataIds } = this.state;
                     if (!dataIds.includes(val)) {
                       this.setState({ dataIds: dataIds.concat(val) });
                     }
                   }}
-                  {...this.init('dataId', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.dataIdCanNotBeEmpty,
-                      },
-                    ],
-                  })}
                 />
               </Form.Item>
               <Form.Item label="Group:" required>
@@ -359,22 +367,22 @@ class HistoryRollback extends React.Component {
                   mode="single"
                   placeholder={locale.group}
                   dataSource={this.state.groups}
+                  value={this.state.group}
                   hasClear
                   showSearch
+                  onChange={val => {
+                    if (!val) {
+                      val = '';
+                    }
+                    this.setState({ group: val });
+                    setParams('historyGroup', val);
+                  }}
                   onSearch={val => {
                     const { groups } = this.state;
                     if (!groups.includes(val)) {
                       this.setState({ groups: groups.concat(val) });
                     }
                   }}
-                  {...this.init('group', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.groupCanNotBeEmpty,
-                      },
-                    ],
-                  })}
                 />
               </Form.Item>
               <Form.Item label="">

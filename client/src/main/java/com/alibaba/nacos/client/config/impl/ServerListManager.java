@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -165,7 +166,8 @@ public class ServerListManager implements Closeable {
         this.isStarted = false;
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
-        this.endpoint = initEndpoint(properties);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        this.endpoint = initEndpoint(clientProperties);
         
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
@@ -176,10 +178,10 @@ public class ServerListManager implements Closeable {
         }
         
         this.name = initServerName(null);
-        initAddressServerUrl(properties);
+        initAddressServerUrl(clientProperties);
     }
     
-    public ServerListManager(Properties properties) throws NacosException {
+    public ServerListManager(NacosClientProperties properties) throws NacosException {
         this.isStarted = false;
         this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
@@ -222,11 +224,11 @@ public class ServerListManager implements Closeable {
         
     }
     
-    private String initServerName(Properties properties) {
+    private String initServerName(NacosClientProperties properties) {
         String serverName;
         //1.user define server name.
         if (properties != null && properties.containsKey(PropertyKeyConst.SERVER_NAME)) {
-            serverName = properties.get(PropertyKeyConst.SERVER_NAME).toString();
+            serverName = properties.getProperty(PropertyKeyConst.SERVER_NAME);
         } else {
             // if fix url,use fix url join string.
             if (isFixed) {
@@ -245,7 +247,7 @@ public class ServerListManager implements Closeable {
         return serverName;
     }
     
-    private void initAddressServerUrl(Properties properties) {
+    private void initAddressServerUrl(NacosClientProperties properties) {
         if (isFixed) {
             return;
         }
@@ -259,7 +261,7 @@ public class ServerListManager implements Closeable {
         }
         if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
             addressServerUrlTem
-                    .append(hasQueryString ? "&" : "?" + properties.get(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
+                    .append(hasQueryString ? "&" : "?" + properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
             
         }
         
@@ -267,7 +269,7 @@ public class ServerListManager implements Closeable {
         LOGGER.info("serverName = {},  address server url = {}", this.name, this.addressServerUrl);
     }
     
-    private void initParam(Properties properties) {
+    private void initParam(NacosClientProperties properties) {
         this.endpoint = initEndpoint(properties);
         
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
@@ -280,10 +282,10 @@ public class ServerListManager implements Closeable {
         }
     }
     
-    private String initEndpoint(final Properties properties) {
+    private String initEndpoint(final NacosClientProperties properties) {
         
         String endpointPortTmp = TemplateUtils
-                .stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
+                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
                         () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
         
         if (StringUtils.isNotBlank(endpointPortTmp)) {
@@ -294,7 +296,7 @@ public class ServerListManager implements Closeable {
         
         // Whether to enable domain name resolution rules
         String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                         String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);

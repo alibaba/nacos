@@ -28,8 +28,8 @@ import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberService;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutorDelegate;
@@ -58,15 +58,11 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     private final PushDelayTaskExecuteEngine delayTaskEngine;
     
-    private final UpgradeJudgement upgradeJudgement;
-    
     public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
             ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
-            NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor, UpgradeJudgement upgradeJudgement,
-            SwitchDomain switchDomain) {
+            NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor, SwitchDomain switchDomain) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
-        this.upgradeJudgement = upgradeJudgement;
         this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
                 metadataManager, pushExecutor, switchDomain);
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
@@ -117,14 +113,12 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     
     @Override
     public void onEvent(Event event) {
-        if (!upgradeJudgement.isUseGrpcFeatures()) {
-            return;
-        }
         if (event instanceof ServiceEvent.ServiceChangedEvent) {
             // If service changed, push to all subscribers.
             ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
             Service service = serviceChangedEvent.getService();
             delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
+            MetricsMonitor.incrementServiceChangeCount(service.getNamespace(), service.getGroup(), service.getName());
         } else if (event instanceof ServiceEvent.ServiceSubscribedEvent) {
             // If service is subscribed by one client, only push this client.
             ServiceEvent.ServiceSubscribedEvent subscribedEvent = (ServiceEvent.ServiceSubscribedEvent) event;
@@ -137,5 +131,9 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
     private Stream<Service> getServiceStream() {
         Collection<Service> services = indexesManager.getSubscribedService();
         return services.size() > PARALLEL_SIZE ? services.parallelStream() : services.stream();
+    }
+    
+    public int getPushPendingTaskCount() {
+        return delayTaskEngine.size();
     }
 }

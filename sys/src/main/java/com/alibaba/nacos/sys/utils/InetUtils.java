@@ -131,7 +131,7 @@ public class InetUtils {
      *
      * @return ip address
      */
-    private static String getNacosIp() {
+    public static String getNacosIp() {
         String nacosIp = System.getProperty(NACOS_SERVER_IP);
         if (StringUtils.isBlank(nacosIp)) {
             nacosIp = EnvUtil.getProperty(IP_ADDRESS);

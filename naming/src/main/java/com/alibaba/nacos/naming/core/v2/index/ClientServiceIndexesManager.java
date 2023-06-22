@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.client.Client;
-import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
@@ -84,20 +83,20 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
         result.add(ClientOperationEvent.ClientDeregisterServiceEvent.class);
         result.add(ClientOperationEvent.ClientSubscribeServiceEvent.class);
         result.add(ClientOperationEvent.ClientUnsubscribeServiceEvent.class);
-        result.add(ClientEvent.ClientDisconnectEvent.class);
+        result.add(ClientOperationEvent.ClientReleaseEvent.class);
         return result;
     }
     
     @Override
     public void onEvent(Event event) {
-        if (event instanceof ClientEvent.ClientDisconnectEvent) {
-            handleClientDisconnect((ClientEvent.ClientDisconnectEvent) event);
+        if (event instanceof ClientOperationEvent.ClientReleaseEvent) {
+            handleClientDisconnect((ClientOperationEvent.ClientReleaseEvent) event);
         } else if (event instanceof ClientOperationEvent) {
             handleClientOperation((ClientOperationEvent) event);
         }
     }
     
-    private void handleClientDisconnect(ClientEvent.ClientDisconnectEvent event) {
+    private void handleClientDisconnect(ClientOperationEvent.ClientReleaseEvent event) {
         Client client = event.getClient();
         for (Service each : client.getAllSubscribeService()) {
             removeSubscriberIndexes(each, client.getClientId());
@@ -129,21 +128,21 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addPublisherIndexes(Service service, String clientId) {
-        publisherIndexes.computeIfAbsent(service, (key) -> new ConcurrentHashSet<>());
+        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
         publisherIndexes.get(service).add(clientId);
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
     private void removePublisherIndexes(Service service, String clientId) {
-        if (!publisherIndexes.containsKey(service)) {
-            return;
-        }
-        publisherIndexes.get(service).remove(clientId);
-        NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+        publisherIndexes.computeIfPresent(service, (s, ids) -> {
+            ids.remove(clientId);
+            NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
+            return ids.isEmpty() ? null : ids;
+        });
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {
-        subscriberIndexes.computeIfAbsent(service, (key) -> new ConcurrentHashSet<>());
+        subscriberIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
         // Fix #5404, Only first time add need notify event.
         if (subscriberIndexes.get(service).add(clientId)) {
             NotifyCenter.publishEvent(new ServiceEvent.ServiceSubscribedEvent(service, clientId));

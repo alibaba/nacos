@@ -19,24 +19,24 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.core.remote.event.ConnectionLimitRuleChangeEvent;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
+import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.file.WatchFileCenter;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -54,7 +54,7 @@ public class ConnectionManagerTest {
     private ConnectionManager connectionManager;
     
     @Mock
-    private ClientConnectionEventListenerRegistry registry;
+    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     @InjectMocks
     private GrpcConnection connection;
@@ -69,6 +69,22 @@ public class ConnectionManagerTest {
     
     private String clientIp = "1.1.1.1";
     
+    static MockedStatic<ControlConfigs> propertyUtilMockedStatic;
+    
+    @BeforeClass
+    public static void setUpClass() {
+        propertyUtilMockedStatic = Mockito.mockStatic(ControlConfigs.class);
+        propertyUtilMockedStatic.when(ControlConfigs::getInstance).thenReturn(new ControlConfigs());
+        
+    }
+    
+    @AfterClass
+    public static void afterClass() {
+        if (propertyUtilMockedStatic != null) {
+            propertyUtilMockedStatic.close();
+        }
+    }
+    
     @Before
     public void setUp() {
         // create base file path
@@ -78,9 +94,9 @@ public class ConnectionManagerTest {
         }
         connectId = UUID.randomUUID().toString();
         connectionManager.start();
-        connectionManager.initLimitRue();
         Mockito.when(channel.isOpen()).thenReturn(true);
         Mockito.when(channel.isActive()).thenReturn(true);
+        
         connectionMeta.clientIp = clientIp;
         Map<String, String> labels = new HashMap<>();
         labels.put("key", "value");
@@ -95,11 +111,6 @@ public class ConnectionManagerTest {
     public void tearDown() {
         connectionManager.unregister(connectId);
         
-        String tpsPath = Paths.get(EnvUtil.getNacosHome(), "data", "loader").toString();
-        WatchFileCenter.deregisterAllWatcher(tpsPath);
-        
-        NotifyCenter.deregisterSubscriber(connectionManager);
-        NotifyCenter.deregisterPublisher(ConnectionLimitRuleChangeEvent.class);
     }
     
     @Test
@@ -109,7 +120,7 @@ public class ConnectionManagerTest {
     
     @Test
     public void testTraced() {
-        Assert.assertTrue(connectionManager.traced(clientIp));
+        Assert.assertFalse(connectionManager.traced(clientIp));
     }
     
     @Test
@@ -155,24 +166,5 @@ public class ConnectionManagerTest {
         Assert.assertEquals(1, connectionManager.currentSdkClientCount());
     }
     
-    @Test
-    public void testOnEvent() {
-        try {
-            String limitRule = "{\"monitorIpList\": [\"1.1.1.1\", \"2.2.2.2\"], \"countLimit\": 1}";
-            ConnectionLimitRuleChangeEvent limitRuleChangeEvent = new ConnectionLimitRuleChangeEvent(limitRule);
-            connectionManager.onEvent(limitRuleChangeEvent);
-    
-            ConnectionManager.ConnectionLimitRule connectionLimitRule = connectionManager.getConnectionLimitRule();
-            Assert.assertEquals(1, connectionLimitRule.getCountLimit());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
-    }
-    
-    @Test
-    public void testGetSubscribeType() {
-        Assert.assertEquals(ConnectionLimitRuleChangeEvent.class, connectionManager.subscribeType());
-    }
 }
 

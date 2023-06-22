@@ -28,12 +28,12 @@ public interface ConnectionEventListener {
      *
      * @param connection connection has connected
      */
-    public void onConnected(Connection connection);
+    void onConnected(Connection connection);
 
     /**
      * notify when  disconnected to server.
      *
      * @param connection connection has disconnected
      */
-    public void onDisConnect(Connection connection);
+    void onDisConnect(Connection connection);
 }

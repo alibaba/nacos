@@ -35,8 +35,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The implement of {@link com.alibaba.nacos.naming.selector.v1.LabelSelector} at new version.
- * The main logic is same with {@link com.alibaba.nacos.naming.selector.v1.LabelSelector}.
  * The {@link LabelSelector} will return the instances labels in {@link #labels} and providers' label value is same with consumer.
  * If none matched, then will return all providers instead of.
  *

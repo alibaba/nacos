@@ -49,6 +49,7 @@ class NewPermissions extends React.Component {
   state = {
     dataSource: [],
   };
+
   componentDidMount() {
     this.props.getNamespaces();
   }

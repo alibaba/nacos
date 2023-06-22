@@ -19,7 +19,11 @@ package com.alibaba.nacos.api.naming.pojo.builder;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -65,6 +69,24 @@ public class InstanceBuilderTest {
         assertThat(actual.isEphemeral(), is(EPHEMERAL));
         assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get(META_KEY), is(META_VALUE));
+    }
+    
+    @Test
+    public void testBuildInstanceWithoutNewMetadata() {
+        InstanceBuilder builder = InstanceBuilder.newBuilder();
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("test", "test");
+        Instance actual = builder.setMetadata(metadata).build();
+        assertNull(actual.getServiceName());
+        assertNull(actual.getClusterName());
+        assertNull(actual.getInstanceId());
+        assertNull(actual.getIp());
+        assertThat(actual.getPort(), is(0));
+        assertThat(actual.getWeight(), is(1.0));
+        assertTrue(actual.isHealthy());
+        assertTrue(actual.isEnabled());
+        assertTrue(actual.isEphemeral());
+        assertEquals(1, actual.getMetadata().size());
     }
     
     @Test

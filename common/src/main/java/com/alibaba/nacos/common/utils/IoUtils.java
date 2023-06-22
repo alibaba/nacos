@@ -46,6 +46,9 @@ import java.util.zip.GZIPOutputStream;
  * @author nacos
  */
 public class IoUtils {
+
+    private IoUtils() {
+    }
     
     /**
      * Try decompress by GZIP from stream.

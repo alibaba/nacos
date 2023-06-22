@@ -16,26 +16,42 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.mockito.Mockito.when;
+
 /**
- * {@link MetricsMonitor} and {@link NacosMeterRegistry} unit tests.
+ * {@link MetricsMonitor} and {@link NacosMeterRegistryCenter} unit tests.
  *
  * @author chenglu
- * @date 2021-06-15 22:58
+ * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class MetricsMonitorTest {
+    
+    @Mock
+    private ConfigurableApplicationContext context;
     
     @Before
     public void initMeterRegistry() {
-        NacosMeterRegistry.getMeterRegistry().add(new SimpleMeterRegistry());
+        ApplicationUtils.injectContext(context);
+        when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
+        // add simple meterRegistry.
+        NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
+                .add(new SimpleMeterRegistry());
     }
     
     @Test
@@ -63,7 +79,7 @@ public class MetricsMonitorTest {
         raftApplyTimerLog.record(10, TimeUnit.SECONDS);
         raftApplyTimerLog.record(20, TimeUnit.SECONDS);
         Assert.assertEquals(0.5D, raftApplyTimerLog.totalTime(TimeUnit.MINUTES), 0.01);
-    
+        
         Assert.assertEquals(30D, raftApplyTimerLog.totalTime(TimeUnit.SECONDS), 0.01);
     }
     
@@ -73,7 +89,7 @@ public class MetricsMonitorTest {
         raftApplyReadTimer.record(10, TimeUnit.SECONDS);
         raftApplyReadTimer.record(20, TimeUnit.SECONDS);
         Assert.assertEquals(0.5D, raftApplyReadTimer.totalTime(TimeUnit.MINUTES), 0.01);
-    
+        
         Assert.assertEquals(30D, raftApplyReadTimer.totalTime(TimeUnit.SECONDS), 0.01);
     }
 }

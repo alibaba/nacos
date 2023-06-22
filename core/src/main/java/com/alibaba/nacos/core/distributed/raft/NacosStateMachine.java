@@ -268,7 +268,7 @@ class NacosStateMachine extends StateMachineAdapter {
                     // components from implementing snapshots
                     
                     final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
-                        boolean[] results = new boolean[wCtx.listFiles().size()];
+                        Boolean[] results = new Boolean[wCtx.listFiles().size()];
                         int[] index = new int[] {0};
                         wCtx.listFiles().forEach((file, meta) -> {
                             try {
@@ -278,7 +278,7 @@ class NacosStateMachine extends StateMachineAdapter {
                             }
                         });
                         final Status status = result
-                                && !Arrays.asList(results).stream().anyMatch(Boolean.FALSE::equals) ? Status.OK()
+                                && Arrays.stream(results).allMatch(Boolean.TRUE::equals) ? Status.OK()
                                 : new Status(RaftError.EIO, "Fail to compress snapshot at %s, error is %s",
                                         writer.getPath(), t == null ? "" : t.getMessage());
                         done.run(status);

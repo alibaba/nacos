@@ -17,21 +17,22 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
-import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.PermissionPersistService;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
+import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
+import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import io.jsonwebtoken.lang.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -43,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 
 /**
  * Nacos builtin role service.
@@ -76,8 +79,8 @@ public class NacosRoleServiceImpl {
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
-            Page<RoleInfo> roleInfoPage = rolePersistService
-                    .getRolesByUserName(StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(StringUtils.EMPTY,
+                    StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
             if (roleInfoPage == null) {
                 return;
             }
@@ -93,8 +96,8 @@ public class NacosRoleServiceImpl {
             
             Map<String, List<PermissionInfo>> tmpPermissionInfoMap = new ConcurrentHashMap<>(16);
             for (String role : tmpRoleSet) {
-                Page<PermissionInfo> permissionInfoPage = permissionPersistService
-                        .getPermissions(role, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+                Page<PermissionInfo> permissionInfoPage = permissionPersistService.getPermissions(role, DEFAULT_PAGE_NO,
+                        Integer.MAX_VALUE);
                 tmpPermissionInfoMap.put(role, permissionInfoPage.getPageItems());
             }
             
@@ -112,24 +115,25 @@ public class NacosRoleServiceImpl {
      * <p>Note if the user has many roles, this method returns true if any one role of the user has the desired
      * permission.
      *
-     * @param username   user info
+     * @param nacosUser  user info
      * @param permission permission to auth
      * @return true if granted, false otherwise
      */
-    public boolean hasPermission(String username, Permission permission) {
+    public boolean hasPermission(NacosUser nacosUser, Permission permission) {
         //update password
         if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource().getName())) {
             return true;
         }
         
-        List<RoleInfo> roleInfoList = getRoles(username);
-        if (Collections.isEmpty(roleInfoList)) {
+        List<RoleInfo> roleInfoList = getRoles(nacosUser.getUserName());
+        if (CollectionUtils.isEmpty(roleInfoList)) {
             return false;
         }
         
         // Global admin pass:
         for (RoleInfo roleInfo : roleInfoList) {
             if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
+                nacosUser.setGlobalAdmin(true);
                 return true;
             }
         }
@@ -142,14 +146,14 @@ public class NacosRoleServiceImpl {
         // For other roles, use a pattern match to decide if pass or not.
         for (RoleInfo roleInfo : roleInfoList) {
             List<PermissionInfo> permissionInfoList = getPermissions(roleInfo.getRole());
-            if (Collections.isEmpty(permissionInfoList)) {
+            if (CollectionUtils.isEmpty(permissionInfoList)) {
                 continue;
             }
             for (PermissionInfo permissionInfo : permissionInfoList) {
                 String permissionResource = permissionInfo.getResource().replaceAll("\\*", ".*");
                 String permissionAction = permissionInfo.getAction();
-                if (permissionAction.contains(permission.getAction()) && Pattern
-                        .matches(permissionResource, joinResource(permission.getResource()))) {
+                if (permissionAction.contains(permission.getAction()) && Pattern.matches(permissionResource,
+                        joinResource(permission.getResource()))) {
                     return true;
                 }
             }
@@ -160,10 +164,11 @@ public class NacosRoleServiceImpl {
     public List<RoleInfo> getRoles(String username) {
         List<RoleInfo> roleInfoList = roleInfoMap.get(username);
         if (!authConfigs.isCachingEnabled() || roleInfoList == null) {
-            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+            Page<RoleInfo> roleInfoPage = getRolesFromDatabase(username, StringUtils.EMPTY, DEFAULT_PAGE_NO,
+                    Integer.MAX_VALUE);
             if (roleInfoPage != null) {
                 roleInfoList = roleInfoPage.getPageItems();
-                if (!Collections.isEmpty(roleInfoList)) {
+                if (!CollectionUtils.isEmpty(roleInfoList)) {
                     roleInfoMap.put(username, roleInfoList);
                 }
             }
@@ -171,8 +176,8 @@ public class NacosRoleServiceImpl {
         return roleInfoList;
     }
     
-    public Page<RoleInfo> getRolesFromDatabase(String userName, int pageNo, int pageSize) {
-        Page<RoleInfo> roles = rolePersistService.getRolesByUserName(userName, pageNo, pageSize);
+    public Page<RoleInfo> getRolesFromDatabase(String userName, String role, int pageNo, int pageSize) {
+        Page<RoleInfo> roles = rolePersistService.getRolesByUserNameAndRoleName(userName, role, pageNo, pageSize);
         if (roles == null) {
             return new Page<>();
         }
@@ -186,7 +191,7 @@ public class NacosRoleServiceImpl {
                     Integer.MAX_VALUE);
             if (permissionInfoPage != null) {
                 permissionInfoList = permissionInfoPage.getPageItems();
-                if (!Collections.isEmpty(permissionInfoList)) {
+                if (!CollectionUtils.isEmpty(permissionInfoList)) {
                     permissionInfoMap.put(role, permissionInfoList);
                 }
             }
@@ -262,7 +267,10 @@ public class NacosRoleServiceImpl {
         StringBuilder result = new StringBuilder();
         String namespaceId = resource.getNamespaceId();
         if (StringUtils.isNotBlank(namespaceId)) {
-            result.append(namespaceId);
+            // https://github.com/alibaba/nacos/issues/10347
+            if (!DEFAULT_NAMESPACE_ID.equals(namespaceId)) {
+                result.append(namespaceId);
+            }
         }
         String group = resource.getGroup();
         if (StringUtils.isBlank(group)) {
@@ -278,5 +286,25 @@ public class NacosRoleServiceImpl {
                     .append(resourceName);
         }
         return result.toString();
+    }
+    
+    public Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize) {
+        return rolePersistService.findRolesLike4Page(username, role, pageNo, pageSize);
+    }
+    
+    public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
+        return permissionPersistService.findPermissionsLike4Page(role, pageNo, pageSize);
+    }
+    
+    /**
+     * check if user has admin role.
+     *
+     * @param userName user name
+     * @return true if user has admin role.
+     */
+    public boolean hasGlobalAdminRole(String userName) {
+        List<RoleInfo> roles = getRoles(userName);
+        
+        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
 }

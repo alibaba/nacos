@@ -29,7 +29,6 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
-import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -71,7 +70,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             List<Member> members = serverMemberManager.allMembersWithoutSelf();
             refresh(members);
             Loggers.CLUSTER
-                    .warn("[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
+                    .info("[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
                             members);
         } catch (NacosException e) {
             Loggers.CLUSTER.warn("[ClusterRpcClientProxy] fail to refresh cluster rpc client,{} ", e.getMessage());
@@ -88,17 +87,13 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         
         //ensure to create client of new members
         for (Member member : members) {
-            
-            if (MemberUtil.isSupportedLongCon(member)) {
-                createRpcClientAndStart(member, ConnectionType.GRPC);
-            }
+            createRpcClientAndStart(member, ConnectionType.GRPC);
         }
         
         //shutdown and remove old members.
         Set<Map.Entry<String, RpcClient>> allClientEntrys = RpcClientFactory.getAllClientEntries();
         Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntrys.iterator();
-        List<String> newMemberKeys = members.stream().filter(MemberUtil::isSupportedLongCon)
-                .map(this::memberClientKey).collect(Collectors.toList());
+        List<String> newMemberKeys = members.stream().map(this::memberClientKey).collect(Collectors.toList());
         while (iterator.hasNext()) {
             Map.Entry<String, RpcClient> next1 = iterator.next();
             if (next1.getKey().startsWith("Cluster-") && !newMemberKeys.contains(next1.getKey())) {
@@ -120,7 +115,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
         String memberClientKey = memberClientKey(member);
         RpcClient client = buildRpcClient(type, labels, memberClientKey);
         if (!client.getConnectionType().equals(type)) {
-            Loggers.CLUSTER.info(",connection type changed,destroy client of member - > : {}", member);
+            Loggers.CLUSTER.info("connection type changed,destroy client of member - > : {}", member);
             RpcClientFactory.destroyClient(memberClientKey);
             client = buildRpcClient(type, labels, memberClientKey);
         }
@@ -154,8 +149,10 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      * Using {@link EnvUtil#getAvailableProcessors(int)} to build cluster clients' grpc thread pool.
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
-        return RpcClientFactory.createClusterClient(memberClientKey, type,
-                EnvUtil.getAvailableProcessors(2), EnvUtil.getAvailableProcessors(8), labels);
+        RpcClient clusterClient = RpcClientFactory
+                .createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
+                        EnvUtil.getAvailableProcessors(8), labels);
+        return clusterClient;
     }
     
     /**

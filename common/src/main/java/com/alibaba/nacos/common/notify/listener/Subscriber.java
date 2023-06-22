@@ -69,6 +69,6 @@ public abstract class Subscriber<T extends Event> {
      * @return Whether the event's scope matches current subscriber
      */
     public boolean scopeMatches(T event) {
-        return event.scope() == null;
+        return true;
     }
 }

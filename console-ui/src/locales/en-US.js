@@ -35,7 +35,8 @@ const I18N_CONF = {
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',
     invalidUsernameOrPassword: 'invalid username or password',
-    productDesc: 'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
+    productDesc:
+      'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
   },
   MainLayout: {
     nacosName: 'NACOS',
@@ -261,6 +262,7 @@ const I18N_CONF = {
     sourceIp: 'Source IP',
     configureContent: 'Configuration Content',
     back: 'Back',
+    namespace: 'Namespace',
   },
   DashboardCard: {
     importantReminder0: 'Important reminder',
@@ -291,6 +293,7 @@ const I18N_CONF = {
     configurationManagement8: 'configuration management',
     queryResults: 'Found',
     articleMeetRequirements: 'configuration items',
+    fuzzydMode: 'Default fuzzy query mode',
     fuzzyd: "Add wildcard '*' for fuzzy query",
     defaultFuzzyd: 'Default fuzzy query mode opened',
     fuzzyg: "Add wildcard '*' for fuzzy query",
@@ -300,6 +303,8 @@ const I18N_CONF = {
     app1: 'Enter App Name\n',
     tags: 'Tags',
     pleaseEnterTag: 'Enter Tag',
+    configDetailLabel: 'DetailSearch',
+    configDetailH: 'search config detail',
     application: 'Application',
     operation: 'Operation',
     export: 'Export query results',
@@ -384,6 +389,7 @@ const I18N_CONF = {
     confirmSyanx: 'The configuration information may has a syntax error. Are you sure to submit?',
     dataIdExists: 'Configuration already exists. Enter a new Data ID and Group name.',
     dataRequired: 'Data cannot be empty, submission failed',
+    namespace: 'Namespace',
   },
   CloneDialog: {
     terminate: 'Terminate',
@@ -445,6 +451,7 @@ const I18N_CONF = {
     dialogCurrentArea: 'Current Value',
     dialogOriginalArea: 'Original Value',
     publishFailed403: 'Publish failed. No operation permission',
+    namespace: 'Namespace',
   },
   EditorNameSpace: {
     notice: 'Notice',
@@ -543,6 +550,7 @@ const I18N_CONF = {
     groupInput: 'Please Enter Group',
     namespaceSelect: 'Please Select namespace',
     configNotFind: 'The Configuration is not found, Please select again',
+    namespace: 'Namespace',
   },
   ConfigRollback: {
     rollBack: 'Roll Back',
@@ -560,6 +568,7 @@ const I18N_CONF = {
     update: 'Update',
     insert: 'Insert',
     additionalRollbackMessage: 'This operation will delete the below config!',
+    namespace: 'Namespace',
   },
   UserManagement: {
     userManagement: 'User Management',
@@ -571,6 +580,10 @@ const I18N_CONF = {
     password: 'Password',
     operation: 'Operation',
     refresh: 'Refresh',
+    query: 'Search',
+    fuzzydMode: 'Default fuzzy query mode',
+    defaultFuzzyd: 'Default fuzzy query mode opened',
+    fuzzyd: "Add wildcard '*' for fuzzy query",
   },
   NewUser: {
     createUser: 'Create user',
@@ -605,6 +618,10 @@ const I18N_CONF = {
     deleteRole: 'Delete',
     deleteRoleTip: 'Do you want to delete this role?',
     refresh: 'Refresh',
+    fuzzydMode: 'Default fuzzy query mode',
+    defaultFuzzyd: 'Default fuzzy query mode opened',
+    fuzzyd: "Add wildcard '*' for fuzzy query",
+    query: 'Search',
   },
   NewRole: {
     bindingRoles: 'Binding roles',
@@ -628,6 +645,10 @@ const I18N_CONF = {
     writeOnly: 'write only',
     readWrite: 'Read and write',
     refresh: 'Refresh',
+    fuzzydMode: 'Default fuzzy query mode',
+    defaultFuzzyd: 'Default fuzzy query mode opened',
+    fuzzyd: "Add wildcard '*' for fuzzy query",
+    query: 'Search',
   },
   NewPermissions: {
     addPermission: 'Add Permission',

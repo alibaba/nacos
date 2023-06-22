@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.model.Page;
-
 import java.util.List;
+
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 /**
  * Role CRUD service.
@@ -46,7 +47,7 @@ public interface RolePersistService {
      * @param pageSize pageSize
      * @return roles page info
      */
-    Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize);
+    Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize);
 
     /**
      * assign role to user.
@@ -78,4 +79,30 @@ public interface RolePersistService {
      * @return roles
      */
     List<String> findRolesLikeRoleName(String role);
+
+    /**
+     * Generate fuzzy search Sql.
+     *
+     * @param s origin string
+     * @return fuzzy search Sql
+     */
+    String generateLikeArgument(String s);
+
+    /**.
+     * fuzzy query role information based on roleName and username
+     *
+     * @param username username of user
+     * @param pageNo page number
+     * @param pageSize page size
+     * @return {@link Page} with {@link RoleInfo} generation
+     */
+    Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize);
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
 }

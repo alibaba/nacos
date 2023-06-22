@@ -45,8 +45,6 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<>();
     
-    private final Object lock = new Object();
-    
     @JustForTest
     public InstancesChangeNotifier() {
         this.eventScope = UUID.randomUUID().toString();
@@ -66,16 +64,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      */
     public void registerListener(String groupName, String serviceName, String clusters, EventListener listener) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
-        if (eventListeners == null) {
-            synchronized (lock) {
-                eventListeners = listenerMap.get(key);
-                if (eventListeners == null) {
-                    eventListeners = new ConcurrentHashSet<>();
-                    listenerMap.put(key, eventListeners);
-                }
-            }
-        }
+        ConcurrentHashSet<EventListener> eventListeners = listenerMap.computeIfAbsent(key, keyInner -> new ConcurrentHashSet<>());
         eventListeners.add(listener);
     }
     

@@ -68,6 +68,7 @@
     "@alifd/next": "^1.19.4",
     "@alifd/theme-design-pro": "0.x",
     "axios": "^0.21.1",
+    "js-yaml": "^4.1.0",
     "moment": "^2.23.0",
     "prop-types": "^15.6.2",
     "qs": "^6.8.2",
@@ -78,7 +79,6 @@
     "react-router-dom": "^5.1.2",
     "react-router-redux": "^4.0.8",
     "redux": "^4.0.5",
-    "redux-thunk": "^2.3.0",
-    "yamljs": "^0.3.0"
+    "redux-thunk": "^2.3.0"
   }
 }

@@ -17,9 +17,13 @@
 
 package com.alibaba.nacos.consistency.serialize;
 
+import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
+import org.apache.http.HttpException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.Serializable;
 
 /**
  * {@link HessianSerializer} unit test.
@@ -52,6 +56,25 @@ public class HessianSerializerTest {
         
         String res2 = hessianSerializer.deserialize(bytes, "java.lang.String");
         Assert.assertEquals(data, res2);
+    }
+    
+    @Test
+    public void testSerializerAndDeserializeForNotAllowClass() {
+        Serializable data = new HttpException();
+        byte[] bytes = hessianSerializer.serialize(data);
+        
+        try {
+            HttpException res = hessianSerializer.deserialize(bytes);
+            Assert.fail("deserialize success which is not expected");
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof ClassCastException);
+        }
+        
+        try {
+            HttpException res1 = hessianSerializer.deserialize(bytes, HttpException.class);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof NacosDeserializationException);
+        }
     }
     
     @Test
