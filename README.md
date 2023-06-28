@@ -134,6 +134,11 @@ https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0
 - [Github Release](https://github.com/alibaba/nacos/releases)
 - [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
 
+## Develop&Deploy
+```shell
+mvn -Prelease-nacos -DskipTests clean install -U
+```
+
 ## Who is using
 
 These are only part of the companies using Nacos, for reference only. If you are using Nacos, please [add your company here](https://github.com/alibaba/nacos/issues/273) to tell us your scenario to make Nacos better.

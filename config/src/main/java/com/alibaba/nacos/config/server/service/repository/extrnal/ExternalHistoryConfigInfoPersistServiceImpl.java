@@ -119,7 +119,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
                                     "src_user", "gmt_modified", "op_type", "encrypted_data_key")), id, configInfo.getDataId(),
                     configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time,
                     ops, encryptedDataKey);
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
         }

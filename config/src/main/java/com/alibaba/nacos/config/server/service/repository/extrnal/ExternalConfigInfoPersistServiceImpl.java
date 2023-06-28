@@ -230,10 +230,12 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.insert(
-                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip", "src_user",
-                        "gmt_create", "gmt_modified", "c_desc", "c_use", "effect", "type", "c_schema",
-                        "encrypted_data_key"));
-        String[] returnGeneratedKeys = configInfoMapper.getPrimaryKeyGeneratedKeys();
+                Arrays.asList("DATA_ID", "GROUP_ID", "TENANT_ID", "APP_NAME", "CONTENT", "MD5", "SRC_IP", "SRC_USER",
+                        "GMT_CREATE", "GMT_MODIFIED", "C_DESC", "C_USE", "EFFECT", "TYPE", "C_SCHEMA",
+                        "ENCRYPTED_DATA_KEY"));
+        String[] returnGeneratedKeys = Arrays.stream(configInfoMapper.getPrimaryKeyGeneratedKeys())
+                .map(k -> k.toUpperCase())
+                .toArray(String[]::new);
         try {
             jt.update(new PreparedStatementCreator() {
                 @Override
